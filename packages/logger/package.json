@@ -1,9 +1,7 @@
 {
     "name": "@repo/logger",
     "version": "0.0.0",
-    "files": [
-        "dist"
-    ],
+    "files": ["dist"],
     "private": true,
     "type": "module",
     "main": "dist/index.js",
@@ -22,7 +20,7 @@
     },
     "dependencies": {
         "chalk": "^5.4.1",
-        "dotenv": "^16.5.0"
+        "@repo/config": "workspace:*"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",

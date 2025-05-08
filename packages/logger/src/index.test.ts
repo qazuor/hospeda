@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import logger, { LogLevel, configure, createLogger, resetConfig } from './index.js';
+import logger, { LogLevel, configureLogger, createLogger, resetLoggerConfig } from './index.js';
 
 describe('Logger', () => {
     beforeEach(() => {
         // Reset logger configuration before each test
-        resetConfig();
+        resetLoggerConfig();
 
         // Mock console methods
         vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -46,14 +46,14 @@ describe('Logger', () => {
     });
 
     it('should log debug messages when configured', () => {
-        configure({ minLevel: LogLevel.DEBUG });
+        configureLogger({ minLevel: LogLevel.DEBUG });
 
         logger.debug('Test debug message');
         expect(console.debug).toHaveBeenCalled();
     });
 
     it('should not log debug messages when minLevel is INFO', () => {
-        configure({ minLevel: LogLevel.INFO });
+        configureLogger({ minLevel: LogLevel.INFO });
 
         logger.debug('Test debug message');
         expect(console.debug).not.toHaveBeenCalled();
@@ -81,7 +81,7 @@ describe('Logger', () => {
         vi.stubEnv('LOG_INCLUDE_TIMESTAMPS', 'false');
         vi.stubEnv('LOG_INCLUDE_LEVEL', 'false');
 
-        resetConfig(); // Reload config from env vars
+        resetLoggerConfig(); // Reload config from env vars
 
         logger.debug('Test debug message');
         expect(console.debug).toHaveBeenCalled();
@@ -96,7 +96,7 @@ describe('Logger', () => {
     });
 
     it('should disable colors when configured', () => {
-        configure({ useColors: false });
+        configureLogger({ useColors: false });
 
         // This test is a bit limited since we're mocking console methods
         // and can't easily check for chalk color codes
@@ -107,7 +107,7 @@ describe('Logger', () => {
     it('should disable colors from environment variables', () => {
         vi.stubEnv('LOG_USE_COLORS', 'false');
 
-        resetConfig(); // Reload config from env vars
+        resetLoggerConfig(); // Reload config from env vars
 
         logger.info('Test message without colors');
         expect(console.info).toHaveBeenCalled();
