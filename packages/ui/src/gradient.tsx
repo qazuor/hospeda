@@ -9,7 +9,7 @@ export function Gradient({
 }) {
     return (
         <span
-            className={`absolute mix-blend-normal will-change-[filter] rounded-[100%] ${
+            className={`absolute rounded-[100%] mix-blend-normal will-change-[filter] ${
                 small ? 'blur-[32px]' : 'blur-[75px]'
             } ${
                 conic
