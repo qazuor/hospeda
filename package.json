@@ -21,11 +21,15 @@
         "check": "biome check --write .",
         "clean": "turbo clean && rm -rf node_modules",
         "check-types": "turbo run check-types",
-        "test": "turbo test"
+        "test": "turbo test",
+        "prepare": "husky install"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
-        "turbo": "^2.5.3"
+        "turbo": "^2.5.3",
+        "husky": "^9.1.7",
+        "@commitlint/cli": "^19.8.1",
+        "@commitlint/config-conventional": "^19.8.1"
     },
     "packageManager": "pnpm@8.15.6",
     "engines": {
