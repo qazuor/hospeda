@@ -3,16 +3,8 @@
  * @module logger
  */
 
+import { getLoggerConfigs } from '@repo/config';
 import chalk from 'chalk';
-import dotenv from 'dotenv';
-
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const monorepoRoot = path.resolve(__dirname, '../../../');
-
-dotenv.config({ path: path.join(monorepoRoot, '.env') });
 /**
  * Log levels enum
  */
@@ -62,50 +54,34 @@ const defaultConfig: LoggerConfig = {
 /**
  * Current logger configuration
  */
-let currentConfig: LoggerConfig = loadConfigFromEnv();
+let currentConfig: LoggerConfig = getConfig();
 
 /**
  * Load configuration from environment variables
  * @returns Logger configuration
  */
-function loadConfigFromEnv(): LoggerConfig {
-    const config = { ...defaultConfig };
-
-    // Load log level from environment variable
-    const envLogLevel = process.env.LOG_LEVEL?.toUpperCase();
-    if (envLogLevel && Object.values(LogLevel).includes(envLogLevel as LogLevel)) {
-        config.minLevel = envLogLevel as LogLevel;
-    }
-
-    // Load other configuration options from environment variables
-    if (process.env.LOG_INCLUDE_TIMESTAMPS === 'false') {
-        config.includeTimestamps = false;
-    }
-
-    if (process.env.LOG_INCLUDE_LEVEL === 'false') {
-        config.includeLevel = false;
-    }
-
-    if (process.env.LOG_USE_COLORS === 'false') {
-        config.useColors = false;
-    }
-
-    return config;
+function getConfig(): LoggerConfig {
+    return Object.assign({}, defaultConfig, {
+        minLevel: getLoggerConfigs().LEVEL,
+        includeTimestamps: getLoggerConfigs().INCLUDE_TIMESTAMPS,
+        includeLevel: getLoggerConfigs().INCLUDE_LEVEL,
+        useColors: getLoggerConfigs().USE_COLORS
+    });
 }
 
 /**
  * Configure the logger
  * @param config - Logger configuration
  */
-export function configure(config: Partial<LoggerConfig>): void {
+export function configureLogger(config: Partial<LoggerConfig>): void {
     currentConfig = { ...currentConfig, ...config };
 }
 
 /**
  * Reset logger configuration to defaults
  */
-export function resetConfig(): void {
-    currentConfig = loadConfigFromEnv();
+export function resetLoggerConfig(): void {
+    currentConfig = getConfig();
 }
 
 /**
@@ -247,8 +223,8 @@ export const logger = {
     warn,
     error,
     debug,
-    configure,
-    resetConfig,
+    configure: configureLogger,
+    resetConfig: resetLoggerConfig,
     createLogger
 };
 
