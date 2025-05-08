@@ -1,0 +1,82 @@
+{
+    "$schema": "https://biomejs.dev/schemas/1.4.1/schema.json",
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "defaultBranch": "main",
+        "useIgnoreFile": true
+    },
+    "files": {
+        "ignoreUnknown": false,
+        "ignore": [
+            "**/node_modules/**",
+            "**/.turbo/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/coverage/**",
+            "**/.output/**",
+            "**/.vinxi/**",
+            "**/routeTree.gen.ts"
+        ]
+    },
+    "organizeImports": {
+        "enabled": true
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "correctness": {
+                "noUnusedVariables": "error",
+                "noUnusedImports": "error"
+            },
+            "style": {
+                "useConst": "error",
+                "noVar": "error",
+                "useTemplate": "error",
+                "noNegationElse": "error",
+                "noUselessElse": "error"
+            },
+            "suspicious": {
+                "noConsoleLog": "error",
+                "noExplicitAny": "error"
+            },
+            "nursery": {
+                "useSortedClasses": {
+                    "level": "error",
+                    "fix": "safe",
+                    "options": {}
+                }
+            }
+        }
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "lineWidth": 100,
+        "formatWithErrors": true,
+        "attributePosition": "multiline",
+        "indentWidth": 4,
+        "lineEnding": "lf",
+        "useEditorconfig": true
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "single",
+            "trailingCommas": "none",
+            "semicolons": "always"
+        }
+    },
+    "overrides": [
+        {
+            "include": ["tests/**", "__tests__/**"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noExplicitAny": "off"
+                    }
+                }
+            }
+        }
+    ]
+}
