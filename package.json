@@ -1,6 +1,18 @@
 {
-    "name": "with-tailwind",
+    "name": "hospeda",
     "private": true,
+    "version": "0.0.1",
+    "description": "Modern, minimalist web platform for discovering and managing tourist accommodations in Concepción del Uruguay and the Litoral region of Argentina, built with Astro, React, TanStack, Drizzle, and PostgreSQL in a TurboRepo-optimized monorepo.",
+    "homepage": "https://github.com/qazuor/hospeda",
+    "author": "Qazuor <qazuor@gmail.com> (https://github.com/qazuor/)",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/qazuor/hospeda"
+    },
+    "bugs": {
+        "url": "https://github.com/qazuor/hospeda/issues",
+        "email": "qazuor@gmail.com"
+    },
     "scripts": {
         "build": "turbo run build",
         "dev": "turbo run dev",
@@ -12,6 +24,7 @@
         "test": "turbo test"
     },
     "devDependencies": {
+        "@biomejs/biome": "1.9.4",
         "turbo": "^2.5.3"
     },
     "packageManager": "pnpm@8.15.6",
