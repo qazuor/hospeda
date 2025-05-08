@@ -1,0 +1,33 @@
+{
+    "name": "@repo/logger",
+    "version": "0.0.0",
+    "files": [
+        "dist"
+    ],
+    "private": true,
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "license": "MIT",
+    "scripts": {
+        "build": "tsc",
+        "dev:components": "tsc --watch",
+        "check-types": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules && rm -rf dist"
+    },
+    "dependencies": {
+        "chalk": "^5.4.1",
+        "dotenv": "^16.5.0"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^22.15.3",
+        "typescript": "^5.8.3",
+        "vitest": "^3.1.3"
+    }
+}
