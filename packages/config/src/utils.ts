@@ -1,3 +1,6 @@
-export const getBooleanOrUndefined = (value: string | undefined) => {
-    return value === 'true' ? true : value === 'false' ? false : undefined;
+export const getBooleanOrUndefined = (value?: string): boolean | undefined => {
+    if (value === undefined) {
+        return undefined;
+    }
+    return value === 'true';
 };
