@@ -1,3 +1,14 @@
 {
-    "recommendations": ["biomejs.biome"]
+    "recommendations": [
+        "biomejs.biome",
+        "yoavbls.pretty-ts-errors",
+        "astro-build.astro-vscode",
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint",
+        "aaron-bond.better-comments",
+        "vincaslt.highlight-matching-tag",
+        "oderwat.indent-rainbow",
+        "shardulm94.trailing-spaces",
+        "usernamehw.errorlens"
+    ]
 }

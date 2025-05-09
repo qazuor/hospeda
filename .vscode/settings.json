@@ -208,6 +208,9 @@
     "[html]": {
         "editor.defaultFormatter": "biomejs.biome"
     },
+    "[astro]": {
+        "editor.defaultFormatter": "astro-build.astro-vscode"
+    },
     "prettier.enable": false,
     "eslint.enable": false,
     "eslint.format.enable": false,
