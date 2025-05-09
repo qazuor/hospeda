@@ -4,12 +4,13 @@
         "target": "ES2021",
         "module": "ESNext",
         "moduleResolution": "Node",
+        "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
-        "strict": true,
+        "declaration": true,
         "outDir": "dist",
-        "declaration": true
+        "types": ["vite/client", "node"]
     },
-    "include": ["src"],
+    "include": ["src", "vite-env.d.ts"],
     "exclude": ["dist", "build", "node_modules"]
 }
