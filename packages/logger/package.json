@@ -9,7 +9,6 @@
     "license": "MIT",
     "scripts": {
         "build": "tsc",
-        "dev:components": "tsc --watch",
         "check-types": "tsc --noEmit",
         "test": "vitest run",
         "test:watch": "vitest",

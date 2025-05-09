@@ -12,17 +12,10 @@ describe('Logger', () => {
         vi.spyOn(console, 'warn').mockImplementation(() => {});
         vi.spyOn(console, 'error').mockImplementation(() => {});
         vi.spyOn(console, 'debug').mockImplementation(() => {});
-
-        // Mock process.env
-        vi.stubEnv('LOG_LEVEL', '');
-        vi.stubEnv('LOG_INCLUDE_TIMESTAMPS', '');
-        vi.stubEnv('LOG_INCLUDE_LEVEL', '');
-        vi.stubEnv('LOG_USE_COLORS', '');
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
-        vi.unstubAllEnvs();
     });
 
     it('should log standard messages', () => {
@@ -46,14 +39,14 @@ describe('Logger', () => {
     });
 
     it('should log debug messages when configured', () => {
-        configureLogger({ minLevel: LogLevel.DEBUG });
+        configureLogger({ LEVEL: LogLevel.DEBUG });
 
         logger.debug('Test debug message');
         expect(console.debug).toHaveBeenCalled();
     });
 
-    it('should not log debug messages when minLevel is INFO', () => {
-        configureLogger({ minLevel: LogLevel.INFO });
+    it('should not log debug messages when LEVEL is INFO', () => {
+        configureLogger({ LEVEL: LogLevel.INFO });
 
         logger.debug('Test debug message');
         expect(console.debug).not.toHaveBeenCalled();
@@ -76,39 +69,11 @@ describe('Logger', () => {
         );
     });
 
-    it('should configure from environment variables', () => {
-        vi.stubEnv('LOG_LEVEL', 'DEBUG');
-        vi.stubEnv('LOG_INCLUDE_TIMESTAMPS', 'false');
-        vi.stubEnv('LOG_INCLUDE_LEVEL', 'false');
-
-        resetLoggerConfig(); // Reload config from env vars
-
-        logger.debug('Test debug message');
-        expect(console.debug).toHaveBeenCalled();
-        expect(console.debug).not.toHaveBeenCalledWith(
-            expect.stringMatching(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z\]/),
-            expect.anything()
-        );
-        expect(console.debug).not.toHaveBeenCalledWith(
-            expect.stringContaining('[DEBUG]'),
-            expect.anything()
-        );
-    });
-
     it('should disable colors when configured', () => {
-        configureLogger({ useColors: false });
+        configureLogger({ USE_COLORS: false });
 
         // This test is a bit limited since we're mocking console methods
         // and can't easily check for chalk color codes
-        logger.info('Test message without colors');
-        expect(console.info).toHaveBeenCalled();
-    });
-
-    it('should disable colors from environment variables', () => {
-        vi.stubEnv('LOG_USE_COLORS', 'false');
-
-        resetLoggerConfig(); // Reload config from env vars
-
         logger.info('Test message without colors');
         expect(console.info).toHaveBeenCalled();
     });

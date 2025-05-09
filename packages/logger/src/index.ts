@@ -3,7 +3,6 @@
  * @module logger
  */
 
-import { getLoggerConfigs } from '@repo/config';
 import chalk from 'chalk';
 /**
  * Log levels enum
@@ -16,6 +15,8 @@ export enum LogLevel {
     DEBUG = 'DEBUG'
 }
 
+export type LogLevelType = keyof typeof LogLevel;
+
 /**
  * Logger configuration interface
  */
@@ -23,65 +24,56 @@ export interface LoggerConfig {
     /**
      * Minimum log level to display
      */
-    minLevel: LogLevel;
+    LEVEL: LogLevelType;
 
     /**
      * Whether to include timestamps in logs
      */
-    includeTimestamps: boolean;
+    INCLUDE_TIMESTAMPS: boolean;
 
     /**
      * Whether to include log level in logs
      */
-    includeLevel: boolean;
+    INCLUDE_LEVEL: boolean;
 
     /**
      * Whether to use colors in logs
      */
-    useColors: boolean;
+    USE_COLORS: boolean;
 }
 
 /**
  * Default logger configuration
  */
 const defaultConfig: LoggerConfig = {
-    minLevel: LogLevel.INFO,
-    includeTimestamps: true,
-    includeLevel: true,
-    useColors: true
+    LEVEL: LogLevel.INFO,
+    INCLUDE_TIMESTAMPS: true,
+    INCLUDE_LEVEL: true,
+    USE_COLORS: true
 };
 
 /**
  * Current logger configuration
  */
-let currentConfig: LoggerConfig = getConfig();
-
-/**
- * Load configuration from environment variables
- * @returns Logger configuration
- */
-function getConfig(): LoggerConfig {
-    return Object.assign({}, defaultConfig, {
-        minLevel: getLoggerConfigs().LEVEL,
-        includeTimestamps: getLoggerConfigs().INCLUDE_TIMESTAMPS,
-        includeLevel: getLoggerConfigs().INCLUDE_LEVEL,
-        useColors: getLoggerConfigs().USE_COLORS
-    });
-}
+let currentConfig: LoggerConfig = defaultConfig;
 
 /**
  * Configure the logger
  * @param config - Logger configuration
  */
 export function configureLogger(config: Partial<LoggerConfig>): void {
-    currentConfig = { ...currentConfig, ...config };
+    currentConfig = {
+        ...defaultConfig,
+        ...currentConfig,
+        ...config
+    };
 }
 
 /**
  * Reset logger configuration to defaults
  */
 export function resetLoggerConfig(): void {
-    currentConfig = getConfig();
+    currentConfig = defaultConfig;
 }
 
 /**
@@ -105,19 +97,19 @@ const levelColors = {
 function formatLogMessage(level: LogLevel, message: string, label?: string): string {
     const parts: string[] = [];
 
-    if (currentConfig.includeTimestamps) {
+    if (currentConfig.INCLUDE_TIMESTAMPS) {
         const timestamp = new Date().toISOString();
-        parts.push(currentConfig.useColors ? chalk.gray(`[${timestamp}]`) : `[${timestamp}]`);
+        parts.push(currentConfig.USE_COLORS ? chalk.gray(`[${timestamp}]`) : `[${timestamp}]`);
     }
 
-    if (currentConfig.includeLevel) {
+    if (currentConfig.INCLUDE_LEVEL) {
         const levelText = `[${level}]`;
-        parts.push(currentConfig.useColors ? levelColors[level](levelText) : levelText);
+        parts.push(currentConfig.USE_COLORS ? levelColors[level](levelText) : levelText);
     }
 
     if (label) {
         const labelText = `[${label}]`;
-        parts.push(currentConfig.useColors ? chalk.cyan(labelText) : labelText);
+        parts.push(currentConfig.USE_COLORS ? chalk.cyan(labelText) : labelText);
     }
 
     parts.push(message);
@@ -131,11 +123,11 @@ function formatLogMessage(level: LogLevel, message: string, label?: string): str
  * @returns Whether the log level should be displayed
  */
 function shouldLog(level: LogLevel): boolean {
-    const levels = Object.values(LogLevel);
-    const minLevelIndex = levels.indexOf(currentConfig.minLevel);
+    const levels = Object.values(LogLevel) as LogLevelType[];
+    const LEVELIndex = levels.indexOf(currentConfig.LEVEL);
     const currentLevelIndex = levels.indexOf(level);
 
-    return currentLevelIndex >= minLevelIndex;
+    return currentLevelIndex >= LEVELIndex;
 }
 
 /**
@@ -146,8 +138,29 @@ function shouldLog(level: LogLevel): boolean {
  */
 export function log(message: string, label?: string, ...args: unknown[]): void {
     if (shouldLog(LogLevel.LOG)) {
+        if (label) {
+            const parts: string[] = [];
+            if (currentConfig.INCLUDE_TIMESTAMPS) {
+                const timestamp = new Date().toISOString();
+                parts.push(
+                    currentConfig.USE_COLORS ? chalk.gray(`[${timestamp}]`) : `[${timestamp}]`
+                );
+            }
+
+            if (currentConfig.INCLUDE_LEVEL) {
+                const levelText = `[${LogLevel.LOG}]`;
+                parts.push(
+                    currentConfig.USE_COLORS ? levelColors[LogLevel.LOG](levelText) : levelText
+                );
+            }
+
+            parts.push(currentConfig.USE_COLORS ? chalk.cyan(label) : label);
+            // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+            console.log(parts.join(' '), message, ...args);
+            return;
+        }
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-        console.log(formatLogMessage(LogLevel.LOG, message, label), ...args);
+        console.log(message, ...args);
     }
 }
 
