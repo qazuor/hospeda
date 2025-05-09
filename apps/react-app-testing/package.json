@@ -1,0 +1,34 @@
+{
+    "name": "react-app",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules && rm -rf dist",
+        "check-types": "tsc --noEmit",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "@repo/types": "workspace:*",
+        "@repo/utils": "workspace:*",
+        "@repo/config": "workspace:*",
+        "@repo/logger": "workspace:*"
+    },
+    "devDependencies": {
+        "@repo/tailwind-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "@types/react": "^19.1.2",
+        "@types/react-dom": "^19.1.2",
+        "@vitejs/plugin-react": "^4.4.1",
+        "globals": "^16.0.0",
+        "typescript": "~5.8.3",
+        "vite": "^6.3.5"
+    }
+}
