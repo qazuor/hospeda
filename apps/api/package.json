@@ -1,0 +1,38 @@
+{
+    "name": "api",
+    "version": "0.0.0",
+    "files": ["dist"],
+    "private": true,
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "license": "MIT",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsx watch src/index.ts",
+        "check-types": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules && rm -rf dist"
+    },
+    "dependencies": {
+        "@hono/node-server": "^1.14.1",
+        "hono": "^4.7.8",
+        "zod": "^3.24.4",
+        "@hono/zod-validator": "^0.5.0",
+        "@repo/config": "workspace:*",
+        "@repo/logger": "workspace:*",
+        "@repo/types": "workspace:*",
+        "@repo/utils": "workspace:*",
+        "@repo/schemas": "workspace:*"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^20.11.17",
+        "tsx": "^4.7.1",
+        "typescript": "^5.8.3"
+    }
+}
