@@ -1,0 +1,131 @@
+---
+import AccommodationCard from '../../components/AccommodationCard.astro';
+import DynamicRating from '../../components/DynamicRating';
+import { getAccommodationsByDestination } from '../../data/accommodations';
+import { getDestinations } from '../../data/destinations';
+import Layout from '../../layouts/Layout.astro';
+import type { Accommodation } from '../../types/Accommodation';
+import type { Destination } from '../../types/Destination';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+    const destinations: Destination[] = getDestinations() || [];
+    if (destinations.length === 0) {
+        throw new Error(`No destinations found`);
+    }
+    return destinations.map((destionation: Destination) => ({
+        params: { id: String(destionation.id) },
+        props: {
+            destination: destionation,
+            accommodations: getAccommodationsByDestination(String(destionation.id)),
+        },
+    }));
+}
+
+const { destination, accommodations } = Astro.props;
+
+if (!destination) {
+    throw new Error(`Destino no encontrado para esta ruta`);
+}
+---
+
+<Layout title={destination.name}>
+    <div class='bg-gray-50 dark:bg-gray-900 min-h-screen'>
+        <div class='aspect-w-16 aspect-h-9 relative'>
+            {
+                destination.images?.length ? (
+                    <img src={destination.images[0]} alt={destination.name} class='h-[500px] object-cover w-full' />
+                ) : null
+            }
+            <div class='absolute bg-gradient-to-t from-black/70 to-transparent bottom-0 inset-x-0 p-8'>
+                <div class='container mx-auto'>
+                    <h1 class='font-display mb-2 text-4xl text-white'>{destination.name}</h1>
+                    <p class='text-gray-200'>{destination.properties} alojamientos disponibles</p>
+                </div>
+            </div>
+        </div>
+
+        <div class='container mx-auto px-4 py-12'>
+            <div class='gap-12 grid grid-cols-1 lg:grid-cols-3'>
+                <div class='lg:col-span-2'>
+                    <div class='mb-8'>
+                        <h2 class='font-bold mb-4 text-2xl'>
+                            Sobre {destination.name}
+                            <DynamicRating client:load id={destination.id} initialRating='0' initialReviews={0} />
+                        </h2>
+                        <p class='dark:text-gray-300 text-gray-600'>{destination.description}</p>
+                    </div>
+
+                    <div class='mb-12'>
+                        <h2 class='font-bold mb-6 text-2xl'>Atracciones principales</h2>
+                        <div class='gap-4 grid grid-cols-1 md:grid-cols-2'>
+                            {
+                                destination.attractions?.map((attraction) => (
+                                    <div class='bg-white dark:bg-gray-800 flex items-center p-4 rounded-lg shadow'>
+                                        <span class='bg-primary-100 dark:bg-primary-900 mr-4 p-3 rounded-full text-primary-600'>
+                                            <svg
+                                                xmlns='http://www.w3.org/2000/svg'
+                                                class='h-6 w-6'
+                                                fill='none'
+                                                viewBox='0 0 24 24'
+                                                stroke='currentColor'
+                                            >
+                                                <path
+                                                    stroke-linecap='round'
+                                                    stroke-linejoin='round'
+                                                    stroke-width='2'
+                                                    d='M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z'
+                                                />
+                                            </svg>
+                                        </span>
+                                        <span class='dark:text-gray-300 text-gray-700'>{attraction}</span>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class='font-bold mb-6 text-2xl'>Alojamientos destacados</h2>
+                        <div class='gap-6 grid grid-cols-1 md:grid-cols-2'>
+                            {
+                                accommodations.map((accommodation: Accommodation) => (
+                                    <AccommodationCard accommodation={accommodation} />
+                                ))
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class='lg:col-span-1'>
+                    <div class='bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg sticky top-24'>
+                        <h3 class='font-bold mb-4 text-xl'>Ubicación</h3>
+                        <div class='aspect-w-16 aspect-h-9 bg-gray-200 dark:bg-gray-700 mb-4 rounded-lg'>
+                            <!-- Aquí iría el mapa -->
+                            <div class='flex items-center justify-center'>
+                                <span class='dark:text-gray-400 text-gray-500 text-sm'>Mapa no disponible</span>
+                            </div>
+                        </div>
+                        <div class='flex items-center text-primary-500'>
+                            <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                class='h-5 w-5'
+                                viewBox='0 0 20 20'
+                                fill='currentColor'
+                            >
+                                <path
+                                    fill-rule='evenodd'
+                                    d='M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z'
+                                    clip-rule='evenodd'></path>
+                            </svg>
+                            <span class='dark:text-gray-300 ml-2 text-gray-600'>
+                                {destination.coordinates?.latitude}, {destination.coordinates?.longitude}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</Layout>

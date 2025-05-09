@@ -1,0 +1,57 @@
+---
+import { getLangFromUrl } from '../utils/i18n';
+
+const { url } = Astro;
+const currentLang = getLangFromUrl(url);
+
+const languages = [
+    { code: 'es', name: 'Español' },
+    { code: 'en', name: 'English' },
+    { code: 'pt', name: 'Português' },
+];
+
+function getPathInLanguage(path: string, lang: string): string {
+    // Remove current language prefix if it exists
+    const pathWithoutLang = path.replace(/^\/(en|es|pt)/, '');
+
+    // Add new language prefix (except for default language)
+    return lang === 'es' ? pathWithoutLang : `/${lang}${pathWithoutLang}`;
+}
+---
+
+<div class='relative'>
+    <button
+        type='button'
+        id='language-button'
+        class='flex items-center space-x-1 text-sm text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-md px-2 py-1'
+        aria-haspopup='true'
+        aria-expanded='false'
+    >
+        <span>{currentLang.toUpperCase()}</span>
+        <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor' class='w-4 h-4'>
+            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'></path>
+        </svg>
+    </button>
+
+    <div
+        id='language-dropdown'
+        class='absolute right-0 mt-2 py-2 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 hidden ring-1 ring-black ring-opacity-5'
+    >
+        {
+            languages.map((lang) => (
+                <a
+                    href={getPathInLanguage(url.pathname, lang.code)}
+                    class:list={[
+                        'block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700',
+                        currentLang === lang.code
+                            ? 'text-primary-500 dark:text-primary-400'
+                            : 'text-gray-700 dark:text-gray-300',
+                    ]}
+                    data-lang={lang.code}
+                >
+                    {lang.name}
+                </a>
+            ))
+        }
+    </div>
+</div>
