@@ -16,7 +16,8 @@
             "**/coverage/**",
             "**/.output/**",
             "**/.vinxi/**",
-            "**/routeTree.gen.ts"
+            "**/routeTree.gen.ts",
+            "**/*.astro"
         ]
     },
     "organizeImports": {
