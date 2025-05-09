@@ -1,0 +1,33 @@
+{
+    "name": "@repo/utils",
+    "version": "0.0.0",
+    "files": ["dist"],
+    "private": true,
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "license": "MIT",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "check-types": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules && rm -rf dist"
+    },
+    "dependencies": {
+        "date-fns": "^4.1.0",
+        "slugify": "^1.6.6",
+        "@repo/config": "workspace:*",
+        "@repo/logger": "workspace:*"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^22.15.3",
+        "typescript": "^5.8.3",
+        "vitest": "^3.1.3"
+    }
+}
