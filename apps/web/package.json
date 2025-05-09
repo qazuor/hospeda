@@ -1,0 +1,40 @@
+{
+    "name": "web",
+    "type": "module",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "pnpm exec astro dev",
+        "build": "pnpm exec astro build",
+        "preview": "pnpm exec astro preview",
+        "astro": "pnpm exec astro",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules && rm -rf dist"
+    },
+    "dependencies": {
+        "@astrojs/react": "^3.0.9",
+        "@astrojs/tailwind": "^5.1.0",
+        "@nanostores/react": "^0.7.1",
+        "astro": "^5.2.5",
+        "i18next": "^23.10.0",
+        "nanostores": "^0.9.5",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-i18next": "^14.0.5",
+        "tailwindcss": "^3.4.1",
+        "@repo/types": "workspace:*",
+        "@repo/utils": "workspace:*",
+        "@repo/config": "workspace:*",
+        "@repo/logger": "workspace:*"
+    },
+    "devDependencies": {
+        "@astrojs/vercel": "^8.1.4",
+        "@types/react": "^18.2.64",
+        "@types/react-dom": "^18.2.21",
+        "typescript": "^5.4.2",
+        "@repo/tailwind-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*"
+    }
+}

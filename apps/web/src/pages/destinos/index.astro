@@ -1,0 +1,68 @@
+---
+import { getAccommodationsByDestination } from '../../data/accommodations';
+import { getDestinations } from '../../data/destinations';
+import Layout from '../../layouts/Layout.astro';
+import type { Destination } from '../../types/Destination';
+
+export async function getStaticPaths() {
+    const destinations = getDestinations();
+    return destinations.map((d) => ({
+        params: { id: String(d.id) },
+        props: {
+            destination: d,
+            accommodations: getAccommodationsByDestination(String(d.id)),
+        },
+    }));
+}
+
+const destinations: Destination[] = getDestinations();
+---
+
+<Layout title='Destinos turísticos'>
+    <div class='bg-gray-50 dark:bg-gray-900 min-h-screen py-12'>
+        <div class='container mx-auto px-4'>
+            <div class='mb-12 text-center'>
+                <h1 class='font-display mb-4 text-4xl'>Destinos turísticos</h1>
+                <p class='dark:text-gray-400 mx-auto max-w-2xl text-gray-600'>
+                    Descubre los lugares más hermosos de la costa del río Uruguay en Entre Ríos. Cada destino ofrece
+                    experiencias únicas y alojamientos excepcionales.
+                </p>
+            </div>
+
+            <div class='gap-8 grid grid-cols-1 md:grid-cols-2'>
+                {
+                    destinations.map((destination) => (
+                        <a
+                            href={`/destinos/${destination.id}`}
+                            class='bg-white dark:bg-gray-800 group overflow-hidden relative rounded-xl shadow-lg transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl'
+                        >
+                            <div class='aspect-w-16 aspect-h-9 relative'>
+                                <img
+                                    src={destination.image}
+                                    alt={`Destino turístico ${destination.name}`}
+                                    class='h-64 object-cover transition-transform duration-300 w-full group-hover:scale-105'
+                                />
+                                <div class='absolute bg-gradient-to-t from-black/70 to-transparent bottom-0 inset-x-0 p-6'>
+                                    <h2 class='font-bold mb-2 text-2xl text-white'>{destination.name}</h2>
+                                    <p class='text-gray-200'>{destination.properties} alojamientos disponibles</p>
+                                </div>
+                            </div>
+
+                            <div class='p-6'>
+                                <p class='dark:text-gray-300 mb-4 text-gray-600'>{destination.description}</p>
+
+                                <div class='flex flex-wrap gap-2'>
+                                    {destination.attractions?.map((attraction) => (
+                                        <span class='bg-primary-100 dark:bg-primary-900 dark:text-primary-100 px-3 py-1 rounded-full text-primary-600 text-sm'>
+                                            {attraction}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </a>
+                    ))
+                }
+            </div>
+        </div>
+    </div>
+</Layout>
