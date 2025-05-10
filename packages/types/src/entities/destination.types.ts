@@ -1,22 +1,6 @@
-import type {
-    AdminInfoType,
-    BaseEntityType,
-    CoordinatesType,
-    MediaType,
-    SeoType
-} from '../common.types';
+import type { BaseEntityType, BaseLocationType, MediaType, SeoType } from '../common.types';
 import type { VisibilityEnum } from '../enums.types';
-
-/**
- * Location data specific to a destination.
- */
-export interface DestinationLocationType {
-    department: string;
-    state: string;
-    zipCode?: string;
-    country: string;
-    coordinates: CoordinatesType;
-}
+import type { UserType } from './user.types';
 
 /**
  * Individual point of interest or attraction inside a destination.
@@ -56,7 +40,8 @@ export interface DestinationRatingType {
  * User-submitted review about an destination.
  */
 export interface DestinationReviewType {
-    author: string; // UUID of user
+    userId: string; // UUID of user
+    user?: UserType;
     title: string;
     content: string;
     rating: DestinationRatingType;
@@ -66,19 +51,15 @@ export interface DestinationReviewType {
  * Represents a tourist destination or city region.
  */
 export interface DestinationType extends BaseEntityType {
-    name: string;
-    longName: string;
     slug: string;
     summary: string;
     description: string;
     media: MediaType;
-    tags?: string[];
     isFeatured?: boolean;
     visibility: VisibilityEnum;
     seo?: SeoType;
-    adminInfo?: AdminInfoType;
     rating?: DestinationRatingType;
     reviews?: DestinationReviewType[];
-    location: DestinationLocationType;
+    location: BaseLocationType;
     attractions: DestinationAttractionsType[];
 }
