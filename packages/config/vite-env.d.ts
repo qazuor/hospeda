@@ -5,6 +5,8 @@ interface ConfigMetaEnv {
     readonly VITE_API_HOST?: string;
     readonly API_CORS_ALLOWED_ORIGINS?: string[] | string;
 
+    readonly DATABASE_URL: string;
+
     readonly VITE_LOG_LEVEL?: string;
     readonly VITE_LOG_INCLUDE_TIMESTAMPS?: string;
     readonly VITE_LOG_INCLUDE_LEVEL?: string;
