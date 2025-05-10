@@ -37,7 +37,7 @@ export const AdCampaignSchema = BaseEntitySchema.extend({
     /**
      * Lifecycle status of the campaign.
      */
-    state: CampaignStateEnumSchema,
+    campaignState: CampaignStateEnumSchema,
 
     /**
      * List of active channels for delivery (e.g., EMAIL, PUSH).
