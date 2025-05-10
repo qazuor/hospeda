@@ -1,12 +1,12 @@
 import logger from '@repo/logger';
-import type { Accommodation } from '@repo/types';
+import type { AccommodationType } from '@repo/types';
 import { type JSX, useEffect, useState } from 'react';
 interface AccommodationCardProps {
     apiUrl: string;
 }
 
 export default function AccommodationCard({ apiUrl }: AccommodationCardProps): JSX.Element {
-    const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
+    const [accommodations, setAccommodations] = useState<AccommodationType[]>([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         const fetchAccommodations = async () => {
@@ -39,7 +39,7 @@ export default function AccommodationCard({ apiUrl }: AccommodationCardProps): J
                 {loading ? (
                     <span>Loading...</span>
                 ) : accommodations.length > 0 ? (
-                    accommodations.map((accommodation: Accommodation) => (
+                    accommodations.map((accommodation: AccommodationType) => (
                         <div
                             className="m-2 rounded border border-1 border-gray-300 p-4"
                             key={accommodation.id}
@@ -52,10 +52,11 @@ export default function AccommodationCard({ apiUrl }: AccommodationCardProps): J
                             <div>
                                 <strong>Contecto info:</strong>
                                 <div>
-                                    <strong>Phone:</strong> {accommodation.contactInfo?.phone}
+                                    <strong>Phone:</strong> {accommodation.contactInfo?.homePhone}
                                 </div>
                                 <div>
-                                    <strong>Email:</strong> {accommodation.contactInfo?.email}
+                                    <strong>Email:</strong>{' '}
+                                    {accommodation.contactInfo?.personalEmail}
                                 </div>
                                 <div>
                                     <strong>Facebook:</strong>{' '}
@@ -71,13 +72,14 @@ export default function AccommodationCard({ apiUrl }: AccommodationCardProps): J
                                 </div>
                             </div>
                             <div>
-                                <strong>Lat:</strong> {accommodation.location?.latitude},{' '}
-                                <strong>Long:</strong> {accommodation.location?.longitude}
+                                <strong>Lat:</strong> {accommodation.location?.coordinates?.lat},{' '}
+                                <strong>Long:</strong> {accommodation.location?.coordinates?.long}
                             </div>
                             <div>
                                 <div>
-                                    <strong>Price:</strong> {accommodation.price?.currency}{' '}
-                                    {accommodation.price?.basePrice}
+                                    <strong>Price:</strong>{' '}
+                                    {accommodation.price?.basePrice.currency}{' '}
+                                    {accommodation.price?.basePrice.price}
                                     <div>
                                         <strong>Additional Fees:</strong>
                                         <div>
@@ -86,11 +88,11 @@ export default function AccommodationCard({ apiUrl }: AccommodationCardProps): J
                                         </div>
                                         <div>
                                             <strong>Service:</strong>{' '}
-                                            {accommodation.price?.additionalFees?.service}
+                                            {accommodation.price?.additionalFees?.cleaning}
                                         </div>
                                         <div>
                                             <strong>Tax Percentage:</strong>{' '}
-                                            {accommodation.price?.additionalFees?.taxPercentage}
+                                            {accommodation.price?.additionalFees?.taxPercent}
                                         </div>
                                     </div>
                                     <div>
