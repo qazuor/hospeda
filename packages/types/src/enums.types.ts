@@ -42,7 +42,6 @@ export enum AmenitiesTypeEnum {
     BED_AND_BATH = 'BED_AND_BATH',
     OUTDOORS = 'OUTDOORS',
     ACCESSIBILITY = 'ACCESSIBILITY',
-    PET_FRIENDLY = 'PET_FRIENDLY',
     SERVICES = 'SERVICES',
     SAFETY = 'SAFETY',
     FAMILY_FRIENDLY = 'FAMILY_FRIENDLY',
@@ -53,11 +52,32 @@ export enum AmenitiesTypeEnum {
 /**
  * System user roles for access control and permissions.
  */
-export enum RoleTypeEnum {
+export enum BuiltinRoleTypeEnum {
     ADMIN = 'ADMIN',
     EDITOR = 'EDITOR',
     CLIENT = 'CLIENT',
     USER = 'USER'
+}
+
+/**
+ * Builtin roles permission for access control
+ */
+export enum BuiltinPermissionTypeEnum {
+    USER_CREATE = 'USER_CREATE',
+    USER_UPDATE = 'USER_UPDATE',
+    USER_DELETE = 'USER_DELETE',
+    DESTINATION_CREATE = 'DESTINATION_CREATE',
+    DESTINATION_UPDATE = 'DESTINATION_UPDATE',
+    DESTINATION_DELETE = 'DESTINATION_DELETE',
+    ACCOMMODATION_CREATE = 'ACCOMMODATION_CREATE',
+    ACCOMMODATION_UPDATE = 'ACCOMMODATION_UPDATE',
+    ACCOMMODATION_DELETE = 'ACCOMMODATION_DELETE',
+    EVENT_CREATE = 'EVENT_CREATE',
+    EVENT_UPDATE = 'EVENT_UPDATE',
+    EVENT_DELETE = 'EVENT_DELETE',
+    POST_CREATE = 'POST_CREATE',
+    POST_UPDATE = 'POST_UPDATE',
+    POST_DELETE = 'POST_DELETE'
 }
 
 /**

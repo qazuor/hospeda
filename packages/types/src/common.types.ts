@@ -6,55 +6,21 @@ import type { PreferedContactEnum, PriceCurrencyEnum, StateEnum } from './enums.
  * Includes audit fields and common metadata.
  */
 export interface BaseEntityType {
-    /**
-     * Unique identifier of the entity.
-     */
     id: string;
-
-    /**
-     * Internal name or code of the entity.
-     */
     name: string;
-
-    /**
-     * Human-friendly display name.
-     */
     displayName: string;
-
-    /**
-     * Current state of the entity (e.g. ACTIVE, DELETED).
-     */
     state: StateEnum;
-
-    /**
-     * Creation timestamp.
-     */
+    tags?: TagType[];
+    adminInfo?: AdminInfoType;
     createdAt: Date;
-
-    /**
-     * User who created the entity.
-     */
-    createdBy: UserType;
-
-    /**
-     * Last update timestamp.
-     */
+    createdById: string;
+    createdBy?: UserType;
     updatedAt: Date;
-
-    /**
-     * User who last updated the entity.
-     */
-    updatedBy: UserType;
-
-    /**
-     * Deletion timestamp (soft delete).
-     */
-    deletedAt: Date;
-
-    /**
-     * User who deleted the entity.
-     */
-    deletedBy: UserType;
+    updatedById: string;
+    updatedBy?: UserType;
+    deletedAt?: Date;
+    deletedById?: string;
+    deletedBy?: UserType;
 }
 
 /**
@@ -66,34 +32,32 @@ export interface ContactInfoType {
     homePhone?: string;
     workPhone?: string;
     mobilePhone: string;
-
-    /**
-     * Preferred email address to be used by the system.
-     */
+    website?: string;
     preferredEmail: PreferedContactEnum;
-
-    /**
-     * Preferred phone contact.
-     */
     preferredPhone: PreferedContactEnum;
 }
 
 /**
- * A full location reference, including address and coordinates.
+ * Base generic Location data
  */
-export interface LocationType {
+export interface BaseLocationType {
+    state: string;
+    zipCode: string;
+    country: string;
+    coordinates?: CoordinatesType;
+}
+
+/**
+ * Full generic Location data
+ */
+export interface FullLocationType extends BaseLocationType {
     street: string;
+    number: string;
+    floor?: string;
+    apartment?: string;
     neighborhood?: string;
     city: string;
-    state: string;
-    zipCode?: string;
-    country: string;
-    placeName?: string;
-
-    /**
-     * Geolocation coordinates (latitude/longitude).
-     */
-    coordinates: CoordinatesType;
+    deparment?: string;
 }
 
 /**
@@ -112,21 +76,14 @@ export interface SocialNetworkType {
     twitter?: string;
     instagram?: string;
     linkedIn?: string;
-    website?: string;
+    tiktok?: string;
 }
 
 /**
  * Common monetary value type.
  */
 export interface BasePriceType {
-    /**
-     * Numeric value of the price.
-     */
     price?: number;
-
-    /**
-     * Currency code (e.g. ARS, USD).
-     */
     currency?: PriceCurrencyEnum;
 }
 
@@ -137,11 +94,7 @@ export interface ImageType {
     url: string;
     caption?: string;
     description?: string;
-    tags?: string[];
-
-    /**
-     * State of the image in the system (e.g. approved or deleted).
-     */
+    tags?: TagType[];
     state: StateEnum;
 }
 
@@ -152,8 +105,17 @@ export interface VideoType {
     url: string;
     caption?: string;
     description?: string;
-    tags?: string[];
+    tags?: TagType[];
     state: StateEnum;
+}
+
+/**
+ * Media content attached to the accommodation (images, videos).
+ */
+export interface MediaType {
+    featuredImage: ImageType;
+    gallery?: ImageType[];
+    videos?: VideoType[];
 }
 
 /**
@@ -171,14 +133,16 @@ export interface SeoType {
 export interface AdminInfoType {
     notes: string;
     favorite: boolean;
-    tags: string[];
 }
 
 /**
- * Media content attached to the accommodation (images, videos).
+ * Tags used for categorizing and filtering content.
  */
-export interface MediaType {
-    featuredImage: ImageType;
-    gallery?: ImageType[];
-    videos?: VideoType[];
+export interface TagType extends BaseEntityType {
+    owerId: string;
+    owner?: UserType;
+    notes: string;
+    variants: string[];
+    color: string;
+    icon: string;
 }

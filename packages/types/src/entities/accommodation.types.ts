@@ -1,41 +1,80 @@
 import type {
-    AdminInfoType,
     BaseEntityType,
     BasePriceType,
     ContactInfoType,
-    LocationType,
+    FullLocationType,
     MediaType,
     SeoType,
     SocialNetworkType
 } from '../common.types';
 import type { AccommodationTypeEnum, AmenitiesTypeEnum } from '../enums.types';
+import type { DestinationType } from './destination.types';
+import type { UserType } from './user.types';
+
+/**
+ * Represents optional fees info.
+ */
+export interface AdditionalFeesInfoType {
+    price?: BasePriceType;
+    percent?: number;
+    isIncluded?: boolean;
+    isOptional?: boolean;
+    isPercent?: boolean;
+    isPerStay?: boolean;
+    isPerNight?: boolean;
+    isPerGuest?: boolean;
+}
 
 /**
  * Represents an additional fee not predefined in the system.
  */
-export interface OtherAdditionalFeesType {
+export interface OtherAdditionalFeesType extends AdditionalFeesInfoType {
     name: string;
     displayName: string;
-    value: number;
-}
-
-/**
- * Represents a custom discount.
- */
-export interface OtherDiscountType {
-    name: string;
-    displayName: string;
-    value: number;
 }
 
 /**
  * Represents optional fees associated with a stay.
  */
 export interface AdditionalFeesType {
-    cleaning?: number;
-    taxPercent?: number;
-    lateCheckout?: number;
+    cleaning?: AdditionalFeesInfoType;
+    tax?: AdditionalFeesInfoType;
+    lateCheckout?: AdditionalFeesInfoType;
+    pets?: AdditionalFeesInfoType;
+    bedlinen?: AdditionalFeesInfoType;
+    towels?: AdditionalFeesInfoType;
+    babyCrib?: AdditionalFeesInfoType;
+    babyHighChair?: AdditionalFeesInfoType;
+    extraBed?: AdditionalFeesInfoType;
+    securityDeposit?: AdditionalFeesInfoType;
+    extraGuest?: AdditionalFeesInfoType;
+    parking?: AdditionalFeesInfoType;
+    earlyCheckin?: AdditionalFeesInfoType;
+    lateCheckin?: AdditionalFeesInfoType;
+    luggageStorage?: AdditionalFeesInfoType;
     others?: OtherAdditionalFeesType[];
+}
+
+/**
+ * Represents optional discount info.
+ */
+export interface DiscountInfoType {
+    price?: BasePriceType;
+    percent?: number;
+    isIncluded?: boolean;
+    isOptional?: boolean;
+    isPercent?: boolean;
+    isPerStay?: boolean;
+    isPerNight?: boolean;
+    isPerGuest?: boolean;
+}
+
+/**
+ * Represents a custom discount.
+ */
+export interface OtherDiscountType extends DiscountInfoType {
+    name: string;
+    displayName: string;
 }
 
 /**
@@ -51,35 +90,9 @@ export interface DiscountsType {
 /**
  * Price details of the accommodation, including base and modifiers.
  */
-export interface AccommodationPriceType {
-    basePrice: BasePriceType;
+export interface AccommodationPriceType extends BasePriceType {
     additionalFees?: AdditionalFeesType;
     discounts?: DiscountsType;
-}
-
-/**
- * Amenity object used to define services/features offered in an accommodation.
- */
-export interface AmenitiesType {
-    name: string;
-    displayName: string;
-    optional: boolean;
-    additionalCost?: BasePriceType;
-    additionalCostPercent?: number;
-    description: string;
-    type?: AmenitiesTypeEnum;
-}
-
-/**
- * Detailed user rating categories for an accommodation.
- */
-export interface AccommodationRatingType {
-    cleanliness: number;
-    hospitality: number;
-    services: number;
-    accuracy: number;
-    communication: number;
-    location: number;
 }
 
 /**
@@ -88,7 +101,11 @@ export interface AccommodationRatingType {
 export interface ScheduleType {
     checkinTime?: string; // Format: "HH:mm"
     checkoutTime?: string;
-    lateCheckout: boolean;
+    earlyCheckinAccepted: boolean;
+    earlyCheckinTime?: string;
+    lateCheckinAccepted: boolean;
+    lateCheckinTime?: string;
+    lateCheckoutAccepted: boolean;
     lateCheckoutTime?: string;
     selfCheckin: boolean;
     selfCheckout: boolean;
@@ -104,16 +121,28 @@ export interface ExtraInfoType {
     bedrooms: number;
     beds?: number;
     bathrooms: number;
-    petFriendly?: boolean;
     smokingAllowed?: boolean;
-    extraRules?: string[];
+    extraInfo?: string[];
+}
+
+/**
+ * Detailed user rating categories for an accommodation.
+ */
+export interface AccommodationRatingType {
+    cleanliness: number;
+    hospitality: number;
+    services: number;
+    accuracy: number;
+    communication: number;
+    location: number;
 }
 
 /**
  * User-submitted review about an accommodation.
  */
-export interface AccommodationReviewType {
-    author: string; // UUID of user
+export interface AccommodationReviewType extends BaseEntityType {
+    userId: string; // UUID of user
+    user?: UserType;
     title: string;
     content: string;
     rating: AccommodationRatingType;
@@ -125,16 +154,37 @@ export interface AccommodationReviewType {
 export interface AccommodationFaqType extends BaseEntityType {
     question: string;
     answer: string;
-    adminInfo?: AdminInfoType;
+    category?: string;
 }
 
 /**
- * Content generated or summarized via AI for the accommodation.
+ * Content to use fro AI to responde question about the accommodation.
  */
 export interface AccommodationIaDataType extends BaseEntityType {
     title: string;
     content: string;
-    adminInfo?: AdminInfoType;
+    category?: string;
+}
+
+/**
+ * Features object related to an accommodation.
+ */
+export interface AccommodationFeaturesType extends BaseEntityType {
+    description?: string;
+    icon?: string;
+}
+
+/**
+ * Amenity object used to define services/extras offered in an accommodation.
+ */
+export interface AccommodationAmenitiesType extends BaseEntityType {
+    description?: string;
+    icon?: string;
+    isBuiltin: boolean;
+    isOptional: boolean;
+    additionalCost?: BasePriceType;
+    additionalCostPercent?: number;
+    type?: AmenitiesTypeEnum;
 }
 
 /**
@@ -148,19 +198,19 @@ export interface AccommodationType extends BaseEntityType {
     socialNetworks: SocialNetworkType;
     price: AccommodationPriceType;
     ownerId: string;
+    owner?: UserType;
     destinationId: string;
-    location: LocationType;
-    features: string[];
-    amenities: AmenitiesType[];
-    media: MediaType;
+    destination?: DestinationType;
+    location: FullLocationType;
+    features?: AccommodationFeaturesType[];
+    amenities?: AccommodationAmenitiesType[];
+    media?: MediaType;
     rating: AccommodationRatingType;
-    reviews: AccommodationReviewType[];
-    schedule: ScheduleType;
-    extraInfo: ExtraInfoType;
+    reviews?: AccommodationReviewType[];
+    schedule?: ScheduleType;
+    extraInfo?: ExtraInfoType;
     isFeatured?: boolean;
-    tags?: string[];
     seo?: SeoType;
-    adminInfo?: AdminInfoType;
     faqs?: AccommodationFaqType[];
     iaData?: AccommodationIaDataType[];
 }
