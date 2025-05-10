@@ -73,7 +73,7 @@ export interface AmenitiesType {
 /**
  * Detailed user rating categories for an accommodation.
  */
-export interface RatingType {
+export interface AccommodationRatingType {
     cleanliness: number;
     hospitality: number;
     services: number;
@@ -112,11 +112,11 @@ export interface ExtraInfoType {
 /**
  * User-submitted review about an accommodation.
  */
-export interface ReviewType {
+export interface AccommodationReviewType {
     author: string; // UUID of user
     title: string;
     content: string;
-    rating: RatingType;
+    rating: AccommodationRatingType;
 }
 
 /**
@@ -148,12 +148,13 @@ export interface AccommodationType extends BaseEntityType {
     socialNetworks: SocialNetworkType;
     price: AccommodationPriceType;
     ownerId: string;
+    destinationId: string;
     location: LocationType;
     features: string[];
     amenities: AmenitiesType[];
     media: MediaType;
-    rating: RatingType;
-    reviews: ReviewType[];
+    rating: AccommodationRatingType;
+    reviews: AccommodationReviewType[];
     schedule: ScheduleType;
     extraInfo: ExtraInfoType;
     isFeatured?: boolean;
