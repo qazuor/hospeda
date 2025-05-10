@@ -149,6 +149,7 @@ export const AccommodationSchema = BaseEntitySchema.extend({
     socialNetworks: SocialNetworkSchema,
     price: AccommodationPriceSchema,
     ownerId: z.string().uuid(),
+    destinationId: z.string().uuid(),
     location: LocationSchema,
     features: z.array(z.string()),
     amenities: z.array(AmenitySchema),
