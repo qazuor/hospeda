@@ -1,0 +1,37 @@
+{
+    "name": "@repo/db",
+    "version": "0.1.0",
+    "description": "Database layer using Drizzle ORM and PostgreSQL",
+    "main": "./index.ts",
+    "scripts": {
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules && rm -rf dist",
+        "db:migrate": "drizzle-kit push:pg --config drizzle.config.ts",
+        "db:generate": "drizzle-kit generate:pg --config drizzle.config.ts",
+        "db:studio": "drizzle-kit studio --config drizzle.config.ts",
+        "db:regenerate": "drizzle-kit push:pg --config drizzle.config.ts --force && pnpm run db:seed:required && pnpm run db:seed:example",
+        "db:regenerate:required": "drizzle-kit push:pg --config drizzle.config.ts --force && pnpm run db:seed:required",
+        "db:regenerate:example": "drizzle-kit push:pg --config drizzle.config.ts --force && pnpm run db:seed:example",
+        "db:seed": "pnpm run db:seed:required && pnpm run db:seed:example",
+        "db:seed:required": "tsx ./src/seeds/required.seed.ts",
+        "db:seed:example": "tsx ./src/seeds/example.seed.ts"
+    },
+    "dependencies": {
+        "@repo/types": "workspace:*",
+        "@repo/schemas": "workspace:*",
+        "@repo/utils": "workspace:*",
+        "@repo/config": "workspace:*",
+        "@repo/logger": "workspace:*",
+        "drizzle-orm": "^0.29.5",
+        "pg": "^8.11.1"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^22.15.3",
+        "@types/pg": "^8.15.1",
+        "drizzle-kit": "^0.20.18",
+        "tsx": "^4.7.0"
+    }
+}

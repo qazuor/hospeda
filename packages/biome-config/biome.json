@@ -78,6 +78,16 @@
                     }
                 }
             }
+        },
+        {
+            "include": ["./packages/db/src/seeds/**"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noConsoleLog": "off"
+                    }
+                }
+            }
         }
     ]
 }
