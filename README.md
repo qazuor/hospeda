@@ -248,6 +248,44 @@ Modern, minimalist web platform for discovering and managing tourist accommodati
 - favorite: boolean
 - tags: string[]
 
+### Destinations Types
+
+#### DestinationLocationType
+
+- street: string
+- neighborhood?: string
+- city: string
+- state: string
+- zipCode?: string
+- country: string
+- placeName?: string
+- coordinates: CoordinatesType
+
+#### DestinationAttractionsType extends BaseEntityType
+
+- name
+- slug
+- description
+- icon
+
+#### DestinationType extends BaseEntityType
+
+- name: string
+- longName: string
+- slug: string
+- summary: string
+- description: string
+- media: MediaType
+- tags?: string[]
+- isFeatured?: boolean
+- visibility: VisibilityEnum
+- seo?: SeoType
+- adminInfo?: AdminInfoType
+- rating?: RatingType
+- reviews?: ReviewType[]
+- location: DestinationLocationType
+- attractions: DestinationAttractionsType
+
 ### Accomodation Types
 
 #### OtherAdditionalFeesType
@@ -352,6 +390,7 @@ Modern, minimalist web platform for discovering and managing tourist accommodati
 - slug: string
 - type: AccommodationTypesEnum
 - state: StateEnum
+- destination: DestinationType
 - description: string
 - contactInfo: ContactInfoTpe
 - socialNetworks: SocialNetworkType
