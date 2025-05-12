@@ -139,10 +139,12 @@ export interface AdminInfoType {
  * Tags used for categorizing and filtering content.
  */
 export interface TagType extends BaseEntityType {
-    owerId: string;
+    ownerId: string;
     owner?: UserType;
     notes: string;
     variants: string[];
     color: string;
     icon: string;
+    entityIds?: string[];
+    entityTypes?: string[];
 }

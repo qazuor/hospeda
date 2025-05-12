@@ -143,6 +143,8 @@ export interface AccommodationRatingType {
 export interface AccommodationReviewType extends BaseEntityType {
     userId: string; // UUID of user
     user?: UserType;
+    accommodationId: string;
+    accommodation?: AccommodationType;
     title: string;
     content: string;
     rating: AccommodationRatingType;
@@ -152,6 +154,8 @@ export interface AccommodationReviewType extends BaseEntityType {
  * Frequently asked question specific to an accommodation.
  */
 export interface AccommodationFaqType extends BaseEntityType {
+    accommodationId: string;
+    accommodation?: AccommodationType;
     question: string;
     answer: string;
     category?: string;
@@ -161,6 +165,8 @@ export interface AccommodationFaqType extends BaseEntityType {
  * Content to use fro AI to responde question about the accommodation.
  */
 export interface AccommodationIaDataType extends BaseEntityType {
+    accommodationId: string;
+    accommodation?: AccommodationType;
     title: string;
     content: string;
     category?: string;
@@ -170,6 +176,8 @@ export interface AccommodationIaDataType extends BaseEntityType {
  * Features object related to an accommodation.
  */
 export interface AccommodationFeaturesType extends BaseEntityType {
+    accommodationId: string;
+    accommodation?: AccommodationType;
     description?: string;
     icon?: string;
 }
@@ -178,6 +186,8 @@ export interface AccommodationFeaturesType extends BaseEntityType {
  * Amenity object used to define services/extras offered in an accommodation.
  */
 export interface AccommodationAmenitiesType extends BaseEntityType {
+    accommodationId: string;
+    accommodation?: AccommodationType;
     description?: string;
     icon?: string;
     isBuiltin: boolean;

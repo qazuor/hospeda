@@ -6,6 +6,8 @@ import type { UserType } from './user.types';
  * Individual point of interest or attraction inside a destination.
  */
 export interface DestinationAttractionsType extends BaseEntityType {
+    destinationId: string;
+    destination?: DestinationType;
     name: string;
     slug: string;
     description: string;
@@ -42,6 +44,8 @@ export interface DestinationRatingType {
 export interface DestinationReviewType {
     userId: string; // UUID of user
     user?: UserType;
+    destinationId: string;
+    destination?: DestinationType;
     title: string;
     content: string;
     rating: DestinationRatingType;
