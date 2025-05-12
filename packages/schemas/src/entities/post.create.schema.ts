@@ -2,12 +2,25 @@ import type { PostType } from '@repo/types';
 import { PostCategoryEnum, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 
-import { BaseEntitySchema, MediaSchema, SeoSchema } from '../common.schema';
+import { MediaSchema, SeoSchema } from '../common.schema';
 
 /**
- * Zod schema for full post entity.
+ * Zod schema for creating a new post.
  */
-export const PostSchema: z.ZodType<PostType> = BaseEntitySchema.extend({
+export const PostCreateSchema: z.ZodType<
+    Omit<
+        PostType,
+        | 'id'
+        | 'createdAt'
+        | 'createdById'
+        | 'updatedAt'
+        | 'updatedById'
+        | 'deletedAt'
+        | 'deletedById'
+    >
+> = z.object({
+    name: z.string({ required_error: 'error:post.nameRequired' }),
+    displayName: z.string({ required_error: 'error:post.displayNameRequired' }),
     slug: z.string({ required_error: 'error:post.slugRequired' }),
     category: z.nativeEnum(PostCategoryEnum, {
         required_error: 'error:post.categoryRequired',
@@ -47,5 +60,10 @@ export const PostSchema: z.ZodType<PostType> = BaseEntitySchema.extend({
 
     likes: z.number().int().min(0).optional(),
     comments: z.number().int().min(0).optional(),
-    shares: z.number().int().min(0).optional()
+    shares: z.number().int().min(0).optional(),
+
+    state: z.nativeEnum(VisibilityEnum, {
+        required_error: 'error:post.stateRequired',
+        invalid_type_error: 'error:post.stateInvalid'
+    })
 });
