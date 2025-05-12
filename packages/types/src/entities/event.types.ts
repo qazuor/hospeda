@@ -8,6 +8,7 @@ import type {
     SocialNetworkType
 } from '../common.types';
 import type { EventCategoryEnum, RecurrenceTypeEnum, VisibilityEnum } from '../enums.types';
+import type { UserType } from './user.types';
 
 /**
  * Defines the schedule of an event, including recurrence.
@@ -36,9 +37,14 @@ export interface EventOrganizerType extends BaseEntityType {
     logo?: string;
     contactInfo?: ContactInfoType;
     social?: SocialNetworkType;
+    events?: EventType[];
 }
 
+/**
+ * Location where the event takes place, including extended address and name.
+ */
 export interface EventLocationType extends BaseLocationType {
+    id: string;
     street?: string;
     number?: string;
     floor?: string;
@@ -47,24 +53,34 @@ export interface EventLocationType extends BaseLocationType {
     city: string;
     deparment?: string;
     placeName?: string;
+    events?: EventType[];
 }
 
 /**
- * Main type representing a published or upcoming event.
+ * Main event entity representing a published or upcoming event.
  */
 export interface EventType extends BaseEntityType {
     slug: string;
     summary: string;
     description?: string;
     media?: MediaType;
+
     category: EventCategoryEnum;
-    location?: EventLocationType;
     date: EventDateType;
-    pricing?: EventPriceType;
-    organizer?: EventOrganizerType;
-    contact?: ContactInfoType;
+
     authorId: string;
-    isFeatured?: boolean;
+    author?: UserType;
+
+    locationId?: string;
+    location?: EventLocationType;
+
+    organizerId?: string;
+    organizer?: EventOrganizerType;
+
+    pricing?: EventPriceType;
+    contact?: ContactInfoType;
+
     visibility: VisibilityEnum;
     seo?: SeoType;
+    isFeatured?: boolean;
 }

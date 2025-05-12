@@ -8,7 +8,7 @@ import type { StateEnum } from '../enums.types';
 import type { AccommodationType } from './accommodation.types';
 
 /**
- * Public user profile for display purposes (e.g., host page).
+ * Accommodation bookmarked by a user for quick access.
  */
 export interface UserBookmarkType {
     userId: string;
@@ -55,6 +55,10 @@ export interface PermissionType extends BaseEntityType {
     description: string;
     isBuiltIn: boolean;
     isDeprecated: boolean;
+    userIds?: string[];
+    users?: UserType[];
+    roleIds?: string[];
+    roles?: RoleType[];
 }
 
 /**
@@ -65,7 +69,29 @@ export interface RoleType extends BaseEntityType {
     isBuiltIn: boolean;
     isDeprecated: boolean;
     isDefault: boolean;
+    permissionIds: string[];
     permissions: PermissionType[];
+    users?: UserType[];
+}
+
+/**
+ * Represents the many-to-many relationship between roles and permissions.
+ */
+export interface RolePermissionType {
+    roleId: string;
+    role?: RoleType;
+    permissionId: string;
+    permission?: PermissionType;
+}
+
+/**
+ * Explicit permission assigned to a specific user.
+ */
+export interface UserPermissionType {
+    userId: string;
+    user?: UserType;
+    permissionId: string;
+    permission?: PermissionType;
 }
 
 /**
@@ -81,7 +107,9 @@ export interface UserType extends BaseEntityType {
     location: FullLocationType;
     contactInfo: ContactInfoType;
     socialNetworks: SocialNetworkType;
+    roleId: string;
     role: RoleType;
+    permissionsIds?: string[];
     permissions: PermissionType[];
     state: StateEnum;
     emailVerified: boolean;

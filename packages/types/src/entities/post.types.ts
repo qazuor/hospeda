@@ -7,7 +7,7 @@ import type {
     SeoType,
     SocialNetworkType
 } from '../common.types';
-import type { ClientTypeEnum, PostCategoryEnum, StateEnum, VisibilityEnum } from '../enums.types';
+import type { ClientTypeEnum, PostCategoryEnum, VisibilityEnum } from '../enums.types';
 import type { AccommodationType } from './accommodation.types';
 import type { DestinationType } from './destination.types';
 import type { EventType } from './event.types';
@@ -22,7 +22,7 @@ export interface PostSponsorType extends BaseEntityType {
     logo?: ImageType;
     social?: SocialNetworkType;
     contact?: ContactInfoType;
-    state: StateEnum;
+    sponsorships?: PostSponsorshipType[];
 }
 
 /**
@@ -32,6 +32,8 @@ export interface PostSponsorType extends BaseEntityType {
 export interface PostSponsorshipType extends BaseEntityType {
     sponsorId: string;
     sponsor?: PostSponsorType;
+    postId: string;
+    post?: PostType;
     message?: string;
     description: string;
     paid: BasePriceType;
@@ -51,22 +53,31 @@ export interface PostType extends BaseEntityType {
     summary: string;
     content: string;
     media: MediaType;
+
     authorId: string;
     author?: UserType;
-    isFeatured?: boolean;
+
+    sponsorshipId?: string;
+    sponsorship?: PostSponsorshipType;
+
+    relatedDestinationId?: string;
+    relatedDestination?: DestinationType;
+
+    relatedAccommodationId?: string;
+    relatedAccommodation?: AccommodationType;
+
+    relatedEventId?: string;
+    relatedEvent?: EventType;
+
     visibility: VisibilityEnum;
     seo?: SeoType;
-    sponsorship?: PostSponsorshipType;
+
+    isFeatured?: boolean;
+    isNews?: boolean;
+    isFeaturedInWebsite?: boolean;
+
     expiresAt?: Date;
     likes?: number;
     comments?: number;
     shares?: number;
-    relatedDestinationId?: string; // Optional, if the post is related to a specific destination
-    relatedDestination?: DestinationType; // Optional, if the post is related to a specific destination
-    relatedAccommodationId?: string; // Optional, if the post is related to a specific accommodation
-    relatedAccommodation?: AccommodationType; // Optional, if the post is related to a specific accommodation
-    relatedEventId?: string; // Optional, if the post is related to a specific event
-    relatedEvent?: EventType; // Optional, if the post is related to a specific event
-    isNews?: boolean; // Optional, if the post is a news article
-    isFeaturedInWebsite?: boolean; // Optional, if the post is featured on the website
 }
