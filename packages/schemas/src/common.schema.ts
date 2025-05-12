@@ -1,5 +1,4 @@
 import { z } from 'zod';
-
 import {
     PreferedContactEnumSchema,
     PriceCurrencyEnumSchema,
@@ -7,180 +6,148 @@ import {
 } from './enums.schema';
 
 /**
- * Schema for geographic coordinates.
+ * Zod schema for user reference by ID.
  */
-export const CoordinatesSchema = z.object({
-    lat: z.string().min(1, {
-        message: 'error:coordinates.latRequired'
-    }),
-    long: z.string().min(1, {
-        message: 'error:coordinates.longRequired'
-    })
-});
+const UserIdSchema = z.string().uuid({ message: 'error:base.userIdInvalid' });
 
 /**
- * Schema for full location address including optional geo metadata.
- */
-export const LocationSchema = z.object({
-    street: z.string().min(1, {
-        message: 'error:location.streetRequired'
-    }),
-    neighborhood: z.string().optional(),
-    city: z.string().min(1, {
-        message: 'error:location.cityRequired'
-    }),
-    state: z.string().min(1, {
-        message: 'error:location.stateRequired'
-    }),
-    zipCode: z.string().optional(),
-    country: z.string().min(1, {
-        message: 'error:location.countryRequired'
-    }),
-    placeName: z.string().optional(),
-    coordinates: CoordinatesSchema
-});
-
-/**
- * Schema for user or business contact information.
- */
-export const ContactInfoSchema = z.object({
-    personalEmail: z.string().email({
-        message: 'error:contact.personalEmailInvalid'
-    }),
-    workEmail: z
-        .string()
-        .email({
-            message: 'error:contact.workEmailInvalid'
-        })
-        .optional(),
-    homePhone: z.string().optional(),
-    workPhone: z.string().optional(),
-    mobilePhone: z.string().min(1, {
-        message: 'error:contact.mobilePhoneRequired'
-    }),
-    preferredEmail: PreferedContactEnumSchema,
-    preferredPhone: PreferedContactEnumSchema
-});
-
-/**
- * Schema for social media links with platform-specific validation patterns.
- */
-export const SocialNetworkSchema = z.object({
-    facebook: z
-        .string()
-        .url()
-        .regex(/^https:\/\/(www\.)?facebook\.com\/[A-Za-z0-9.]+$/, {
-            message: 'error:social.facebookInvalid'
-        })
-        .optional(),
-
-    twitter: z
-        .string()
-        .url()
-        .regex(/^https:\/\/(www\.)?twitter\.com\/[A-Za-z0-9_]+$/, {
-            message: 'error:social.twitterInvalid'
-        })
-        .optional(),
-
-    instagram: z
-        .string()
-        .url()
-        .regex(/^https:\/\/(www\.)?instagram\.com\/[A-Za-z0-9_.]+$/, {
-            message: 'error:social.instagramInvalid'
-        })
-        .optional(),
-
-    linkedIn: z
-        .string()
-        .url()
-        .regex(/^https:\/\/(www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+$/, {
-            message: 'error:social.linkedinInvalid'
-        })
-        .optional(),
-
-    website: z
-        .string()
-        .url({
-            message: 'error:social.websiteInvalid'
-        })
-        .optional()
-});
-
-/**
- * Schema for price with optional amount and standardized currency.
- */
-export const BasePriceSchema = z.object({
-    price: z.number().nonnegative().optional(),
-    currency: PriceCurrencyEnumSchema.optional()
-});
-
-/**
- * Schema for image media including metadata and tags.
- */
-export const ImageSchema = z.object({
-    url: z.string().url({
-        message: 'error:image.urlInvalid'
-    }),
-    caption: z.string().optional(),
-    description: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    state: StateEnumSchema
-});
-
-/**
- * Schema for video content.
- */
-export const VideoSchema = z.object({
-    url: z.string().url({
-        message: 'error:video.urlInvalid'
-    }),
-    caption: z.string().optional(),
-    description: z.string().optional(),
-    tags: z.array(z.string()).optional(),
-    state: StateEnumSchema
-});
-
-/**
- * SEO fields for content optimization.
- */
-export const SeoSchema = z.object({
-    seoTitle: z.string().optional(),
-    seoDescription: z.string().optional(),
-    seoKeywords: z.array(z.string()).optional()
-});
-
-/**
- * Metadata used by administrators only.
+ * Zod schema for admin metadata.
  */
 export const AdminInfoSchema = z.object({
-    notes: z.string().max(1000, {
-        message: 'error:admin.notesTooLong'
-    }),
-    favorite: z.boolean(),
-    tags: z.array(z.string())
+    notes: z.string({ required_error: 'error:common.admin.notesRequired' }),
+    favorite: z.boolean({ required_error: 'error:common.admin.favoriteRequired' })
 });
 
 /**
- * Reusable base schema for audit and metadata in main entities.
+ * Zod schema for base entity (without tags).
  */
 export const BaseEntitySchema = z.object({
-    id: z.string().uuid(),
-    name: z.string().min(1),
-    displayName: z.string().min(1),
+    id: z.string().uuid({ message: 'error:base.idInvalid' }),
+    name: z.string({ required_error: 'error:base.nameRequired' }),
+    displayName: z.string({ required_error: 'error:base.displayNameRequired' }),
     state: StateEnumSchema,
-    createdAt: z.date(),
-    createdBy: z.string().uuid(),
-    updatedAt: z.date(),
-    updatedBy: z.string().uuid(),
-    deletedAt: z.date().optional(),
-    deletedBy: z.string().uuid().optional()
+    adminInfo: AdminInfoSchema.optional(),
+    createdAt: z.coerce.date(),
+    createdById: UserIdSchema,
+    updatedAt: z.coerce.date(),
+    updatedById: UserIdSchema,
+    deletedAt: z.coerce.date().optional(),
+    deletedById: z.string().uuid({ message: 'error:base.deletedByIdInvalid' }).optional()
 });
 
 /**
- * Schema representing all media content (images, videos).
+ * Zod schema for a tag entity.
+ */
+export const TagSchema = BaseEntitySchema.extend({
+    ownerId: z.string().uuid({ message: 'error:tag.ownerIdInvalid' }),
+    notes: z.string({ required_error: 'error:tag.notesRequired' }),
+    variants: z.array(z.string({ required_error: 'error:tag.variantRequired' })),
+    color: z.string({ required_error: 'error:tag.colorRequired' }),
+    icon: z.string({ required_error: 'error:tag.iconRequired' }),
+    entityIds: z.array(z.string().uuid()).optional(),
+    entityTypes: z.array(z.string()).optional()
+});
+
+/**
+ * Zod schema for geographic coordinates.
+ */
+export const CoordinatesSchema = z.object({
+    lat: z.string({ required_error: 'error:common.coordinates.latRequired' }),
+    long: z.string({ required_error: 'error:common.coordinates.longRequired' })
+});
+
+/**
+ * Zod schema for base location.
+ */
+export const BaseLocationSchema = z.object({
+    state: z.string({ required_error: 'error:common.location.stateRequired' }),
+    zipCode: z.string({ required_error: 'error:common.location.zipCodeRequired' }),
+    country: z.string({ required_error: 'error:common.location.countryRequired' }),
+    coordinates: CoordinatesSchema.optional()
+});
+
+/**
+ * Zod schema for full location.
+ */
+export const FullLocationSchema = BaseLocationSchema.extend({
+    street: z.string({ required_error: 'error:common.location.streetRequired' }),
+    number: z.string({ required_error: 'error:common.location.numberRequired' }),
+    floor: z.string().optional(),
+    apartment: z.string().optional(),
+    neighborhood: z.string().optional(),
+    city: z.string({ required_error: 'error:common.location.cityRequired' }),
+    deparment: z.string().optional()
+});
+
+/**
+ * Zod schema for image.
+ */
+export const ImageSchema = z.object({
+    url: z.string({ required_error: 'error:common.image.urlRequired' }),
+    caption: z.string().optional(),
+    description: z.string().optional(),
+    tags: z.array(TagSchema).optional(),
+    state: StateEnumSchema
+});
+
+/**
+ * Zod schema for video.
+ */
+export const VideoSchema = z.object({
+    url: z.string({ required_error: 'error:common.video.urlRequired' }),
+    caption: z.string().optional(),
+    description: z.string().optional(),
+    tags: z.array(TagSchema).optional(),
+    state: StateEnumSchema
+});
+
+/**
+ * Zod schema for media content.
  */
 export const MediaSchema = z.object({
     featuredImage: ImageSchema,
     gallery: z.array(ImageSchema).optional(),
     videos: z.array(VideoSchema).optional()
+});
+
+/**
+ * Zod schema for contact info.
+ */
+export const ContactInfoSchema = z.object({
+    personalEmail: z.string({ required_error: 'error:common.contact.personalEmailRequired' }),
+    workEmail: z.string().optional(),
+    homePhone: z.string().optional(),
+    workPhone: z.string().optional(),
+    mobilePhone: z.string({ required_error: 'error:common.contact.mobilePhoneRequired' }),
+    website: z.string().url({ message: 'error:common.contact.websiteInvalid' }).optional(),
+    preferredEmail: PreferedContactEnumSchema,
+    preferredPhone: PreferedContactEnumSchema
+});
+
+/**
+ * Zod schema for social networks.
+ */
+export const SocialNetworkSchema = z.object({
+    facebook: z.string().url({ message: 'error:common.social.facebookInvalid' }).optional(),
+    twitter: z.string().url({ message: 'error:common.social.twitterInvalid' }).optional(),
+    instagram: z.string().url({ message: 'error:common.social.instagramInvalid' }).optional(),
+    linkedIn: z.string().url({ message: 'error:common.social.linkedinInvalid' }).optional(),
+    tiktok: z.string().url({ message: 'error:common.social.tiktokInvalid' }).optional()
+});
+
+/**
+ * Zod schema for base price.
+ */
+export const BasePriceSchema = z.object({
+    price: z.number().optional(),
+    currency: PriceCurrencyEnumSchema.optional()
+});
+
+/**
+ * Zod schema for SEO metadata.
+ */
+export const SeoSchema = z.object({
+    seoTitle: z.string().optional(),
+    seoDescription: z.string().optional(),
+    seoKeywords: z.array(z.string()).optional()
 });

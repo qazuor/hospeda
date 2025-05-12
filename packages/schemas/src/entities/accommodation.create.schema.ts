@@ -1,5 +1,5 @@
 import type { AccommodationType } from '@repo/types';
-import { AccommodationTypeEnum } from '@repo/types';
+import { AccommodationTypeEnum, StateEnum } from '@repo/types';
 import { z } from 'zod';
 
 import {
@@ -9,8 +9,6 @@ import {
     AccommodationIaDataSchema,
     AccommodationPriceSchema,
     AccommodationRatingSchema,
-    AccommodationReviewSchema,
-    BaseEntitySchema,
     ContactInfoSchema,
     ExtraInfoSchema,
     FullLocationSchema,
@@ -21,9 +19,23 @@ import {
 } from '../common.schema';
 
 /**
- * Zod schema for full accommodation entity.
+ * Zod schema for creating a new accommodation.
+ * Includes only user-submittable fields.
  */
-export const AccommodationSchema: z.ZodType<AccommodationType> = BaseEntitySchema.extend({
+export const AccommodationCreateSchema: z.ZodType<
+    Omit<
+        AccommodationType,
+        | 'id'
+        | 'createdAt'
+        | 'createdById'
+        | 'updatedAt'
+        | 'updatedById'
+        | 'deletedAt'
+        | 'deletedById'
+    >
+> = z.object({
+    name: z.string({ required_error: 'error:accommodation.nameRequired' }),
+    displayName: z.string({ required_error: 'error:accommodation.displayNameRequired' }),
     slug: z.string({ required_error: 'error:accommodation.slugRequired' }),
     type: z.nativeEnum(AccommodationTypeEnum, {
         required_error: 'error:accommodation.typeRequired',
@@ -40,11 +52,15 @@ export const AccommodationSchema: z.ZodType<AccommodationType> = BaseEntitySchem
     amenities: z.array(AccommodationAmenitiesSchema).optional(),
     media: MediaSchema.optional(),
     rating: AccommodationRatingSchema,
-    reviews: z.array(AccommodationReviewSchema).optional(),
+    reviews: z.array(z.any()).optional(), // reviews no se crean con el alojamiento
     schedule: ScheduleSchema.optional(),
     extraInfo: ExtraInfoSchema.optional(),
     isFeatured: z.boolean().optional(),
     seo: SeoSchema.optional(),
     faqs: z.array(AccommodationFaqSchema).optional(),
-    iaData: z.array(AccommodationIaDataSchema).optional()
+    iaData: z.array(AccommodationIaDataSchema).optional(),
+    state: z.nativeEnum(StateEnum, {
+        required_error: 'error:accommodation.stateRequired',
+        invalid_type_error: 'error:accommodation.stateInvalid'
+    })
 });
