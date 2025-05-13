@@ -1,46 +1,58 @@
+import type { AdminInfoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { EntityTypePgEnum } from 'src/schema/enums.dbschema';
+import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { EntityTypePgEnum, StatePgEnum } from './enums.dbschema';
 import { users } from './user.dbschema';
 
 /**
  * user_bookmarks table schema
  */
-export const userBookmarks = pgTable(
+export const userBookmarks: ReturnType<typeof pgTable> = pgTable(
     'user_bookmarks',
     {
-        /** Primary key for each bookmark record */
+        /** Primary key */
         id: uuid('id').primaryKey().defaultRandom(),
 
-        /** Reference to the user who created the bookmark */
+        /** Owner (user) of the bookmark */
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'cascade' }),
 
-        /** Type of entity being bookmarked (values from EntityTypeEnum) */
+        /** Type of the bookmarked entity */
         entityType: EntityTypePgEnum('entity_type').notNull(),
 
-        /** UUID of the entity being bookmarked */
+        /** ID of the bookmarked entity */
         entityId: uuid('entity_id').notNull(),
 
-        /** Optional display name for listing purposes */
+        /** Optional custom name for this bookmark */
         name: text('name'),
 
-        /** Optional description or notes about the bookmark */
+        /** Optional description or note */
         description: text('description'),
 
-        /** Timestamp when the bookmark was created */
+        /** Bookmark state (ACTIVE, DELETED, etc.) */
+        state: StatePgEnum('state').default('ACTIVE').notNull(),
+
+        /** Admin metadata (notes, favorite) */
+        adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
+
+        /** Audit & soft-delete timestamps */
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-
-        /** Timestamp when the bookmark was last updated; maintained by trigger */
+        createdById: uuid('created_by_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-
-        /** Soft-delete timestamp; NULL means the record is active */
-        deletedAt: timestamp('deleted_at', { withTimezone: true })
+        updatedById: uuid('updated_by_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        deletedAt: timestamp('deleted_at', { withTimezone: true }),
+        deletedById: uuid('deleted_by_id').references(() => users.id, {
+            onDelete: 'set null'
+        })
     },
     (table) => ({
-        /** Prevent the same user from bookmarking the same entity more than once */
-        uniqueBookmark: uniqueIndex('user_bookmarks_unique').on(
+        /** Prevent duplicate bookmarks of the same entity by the same user */
+        uniqueBookmark: uniqueIndex('user_bookmarks_owner_entity_key').on(
             table.ownerId,
             table.entityType,
             table.entityId
@@ -49,12 +61,15 @@ export const userBookmarks = pgTable(
 );
 
 /**
- * Relations configuration for convenient JOINs
+ * Relations for user_bookmarks table
  */
 export const userBookmarksRelations = relations(userBookmarks, ({ one }) => ({
-    /** Join to owner user record */
-    owner: one(users, {
-        fields: [userBookmarks.ownerId],
-        references: [users.id]
-    })
+    /** Who owns this bookmark */
+    owner: one(users),
+    /** Who created it */
+    createdBy: one(users),
+    /** Who last updated it */
+    updatedBy: one(users),
+    /** Who soft-deleted it */
+    deletedBy: one(users)
 }));
