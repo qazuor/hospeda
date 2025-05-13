@@ -41,3 +41,25 @@ export interface FindParams extends PaginationParams {
      */
     query?: string;
 }
+
+/**
+ * Generic type for update operations:
+ * Omit common audit fields and make the rest optional.
+ *
+ * @template T - The insert data type for a table.
+ *
+ * @example
+ * type UpdateUserData = UpdateData<CreateUserData>;
+ */
+export type UpdateData<T> = Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>>;
+
+/**
+ * Base filter options for listing entities.
+ * Includes pagination, optional search term, and soft-delete control.
+ */
+export interface BaseSelectFilter extends PaginationParams {
+    /** Generic fuzzy search term (e.g., name, title, etc.) */
+    query?: string;
+    /** Whether to include soft-deleted records */
+    includeDeleted?: boolean;
+}
