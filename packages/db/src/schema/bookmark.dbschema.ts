@@ -1,21 +1,7 @@
-// bookmark.dbschema.ts
-
-import { EntityTypeEnum } from '@repo/types'; // your TS enum
 import { relations } from 'drizzle-orm';
-import { pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { EntityTypePgEnum } from 'src/schema/enums.dbschema';
 import { users } from './user.dbschema';
-
-/**
- * Derive the allowed entity-type values from the TypeScript enum,
- * so you never have to re-type them here.
- */
-const entityTypeValues = Object.values(EntityTypeEnum) as [EntityTypeEnum, ...EntityTypeEnum[]];
-
-/**
- * PostgreSQL native ENUM for different entity types that can be bookmarked.
- * Values come directly from your TS `EntityTypeEnum`.
- */
-export const EntityTypePgEnum = pgEnum('entity_type_enum', entityTypeValues);
 
 /**
  * user_bookmarks table schema
