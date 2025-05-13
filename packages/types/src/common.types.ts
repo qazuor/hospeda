@@ -2,6 +2,14 @@ import type { UserType } from './entities/user.types';
 import type { PreferedContactEnum, PriceCurrencyEnum, StateEnum } from './enums.types';
 
 /**
+ * Internal admin notes and tags used for moderation and search.
+ */
+export interface AdminInfoType {
+    notes?: string;
+    favorite: boolean;
+}
+
+/**
  * Reusable base type for all main entities.
  * Includes audit fields and common metadata.
  */
@@ -10,24 +18,34 @@ export interface BaseEntityType {
     name: string;
     displayName: string;
     state: StateEnum;
-    tags?: TagType[];
     adminInfo?: AdminInfoType;
     createdAt: Date;
     createdById: string;
-    createdBy?: UserType;
+    createdBy?: UserType | undefined;
     updatedAt: Date;
     updatedById: string;
-    updatedBy?: UserType;
-    deletedAt?: Date;
-    deletedById?: string;
-    deletedBy?: UserType;
+    updatedBy?: UserType | undefined;
+    deletedAt?: Date | undefined;
+    deletedById?: string | undefined;
+    deletedBy?: UserType | undefined;
+}
+
+/**
+ * Tags used for categorizing and filtering content.
+ */
+export interface TagType extends BaseEntityType {
+    ownerId: string;
+    owner?: UserType;
+    notes?: string;
+    color: string;
+    icon?: string;
 }
 
 /**
  * User contact details across multiple channels.
  */
 export interface ContactInfoType {
-    personalEmail: string;
+    personalEmail?: string;
     workEmail?: string;
     homePhone?: string;
     workPhone?: string;
@@ -35,6 +53,14 @@ export interface ContactInfoType {
     website?: string;
     preferredEmail: PreferedContactEnum;
     preferredPhone: PreferedContactEnum;
+}
+
+/**
+ * Geographic coordinates.
+ */
+export interface CoordinatesType {
+    lat: string;
+    long: string;
 }
 
 /**
@@ -58,14 +84,6 @@ export interface FullLocationType extends BaseLocationType {
     neighborhood?: string;
     city: string;
     deparment?: string;
-}
-
-/**
- * Geographic coordinates.
- */
-export interface CoordinatesType {
-    lat: string;
-    long: string;
 }
 
 /**
@@ -125,26 +143,4 @@ export interface SeoType {
     seoTitle?: string;
     seoDescription?: string;
     seoKeywords?: string[];
-}
-
-/**
- * Internal admin notes and tags used for moderation and search.
- */
-export interface AdminInfoType {
-    notes: string;
-    favorite: boolean;
-}
-
-/**
- * Tags used for categorizing and filtering content.
- */
-export interface TagType extends BaseEntityType {
-    ownerId: string;
-    owner?: UserType;
-    notes: string;
-    variants: string[];
-    color: string;
-    icon: string;
-    entityIds?: string[];
-    entityTypes?: string[];
 }

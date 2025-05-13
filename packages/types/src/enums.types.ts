@@ -1,3 +1,11 @@
+export enum EntityTypeEnum {
+    ACCOMMODATION = 'ACCOMMODATION',
+    DESTINATION = 'DESTINATION',
+    USER = 'USER',
+    POST = 'POST',
+    EVENT = 'EVENT'
+}
+
 /**
  * General state used across all entities.
  */
@@ -143,4 +151,24 @@ export enum ClientTypeEnum {
 export enum PriceCurrencyEnum {
     ARS = 'ARS',
     USD = 'USD'
+}
+
+/**
+ * Tags color values for UI representation.
+ */
+export enum TagColorEnum {
+    RED = 'RED',
+    BLUE = 'BLUE',
+    GREEN = 'GREEN',
+    YELLOW = 'YELLOW',
+    ORANGE = 'ORANGE',
+    PURPLE = 'PURPLE',
+    PINK = 'PINK',
+    BROWN = 'BROWN',
+    GREY = 'GREY',
+    WHITE = 'WHITE',
+    CYAN = 'CYAN',
+    MAGENTA = 'MAGENTA',
+    LIGHT_BLUE = 'LIGHT_BLUE',
+    LIGHT_GREEN = 'LIGHT_GREEN'
 }

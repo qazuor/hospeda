@@ -1,4 +1,10 @@
-import type { BaseEntityType, BaseLocationType, MediaType, SeoType } from '../common.types';
+import type {
+    BaseEntityType,
+    BaseLocationType,
+    MediaType,
+    SeoType,
+    TagType
+} from '../common.types';
 import type { VisibilityEnum } from '../enums.types';
 import type { UserType } from './user.types';
 
@@ -6,8 +12,6 @@ import type { UserType } from './user.types';
  * Individual point of interest or attraction inside a destination.
  */
 export interface DestinationAttractionsType extends BaseEntityType {
-    destinationId: string;
-    destination?: DestinationType;
     name: string;
     slug: string;
     description: string;
@@ -15,7 +19,7 @@ export interface DestinationAttractionsType extends BaseEntityType {
 }
 
 /**
- * Detailed user rating categories for an destinnation.
+ * Detailed user rating categories for a destination.
  */
 export interface DestinationRatingType {
     landscape: number; // Natural beauty and landscapes
@@ -46,8 +50,8 @@ export interface DestinationReviewType {
     user?: UserType;
     destinationId: string;
     destination?: DestinationType;
-    title: string;
-    content: string;
+    title?: string;
+    content?: string;
     rating: DestinationRatingType;
 }
 
@@ -66,4 +70,5 @@ export interface DestinationType extends BaseEntityType {
     reviews?: DestinationReviewType[];
     location: BaseLocationType;
     attractions: DestinationAttractionsType[];
+    tags?: TagType[];
 }

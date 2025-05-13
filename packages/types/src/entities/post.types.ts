@@ -5,7 +5,8 @@ import type {
     ImageType,
     MediaType,
     SeoType,
-    SocialNetworkType
+    SocialNetworkType,
+    TagType
 } from '../common.types';
 import type { ClientTypeEnum, PostCategoryEnum, VisibilityEnum } from '../enums.types';
 import type { AccommodationType } from './accommodation.types';
@@ -80,4 +81,5 @@ export interface PostType extends BaseEntityType {
     likes?: number;
     comments?: number;
     shares?: number;
+    tags?: TagType[];
 }

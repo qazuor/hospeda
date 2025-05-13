@@ -4,17 +4,21 @@ import type {
     FullLocationType,
     SocialNetworkType
 } from '../common.types';
-import type { StateEnum } from '../enums.types';
+import type { EntityTypeEnum, StateEnum } from '../enums.types';
 import type { AccommodationType } from './accommodation.types';
+import type { DestinationType } from './destination.types';
+import type { EventType } from './event.types';
+import type { PostType } from './post.types';
 
 /**
  * Accommodation bookmarked by a user for quick access.
  */
 export interface UserBookmarkType {
-    userId: string;
-    user?: UserType;
-    accommodationId: string;
-    accommodation?: AccommodationType;
+    ownerId: string;
+    owner?: UserType;
+    entityId: string;
+    entity?: AccommodationType | DestinationType | UserType | PostType | EventType;
+    entityType: EntityTypeEnum; // e.g., 'accommodation', 'destination', 'user', 'post', 'event'
     name?: string;
     description?: string;
 }
@@ -23,7 +27,7 @@ export interface UserBookmarkType {
  * Public user profile for display purposes (e.g., host page).
  */
 export interface UserProfile {
-    avatar: string;
+    avatar?: string;
     bio?: string;
     website?: string;
     occupation?: string;
@@ -67,10 +71,10 @@ export interface PermissionType extends BaseEntityType {
 export interface RoleType extends BaseEntityType {
     description: string;
     isBuiltIn: boolean;
-    isDeprecated: boolean;
-    isDefault: boolean;
-    permissionIds: string[];
-    permissions: PermissionType[];
+    isDeprecated?: boolean;
+    isDefault?: boolean;
+    permissionIds?: string[];
+    permissions?: PermissionType[];
     users?: UserType[];
 }
 
@@ -100,20 +104,19 @@ export interface UserPermissionType {
 export interface UserType extends BaseEntityType {
     userName: string;
     passwordHash: string;
-    displayName: string;
-    firstName: string;
-    lastName: string;
-    brithDate: Date;
-    location: FullLocationType;
-    contactInfo: ContactInfoType;
-    socialNetworks: SocialNetworkType;
+    firstName?: string;
+    lastName?: string;
+    brithDate?: Date;
+    location?: FullLocationType;
+    contactInfo?: ContactInfoType;
+    socialNetworks?: SocialNetworkType;
     roleId: string;
-    role: RoleType;
+    role?: RoleType;
     permissionsIds?: string[];
-    permissions: PermissionType[];
+    permissions?: PermissionType[];
     state: StateEnum;
-    emailVerified: boolean;
-    phoneVerified: boolean;
+    emailVerified?: boolean;
+    phoneVerified?: boolean;
     profile?: UserProfile;
     settings?: UserSettingsType;
     bookmarks?: UserBookmarkType[];
