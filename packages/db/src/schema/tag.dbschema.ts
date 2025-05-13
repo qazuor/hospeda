@@ -1,5 +1,3 @@
-// packages/db/src/schema/tag.dbschema.ts
-
 import type { AdminInfoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';

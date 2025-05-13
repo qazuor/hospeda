@@ -1,5 +1,3 @@
-// packages/db/src/schema/enums.dbschema.ts
-
 import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,

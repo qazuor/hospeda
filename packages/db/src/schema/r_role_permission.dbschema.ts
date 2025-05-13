@@ -1,5 +1,3 @@
-// packages/db/src/schema/r_role_permission.dbschema.ts
-
 import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { permissions } from './permission.dbschema';
 import { roles } from './role.dbschema';
