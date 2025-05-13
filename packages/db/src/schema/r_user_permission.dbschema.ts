@@ -23,6 +23,6 @@ export const userPermissions = pgTable(
     },
     (table) => ({
         /** Composite primary key */
-        pk: primaryKey(table.userId, table.permissionId)
+        pk: primaryKey({ columns: [table.userId, table.permissionId] })
     })
 );
