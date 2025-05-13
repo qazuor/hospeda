@@ -1,19 +1,46 @@
-# @repo/db
+# Tablas
 
-This package contains the database layer of the application using **Drizzle ORM** and **PostgreSQL**.
+va a quedar asi:
 
-## Structure
+## 🧱 ENTIDADES PRINCIPALES (tablas base)
 
-- `schema/`: Table definitions and relations
-- `migrations/`: Generated migration files
-- `seeds/`: Initial and example seed data
-- `client.ts`: Drizzle client setup
-- `index.ts`: Export point for db access
+- users
+- bookmarks
+- roles
+- permissions
+- tags
 
-## Scripts
+- destinations
+- destinationsAttractions
+- destinationsReviews
 
-- `pnpm run db:migrate` – apply latest schema to the database
-- `pnpm run db:seed:required` – insert required initial records
-- `pnpm run db:seed:example` – insert mock/example data
-- `pnpm run lint` – lint with Biome
-- `pnpm run format` – format with Biome
+- accommodations
+- accommodationsFeatures
+- accommodationsAmenities
+- accommodationsFaqs
+- accommodationsIaData
+- accommodationsReviews
+
+- posts
+- postsSponsors
+
+- events
+- eventsOrganizers
+- eventsLocations
+
+## 🔗 TABLAS RELACIONALES (many-to-many / auxiliares)
+
+- r_user_permission
+- r_role_permission
+- r_user_bookmark
+
+- r_entity_tags
+
+- r_destination_attraction
+- r_destination_review
+
+- r_accommodation_amenitie
+- r_accommodation_feature
+- r_accommodation_faq
+- r_accommodation_review
+- r_accommodation_accommodationsIaData
