@@ -87,12 +87,10 @@ export const UserModel = {
         try {
             log.info('listing users', 'listUsers', filter);
 
-            // Start query in an any-wrapper so TS no se queja
             let query = rawSelect(db.select().from(users));
 
             if (filter.query) {
                 const term = `%${filter.query}%`;
-                // Use drizzle-orm's or() helper
                 query = query.where(or(ilike(users.name, term), ilike(users.userName, term)));
             }
 
