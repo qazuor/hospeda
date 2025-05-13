@@ -9,15 +9,25 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
 
-    # Aquí defines el env para *todo* el job:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4 # O la versión más reciente
+        with:
+          version: 8 # Especifica la versión de pnpm que usas, o la última estable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - run: npm ci
+          cache: 'pnpm' # Habilita el caching para pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile # O simplemente pnpm install si prefieres
+
       - name: Refresh materialized view
-        run: node packages/db/scripts/refresh-search-view.js
+        run: node packages/db/scripts/refresh-search-view.js # Asegúrate que este script se ejecute con pnpm si es necesario, p.ej. pnpm run tu-script-de-refresh
