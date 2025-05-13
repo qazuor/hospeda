@@ -4,15 +4,25 @@ import {
     BuiltinPermissionTypeEnum,
     BuiltinRoleTypeEnum,
     ClientTypeEnum,
+    EntityTypeEnum,
     EventCategoryEnum,
     PostCategoryEnum,
     PreferedContactEnum,
     PriceCurrencyEnum,
     RecurrenceTypeEnum,
     StateEnum,
+    TagColorEnum,
     VisibilityEnum
 } from '@repo/types';
 import { z } from 'zod';
+
+/**
+ * Zod schema for EntityEnum.
+ */
+export const EntityTypeEnumSchema = z.nativeEnum(EntityTypeEnum, {
+    required_error: 'error:enum.entityType.required',
+    invalid_type_error: 'error:enum.entityType.invalid'
+});
 
 /**
  * Zod schema for StateEnum.
@@ -108,4 +118,12 @@ export const ClientTypeEnumSchema = z.nativeEnum(ClientTypeEnum, {
 export const PriceCurrencyEnumSchema = z.nativeEnum(PriceCurrencyEnum, {
     required_error: 'error:enum.currency.required',
     invalid_type_error: 'error:enum.currency.invalid'
+});
+
+/**
+ * Zod schema for TagColorEnum.
+ */
+export const TagColorEnumSchema = z.nativeEnum(TagColorEnum, {
+    required_error: 'error:enum.tagColor.required',
+    invalid_type_error: 'error:enum.tagColor.invalid'
 });

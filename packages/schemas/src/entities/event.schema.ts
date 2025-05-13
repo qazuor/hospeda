@@ -1,46 +1,69 @@
-import type { EventType } from '@repo/types';
-import { EventCategoryEnum, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
-
-import { BaseEntitySchema, ContactInfoSchema, MediaSchema, SeoSchema } from '../common.schema';
-
-import { EventDateSchema } from './event_date.schema';
-import { EventLocationSchema } from './event_location.schema';
-import { EventOrganizerSchema } from './event_organizer.schema';
-import { EventPriceSchema } from './event_price.schema';
+import {
+    BaseEntitySchema,
+    ContactInfoSchema,
+    MediaSchema,
+    SeoSchema,
+    TagSchema
+} from '../common.schema';
+import { EventCategoryEnumSchema, VisibilityEnumSchema } from '../enums.schema';
+import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils';
+import { EventDateSchema } from './event/date.schema';
+import { EventPriceSchema } from './event/price.schema';
 
 /**
- * Zod schema for full event entity.
+ * Zod schema for a event entity.
  */
-export const EventSchema: z.ZodType<EventType> = BaseEntitySchema.extend({
-    slug: z.string({ required_error: 'error:event.slugRequired' }),
-    summary: z.string({ required_error: 'error:event.summaryRequired' }),
-    description: z.string().optional(),
+export const EventSchema = BaseEntitySchema.extend({
+    slug: z
+        .string()
+        .min(3, 'error:event.slug.min_lenght')
+        .max(30, 'error:event.slug.max_lenght')
+        .regex(SlugRegex, {
+            message: 'error:event.slug.pattern'
+        }),
+    summary: z
+        .string()
+        .min(50, 'error:event.summary.min_lenght')
+        .max(200, 'error:event.summary.max_lenght'),
+    description: z
+        .string()
+        .min(50, 'error:event.description.min_lenght')
+        .max(1000, 'error:event.description.max_lenght'),
     media: MediaSchema.optional(),
-
-    category: z.nativeEnum(EventCategoryEnum, {
-        required_error: 'error:event.categoryRequired',
-        invalid_type_error: 'error:event.categoryInvalid'
-    }),
-
+    category: EventCategoryEnumSchema,
     date: EventDateSchema,
-
-    authorId: z.string().uuid({ message: 'error:event.authorIdInvalid' }),
-
-    locationId: z.string().uuid({ message: 'error:event.locationIdInvalid' }).optional(),
-    location: EventLocationSchema.optional(),
-
-    organizerId: z.string().uuid({ message: 'error:event.organizerIdInvalid' }).optional(),
-    organizer: EventOrganizerSchema.optional(),
-
+    locationId: z.string().uuid({
+        message: 'error:event.locationId.invalid'
+    }),
+    organizerId: z.string().uuid({
+        message: 'error:event.organizerId.invalid'
+    }),
     pricing: EventPriceSchema.optional(),
     contact: ContactInfoSchema.optional(),
-
-    visibility: z.nativeEnum(VisibilityEnum, {
-        required_error: 'error:event.visibilityRequired',
-        invalid_type_error: 'error:event.visibilityInvalid'
-    }),
-
+    visibility: VisibilityEnumSchema,
     seo: SeoSchema.optional(),
-    isFeatured: z.boolean().optional()
+    isFeatured: z
+        .boolean({
+            required_error: 'error:event.isFeatured.required',
+            invalid_type_error: 'error:event.isFeatured.invalid_type'
+        })
+        .optional(),
+    tags: z.array(TagSchema).optional()
 });
+
+export type EventInput = z.infer<typeof EventSchema>;
+
+export const EventCreateSchema = EventSchema.omit(
+    Object.fromEntries(omittedBaseEntityFieldsForActions.map((field) => [field, true])) as Record<
+        keyof typeof EventSchema.shape,
+        true
+    >
+);
+
+export const EventUpdateSchema = EventSchema.omit(
+    Object.fromEntries(omittedBaseEntityFieldsForActions.map((field) => [field, true])) as Record<
+        keyof typeof EventSchema.shape,
+        true
+    >
+).partial();

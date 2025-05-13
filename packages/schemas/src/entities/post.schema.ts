@@ -1,51 +1,96 @@
-import type { PostType } from '@repo/types';
-import { PostCategoryEnum, VisibilityEnum } from '@repo/types';
-import { z } from 'zod';
+// export interface PostType extends BaseEntityType {
 
-import { BaseEntitySchema, MediaSchema, SeoSchema } from '../common.schema';
+import { z } from 'zod';
+import { BaseEntitySchema, MediaSchema, SeoSchema, TagSchema } from '../common.schema';
+import { PostCategoryEnumSchema, VisibilityEnumSchema } from '../enums.schema';
+import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils';
+import { PostSponsorshipSchema } from './post/sponsorship.schema';
+
+// }
 
 /**
- * Zod schema for full post entity.
+ * Zod schema for a post entity.
  */
-export const PostSchema: z.ZodType<PostType> = BaseEntitySchema.extend({
-    slug: z.string({ required_error: 'error:post.slugRequired' }),
-    category: z.nativeEnum(PostCategoryEnum, {
-        required_error: 'error:post.categoryRequired',
-        invalid_type_error: 'error:post.categoryInvalid'
-    }),
-    title: z.string({ required_error: 'error:post.titleRequired' }),
-    summary: z.string({ required_error: 'error:post.summaryRequired' }),
-    content: z.string({ required_error: 'error:post.contentRequired' }),
-    media: MediaSchema,
-
-    authorId: z.string().uuid({ message: 'error:post.authorIdInvalid' }),
-
-    sponsorshipId: z.string().uuid({ message: 'error:post.sponsorshipIdInvalid' }).optional(),
-
+export const PostSchema = BaseEntitySchema.extend({
+    slug: z
+        .string()
+        .min(3, 'error:post.slug.min_lenght')
+        .max(30, 'error:post.slug.max_lenght')
+        .regex(SlugRegex, {
+            message: 'error:post.slug.pattern'
+        }),
+    category: PostCategoryEnumSchema,
+    title: z
+        .string()
+        .min(50, 'error:post.title.min_lenght')
+        .max(200, 'error:post.title.max_lenght'),
+    summary: z
+        .string()
+        .min(50, 'error:post.summary.min_lenght')
+        .max(200, 'error:post.summary.max_lenght'),
+    content: z
+        .string()
+        .min(50, 'error:post.description.min_lenght')
+        .max(1000, 'error:post.description.max_lenght'),
+    media: MediaSchema.optional(),
+    sponsorship: PostSponsorshipSchema.optional(),
     relatedDestinationId: z
         .string()
-        .uuid({ message: 'error:post.relatedDestinationIdInvalid' })
+        .uuid({ message: 'error:post.relatedDestinationId.invalid' })
         .optional(),
     relatedAccommodationId: z
         .string()
-        .uuid({ message: 'error:post.relatedAccommodationIdInvalid' })
+        .uuid({ message: 'error:post.relatedAccommodationId.invalid' })
         .optional(),
-    relatedEventId: z.string().uuid({ message: 'error:post.relatedEventIdInvalid' }).optional(),
-
-    visibility: z.nativeEnum(VisibilityEnum, {
-        required_error: 'error:post.visibilityRequired',
-        invalid_type_error: 'error:post.visibilityInvalid'
-    }),
-
+    relatedEventId: z.string().uuid({ message: 'error:post.relatedEventId.invalid' }).optional(),
+    visibility: VisibilityEnumSchema,
     seo: SeoSchema.optional(),
-
-    isFeatured: z.boolean().optional(),
-    isNews: z.boolean().optional(),
-    isFeaturedInWebsite: z.boolean().optional(),
-
-    expiresAt: z.coerce.date().optional(),
-
-    likes: z.number().int().min(0).optional(),
-    comments: z.number().int().min(0).optional(),
-    shares: z.number().int().min(0).optional()
+    isFeatured: z
+        .boolean({
+            required_error: 'error:post.isFeatured.required',
+            invalid_type_error: 'error:post.isFeatured.invalid_type'
+        })
+        .optional(),
+    isNews: z
+        .boolean({
+            required_error: 'error:post.isNews.required',
+            invalid_type_error: 'error:post.isNews.invalid_type'
+        })
+        .optional(),
+    isFeaturedInWebsite: z
+        .boolean({
+            required_error: 'error:post.isFeaturedInWebsite.required',
+            invalid_type_error: 'error:post.isFeaturedInWebsite.invalid_type'
+        })
+        .optional(),
+    tags: z.array(TagSchema).optional(),
+    expiresAt: z.coerce
+        .date({ required_error: 'error:post.expiresAt.required' })
+        .refine(
+            (date) => {
+                const min = new Date();
+                min.setDate(min.getDate() + 1);
+                return date < min;
+            },
+            {
+                message: 'error:post.expiresAt.min_value'
+            }
+        )
+        .optional()
 });
+
+export type PostInput = z.infer<typeof PostSchema>;
+
+export const PostCreateSchema = PostSchema.omit(
+    Object.fromEntries(omittedBaseEntityFieldsForActions.map((field) => [field, true])) as Record<
+        keyof typeof PostSchema.shape,
+        true
+    >
+);
+
+export const PostUpdateSchema = PostSchema.omit(
+    Object.fromEntries(omittedBaseEntityFieldsForActions.map((field) => [field, true])) as Record<
+        keyof typeof PostSchema.shape,
+        true
+    >
+).partial();
