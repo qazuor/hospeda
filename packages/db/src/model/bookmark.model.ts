@@ -31,6 +31,8 @@ export type UpdateBookmarkData = UpdateData<CreateBookmarkData>;
 export interface SelectBookmarkFilter extends BaseSelectFilter {
     /** ID of the user who owns the bookmarks */
     ownerId: string;
+    /** Optional filter by entity ID */
+    entityId?: string;
     /** Optional filter by entity type */
     entityType?: EntityTypeEnum;
 }
@@ -99,6 +101,40 @@ export const BookmarkModel = {
             log.error('selectBookmarks failed', 'selectBookmarks', error);
             throw error;
         }
+    },
+
+    /**
+     * Helper: fetch all bookmarks for a given entityType (admin use).
+     */
+    async selectByEntityType(
+        entityType: EntityTypeEnum,
+        pagination: Pick<BaseSelectFilter, 'limit' | 'offset' | 'order'>
+    ): Promise<BookmarkRecord[]> {
+        return this.selectBookmarks({
+            ownerId: '', // ignored
+            entityType,
+            includeDeleted: true,
+            limit: pagination.limit,
+            offset: pagination.offset,
+            order: pagination.order
+        });
+    },
+
+    /**
+     * Helper: fetch all bookmarks for a given entityId (admin use).
+     */
+    async selectByEntityId(
+        entityId: string,
+        pagination: Pick<BaseSelectFilter, 'limit' | 'offset' | 'order'>
+    ): Promise<BookmarkRecord[]> {
+        return this.selectBookmarks({
+            ownerId: '', // ignored
+            entityId,
+            includeDeleted: true,
+            limit: pagination.limit,
+            offset: pagination.offset,
+            order: pagination.order
+        });
     },
 
     /**
