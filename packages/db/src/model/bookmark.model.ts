@@ -4,7 +4,7 @@ import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, isNull } from 'drizzle-orm';
 import { db } from '../client';
 import { userBookmarks } from '../schema/bookmark.dbschema';
-import type { PaginationParams } from '../types/db.types';
+import type { BaseSelectFilter, UpdateData } from '../types/db.types';
 import { assertExists, castReturning, sanitizePartialUpdate } from '../utils/db-utils';
 
 // Create a scoped logger for bookmark model operations
@@ -23,20 +23,16 @@ export type CreateBookmarkData = InferInsertModel<typeof userBookmarks>;
 /**
  * Type representing the fields that can be updated on a bookmark (partial insert fields).
  */
-export type UpdateBookmarkData = Partial<
-    Omit<CreateBookmarkData, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
->;
+export type UpdateBookmarkData = UpdateData<CreateBookmarkData>;
 
 /**
  * Filters and pagination options for querying bookmarks.
  */
-export interface SelectBookmarkFilter extends PaginationParams {
+export interface SelectBookmarkFilter extends BaseSelectFilter {
     /** ID of the user who owns the bookmarks */
     ownerId: string;
     /** Optional filter by entity type */
     entityType?: EntityTypeEnum;
-    /** Include soft-deleted records if true */
-    includeDeleted?: boolean;
 }
 
 /**
