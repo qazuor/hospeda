@@ -5,7 +5,8 @@ import type {
     ContactInfoType,
     MediaType,
     SeoType,
-    SocialNetworkType
+    SocialNetworkType,
+    TagType
 } from '../common.types';
 import type { EventCategoryEnum, RecurrenceTypeEnum, VisibilityEnum } from '../enums.types';
 import type { UserType } from './user.types';
@@ -83,4 +84,5 @@ export interface EventType extends BaseEntityType {
     visibility: VisibilityEnum;
     seo?: SeoType;
     isFeatured?: boolean;
+    tags?: TagType[];
 }

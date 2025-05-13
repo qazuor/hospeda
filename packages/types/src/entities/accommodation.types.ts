@@ -5,7 +5,8 @@ import type {
     FullLocationType,
     MediaType,
     SeoType,
-    SocialNetworkType
+    SocialNetworkType,
+    TagType
 } from '../common.types';
 import type { AccommodationTypeEnum, AmenitiesTypeEnum } from '../enums.types';
 import type { DestinationType } from './destination.types';
@@ -81,9 +82,9 @@ export interface OtherDiscountType extends DiscountInfoType {
  * Represents optional discounts applied to a booking.
  */
 export interface DiscountsType {
-    weekly?: number;
-    monthly?: number;
-    lastMinute?: number;
+    weekly?: DiscountInfoType;
+    monthly?: DiscountInfoType;
+    lastMinute?: DiscountInfoType;
     others?: OtherDiscountType[];
 }
 
@@ -223,4 +224,5 @@ export interface AccommodationType extends BaseEntityType {
     seo?: SeoType;
     faqs?: AccommodationFaqType[];
     iaData?: AccommodationIaDataType[];
+    tags?: TagType[];
 }
