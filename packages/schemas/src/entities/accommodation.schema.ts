@@ -1,50 +1,74 @@
-import type { AccommodationType } from '@repo/types';
-import { AccommodationTypeEnum } from '@repo/types';
 import { z } from 'zod';
-
 import {
-    AccommodationAmenitiesSchema,
-    AccommodationFaqSchema,
-    AccommodationFeaturesSchema,
-    AccommodationIaDataSchema,
-    AccommodationPriceSchema,
-    AccommodationRatingSchema,
-    AccommodationReviewSchema,
     BaseEntitySchema,
     ContactInfoSchema,
-    ExtraInfoSchema,
     FullLocationSchema,
     MediaSchema,
-    ScheduleSchema,
     SeoSchema,
-    SocialNetworkSchema
+    SocialNetworkSchema,
+    TagSchema
 } from '../common.schema';
+import { AccommodationTypeEnumSchema } from '../enums.schema';
+import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils';
+import { AccommodationAmenitiesSchema } from './accommodation/amenities.schema';
+import { AccommodationExtraInfoSchema } from './accommodation/extraInfo.schema';
+import { AccommodationFaqSchema } from './accommodation/faq.schema';
+import { AccommodationFeaturesSchema } from './accommodation/features.schema';
+import { AccommodationIaDataSchema } from './accommodation/iaData.schema';
+import { AccommodationPriceSchema } from './accommodation/price.schema';
+import { AccommodationRatingSchema } from './accommodation/rating.schema';
+import { AccommodationReviewSchema } from './accommodation/review.schema';
+import { AccommodationScheduleSchema } from './accommodation/schedule.schema';
 
 /**
- * Zod schema for full accommodation entity.
+ * Zod schema for a Accommodation entity.
  */
-export const AccommodationSchema: z.ZodType<AccommodationType> = BaseEntitySchema.extend({
-    slug: z.string({ required_error: 'error:accommodation.slugRequired' }),
-    type: z.nativeEnum(AccommodationTypeEnum, {
-        required_error: 'error:accommodation.typeRequired',
-        invalid_type_error: 'error:accommodation.typeInvalid'
-    }),
-    description: z.string({ required_error: 'error:accommodation.descriptionRequired' }),
-    contactInfo: ContactInfoSchema,
-    socialNetworks: SocialNetworkSchema,
-    price: AccommodationPriceSchema,
-    ownerId: z.string().uuid({ message: 'error:accommodation.ownerIdInvalid' }),
-    destinationId: z.string().uuid({ message: 'error:accommodation.destinationIdInvalid' }),
-    location: FullLocationSchema,
-    features: z.array(AccommodationFeaturesSchema).optional(),
-    amenities: z.array(AccommodationAmenitiesSchema).optional(),
+export const AccommodationSchema = BaseEntitySchema.extend({
+    slug: z
+        .string()
+        .min(3, 'error:accommodation.slug.min_lenght')
+        .max(30, 'error:accommodation.slug.max_lenght')
+        .regex(SlugRegex, {
+            message: 'error:accommodation.slug.pattern'
+        }),
+    type: AccommodationTypeEnumSchema,
+    description: z
+        .string()
+        .min(50, 'error:accommodation.description.min_lenght')
+        .max(1000, 'error:accommodation.description.max_lenght'),
+    contactInfo: ContactInfoSchema.optional(),
+    socialNetworks: SocialNetworkSchema.optional(),
+    price: AccommodationPriceSchema.optional(),
+    location: FullLocationSchema.optional(),
+    features: z.array(AccommodationFeaturesSchema.optional()),
+    amenities: z.array(AccommodationAmenitiesSchema.optional()),
     media: MediaSchema.optional(),
     rating: AccommodationRatingSchema,
     reviews: z.array(AccommodationReviewSchema).optional(),
-    schedule: ScheduleSchema.optional(),
-    extraInfo: ExtraInfoSchema.optional(),
-    isFeatured: z.boolean().optional(),
+    schedule: AccommodationScheduleSchema.optional(),
+    extraInfo: AccommodationExtraInfoSchema.optional(),
+    isFeatured: z.boolean({
+        required_error: 'error:accommodation.isFeatured.required',
+        invalid_type_error: 'error:accommodation.isFeatured.invalid_type'
+    }),
     seo: SeoSchema.optional(),
-    faqs: z.array(AccommodationFaqSchema).optional(),
-    iaData: z.array(AccommodationIaDataSchema).optional()
+    faqs: z.array(AccommodationFaqSchema.optional()),
+    iaData: z.array(AccommodationIaDataSchema).optional(),
+    tags: z.array(TagSchema).optional()
 });
+
+export type AccommodationInput = z.infer<typeof AccommodationSchema>;
+
+export const AccommodationCreateSchema = AccommodationSchema.omit(
+    Object.fromEntries(omittedBaseEntityFieldsForActions.map((field) => [field, true])) as Record<
+        keyof typeof AccommodationSchema.shape,
+        true
+    >
+);
+
+export const AccommodationUpdateSchema = AccommodationSchema.omit(
+    Object.fromEntries(omittedBaseEntityFieldsForActions.map((field) => [field, true])) as Record<
+        keyof typeof AccommodationSchema.shape,
+        true
+    >
+).partial();
