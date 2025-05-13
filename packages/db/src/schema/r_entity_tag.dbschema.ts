@@ -1,5 +1,3 @@
-// packages/db/src/schema/r_entity_tag.dbschema.ts
-
 import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { EntityTypePgEnum } from './enums.dbschema';
 import { tags } from './tag.dbschema';
