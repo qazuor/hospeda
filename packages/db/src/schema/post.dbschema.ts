@@ -12,7 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { accommodations } from './accommodation.dbschema';
 import { destinations } from './destination.dbschema';
-import { PostCategoryPgEnum, VisibilityPgEnum } from './enums.dbschema';
+import { PostCategoryPgEnum, StatePgEnum, VisibilityPgEnum } from './enums.dbschema';
 import { events } from './event.dbschema';
 import { postSponsorships } from './post_sponsorship.dbschema';
 import { entityTagRelations } from './r_entity_tag.dbschema';
@@ -92,7 +92,7 @@ export const posts: ReturnType<typeof pgTable> = pgTable(
         shares: integer('shares').default(0).notNull(),
 
         /** General state */
-        state: PostCategoryPgEnum('state').default('ACTIVE').notNull(),
+        state: StatePgEnum('state').default('ACTIVE').notNull(),
 
         /** Admin metadata JSONB */
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
