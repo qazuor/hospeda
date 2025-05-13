@@ -1,0 +1,191 @@
+import { logger } from '@repo/logger';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { eq, ilike, isNull, or } from 'drizzle-orm';
+import type { BaseSelectFilter, UpdateData } from 'src/types/db.types';
+import { db } from '../client';
+import { tags } from '../schema/tag.dbschema';
+import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+
+/**
+ * Scoped logger for tag model operations.
+ */
+const log = logger.createLogger('TagModel');
+
+/**
+ * Full tag record as returned by the database.
+ */
+export type TagRecord = InferSelectModel<typeof tags>;
+
+/**
+ * Data required to create a new tag.
+ */
+export type CreateTagData = InferInsertModel<typeof tags>;
+
+/**
+ * Fields allowed for updating a tag.
+ */
+export type UpdateTagData = UpdateData<CreateTagData>;
+
+/**
+ * Filter options for listing tags.
+ */
+export interface SelectTagFilter extends BaseSelectFilter {
+    /** Filter by owner */
+    ownerId?: string;
+    /** Include soft-deleted records if true */
+    includeDeleted?: boolean;
+}
+
+/**
+ * TagModel provides CRUD operations for the tags table.
+ */
+export const TagModel = {
+    /**
+     * Create a new tag.
+     *
+     * @param data - Fields required to create the tag
+     * @returns The created tag record
+     */
+    async createTag(data: CreateTagData): Promise<TagRecord> {
+        try {
+            log.info('creating a new tag', 'createTag', data);
+            const rows = castReturning<TagRecord>(await db.insert(tags).values(data).returning());
+            const tag = assertExists(rows[0], 'createTag: no record returned');
+            log.query('insert', 'tags', data, tag);
+            return tag;
+        } catch (error) {
+            log.error('createTag failed', 'createTag', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Fetch a single tag by ID.
+     *
+     * @param id - UUID of the tag
+     * @returns The tag record or undefined if not found
+     */
+    async getTagById(id: string): Promise<TagRecord | undefined> {
+        try {
+            log.info('fetching tag by id', 'getTagById', { id });
+            const [tag] = (await db
+                .select()
+                .from(tags)
+                .where(eq(tags.id, id))
+                .limit(1)) as TagRecord[];
+            log.query('select', 'tags', { id }, tag);
+            return tag;
+        } catch (error) {
+            log.error('getTagById failed', 'getTagById', error);
+            throw error;
+        }
+    },
+
+    /**
+     * List tags with optional filters, pagination, and search.
+     *
+     * @param filter - Pagination and filtering options
+     * @returns Array of tag records
+     */
+    async listTags(filter: SelectTagFilter): Promise<TagRecord[]> {
+        try {
+            log.info('listing tags', 'listTags', filter);
+            let query = rawSelect(db.select().from(tags));
+
+            if (filter.query) {
+                const term = `%${filter.query}%`;
+                query = query.where(or(ilike(tags.name, term), ilike(tags.displayName, term)));
+            }
+
+            if (filter.ownerId) {
+                query = query.where(eq(tags.ownerId, filter.ownerId));
+            }
+
+            if (!filter.includeDeleted) {
+                query = query.where(isNull(tags.deletedAt));
+            }
+
+            const rows = (await query
+                .limit(filter.limit ?? 20)
+                .offset(filter.offset ?? 0)
+                .orderBy(tags.createdAt, 'desc')) as TagRecord[];
+
+            log.query('select', 'tags', filter, rows);
+            return rows;
+        } catch (error) {
+            log.error('listTags failed', 'listTags', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Update fields on an existing tag.
+     *
+     * @param id - UUID of the tag to update
+     * @param changes - Partial fields to update
+     * @returns The updated tag record
+     */
+    async updateTag(id: string, changes: UpdateTagData): Promise<TagRecord> {
+        try {
+            const dataToUpdate = sanitizePartialUpdate(changes);
+            log.info('updating tag', 'updateTag', { id, dataToUpdate });
+            const rows = castReturning<TagRecord>(
+                await db.update(tags).set(dataToUpdate).where(eq(tags.id, id)).returning()
+            );
+            const updated = assertExists(rows[0], `updateTag: no tag found for id ${id}`);
+            log.query('update', 'tags', { id, changes: dataToUpdate }, updated);
+            return updated;
+        } catch (error) {
+            log.error('updateTag failed', 'updateTag', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Soft-delete a tag by setting the deletedAt timestamp.
+     *
+     * @param id - UUID of the tag
+     */
+    async softDeleteTag(id: string): Promise<void> {
+        try {
+            log.info('soft deleting tag', 'softDeleteTag', { id });
+            await db.update(tags).set({ deletedAt: new Date() }).where(eq(tags.id, id));
+            log.query('update', 'tags', { id }, { deleted: true });
+        } catch (error) {
+            log.error('softDeleteTag failed', 'softDeleteTag', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Restore a soft-deleted tag by clearing the deletedAt timestamp.
+     *
+     * @param id - UUID of the tag
+     */
+    async restoreTag(id: string): Promise<void> {
+        try {
+            log.info('restoring tag', 'restoreTag', { id });
+            await db.update(tags).set({ deletedAt: null }).where(eq(tags.id, id));
+            log.query('update', 'tags', { id }, { restored: true });
+        } catch (error) {
+            log.error('restoreTag failed', 'restoreTag', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Permanently delete a tag record from the database.
+     *
+     * @param id - UUID of the tag
+     */
+    async hardDeleteTag(id: string): Promise<void> {
+        try {
+            log.info('hard deleting tag', 'hardDeleteTag', { id });
+            await db.delete(tags).where(eq(tags.id, id));
+            log.query('delete', 'tags', { id }, { deleted: true });
+        } catch (error) {
+            log.error('hardDeleteTag failed', 'hardDeleteTag', error);
+            throw error;
+        }
+    }
+};
