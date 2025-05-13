@@ -262,3 +262,17 @@ export function castUserJsonFields<T extends { [key: string]: unknown }>(
         state: row.state as UserType['state']
     };
 }
+
+/**
+ * Cast the result of a Drizzle `.returning()` call to a typed array.
+ *
+ * @template T - The expected row type.
+ * @param rows - The raw result from `await db.insert(...).returning()`
+ * @returns An array of T
+ *
+ * @example
+ * const inserted = castReturning<UserRecord>(await db.insert(users).values(data).returning());
+ */
+export function castReturning<T>(rows: unknown): T[] {
+    return rows as T[];
+}
