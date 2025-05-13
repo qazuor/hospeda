@@ -276,3 +276,13 @@ export function castUserJsonFields<T extends { [key: string]: unknown }>(
 export function castReturning<T>(rows: unknown): T[] {
     return rows as T[];
 }
+
+/**
+ * Wrap a Drizzle select builder as any so you can chain where/limit/orderBy without TS errors.
+ * @param builder - The initial select builder, e.g. db.select().from(table)
+ */
+
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export function rawSelect(builder: any): any {
+    return builder;
+}
