@@ -213,6 +213,38 @@ export function debug(message: string, label?: string, ...args: unknown[]): void
 }
 
 /**
+ * Log a DB query with JSON-stringified params/results
+ *
+ * @param queryType  – e.g. 'select' | 'insert' | etc.
+ * @param table      – name of the table involved
+ * @param params     – any parameters you passed (will be JSON-stringified)
+ * @param results    – any results you got back (will be JSON-stringified)
+ */
+export function query(queryType: string, table: string, params?: unknown, results?: unknown): void {
+    if (!shouldLog(LogLevel.INFO)) return;
+
+    // Safely stringify without throwing on circular refs
+    const safeStringify = (obj: unknown) => {
+        try {
+            return JSON.stringify(obj);
+        } catch {
+            return String(obj);
+        }
+    };
+
+    const paramStr = params !== undefined ? safeStringify(params) : '';
+    const resultStr = results !== undefined ? safeStringify(results) : '';
+
+    console.info(
+        formatLogMessage(
+            LogLevel.INFO,
+            `params: ${paramStr}\nresults: ${resultStr}`,
+            `DB:${queryType}:${table}`
+        )
+    );
+}
+
+/**
  * Create a logger with a predefined label
  * @param label - Label to use for all log messages
  * @returns Logger with predefined label
@@ -223,7 +255,15 @@ export function createLogger(label: string) {
         info: (message: string, ...args: unknown[]) => info(message, label, ...args),
         warn: (message: string, ...args: unknown[]) => warn(message, label, ...args),
         error: (message: string, ...args: unknown[]) => error(message, label, ...args),
-        debug: (message: string, ...args: unknown[]) => debug(message, label, ...args)
+        debug: (message: string, ...args: unknown[]) => debug(message, label, ...args),
+        query: (
+            queryType: string,
+            table: string,
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            params?: Record<string, any>,
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            results?: Record<string, any>
+        ) => query(queryType, table, params, results)
     };
 }
 
@@ -236,6 +276,7 @@ export const logger = {
     warn,
     error,
     debug,
+    query,
     configure: configureLogger,
     resetConfig: resetLoggerConfig,
     createLogger
