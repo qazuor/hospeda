@@ -3,6 +3,9 @@
  * Used for pagination, filtering and utility options.
  */
 
+import type { InferInsertModel } from 'drizzle-orm';
+import type { users } from 'src/schema';
+
 /**
  * Pagination and sorting options for listings.
  */
@@ -62,4 +65,24 @@ export interface BaseSelectFilter extends PaginationParams {
     query?: string;
     /** Whether to include soft-deleted records */
     includeDeleted?: boolean;
+}
+
+/**
+ * Data required to create a new user.
+ */
+export type CreateUserData = InferInsertModel<typeof users>;
+
+/**
+ * Fields allowed for updating a user.
+ */
+export type UpdateUserData = Partial<
+    Omit<CreateUserData, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>
+>;
+
+/**
+ * Filter options for listing users.
+ */
+export interface SelectUserFilter extends BaseSelectFilter {
+    /** Filter by state */
+    state?: string;
 }

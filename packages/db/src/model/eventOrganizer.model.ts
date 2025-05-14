@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db.types';
+import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
 import { db } from '../client';
 import { eventOrganizers } from '../schema/event_organizer.dbschema';
 import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
