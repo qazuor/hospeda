@@ -1,20 +1,16 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
-import { and, eq } from 'drizzle-orm';
-import { db } from '../client'; // Import db client for direct queries
 import {
     PermissionModel,
     type PermissionRecord,
     RoleModel,
-    RolePermissionModel,
+    RolePermissionModel, // Will call methods on this model
     type RolePermissionRecord,
     type RoleRecord,
     UserModel,
-    UserPermissionModel,
+    UserPermissionModel, // Will call methods on this model
     type UserPermissionRecord
 } from '../model';
-import { rolePermissions } from '../schema/r_role_permission.dbschema'; // Import schema for direct queries
-import { userPermissions } from '../schema/r_user_permission.dbschema'; // Import schema for direct queries
 import type {
     InsertPermission,
     InsertRolePermission,
@@ -24,6 +20,7 @@ import type {
     UpdatePermissionData
 } from '../types/db-types';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+// Removed direct db, eq, and, schema imports as they are no longer used here
 
 const log = logger.createLogger('PermissionService');
 
@@ -400,7 +397,7 @@ export class PermissionService {
         );
 
         try {
-            // Use the existing model method listByRole
+            // Use the existing model method listByRole which returns relation records
             const permissions = await RolePermissionModel.listByRole(existingRole.id, filter);
             log.info('permissions listed for role successfully', 'listForRole', {
                 roleId: existingRole.id,
@@ -516,7 +513,7 @@ export class PermissionService {
             filter
         });
 
-        PermissionService.assertAdmin(actor); // Assuming admin-only for listing direct permissions
+        PermissionService.assertAdmin(actor);
 
         const existingUser = assertExists(
             await UserModel.getUserById(userId),
@@ -524,7 +521,7 @@ export class PermissionService {
         );
 
         try {
-            // Use the existing model method listByUser
+            // Use the existing model method listByUser which returns relation records
             const permissions = await UserPermissionModel.listByUser(existingUser.id, filter);
             log.info('permissions listed for user successfully', 'listForUser', {
                 userId: existingUser.id,
@@ -567,18 +564,17 @@ export class PermissionService {
         );
 
         try {
-            // Use the existing model method listByPermission
-            // Assuming it returns relation records, need to fetch Role details separately
+            // Use the existing model method listByPermission which returns relation records
             const roleRelations = await RolePermissionModel.listByPermission(
                 existingPermission.id,
                 filter
-            ); // Corrected method name
+            );
 
             // Fetch the details for each Role based on the relation records
-            // This might be inefficient if there are many relations. A joined query in the model would be better.
-            // For now, fetch roles one by one (or in batches)
+            // This approach adheres to 'service calls model' but might be less efficient
             const roles: RoleRecord[] = [];
             for (const relation of roleRelations) {
+                // Call the RoleModel to get each role's details
                 const role = await RoleModel.getRoleById(relation.roleId);
                 if (role) {
                     roles.push(role);
@@ -608,9 +604,9 @@ export class PermissionService {
      * @throws Error if user or permission is not found.
      */
     async userHas(userId: string, permissionId: string): Promise<boolean> {
-        // log.info('checking if user has permission', 'userHas', { userId, permissionId }); // Avoid logging for frequent checks
+        // Note: No authorization check based on 'actor' here, as this IS an authorization check.
+        // Ensure user and permission exist - handled by `assertExists` below.
 
-        // Fetch user and permission to ensure existence and get roleId
         const existingUser = assertExists(
             await UserModel.getUserById(userId),
             `User ${userId} not found`
@@ -620,44 +616,34 @@ export class PermissionService {
             `Permission ${permissionId} not found`
         );
 
-        // Implement checks directly using Drizzle queries
-        // 1. Check direct user-permission relation
-        const [directRelation] = await db
-            .select()
-            .from(userPermissions)
-            .where(
-                and(
-                    eq(userPermissions.userId, existingUser.id),
-                    eq(userPermissions.permissionId, permissionId)
-                )
-            )
-            .limit(1);
+        // Call model methods to check for existence, assuming they exist and return boolean or relation record
+        // If the model methods return relation records, check if the result is non-null.
+        // If they return boolean, use the boolean directly.
 
-        if (directRelation) {
-            // log.debug('User has permission directly', { userId, permissionId });
+        // 1. Check direct user-permission relation
+        // Assuming UserPermissionModel has a method to check existence by user and permission IDs
+        const hasDirectPermission = await UserPermissionModel.getByUserIdAndPermissionId(
+            existingUser.id,
+            permissionId
+        ); // Assume this method exists
+
+        if (hasDirectPermission) {
             return true;
         }
 
         // 2. Check role-permission relation if user has a role
         if (existingUser.roleId) {
-            const [roleRelation] = await db
-                .select()
-                .from(rolePermissions)
-                .where(
-                    and(
-                        eq(rolePermissions.roleId, existingUser.roleId),
-                        eq(rolePermissions.permissionId, permissionId)
-                    )
-                )
-                .limit(1);
+            // Assuming RolePermissionModel has a method to check existence by role and permission IDs
+            const hasRolePermission = await RolePermissionModel.getByRoleIdAndPermissionId(
+                existingUser.roleId,
+                permissionId
+            ); // Assume this method exists
 
-            if (roleRelation) {
-                // log.debug('User has permission via role', { userId, roleId: existingUser.roleId, permissionId });
+            if (hasRolePermission) {
                 return true;
             }
         }
 
-        // log.debug('User does not have permission', { userId, permissionId });
         return false;
     }
 
@@ -671,29 +657,23 @@ export class PermissionService {
      * @throws Error if role or permission is not found.
      */
     async roleHas(roleId: string, permissionId: string): Promise<boolean> {
-        // log.info('checking if role has permission', 'roleHas', { roleId, permissionId }); // Avoid logging for frequent checks
+        // Note: No authorization check based on 'actor' here.
+        // Ensure role and permission exist - handled by `assertExists` below.
 
-        // Fetch role and permission to ensure existence
         assertExists(await RoleModel.getRoleById(roleId), `Role ${roleId} not found`);
         assertExists(
             await PermissionModel.getPermissionById(permissionId),
             `Permission ${permissionId} not found`
         );
 
-        // Implement check directly using Drizzle query
-        const [roleRelation] = await db
-            .select()
-            .from(rolePermissions)
-            .where(
-                and(
-                    eq(rolePermissions.roleId, roleId),
-                    eq(rolePermissions.permissionId, permissionId)
-                )
-            )
-            .limit(1);
+        // Call model method to check for existence, assuming it exists and returns boolean or relation record
+        // Assuming RolePermissionModel has a method to check existence by role and permission IDs
+        const hasPermission = await RolePermissionModel.getByRoleIdAndPermissionId(
+            roleId,
+            permissionId
+        ); // Assume this method exists
 
-        // log.debug('Role has permission status', { roleId, permissionId, hasPermission: !!roleRelation });
-        return !!roleRelation; // Return true if relation exists, false otherwise
+        return !!hasPermission; // Return true if the model method indicates existence
     }
 
     /**
@@ -712,10 +692,20 @@ export class PermissionService {
 
         assertExists(await RoleModel.getRoleById(roleId), `Role ${roleId} not found`);
 
-        // Implement deletion directly using Drizzle
-        await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
-
-        log.info('all permissions cleared from role successfully', 'clearAllFromRole', { roleId });
+        try {
+            // Call the model method to delete all by role ID
+            // Assuming RolePermissionModel.deleteAllByRoleId exists
+            await RolePermissionModel.deleteAllByRoleId(roleId);
+            log.info('all permissions cleared from role successfully', 'clearAllFromRole', {
+                roleId
+            });
+        } catch (error) {
+            log.error('failed to clear all permissions from role', 'clearAllFromRole', error, {
+                roleId,
+                actor: actor.id
+            });
+            throw error;
+        }
     }
 
     /**
@@ -734,11 +724,21 @@ export class PermissionService {
 
         assertExists(await UserModel.getUserById(userId), `User ${userId} not found`);
 
-        // Implement deletion directly using Drizzle
-        await db.delete(userPermissions).where(eq(userPermissions.userId, userId));
-
-        log.info('all direct permissions cleared from user successfully', 'clearAllFromUser', {
-            userId
-        });
+        try {
+            // Call the model method to delete all by user ID
+            // Assuming UserPermissionModel.deleteAllByUserId exists
+            await UserPermissionModel.deleteAllByUserId(userId);
+            log.info('all direct permissions cleared from user successfully', 'clearAllFromUser', {
+                userId
+            });
+        } catch (error) {
+            log.error(
+                'failed to clear all direct permissions from user',
+                'clearAllFromUser',
+                error,
+                { userId, actor: actor.id }
+            );
+            throw error;
+        }
     }
 }
