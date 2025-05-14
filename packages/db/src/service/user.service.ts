@@ -69,7 +69,7 @@ export class UserService {
 
     /**
      * Create a new user.
-     * @param data - The data for the new user (InsertUser type from db-types).
+     * @param data - The data for the new user.
      * @param actor - The user creating the new user (must be an admin).
      * @returns The created user record.
      * @throws Error if actor is not authorized or creation fails.
@@ -98,7 +98,7 @@ export class UserService {
     }
 
     /**
-     * Fetch a single user by ID.
+     * Get a single user by ID.
      * @param id - The ID of the user to fetch.
      * @param actor - The user performing the action.
      * @returns The user record.
@@ -118,7 +118,7 @@ export class UserService {
 
     /**
      * List users with optional filtering and pagination.
-     * @param filter - Filtering and pagination options (SelectUserFilter type from db-types).
+     * @param filter - Filtering and pagination options.
      * @param actor - The user performing the action (must be an admin).
      * @returns An array of user records.
      * @throws Error if actor is not authorized or listing fails.
@@ -141,7 +141,7 @@ export class UserService {
     /**
      * Update fields on an existing user.
      * @param id - The ID of the user to update.
-     * @param changes - The partial fields to update (UpdateUserData type from db-types).
+     * @param changes - The partial fields to update.
      * @param actor - The user performing the action.
      * @returns The updated user record.
      * @throws Error if user is not found, actor is not authorized, or update fails.
@@ -288,7 +288,7 @@ export class UserService {
      * Get users by role ID.
      * @param roleId - The ID of the role to filter by.
      * @param actor - The user performing the action (must be an admin).
-     * @param pagination - Pagination options (PaginationParams type from db-types).
+     * @param pagination - Pagination options.
      * @returns An array of user records with the specified role.
      * @throws Error if actor is not authorized or listing fails.
      */
@@ -456,7 +456,7 @@ export class UserService {
     /**
      * List all users with the admin role.
      * @param actor - The user performing the action (must be an admin).
-     * @param pagination - Pagination options (PaginationParams type from db-types).
+     * @param pagination - Pagination options.
      * @returns An array of admin user records.
      * @throws Error if actor is not authorized or listing fails.
      */
@@ -490,7 +490,7 @@ export class UserService {
      * Search users by query term (fuzzy search on name and username).
      * @param query - The search term.
      * @param actor - The user performing the action (must be an admin).
-     * @param pagination - Pagination options (PaginationParams type from db-types).
+     * @param pagination - Pagination options.
      * @returns An array of matching user records.
      * @throws Error if actor is not authorized or search fails.
      */
@@ -514,7 +514,7 @@ export class UserService {
      * Get users by state.
      * @param state - The state to filter by.
      * @param actor - The user performing the action (must be an admin).
-     * @param pagination - Pagination options (PaginationParams type from db-types).
+     * @param pagination - Pagination options.
      * @returns An array of user records with the specified state.
      * @throws Error if actor is not authorized or listing fails.
      */
@@ -630,7 +630,7 @@ export class UserService {
      * List all direct permissions for a user.
      * @param userId - The ID of the user.
      * @param actor - The user performing the action.
-     * @param filter - Pagination options (PaginationParams type from db-types).
+     * @param filter - Pagination options.
      * @returns An array of user-permission relation records.
      * @throws Error if user is not found, actor is not authorized, or listing fails.
      */
