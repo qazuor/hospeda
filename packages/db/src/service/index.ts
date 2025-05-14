@@ -1,4 +1,5 @@
 export * from './accommodation.service';
+export * from './accommodationReview.service';
 export * from './bookmark.service';
 export * from './destination.service';
 export * from './destinationAttraction.service';
