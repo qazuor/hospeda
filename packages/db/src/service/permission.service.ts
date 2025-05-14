@@ -4,11 +4,11 @@ import {
     PermissionModel,
     type PermissionRecord,
     RoleModel,
-    RolePermissionModel, // Will call methods on this model
+    RolePermissionModel,
     type RolePermissionRecord,
     type RoleRecord,
     UserModel,
-    UserPermissionModel, // Will call methods on this model
+    UserPermissionModel,
     type UserPermissionRecord
 } from '../model';
 import type {
@@ -20,7 +20,6 @@ import type {
     UpdatePermissionData
 } from '../types/db-types';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
-// Removed direct db, eq, and, schema imports as they are no longer used here
 
 const log = logger.createLogger('PermissionService');
 
@@ -397,7 +396,6 @@ export class PermissionService {
         );
 
         try {
-            // Use the existing model method listByRole which returns relation records
             const permissions = await RolePermissionModel.listByRole(existingRole.id, filter);
             log.info('permissions listed for role successfully', 'listForRole', {
                 roleId: existingRole.id,
@@ -521,7 +519,6 @@ export class PermissionService {
         );
 
         try {
-            // Use the existing model method listByUser which returns relation records
             const permissions = await UserPermissionModel.listByUser(existingUser.id, filter);
             log.info('permissions listed for user successfully', 'listForUser', {
                 userId: existingUser.id,
@@ -564,17 +561,13 @@ export class PermissionService {
         );
 
         try {
-            // Use the existing model method listByPermission which returns relation records
             const roleRelations = await RolePermissionModel.listByPermission(
                 existingPermission.id,
                 filter
             );
 
-            // Fetch the details for each Role based on the relation records
-            // This approach adheres to 'service calls model' but might be less efficient
             const roles: RoleRecord[] = [];
             for (const relation of roleRelations) {
-                // Call the RoleModel to get each role's details
                 const role = await RoleModel.getRoleById(relation.roleId);
                 if (role) {
                     roles.push(role);
@@ -621,11 +614,10 @@ export class PermissionService {
         // If they return boolean, use the boolean directly.
 
         // 1. Check direct user-permission relation
-        // Assuming UserPermissionModel has a method to check existence by user and permission IDs
         const hasDirectPermission = await UserPermissionModel.getByUserIdAndPermissionId(
             existingUser.id,
             permissionId
-        ); // Assume this method exists
+        );
 
         if (hasDirectPermission) {
             return true;
@@ -633,11 +625,10 @@ export class PermissionService {
 
         // 2. Check role-permission relation if user has a role
         if (existingUser.roleId) {
-            // Assuming RolePermissionModel has a method to check existence by role and permission IDs
             const hasRolePermission = await RolePermissionModel.getByRoleIdAndPermissionId(
                 existingUser.roleId,
                 permissionId
-            ); // Assume this method exists
+            );
 
             if (hasRolePermission) {
                 return true;
@@ -667,13 +658,12 @@ export class PermissionService {
         );
 
         // Call model method to check for existence, assuming it exists and returns boolean or relation record
-        // Assuming RolePermissionModel has a method to check existence by role and permission IDs
         const hasPermission = await RolePermissionModel.getByRoleIdAndPermissionId(
             roleId,
             permissionId
-        ); // Assume this method exists
+        );
 
-        return !!hasPermission; // Return true if the model method indicates existence
+        return !!hasPermission;
     }
 
     /**
@@ -693,8 +683,6 @@ export class PermissionService {
         assertExists(await RoleModel.getRoleById(roleId), `Role ${roleId} not found`);
 
         try {
-            // Call the model method to delete all by role ID
-            // Assuming RolePermissionModel.deleteAllByRoleId exists
             await RolePermissionModel.deleteAllByRoleId(roleId);
             log.info('all permissions cleared from role successfully', 'clearAllFromRole', {
                 roleId
@@ -725,8 +713,6 @@ export class PermissionService {
         assertExists(await UserModel.getUserById(userId), `User ${userId} not found`);
 
         try {
-            // Call the model method to delete all by user ID
-            // Assuming UserPermissionModel.deleteAllByUserId exists
             await UserPermissionModel.deleteAllByUserId(userId);
             log.info('all direct permissions cleared from user successfully', 'clearAllFromUser', {
                 userId
