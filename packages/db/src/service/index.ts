@@ -14,6 +14,7 @@ export * from './eventOrganizer.service';
 export * from './permission.service';
 export * from './post.service';
 export * from './postSponsor.service';
+export * from './postSponsorship.service';
 export * from './role.service';
 export * from './tag.service';
 export * from './user.service';
