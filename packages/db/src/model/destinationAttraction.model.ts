@@ -1,13 +1,23 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { destinationAttractions } from '../schema/destination_attraction.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type {
+    InsertDestinationAttraction,
+    SelectDestinationAttractionFilter,
+    UpdateDestinationAttractionData
+} from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
- * Scoped logger for DestinationAttractionModel operations.
+ * Scoped logger for destination attraction model operations.
  */
 const log = logger.createLogger('DestinationAttractionModel');
 
@@ -17,48 +27,26 @@ const log = logger.createLogger('DestinationAttractionModel');
 export type DestinationAttractionRecord = InferSelectModel<typeof destinationAttractions>;
 
 /**
- * Data required to create a new destination attraction.
- */
-export type CreateDestinationAttractionData = InferInsertModel<typeof destinationAttractions>;
-
-/**
- * Fields allowed for updating a destination attraction.
- */
-export type UpdateDestinationAttractionData = UpdateData<CreateDestinationAttractionData>;
-
-/**
- * Filter options for listing attractions.
- */
-export interface SelectDestinationAttractionFilter extends BaseSelectFilter {
-    /** ID of the destination */
-    destinationId: string;
-    /** Optional fuzzy search on name or description */
-    query?: string;
-    /** Include soft-deleted if true */
-    includeDeleted?: boolean;
-}
-
-/**
  * DestinationAttractionModel provides CRUD operations for the destination_attractions table.
  */
 export const DestinationAttractionModel = {
     /**
      * Create a new attraction.
      *
-     * @param data - Fields required to create the attraction
+     * @param data - Fields required to create the attraction (InsertDestinationAttraction type from db-types)
      * @returns The created attraction record
      */
     async createAttraction(
-        data: CreateDestinationAttractionData
+        data: InsertDestinationAttraction
     ): Promise<DestinationAttractionRecord> {
         try {
             log.info('creating destination attraction', 'createAttraction', data);
             const rows = castReturning<DestinationAttractionRecord>(
                 await db.insert(destinationAttractions).values(data).returning()
             );
-            const attraction = assertExists(rows[0], 'createAttraction: no attraction returned');
-            log.query('insert', 'destination_attractions', data, attraction);
-            return attraction;
+            const attr = assertExists(rows[0], 'createAttraction: no attraction returned');
+            log.query('insert', 'destination_attractions', data, attr);
+            return attr;
         } catch (error) {
             log.error('createAttraction failed', 'createAttraction', error);
             throw error;
@@ -74,13 +62,13 @@ export const DestinationAttractionModel = {
     async getAttractionById(id: string): Promise<DestinationAttractionRecord | undefined> {
         try {
             log.info('fetching attraction by id', 'getAttractionById', { id });
-            const [attraction] = (await db
+            const [attr] = await db
                 .select()
                 .from(destinationAttractions)
                 .where(eq(destinationAttractions.id, id))
-                .limit(1)) as DestinationAttractionRecord[];
-            log.query('select', 'destination_attractions', { id }, attraction);
-            return attraction;
+                .limit(1);
+            log.query('select', 'destination_attractions', { id }, attr);
+            return attr ? (attr as DestinationAttractionRecord) : undefined;
         } catch (error) {
             log.error('getAttractionById failed', 'getAttractionById', error);
             throw error;
@@ -88,9 +76,9 @@ export const DestinationAttractionModel = {
     },
 
     /**
-     * List attractions for a given destination.
+     * List attractions with optional filters, pagination, and search.
      *
-     * @param filter - Filtering and pagination options
+     * @param filter - Filtering and pagination options (SelectDestinationAttractionFilter type from db-types)
      * @returns Array of attraction records
      */
     async listAttractions(
@@ -99,33 +87,51 @@ export const DestinationAttractionModel = {
         try {
             log.info('listing attractions', 'listAttractions', filter);
 
-            let query = rawSelect(
-                db
-                    .select()
-                    .from(destinationAttractions)
-                    .where(eq(destinationAttractions.destinationId, filter.destinationId))
-            );
+            let query = db.select().from(destinationAttractions).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
+                const term = prepareLikeQuery(filter.query);
                 query = query.where(
                     or(
                         ilike(destinationAttractions.name, term),
-                        ilike(destinationAttractions.description, term)
+                        ilike(destinationAttractions.displayName, term),
+                        ilike(destinationAttractions.description, term),
+                        ilike(destinationAttractions.slug, term)
                     )
                 );
             }
+
+            if (filter.state) {
+                query = query.where(eq(destinationAttractions.state, filter.state));
+            }
+
+            if (filter.createdById) {
+                query = query.where(eq(destinationAttractions.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                query = query.where(eq(destinationAttractions.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                query = query.where(eq(destinationAttractions.deletedById, filter.deletedById));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(destinationAttractions.deletedAt));
             }
 
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(
+                destinationAttractions,
+                filter.orderBy,
+                destinationAttractions.createdAt
+            );
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(
-                    destinationAttractions.createdAt,
-                    'desc'
-                )) as DestinationAttractionRecord[];
+                .offset(filter.offset ?? 0)) as DestinationAttractionRecord[];
 
             log.query('select', 'destination_attractions', filter, rows);
             return rows;
@@ -139,7 +145,7 @@ export const DestinationAttractionModel = {
      * Update fields on an existing attraction.
      *
      * @param id - UUID of the attraction to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdateDestinationAttractionData type from db-types)
      * @returns The updated attraction record
      */
     async updateAttraction(
@@ -148,7 +154,10 @@ export const DestinationAttractionModel = {
     ): Promise<DestinationAttractionRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating attraction', 'updateAttraction', { id, changes: dataToUpdate });
+            log.info('updating attraction', 'updateAttraction', {
+                id,
+                changes: dataToUpdate
+            });
             const rows = castReturning<DestinationAttractionRecord>(
                 await db
                     .update(destinationAttractions)

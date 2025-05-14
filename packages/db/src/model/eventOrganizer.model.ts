@@ -1,10 +1,20 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { eventOrganizers } from '../schema/event_organizer.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type {
+    InsertEventOrganizer,
+    SelectEventOrganizerFilter,
+    UpdateEventOrganizerData
+} from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for EventOrganizerModel operations.
@@ -17,36 +27,16 @@ const log = logger.createLogger('EventOrganizerModel');
 export type EventOrganizerRecord = InferSelectModel<typeof eventOrganizers>;
 
 /**
- * Data required to create a new event organizer.
- */
-export type CreateEventOrganizerData = InferInsertModel<typeof eventOrganizers>;
-
-/**
- * Fields allowed for updating an event organizer.
- */
-export type UpdateEventOrganizerData = UpdateData<CreateEventOrganizerData>;
-
-/**
- * Filter options for listing organizers.
- */
-export interface SelectEventOrganizerFilter extends BaseSelectFilter {
-    /** Optional fuzzy search on name or description */
-    query?: string;
-    /** Include soft-deleted if true */
-    includeDeleted?: boolean;
-}
-
-/**
  * EventOrganizerModel provides CRUD operations for the event_organizer table.
  */
 export const EventOrganizerModel = {
     /**
      * Create a new organizer.
      *
-     * @param data - Fields required to create the organizer
+     * @param data - Fields required to create the organizer (InsertEventOrganizer type from db-types)
      * @returns The created organizer record
      */
-    async createOrganizer(data: CreateEventOrganizerData): Promise<EventOrganizerRecord> {
+    async createOrganizer(data: InsertEventOrganizer): Promise<EventOrganizerRecord> {
         try {
             log.info('creating event organizer', 'createOrganizer', data);
             const rows = castReturning<EventOrganizerRecord>(
@@ -70,13 +60,13 @@ export const EventOrganizerModel = {
     async getOrganizerById(id: string): Promise<EventOrganizerRecord | undefined> {
         try {
             log.info('fetching organizer by id', 'getOrganizerById', { id });
-            const [org] = (await db
+            const [org] = await db
                 .select()
                 .from(eventOrganizers)
                 .where(eq(eventOrganizers.id, id))
-                .limit(1)) as EventOrganizerRecord[];
+                .limit(1);
             log.query('select', 'event_organizer', { id }, org);
-            return org;
+            return org ? (org as EventOrganizerRecord) : undefined;
         } catch (error) {
             log.error('getOrganizerById failed', 'getOrganizerById', error);
             throw error;
@@ -84,31 +74,59 @@ export const EventOrganizerModel = {
     },
 
     /**
-     * List organizers with optional search.
+     * List organizers with optional filters, pagination, and search.
      *
-     * @param filter - Filtering and pagination options
+     * @param filter - Filtering and pagination options (SelectEventOrganizerFilter type from db-types)
      * @returns Array of organizer records
      */
     async listOrganizers(filter: SelectEventOrganizerFilter): Promise<EventOrganizerRecord[]> {
         try {
             log.info('listing organizers', 'listOrganizers', filter);
 
-            let query = rawSelect(db.select().from(eventOrganizers));
+            let query = db.select().from(eventOrganizers).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
+                const term = prepareLikeQuery(filter.query);
                 query = query.where(
-                    or(ilike(eventOrganizers.name, term), ilike(eventOrganizers.description, term))
+                    or(ilike(eventOrganizers.name, term), ilike(eventOrganizers.displayName, term)) // Changed description to displayName based on schema
                 );
             }
+
+            if (filter.state) {
+                // Using the inherited 'state' filter
+                query = query.where(eq(eventOrganizers.state, filter.state));
+            }
+
+            if (filter.createdById) {
+                // Added createdById filter
+                query = query.where(eq(eventOrganizers.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                // Added updatedById filter
+                query = query.where(eq(eventOrganizers.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                // Added deletedById filter
+                query = query.where(eq(eventOrganizers.deletedById, filter.deletedById));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(eventOrganizers.deletedAt));
             }
 
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(
+                eventOrganizers,
+                filter.orderBy,
+                eventOrganizers.createdAt
+            );
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(eventOrganizers.createdAt, 'desc')) as EventOrganizerRecord[];
+                .offset(filter.offset ?? 0)) as EventOrganizerRecord[];
 
             log.query('select', 'event_organizer', filter, rows);
             return rows;
@@ -122,7 +140,7 @@ export const EventOrganizerModel = {
      * Update fields on an existing organizer.
      *
      * @param id - UUID of the organizer to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdateEventOrganizerData type from db-types)
      * @returns The updated organizer record
      */
     async updateOrganizer(

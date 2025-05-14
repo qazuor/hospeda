@@ -1,10 +1,16 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { roles } from '../schema/role.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type { InsertRole, SelectRoleFilter, UpdateRoleData } from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for role model operations.
@@ -17,34 +23,16 @@ const log = logger.createLogger('RoleModel');
 export type RoleRecord = InferSelectModel<typeof roles>;
 
 /**
- * Data required to create a new role.
- */
-export type CreateRoleData = InferInsertModel<typeof roles>;
-
-/**
- * Fields allowed for updating a role.
- */
-export type UpdateRoleData = UpdateData<CreateRoleData>;
-
-/**
- * Filter options for listing roles.
- */
-export interface SelectRoleFilter extends BaseSelectFilter {
-    /** Filter by role state */
-    state?: string;
-}
-
-/**
  * RoleModel provides low-level CRUD operations for the roles table.
  */
 export const RoleModel = {
     /**
      * Create a new role.
      *
-     * @param data - Fields required to create the role
+     * @param data - Fields required to create the role (InsertRole type from db-types)
      * @returns The created role record
      */
-    async createRole(data: CreateRoleData): Promise<RoleRecord> {
+    async createRole(data: InsertRole): Promise<RoleRecord> {
         try {
             log.info('creating a new role', 'createRole', data);
             const rows = castReturning<RoleRecord>(await db.insert(roles).values(data).returning());
@@ -66,13 +54,9 @@ export const RoleModel = {
     async getRoleById(id: string): Promise<RoleRecord | undefined> {
         try {
             log.info('fetching role by id', 'getRoleById', { id });
-            const [role] = (await db
-                .select()
-                .from(roles)
-                .where(eq(roles.id, id))
-                .limit(1)) as RoleRecord[];
+            const [role] = await db.select().from(roles).where(eq(roles.id, id)).limit(1);
             log.query('select', 'roles', { id }, role);
-            return role;
+            return role ? (role as RoleRecord) : undefined;
         } catch (error) {
             log.error('getRoleById failed', 'getRoleById', error);
             throw error;
@@ -80,33 +64,82 @@ export const RoleModel = {
     },
 
     /**
-     * List roles with optional pagination and search.
+     * Fetch a single role by name.
      *
-     * @param filter - Pagination and filtering options
+     * @param name - The name of the role (internal identifier).
+     * @returns The role record or undefined if not found.
+     */
+    async getRoleByName(name: string): Promise<RoleRecord | undefined> {
+        try {
+            log.info('fetching role by name', 'getRoleByName', { name });
+            const [role] = await db.select().from(roles).where(eq(roles.name, name)).limit(1);
+            log.query('select', 'roles', { name }, role);
+            return role ? (role as RoleRecord) : undefined;
+        } catch (error) {
+            log.error('getRoleByName failed', 'getRoleByName', error);
+            throw error;
+        }
+    },
+
+    /**
+     * List roles with optional filters, pagination and search.
+     *
+     * @param filter - Pagination and filtering options (SelectRoleFilter type from db-types)
      * @returns Array of role records
      */
     async listRoles(filter: SelectRoleFilter): Promise<RoleRecord[]> {
         try {
             log.info('listing roles', 'listRoles', filter);
-            let query = rawSelect(db.select().from(roles));
+            let query = db.select().from(roles).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
+                const term = prepareLikeQuery(filter.query);
                 query = query.where(or(ilike(roles.name, term), ilike(roles.displayName, term)));
             }
 
             if (filter.state) {
+                // Using inherited 'state' filter
                 query = query.where(eq(roles.state, filter.state));
+            }
+
+            if (typeof filter.isBuiltIn === 'boolean') {
+                query = query.where(eq(roles.isBuiltIn, filter.isBuiltIn));
+            }
+
+            if (typeof filter.isDeprecated === 'boolean') {
+                query = query.where(eq(roles.isDeprecated, filter.isDeprecated));
+            }
+
+            if (typeof filter.isDefault === 'boolean') {
+                query = query.where(eq(roles.isDefault, filter.isDefault));
+            }
+
+            if (filter.createdById) {
+                // Added createdById filter
+                query = query.where(eq(roles.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                // Added updatedById filter
+                query = query.where(eq(roles.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                // Added deletedById filter
+                query = query.where(eq(roles.deletedById, filter.deletedById));
             }
 
             if (!filter.includeDeleted) {
                 query = query.where(isNull(roles.deletedAt));
             }
 
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(roles, filter.orderBy, roles.createdAt);
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(roles.createdAt, 'desc')) as RoleRecord[];
+                .offset(filter.offset ?? 0)) as RoleRecord[];
 
             log.query('select', 'roles', filter, rows);
             return rows;
@@ -120,7 +153,7 @@ export const RoleModel = {
      * Update fields on an existing role.
      *
      * @param id - UUID of the role to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdateRoleData type from db-types)
      * @returns The updated role record
      */
     async updateRole(id: string, changes: UpdateRoleData): Promise<RoleRecord> {

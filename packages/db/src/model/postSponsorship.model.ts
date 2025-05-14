@@ -1,10 +1,20 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, isNull } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { postSponsorships } from '../schema/post_sponsorship.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type {
+    InsertPostSponsorship,
+    SelectPostSponsorshipFilter,
+    UpdatePostSponsorshipData
+} from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for PostSponsorshipModel operations.
@@ -17,36 +27,16 @@ const log = logger.createLogger('PostSponsorshipModel');
 export type PostSponsorshipRecord = InferSelectModel<typeof postSponsorships>;
 
 /**
- * Data required to create a new post sponsorship.
- */
-export type CreatePostSponsorshipData = InferInsertModel<typeof postSponsorships>;
-
-/**
- * Fields allowed for updating a post sponsorship.
- */
-export type UpdatePostSponsorshipData = UpdateData<CreatePostSponsorshipData>;
-
-/**
- * Filter options for listing sponsorships.
- */
-export interface SelectPostSponsorshipFilter extends BaseSelectFilter {
-    /** ID of the post */
-    postId: string;
-    /** Include soft-deleted if true */
-    includeDeleted?: boolean;
-}
-
-/**
  * PostSponsorshipModel provides CRUD operations for the post_sponsorship table.
  */
 export const PostSponsorshipModel = {
     /**
      * Create a new sponsorship.
      *
-     * @param data - Fields required to create the sponsorship
+     * @param data - Fields required to create the sponsorship (InsertPostSponsorship type from db-types)
      * @returns The created sponsorship record
      */
-    async createSponsorship(data: CreatePostSponsorshipData): Promise<PostSponsorshipRecord> {
+    async createSponsorship(data: InsertPostSponsorship): Promise<PostSponsorshipRecord> {
         try {
             log.info('creating post sponsorship', 'createSponsorship', data);
             const rows = castReturning<PostSponsorshipRecord>(
@@ -70,13 +60,13 @@ export const PostSponsorshipModel = {
     async getSponsorshipById(id: string): Promise<PostSponsorshipRecord | undefined> {
         try {
             log.info('fetching sponsorship by id', 'getSponsorshipById', { id });
-            const [sponsorship] = (await db
+            const [sponsorship] = await db
                 .select()
                 .from(postSponsorships)
                 .where(eq(postSponsorships.id, id))
-                .limit(1)) as PostSponsorshipRecord[];
+                .limit(1);
             log.query('select', 'post_sponsorship', { id }, sponsorship);
-            return sponsorship;
+            return sponsorship ? (sponsorship as PostSponsorshipRecord) : undefined;
         } catch (error) {
             log.error('getSponsorshipById failed', 'getSponsorshipById', error);
             throw error;
@@ -84,27 +74,76 @@ export const PostSponsorshipModel = {
     },
 
     /**
-     * List sponsorships for a given post.
+     * List sponsorships with optional filters and pagination.
      *
-     * @param filter - Filtering and pagination options
+     * @param filter - Filtering and pagination options (SelectPostSponsorshipFilter type from db-types)
      * @returns Array of sponsorship records
      */
     async listSponsorships(filter: SelectPostSponsorshipFilter): Promise<PostSponsorshipRecord[]> {
         try {
             log.info('listing sponsorships', 'listSponsorships', filter);
 
-            let query = rawSelect(
-                db.select().from(postSponsorships).where(eq(postSponsorships.postId, filter.postId))
-            );
+            let query = db.select().from(postSponsorships).$dynamic();
+
+            if (filter.postId) {
+                query = query.where(eq(postSponsorships.postId, filter.postId));
+            }
+
+            if (filter.sponsorId) {
+                query = query.where(eq(postSponsorships.sponsorId, filter.sponsorId));
+            }
+
+            if (typeof filter.isHighlighted === 'boolean') {
+                query = query.where(eq(postSponsorships.isHighlighted, filter.isHighlighted));
+            }
+
+            if (filter.state) {
+                // Using inherited 'state' filter
+                query = query.where(eq(postSponsorships.state, filter.state));
+            }
+
+            if (filter.createdById) {
+                // Added createdById filter
+                query = query.where(eq(postSponsorships.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                // Added updatedById filter
+                query = query.where(eq(postSponsorships.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                // Added deletedById filter
+                query = query.where(eq(postSponsorships.deletedById, filter.deletedById));
+            }
+
+            if (filter.query) {
+                const term = prepareLikeQuery(filter.query);
+                // Assuming search applies to message or description
+                query = query.where(
+                    or(
+                        ilike(postSponsorships.message, term),
+                        ilike(postSponsorships.description, term)
+                    )
+                );
+            }
 
             if (!filter.includeDeleted) {
-                query = query.where(isNull(postSponsorships.deletedAt));
+                // This table might not have deletedAt
+                query = query.where(isNull(postSponsorships.deletedAt)); // Assuming deletedAt exists based on BaseSelectFilter
             }
+
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(
+                postSponsorships,
+                filter.orderBy,
+                postSponsorships.createdAt
+            );
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
 
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(postSponsorships.createdAt, 'desc')) as PostSponsorshipRecord[];
+                .offset(filter.offset ?? 0)) as PostSponsorshipRecord[];
 
             log.query('select', 'post_sponsorship', filter, rows);
             return rows;
@@ -118,7 +157,7 @@ export const PostSponsorshipModel = {
      * Update fields on an existing sponsorship.
      *
      * @param id - UUID of the sponsorship to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdatePostSponsorshipData type from db-types)
      * @returns The updated sponsorship record
      */
     async updateSponsorship(

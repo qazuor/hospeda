@@ -1,10 +1,16 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { posts } from '../schema/post.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type { InsertPost, SelectPostFilter, UpdatePostData } from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for post model operations.
@@ -17,36 +23,16 @@ const log = logger.createLogger('PostModel');
 export type PostRecord = InferSelectModel<typeof posts>;
 
 /**
- * Data required to create a new post.
- */
-export type CreatePostData = InferInsertModel<typeof posts>;
-
-/**
- * Fields allowed for updating a post.
- */
-export type UpdatePostData = UpdateData<CreatePostData>;
-
-/**
- * Filter options for listing posts.
- */
-export interface SelectPostFilter extends BaseSelectFilter {
-    /** Filter by category */
-    category?: string;
-    /** Filter by visibility */
-    visibility?: string;
-}
-
-/**
  * PostModel provides CRUD operations for the posts table.
  */
 export const PostModel = {
     /**
      * Create a new post record.
      *
-     * @param data - Fields required to create the post
+     * @param data - Fields required to create the post (InsertPost type from db-types)
      * @returns The created post record
      */
-    async createPost(data: CreatePostData): Promise<PostRecord> {
+    async createPost(data: InsertPost): Promise<PostRecord> {
         try {
             log.info('creating a new post', 'createPost', data);
             const rows = castReturning<PostRecord>(await db.insert(posts).values(data).returning());
@@ -68,13 +54,9 @@ export const PostModel = {
     async getPostById(id: string): Promise<PostRecord | undefined> {
         try {
             log.info('fetching post by id', 'getPostById', { id });
-            const [post] = (await db
-                .select()
-                .from(posts)
-                .where(eq(posts.id, id))
-                .limit(1)) as PostRecord[];
+            const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
             log.query('select', 'posts', { id }, post);
-            return post;
+            return post ? (post as PostRecord) : undefined;
         } catch (error) {
             log.error('getPostById failed', 'getPostById', error);
             throw error;
@@ -84,16 +66,16 @@ export const PostModel = {
     /**
      * List posts with optional filters, pagination, and search.
      *
-     * @param filter - Pagination and filtering options
+     * @param filter - Pagination and filtering options (SelectPostFilter type from db-types)
      * @returns Array of post records
      */
     async listPosts(filter: SelectPostFilter): Promise<PostRecord[]> {
         try {
             log.info('listing posts', 'listPosts', filter);
-            let query = rawSelect(db.select().from(posts));
+            let query = db.select().from(posts).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
+                const term = prepareLikeQuery(filter.query);
                 query = query.where(
                     or(
                         ilike(posts.title, term),
@@ -111,14 +93,67 @@ export const PostModel = {
                 query = query.where(eq(posts.visibility, filter.visibility));
             }
 
+            if (filter.sponsorshipId) {
+                query = query.where(eq(posts.sponsorshipId, filter.sponsorshipId));
+            }
+
+            if (filter.relatedAccommodationId) {
+                query = query.where(
+                    eq(posts.relatedAccommodationId, filter.relatedAccommodationId)
+                );
+            }
+
+            if (filter.relatedDestinationId) {
+                query = query.where(eq(posts.relatedDestinationId, filter.relatedDestinationId));
+            }
+
+            if (filter.relatedEventId) {
+                query = query.where(eq(posts.relatedEventId, filter.relatedEventId));
+            }
+
+            if (typeof filter.isFeatured === 'boolean') {
+                query = query.where(eq(posts.isFeatured, filter.isFeatured));
+            }
+
+            if (typeof filter.isNews === 'boolean') {
+                query = query.where(eq(posts.isNews, filter.isNews));
+            }
+
+            if (typeof filter.isFeaturedInWebsite === 'boolean') {
+                query = query.where(eq(posts.isFeaturedInWebsite, filter.isFeaturedInWebsite));
+            }
+
+            if (filter.state) {
+                // Using inherited 'state' filter
+                query = query.where(eq(posts.state, filter.state));
+            }
+
+            if (filter.createdById) {
+                // Added createdById filter
+                query = query.where(eq(posts.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                // Added updatedById filter
+                query = query.where(eq(posts.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                // Added deletedById filter
+                query = query.where(eq(posts.deletedById, filter.deletedById));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(posts.deletedAt));
             }
 
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(posts, filter.orderBy, posts.createdAt);
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(posts.createdAt, 'desc')) as PostRecord[];
+                .offset(filter.offset ?? 0)) as PostRecord[];
 
             log.query('select', 'posts', filter, rows);
             return rows;
@@ -132,7 +167,7 @@ export const PostModel = {
      * Update fields on an existing post.
      *
      * @param id - UUID of the post to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdatePostData type from db-types)
      * @returns The updated post record
      */
     async updatePost(id: string, changes: UpdatePostData): Promise<PostRecord> {

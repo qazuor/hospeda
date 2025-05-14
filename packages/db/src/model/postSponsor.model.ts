@@ -1,10 +1,20 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { postSponsors } from '../schema/post_sponsor.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type {
+    InsertPostSponsor,
+    SelectPostSponsorFilter,
+    UpdatePostSponsorData
+} from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for PostSponsorModel operations.
@@ -17,36 +27,16 @@ const log = logger.createLogger('PostSponsorModel');
 export type PostSponsorRecord = InferSelectModel<typeof postSponsors>;
 
 /**
- * Data required to create a new post sponsor.
- */
-export type CreatePostSponsorData = InferInsertModel<typeof postSponsors>;
-
-/**
- * Fields allowed for updating a post sponsor.
- */
-export type UpdatePostSponsorData = UpdateData<CreatePostSponsorData>;
-
-/**
- * Filter options for listing sponsors.
- */
-export interface SelectPostSponsorFilter extends BaseSelectFilter {
-    /** Optional fuzzy search on name or description */
-    query?: string;
-    /** Include soft-deleted if true */
-    includeDeleted?: boolean;
-}
-
-/**
  * PostSponsorModel provides CRUD operations for the post_sponsor table.
  */
 export const PostSponsorModel = {
     /**
      * Create a new sponsor.
      *
-     * @param data - Fields required to create the sponsor
+     * @param data - Fields required to create the sponsor (InsertPostSponsor type from db-types)
      * @returns The created sponsor record
      */
-    async createSponsor(data: CreatePostSponsorData): Promise<PostSponsorRecord> {
+    async createSponsor(data: InsertPostSponsor): Promise<PostSponsorRecord> {
         try {
             log.info('creating post sponsor', 'createSponsor', data);
             const rows = castReturning<PostSponsorRecord>(
@@ -70,13 +60,13 @@ export const PostSponsorModel = {
     async getSponsorById(id: string): Promise<PostSponsorRecord | undefined> {
         try {
             log.info('fetching sponsor by id', 'getSponsorById', { id });
-            const [sponsor] = (await db
+            const [sponsor] = await db
                 .select()
                 .from(postSponsors)
                 .where(eq(postSponsors.id, id))
-                .limit(1)) as PostSponsorRecord[];
+                .limit(1);
             log.query('select', 'post_sponsor', { id }, sponsor);
-            return sponsor;
+            return sponsor ? (sponsor as PostSponsorRecord) : undefined;
         } catch (error) {
             log.error('getSponsorById failed', 'getSponsorById', error);
             throw error;
@@ -84,31 +74,63 @@ export const PostSponsorModel = {
     },
 
     /**
-     * List sponsors with optional search.
+     * List sponsors with optional filters, pagination, and search.
      *
-     * @param filter - Filtering and pagination options
+     * @param filter - Filtering and pagination options (SelectPostSponsorFilter type from db-types)
      * @returns Array of sponsor records
      */
     async listSponsors(filter: SelectPostSponsorFilter): Promise<PostSponsorRecord[]> {
         try {
             log.info('listing sponsors', 'listSponsors', filter);
 
-            let query = rawSelect(db.select().from(postSponsors));
+            let query = db.select().from(postSponsors).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
+                const term = prepareLikeQuery(filter.query);
                 query = query.where(
-                    or(ilike(postSponsors.name, term), ilike(postSponsors.description, term))
+                    or(ilike(postSponsors.name, term), ilike(postSponsors.displayName, term)) // Changed description to displayName based on schema
                 );
             }
+
+            if (filter.type) {
+                query = query.where(eq(postSponsors.type, filter.type));
+            }
+
+            if (filter.state) {
+                // Using inherited 'state' filter
+                query = query.where(eq(postSponsors.state, filter.state));
+            }
+
+            if (filter.createdById) {
+                // Added createdById filter
+                query = query.where(eq(postSponsors.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                // Added updatedById filter
+                query = query.where(eq(postSponsors.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                // Added deletedById filter
+                query = query.where(eq(postSponsors.deletedById, filter.deletedById));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(postSponsors.deletedAt));
             }
 
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(
+                postSponsors,
+                filter.orderBy,
+                postSponsors.createdAt
+            );
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(postSponsors.createdAt, 'desc')) as PostSponsorRecord[];
+                .offset(filter.offset ?? 0)) as PostSponsorRecord[];
 
             log.query('select', 'post_sponsor', filter, rows);
             return rows;
@@ -122,7 +144,7 @@ export const PostSponsorModel = {
      * Update fields on an existing sponsor.
      *
      * @param id - UUID of the sponsor to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdatePostSponsorData type from db-types)
      * @returns The updated sponsor record
      */
     async updateSponsor(id: string, changes: UpdatePostSponsorData): Promise<PostSponsorRecord> {

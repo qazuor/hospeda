@@ -1,39 +1,35 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import type { EntityTypeEnum } from '@repo/types';
+import type { InferSelectModel } from 'drizzle-orm';
 import { and, eq } from 'drizzle-orm';
-import type { BaseSelectFilter } from 'src/types/db-types';
 import { db } from '../client';
 import { entityTagRelations } from '../schema/r_entity_tag.dbschema';
-import { assertExists, castReturning, rawSelect } from '../utils/db-utils';
+import type { InsertEntityTagRelation, SelectEntityTagRelationFilter } from '../types/db-types';
+import { assertExists, castReturning } from '../utils/db-utils';
 
 /**
- * Scoped logger for entity-tag relation model operations.
+ * Scoped logger for entity tag relation model operations.
  */
 const log = logger.createLogger('EntityTagModel');
 
 /**
- * Full entity-tag relation record as returned by the database.
+ * Full entity tag relation record as returned by the database.
  */
 export type EntityTagRecord = InferSelectModel<typeof entityTagRelations>;
 
 /**
- * Data required to create a new entity-tag relation.
- */
-export type CreateEntityTagData = InferInsertModel<typeof entityTagRelations>;
-
-/**
- * EntityTagModel provides CRUD operations for the r_entity_tag table.
+ * EntityTagModel provides low-level CRUD operations for the r_entity_tag table.
  */
 export const EntityTagModel = {
     /**
-     * Create a new entity-tag relation.
+     * Create a new entity tag relation.
      *
-     * @param data - Fields required to create the relation
+     * @param data - Fields required to create the relation (InsertEntityTagRelation type from db-types)
      * @returns The created relation record
      */
-    async createRelation(data: CreateEntityTagData): Promise<EntityTagRecord> {
+    async createRelation(data: InsertEntityTagRelation): Promise<EntityTagRecord> {
         try {
-            log.info('creating a new entity-tag relation', 'createRelation', data);
+            log.info('creating entity tag relation', 'createRelation', data);
             const rows = castReturning<EntityTagRecord>(
                 await db.insert(entityTagRelations).values(data).returning()
             );
@@ -47,94 +43,76 @@ export const EntityTagModel = {
     },
 
     /**
-     * List relations by entity (type + id).
+     * List entity tag relations with optional filters and pagination.
      *
-     * @param entityType - Type of the entity
-     * @param entityId - ID of the entity
-     * @param filter - Pagination options
+     * @param filter - Filtering and pagination options (SelectEntityTagRelationFilter type from db-types)
      * @returns Array of relation records
      */
-    async listByEntity(
-        entityType: string,
+    async listRelations(filter: SelectEntityTagRelationFilter = {}): Promise<EntityTagRecord[]> {
+        try {
+            log.info('listing entity tag relations', 'listRelations', filter);
+
+            let query = db.select().from(entityTagRelations).$dynamic();
+
+            if (filter.entityType) {
+                query = query.where(eq(entityTagRelations.entityType, filter.entityType));
+            }
+
+            if (filter.entityId) {
+                query = query.where(eq(entityTagRelations.entityId, filter.entityId));
+            }
+
+            if (filter.tagId) {
+                query = query.where(eq(entityTagRelations.tagId, filter.tagId));
+            }
+
+            // Removed filters for createdById, updatedById, deletedById as they do not exist in schema
+            // if (filter.createdById) { query = query.where(eq(entityTagRelations.createdById, filter.createdById)); }
+            // if (filter.updatedById) { query = query.where(eq(entityTagRelations.updatedById, filter.updatedById)); }
+            // if (filter.deletedById) { query = query.where(eq(entityTagRelations.deletedById, filter.deletedById)); }
+
+            // Note: No fuzzy search implemented for this join table based on common fields
+            // if (filter.query) { ... }
+
+            // Relation tables typically don't have deletedAt timestamp.
+            // If soft-delete was implemented on this table, the filter.includeDeleted logic would apply.
+            // Based on schema, it does NOT have deletedAt.
+            // if (!filter.includeDeleted) { ... }
+
+            // getOrderByColumn is not suitable as there's no single primary timestamp/column for ordering.
+            // Defaulting to ordering by the relation keys as they form the primary key.
+            query = query.orderBy(
+                entityTagRelations.entityType,
+                entityTagRelations.entityId,
+                entityTagRelations.tagId
+            );
+
+            const rows = (await query
+                .limit(filter.limit ?? 20)
+                .offset(filter.offset ?? 0)) as EntityTagRecord[];
+
+            log.query('select', 'r_entity_tag', filter, rows);
+            return rows;
+        } catch (error) {
+            log.error('listRelations failed', 'listRelations', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Delete an entity tag relation.
+     *
+     * @param entityType - The type of entity
+     * @param entityId - The ID of the entity
+     * @param tagId - The ID of the tag
+     */
+    async deleteRelation(
+        entityType: EntityTypeEnum,
         entityId: string,
-        filter?: BaseSelectFilter
-    ): Promise<EntityTagRecord[]> {
+        tagId: string
+    ): Promise<void> {
         try {
-            log.info('listing relations by entity', 'listByEntity', {
-                entityType,
-                entityId,
-                filter
-            });
-
-            let query = rawSelect(
-                db
-                    .select()
-                    .from(entityTagRelations)
-                    .where(
-                        and(
-                            eq(entityTagRelations.entityType, entityType),
-                            eq(entityTagRelations.entityId, entityId)
-                        )
-                    )
-            );
-
-            if (filter) {
-                query = query
-                    .limit(filter.limit ?? 20)
-                    .offset(filter.offset ?? 0)
-                    .orderBy(entityTagRelations.tagId, 'asc');
-            }
-
-            const rows = (await query) as EntityTagRecord[];
-            log.query('select', 'r_entity_tag', { entityType, entityId, filter }, rows);
-            return rows;
-        } catch (error) {
-            log.error('listByEntity failed', 'listByEntity', error);
-            throw error;
-        }
-    },
-
-    /**
-     * List relations by tag.
-     *
-     * @param tagId - ID of the tag
-     * @param filter - Pagination options
-     * @returns Array of relation records
-     */
-    async listByTag(tagId: string, filter?: BaseSelectFilter): Promise<EntityTagRecord[]> {
-        try {
-            log.info('listing relations by tag', 'listByTag', { tagId, filter });
-
-            let query = rawSelect(
-                db.select().from(entityTagRelations).where(eq(entityTagRelations.tagId, tagId))
-            );
-
-            if (filter) {
-                query = query
-                    .limit(filter.limit ?? 20)
-                    .offset(filter.offset ?? 0)
-                    .orderBy(entityTagRelations.entityId, 'asc');
-            }
-
-            const rows = (await query) as EntityTagRecord[];
-            log.query('select', 'r_entity_tag', { tagId, filter }, rows);
-            return rows;
-        } catch (error) {
-            log.error('listByTag failed', 'listByTag', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Delete an entity-tag relation.
-     *
-     * @param entityType - Type of the entity
-     * @param entityId - ID of the entity
-     * @param tagId - ID of the tag
-     */
-    async deleteRelation(entityType: string, entityId: string, tagId: string): Promise<void> {
-        try {
-            log.info('deleting entity-tag relation', 'deleteRelation', {
+            log.info('deleting entity tag relation', 'deleteRelation', {
                 entityType,
                 entityId,
                 tagId
@@ -154,4 +132,7 @@ export const EntityTagModel = {
             throw error;
         }
     }
+
+    // Note: Update and soft/hard delete operations are less common for join tables like this.
+    // They are typically managed by inserting or deleting relations. This model does not include update methods.
 };

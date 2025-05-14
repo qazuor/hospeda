@@ -1,10 +1,16 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { events } from '../schema/event.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type { InsertEvent, SelectEventFilter, UpdateEventData } from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for event model operations.
@@ -17,42 +23,24 @@ const log = logger.createLogger('EventModel');
 export type EventRecord = InferSelectModel<typeof events>;
 
 /**
- * Data required to create a new event.
- */
-export type CreateEventData = InferInsertModel<typeof events>;
-
-/**
- * Fields allowed for updating an event.
- */
-export type UpdateEventData = UpdateData<CreateEventData>;
-
-/**
- * Filter options for listing events.
- */
-export interface SelectEventFilter extends BaseSelectFilter {
-    /** Filter by category */
-    category?: string;
-}
-
-/**
  * EventModel provides CRUD operations for the events table.
  */
 export const EventModel = {
     /**
      * Create a new event record.
      *
-     * @param data - Fields required to create the event
+     * @param data - Fields required to create the event (InsertEvent type from db-types)
      * @returns The created event record
      */
-    async createEvent(data: CreateEventData): Promise<EventRecord> {
+    async createEvent(data: InsertEvent): Promise<EventRecord> {
         try {
             log.info('creating a new event', 'createEvent', data);
             const rows = castReturning<EventRecord>(
                 await db.insert(events).values(data).returning()
             );
-            const ev = assertExists(rows[0], 'createEvent: no record returned');
-            log.query('insert', 'events', data, ev);
-            return ev;
+            const event = assertExists(rows[0], 'createEvent: no record returned');
+            log.query('insert', 'events', data, event);
+            return event;
         } catch (error) {
             log.error('createEvent failed', 'createEvent', error);
             throw error;
@@ -68,13 +56,9 @@ export const EventModel = {
     async getEventById(id: string): Promise<EventRecord | undefined> {
         try {
             log.info('fetching event by id', 'getEventById', { id });
-            const [ev] = (await db
-                .select()
-                .from(events)
-                .where(eq(events.id, id))
-                .limit(1)) as EventRecord[];
-            log.query('select', 'events', { id }, ev);
-            return ev;
+            const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
+            log.query('select', 'events', { id }, event);
+            return event ? (event as EventRecord) : undefined;
         } catch (error) {
             log.error('getEventById failed', 'getEventById', error);
             throw error;
@@ -84,31 +68,81 @@ export const EventModel = {
     /**
      * List events with optional filters, pagination, and search.
      *
-     * @param filter - Pagination and filtering options
+     * @param filter - Pagination and filtering options (SelectEventFilter type from db-types)
      * @returns Array of event records
      */
     async listEvents(filter: SelectEventFilter): Promise<EventRecord[]> {
         try {
             log.info('listing events', 'listEvents', filter);
-            let query = rawSelect(db.select().from(events));
+            let query = db.select().from(events).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
-                query = query.where(or(ilike(events.name, term), ilike(events.summary, term)));
+                const term = prepareLikeQuery(filter.query);
+                query = query.where(
+                    or(
+                        ilike(events.name, term),
+                        ilike(events.displayName, term),
+                        ilike(events.summary, term),
+                        ilike(events.description, term),
+                        ilike(events.slug, term)
+                    )
+                );
             }
 
             if (filter.category) {
                 query = query.where(eq(events.category, filter.category));
             }
 
+            if (filter.authorId) {
+                query = query.where(eq(events.authorId, filter.authorId));
+            }
+
+            if (filter.locationId) {
+                query = query.where(eq(events.locationId, filter.locationId));
+            }
+
+            if (filter.organizerId) {
+                query = query.where(eq(events.organizerId, filter.organizerId));
+            }
+
+            if (filter.visibility) {
+                query = query.where(eq(events.visibility, filter.visibility));
+            }
+
+            if (typeof filter.isFeatured === 'boolean') {
+                query = query.where(eq(events.isFeatured, filter.isFeatured));
+            }
+
+            if (filter.state) {
+                query = query.where(eq(events.state, filter.state));
+            }
+
+            if (filter.createdById) {
+                // Added createdById filter
+                query = query.where(eq(events.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                // Added updatedById filter
+                query = query.where(eq(events.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                // Added deletedById filter
+                query = query.where(eq(events.deletedById, filter.deletedById));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(events.deletedAt));
             }
 
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(events, filter.orderBy, events.createdAt);
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(events.createdAt, 'desc')) as EventRecord[];
+                .offset(filter.offset ?? 0)) as EventRecord[];
 
             log.query('select', 'events', filter, rows);
             return rows;
@@ -122,13 +156,13 @@ export const EventModel = {
      * Update fields on an existing event.
      *
      * @param id - UUID of the event to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdateEventData type from db-types)
      * @returns The updated event record
      */
     async updateEvent(id: string, changes: UpdateEventData): Promise<EventRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating event', 'updateEvent', { id, dataToUpdate });
+            log.info('updating event', 'updateEvent', { id, changes: dataToUpdate });
             const rows = castReturning<EventRecord>(
                 await db.update(events).set(dataToUpdate).where(eq(events.id, id)).returning()
             );
