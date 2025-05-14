@@ -2,6 +2,7 @@ export * from './accommodation.service';
 export * from './bookmark.service';
 export * from './destination.service';
 export * from './event.service';
+export * from './eventOrganizer.service';
 export * from './permission.service';
 export * from './post.service';
 export * from './postSponsor.service';
