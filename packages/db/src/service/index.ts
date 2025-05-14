@@ -1,6 +1,7 @@
 export * from './accommodation.service';
 export * from './bookmark.service';
 export * from './destination.service';
+export * from './destinationReview.service';
 export * from './event.service';
 export * from './eventLocation.service';
 export * from './eventOrganizer.service';
