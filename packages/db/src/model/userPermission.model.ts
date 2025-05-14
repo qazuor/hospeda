@@ -142,5 +142,77 @@ export const UserPermissionModel = {
             log.error('deleteRelation failed', 'deleteRelation', error);
             throw error;
         }
+    },
+
+    /**
+     * Get a user-permission relation by user ID and permission ID.
+     * This checks for the existence of a specific relation.
+     * @param userId - The ID of the user.
+     * @param permissionId - The ID of the permission.
+     * @returns The relation record if found, undefined otherwise.
+     * @throws Error if the database query fails.
+     */
+    async getByUserIdAndPermissionId(
+        userId: string,
+        permissionId: string
+    ): Promise<UserPermissionRecord | undefined> {
+        log.debug('checking user-permission relation existence', 'getByUserIdAndPermissionId', {
+            userId,
+            permissionId
+        });
+        try {
+            const [relation] = await db
+                .select()
+                .from(userPermissions)
+                .where(
+                    and(
+                        eq(userPermissions.userId, userId),
+                        eq(userPermissions.permissionId, permissionId)
+                    )
+                )
+                .limit(1); // Limit to 1 as we only need to know if it exists
+
+            log.debug('user-permission relation check result', 'getByUserIdAndPermissionId', {
+                userId,
+                permissionId,
+                exists: !!relation
+            });
+            return relation;
+        } catch (error) {
+            log.error(
+                'failed to check user-permission relation existence',
+                'getByUserIdAndPermissionId',
+                error,
+                { userId, permissionId }
+            );
+            throw error;
+        }
+    },
+
+    /**
+     * Delete all user-permission relations for a given user ID.
+     * @param userId - The ID of the user.
+     * @throws Error if deletion fails.
+     */
+    async deleteAllByUserId(userId: string): Promise<void> {
+        log.info('deleting all user-permission relations for user', 'deleteAllByUserId', {
+            userId
+        });
+        try {
+            await db.delete(userPermissions).where(eq(userPermissions.userId, userId));
+            log.info(
+                'all user-permission relations for user deleted successfully',
+                'deleteAllByUserId',
+                { userId }
+            );
+        } catch (error) {
+            log.error(
+                'failed to delete all user-permission relations for user',
+                'deleteAllByUserId',
+                error,
+                { userId }
+            );
+            throw error;
+        }
     }
 };
