@@ -1,4 +1,5 @@
 export * from './accommodation.service';
+export * from './accommodationAmenity.service';
 export * from './accommodationFaq.service';
 export * from './accommodationFeature.service';
 export * from './accommodationIaData.service';
