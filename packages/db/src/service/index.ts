@@ -4,6 +4,7 @@ export * from './destination.service';
 export * from './event.service';
 export * from './permission.service';
 export * from './post.service';
+export * from './postSponsor.service';
 export * from './role.service';
 export * from './tag.service';
 export * from './user.service';
