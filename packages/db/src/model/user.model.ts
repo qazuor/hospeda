@@ -3,7 +3,7 @@ import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { users } from '../schema/user.dbschema';
-import type { BaseSelectFilter, UpdateData } from '../types/db.types';
+import type { BaseSelectFilter, UpdateData } from '../types/db-types';
 import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
 
 // Scoped logger for user model operations

@@ -4,7 +4,7 @@ import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, isNull } from 'drizzle-orm';
 import { db } from '../client';
 import { userBookmarks } from '../schema/bookmark.dbschema';
-import type { BaseSelectFilter, UpdateData } from '../types/db.types';
+import type { BaseSelectFilter, UpdateData } from '../types/db-types';
 import { assertExists, castReturning, sanitizePartialUpdate } from '../utils/db-utils';
 
 // Create a scoped logger for bookmark model operations

@@ -14,7 +14,7 @@ import {
     type UpdateBookmarkData,
     UserModel
 } from '../model';
-import type { PaginationParams } from '../types/db.types';
+import type { PaginationParams } from '../types/db-types';
 import { assertExists } from '../utils/db-utils';
 
 // Scoped logger for the service layer
