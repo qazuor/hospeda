@@ -1,10 +1,17 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import { db } from '../client';
 import { tags } from '../schema/tag.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type { InsertTag, SelectTagFilter, UpdateTagData } from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for tag model operations.
@@ -17,36 +24,16 @@ const log = logger.createLogger('TagModel');
 export type TagRecord = InferSelectModel<typeof tags>;
 
 /**
- * Data required to create a new tag.
- */
-export type CreateTagData = InferInsertModel<typeof tags>;
-
-/**
- * Fields allowed for updating a tag.
- */
-export type UpdateTagData = UpdateData<CreateTagData>;
-
-/**
- * Filter options for listing tags.
- */
-export interface SelectTagFilter extends BaseSelectFilter {
-    /** Filter by owner */
-    ownerId?: string;
-    /** Include soft-deleted records if true */
-    includeDeleted?: boolean;
-}
-
-/**
  * TagModel provides CRUD operations for the tags table.
  */
 export const TagModel = {
     /**
      * Create a new tag.
      *
-     * @param data - Fields required to create the tag
+     * @param data - Fields required to create the tag (InsertTag type from db-types)
      * @returns The created tag record
      */
-    async createTag(data: CreateTagData): Promise<TagRecord> {
+    async createTag(data: InsertTag): Promise<TagRecord> {
         try {
             log.info('creating a new tag', 'createTag', data);
             const rows = castReturning<TagRecord>(await db.insert(tags).values(data).returning());
@@ -68,13 +55,9 @@ export const TagModel = {
     async getTagById(id: string): Promise<TagRecord | undefined> {
         try {
             log.info('fetching tag by id', 'getTagById', { id });
-            const [tag] = (await db
-                .select()
-                .from(tags)
-                .where(eq(tags.id, id))
-                .limit(1)) as TagRecord[];
+            const [tag] = await db.select().from(tags).where(eq(tags.id, id)).limit(1);
             log.query('select', 'tags', { id }, tag);
-            return tag;
+            return tag ? (tag as TagRecord) : undefined;
         } catch (error) {
             log.error('getTagById failed', 'getTagById', error);
             throw error;
@@ -84,16 +67,16 @@ export const TagModel = {
     /**
      * List tags with optional filters, pagination, and search.
      *
-     * @param filter - Pagination and filtering options
+     * @param filter - Pagination and filtering options (SelectTagFilter type from db-types)
      * @returns Array of tag records
      */
     async listTags(filter: SelectTagFilter): Promise<TagRecord[]> {
         try {
             log.info('listing tags', 'listTags', filter);
-            let query = rawSelect(db.select().from(tags));
+            let query = db.select().from(tags).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
+                const term = prepareLikeQuery(filter.query);
                 query = query.where(or(ilike(tags.name, term), ilike(tags.displayName, term)));
             }
 
@@ -101,14 +84,46 @@ export const TagModel = {
                 query = query.where(eq(tags.ownerId, filter.ownerId));
             }
 
+            if (filter.state) {
+                // Using inherited 'state' filter
+                query = query.where(eq(tags.state, filter.state));
+            }
+
+            if (filter.color) {
+                query = query.where(eq(tags.color, filter.color));
+            }
+
+            if (filter.createdById) {
+                // Added createdById filter
+                query = query.where(eq(tags.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                // Added updatedById filter
+                query = query.where(eq(tags.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                // Added deletedById filter
+                query = query.where(eq(tags.deletedById, filter.deletedById));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(tags.deletedAt));
             }
 
+            // Use the getOrderByColumn utility with double type assertion for the schema object
+            const orderByColumn = getOrderByColumn(
+                // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                tags as unknown as Record<string, PgColumn<any, any, any>>,
+                filter.orderBy,
+                tags.createdAt
+            );
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(tags.createdAt, 'desc')) as TagRecord[];
+                .offset(filter.offset ?? 0)) as TagRecord[];
 
             log.query('select', 'tags', filter, rows);
             return rows;
@@ -122,7 +137,7 @@ export const TagModel = {
      * Update fields on an existing tag.
      *
      * @param id - UUID of the tag to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdateTagData type from db-types)
      * @returns The updated tag record
      */
     async updateTag(id: string, changes: UpdateTagData): Promise<TagRecord> {

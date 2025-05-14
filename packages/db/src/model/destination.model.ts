@@ -1,10 +1,20 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { destinations } from '../schema/destination.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type {
+    InsertDestination,
+    SelectDestinationFilter,
+    UpdateDestinationData
+} from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for destination model operations.
@@ -17,40 +27,22 @@ const log = logger.createLogger('DestinationModel');
 export type DestinationRecord = InferSelectModel<typeof destinations>;
 
 /**
- * Data required to create a new destination.
- */
-export type CreateDestinationData = InferInsertModel<typeof destinations>;
-
-/**
- * Fields allowed for updating a destination.
- */
-export type UpdateDestinationData = UpdateData<CreateDestinationData>;
-
-/**
- * Filter options for listing destinations.
- */
-export interface SelectDestinationFilter extends BaseSelectFilter {
-    /** Filter by visibility */
-    visibility?: string;
-}
-
-/**
  * DestinationModel provides CRUD operations for the destinations table.
  */
 export const DestinationModel = {
     /**
      * Create a new destination record.
      *
-     * @param data - Fields required to create the destination
+     * @param data - Fields required to create the destination (InsertDestination type from db-types)
      * @returns The created destination record
      */
-    async createDestination(data: CreateDestinationData): Promise<DestinationRecord> {
+    async createDestination(data: InsertDestination): Promise<DestinationRecord> {
         try {
             log.info('creating a new destination', 'createDestination', data);
             const rows = castReturning<DestinationRecord>(
                 await db.insert(destinations).values(data).returning()
             );
-            const dest = assertExists(rows[0], 'createDestination: no record returned');
+            const dest = assertExists(rows[0], 'createDestination: no destination returned');
             log.query('insert', 'destinations', data, dest);
             return dest;
         } catch (error) {
@@ -68,13 +60,13 @@ export const DestinationModel = {
     async getDestinationById(id: string): Promise<DestinationRecord | undefined> {
         try {
             log.info('fetching destination by id', 'getDestinationById', { id });
-            const [dest] = (await db
+            const [dest] = await db
                 .select()
                 .from(destinations)
                 .where(eq(destinations.id, id))
-                .limit(1)) as DestinationRecord[];
+                .limit(1);
             log.query('select', 'destinations', { id }, dest);
-            return dest;
+            return dest ? (dest as DestinationRecord) : undefined;
         } catch (error) {
             log.error('getDestinationById failed', 'getDestinationById', error);
             throw error;
@@ -84,33 +76,66 @@ export const DestinationModel = {
     /**
      * List destinations with optional filters, pagination, and search.
      *
-     * @param filter - Pagination and filtering options
+     * @param filter - Filtering and pagination options (SelectDestinationFilter type from db-types)
      * @returns Array of destination records
      */
     async listDestinations(filter: SelectDestinationFilter): Promise<DestinationRecord[]> {
         try {
             log.info('listing destinations', 'listDestinations', filter);
-            let query = rawSelect(db.select().from(destinations));
+            let query = db.select().from(destinations).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
+                const term = prepareLikeQuery(filter.query);
                 query = query.where(
-                    or(ilike(destinations.name, term), ilike(destinations.displayName, term))
+                    or(
+                        ilike(destinations.name, term),
+                        ilike(destinations.displayName, term),
+                        ilike(destinations.summary, term),
+                        ilike(destinations.description, term),
+                        ilike(destinations.slug, term)
+                    )
                 );
+            }
+
+            if (typeof filter.isFeatured === 'boolean') {
+                query = query.where(eq(destinations.isFeatured, filter.isFeatured));
             }
 
             if (filter.visibility) {
                 query = query.where(eq(destinations.visibility, filter.visibility));
             }
 
+            if (filter.state) {
+                query = query.where(eq(destinations.state, filter.state));
+            }
+
+            if (filter.createdById) {
+                query = query.where(eq(destinations.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                query = query.where(eq(destinations.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                query = query.where(eq(destinations.deletedById, filter.deletedById));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(destinations.deletedAt));
             }
 
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(
+                destinations,
+                filter.orderBy,
+                destinations.createdAt
+            );
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(destinations.createdAt, 'desc')) as DestinationRecord[];
+                .offset(filter.offset ?? 0)) as DestinationRecord[];
 
             log.query('select', 'destinations', filter, rows);
             return rows;
@@ -124,7 +149,7 @@ export const DestinationModel = {
      * Update fields on an existing destination.
      *
      * @param id - UUID of the destination to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdateDestinationData type from db-types)
      * @returns The updated destination record
      */
     async updateDestination(
@@ -133,10 +158,7 @@ export const DestinationModel = {
     ): Promise<DestinationRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating destination', 'updateDestination', {
-                id,
-                dataToUpdate
-            });
+            log.info('updating destination', 'updateDestination', { id, changes: dataToUpdate });
             const rows = castReturning<DestinationRecord>(
                 await db
                     .update(destinations)
@@ -146,7 +168,7 @@ export const DestinationModel = {
             );
             const updated = assertExists(
                 rows[0],
-                `updateDestination: no record found for id ${id}`
+                `updateDestination: no destination found for id ${id}`
             );
             log.query('update', 'destinations', { id, changes: dataToUpdate }, updated);
             return updated;
@@ -163,9 +185,7 @@ export const DestinationModel = {
      */
     async softDeleteDestination(id: string): Promise<void> {
         try {
-            log.info('soft deleting destination', 'softDeleteDestination', {
-                id
-            });
+            log.info('soft deleting destination', 'softDeleteDestination', { id });
             await db
                 .update(destinations)
                 .set({ deletedAt: new Date() })
@@ -200,9 +220,7 @@ export const DestinationModel = {
      */
     async hardDeleteDestination(id: string): Promise<void> {
         try {
-            log.info('hard deleting destination', 'hardDeleteDestination', {
-                id
-            });
+            log.info('hard deleting destination', 'hardDeleteDestination', { id });
             await db.delete(destinations).where(eq(destinations.id, id));
             log.query('delete', 'destinations', { id }, { deleted: true });
         } catch (error) {

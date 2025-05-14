@@ -1,10 +1,20 @@
 import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import type { InferSelectModel } from 'drizzle-orm';
+import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { db } from '../client';
 import { accommodations } from '../schema/accommodation.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import type {
+    InsertAccommodation,
+    SelectAccommodationFilter,
+    UpdateAccommodationData
+} from '../types/db-types';
+import {
+    assertExists,
+    castReturning,
+    getOrderByColumn,
+    prepareLikeQuery,
+    sanitizePartialUpdate
+} from '../utils/db-utils';
 
 /**
  * Scoped logger for accommodation model operations.
@@ -17,40 +27,22 @@ const log = logger.createLogger('AccommodationModel');
 export type AccommodationRecord = InferSelectModel<typeof accommodations>;
 
 /**
- * Data required to create a new accommodation.
- */
-export type CreateAccommodationData = InferInsertModel<typeof accommodations>;
-
-/**
- * Fields allowed for updating an accommodation.
- */
-export type UpdateAccommodationData = UpdateData<CreateAccommodationData>;
-
-/**
- * Filter options for listing accommodations.
- */
-export interface SelectAccommodationFilter extends BaseSelectFilter {
-    /** Filter by destination ID */
-    destinationId?: string;
-}
-
-/**
  * AccommodationModel provides CRUD operations for the accommodations table.
  */
 export const AccommodationModel = {
     /**
      * Create a new accommodation record.
      *
-     * @param data - Fields required to create the accommodation
+     * @param data - Fields required to create the accommodation (InsertAccommodation type from db-types)
      * @returns The created accommodation record
      */
-    async createAccommodation(data: CreateAccommodationData): Promise<AccommodationRecord> {
+    async createAccommodation(data: InsertAccommodation): Promise<AccommodationRecord> {
         try {
             log.info('creating a new accommodation', 'createAccommodation', data);
             const rows = castReturning<AccommodationRecord>(
                 await db.insert(accommodations).values(data).returning()
             );
-            const acc = assertExists(rows[0], 'createAccommodation: no record returned');
+            const acc = assertExists(rows[0], 'createAccommodation: no accommodation returned');
             log.query('insert', 'accommodations', data, acc);
             return acc;
         } catch (error) {
@@ -68,13 +60,13 @@ export const AccommodationModel = {
     async getAccommodationById(id: string): Promise<AccommodationRecord | undefined> {
         try {
             log.info('fetching accommodation by id', 'getAccommodationById', { id });
-            const [acc] = (await db
+            const [acc] = await db
                 .select()
                 .from(accommodations)
                 .where(eq(accommodations.id, id))
-                .limit(1)) as AccommodationRecord[];
+                .limit(1);
             log.query('select', 'accommodations', { id }, acc);
-            return acc;
+            return acc ? (acc as AccommodationRecord) : undefined;
         } catch (error) {
             log.error('getAccommodationById failed', 'getAccommodationById', error);
             throw error;
@@ -84,33 +76,73 @@ export const AccommodationModel = {
     /**
      * List accommodations with optional filters, pagination, and search.
      *
-     * @param filter - Pagination and filtering options
+     * @param filter - Filtering and pagination options (SelectAccommodationFilter type from db-types)
      * @returns Array of accommodation records
      */
     async listAccommodations(filter: SelectAccommodationFilter): Promise<AccommodationRecord[]> {
         try {
             log.info('listing accommodations', 'listAccommodations', filter);
-            let query = rawSelect(db.select().from(accommodations));
+            let query = db.select().from(accommodations).$dynamic();
 
             if (filter.query) {
-                const term = `%${filter.query}%`;
+                const term = prepareLikeQuery(filter.query);
                 query = query.where(
-                    or(ilike(accommodations.name, term), ilike(accommodations.slug, term))
+                    or(
+                        ilike(accommodations.name, term),
+                        ilike(accommodations.displayName, term),
+                        ilike(accommodations.description, term),
+                        ilike(accommodations.slug, term)
+                    )
                 );
+            }
+
+            if (filter.type) {
+                query = query.where(eq(accommodations.type, filter.type));
             }
 
             if (filter.destinationId) {
                 query = query.where(eq(accommodations.destinationId, filter.destinationId));
             }
 
+            if (filter.ownerId) {
+                query = query.where(eq(accommodations.ownerId, filter.ownerId));
+            }
+
+            if (typeof filter.isFeatured === 'boolean') {
+                query = query.where(eq(accommodations.isFeatured, filter.isFeatured));
+            }
+
+            if (filter.state) {
+                query = query.where(eq(accommodations.state, filter.state));
+            }
+
+            if (filter.createdById) {
+                query = query.where(eq(accommodations.createdById, filter.createdById));
+            }
+            if (filter.updatedById) {
+                query = query.where(eq(accommodations.updatedById, filter.updatedById));
+            }
+            if (filter.deletedById) {
+                query = query.where(eq(accommodations.deletedById, filter.deletedById));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(accommodations.deletedAt));
             }
 
+            // Use the getOrderByColumn utility
+            const orderByColumn = getOrderByColumn(
+                accommodations,
+                filter.orderBy,
+                accommodations.createdAt
+            );
+            query = query.orderBy(
+                filter.order === 'asc' ? asc(orderByColumn) : desc(orderByColumn)
+            );
+
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(accommodations.createdAt, 'desc')) as AccommodationRecord[];
+                .offset(filter.offset ?? 0)) as AccommodationRecord[];
 
             log.query('select', 'accommodations', filter, rows);
             return rows;
@@ -124,7 +156,7 @@ export const AccommodationModel = {
      * Update fields on an existing accommodation.
      *
      * @param id - UUID of the accommodation to update
-     * @param changes - Partial fields to update
+     * @param changes - Partial fields to update (UpdateAccommodationData type from db-types)
      * @returns The updated accommodation record
      */
     async updateAccommodation(
@@ -135,7 +167,7 @@ export const AccommodationModel = {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating accommodation', 'updateAccommodation', {
                 id,
-                dataToUpdate
+                changes: dataToUpdate
             });
             const rows = castReturning<AccommodationRecord>(
                 await db
@@ -146,7 +178,7 @@ export const AccommodationModel = {
             );
             const updated = assertExists(
                 rows[0],
-                `updateAccommodation: no record found for id ${id}`
+                `updateAccommodation: no accommodation found for id ${id}`
             );
             log.query('update', 'accommodations', { id, changes: dataToUpdate }, updated);
             return updated;
@@ -163,9 +195,7 @@ export const AccommodationModel = {
      */
     async softDeleteAccommodation(id: string): Promise<void> {
         try {
-            log.info('soft deleting accommodation', 'softDeleteAccommodation', {
-                id
-            });
+            log.info('soft deleting accommodation', 'softDeleteAccommodation', { id });
             await db
                 .update(accommodations)
                 .set({ deletedAt: new Date() })
@@ -203,9 +233,7 @@ export const AccommodationModel = {
      */
     async hardDeleteAccommodation(id: string): Promise<void> {
         try {
-            log.info('hard deleting accommodation', 'hardDeleteAccommodation', {
-                id
-            });
+            log.info('hard deleting accommodation', 'hardDeleteAccommodation', { id });
             await db.delete(accommodations).where(eq(accommodations.id, id));
             log.query('delete', 'accommodations', { id }, { deleted: true });
         } catch (error) {
