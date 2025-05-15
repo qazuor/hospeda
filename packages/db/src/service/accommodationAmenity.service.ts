@@ -95,8 +95,8 @@ export class AccommodationAmenityService {
      * @returns The amenity record.
      * @throws Error if amenity entry is not found or actor is not authorized.
      */
-    async getAmenityById(id: string, actor: UserType): Promise<AccommodationAmenityRecord> {
-        log.info('fetching amenity by id', 'getAmenityById', { amenityId: id, actor: actor.id });
+    async getById(id: string, actor: UserType): Promise<AccommodationAmenityRecord> {
+        log.info('fetching amenity by id', 'getById', { amenityId: id, actor: actor.id });
 
         try {
             const amenity = await AccommodationAmenityModel.getAmenityById(id);
@@ -113,12 +113,12 @@ export class AccommodationAmenityService {
             // Check if actor is owner or admin
             AccommodationAmenityService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
-            log.info('amenity fetched successfully', 'getAmenityById', {
+            log.info('amenity fetched successfully', 'getById', {
                 amenityId: existingAmenity.id
             });
             return existingAmenity;
         } catch (error) {
-            log.error('failed to fetch amenity by id', 'getAmenityById', error, {
+            log.error('failed to fetch amenity by id', 'getById', error, {
                 amenityId: id,
                 actor: actor.id
             });
@@ -134,12 +134,12 @@ export class AccommodationAmenityService {
      * @returns Array of amenity records.
      * @throws Error if accommodation is not found, actor is not authorized, or listing fails.
      */
-    async listAmenities(
+    async list(
         accommodationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationAmenityRecord[]> {
-        log.info('listing amenities for accommodation', 'listAmenities', {
+        log.info('listing amenities for accommodation', 'list', {
             accommodationId,
             actor: actor.id,
             filter
@@ -159,13 +159,13 @@ export class AccommodationAmenityService {
             };
 
             const amenities = await AccommodationAmenityModel.listAmenities(amenityFilter);
-            log.info('amenities listed successfully', 'listAmenities', {
+            log.info('amenities listed successfully', 'list', {
                 accommodationId,
                 count: amenities.length
             });
             return amenities;
         } catch (error) {
-            log.error('failed to list amenities', 'listAmenities', error, {
+            log.error('failed to list amenities', 'list', error, {
                 accommodationId,
                 actor: actor.id
             });
@@ -181,14 +181,14 @@ export class AccommodationAmenityService {
      * @returns The updated amenity record.
      * @throws Error if amenity entry is not found, actor is not authorized, or update fails.
      */
-    async updateAmenity(
+    async update(
         id: string,
         changes: UpdateAccommodationAmenityData,
         actor: UserType
     ): Promise<AccommodationAmenityRecord> {
-        log.info('updating amenity', 'updateAmenity', { amenityId: id, actor: actor.id });
+        log.info('updating amenity', 'update', { amenityId: id, actor: actor.id });
 
-        const existingAmenity = await this.getAmenityById(id, actor);
+        const existingAmenity = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -212,12 +212,12 @@ export class AccommodationAmenityService {
                 existingAmenity.id,
                 dataWithAudit
             );
-            log.info('amenity updated successfully', 'updateAmenity', {
+            log.info('amenity updated successfully', 'update', {
                 amenityId: updatedAmenity.id
             });
             return updatedAmenity;
         } catch (error) {
-            log.error('failed to update amenity', 'updateAmenity', error, {
+            log.error('failed to update amenity', 'update', error, {
                 amenityId: id,
                 actor: actor.id
             });
@@ -234,7 +234,7 @@ export class AccommodationAmenityService {
     async delete(id: string, actor: UserType): Promise<void> {
         log.info('soft deleting amenity', 'delete', { amenityId: id, actor: actor.id });
 
-        const existingAmenity = await this.getAmenityById(id, actor);
+        const existingAmenity = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -268,7 +268,7 @@ export class AccommodationAmenityService {
     async restore(id: string, actor: UserType): Promise<void> {
         log.info('restoring amenity', 'restore', { amenityId: id, actor: actor.id });
 
-        const existingAmenity = await this.getAmenityById(id, actor);
+        const existingAmenity = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -307,7 +307,7 @@ export class AccommodationAmenityService {
             throw new Error('Forbidden: Only admins can permanently delete amenities');
         }
 
-        await this.getAmenityById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await AccommodationAmenityModel.hardDeleteAmenity(id);

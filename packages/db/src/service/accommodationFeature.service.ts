@@ -95,8 +95,8 @@ export class AccommodationFeatureService {
      * @returns The feature record.
      * @throws Error if feature entry is not found or actor is not authorized.
      */
-    async getFeatureById(id: string, actor: UserType): Promise<AccommodationFeatureRecord> {
-        log.info('fetching feature by id', 'getFeatureById', { featureId: id, actor: actor.id });
+    async getById(id: string, actor: UserType): Promise<AccommodationFeatureRecord> {
+        log.info('fetching feature by id', 'getById', { featureId: id, actor: actor.id });
 
         try {
             const feature = await AccommodationFeatureModel.getFeatureById(id);
@@ -113,12 +113,12 @@ export class AccommodationFeatureService {
             // Check if actor is owner or admin
             AccommodationFeatureService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
-            log.info('feature fetched successfully', 'getFeatureById', {
+            log.info('feature fetched successfully', 'getById', {
                 featureId: existingFeature.id
             });
             return existingFeature;
         } catch (error) {
-            log.error('failed to fetch feature by id', 'getFeatureById', error, {
+            log.error('failed to fetch feature by id', 'getById', error, {
                 featureId: id,
                 actor: actor.id
             });
@@ -134,12 +134,12 @@ export class AccommodationFeatureService {
      * @returns Array of feature records.
      * @throws Error if accommodation is not found, actor is not authorized, or listing fails.
      */
-    async listFeatures(
+    async list(
         accommodationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationFeatureRecord[]> {
-        log.info('listing features for accommodation', 'listFeatures', {
+        log.info('listing features for accommodation', 'list', {
             accommodationId,
             actor: actor.id,
             filter
@@ -159,13 +159,13 @@ export class AccommodationFeatureService {
             };
 
             const features = await AccommodationFeatureModel.listFeatures(featureFilter);
-            log.info('features listed successfully', 'listFeatures', {
+            log.info('features listed successfully', 'list', {
                 accommodationId,
                 count: features.length
             });
             return features;
         } catch (error) {
-            log.error('failed to list features', 'listFeatures', error, {
+            log.error('failed to list features', 'list', error, {
                 accommodationId,
                 actor: actor.id
             });
@@ -181,14 +181,14 @@ export class AccommodationFeatureService {
      * @returns The updated feature record.
      * @throws Error if feature entry is not found, actor is not authorized, or update fails.
      */
-    async updateFeature(
+    async update(
         id: string,
         changes: UpdateAccommodationFeatureData,
         actor: UserType
     ): Promise<AccommodationFeatureRecord> {
-        log.info('updating feature', 'updateFeature', { featureId: id, actor: actor.id });
+        log.info('updating feature', 'update', { featureId: id, actor: actor.id });
 
-        const existingFeature = await this.getFeatureById(id, actor);
+        const existingFeature = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -212,12 +212,12 @@ export class AccommodationFeatureService {
                 existingFeature.id,
                 dataWithAudit
             );
-            log.info('feature updated successfully', 'updateFeature', {
+            log.info('feature updated successfully', 'update', {
                 featureId: updatedFeature.id
             });
             return updatedFeature;
         } catch (error) {
-            log.error('failed to update feature', 'updateFeature', error, {
+            log.error('failed to update feature', 'update', error, {
                 featureId: id,
                 actor: actor.id
             });
@@ -234,7 +234,7 @@ export class AccommodationFeatureService {
     async delete(id: string, actor: UserType): Promise<void> {
         log.info('soft deleting feature', 'delete', { featureId: id, actor: actor.id });
 
-        const existingFeature = await this.getFeatureById(id, actor);
+        const existingFeature = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -268,7 +268,7 @@ export class AccommodationFeatureService {
     async restore(id: string, actor: UserType): Promise<void> {
         log.info('restoring feature', 'restore', { featureId: id, actor: actor.id });
 
-        const existingFeature = await this.getFeatureById(id, actor);
+        const existingFeature = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -307,7 +307,7 @@ export class AccommodationFeatureService {
             throw new Error('Forbidden: Only admins can permanently delete features');
         }
 
-        await this.getFeatureById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await AccommodationFeatureModel.hardDeleteFeature(id);

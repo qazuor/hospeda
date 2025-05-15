@@ -80,8 +80,8 @@ export class EventLocationService {
      * @returns The location record.
      * @throws Error if location is not found.
      */
-    async getLocationById(id: string, actor: UserType): Promise<EventLocationRecord> {
-        log.info('fetching location by id', 'getLocationById', {
+    async getById(id: string, actor: UserType): Promise<EventLocationRecord> {
+        log.info('fetching location by id', 'getById', {
             locationId: id,
             actor: actor.id
         });
@@ -90,12 +90,12 @@ export class EventLocationService {
             const location = await EventLocationModel.getLocationById(id);
             const existingLocation = assertExists(location, `Location ${id} not found`);
 
-            log.info('location fetched successfully', 'getLocationById', {
+            log.info('location fetched successfully', 'getById', {
                 locationId: existingLocation.id
             });
             return existingLocation;
         } catch (error) {
-            log.error('failed to fetch location by id', 'getLocationById', error, {
+            log.error('failed to fetch location by id', 'getById', error, {
                 locationId: id,
                 actor: actor.id
             });
@@ -110,21 +110,18 @@ export class EventLocationService {
      * @returns Array of location records.
      * @throws Error if listing fails.
      */
-    async listLocations(
-        filter: SelectEventLocationFilter,
-        actor: UserType
-    ): Promise<EventLocationRecord[]> {
-        log.info('listing locations', 'listLocations', { filter, actor: actor.id });
+    async list(filter: SelectEventLocationFilter, actor: UserType): Promise<EventLocationRecord[]> {
+        log.info('listing locations', 'list', { filter, actor: actor.id });
 
         try {
             const locations = await EventLocationModel.listLocations(filter);
-            log.info('locations listed successfully', 'listLocations', {
+            log.info('locations listed successfully', 'list', {
                 count: locations.length,
                 filter
             });
             return locations;
         } catch (error) {
-            log.error('failed to list locations', 'listLocations', error, {
+            log.error('failed to list locations', 'list', error, {
                 filter,
                 actor: actor.id
             });
@@ -140,17 +137,17 @@ export class EventLocationService {
      * @returns The updated location record.
      * @throws Error if location is not found, actor is not authorized, or update fails.
      */
-    async updateLocation(
+    async update(
         id: string,
         changes: UpdateEventLocationData,
         actor: UserType
     ): Promise<EventLocationRecord> {
-        log.info('updating location', 'updateLocation', { locationId: id, actor: actor.id });
+        log.info('updating location', 'update', { locationId: id, actor: actor.id });
 
         // Only admins can update locations
         EventLocationService.assertAdmin(actor);
 
-        const existingLocation = await this.getLocationById(id, actor);
+        const existingLocation = await this.getById(id, actor);
 
         const dataToUpdate = sanitizePartialUpdate(changes);
 
@@ -163,12 +160,12 @@ export class EventLocationService {
                 existingLocation.id,
                 dataWithAudit
             );
-            log.info('location updated successfully', 'updateLocation', {
+            log.info('location updated successfully', 'update', {
                 locationId: updatedLocation.id
             });
             return updatedLocation;
         } catch (error) {
-            log.error('failed to update location', 'updateLocation', error, {
+            log.error('failed to update location', 'update', error, {
                 locationId: id,
                 actor: actor.id
             });
@@ -188,7 +185,7 @@ export class EventLocationService {
         // Only admins can delete locations
         EventLocationService.assertAdmin(actor);
 
-        await this.getLocationById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await EventLocationModel.softDeleteLocation(id);
@@ -214,7 +211,7 @@ export class EventLocationService {
         // Only admins can restore locations
         EventLocationService.assertAdmin(actor);
 
-        await this.getLocationById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await EventLocationModel.restoreLocation(id);
@@ -240,7 +237,7 @@ export class EventLocationService {
         // Only admins can hard delete
         EventLocationService.assertAdmin(actor);
 
-        await this.getLocationById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await EventLocationModel.hardDeleteLocation(id);
@@ -255,45 +252,42 @@ export class EventLocationService {
     }
 
     /**
-     * List events at a specific location.
+     * List events for a specific location.
      * @param locationId - The ID of the location.
      * @param actor - The user performing the action.
      * @param filter - Pagination options.
      * @returns Array of event records at the specified location.
      * @throws Error if location is not found or listing fails.
      */
-    async listEventsByLocation(
+    async listEvents(
         locationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<EventRecord[]> {
-        log.info('listing events by location', 'listEventsByLocation', {
+        log.info('listing events by location', 'listEvents', {
             locationId,
             actor: actor.id,
             filter
         });
 
         try {
-            // Check if location exists
-            const location = await EventLocationModel.getLocationById(locationId);
-            if (!location) {
-                throw new Error(`Location ${locationId} not found`);
-            }
+            // Verify location exists
+            const location = await this.getById(locationId, actor);
 
             const eventFilter: SelectEventFilter = {
-                locationId,
+                locationId: location.id,
                 ...filter,
                 includeDeleted: false
             };
 
             const events = await EventModel.listEvents(eventFilter);
-            log.info('events by location listed successfully', 'listEventsByLocation', {
+            log.info('events by location listed successfully', 'listEvents', {
                 locationId,
                 count: events.length
             });
             return events;
         } catch (error) {
-            log.error('failed to list events by location', 'listEventsByLocation', error, {
+            log.error('failed to list events by location', 'listEvents', error, {
                 locationId,
                 actor: actor.id
             });

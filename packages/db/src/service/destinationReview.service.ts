@@ -80,19 +80,19 @@ export class DestinationReviewService {
      * @returns The review record.
      * @throws Error if review is not found.
      */
-    async getReviewById(id: string, actor: UserType): Promise<DestinationReviewRecord> {
-        log.info('fetching review by id', 'getReviewById', { reviewId: id, actor: actor.id });
+    async getById(id: string, actor: UserType): Promise<DestinationReviewRecord> {
+        log.info('fetching review by id', 'getById', { reviewId: id, actor: actor.id });
 
         try {
             const review = await DestinationReviewModel.getReviewById(id);
             const existingReview = assertExists(review, `Review ${id} not found`);
 
-            log.info('review fetched successfully', 'getReviewById', {
+            log.info('review fetched successfully', 'getById', {
                 reviewId: existingReview.id
             });
             return existingReview;
         } catch (error) {
-            log.error('failed to fetch review by id', 'getReviewById', error, {
+            log.error('failed to fetch review by id', 'getById', error, {
                 reviewId: id,
                 actor: actor.id
             });
@@ -108,12 +108,12 @@ export class DestinationReviewService {
      * @returns Array of review records.
      * @throws Error if destination is not found or listing fails.
      */
-    async listReviews(
+    async list(
         destinationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationReviewRecord[]> {
-        log.info('listing reviews for destination', 'listReviews', {
+        log.info('listing reviews for destination', 'list', {
             destinationId,
             actor: actor.id,
             filter
@@ -131,13 +131,13 @@ export class DestinationReviewService {
                 ...filter,
                 includeDeleted: false
             });
-            log.info('reviews listed successfully', 'listReviews', {
+            log.info('reviews listed successfully', 'list', {
                 destinationId,
                 count: reviews.length
             });
             return reviews;
         } catch (error) {
-            log.error('failed to list reviews', 'listReviews', error, {
+            log.error('failed to list reviews', 'list', error, {
                 destinationId,
                 actor: actor.id
             });
@@ -153,14 +153,14 @@ export class DestinationReviewService {
      * @returns The updated review record.
      * @throws Error if review is not found, actor is not authorized, or update fails.
      */
-    async updateReview(
+    async update(
         id: string,
         changes: UpdateDestinationReviewData,
         actor: UserType
     ): Promise<DestinationReviewRecord> {
-        log.info('updating review', 'updateReview', { reviewId: id, actor: actor.id });
+        log.info('updating review', 'update', { reviewId: id, actor: actor.id });
 
-        const existingReview = await this.getReviewById(id, actor);
+        const existingReview = await this.getById(id, actor);
 
         // Check if actor is creator or admin
         DestinationReviewService.assertCreatorOrAdmin(existingReview.createdById, actor);
@@ -176,12 +176,12 @@ export class DestinationReviewService {
                 existingReview.id,
                 dataWithAudit
             );
-            log.info('review updated successfully', 'updateReview', {
+            log.info('review updated successfully', 'update', {
                 reviewId: updatedReview.id
             });
             return updatedReview;
         } catch (error) {
-            log.error('failed to update review', 'updateReview', error, {
+            log.error('failed to update review', 'update', error, {
                 reviewId: id,
                 actor: actor.id
             });
@@ -198,7 +198,7 @@ export class DestinationReviewService {
     async delete(id: string, actor: UserType): Promise<void> {
         log.info('soft deleting review', 'delete', { reviewId: id, actor: actor.id });
 
-        const existingReview = await this.getReviewById(id, actor);
+        const existingReview = await this.getById(id, actor);
 
         // Check if actor is creator or admin
         DestinationReviewService.assertCreatorOrAdmin(existingReview.createdById, actor);
@@ -224,7 +224,7 @@ export class DestinationReviewService {
     async restore(id: string, actor: UserType): Promise<void> {
         log.info('restoring review', 'restore', { reviewId: id, actor: actor.id });
 
-        const existingReview = await this.getReviewById(id, actor);
+        const existingReview = await this.getById(id, actor);
 
         // Check if actor is creator or admin
         DestinationReviewService.assertCreatorOrAdmin(existingReview.createdById, actor);
@@ -255,7 +255,7 @@ export class DestinationReviewService {
             throw new Error('Forbidden: Only admins can permanently delete reviews');
         }
 
-        await this.getReviewById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await DestinationReviewModel.hardDeleteReview(id);
@@ -387,12 +387,12 @@ export class DestinationReviewService {
      * @returns Array of review records created by the user.
      * @throws Error if listing fails.
      */
-    async listReviewsByUser(
+    async listByUser(
         userId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationReviewRecord[]> {
-        log.info('listing reviews by user', 'listReviewsByUser', {
+        log.info('listing reviews by user', 'listByUser', {
             userId,
             actor: actor.id,
             filter
@@ -432,13 +432,13 @@ export class DestinationReviewService {
             const limit = filter.limit || 20;
             const paginatedReviews = userReviews.slice(offset, offset + limit);
 
-            log.info('reviews by user listed successfully', 'listReviewsByUser', {
+            log.info('reviews by user listed successfully', 'listByUser', {
                 userId,
                 count: paginatedReviews.length
             });
             return paginatedReviews;
         } catch (error) {
-            log.error('failed to list reviews by user', 'listReviewsByUser', error, {
+            log.error('failed to list reviews by user', 'listByUser', error, {
                 userId,
                 actor: actor.id
             });

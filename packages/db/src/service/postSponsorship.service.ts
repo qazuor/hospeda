@@ -91,8 +91,8 @@ export class PostSponsorshipService {
      * @returns The sponsorship record.
      * @throws Error if sponsorship is not found.
      */
-    async getSponsorshipById(id: string, actor: UserType): Promise<PostSponsorshipRecord> {
-        log.info('fetching sponsorship by id', 'getSponsorshipById', {
+    async getById(id: string, actor: UserType): Promise<PostSponsorshipRecord> {
+        log.info('fetching sponsorship by id', 'getById', {
             sponsorshipId: id,
             actor: actor.id
         });
@@ -101,12 +101,12 @@ export class PostSponsorshipService {
             const sponsorship = await PostSponsorshipModel.getSponsorshipById(id);
             const existingSponsorship = assertExists(sponsorship, `Sponsorship ${id} not found`);
 
-            log.info('sponsorship fetched successfully', 'getSponsorshipById', {
+            log.info('sponsorship fetched successfully', 'getById', {
                 sponsorshipId: existingSponsorship.id
             });
             return existingSponsorship;
         } catch (error) {
-            log.error('failed to fetch sponsorship by id', 'getSponsorshipById', error, {
+            log.error('failed to fetch sponsorship by id', 'getById', error, {
                 sponsorshipId: id,
                 actor: actor.id
             });
@@ -121,21 +121,21 @@ export class PostSponsorshipService {
      * @returns Array of sponsorship records.
      * @throws Error if listing fails.
      */
-    async listSponsorships(
+    async list(
         filter: SelectPostSponsorshipFilter,
         actor: UserType
     ): Promise<PostSponsorshipRecord[]> {
-        log.info('listing sponsorships', 'listSponsorships', { filter, actor: actor.id });
+        log.info('listing sponsorships', 'list', { filter, actor: actor.id });
 
         try {
             const sponsorships = await PostSponsorshipModel.listSponsorships(filter);
-            log.info('sponsorships listed successfully', 'listSponsorships', {
+            log.info('sponsorships listed successfully', 'list', {
                 count: sponsorships.length,
                 filter
             });
             return sponsorships;
         } catch (error) {
-            log.error('failed to list sponsorships', 'listSponsorships', error, {
+            log.error('failed to list sponsorships', 'list', error, {
                 filter,
                 actor: actor.id
             });
@@ -151,12 +151,12 @@ export class PostSponsorshipService {
      * @returns The updated sponsorship record.
      * @throws Error if sponsorship is not found, actor is not authorized, or update fails.
      */
-    async updateSponsorship(
+    async update(
         id: string,
         changes: UpdatePostSponsorshipData,
         actor: UserType
     ): Promise<PostSponsorshipRecord> {
-        log.info('updating sponsorship', 'updateSponsorship', {
+        log.info('updating sponsorship', 'update', {
             sponsorshipId: id,
             actor: actor.id
         });
@@ -164,7 +164,7 @@ export class PostSponsorshipService {
         // Only admins can update sponsorships
         PostSponsorshipService.assertAdmin(actor);
 
-        const existingSponsorship = await this.getSponsorshipById(id, actor);
+        const existingSponsorship = await this.getById(id, actor);
 
         const dataToUpdate = sanitizePartialUpdate(changes);
 
@@ -177,12 +177,12 @@ export class PostSponsorshipService {
                 existingSponsorship.id,
                 dataWithAudit
             );
-            log.info('sponsorship updated successfully', 'updateSponsorship', {
+            log.info('sponsorship updated successfully', 'update', {
                 sponsorshipId: updatedSponsorship.id
             });
             return updatedSponsorship;
         } catch (error) {
-            log.error('failed to update sponsorship', 'updateSponsorship', error, {
+            log.error('failed to update sponsorship', 'update', error, {
                 sponsorshipId: id,
                 actor: actor.id
             });
@@ -202,7 +202,7 @@ export class PostSponsorshipService {
         // Only admins can delete sponsorships
         PostSponsorshipService.assertAdmin(actor);
 
-        await this.getSponsorshipById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await PostSponsorshipModel.softDeleteSponsorship(id);
@@ -228,7 +228,7 @@ export class PostSponsorshipService {
         // Only admins can restore sponsorships
         PostSponsorshipService.assertAdmin(actor);
 
-        await this.getSponsorshipById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await PostSponsorshipModel.restoreSponsorship(id);
@@ -254,7 +254,7 @@ export class PostSponsorshipService {
         // Only admins can hard delete
         PostSponsorshipService.assertAdmin(actor);
 
-        await this.getSponsorshipById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await PostSponsorshipModel.hardDeleteSponsorship(id);
@@ -276,12 +276,12 @@ export class PostSponsorshipService {
      * @returns Array of sponsorship records for the sponsor.
      * @throws Error if sponsor is not found or listing fails.
      */
-    async listSponsorshipsBySponsor(
+    async listBySponsor(
         sponsorId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostSponsorshipRecord[]> {
-        log.info('listing sponsorships by sponsor', 'listSponsorshipsBySponsor', {
+        log.info('listing sponsorships by sponsor', 'listBySponsor', {
             sponsorId,
             actor: actor.id,
             filter
@@ -301,21 +301,16 @@ export class PostSponsorshipService {
             };
 
             const sponsorships = await PostSponsorshipModel.listSponsorships(sponsorshipFilter);
-            log.info('sponsorships by sponsor listed successfully', 'listSponsorshipsBySponsor', {
+            log.info('sponsorships by sponsor listed successfully', 'listBySponsor', {
                 sponsorId,
                 count: sponsorships.length
             });
             return sponsorships;
         } catch (error) {
-            log.error(
-                'failed to list sponsorships by sponsor',
-                'listSponsorshipsBySponsor',
-                error,
-                {
-                    sponsorId,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to list sponsorships by sponsor', 'listBySponsor', error, {
+                sponsorId,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -327,11 +322,11 @@ export class PostSponsorshipService {
      * @returns Array of active sponsorship records.
      * @throws Error if listing fails.
      */
-    async getActiveSponsorships(
+    async getActive(
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostSponsorshipRecord[]> {
-        log.info('getting active sponsorships', 'getActiveSponsorships', {
+        log.info('getting active sponsorships', 'getActive', {
             actor: actor.id,
             filter
         });
@@ -371,12 +366,12 @@ export class PostSponsorshipService {
                 return false;
             });
 
-            log.info('active sponsorships retrieved successfully', 'getActiveSponsorships', {
+            log.info('active sponsorships retrieved successfully', 'getActive', {
                 count: activeSponsorships.length
             });
             return activeSponsorships;
         } catch (error) {
-            log.error('failed to get active sponsorships', 'getActiveSponsorships', error, {
+            log.error('failed to get active sponsorships', 'getActive', error, {
                 actor: actor.id
             });
             throw error;
@@ -389,7 +384,7 @@ export class PostSponsorshipService {
      * @returns Sponsorship statistics.
      * @throws Error if actor is not authorized or stats calculation fails.
      */
-    async getSponsorshipStats(actor: UserType): Promise<{
+    async getStats(actor: UserType): Promise<{
         totalSponsorships: number;
         activeSponsorships: number;
         expiredSponsorships: number;
@@ -398,7 +393,7 @@ export class PostSponsorshipService {
         totalRevenue: number;
         averageDuration: number;
     }> {
-        log.info('getting sponsorship stats', 'getSponsorshipStats', { actor: actor.id });
+        log.info('getting sponsorship stats', 'getStats', { actor: actor.id });
 
         // Only admins can view sponsorship stats
         PostSponsorshipService.assertAdmin(actor);
@@ -489,12 +484,12 @@ export class PostSponsorshipService {
                 averageDuration
             };
 
-            log.info('sponsorship stats retrieved successfully', 'getSponsorshipStats', {
+            log.info('sponsorship stats retrieved successfully', 'getStats', {
                 stats
             });
             return stats;
         } catch (error) {
-            log.error('failed to get sponsorship stats', 'getSponsorshipStats', error, {
+            log.error('failed to get sponsorship stats', 'getStats', error, {
                 actor: actor.id
             });
             throw error;

@@ -6,15 +6,16 @@ import {
     PostModel,
     type PostRecord,
     PostSponsorModel,
-    type PostSponsorRecord
+    PostSponsorshipModel,
+    type PostSponsorshipRecord
 } from '../model';
 import type {
     InsertEntityTagRelation,
     InsertPost,
+    InsertPostSponsorship,
     PaginationParams,
     SelectPostFilter,
-    UpdatePostData,
-    UpdatePostSponsorData
+    UpdatePostData
 } from '../types/db-types';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
 
@@ -94,17 +95,17 @@ export class PostService {
      * @returns The post record.
      * @throws Error if post is not found.
      */
-    async getPostById(id: string, actor: UserType): Promise<PostRecord> {
-        log.info('fetching post by id', 'getPostById', { postId: id, actor: actor.id });
+    async getById(id: string, actor: UserType): Promise<PostRecord> {
+        log.info('fetching post by id', 'getById', { postId: id, actor: actor.id });
 
         try {
             const post = await PostModel.getPostById(id);
             const existingPost = assertExists(post, `Post ${id} not found`);
 
-            log.info('post fetched successfully', 'getPostById', { postId: existingPost.id });
+            log.info('post fetched successfully', 'getById', { postId: existingPost.id });
             return existingPost;
         } catch (error) {
-            log.error('failed to fetch post by id', 'getPostById', error, {
+            log.error('failed to fetch post by id', 'getById', error, {
                 postId: id,
                 actor: actor.id
             });
@@ -119,18 +120,18 @@ export class PostService {
      * @returns Array of post records.
      * @throws Error if listing fails.
      */
-    async listPosts(filter: SelectPostFilter, actor: UserType): Promise<PostRecord[]> {
-        log.info('listing posts', 'listPosts', { filter, actor: actor.id });
+    async list(filter: SelectPostFilter, actor: UserType): Promise<PostRecord[]> {
+        log.info('listing posts', 'list', { filter, actor: actor.id });
 
         try {
             const posts = await PostModel.listPosts(filter);
-            log.info('posts listed successfully', 'listPosts', {
+            log.info('posts listed successfully', 'list', {
                 count: posts.length,
                 filter
             });
             return posts;
         } catch (error) {
-            log.error('failed to list posts', 'listPosts', error, { filter, actor: actor.id });
+            log.error('failed to list posts', 'list', error, { filter, actor: actor.id });
             throw error;
         }
     }
@@ -143,10 +144,10 @@ export class PostService {
      * @returns The updated post record.
      * @throws Error if post is not found, actor is not authorized, or update fails.
      */
-    async updatePost(id: string, changes: UpdatePostData, actor: UserType): Promise<PostRecord> {
-        log.info('updating post', 'updatePost', { postId: id, actor: actor.id });
+    async update(id: string, changes: UpdatePostData, actor: UserType): Promise<PostRecord> {
+        log.info('updating post', 'update', { postId: id, actor: actor.id });
 
-        const existingPost = await this.getPostById(id, actor);
+        const existingPost = await this.getById(id, actor);
 
         // Check if actor is author or admin
         PostService.assertAuthorOrAdmin(existingPost.createdById, actor);
@@ -159,10 +160,10 @@ export class PostService {
                 updatedById: actor.id
             };
             const updatedPost = await PostModel.updatePost(existingPost.id, dataWithAudit);
-            log.info('post updated successfully', 'updatePost', { postId: updatedPost.id });
+            log.info('post updated successfully', 'update', { postId: updatedPost.id });
             return updatedPost;
         } catch (error) {
-            log.error('failed to update post', 'updatePost', error, {
+            log.error('failed to update post', 'update', error, {
                 postId: id,
                 actor: actor.id
             });
@@ -179,7 +180,7 @@ export class PostService {
     async delete(id: string, actor: UserType): Promise<void> {
         log.info('soft deleting post', 'delete', { postId: id, actor: actor.id });
 
-        const existingPost = await this.getPostById(id, actor);
+        const existingPost = await this.getById(id, actor);
 
         // Check if actor is author or admin
         PostService.assertAuthorOrAdmin(existingPost.createdById, actor);
@@ -205,7 +206,7 @@ export class PostService {
     async restore(id: string, actor: UserType): Promise<void> {
         log.info('restoring post', 'restore', { postId: id, actor: actor.id });
 
-        const existingPost = await this.getPostById(id, actor);
+        const existingPost = await this.getById(id, actor);
 
         // Check if actor is author or admin
         PostService.assertAuthorOrAdmin(existingPost.createdById, actor);
@@ -234,7 +235,7 @@ export class PostService {
         // Only admins can hard delete
         PostService.assertAdmin(actor);
 
-        await this.getPostById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await PostModel.hardDeletePost(id);
@@ -256,12 +257,12 @@ export class PostService {
      * @returns Array of post records with the specified category.
      * @throws Error if listing fails.
      */
-    async getPostsByCategory(
+    async getByCategory(
         category: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('fetching posts by category', 'getPostsByCategory', {
+        log.info('fetching posts by category', 'getByCategory', {
             category,
             actor: actor.id,
             filter
@@ -275,13 +276,13 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('posts fetched by category successfully', 'getPostsByCategory', {
+            log.info('posts fetched by category successfully', 'getByCategory', {
                 category,
                 count: posts.length
             });
             return posts;
         } catch (error) {
-            log.error('failed to fetch posts by category', 'getPostsByCategory', error, {
+            log.error('failed to fetch posts by category', 'getByCategory', error, {
                 category,
                 actor: actor.id
             });
@@ -297,12 +298,12 @@ export class PostService {
      * @returns Array of post records with the specified visibility.
      * @throws Error if listing fails.
      */
-    async getPostsByVisibility(
+    async getByVisibility(
         visibility: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('fetching posts by visibility', 'getPostsByVisibility', {
+        log.info('fetching posts by visibility', 'getByVisibility', {
             visibility,
             actor: actor.id,
             filter
@@ -316,13 +317,13 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('posts fetched by visibility successfully', 'getPostsByVisibility', {
+            log.info('posts fetched by visibility successfully', 'getByVisibility', {
                 visibility,
                 count: posts.length
             });
             return posts;
         } catch (error) {
-            log.error('failed to fetch posts by visibility', 'getPostsByVisibility', error, {
+            log.error('failed to fetch posts by visibility', 'getByVisibility', error, {
                 visibility,
                 actor: actor.id
             });
@@ -331,46 +332,109 @@ export class PostService {
     }
 
     /**
-     * Update a post sponsor.
-     * @param sponsorId - The ID of the sponsor to update.
-     * @param changes - The partial fields to update.
+     * Assign a sponsor to a post by creating a sponsorship.
+     * @param postId - The ID of the post.
+     * @param sponsorId - The ID of the sponsor.
+     * @param sponsorshipData - The sponsorship data.
      * @param actor - The user performing the action (must be an admin).
-     * @returns The updated sponsor record.
-     * @throws Error if sponsor is not found, actor is not authorized, or update fails.
+     * @returns The created sponsorship record.
+     * @throws Error if post or sponsor is not found, actor is not authorized, or creation fails.
      */
-    async updateSponsor(
+    async addSponsor(
+        postId: string,
         sponsorId: string,
-        changes: UpdatePostSponsorData,
+        sponsorshipData: Omit<
+            InsertPostSponsorship,
+            'postId' | 'sponsorId' | 'createdById' | 'updatedById'
+        >,
         actor: UserType
-    ): Promise<PostSponsorRecord> {
-        log.info('updating post sponsor', 'updateSponsor', {
+    ): Promise<PostSponsorshipRecord> {
+        log.info('adding sponsor to post', 'addSponsor', {
+            postId,
             sponsorId,
             actor: actor.id
         });
 
-        // Only admins can update sponsors
+        // Only admins can assign sponsors
         PostService.assertAdmin(actor);
 
-        try {
-            // Check if sponsor exists
-            const sponsor = await PostSponsorModel.getSponsorById(sponsorId);
-            if (!sponsor) {
-                throw new Error(`Sponsor ${sponsorId} not found`);
-            }
+        // Check if post exists
+        const _post = await this.getById(postId, actor);
 
-            const dataToUpdate = sanitizePartialUpdate(changes);
-            const dataWithAudit: UpdatePostSponsorData = {
-                ...dataToUpdate,
+        // Check if sponsor exists
+        const sponsor = await PostSponsorModel.getSponsorById(sponsorId);
+        if (!sponsor) {
+            throw new Error(`Sponsor ${sponsorId} not found`);
+        }
+
+        try {
+            const sponsorshipDataWithIds: InsertPostSponsorship = {
+                ...sponsorshipData,
+                postId,
+                sponsorId,
+                createdById: actor.id,
                 updatedById: actor.id
             };
 
-            const updatedSponsor = await PostSponsorModel.updateSponsor(sponsorId, dataWithAudit);
-            log.info('post sponsor updated successfully', 'updateSponsor', {
-                sponsorId: updatedSponsor.id
+            const sponsorship =
+                await PostSponsorshipModel.createSponsorship(sponsorshipDataWithIds);
+            log.info('sponsor added to post successfully', 'addSponsor', {
+                postId,
+                sponsorId,
+                sponsorshipId: sponsorship.id
             });
-            return updatedSponsor;
+            return sponsorship;
         } catch (error) {
-            log.error('failed to update post sponsor', 'updateSponsor', error, {
+            log.error('failed to add sponsor to post', 'addSponsor', error, {
+                postId,
+                sponsorId,
+                actor: actor.id
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Remove a sponsor from a post by deleting the sponsorship.
+     * @param postId - The ID of the post.
+     * @param sponsorId - The ID of the sponsor to remove.
+     * @param actor - The user performing the action (must be an admin).
+     * @throws Error if post or sponsor is not found, actor is not authorized, or deletion fails.
+     */
+    async removeSponsor(postId: string, sponsorId: string, actor: UserType): Promise<void> {
+        log.info('removing sponsor from post', 'removeSponsor', {
+            postId,
+            sponsorId,
+            actor: actor.id
+        });
+
+        // Only admins can remove sponsors
+        PostService.assertAdmin(actor);
+
+        try {
+            // Find the sponsorship
+            const sponsorships = await PostSponsorshipModel.listSponsorships({
+                postId,
+                sponsorId,
+                includeDeleted: false
+            });
+
+            if (sponsorships.length === 0) {
+                throw new Error(`No sponsorship found for post ${postId} and sponsor ${sponsorId}`);
+            }
+
+            // Delete each sponsorship (should be only one, but just in case)
+            for (const sponsorship of sponsorships) {
+                await PostSponsorshipModel.softDeleteSponsorship(sponsorship.id);
+            }
+
+            log.info('sponsor removed from post successfully', 'removeSponsor', {
+                postId,
+                sponsorId
+            });
+        } catch (error) {
+            log.error('failed to remove sponsor from post', 'removeSponsor', error, {
+                postId,
                 sponsorId,
                 actor: actor.id
             });
@@ -393,7 +457,7 @@ export class PostService {
             actor: actor.id
         });
 
-        const existingPost = await this.getPostById(postId, actor);
+        const existingPost = await this.getById(postId, actor);
 
         // Check if actor is author or admin
         PostService.assertAuthorOrAdmin(existingPost.createdById, actor);
@@ -435,7 +499,7 @@ export class PostService {
             actor: actor.id
         });
 
-        const existingPost = await this.getPostById(postId, actor);
+        const existingPost = await this.getById(postId, actor);
 
         // Check if actor is author or admin
         PostService.assertAuthorOrAdmin(existingPost.createdById, actor);
@@ -465,13 +529,13 @@ export class PostService {
      * @returns Array of post records within the date range.
      * @throws Error if listing fails.
      */
-    async getPostsByDateRange(
+    async getByDateRange(
         startDate: Date,
         endDate: Date,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('getting posts by date range', 'getPostsByDateRange', {
+        log.info('getting posts by date range', 'getByDateRange', {
             startDate,
             endDate,
             actor: actor.id,
@@ -498,12 +562,12 @@ export class PostService {
                 return dateB.getTime() - dateA.getTime();
             });
 
-            log.info('posts in date range retrieved successfully', 'getPostsByDateRange', {
+            log.info('posts in date range retrieved successfully', 'getByDateRange', {
                 count: postsInRange.length
             });
             return postsInRange;
         } catch (error) {
-            log.error('failed to get posts by date range', 'getPostsByDateRange', error, {
+            log.error('failed to get posts by date range', 'getByDateRange', error, {
                 startDate,
                 endDate,
                 actor: actor.id
@@ -519,8 +583,8 @@ export class PostService {
      * @returns Array of featured post records.
      * @throws Error if listing fails.
      */
-    async getFeaturedPosts(limit: number, actor: UserType): Promise<PostRecord[]> {
-        log.info('getting featured posts', 'getFeaturedPosts', {
+    async getFeatured(limit: number, actor: UserType): Promise<PostRecord[]> {
+        log.info('getting featured posts', 'getFeatured', {
             limit,
             actor: actor.id
         });
@@ -533,12 +597,12 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('featured posts retrieved successfully', 'getFeaturedPosts', {
+            log.info('featured posts retrieved successfully', 'getFeatured', {
                 count: posts.length
             });
             return posts;
         } catch (error) {
-            log.error('failed to get featured posts', 'getFeaturedPosts', error, {
+            log.error('failed to get featured posts', 'getFeatured', error, {
                 limit,
                 actor: actor.id
             });
@@ -553,8 +617,8 @@ export class PostService {
      * @returns Array of news post records.
      * @throws Error if listing fails.
      */
-    async getNewsPosts(limit: number, actor: UserType): Promise<PostRecord[]> {
-        log.info('getting news posts', 'getNewsPosts', {
+    async getNews(limit: number, actor: UserType): Promise<PostRecord[]> {
+        log.info('getting news posts', 'getNews', {
             limit,
             actor: actor.id
         });
@@ -567,12 +631,12 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('news posts retrieved successfully', 'getNewsPosts', {
+            log.info('news posts retrieved successfully', 'getNews', {
                 count: posts.length
             });
             return posts;
         } catch (error) {
-            log.error('failed to get news posts', 'getNewsPosts', error, {
+            log.error('failed to get news posts', 'getNews', error, {
                 limit,
                 actor: actor.id
             });
@@ -768,12 +832,12 @@ export class PostService {
      * @returns Array of matching post records.
      * @throws Error if search fails.
      */
-    async searchPosts(
+    async search(
         query: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('searching posts', 'searchPosts', {
+        log.info('searching posts', 'search', {
             query,
             actor: actor.id,
             filter
@@ -787,13 +851,13 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(searchFilter);
-            log.info('posts search completed successfully', 'searchPosts', {
+            log.info('posts search completed successfully', 'search', {
                 query,
                 count: posts.length
             });
             return posts;
         } catch (error) {
-            log.error('failed to search posts', 'searchPosts', error, {
+            log.error('failed to search posts', 'search', error, {
                 query,
                 actor: actor.id
             });

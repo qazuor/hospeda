@@ -90,8 +90,8 @@ export class AccommodationFaqService {
      * @returns The FAQ record.
      * @throws Error if FAQ entry is not found or actor is not authorized.
      */
-    async getFaqById(id: string, actor: UserType): Promise<AccommodationFaqRecord> {
-        log.info('fetching FAQ by id', 'getFaqById', { faqId: id, actor: actor.id });
+    async getById(id: string, actor: UserType): Promise<AccommodationFaqRecord> {
+        log.info('fetching FAQ by id', 'getById', { faqId: id, actor: actor.id });
 
         try {
             const faq = await AccommodationFaqModel.getFaqById(id);
@@ -108,12 +108,12 @@ export class AccommodationFaqService {
             // Check if actor is owner or admin
             AccommodationFaqService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
-            log.info('FAQ fetched successfully', 'getFaqById', {
+            log.info('FAQ fetched successfully', 'getById', {
                 faqId: existingFaq.id
             });
             return existingFaq;
         } catch (error) {
-            log.error('failed to fetch FAQ by id', 'getFaqById', error, {
+            log.error('failed to fetch FAQ by id', 'getById', error, {
                 faqId: id,
                 actor: actor.id
             });
@@ -129,12 +129,12 @@ export class AccommodationFaqService {
      * @returns Array of FAQ records.
      * @throws Error if accommodation is not found, actor is not authorized, or listing fails.
      */
-    async listFaqs(
+    async list(
         accommodationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationFaqRecord[]> {
-        log.info('listing FAQs for accommodation', 'listFaqs', {
+        log.info('listing FAQs for accommodation', 'list', {
             accommodationId,
             actor: actor.id,
             filter
@@ -154,13 +154,13 @@ export class AccommodationFaqService {
             };
 
             const faqs = await AccommodationFaqModel.listFaqs(faqFilter);
-            log.info('FAQs listed successfully', 'listFaqs', {
+            log.info('FAQs listed successfully', 'list', {
                 accommodationId,
                 count: faqs.length
             });
             return faqs;
         } catch (error) {
-            log.error('failed to list FAQs', 'listFaqs', error, {
+            log.error('failed to list FAQs', 'list', error, {
                 accommodationId,
                 actor: actor.id
             });
@@ -176,14 +176,14 @@ export class AccommodationFaqService {
      * @returns The updated FAQ record.
      * @throws Error if FAQ entry is not found, actor is not authorized, or update fails.
      */
-    async updateFaq(
+    async update(
         id: string,
         changes: UpdateAccommodationFaqData,
         actor: UserType
     ): Promise<AccommodationFaqRecord> {
-        log.info('updating FAQ', 'updateFaq', { faqId: id, actor: actor.id });
+        log.info('updating FAQ', 'update', { faqId: id, actor: actor.id });
 
-        const existingFaq = await this.getFaqById(id, actor);
+        const existingFaq = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -204,12 +204,12 @@ export class AccommodationFaqService {
                 updatedById: actor.id
             };
             const updatedFaq = await AccommodationFaqModel.updateFaq(existingFaq.id, dataWithAudit);
-            log.info('FAQ updated successfully', 'updateFaq', {
+            log.info('FAQ updated successfully', 'update', {
                 faqId: updatedFaq.id
             });
             return updatedFaq;
         } catch (error) {
-            log.error('failed to update FAQ', 'updateFaq', error, {
+            log.error('failed to update FAQ', 'update', error, {
                 faqId: id,
                 actor: actor.id
             });
@@ -226,7 +226,7 @@ export class AccommodationFaqService {
     async delete(id: string, actor: UserType): Promise<void> {
         log.info('soft deleting FAQ', 'delete', { faqId: id, actor: actor.id });
 
-        const existingFaq = await this.getFaqById(id, actor);
+        const existingFaq = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -260,7 +260,7 @@ export class AccommodationFaqService {
     async restore(id: string, actor: UserType): Promise<void> {
         log.info('restoring FAQ', 'restore', { faqId: id, actor: actor.id });
 
-        const existingFaq = await this.getFaqById(id, actor);
+        const existingFaq = await this.getById(id, actor);
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(
@@ -299,7 +299,7 @@ export class AccommodationFaqService {
             throw new Error('Forbidden: Only admins can permanently delete FAQs');
         }
 
-        await this.getFaqById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await AccommodationFaqModel.hardDeleteFaq(id);

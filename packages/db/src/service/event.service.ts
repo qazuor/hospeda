@@ -95,17 +95,17 @@ export class EventService {
      * @returns The event record.
      * @throws Error if event is not found.
      */
-    async getEventById(id: string, actor: UserType): Promise<EventRecord> {
-        log.info('fetching event by id', 'getEventById', { eventId: id, actor: actor.id });
+    async getById(id: string, actor: UserType): Promise<EventRecord> {
+        log.info('fetching event by id', 'getById', { eventId: id, actor: actor.id });
 
         try {
             const event = await EventModel.getEventById(id);
             const existingEvent = assertExists(event, `Event ${id} not found`);
 
-            log.info('event fetched successfully', 'getEventById', { eventId: existingEvent.id });
+            log.info('event fetched successfully', 'getById', { eventId: existingEvent.id });
             return existingEvent;
         } catch (error) {
-            log.error('failed to fetch event by id', 'getEventById', error, {
+            log.error('failed to fetch event by id', 'getById', error, {
                 eventId: id,
                 actor: actor.id
             });
@@ -156,18 +156,18 @@ export class EventService {
      * @returns Array of event records.
      * @throws Error if listing fails.
      */
-    async listEvents(filter: SelectEventFilter, actor: UserType): Promise<EventRecord[]> {
-        log.info('listing events', 'listEvents', { filter, actor: actor.id });
+    async list(filter: SelectEventFilter, actor: UserType): Promise<EventRecord[]> {
+        log.info('listing events', 'list', { filter, actor: actor.id });
 
         try {
             const events = await EventModel.listEvents(filter);
-            log.info('events listed successfully', 'listEvents', {
+            log.info('events listed successfully', 'list', {
                 count: events.length,
                 filter
             });
             return events;
         } catch (error) {
-            log.error('failed to list events', 'listEvents', error, { filter, actor: actor.id });
+            log.error('failed to list events', 'list', error, { filter, actor: actor.id });
             throw error;
         }
     }
@@ -180,10 +180,10 @@ export class EventService {
      * @returns The updated event record.
      * @throws Error if event is not found, actor is not authorized, or update fails.
      */
-    async updateEvent(id: string, changes: UpdateEventData, actor: UserType): Promise<EventRecord> {
-        log.info('updating event', 'updateEvent', { eventId: id, actor: actor.id });
+    async update(id: string, changes: UpdateEventData, actor: UserType): Promise<EventRecord> {
+        log.info('updating event', 'update', { eventId: id, actor: actor.id });
 
-        const existingEvent = await this.getEventById(id, actor);
+        const existingEvent = await this.getById(id, actor);
 
         // Check if actor is author or admin
         EventService.assertAuthorOrAdmin(existingEvent.authorId, actor);
@@ -196,10 +196,10 @@ export class EventService {
                 updatedById: actor.id
             };
             const updatedEvent = await EventModel.updateEvent(existingEvent.id, dataWithAudit);
-            log.info('event updated successfully', 'updateEvent', { eventId: updatedEvent.id });
+            log.info('event updated successfully', 'update', { eventId: updatedEvent.id });
             return updatedEvent;
         } catch (error) {
-            log.error('failed to update event', 'updateEvent', error, {
+            log.error('failed to update event', 'update', error, {
                 eventId: id,
                 actor: actor.id
             });
@@ -216,7 +216,7 @@ export class EventService {
     async delete(id: string, actor: UserType): Promise<void> {
         log.info('soft deleting event', 'delete', { eventId: id, actor: actor.id });
 
-        const existingEvent = await this.getEventById(id, actor);
+        const existingEvent = await this.getById(id, actor);
 
         // Check if actor is author or admin
         EventService.assertAuthorOrAdmin(existingEvent.authorId, actor);
@@ -242,7 +242,7 @@ export class EventService {
     async restore(id: string, actor: UserType): Promise<void> {
         log.info('restoring event', 'restore', { eventId: id, actor: actor.id });
 
-        const existingEvent = await this.getEventById(id, actor);
+        const existingEvent = await this.getById(id, actor);
 
         // Check if actor is author or admin
         EventService.assertAuthorOrAdmin(existingEvent.authorId, actor);
@@ -271,7 +271,7 @@ export class EventService {
         // Only admins can hard delete
         EventService.assertAdmin(actor);
 
-        await this.getEventById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await EventModel.hardDeleteEvent(id);
@@ -293,12 +293,12 @@ export class EventService {
      * @returns Array of event records with the specified category.
      * @throws Error if listing fails.
      */
-    async getEventsByCategory(
+    async getByCategory(
         category: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<EventRecord[]> {
-        log.info('fetching events by category', 'getEventsByCategory', {
+        log.info('fetching events by category', 'getByCategory', {
             category,
             actor: actor.id,
             filter
@@ -312,13 +312,13 @@ export class EventService {
             };
 
             const events = await EventModel.listEvents(eventFilter);
-            log.info('events fetched by category successfully', 'getEventsByCategory', {
+            log.info('events fetched by category successfully', 'getByCategory', {
                 category,
                 count: events.length
             });
             return events;
         } catch (error) {
-            log.error('failed to fetch events by category', 'getEventsByCategory', error, {
+            log.error('failed to fetch events by category', 'getByCategory', error, {
                 category,
                 actor: actor.id
             });
@@ -626,8 +626,8 @@ export class EventService {
      * @returns Array of event records for the current month.
      * @throws Error if listing fails.
      */
-    async listForThisMonth(actor: UserType, filter: PaginationParams = {}): Promise<EventRecord[]> {
-        log.info('listing events for this month', 'listForThisMonth', { actor: actor.id, filter });
+    async listThisMonth(actor: UserType, filter: PaginationParams = {}): Promise<EventRecord[]> {
+        log.info('listing events for this month', 'listThisMonth', { actor: actor.id, filter });
 
         try {
             // Get all active events
@@ -678,12 +678,12 @@ export class EventService {
                 return dateA.getTime() - dateB.getTime();
             });
 
-            log.info('events for this month listed successfully', 'listForThisMonth', {
+            log.info('events for this month listed successfully', 'listThisMonth', {
                 count: thisMonthEvents.length
             });
             return thisMonthEvents;
         } catch (error) {
-            log.error('failed to list events for this month', 'listForThisMonth', error, {
+            log.error('failed to list events for this month', 'listThisMonth', error, {
                 actor: actor.id
             });
             throw error;
@@ -697,8 +697,8 @@ export class EventService {
      * @returns Array of event records for the current week.
      * @throws Error if listing fails.
      */
-    async listForThisWeek(actor: UserType, filter: PaginationParams = {}): Promise<EventRecord[]> {
-        log.info('listing events for this week', 'listForThisWeek', { actor: actor.id, filter });
+    async listThisWeek(actor: UserType, filter: PaginationParams = {}): Promise<EventRecord[]> {
+        log.info('listing events for this week', 'listThisWeek', { actor: actor.id, filter });
 
         try {
             // Get all active events
@@ -747,66 +747,12 @@ export class EventService {
                 return dateA.getTime() - dateB.getTime();
             });
 
-            log.info('events for this week listed successfully', 'listForThisWeek', {
+            log.info('events for this week listed successfully', 'listThisWeek', {
                 count: thisWeekEvents.length
             });
             return thisWeekEvents;
         } catch (error) {
-            log.error('failed to list events for this week', 'listForThisWeek', error, {
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * List events by destination.
-     * @param destinationId - The ID of the destination.
-     * @param actor - The user performing the action.
-     * @param filter - Pagination options.
-     * @returns Array of event records for the specified destination.
-     * @throws Error if destination is not found or listing fails.
-     */
-    async listByDestination(
-        destinationId: string,
-        actor: UserType,
-        filter: PaginationParams = {}
-    ): Promise<EventRecord[]> {
-        log.info('listing events by destination', 'listByDestination', {
-            destinationId,
-            actor: actor.id,
-            filter
-        });
-
-        try {
-            // Get all active events
-            const allEvents = await EventModel.listEvents({
-                ...filter,
-                includeDeleted: false
-            });
-
-            // Filter for events at locations in this destination
-            // This is a simplified approach - in a real application, you would have a direct
-            // relationship between events and destinations or a more efficient query
-            const destinationEvents = allEvents.filter((event) => {
-                if (!event.locationId) {
-                    return false;
-                }
-
-                // In a real implementation, you would check if the location is in the destination
-                // This would require a more complex data model with location.destinationId
-                // For now, we'll assume this relationship exists in the location data
-                return true; // Placeholder for actual destination check
-            });
-
-            log.info('events listed by destination successfully', 'listByDestination', {
-                destinationId,
-                count: destinationEvents.length
-            });
-            return destinationEvents;
-        } catch (error) {
-            log.error('failed to list events by destination', 'listByDestination', error, {
-                destinationId,
+            log.error('failed to list events for this week', 'listThisWeek', error, {
                 actor: actor.id
             });
             throw error;
@@ -822,13 +768,13 @@ export class EventService {
      * @returns Array of event records within the date range.
      * @throws Error if listing fails.
      */
-    async getEventsByDateRange(
+    async getByDateRange(
         startDate: Date,
         endDate: Date,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<EventRecord[]> {
-        log.info('getting events by date range', 'getEventsByDateRange', {
+        log.info('getting events by date range', 'getByDateRange', {
             startDate,
             endDate,
             actor: actor.id,
@@ -866,12 +812,12 @@ export class EventService {
                 return dateA.getTime() - dateB.getTime();
             });
 
-            log.info('events in date range retrieved successfully', 'getEventsByDateRange', {
+            log.info('events in date range retrieved successfully', 'getByDateRange', {
                 count: eventsInRange.length
             });
             return eventsInRange;
         } catch (error) {
-            log.error('failed to get events by date range', 'getEventsByDateRange', error, {
+            log.error('failed to get events by date range', 'getByDateRange', error, {
                 startDate,
                 endDate,
                 actor: actor.id
@@ -887,10 +833,10 @@ export class EventService {
      * @returns The updated event record.
      * @throws Error if event is not found, actor is not authorized, or update fails.
      */
-    async publishEvent(id: string, actor: UserType): Promise<EventRecord> {
-        log.info('publishing event', 'publishEvent', { eventId: id, actor: actor.id });
+    async publish(id: string, actor: UserType): Promise<EventRecord> {
+        log.info('publishing event', 'publish', { eventId: id, actor: actor.id });
 
-        const existingEvent = await this.getEventById(id, actor);
+        const existingEvent = await this.getById(id, actor);
 
         // Check if actor is author or admin
         EventService.assertAuthorOrAdmin(existingEvent.authorId, actor);
@@ -901,10 +847,10 @@ export class EventService {
                 updatedById: actor.id
             };
             const updatedEvent = await EventModel.updateEvent(existingEvent.id, changes);
-            log.info('event published successfully', 'publishEvent', { eventId: updatedEvent.id });
+            log.info('event published successfully', 'publish', { eventId: updatedEvent.id });
             return updatedEvent;
         } catch (error) {
-            log.error('failed to publish event', 'publishEvent', error, {
+            log.error('failed to publish event', 'publish', error, {
                 eventId: id,
                 actor: actor.id
             });
@@ -919,10 +865,10 @@ export class EventService {
      * @returns The updated event record.
      * @throws Error if event is not found, actor is not authorized, or update fails.
      */
-    async unpublishEvent(id: string, actor: UserType): Promise<EventRecord> {
-        log.info('unpublishing event', 'unpublishEvent', { eventId: id, actor: actor.id });
+    async unpublish(id: string, actor: UserType): Promise<EventRecord> {
+        log.info('unpublishing event', 'unpublish', { eventId: id, actor: actor.id });
 
-        const existingEvent = await this.getEventById(id, actor);
+        const existingEvent = await this.getById(id, actor);
 
         // Check if actor is author or admin
         EventService.assertAuthorOrAdmin(existingEvent.authorId, actor);
@@ -933,12 +879,10 @@ export class EventService {
                 updatedById: actor.id
             };
             const updatedEvent = await EventModel.updateEvent(existingEvent.id, changes);
-            log.info('event unpublished successfully', 'unpublishEvent', {
-                eventId: updatedEvent.id
-            });
+            log.info('event unpublished successfully', 'unpublish', { eventId: updatedEvent.id });
             return updatedEvent;
         } catch (error) {
-            log.error('failed to unpublish event', 'unpublishEvent', error, {
+            log.error('failed to unpublish event', 'unpublish', error, {
                 eventId: id,
                 actor: actor.id
             });

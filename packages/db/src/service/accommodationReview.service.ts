@@ -91,19 +91,19 @@ export class AccommodationReviewService {
      * @returns The review record.
      * @throws Error if review is not found.
      */
-    async getReviewById(id: string, actor: UserType): Promise<AccommodationReviewRecord> {
-        log.info('fetching review by id', 'getReviewById', { reviewId: id, actor: actor.id });
+    async getById(id: string, actor: UserType): Promise<AccommodationReviewRecord> {
+        log.info('fetching review by id', 'getById', { reviewId: id, actor: actor.id });
 
         try {
             const review = await AccommodationReviewModel.getReviewById(id);
             const existingReview = assertExists(review, `Review ${id} not found`);
 
-            log.info('review fetched successfully', 'getReviewById', {
+            log.info('review fetched successfully', 'getById', {
                 reviewId: existingReview.id
             });
             return existingReview;
         } catch (error) {
-            log.error('failed to fetch review by id', 'getReviewById', error, {
+            log.error('failed to fetch review by id', 'getById', error, {
                 reviewId: id,
                 actor: actor.id
             });
@@ -119,12 +119,12 @@ export class AccommodationReviewService {
      * @returns Array of review records.
      * @throws Error if accommodation is not found or listing fails.
      */
-    async listReviews(
+    async list(
         accommodationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationReviewRecord[]> {
-        log.info('listing reviews for accommodation', 'listReviews', {
+        log.info('listing reviews for accommodation', 'list', {
             accommodationId,
             actor: actor.id,
             filter
@@ -142,13 +142,13 @@ export class AccommodationReviewService {
                 ...filter,
                 includeDeleted: false
             });
-            log.info('reviews listed successfully', 'listReviews', {
+            log.info('reviews listed successfully', 'list', {
                 accommodationId,
                 count: reviews.length
             });
             return reviews;
         } catch (error) {
-            log.error('failed to list reviews', 'listReviews', error, {
+            log.error('failed to list reviews', 'list', error, {
                 accommodationId,
                 actor: actor.id
             });
@@ -164,14 +164,14 @@ export class AccommodationReviewService {
      * @returns The updated review record.
      * @throws Error if review is not found, actor is not authorized, or update fails.
      */
-    async updateReview(
+    async update(
         id: string,
         changes: UpdateAccommodationReviewData,
         actor: UserType
     ): Promise<AccommodationReviewRecord> {
-        log.info('updating review', 'updateReview', { reviewId: id, actor: actor.id });
+        log.info('updating review', 'update', { reviewId: id, actor: actor.id });
 
-        const existingReview = await this.getReviewById(id, actor);
+        const existingReview = await this.getById(id, actor);
 
         // Check if actor is creator or admin
         AccommodationReviewService.assertCreatorOrAdmin(existingReview.createdById, actor);
@@ -187,12 +187,12 @@ export class AccommodationReviewService {
                 existingReview.id,
                 dataWithAudit
             );
-            log.info('review updated successfully', 'updateReview', {
+            log.info('review updated successfully', 'update', {
                 reviewId: updatedReview.id
             });
             return updatedReview;
         } catch (error) {
-            log.error('failed to update review', 'updateReview', error, {
+            log.error('failed to update review', 'update', error, {
                 reviewId: id,
                 actor: actor.id
             });
@@ -209,7 +209,7 @@ export class AccommodationReviewService {
     async delete(id: string, actor: UserType): Promise<void> {
         log.info('soft deleting review', 'delete', { reviewId: id, actor: actor.id });
 
-        const existingReview = await this.getReviewById(id, actor);
+        const existingReview = await this.getById(id, actor);
 
         // Check if actor is creator or admin
         AccommodationReviewService.assertCreatorOrAdmin(existingReview.createdById, actor);
@@ -235,7 +235,7 @@ export class AccommodationReviewService {
     async restore(id: string, actor: UserType): Promise<void> {
         log.info('restoring review', 'restore', { reviewId: id, actor: actor.id });
 
-        const existingReview = await this.getReviewById(id, actor);
+        const existingReview = await this.getById(id, actor);
 
         // Check if actor is creator or admin
         AccommodationReviewService.assertCreatorOrAdmin(existingReview.createdById, actor);
@@ -266,7 +266,7 @@ export class AccommodationReviewService {
             throw new Error('Forbidden: Only admins can permanently delete reviews');
         }
 
-        await this.getReviewById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await AccommodationReviewModel.hardDeleteReview(id);
@@ -370,29 +370,14 @@ export class AccommodationReviewService {
     }
 
     /**
-     * Get the average rating for a specific accommodation.
-     * This is an alias for getAverageRating for better API naming.
-     * @param accommodationId - The ID of the accommodation.
-     * @param actor - The user performing the action.
-     * @returns The average rating.
-     * @throws Error if accommodation is not found or calculation fails.
-     */
-    async getAverageRatingForAccommodation(
-        accommodationId: string,
-        actor: UserType
-    ): Promise<AccommodationRatingType> {
-        return this.getAverageRating(accommodationId, actor);
-    }
-
-    /**
      * Count the number of reviews for a specific accommodation.
      * @param accommodationId - The ID of the accommodation.
      * @param actor - The user performing the action.
      * @returns The number of reviews.
      * @throws Error if accommodation is not found or count fails.
      */
-    async countReviewsByAccommodation(accommodationId: string, actor: UserType): Promise<number> {
-        log.info('counting reviews by accommodation', 'countReviewsByAccommodation', {
+    async countByAccommodation(accommodationId: string, actor: UserType): Promise<number> {
+        log.info('counting reviews by accommodation', 'countByAccommodation', {
             accommodationId,
             actor: actor.id
         });
@@ -410,25 +395,16 @@ export class AccommodationReviewService {
                 includeDeleted: false
             });
 
-            log.info(
-                'reviews counted by accommodation successfully',
-                'countReviewsByAccommodation',
-                {
-                    accommodationId,
-                    count: reviews.length
-                }
-            );
+            log.info('reviews counted by accommodation successfully', 'countByAccommodation', {
+                accommodationId,
+                count: reviews.length
+            });
             return reviews.length;
         } catch (error) {
-            log.error(
-                'failed to count reviews by accommodation',
-                'countReviewsByAccommodation',
-                error,
-                {
-                    accommodationId,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to count reviews by accommodation', 'countByAccommodation', error, {
+                accommodationId,
+                actor: actor.id
+            });
             throw error;
         }
     }

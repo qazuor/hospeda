@@ -95,8 +95,8 @@ export class DestinationService {
      * @returns The destination record.
      * @throws Error if destination is not found.
      */
-    async getDestinationById(id: string, actor: UserType): Promise<DestinationRecord> {
-        log.info('fetching destination by id', 'getDestinationById', {
+    async getById(id: string, actor: UserType): Promise<DestinationRecord> {
+        log.info('fetching destination by id', 'getById', {
             destinationId: id,
             actor: actor.id
         });
@@ -105,12 +105,12 @@ export class DestinationService {
             const destination = await DestinationModel.getDestinationById(id);
             const existingDestination = assertExists(destination, `Destination ${id} not found`);
 
-            log.info('destination fetched successfully', 'getDestinationById', {
+            log.info('destination fetched successfully', 'getById', {
                 destinationId: existingDestination.id
             });
             return existingDestination;
         } catch (error) {
-            log.error('failed to fetch destination by id', 'getDestinationById', error, {
+            log.error('failed to fetch destination by id', 'getById', error, {
                 destinationId: id,
                 actor: actor.id
             });
@@ -167,21 +167,18 @@ export class DestinationService {
      * @returns Array of destination records.
      * @throws Error if listing fails.
      */
-    async listDestinations(
-        filter: SelectDestinationFilter,
-        actor: UserType
-    ): Promise<DestinationRecord[]> {
-        log.info('listing destinations', 'listDestinations', { filter, actor: actor.id });
+    async list(filter: SelectDestinationFilter, actor: UserType): Promise<DestinationRecord[]> {
+        log.info('listing destinations', 'list', { filter, actor: actor.id });
 
         try {
             const destinations = await DestinationModel.listDestinations(filter);
-            log.info('destinations listed successfully', 'listDestinations', {
+            log.info('destinations listed successfully', 'list', {
                 count: destinations.length,
                 filter
             });
             return destinations;
         } catch (error) {
-            log.error('failed to list destinations', 'listDestinations', error, {
+            log.error('failed to list destinations', 'list', error, {
                 filter,
                 actor: actor.id
             });
@@ -197,12 +194,12 @@ export class DestinationService {
      * @returns The updated destination record.
      * @throws Error if destination is not found, actor is not authorized, or update fails.
      */
-    async updateDestination(
+    async update(
         id: string,
         changes: UpdateDestinationData,
         actor: UserType
     ): Promise<DestinationRecord> {
-        log.info('updating destination', 'updateDestination', {
+        log.info('updating destination', 'update', {
             destinationId: id,
             actor: actor.id
         });
@@ -210,7 +207,7 @@ export class DestinationService {
         // Only admins can update destinations
         DestinationService.assertAdmin(actor);
 
-        const existingDestination = await this.getDestinationById(id, actor);
+        const existingDestination = await this.getById(id, actor);
 
         const dataToUpdate = sanitizePartialUpdate(changes);
 
@@ -223,12 +220,12 @@ export class DestinationService {
                 existingDestination.id,
                 dataWithAudit
             );
-            log.info('destination updated successfully', 'updateDestination', {
+            log.info('destination updated successfully', 'update', {
                 destinationId: updatedDestination.id
             });
             return updatedDestination;
         } catch (error) {
-            log.error('failed to update destination', 'updateDestination', error, {
+            log.error('failed to update destination', 'update', error, {
                 destinationId: id,
                 actor: actor.id
             });
@@ -248,7 +245,7 @@ export class DestinationService {
         // Only admins can delete destinations
         DestinationService.assertAdmin(actor);
 
-        await this.getDestinationById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await DestinationModel.softDeleteDestination(id);
@@ -274,7 +271,7 @@ export class DestinationService {
         // Only admins can restore destinations
         DestinationService.assertAdmin(actor);
 
-        await this.getDestinationById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await DestinationModel.restoreDestination(id);
@@ -300,7 +297,7 @@ export class DestinationService {
         // Only admins can hard delete
         DestinationService.assertAdmin(actor);
 
-        await this.getDestinationById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await DestinationModel.hardDeleteDestination(id);
@@ -322,12 +319,12 @@ export class DestinationService {
      * @returns Array of destination records with the specified visibility.
      * @throws Error if listing fails.
      */
-    async getDestinationsByVisibility(
+    async getByVisibility(
         visibility: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationRecord[]> {
-        log.info('fetching destinations by visibility', 'getDestinationsByVisibility', {
+        log.info('fetching destinations by visibility', 'getByVisibility', {
             visibility,
             actor: actor.id,
             filter
@@ -341,25 +338,16 @@ export class DestinationService {
             };
 
             const destinations = await DestinationModel.listDestinations(destinationFilter);
-            log.info(
-                'destinations fetched by visibility successfully',
-                'getDestinationsByVisibility',
-                {
-                    visibility,
-                    count: destinations.length
-                }
-            );
+            log.info('destinations fetched by visibility successfully', 'getByVisibility', {
+                visibility,
+                count: destinations.length
+            });
             return destinations;
         } catch (error) {
-            log.error(
-                'failed to fetch destinations by visibility',
-                'getDestinationsByVisibility',
-                error,
-                {
-                    visibility,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to fetch destinations by visibility', 'getByVisibility', error, {
+                visibility,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -372,12 +360,12 @@ export class DestinationService {
      * @returns The created attraction record.
      * @throws Error if destination is not found, actor is not authorized, or creation fails.
      */
-    async addAttractionToDestination(
+    async addAttraction(
         destinationId: string,
         data: InsertDestinationAttraction,
         actor: UserType
     ): Promise<DestinationAttractionRecord> {
-        log.info('adding attraction to destination', 'addAttractionToDestination', {
+        log.info('adding attraction to destination', 'addAttraction', {
             destinationId,
             actor: actor.id
         });
@@ -386,7 +374,7 @@ export class DestinationService {
         DestinationService.assertAdmin(actor);
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             const attractionData: InsertDestinationAttraction = {
@@ -396,21 +384,16 @@ export class DestinationService {
             };
 
             const attraction = await DestinationAttractionModel.createAttraction(attractionData);
-            log.info('attraction added to destination successfully', 'addAttractionToDestination', {
+            log.info('attraction added to destination successfully', 'addAttraction', {
                 destinationId,
                 attractionId: attraction.id
             });
             return attraction;
         } catch (error) {
-            log.error(
-                'failed to add attraction to destination',
-                'addAttractionToDestination',
-                error,
-                {
-                    destinationId,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to add attraction to destination', 'addAttraction', error, {
+                destinationId,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -422,12 +405,12 @@ export class DestinationService {
      * @param actor - The user performing the action (must be an admin).
      * @throws Error if destination or attraction is not found, actor is not authorized, or deletion fails.
      */
-    async removeAttractionFromDestination(
+    async removeAttraction(
         destinationId: string,
         attractionId: string,
         actor: UserType
     ): Promise<void> {
-        log.info('removing attraction from destination', 'removeAttractionFromDestination', {
+        log.info('removing attraction from destination', 'removeAttraction', {
             destinationId,
             attractionId,
             actor: actor.id
@@ -437,29 +420,20 @@ export class DestinationService {
         DestinationService.assertAdmin(actor);
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             await DestinationAttractionModel.softDeleteAttraction(attractionId);
-            log.info(
-                'attraction removed from destination successfully',
-                'removeAttractionFromDestination',
-                {
-                    destinationId,
-                    attractionId
-                }
-            );
+            log.info('attraction removed from destination successfully', 'removeAttraction', {
+                destinationId,
+                attractionId
+            });
         } catch (error) {
-            log.error(
-                'failed to remove attraction from destination',
-                'removeAttractionFromDestination',
-                error,
-                {
-                    destinationId,
-                    attractionId,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to remove attraction from destination', 'removeAttraction', error, {
+                destinationId,
+                attractionId,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -472,19 +446,19 @@ export class DestinationService {
      * @returns Array of attraction records.
      * @throws Error if destination is not found or listing fails.
      */
-    async listAttractionsForDestination(
+    async listAttractions(
         destinationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationAttractionRecord[]> {
-        log.info('listing attractions for destination', 'listAttractionsForDestination', {
+        log.info('listing attractions for destination', 'listAttractions', {
             destinationId,
             actor: actor.id,
             filter
         });
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             const attractionFilter: SelectDestinationAttractionFilter = {
@@ -493,25 +467,16 @@ export class DestinationService {
             };
 
             const attractions = await DestinationAttractionModel.listAttractions(attractionFilter);
-            log.info(
-                'attractions listed for destination successfully',
-                'listAttractionsForDestination',
-                {
-                    destinationId,
-                    count: attractions.length
-                }
-            );
+            log.info('attractions listed for destination successfully', 'listAttractions', {
+                destinationId,
+                count: attractions.length
+            });
             return attractions;
         } catch (error) {
-            log.error(
-                'failed to list attractions for destination',
-                'listAttractionsForDestination',
-                error,
-                {
-                    destinationId,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to list attractions for destination', 'listAttractions', error, {
+                destinationId,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -524,18 +489,18 @@ export class DestinationService {
      * @returns The created review record.
      * @throws Error if destination is not found or review creation fails.
      */
-    async addReviewToDestination(
+    async addReview(
         destinationId: string,
         data: InsertDestinationReview,
         actor: UserType
     ): Promise<DestinationReviewRecord> {
-        log.info('adding review to destination', 'addReviewToDestination', {
+        log.info('adding review to destination', 'addReview', {
             destinationId,
             actor: actor.id
         });
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             const reviewData: InsertDestinationReview = {
@@ -546,63 +511,16 @@ export class DestinationService {
             };
 
             const review = await DestinationReviewModel.createReview(reviewData);
-            log.info('review added to destination successfully', 'addReviewToDestination', {
+            log.info('review added to destination successfully', 'addReview', {
                 destinationId,
                 reviewId: review.id
             });
             return review;
         } catch (error) {
-            log.error('failed to add review to destination', 'addReviewToDestination', error, {
+            log.error('failed to add review to destination', 'addReview', error, {
                 destinationId,
                 actor: actor.id
             });
-            throw error;
-        }
-    }
-
-    /**
-     * List reviews for a destination.
-     * @param destinationId - The ID of the destination.
-     * @param actor - The user performing the action.
-     * @param filter - Pagination options.
-     * @returns Array of review records.
-     * @throws Error if destination is not found or listing fails.
-     */
-    async listReviewsForDestination(
-        destinationId: string,
-        actor: UserType,
-        filter: PaginationParams = {}
-    ): Promise<DestinationReviewRecord[]> {
-        log.info('listing reviews for destination', 'listReviewsForDestination', {
-            destinationId,
-            actor: actor.id,
-            filter
-        });
-
-        // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
-
-        try {
-            const reviews = await DestinationReviewModel.listReviews({
-                destinationId,
-                ...filter,
-                includeDeleted: false
-            });
-            log.info('reviews listed for destination successfully', 'listReviewsForDestination', {
-                destinationId,
-                count: reviews.length
-            });
-            return reviews;
-        } catch (error) {
-            log.error(
-                'failed to list reviews for destination',
-                'listReviewsForDestination',
-                error,
-                {
-                    destinationId,
-                    actor: actor.id
-                }
-            );
             throw error;
         }
     }
@@ -614,19 +532,15 @@ export class DestinationService {
      * @param actor - The user performing the action.
      * @throws Error if destination or review is not found, actor is not authorized, or deletion fails.
      */
-    async removeReviewFromDestination(
-        destinationId: string,
-        reviewId: string,
-        actor: UserType
-    ): Promise<void> {
-        log.info('removing review from destination', 'removeReviewFromDestination', {
+    async removeReview(destinationId: string, reviewId: string, actor: UserType): Promise<void> {
+        log.info('removing review from destination', 'removeReview', {
             destinationId,
             reviewId,
             actor: actor.id
         });
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         // Get the review to check ownership
         const review = await DestinationReviewModel.getReviewById(reviewId);
@@ -641,25 +555,58 @@ export class DestinationService {
 
         try {
             await DestinationReviewModel.softDeleteReview(reviewId);
-            log.info(
-                'review removed from destination successfully',
-                'removeReviewFromDestination',
-                {
-                    destinationId,
-                    reviewId
-                }
-            );
+            log.info('review removed from destination successfully', 'removeReview', {
+                destinationId,
+                reviewId
+            });
         } catch (error) {
-            log.error(
-                'failed to remove review from destination',
-                'removeReviewFromDestination',
-                error,
-                {
-                    destinationId,
-                    reviewId,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to remove review from destination', 'removeReview', error, {
+                destinationId,
+                reviewId,
+                actor: actor.id
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * List reviews for a destination.
+     * @param destinationId - The ID of the destination.
+     * @param actor - The user performing the action.
+     * @param filter - Pagination options.
+     * @returns Array of review records.
+     * @throws Error if destination is not found or listing fails.
+     */
+    async listReviews(
+        destinationId: string,
+        actor: UserType,
+        filter: PaginationParams = {}
+    ): Promise<DestinationReviewRecord[]> {
+        log.info('listing reviews for destination', 'listReviews', {
+            destinationId,
+            actor: actor.id,
+            filter
+        });
+
+        // Verify destination exists
+        await this.getById(destinationId, actor);
+
+        try {
+            const reviews = await DestinationReviewModel.listReviews({
+                destinationId,
+                ...filter,
+                includeDeleted: false
+            });
+            log.info('reviews listed for destination successfully', 'listReviews', {
+                destinationId,
+                count: reviews.length
+            });
+            return reviews;
+        } catch (error) {
+            log.error('failed to list reviews for destination', 'listReviews', error, {
+                destinationId,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -671,7 +618,7 @@ export class DestinationService {
      * @returns Statistics for the destination.
      * @throws Error if destination is not found or stats calculation fails.
      */
-    async getDestinationStats(
+    async getStats(
         destinationId: string,
         actor: UserType
     ): Promise<{
@@ -680,13 +627,13 @@ export class DestinationService {
         attractionCount: number;
         bookmarkCount: number;
     }> {
-        log.info('getting destination stats', 'getDestinationStats', {
+        log.info('getting destination stats', 'getStats', {
             destinationId,
             actor: actor.id
         });
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             // Get reviews
@@ -759,13 +706,13 @@ export class DestinationService {
                 bookmarkCount: bookmarks.length
             };
 
-            log.info('destination stats retrieved successfully', 'getDestinationStats', {
+            log.info('destination stats retrieved successfully', 'getStats', {
                 destinationId,
                 stats
             });
             return stats;
         } catch (error) {
-            log.error('failed to get destination stats', 'getDestinationStats', error, {
+            log.error('failed to get destination stats', 'getStats', error, {
                 destinationId,
                 actor: actor.id
             });
@@ -783,14 +730,14 @@ export class DestinationService {
      * @returns Array of nearby destination records.
      * @throws Error if search fails.
      */
-    async findDestinationsNearby(
+    async findNearby(
         latitude: number,
         longitude: number,
         radiusKm: number,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationRecord[]> {
-        log.info('finding destinations nearby', 'findDestinationsNearby', {
+        log.info('finding destinations nearby', 'findNearby', {
             latitude,
             longitude,
             radiusKm,
@@ -824,7 +771,7 @@ export class DestinationService {
                 return distance <= radiusKm;
             });
 
-            log.info('nearby destinations found successfully', 'findDestinationsNearby', {
+            log.info('nearby destinations found successfully', 'findNearby', {
                 count: nearbyDestinations.length,
                 latitude,
                 longitude,
@@ -832,7 +779,7 @@ export class DestinationService {
             });
             return nearbyDestinations;
         } catch (error) {
-            log.error('failed to find destinations nearby', 'findDestinationsNearby', error, {
+            log.error('failed to find destinations nearby', 'findNearby', error, {
                 latitude,
                 longitude,
                 radiusKm,
@@ -881,8 +828,8 @@ export class DestinationService {
      * @returns Array of top destination records.
      * @throws Error if listing fails.
      */
-    async listTopDestinations(limit: number, actor: UserType): Promise<DestinationRecord[]> {
-        log.info('listing top destinations', 'listTopDestinations', {
+    async listTop(limit: number, actor: UserType): Promise<DestinationRecord[]> {
+        log.info('listing top destinations', 'listTop', {
             limit,
             actor: actor.id
         });
@@ -896,7 +843,7 @@ export class DestinationService {
             // For each destination, calculate an overall score based on reviews
             const scoredDestinations = await Promise.all(
                 allDestinations.map(async (destination) => {
-                    const stats = await this.getDestinationStats(destination.id, actor);
+                    const stats = await this.getStats(destination.id, actor);
 
                     // Calculate overall score (average of all rating categories)
                     const ratingValues = Object.values(stats.averageRating) as number[];
@@ -919,12 +866,12 @@ export class DestinationService {
                 .slice(0, limit)
                 .map((item) => item.destination);
 
-            log.info('top destinations listed successfully', 'listTopDestinations', {
+            log.info('top destinations listed successfully', 'listTop', {
                 count: topDestinations.length
             });
             return topDestinations;
         } catch (error) {
-            log.error('failed to list top destinations', 'listTopDestinations', error, {
+            log.error('failed to list top destinations', 'listTop', error, {
                 limit,
                 actor: actor.id
             });
@@ -940,12 +887,12 @@ export class DestinationService {
      * @returns The updated destination record.
      * @throws Error if destination is not found, actor is not authorized, or update fails.
      */
-    async updateDestinationVisibility(
+    async updateVisibility(
         id: string,
         visibility: string,
         actor: UserType
     ): Promise<DestinationRecord> {
-        log.info('updating destination visibility', 'updateDestinationVisibility', {
+        log.info('updating destination visibility', 'updateVisibility', {
             destinationId: id,
             visibility,
             actor: actor.id
@@ -954,7 +901,7 @@ export class DestinationService {
         // Only admins can update visibility
         DestinationService.assertAdmin(actor);
 
-        const existingDestination = await this.getDestinationById(id, actor);
+        const existingDestination = await this.getById(id, actor);
 
         try {
             const changes: UpdateDestinationData = {
@@ -965,22 +912,17 @@ export class DestinationService {
                 existingDestination.id,
                 changes
             );
-            log.info('destination visibility updated successfully', 'updateDestinationVisibility', {
+            log.info('destination visibility updated successfully', 'updateVisibility', {
                 destinationId: updatedDestination.id,
                 visibility
             });
             return updatedDestination;
         } catch (error) {
-            log.error(
-                'failed to update destination visibility',
-                'updateDestinationVisibility',
-                error,
-                {
-                    destinationId: id,
-                    visibility,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to update destination visibility', 'updateVisibility', error, {
+                destinationId: id,
+                visibility,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -992,8 +934,8 @@ export class DestinationService {
      * @returns Array of featured destination records.
      * @throws Error if listing fails.
      */
-    async getFeaturedDestinations(limit: number, actor: UserType): Promise<DestinationRecord[]> {
-        log.info('getting featured destinations', 'getFeaturedDestinations', {
+    async getFeatured(limit: number, actor: UserType): Promise<DestinationRecord[]> {
+        log.info('getting featured destinations', 'getFeatured', {
             limit,
             actor: actor.id
         });
@@ -1006,121 +948,13 @@ export class DestinationService {
             };
 
             const destinations = await DestinationModel.listDestinations(destinationFilter);
-            log.info('featured destinations retrieved successfully', 'getFeaturedDestinations', {
+            log.info('featured destinations retrieved successfully', 'getFeatured', {
                 count: destinations.length
             });
             return destinations;
         } catch (error) {
-            log.error('failed to get featured destinations', 'getFeaturedDestinations', error, {
+            log.error('failed to get featured destinations', 'getFeatured', error, {
                 limit,
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * Get all attractions.
-     * @param actor - The user performing the action.
-     * @param filter - Pagination options.
-     * @returns Array of attraction records.
-     * @throws Error if listing fails.
-     */
-    async getAttractions(
-        actor: UserType,
-        filter: PaginationParams = {}
-    ): Promise<DestinationAttractionRecord[]> {
-        log.info('getting all attractions', 'getAttractions', {
-            actor: actor.id,
-            filter
-        });
-
-        try {
-            const attractionFilter: SelectDestinationAttractionFilter = {
-                ...filter,
-                includeDeleted: false
-            };
-
-            const attractions = await DestinationAttractionModel.listAttractions(attractionFilter);
-            log.info('attractions retrieved successfully', 'getAttractions', {
-                count: attractions.length
-            });
-            return attractions;
-        } catch (error) {
-            log.error('failed to get attractions', 'getAttractions', error, {
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * Add a new attraction.
-     * @param data - The attraction data.
-     * @param actor - The user performing the action (must be an admin).
-     * @returns The created attraction record.
-     * @throws Error if actor is not authorized or creation fails.
-     */
-    async addAttraction(
-        data: InsertDestinationAttraction,
-        actor: UserType
-    ): Promise<DestinationAttractionRecord> {
-        log.info('adding attraction', 'addAttraction', {
-            actor: actor.id
-        });
-
-        // Only admins can add attractions
-        DestinationService.assertAdmin(actor);
-
-        try {
-            const attractionData: InsertDestinationAttraction = {
-                ...data,
-                createdById: actor.id,
-                updatedById: actor.id
-            };
-
-            const attraction = await DestinationAttractionModel.createAttraction(attractionData);
-            log.info('attraction added successfully', 'addAttraction', {
-                attractionId: attraction.id
-            });
-            return attraction;
-        } catch (error) {
-            log.error('failed to add attraction', 'addAttraction', error, {
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * Remove an attraction.
-     * @param attractionId - The ID of the attraction to remove.
-     * @param actor - The user performing the action (must be an admin).
-     * @throws Error if attraction is not found, actor is not authorized, or deletion fails.
-     */
-    async removeAttraction(attractionId: string, actor: UserType): Promise<void> {
-        log.info('removing attraction', 'removeAttraction', {
-            attractionId,
-            actor: actor.id
-        });
-
-        // Only admins can remove attractions
-        DestinationService.assertAdmin(actor);
-
-        try {
-            // Check if attraction exists
-            const attraction = await DestinationAttractionModel.getAttractionById(attractionId);
-            if (!attraction) {
-                throw new Error(`Attraction ${attractionId} not found`);
-            }
-
-            await DestinationAttractionModel.softDeleteAttraction(attractionId);
-            log.info('attraction removed successfully', 'removeAttraction', {
-                attractionId
-            });
-        } catch (error) {
-            log.error('failed to remove attraction', 'removeAttraction', error, {
-                attractionId,
                 actor: actor.id
             });
             throw error;
@@ -1141,7 +975,7 @@ export class DestinationService {
         });
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             const relations = await EntityTagModel.listRelations({
@@ -1190,7 +1024,7 @@ export class DestinationService {
         DestinationService.assertAdmin(actor);
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         // Verify tag exists
         const tag = await TagModel.getTagById(tagId);
@@ -1239,7 +1073,7 @@ export class DestinationService {
         DestinationService.assertAdmin(actor);
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             await EntityTagModel.deleteRelation(EntityTypeEnum.DESTINATION, destinationId, tagId);
@@ -1271,7 +1105,7 @@ export class DestinationService {
         });
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             const bookmarks = await BookmarkModel.selectBookmarks({
@@ -1310,7 +1144,7 @@ export class DestinationService {
         });
 
         // Verify destination exists
-        await this.getDestinationById(destinationId, actor);
+        await this.getById(destinationId, actor);
 
         try {
             const exists = await BookmarkModel.exists(
@@ -1333,51 +1167,5 @@ export class DestinationService {
             });
             throw error;
         }
-    }
-
-    /**
-     * Add a review to a destination.
-     * @param destinationId - The ID of the destination.
-     * @param data - The review data.
-     * @param actor - The user performing the action.
-     * @returns The created review record.
-     * @throws Error if destination is not found or review creation fails.
-     */
-    async addReview(
-        destinationId: string,
-        data: InsertDestinationReview,
-        actor: UserType
-    ): Promise<DestinationReviewRecord> {
-        // This is an alias for addReviewToDestination
-        return this.addReviewToDestination(destinationId, data, actor);
-    }
-
-    /**
-     * Remove a review from a destination.
-     * @param destinationId - The ID of the destination.
-     * @param reviewId - The ID of the review.
-     * @param actor - The user performing the action.
-     * @throws Error if destination or review is not found, actor is not authorized, or removal fails.
-     */
-    async removeReview(destinationId: string, reviewId: string, actor: UserType): Promise<void> {
-        // This is an alias for removeReviewFromDestination
-        return this.removeReviewFromDestination(destinationId, reviewId, actor);
-    }
-
-    /**
-     * Get reviews for a destination.
-     * @param destinationId - The ID of the destination.
-     * @param actor - The user performing the action.
-     * @param filter - Pagination options.
-     * @returns Array of review records.
-     * @throws Error if destination is not found or listing fails.
-     */
-    async getReviews(
-        destinationId: string,
-        actor: UserType,
-        filter: PaginationParams = {}
-    ): Promise<DestinationReviewRecord[]> {
-        // This is an alias for listReviewsForDestination
-        return this.listReviewsForDestination(destinationId, actor, filter);
     }
 }
