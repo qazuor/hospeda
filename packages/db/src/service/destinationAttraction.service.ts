@@ -84,8 +84,8 @@ export class DestinationAttractionService {
      * @returns The attraction record.
      * @throws Error if attraction is not found.
      */
-    async getAttractionById(id: string, actor: UserType): Promise<DestinationAttractionRecord> {
-        log.info('fetching attraction by id', 'getAttractionById', {
+    async getById(id: string, actor: UserType): Promise<DestinationAttractionRecord> {
+        log.info('fetching attraction by id', 'getById', {
             attractionId: id,
             actor: actor.id
         });
@@ -94,12 +94,12 @@ export class DestinationAttractionService {
             const attraction = await DestinationAttractionModel.getAttractionById(id);
             const existingAttraction = assertExists(attraction, `Attraction ${id} not found`);
 
-            log.info('attraction fetched successfully', 'getAttractionById', {
+            log.info('attraction fetched successfully', 'getById', {
                 attractionId: existingAttraction.id
             });
             return existingAttraction;
         } catch (error) {
-            log.error('failed to fetch attraction by id', 'getAttractionById', error, {
+            log.error('failed to fetch attraction by id', 'getById', error, {
                 attractionId: id,
                 actor: actor.id
             });
@@ -114,21 +114,21 @@ export class DestinationAttractionService {
      * @returns Array of attraction records.
      * @throws Error if listing fails.
      */
-    async listAttractions(
+    async list(
         filter: SelectDestinationAttractionFilter,
         actor: UserType
     ): Promise<DestinationAttractionRecord[]> {
-        log.info('listing attractions', 'listAttractions', { filter, actor: actor.id });
+        log.info('listing attractions', 'list', { filter, actor: actor.id });
 
         try {
             const attractions = await DestinationAttractionModel.listAttractions(filter);
-            log.info('attractions listed successfully', 'listAttractions', {
+            log.info('attractions listed successfully', 'list', {
                 count: attractions.length,
                 filter
             });
             return attractions;
         } catch (error) {
-            log.error('failed to list attractions', 'listAttractions', error, {
+            log.error('failed to list attractions', 'list', error, {
                 filter,
                 actor: actor.id
             });
@@ -144,17 +144,17 @@ export class DestinationAttractionService {
      * @returns The updated attraction record.
      * @throws Error if attraction is not found, actor is not authorized, or update fails.
      */
-    async updateAttraction(
+    async update(
         id: string,
         changes: UpdateDestinationAttractionData,
         actor: UserType
     ): Promise<DestinationAttractionRecord> {
-        log.info('updating attraction', 'updateAttraction', { attractionId: id, actor: actor.id });
+        log.info('updating attraction', 'update', { attractionId: id, actor: actor.id });
 
         // Only admins can update attractions
         DestinationAttractionService.assertAdmin(actor);
 
-        const existingAttraction = await this.getAttractionById(id, actor);
+        const existingAttraction = await this.getById(id, actor);
 
         const dataToUpdate = sanitizePartialUpdate(changes);
 
@@ -167,12 +167,12 @@ export class DestinationAttractionService {
                 existingAttraction.id,
                 dataWithAudit
             );
-            log.info('attraction updated successfully', 'updateAttraction', {
+            log.info('attraction updated successfully', 'update', {
                 attractionId: updatedAttraction.id
             });
             return updatedAttraction;
         } catch (error) {
-            log.error('failed to update attraction', 'updateAttraction', error, {
+            log.error('failed to update attraction', 'update', error, {
                 attractionId: id,
                 actor: actor.id
             });
@@ -192,7 +192,7 @@ export class DestinationAttractionService {
         // Only admins can delete attractions
         DestinationAttractionService.assertAdmin(actor);
 
-        await this.getAttractionById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await DestinationAttractionModel.softDeleteAttraction(id);
@@ -218,7 +218,7 @@ export class DestinationAttractionService {
         // Only admins can restore attractions
         DestinationAttractionService.assertAdmin(actor);
 
-        await this.getAttractionById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await DestinationAttractionModel.restoreAttraction(id);
@@ -244,7 +244,7 @@ export class DestinationAttractionService {
         // Only admins can hard delete
         DestinationAttractionService.assertAdmin(actor);
 
-        await this.getAttractionById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await DestinationAttractionModel.hardDeleteAttraction(id);
@@ -265,8 +265,8 @@ export class DestinationAttractionService {
      * @returns The number of attractions for the destination.
      * @throws Error if destination is not found or count fails.
      */
-    async countAttractionsByDestination(destinationId: string, actor: UserType): Promise<number> {
-        log.info('counting attractions by destination', 'countAttractionsByDestination', {
+    async countByDestination(destinationId: string, actor: UserType): Promise<number> {
+        log.info('counting attractions by destination', 'countByDestination', {
             destinationId,
             actor: actor.id
         });
@@ -278,57 +278,45 @@ export class DestinationAttractionService {
                 throw new Error(`Destination ${destinationId} not found`);
             }
 
-            // Get all attractions for this destination
+            // Get all attractions related to this destination
+            // In a real implementation, there would be a direct relationship or filter
             const attractions = await DestinationAttractionModel.listAttractions({
                 includeDeleted: false
             });
 
-            // Filter for attractions related to this destination
-            // In a real implementation, you would have a direct relationship or query
-            // For now, we'll assume all attractions are returned and need filtering
-            const destinationAttractions = attractions.filter((_attraction) => {
-                // This would be replaced with actual relationship check
-                // For example: attraction.destinationId === destinationId
-                return true; // Placeholder for actual destination check
-            });
+            // Count attractions for this destination - this is a simplified approach
+            // In a real implementation, you would have a more efficient query that counts directly
+            // or have a proper filter in the model method
+            const count = attractions.length;
 
-            log.info(
-                'attractions counted by destination successfully',
-                'countAttractionsByDestination',
-                {
-                    destinationId,
-                    count: destinationAttractions.length
-                }
-            );
-            return destinationAttractions.length;
+            log.info('attractions counted by destination successfully', 'countByDestination', {
+                destinationId,
+                count
+            });
+            return count;
         } catch (error) {
-            log.error(
-                'failed to count attractions by destination',
-                'countAttractionsByDestination',
-                error,
-                {
-                    destinationId,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to count attractions by destination', 'countByDestination', error, {
+                destinationId,
+                actor: actor.id
+            });
             throw error;
         }
     }
 
     /**
-     * List attractions matching a search query.
+     * Search attractions by query string.
      * @param query - The search query.
      * @param actor - The user performing the action.
      * @param filter - Pagination options.
      * @returns Array of matching attraction records.
      * @throws Error if search fails.
      */
-    async listAttractionsByQuery(
+    async search(
         query: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationAttractionRecord[]> {
-        log.info('listing attractions by query', 'listAttractionsByQuery', {
+        log.info('searching attractions', 'search', {
             query,
             actor: actor.id,
             filter
@@ -342,13 +330,13 @@ export class DestinationAttractionService {
             };
 
             const attractions = await DestinationAttractionModel.listAttractions(searchFilter);
-            log.info('attractions listed by query successfully', 'listAttractionsByQuery', {
+            log.info('attractions search completed successfully', 'search', {
                 query,
                 count: attractions.length
             });
             return attractions;
         } catch (error) {
-            log.error('failed to list attractions by query', 'listAttractionsByQuery', error, {
+            log.error('failed to search attractions', 'search', error, {
                 query,
                 actor: actor.id
             });

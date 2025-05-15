@@ -90,8 +90,8 @@ export class TagService {
      * @returns The tag record.
      * @throws Error if tag is not found or actor is not authorized.
      */
-    async getTagById(id: string, actor: UserType): Promise<TagRecord> {
-        log.info('fetching tag by id', 'getTagById', { tagId: id, actor: actor.id });
+    async getById(id: string, actor: UserType): Promise<TagRecord> {
+        log.info('fetching tag by id', 'getById', { tagId: id, actor: actor.id });
 
         try {
             const tag = await TagModel.getTagById(id);
@@ -100,10 +100,10 @@ export class TagService {
             // Check if actor is owner or admin
             TagService.assertOwnerOrAdmin(existingTag.ownerId, actor);
 
-            log.info('tag fetched successfully', 'getTagById', { tagId: existingTag.id });
+            log.info('tag fetched successfully', 'getById', { tagId: existingTag.id });
             return existingTag;
         } catch (error) {
-            log.error('failed to fetch tag by id', 'getTagById', error, {
+            log.error('failed to fetch tag by id', 'getById', error, {
                 tagId: id,
                 actor: actor.id
             });
@@ -118,8 +118,8 @@ export class TagService {
      * @returns Array of tag records.
      * @throws Error if listing fails.
      */
-    async listTags(filter: SelectTagFilter, actor: UserType): Promise<TagRecord[]> {
-        log.info('listing tags', 'listTags', { filter, actor: actor.id });
+    async list(filter: SelectTagFilter, actor: UserType): Promise<TagRecord[]> {
+        log.info('listing tags', 'list', { filter, actor: actor.id });
 
         try {
             // If ownerId is specified, check if actor is owner or admin
@@ -128,13 +128,13 @@ export class TagService {
             }
 
             const tags = await TagModel.listTags(filter);
-            log.info('tags listed successfully', 'listTags', {
+            log.info('tags listed successfully', 'list', {
                 count: tags.length,
                 filter
             });
             return tags;
         } catch (error) {
-            log.error('failed to list tags', 'listTags', error, { filter, actor: actor.id });
+            log.error('failed to list tags', 'list', error, { filter, actor: actor.id });
             throw error;
         }
     }
@@ -147,10 +147,10 @@ export class TagService {
      * @returns The updated tag record.
      * @throws Error if tag is not found, actor is not authorized, or update fails.
      */
-    async updateTag(id: string, changes: UpdateTagData, actor: UserType): Promise<TagRecord> {
-        log.info('updating tag', 'updateTag', { tagId: id, actor: actor.id });
+    async update(id: string, changes: UpdateTagData, actor: UserType): Promise<TagRecord> {
+        log.info('updating tag', 'update', { tagId: id, actor: actor.id });
 
-        const existingTag = await this.getTagById(id, actor);
+        const existingTag = await this.getById(id, actor);
 
         // Check if actor is owner or admin
         TagService.assertOwnerOrAdmin(existingTag.ownerId, actor);
@@ -167,10 +167,10 @@ export class TagService {
                 throw new Error(`Failed to retrieve updated tag ${id}`);
             }
 
-            log.info('tag updated successfully', 'updateTag', { tagId: updatedTag.id });
+            log.info('tag updated successfully', 'update', { tagId: updatedTag.id });
             return updatedTag;
         } catch (error) {
-            log.error('failed to update tag', 'updateTag', error, {
+            log.error('failed to update tag', 'update', error, {
                 tagId: id,
                 actor: actor.id
             });
@@ -187,7 +187,7 @@ export class TagService {
     async delete(id: string, actor: UserType): Promise<void> {
         log.info('soft deleting tag', 'delete', { tagId: id, actor: actor.id });
 
-        const existingTag = await this.getTagById(id, actor);
+        const existingTag = await this.getById(id, actor);
 
         // Check if actor is owner or admin
         TagService.assertOwnerOrAdmin(existingTag.ownerId, actor);
@@ -214,7 +214,7 @@ export class TagService {
     async restore(id: string, actor: UserType): Promise<void> {
         log.info('restoring tag', 'restore', { tagId: id, actor: actor.id });
 
-        const existingTag = await this.getTagById(id, actor);
+        const existingTag = await this.getById(id, actor);
 
         // Check if actor is owner or admin
         TagService.assertOwnerOrAdmin(existingTag.ownerId, actor);
@@ -244,7 +244,7 @@ export class TagService {
         // Only admins can hard delete
         TagService.assertAdmin(actor);
 
-        const existingTag = await this.getTagById(id, actor);
+        const existingTag = await this.getById(id, actor);
 
         try {
             await TagModel.hardDeleteTag(existingTag.id);
@@ -267,13 +267,13 @@ export class TagService {
      * @returns The created entity-tag relation record.
      * @throws Error if tag or entity is not found, actor is not authorized, or creation fails.
      */
-    async addTagToEntity(
+    async addToEntity(
         entityType: EntityTypeEnum,
         entityId: string,
         tagId: string,
         actor: UserType
     ): Promise<EntityTagRecord> {
-        log.info('adding tag to entity', 'addTagToEntity', {
+        log.info('adding tag to entity', 'addToEntity', {
             entityType,
             entityId,
             tagId,
@@ -281,7 +281,7 @@ export class TagService {
         });
 
         // Verify tag exists and actor has permission
-        const tag = await this.getTagById(tagId, actor);
+        const tag = await this.getById(tagId, actor);
 
         try {
             const relationData: InsertEntityTagRelation = {
@@ -291,14 +291,14 @@ export class TagService {
             };
 
             const relation = await EntityTagModel.createRelation(relationData);
-            log.info('tag added to entity successfully', 'addTagToEntity', {
+            log.info('tag added to entity successfully', 'addToEntity', {
                 entityType,
                 entityId,
                 tagId
             });
             return relation;
         } catch (error) {
-            log.error('failed to add tag to entity', 'addTagToEntity', error, {
+            log.error('failed to add tag to entity', 'addToEntity', error, {
                 entityType,
                 entityId,
                 tagId,
@@ -316,13 +316,13 @@ export class TagService {
      * @param actor - The user performing the action.
      * @throws Error if tag is not found, actor is not authorized, or deletion fails.
      */
-    async removeTagFromEntity(
+    async removeFromEntity(
         entityType: EntityTypeEnum,
         entityId: string,
         tagId: string,
         actor: UserType
     ): Promise<void> {
-        log.info('removing tag from entity', 'removeTagFromEntity', {
+        log.info('removing tag from entity', 'removeFromEntity', {
             entityType,
             entityId,
             tagId,
@@ -330,17 +330,17 @@ export class TagService {
         });
 
         // Verify tag exists and actor has permission
-        await this.getTagById(tagId, actor);
+        await this.getById(tagId, actor);
 
         try {
             await EntityTagModel.deleteRelation(entityType, entityId, tagId);
-            log.info('tag removed from entity successfully', 'removeTagFromEntity', {
+            log.info('tag removed from entity successfully', 'removeFromEntity', {
                 entityType,
                 entityId,
                 tagId
             });
         } catch (error) {
-            log.error('failed to remove tag from entity', 'removeTagFromEntity', error, {
+            log.error('failed to remove tag from entity', 'removeFromEntity', error, {
                 entityType,
                 entityId,
                 tagId,
@@ -359,13 +359,13 @@ export class TagService {
      * @returns Array of tag records.
      * @throws Error if listing fails.
      */
-    async listTagsForEntityId(
+    async listForEntity(
         entityType: EntityTypeEnum,
         entityId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<TagRecord[]> {
-        log.info('listing tags for entity', 'listTagsForEntityId', {
+        log.info('listing tags for entity', 'listForEntity', {
             entityType,
             entityId,
             actor: actor.id,
@@ -390,68 +390,16 @@ export class TagService {
                 }
             }
 
-            log.info('tags listed for entity successfully', 'listTagsForEntityId', {
+            log.info('tags listed for entity successfully', 'listForEntity', {
                 entityType,
                 entityId,
                 count: tags.length
             });
             return tags;
         } catch (error) {
-            log.error('failed to list tags for entity', 'listTagsForEntityId', error, {
+            log.error('failed to list tags for entity', 'listForEntity', error, {
                 entityType,
                 entityId,
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * List tags for a specific entity type.
-     * @param entityType - The type of entity.
-     * @param actor - The user performing the action.
-     * @param filter - Pagination options.
-     * @returns Array of tag records.
-     * @throws Error if listing fails.
-     */
-    async listTagsForEntityType(
-        entityType: EntityTypeEnum,
-        actor: UserType,
-        filter: PaginationParams = {}
-    ): Promise<TagRecord[]> {
-        log.info('listing tags for entity type', 'listTagsForEntityType', {
-            entityType,
-            actor: actor.id,
-            filter
-        });
-
-        try {
-            const relationFilter: SelectEntityTagRelationFilter = {
-                entityType,
-                ...filter
-            };
-
-            const relations = await EntityTagModel.listRelations(relationFilter);
-
-            // Get the actual tag records (unique)
-            const tagIds = new Set(relations.map((r) => r.tagId));
-            const tags: TagRecord[] = [];
-
-            for (const tagId of tagIds) {
-                const tag = await TagModel.getTagById(tagId);
-                if (tag) {
-                    tags.push(tag);
-                }
-            }
-
-            log.info('tags listed for entity type successfully', 'listTagsForEntityType', {
-                entityType,
-                count: tags.length
-            });
-            return tags;
-        } catch (error) {
-            log.error('failed to list tags for entity type', 'listTagsForEntityType', error, {
-                entityType,
                 actor: actor.id
             });
             throw error;
@@ -466,19 +414,19 @@ export class TagService {
      * @returns Array of entity-tag relation records.
      * @throws Error if tag is not found, actor is not authorized, or listing fails.
      */
-    async listEntitiesByTag(
+    async listEntities(
         tagId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<EntityTagRecord[]> {
-        log.info('listing entities by tag', 'listEntitiesByTag', {
+        log.info('listing entities by tag', 'listEntities', {
             tagId,
             actor: actor.id,
             filter
         });
 
         // Verify tag exists and actor has permission
-        await this.getTagById(tagId, actor);
+        await this.getById(tagId, actor);
 
         try {
             const relationFilter: SelectEntityTagRelationFilter = {
@@ -487,13 +435,13 @@ export class TagService {
             };
 
             const relations = await EntityTagModel.listRelations(relationFilter);
-            log.info('entities listed by tag successfully', 'listEntitiesByTag', {
+            log.info('entities listed by tag successfully', 'listEntities', {
                 tagId,
                 count: relations.length
             });
             return relations;
         } catch (error) {
-            log.error('failed to list entities by tag', 'listEntitiesByTag', error, {
+            log.error('failed to list entities by tag', 'listEntities', error, {
                 tagId,
                 actor: actor.id
             });
@@ -509,12 +457,12 @@ export class TagService {
      * @returns Array of matching tag records.
      * @throws Error if search fails.
      */
-    async searchTags(
+    async search(
         query: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<TagRecord[]> {
-        log.info('searching tags', 'searchTags', { query, actor: actor.id, filter });
+        log.info('searching tags', 'search', { query, actor: actor.id, filter });
 
         try {
             const searchFilter: SelectTagFilter = {
@@ -524,13 +472,13 @@ export class TagService {
             };
 
             const tags = await TagModel.listTags(searchFilter);
-            log.info('tags search completed successfully', 'searchTags', {
+            log.info('tags search completed successfully', 'search', {
                 query,
                 count: tags.length
             });
             return tags;
         } catch (error) {
-            log.error('failed to search tags', 'searchTags', error, {
+            log.error('failed to search tags', 'search', error, {
                 query,
                 actor: actor.id
             });
@@ -545,23 +493,23 @@ export class TagService {
      * @returns The number of entities using the tag.
      * @throws Error if tag is not found, actor is not authorized, or count fails.
      */
-    async getTagUsageCount(tagId: string, actor: UserType): Promise<number> {
-        log.info('getting tag usage count', 'getTagUsageCount', { tagId, actor: actor.id });
+    async getUsageCount(tagId: string, actor: UserType): Promise<number> {
+        log.info('getting tag usage count', 'getUsageCount', { tagId, actor: actor.id });
 
         // Verify tag exists and actor has permission
-        await this.getTagById(tagId, actor);
+        await this.getById(tagId, actor);
 
         try {
             const relations = await EntityTagModel.listRelations({ tagId });
             const count = relations.length;
 
-            log.info('tag usage count retrieved successfully', 'getTagUsageCount', {
+            log.info('tag usage count retrieved successfully', 'getUsageCount', {
                 tagId,
                 count
             });
             return count;
         } catch (error) {
-            log.error('failed to get tag usage count', 'getTagUsageCount', error, {
+            log.error('failed to get tag usage count', 'getUsageCount', error, {
                 tagId,
                 actor: actor.id
             });
@@ -576,11 +524,11 @@ export class TagService {
      * @returns Array of tag records with usage counts.
      * @throws Error if listing fails.
      */
-    async listMostUsedTags(
+    async listMostUsed(
         limit: number,
         actor: UserType
     ): Promise<Array<{ tag: TagRecord; count: number }>> {
-        log.info('listing most used tags', 'listMostUsedTags', { limit, actor: actor.id });
+        log.info('listing most used tags', 'listMostUsed', { limit, actor: actor.id });
 
         try {
             // Get all entity-tag relations
@@ -614,12 +562,12 @@ export class TagService {
                 }
             }
 
-            log.info('most used tags listed successfully', 'listMostUsedTags', {
+            log.info('most used tags listed successfully', 'listMostUsed', {
                 count: result.length
             });
             return result;
         } catch (error) {
-            log.error('failed to list most used tags', 'listMostUsedTags', error, {
+            log.error('failed to list most used tags', 'listMostUsed', error, {
                 limit,
                 actor: actor.id
             });
@@ -636,13 +584,13 @@ export class TagService {
      * @returns Array of created entity-tag relation records.
      * @throws Error if any tag is not found, actor is not authorized, or creation fails.
      */
-    async bulkAddTags(
+    async bulkAdd(
         entityType: EntityTypeEnum,
         entityId: string,
         tagIds: string[],
         actor: UserType
     ): Promise<EntityTagRecord[]> {
-        log.info('bulk adding tags to entity', 'bulkAddTags', {
+        log.info('bulk adding tags to entity', 'bulkAdd', {
             entityType,
             entityId,
             tagCount: tagIds.length,
@@ -651,7 +599,7 @@ export class TagService {
 
         // Verify all tags exist and actor has permission
         for (const tagId of tagIds) {
-            await this.getTagById(tagId, actor);
+            await this.getById(tagId, actor);
         }
 
         try {
@@ -668,14 +616,14 @@ export class TagService {
                 relations.push(relation);
             }
 
-            log.info('tags bulk added to entity successfully', 'bulkAddTags', {
+            log.info('tags bulk added to entity successfully', 'bulkAdd', {
                 entityType,
                 entityId,
                 count: relations.length
             });
             return relations;
         } catch (error) {
-            log.error('failed to bulk add tags to entity', 'bulkAddTags', error, {
+            log.error('failed to bulk add tags to entity', 'bulkAdd', error, {
                 entityType,
                 entityId,
                 tagIds,
@@ -693,13 +641,13 @@ export class TagService {
      * @param actor - The user performing the action.
      * @throws Error if any tag is not found, actor is not authorized, or deletion fails.
      */
-    async bulkRemoveTags(
+    async bulkRemove(
         entityType: EntityTypeEnum,
         entityId: string,
         tagIds: string[],
         actor: UserType
     ): Promise<void> {
-        log.info('bulk removing tags from entity', 'bulkRemoveTags', {
+        log.info('bulk removing tags from entity', 'bulkRemove', {
             entityType,
             entityId,
             tagCount: tagIds.length,
@@ -708,7 +656,7 @@ export class TagService {
 
         // Verify all tags exist and actor has permission
         for (const tagId of tagIds) {
-            await this.getTagById(tagId, actor);
+            await this.getById(tagId, actor);
         }
 
         try {
@@ -716,13 +664,13 @@ export class TagService {
                 await EntityTagModel.deleteRelation(entityType, entityId, tagId);
             }
 
-            log.info('tags bulk removed from entity successfully', 'bulkRemoveTags', {
+            log.info('tags bulk removed from entity successfully', 'bulkRemove', {
                 entityType,
                 entityId,
                 count: tagIds.length
             });
         } catch (error) {
-            log.error('failed to bulk remove tags from entity', 'bulkRemoveTags', error, {
+            log.error('failed to bulk remove tags from entity', 'bulkRemove', error, {
                 entityType,
                 entityId,
                 tagIds,

@@ -81,8 +81,8 @@ export class EventOrganizerService {
      * @returns The organizer record.
      * @throws Error if organizer is not found.
      */
-    async getOrganizerById(id: string, actor: UserType): Promise<EventOrganizerRecord> {
-        log.info('fetching organizer by id', 'getOrganizerById', {
+    async getById(id: string, actor: UserType): Promise<EventOrganizerRecord> {
+        log.info('fetching organizer by id', 'getById', {
             organizerId: id,
             actor: actor.id
         });
@@ -91,12 +91,12 @@ export class EventOrganizerService {
             const organizer = await EventOrganizerModel.getOrganizerById(id);
             const existingOrganizer = assertExists(organizer, `Organizer ${id} not found`);
 
-            log.info('organizer fetched successfully', 'getOrganizerById', {
+            log.info('organizer fetched successfully', 'getById', {
                 organizerId: existingOrganizer.id
             });
             return existingOrganizer;
         } catch (error) {
-            log.error('failed to fetch organizer by id', 'getOrganizerById', error, {
+            log.error('failed to fetch organizer by id', 'getById', error, {
                 organizerId: id,
                 actor: actor.id
             });
@@ -111,21 +111,21 @@ export class EventOrganizerService {
      * @returns Array of organizer records.
      * @throws Error if listing fails.
      */
-    async listOrganizers(
+    async list(
         filter: SelectEventOrganizerFilter,
         actor: UserType
     ): Promise<EventOrganizerRecord[]> {
-        log.info('listing organizers', 'listOrganizers', { filter, actor: actor.id });
+        log.info('listing organizers', 'list', { filter, actor: actor.id });
 
         try {
             const organizers = await EventOrganizerModel.listOrganizers(filter);
-            log.info('organizers listed successfully', 'listOrganizers', {
+            log.info('organizers listed successfully', 'list', {
                 count: organizers.length,
                 filter
             });
             return organizers;
         } catch (error) {
-            log.error('failed to list organizers', 'listOrganizers', error, {
+            log.error('failed to list organizers', 'list', error, {
                 filter,
                 actor: actor.id
             });
@@ -141,17 +141,17 @@ export class EventOrganizerService {
      * @returns The updated organizer record.
      * @throws Error if organizer is not found, actor is not authorized, or update fails.
      */
-    async updateOrganizer(
+    async update(
         id: string,
         changes: UpdateEventOrganizerData,
         actor: UserType
     ): Promise<EventOrganizerRecord> {
-        log.info('updating organizer', 'updateOrganizer', { organizerId: id, actor: actor.id });
+        log.info('updating organizer', 'update', { organizerId: id, actor: actor.id });
 
         // Only admins can update organizers
         EventOrganizerService.assertAdmin(actor);
 
-        const existingOrganizer = await this.getOrganizerById(id, actor);
+        const existingOrganizer = await this.getById(id, actor);
 
         const dataToUpdate = sanitizePartialUpdate(changes);
 
@@ -164,12 +164,12 @@ export class EventOrganizerService {
                 existingOrganizer.id,
                 dataWithAudit
             );
-            log.info('organizer updated successfully', 'updateOrganizer', {
+            log.info('organizer updated successfully', 'update', {
                 organizerId: updatedOrganizer.id
             });
             return updatedOrganizer;
         } catch (error) {
-            log.error('failed to update organizer', 'updateOrganizer', error, {
+            log.error('failed to update organizer', 'update', error, {
                 organizerId: id,
                 actor: actor.id
             });
@@ -189,7 +189,7 @@ export class EventOrganizerService {
         // Only admins can delete organizers
         EventOrganizerService.assertAdmin(actor);
 
-        await this.getOrganizerById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await EventOrganizerModel.softDeleteOrganizer(id);
@@ -215,7 +215,7 @@ export class EventOrganizerService {
         // Only admins can restore organizers
         EventOrganizerService.assertAdmin(actor);
 
-        await this.getOrganizerById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await EventOrganizerModel.restoreOrganizer(id);
@@ -241,7 +241,7 @@ export class EventOrganizerService {
         // Only admins can hard delete
         EventOrganizerService.assertAdmin(actor);
 
-        await this.getOrganizerById(id, actor);
+        await this.getById(id, actor);
 
         try {
             await EventOrganizerModel.hardDeleteOrganizer(id);
@@ -263,12 +263,12 @@ export class EventOrganizerService {
      * @returns The updated event record.
      * @throws Error if event or organizer is not found, actor is not authorized, or update fails.
      */
-    async assignOrganizerToEvent(
+    async assignToEvent(
         eventId: string,
         organizerId: string,
         actor: UserType
     ): Promise<EventRecord> {
-        log.info('assigning organizer to event', 'assignOrganizerToEvent', {
+        log.info('assigning organizer to event', 'assignToEvent', {
             eventId,
             organizerId,
             actor: actor.id
@@ -287,25 +287,22 @@ export class EventOrganizerService {
             }
 
             // Check if organizer exists
-            const organizer = await EventOrganizerModel.getOrganizerById(organizerId);
-            if (!organizer) {
-                throw new Error(`Organizer ${organizerId} not found`);
-            }
+            const organizer = await this.getById(organizerId, actor);
 
             // Update the event with the organizer ID
             const changes: UpdateEventData = {
-                organizerId,
+                organizerId: organizer.id,
                 updatedById: actor.id
             };
 
             const updatedEvent = await EventModel.updateEvent(eventId, changes);
-            log.info('organizer assigned to event successfully', 'assignOrganizerToEvent', {
+            log.info('organizer assigned to event successfully', 'assignToEvent', {
                 eventId,
                 organizerId
             });
             return updatedEvent;
         } catch (error) {
-            log.error('failed to assign organizer to event', 'assignOrganizerToEvent', error, {
+            log.error('failed to assign organizer to event', 'assignToEvent', error, {
                 eventId,
                 organizerId,
                 actor: actor.id
@@ -315,30 +312,27 @@ export class EventOrganizerService {
     }
 
     /**
-     * Get events by organizer.
+     * List events for a specific organizer.
      * @param organizerId - The ID of the organizer.
      * @param actor - The user performing the action.
      * @param filter - Pagination options.
      * @returns Array of event records organized by the specified organizer.
      * @throws Error if organizer is not found or listing fails.
      */
-    async getEventsByOrganizer(
+    async listEvents(
         organizerId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<EventRecord[]> {
-        log.info('getting events by organizer', 'getEventsByOrganizer', {
+        log.info('listing events by organizer', 'listEvents', {
             organizerId,
             actor: actor.id,
             filter
         });
 
         try {
-            // Check if organizer exists
-            const organizer = await EventOrganizerModel.getOrganizerById(organizerId);
-            if (!organizer) {
-                throw new Error(`Organizer ${organizerId} not found`);
-            }
+            // Verify organizer exists
+            await this.getById(organizerId, actor);
 
             const eventFilter: SelectEventFilter = {
                 organizerId,
@@ -347,13 +341,13 @@ export class EventOrganizerService {
             };
 
             const events = await EventModel.listEvents(eventFilter);
-            log.info('events by organizer retrieved successfully', 'getEventsByOrganizer', {
+            log.info('events by organizer listed successfully', 'listEvents', {
                 organizerId,
                 count: events.length
             });
             return events;
         } catch (error) {
-            log.error('failed to get events by organizer', 'getEventsByOrganizer', error, {
+            log.error('failed to list events by organizer', 'listEvents', error, {
                 organizerId,
                 actor: actor.id
             });

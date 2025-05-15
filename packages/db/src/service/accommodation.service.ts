@@ -121,8 +121,8 @@ export class AccommodationService {
      * @returns The accommodation record.
      * @throws Error if accommodation is not found.
      */
-    async getAccommodationById(id: string, actor: UserType): Promise<AccommodationRecord> {
-        log.info('fetching accommodation by id', 'getAccommodationById', {
+    async getById(id: string, actor: UserType): Promise<AccommodationRecord> {
+        log.info('fetching accommodation by id', 'getById', {
             accommodationId: id,
             actor: actor.id
         });
@@ -134,12 +134,12 @@ export class AccommodationService {
                 `Accommodation ${id} not found`
             );
 
-            log.info('accommodation fetched successfully', 'getAccommodationById', {
+            log.info('accommodation fetched successfully', 'getById', {
                 accommodationId: existingAccommodation.id
             });
             return existingAccommodation;
         } catch (error) {
-            log.error('failed to fetch accommodation by id', 'getAccommodationById', error, {
+            log.error('failed to fetch accommodation by id', 'getById', error, {
                 accommodationId: id,
                 actor: actor.id
             });
@@ -154,22 +154,171 @@ export class AccommodationService {
      * @returns An array of accommodation records.
      * @throws Error if listing fails.
      */
-    async listAccommodations(
-        filter: SelectAccommodationFilter,
-        actor: UserType
-    ): Promise<AccommodationRecord[]> {
-        log.info('listing accommodations', 'listAccommodations', { filter, actor: actor.id });
+    async list(filter: SelectAccommodationFilter, actor: UserType): Promise<AccommodationRecord[]> {
+        log.info('listing accommodations', 'list', { filter, actor: actor.id });
 
         try {
             const accommodations = await AccommodationModel.listAccommodations(filter);
-            log.info('accommodations listed successfully', 'listAccommodations', {
+            log.info('accommodations listed successfully', 'list', {
                 count: accommodations.length,
                 filter
             });
             return accommodations;
         } catch (error) {
-            log.error('failed to list accommodations', 'listAccommodations', error, {
+            log.error('failed to list accommodations', 'list', error, {
                 filter,
+                actor: actor.id
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Update fields on an existing accommodation.
+     * @param id - The ID of the accommodation to update.
+     * @param changes - The changes to apply.
+     * @param actor - The user performing the action.
+     * @returns The updated accommodation record.
+     * @throws Error if accommodation is not found, actor is not authorized, or update fails.
+     */
+    async update(
+        id: string,
+        changes: UpdateAccommodationData,
+        actor: UserType
+    ): Promise<AccommodationRecord> {
+        log.info('updating accommodation', 'update', {
+            accommodationId: id,
+            actor: actor.id
+        });
+
+        const existingAccommodation = await this.getById(id, actor);
+
+        // Check if actor is owner or admin
+        AccommodationService.assertOwnerOrAdmin(existingAccommodation.ownerId, actor);
+
+        const dataToUpdate = sanitizePartialUpdate(changes);
+
+        try {
+            const dataWithAudit: UpdateAccommodationData = {
+                ...dataToUpdate,
+                updatedById: actor.id
+            };
+
+            const updatedAccommodation = await AccommodationModel.updateAccommodation(
+                existingAccommodation.id,
+                dataWithAudit
+            );
+
+            log.info('accommodation updated successfully', 'update', {
+                accommodationId: updatedAccommodation.id
+            });
+            return updatedAccommodation;
+        } catch (error) {
+            log.error('failed to update accommodation', 'update', error, {
+                accommodationId: id,
+                actor: actor.id
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Soft-delete an accommodation.
+     * @param id - The ID of the accommodation to delete.
+     * @param actor - The user performing the action.
+     * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
+     */
+    async delete(id: string, actor: UserType): Promise<void> {
+        log.info('soft deleting accommodation', 'delete', {
+            accommodationId: id,
+            actor: actor.id
+        });
+
+        const existingAccommodation = await this.getById(id, actor);
+
+        // Check if actor is owner or admin
+        AccommodationService.assertOwnerOrAdmin(existingAccommodation.ownerId, actor);
+
+        try {
+            const changes: UpdateAccommodationData = {
+                deletedAt: new Date(),
+                deletedById: actor.id
+            };
+
+            await AccommodationModel.updateAccommodation(existingAccommodation.id, changes);
+            log.info('accommodation soft deleted successfully', 'delete', {
+                accommodationId: existingAccommodation.id
+            });
+        } catch (error) {
+            log.error('failed to soft delete accommodation', 'delete', error, {
+                accommodationId: id,
+                actor: actor.id
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Restore a soft-deleted accommodation.
+     * @param id - The ID of the accommodation to restore.
+     * @param actor - The user performing the action.
+     * @throws Error if accommodation is not found, actor is not authorized, or restoration fails.
+     */
+    async restore(id: string, actor: UserType): Promise<void> {
+        log.info('restoring accommodation', 'restore', {
+            accommodationId: id,
+            actor: actor.id
+        });
+
+        const existingAccommodation = await this.getById(id, actor);
+
+        // Check if actor is owner or admin
+        AccommodationService.assertOwnerOrAdmin(existingAccommodation.ownerId, actor);
+
+        try {
+            const changes: UpdateAccommodationData = {
+                deletedAt: null,
+                deletedById: null
+            };
+
+            await AccommodationModel.updateAccommodation(existingAccommodation.id, changes);
+            log.info('accommodation restored successfully', 'restore', {
+                accommodationId: existingAccommodation.id
+            });
+        } catch (error) {
+            log.error('failed to restore accommodation', 'restore', error, {
+                accommodationId: id,
+                actor: actor.id
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Permanently delete an accommodation.
+     * @param id - The ID of the accommodation to hard delete.
+     * @param actor - The user performing the action (must be an admin).
+     * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
+     */
+    async hardDelete(id: string, actor: UserType): Promise<void> {
+        log.info('hard deleting accommodation', 'hardDelete', {
+            accommodationId: id,
+            actor: actor.id
+        });
+
+        // Only admins can hard delete
+        AccommodationService.assertAdmin(actor);
+
+        const existingAccommodation = await this.getById(id, actor);
+
+        try {
+            await AccommodationModel.hardDeleteAccommodation(existingAccommodation.id);
+            log.info('accommodation hard deleted successfully', 'hardDelete', {
+                accommodationId: existingAccommodation.id
+            });
+        } catch (error) {
+            log.error('failed to hard delete accommodation', 'hardDelete', error, {
+                accommodationId: id,
                 actor: actor.id
             });
             throw error;
@@ -184,12 +333,12 @@ export class AccommodationService {
      * @returns An array of accommodation records.
      * @throws Error if actor is not authorized or listing fails.
      */
-    async getAccommodationsByOwnerId(
+    async getByOwner(
         ownerId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('fetching accommodations by owner id', 'getAccommodationsByOwnerId', {
+        log.info('fetching accommodations by owner id', 'getByOwner', {
             ownerId,
             actor: actor.id,
             filter
@@ -206,21 +355,16 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(accommodationFilter);
-            log.info('accommodations by owner fetched successfully', 'getAccommodationsByOwnerId', {
+            log.info('accommodations by owner fetched successfully', 'getByOwner', {
                 ownerId,
                 count: accommodations.length
             });
             return accommodations;
         } catch (error) {
-            log.error(
-                'failed to fetch accommodations by owner',
-                'getAccommodationsByOwnerId',
-                error,
-                {
-                    ownerId,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to fetch accommodations by owner', 'getByOwner', error, {
+                ownerId,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -233,12 +377,12 @@ export class AccommodationService {
      * @returns An array of accommodation records.
      * @throws Error if listing fails.
      */
-    async getAccommodationsByType(
+    async getByType(
         type: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('fetching accommodations by type', 'getAccommodationsByType', {
+        log.info('fetching accommodations by type', 'getByType', {
             type,
             actor: actor.id,
             filter
@@ -252,13 +396,13 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(accommodationFilter);
-            log.info('accommodations by type fetched successfully', 'getAccommodationsByType', {
+            log.info('accommodations by type fetched successfully', 'getByType', {
                 type,
                 count: accommodations.length
             });
             return accommodations;
         } catch (error) {
-            log.error('failed to fetch accommodations by type', 'getAccommodationsByType', error, {
+            log.error('failed to fetch accommodations by type', 'getByType', error, {
                 type,
                 actor: actor.id
             });
@@ -274,12 +418,12 @@ export class AccommodationService {
      * @returns An array of accommodation records.
      * @throws Error if actor is not authorized or listing fails.
      */
-    async getAccommodationsByState(
+    async getByState(
         state: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('fetching accommodations by state', 'getAccommodationsByState', {
+        log.info('fetching accommodations by state', 'getByState', {
             state,
             actor: actor.id,
             filter
@@ -296,21 +440,16 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(accommodationFilter);
-            log.info('accommodations by state fetched successfully', 'getAccommodationsByState', {
+            log.info('accommodations by state fetched successfully', 'getByState', {
                 state,
                 count: accommodations.length
             });
             return accommodations;
         } catch (error) {
-            log.error(
-                'failed to fetch accommodations by state',
-                'getAccommodationsByState',
-                error,
-                {
-                    state,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to fetch accommodations by state', 'getByState', error, {
+                state,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -357,22 +496,6 @@ export class AccommodationService {
     }
 
     /**
-     * Get accommodations by destination (alias for listByDestination).
-     * @param destinationId - The ID of the destination.
-     * @param actor - The user performing the action.
-     * @param filter - Pagination options.
-     * @returns An array of accommodation records.
-     * @throws Error if listing fails.
-     */
-    async getAccommodationsByDestination(
-        destinationId: string,
-        actor: UserType,
-        filter: PaginationParams = {}
-    ): Promise<AccommodationRecord[]> {
-        return this.listByDestination(destinationId, actor, filter);
-    }
-
-    /**
      * Add a review to an accommodation.
      * @param accommodationId - The ID of the accommodation.
      * @param data - The review data.
@@ -391,7 +514,7 @@ export class AccommodationService {
         });
 
         // Verify accommodation exists
-        const accommodation = await this.getAccommodationById(accommodationId, actor);
+        const accommodation = await this.getById(accommodationId, actor);
 
         try {
             const reviewData: CreateAccommodationReviewData = {
@@ -436,7 +559,7 @@ export class AccommodationService {
         });
 
         // Verify accommodation exists
-        await this.getAccommodationById(accommodationId, actor);
+        await this.getById(accommodationId, actor);
 
         try {
             const reviewFilter: SelectAccommodationFilter = {
@@ -464,36 +587,6 @@ export class AccommodationService {
     }
 
     /**
-     * Get a specific review by ID.
-     * @param reviewId - The ID of the review.
-     * @param actor - The user performing the action.
-     * @returns The review record.
-     * @throws Error if review is not found.
-     */
-    async getReviewById(reviewId: string, actor: UserType): Promise<AccommodationReviewRecord> {
-        log.info('fetching review by id', 'getReviewById', {
-            reviewId,
-            actor: actor.id
-        });
-
-        try {
-            const review = await AccommodationReviewModel.getReviewById(reviewId);
-            const existingReview = assertExists(review, `Review ${reviewId} not found`);
-
-            log.info('review fetched successfully', 'getReviewById', {
-                reviewId: existingReview.id
-            });
-            return existingReview;
-        } catch (error) {
-            log.error('failed to fetch review by id', 'getReviewById', error, {
-                reviewId,
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
      * Get the average rating for an accommodation.
      * @param accommodationId - The ID of the accommodation.
      * @param actor - The user performing the action.
@@ -510,7 +603,7 @@ export class AccommodationService {
         });
 
         // Verify accommodation exists
-        await this.getAccommodationById(accommodationId, actor);
+        await this.getById(accommodationId, actor);
 
         try {
             const reviews = await AccommodationReviewModel.listReviews({
@@ -572,158 +665,6 @@ export class AccommodationService {
         } catch (error) {
             log.error('failed to calculate average rating', 'getAverageRating', error, {
                 accommodationId,
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * Update an accommodation.
-     * @param id - The ID of the accommodation to update.
-     * @param changes - The changes to apply.
-     * @param actor - The user performing the action.
-     * @returns The updated accommodation record.
-     * @throws Error if accommodation is not found, actor is not authorized, or update fails.
-     */
-    async updateAccommodation(
-        id: string,
-        changes: UpdateAccommodationData,
-        actor: UserType
-    ): Promise<AccommodationRecord> {
-        log.info('updating accommodation', 'updateAccommodation', {
-            accommodationId: id,
-            actor: actor.id
-        });
-
-        const existingAccommodation = await this.getAccommodationById(id, actor);
-
-        // Check if actor is owner or admin
-        AccommodationService.assertOwnerOrAdmin(existingAccommodation.ownerId, actor);
-
-        const dataToUpdate = sanitizePartialUpdate(changes);
-
-        try {
-            const dataWithAudit: UpdateAccommodationData = {
-                ...dataToUpdate,
-                updatedById: actor.id
-            };
-
-            const updatedAccommodation = await AccommodationModel.updateAccommodation(
-                existingAccommodation.id,
-                dataWithAudit
-            );
-
-            log.info('accommodation updated successfully', 'updateAccommodation', {
-                accommodationId: updatedAccommodation.id
-            });
-            return updatedAccommodation;
-        } catch (error) {
-            log.error('failed to update accommodation', 'updateAccommodation', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * Soft-delete an accommodation.
-     * @param id - The ID of the accommodation to delete.
-     * @param actor - The user performing the action.
-     * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
-     */
-    async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting accommodation', 'delete', {
-            accommodationId: id,
-            actor: actor.id
-        });
-
-        const existingAccommodation = await this.getAccommodationById(id, actor);
-
-        // Check if actor is owner or admin
-        AccommodationService.assertOwnerOrAdmin(existingAccommodation.ownerId, actor);
-
-        try {
-            const changes: UpdateAccommodationData = {
-                deletedAt: new Date(),
-                deletedById: actor.id
-            };
-
-            await AccommodationModel.updateAccommodation(existingAccommodation.id, changes);
-            log.info('accommodation soft deleted successfully', 'delete', {
-                accommodationId: existingAccommodation.id
-            });
-        } catch (error) {
-            log.error('failed to soft delete accommodation', 'delete', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * Restore a soft-deleted accommodation.
-     * @param id - The ID of the accommodation to restore.
-     * @param actor - The user performing the action.
-     * @throws Error if accommodation is not found, actor is not authorized, or restoration fails.
-     */
-    async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring accommodation', 'restore', {
-            accommodationId: id,
-            actor: actor.id
-        });
-
-        const existingAccommodation = await this.getAccommodationById(id, actor);
-
-        // Check if actor is owner or admin
-        AccommodationService.assertOwnerOrAdmin(existingAccommodation.ownerId, actor);
-
-        try {
-            const changes: UpdateAccommodationData = {
-                deletedAt: null,
-                deletedById: null
-            };
-
-            await AccommodationModel.updateAccommodation(existingAccommodation.id, changes);
-            log.info('accommodation restored successfully', 'restore', {
-                accommodationId: existingAccommodation.id
-            });
-        } catch (error) {
-            log.error('failed to restore accommodation', 'restore', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * Permanently delete an accommodation.
-     * @param id - The ID of the accommodation to hard delete.
-     * @param actor - The user performing the action (must be an admin).
-     * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
-     */
-    async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting accommodation', 'hardDelete', {
-            accommodationId: id,
-            actor: actor.id
-        });
-
-        // Only admins can hard delete
-        AccommodationService.assertAdmin(actor);
-
-        const existingAccommodation = await this.getAccommodationById(id, actor);
-
-        try {
-            await AccommodationModel.hardDeleteAccommodation(existingAccommodation.id);
-            log.info('accommodation hard deleted successfully', 'hardDelete', {
-                accommodationId: existingAccommodation.id
-            });
-        } catch (error) {
-            log.error('failed to hard delete accommodation', 'hardDelete', error, {
-                accommodationId: id,
                 actor: actor.id
             });
             throw error;
@@ -799,12 +740,12 @@ export class AccommodationService {
      * @returns An array of matching accommodation records.
      * @throws Error if search fails.
      */
-    async searchAccommodations(
+    async searchFullText(
         query: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('searching accommodations', 'searchAccommodations', {
+        log.info('searching accommodations', 'searchFullText', {
             query,
             actor: actor.id,
             filter
@@ -818,36 +759,18 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(searchFilter);
-            log.info('accommodations search completed successfully', 'searchAccommodations', {
+            log.info('accommodations search completed successfully', 'searchFullText', {
                 query,
                 count: accommodations.length
             });
             return accommodations;
         } catch (error) {
-            log.error('failed to search accommodations', 'searchAccommodations', error, {
+            log.error('failed to search accommodations', 'searchFullText', error, {
                 query,
                 actor: actor.id
             });
             throw error;
         }
-    }
-
-    /**
-     * Perform full-text search across accommodations.
-     * @param query - The search query.
-     * @param actor - The user performing the action.
-     * @param filter - Pagination options.
-     * @returns An array of matching accommodation records.
-     * @throws Error if search fails.
-     */
-    async searchFullText(
-        query: string,
-        actor: UserType,
-        filter: PaginationParams = {}
-    ): Promise<AccommodationRecord[]> {
-        // For now, this is an alias to searchAccommodations
-        // In a real implementation, this would use a full-text search index
-        return this.searchAccommodations(query, actor, filter);
     }
 
     /**
@@ -870,7 +793,7 @@ export class AccommodationService {
         });
 
         // Verify accommodation exists
-        await this.getAccommodationById(accommodationId, actor);
+        await this.getById(accommodationId, actor);
 
         try {
             const amenityFilter: SelectAccommodationAmenityFilter = {
@@ -914,7 +837,7 @@ export class AccommodationService {
         });
 
         // Verify accommodation exists
-        await this.getAccommodationById(accommodationId, actor);
+        await this.getById(accommodationId, actor);
 
         try {
             const featureFilter: SelectAccommodationFeatureFilter = {
@@ -958,7 +881,7 @@ export class AccommodationService {
         });
 
         // Verify accommodation exists
-        await this.getAccommodationById(accommodationId, actor);
+        await this.getById(accommodationId, actor);
 
         try {
             const faqFilter: SelectAccommodationFaqFilter = {
@@ -1001,7 +924,7 @@ export class AccommodationService {
             filter
         });
 
-        const accommodation = await this.getAccommodationById(accommodationId, actor);
+        const accommodation = await this.getById(accommodationId, actor);
 
         // Only owner or admin can see IA data
         AccommodationService.assertOwnerOrAdmin(accommodation.ownerId, actor);
@@ -1046,7 +969,7 @@ export class AccommodationService {
             actor: actor.id
         });
 
-        const accommodation = await this.getAccommodationById(accommodationId, actor);
+        const accommodation = await this.getById(accommodationId, actor);
 
         // Only owner or admin can add amenities
         AccommodationService.assertOwnerOrAdmin(accommodation.ownerId, actor);
@@ -1092,7 +1015,7 @@ export class AccommodationService {
             actor: actor.id
         });
 
-        const accommodation = await this.getAccommodationById(accommodationId, actor);
+        const accommodation = await this.getById(accommodationId, actor);
 
         // Only owner or admin can add features
         AccommodationService.assertOwnerOrAdmin(accommodation.ownerId, actor);
@@ -1138,7 +1061,7 @@ export class AccommodationService {
             actor: actor.id
         });
 
-        const accommodation = await this.getAccommodationById(accommodationId, actor);
+        const accommodation = await this.getById(accommodationId, actor);
 
         // Only owner or admin can add FAQs
         AccommodationService.assertOwnerOrAdmin(accommodation.ownerId, actor);
@@ -1184,7 +1107,7 @@ export class AccommodationService {
             actor: actor.id
         });
 
-        const accommodation = await this.getAccommodationById(accommodationId, actor);
+        const accommodation = await this.getById(accommodationId, actor);
 
         // Only owner or admin can add IA data
         AccommodationService.assertOwnerOrAdmin(accommodation.ownerId, actor);
@@ -1219,7 +1142,7 @@ export class AccommodationService {
      * @returns The accommodation record with all related details.
      * @throws Error if accommodation is not found or fetching fails.
      */
-    async getAccommodationWithDetails(
+    async getWithDetails(
         id: string,
         actor: UserType
     ): Promise<
@@ -1231,14 +1154,14 @@ export class AccommodationService {
             reviews: AccommodationReviewRecord[];
         }
     > {
-        log.info('fetching accommodation with details', 'getAccommodationWithDetails', {
+        log.info('fetching accommodation with details', 'getWithDetails', {
             accommodationId: id,
             actor: actor.id
         });
 
         try {
             // Get the base accommodation
-            const accommodation = await this.getAccommodationById(id, actor);
+            const accommodation = await this.getById(id, actor);
 
             // Get related entities in parallel
             const [amenities, features, faqs, reviews] = await Promise.all([
@@ -1263,24 +1186,15 @@ export class AccommodationService {
                 reviews
             };
 
-            log.info(
-                'accommodation with details fetched successfully',
-                'getAccommodationWithDetails',
-                {
-                    accommodationId: id
-                }
-            );
+            log.info('accommodation with details fetched successfully', 'getWithDetails', {
+                accommodationId: id
+            });
             return result;
         } catch (error) {
-            log.error(
-                'failed to fetch accommodation with details',
-                'getAccommodationWithDetails',
-                error,
-                {
-                    accommodationId: id,
-                    actor: actor.id
-                }
-            );
+            log.error('failed to fetch accommodation with details', 'getWithDetails', error, {
+                accommodationId: id,
+                actor: actor.id
+            });
             throw error;
         }
     }
@@ -1304,7 +1218,7 @@ export class AccommodationService {
             actor: actor.id
         });
 
-        const accommodation = await this.getAccommodationById(accommodationId, actor);
+        const accommodation = await this.getById(accommodationId, actor);
 
         // Only owner or admin can add tags
         AccommodationService.assertOwnerOrAdmin(accommodation.ownerId, actor);
@@ -1355,7 +1269,7 @@ export class AccommodationService {
 
         try {
             // Get the source accommodation
-            const accommodation = await this.getAccommodationById(accommodationId, actor);
+            const accommodation = await this.getById(accommodationId, actor);
 
             // Find accommodations with the same type and destination
             const similarAccommodations = await AccommodationModel.listAccommodations({
