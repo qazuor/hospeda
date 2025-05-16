@@ -4,6 +4,7 @@ export * from './accommodationFaq.service';
 export * from './accommodationFeature.service';
 export * from './accommodationIaData.service';
 export * from './accommodationReview.service';
+export * from './amenity.service';
 export * from './bookmark.service';
 export * from './destination.service';
 export * from './destinationAttraction.service';

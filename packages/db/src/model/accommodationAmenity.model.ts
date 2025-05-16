@@ -1,9 +1,12 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../client';
 import { accommodationAmenities } from '../schema/accommodation_amenity.dbschema';
+import type {
+    SelectAccommodationAmenityFilter,
+    UpdateAccommodationAmenityData
+} from '../types/db-types';
 import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
 
 /**
@@ -22,189 +25,310 @@ export type AccommodationAmenityRecord = InferSelectModel<typeof accommodationAm
 export type CreateAccommodationAmenityData = InferInsertModel<typeof accommodationAmenities>;
 
 /**
- * Fields allowed for updating an accommodation amenity.
- */
-export type UpdateAccommodationAmenityData = UpdateData<CreateAccommodationAmenityData>;
-
-/**
- * Filter options for listing amenities.
- */
-export interface SelectAccommodationAmenityFilter extends BaseSelectFilter {
-    /** ID of the accommodation */
-    accommodationId: string;
-    /** Optional fuzzy search on description */
-    query?: string;
-    /** Include soft-deleted if true */
-    includeDeleted?: boolean;
-}
-
-/**
  * AccommodationAmenityModel provides CRUD operations for the accommodation_amenities table.
  */
 export const AccommodationAmenityModel = {
     /**
-     * Create a new accommodation amenity.
-     *
-     * @param data - Fields required to create the amenity
-     * @returns The created amenity record
+     * Create a new accommodation amenity relation.
+     * @param data - Fields required to create the amenity relation
+     * @returns The created amenity relation record
      */
-    async createAmenity(data: CreateAccommodationAmenityData): Promise<AccommodationAmenityRecord> {
+    async createAmenityRelation(
+        data: CreateAccommodationAmenityData
+    ): Promise<AccommodationAmenityRecord> {
         try {
-            log.info('creating accommodation amenity', 'createAmenity', data);
+            log.info('creating accommodation amenity relation', 'createAmenityRelation', data);
             const rows = castReturning<AccommodationAmenityRecord>(
                 await db.insert(accommodationAmenities).values(data).returning()
             );
-            const amenity = assertExists(rows[0], 'createAmenity: no amenity returned');
-            log.query('insert', 'accommodation_amenities', data, amenity);
-            return amenity;
+            const amenityRelation = assertExists(
+                rows[0],
+                'createAmenityRelation: no relation returned'
+            );
+            log.query('insert', 'accommodation_amenities', data, amenityRelation);
+            return amenityRelation;
         } catch (error) {
-            log.error('createAmenity failed', 'createAmenity', error);
+            log.error('createAmenityRelation failed', 'createAmenityRelation', error);
             throw error;
         }
     },
 
     /**
-     * Fetch a single amenity by ID.
-     *
-     * @param id - UUID of the amenity
-     * @returns The amenity record or undefined if not found
+     * Fetch a single amenity relation by accommodation ID and amenity ID.
+     * @param accommodationId - UUID of the accommodation
+     * @param amenityId - UUID of the amenity
+     * @returns The amenity relation record or undefined if not found
      */
-    async getAmenityById(id: string): Promise<AccommodationAmenityRecord | undefined> {
+    async getAmenityRelation(
+        accommodationId: string,
+        amenityId: string
+    ): Promise<AccommodationAmenityRecord | undefined> {
         try {
-            log.info('fetching amenity by id', 'getAmenityById', { id });
-            const [amenity] = (await db
+            log.info('fetching amenity relation', 'getAmenityRelation', {
+                accommodationId,
+                amenityId
+            });
+            const [relation] = await db
                 .select()
                 .from(accommodationAmenities)
-                .where(eq(accommodationAmenities.id, id))
-                .limit(1)) as AccommodationAmenityRecord[];
-            log.query('select', 'accommodation_amenities', { id }, amenity);
-            return amenity;
+                .where(
+                    and(
+                        eq(accommodationAmenities.accommodationId, accommodationId),
+                        eq(accommodationAmenities.amenityId, amenityId)
+                    )
+                )
+                .limit(1);
+
+            log.query(
+                'select',
+                'accommodation_amenities',
+                { accommodationId, amenityId },
+                relation
+            );
+            return relation as AccommodationAmenityRecord | undefined;
         } catch (error) {
-            log.error('getAmenityById failed', 'getAmenityById', error);
+            log.error('getAmenityRelation failed', 'getAmenityRelation', error);
             throw error;
         }
     },
 
     /**
      * List amenities for a given accommodation.
-     *
      * @param filter - Filtering and pagination options
-     * @returns Array of amenity records
+     * @returns Array of amenity relation records
      */
-    async listAmenities(
+    async listAmenityRelations(
         filter: SelectAccommodationAmenityFilter
     ): Promise<AccommodationAmenityRecord[]> {
         try {
-            log.info('listing amenities', 'listAmenities', filter);
+            log.info('listing amenity relations', 'listAmenityRelations', filter);
 
-            let query = rawSelect(
-                db
-                    .select()
-                    .from(accommodationAmenities)
-                    .where(eq(accommodationAmenities.accommodationId, filter.accommodationId))
-            );
+            let query = rawSelect(db.select().from(accommodationAmenities));
 
-            if (filter.query) {
-                const term = `%${filter.query}%`;
-                query = query.where(ilike(accommodationAmenities.description, term));
+            if (filter.accommodationId) {
+                query = query.where(
+                    eq(accommodationAmenities.accommodationId, filter.accommodationId)
+                );
             }
+
+            if (filter.amenityId) {
+                query = query.where(eq(accommodationAmenities.amenityId, filter.amenityId));
+            }
+
+            if (typeof filter.isOptional === 'boolean') {
+                query = query.where(eq(accommodationAmenities.isOptional, filter.isOptional));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(accommodationAmenities.deletedAt));
             }
 
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(accommodationAmenities.createdAt, 'desc')) as AccommodationAmenityRecord[];
+                .offset(filter.offset ?? 0)) as AccommodationAmenityRecord[];
 
             log.query('select', 'accommodation_amenities', filter, rows);
             return rows;
         } catch (error) {
-            log.error('listAmenities failed', 'listAmenities', error);
+            log.error('listAmenityRelations failed', 'listAmenityRelations', error);
             throw error;
         }
     },
 
     /**
-     * Update fields on an existing amenity.
-     *
-     * @param id - UUID of the amenity to update
+     * Update fields on an existing amenity relation.
+     * @param accommodationId - UUID of the accommodation
+     * @param amenityId - UUID of the amenity
      * @param changes - Partial fields to update
-     * @returns The updated amenity record
+     * @returns The updated amenity relation record
      */
-    async updateAmenity(
-        id: string,
+    async updateAmenityRelation(
+        accommodationId: string,
+        amenityId: string,
         changes: UpdateAccommodationAmenityData
     ): Promise<AccommodationAmenityRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating amenity', 'updateAmenity', { id, changes: dataToUpdate });
+            log.info('updating amenity relation', 'updateAmenityRelation', {
+                accommodationId,
+                amenityId,
+                changes: dataToUpdate
+            });
+
             const rows = castReturning<AccommodationAmenityRecord>(
                 await db
                     .update(accommodationAmenities)
                     .set(dataToUpdate)
-                    .where(eq(accommodationAmenities.id, id))
+                    .where(
+                        and(
+                            eq(accommodationAmenities.accommodationId, accommodationId),
+                            eq(accommodationAmenities.amenityId, amenityId)
+                        )
+                    )
                     .returning()
             );
-            const updated = assertExists(rows[0], `updateAmenity: no amenity found for id ${id}`);
-            log.query('update', 'accommodation_amenities', { id, changes: dataToUpdate }, updated);
+
+            const updated = assertExists(
+                rows[0],
+                `updateAmenityRelation: no relation found for accommodationId ${accommodationId} and amenityId ${amenityId}`
+            );
+
+            log.query(
+                'update',
+                'accommodation_amenities',
+                {
+                    accommodationId,
+                    amenityId,
+                    changes: dataToUpdate
+                },
+                updated
+            );
+
             return updated;
         } catch (error) {
-            log.error('updateAmenity failed', 'updateAmenity', error);
+            log.error('updateAmenityRelation failed', 'updateAmenityRelation', error);
             throw error;
         }
     },
 
     /**
-     * Soft-delete an amenity by setting the deletedAt timestamp.
-     *
-     * @param id - UUID of the amenity
+     * Soft-delete an amenity relation by setting the deletedAt timestamp.
+     * @param accommodationId - UUID of the accommodation
+     * @param amenityId - UUID of the amenity
      */
-    async softDeleteAmenity(id: string): Promise<void> {
+    async softDeleteAmenityRelation(accommodationId: string, amenityId: string): Promise<void> {
         try {
-            log.info('soft deleting amenity', 'softDeleteAmenity', { id });
+            log.info('soft deleting amenity relation', 'softDeleteAmenityRelation', {
+                accommodationId,
+                amenityId
+            });
+
             await db
                 .update(accommodationAmenities)
                 .set({ deletedAt: new Date() })
-                .where(eq(accommodationAmenities.id, id));
-            log.query('update', 'accommodation_amenities', { id }, { deleted: true });
+                .where(
+                    and(
+                        eq(accommodationAmenities.accommodationId, accommodationId),
+                        eq(accommodationAmenities.amenityId, amenityId)
+                    )
+                );
+
+            log.query(
+                'update',
+                'accommodation_amenities',
+                {
+                    accommodationId,
+                    amenityId
+                },
+                { deleted: true }
+            );
         } catch (error) {
-            log.error('softDeleteAmenity failed', 'softDeleteAmenity', error);
+            log.error('softDeleteAmenityRelation failed', 'softDeleteAmenityRelation', error);
             throw error;
         }
     },
 
     /**
-     * Restore a soft-deleted amenity by clearing the deletedAt timestamp.
-     *
-     * @param id - UUID of the amenity
+     * Restore a soft-deleted amenity relation by clearing the deletedAt timestamp.
+     * @param accommodationId - UUID of the accommodation
+     * @param amenityId - UUID of the amenity
      */
-    async restoreAmenity(id: string): Promise<void> {
+    async restoreAmenityRelation(accommodationId: string, amenityId: string): Promise<void> {
         try {
-            log.info('restoring amenity', 'restoreAmenity', { id });
+            log.info('restoring amenity relation', 'restoreAmenityRelation', {
+                accommodationId,
+                amenityId
+            });
+
             await db
                 .update(accommodationAmenities)
                 .set({ deletedAt: null })
-                .where(eq(accommodationAmenities.id, id));
-            log.query('update', 'accommodation_amenities', { id }, { restored: true });
+                .where(
+                    and(
+                        eq(accommodationAmenities.accommodationId, accommodationId),
+                        eq(accommodationAmenities.amenityId, amenityId)
+                    )
+                );
+
+            log.query(
+                'update',
+                'accommodation_amenities',
+                {
+                    accommodationId,
+                    amenityId
+                },
+                { restored: true }
+            );
         } catch (error) {
-            log.error('restoreAmenity failed', 'restoreAmenity', error);
+            log.error('restoreAmenityRelation failed', 'restoreAmenityRelation', error);
             throw error;
         }
     },
 
     /**
-     * Permanently delete an amenity record from the database.
-     *
-     * @param id - UUID of the amenity
+     * Permanently delete an amenity relation record from the database.
+     * @param accommodationId - UUID of the accommodation
+     * @param amenityId - UUID of the amenity
      */
-    async hardDeleteAmenity(id: string): Promise<void> {
+    async hardDeleteAmenityRelation(accommodationId: string, amenityId: string): Promise<void> {
         try {
-            log.info('hard deleting amenity', 'hardDeleteAmenity', { id });
-            await db.delete(accommodationAmenities).where(eq(accommodationAmenities.id, id));
-            log.query('delete', 'accommodation_amenities', { id }, { deleted: true });
+            log.info('hard deleting amenity relation', 'hardDeleteAmenityRelation', {
+                accommodationId,
+                amenityId
+            });
+
+            await db
+                .delete(accommodationAmenities)
+                .where(
+                    and(
+                        eq(accommodationAmenities.accommodationId, accommodationId),
+                        eq(accommodationAmenities.amenityId, amenityId)
+                    )
+                );
+
+            log.query(
+                'delete',
+                'accommodation_amenities',
+                {
+                    accommodationId,
+                    amenityId
+                },
+                { deleted: true }
+            );
         } catch (error) {
-            log.error('hardDeleteAmenity failed', 'hardDeleteAmenity', error);
+            log.error('hardDeleteAmenityRelation failed', 'hardDeleteAmenityRelation', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Delete all amenity relations for a specific accommodation.
+     * @param accommodationId - UUID of the accommodation
+     */
+    async deleteAllByAccommodation(accommodationId: string): Promise<void> {
+        try {
+            log.info(
+                'deleting all amenity relations for accommodation',
+                'deleteAllByAccommodation',
+                {
+                    accommodationId
+                }
+            );
+
+            await db
+                .delete(accommodationAmenities)
+                .where(eq(accommodationAmenities.accommodationId, accommodationId));
+
+            log.query(
+                'delete',
+                'accommodation_amenities',
+                {
+                    accommodationId
+                },
+                { deleted: true }
+            );
+        } catch (error) {
+            log.error('deleteAllByAccommodation failed', 'deleteAllByAccommodation', error);
             throw error;
         }
     }

@@ -8,6 +8,7 @@ import type {
     accommodationIaData,
     accommodationReviews,
     accommodations,
+    amenities,
     destinationAttractions,
     destinationReviews,
     destinations,
@@ -127,6 +128,28 @@ export interface SelectAccommodationFilter extends BaseSelectFilter {
     /** Filter by featured status */
     isFeatured?: boolean;
     // state filter is now inherited from BaseSelectFilter
+}
+
+/**
+ * Filter options for listing amenities.
+ */
+export interface SelectAmenityFilter extends BaseSelectFilter {
+    /** Filter by amenity type (CLIMATE_CONTROL, etc) */
+    type?: string;
+    /** Filter by built-in status */
+    isBuiltin?: boolean;
+}
+
+/**
+ * Filter options for listing accommodation amenities.
+ */
+export interface SelectAccommodationAmenityFilter extends BaseSelectFilter {
+    /** Filter by accommodation ID */
+    accommodationId?: string;
+    /** Filter by amenity ID */
+    amenityId?: string;
+    /** Filter by optional status */
+    isOptional?: boolean;
 }
 
 /**
@@ -312,6 +335,7 @@ export interface SelectUserFilter extends BaseSelectFilter {
 
 export type InsertAccommodation = InferInsertModel<typeof accommodations>;
 export type InsertAccommodationAmenity = InferInsertModel<typeof accommodationAmenities>;
+export type InsertAmenity = InferInsertModel<typeof amenities>;
 export type InsertAccommodationFaq = InferInsertModel<typeof accommodationFaqs>;
 export type InsertAccommodationFeature = InferInsertModel<typeof accommodationFeatures>;
 export type InsertAccommodationIaData = InferInsertModel<typeof accommodationIaData>;
@@ -341,6 +365,7 @@ export type InsertUser = InferInsertModel<typeof users>;
 
 export type UpdateAccommodationData = UpdateData<InsertAccommodation>;
 export type UpdateAccommodationAmenityData = UpdateData<InsertAccommodationAmenity>;
+export type UpdateAmenityData = UpdateData<InsertAmenity>;
 export type UpdateAccommodationFaqData = UpdateData<InsertAccommodationFaq>;
 export type UpdateAccommodationFeatureData = UpdateData<InsertAccommodationFeature>;
 export type UpdateAccommodationIaData = UpdateData<InsertAccommodationIaData>;
