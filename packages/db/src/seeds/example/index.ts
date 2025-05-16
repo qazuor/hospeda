@@ -1,4 +1,5 @@
 import { logger } from '@repo/logger';
+import { seedExampleAccommodations } from 'src/seeds/example/accommodation';
 import { seedEvents } from './event.example.seed';
 import { seedPosts } from './post.example.seed';
 import { seedSponsors } from './sponsor.example.seed';
@@ -24,7 +25,7 @@ export async function seedExampleData(): Promise<void> {
 
         // Seed accommodations
         logger.info('Seeding accommodations...', 'seedExampleData');
-        // await seedExampleAccommodations();
+        await seedExampleAccommodations();
         logger.info('Accommodations seeded successfully', 'seedExampleData');
 
         // Seed sponsors

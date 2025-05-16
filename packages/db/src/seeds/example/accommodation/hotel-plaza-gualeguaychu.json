@@ -1,0 +1,302 @@
+{
+    "slug": "hotel-plaza-gualeguaychu",
+    "name": "hotel-plaza",
+    "displayName": "Hotel Plaza",
+    "type": "HOTEL",
+    "description": "Hotel Plaza se encuentra en el corazón de Gualeguaychú, a solo 200 metros de la Plaza Principal y a corta distancia de los principales atractivos de esta vibrante ciudad entrerriana. Con una arquitectura que combina elementos clásicos y modernos, este hotel boutique de 3 estrellas ofrece una experiencia confortable y personalizada para viajeros de negocios y turistas.\n\nCon 24 habitaciones distribuidas en tres categorías (estándar, superior y suite), el hotel satisface las necesidades de diferentes tipos de huéspedes. Todas las habitaciones están equipadas con camas de alta calidad, ropa de cama premium, aire acondicionado, TV LED con cable, minibar y baño privado con amenities seleccionados. Las habitaciones superiores y suites añaden áreas de descanso adicionales y vistas privilegiadas a la ciudad.\n\nEntre los servicios destacados del Hotel Plaza se encuentra su restaurante 'El Dorado', que sirve desayuno buffet completo incluido en la tarifa, así como almuerzos y cenas con un menú que resalta los sabores regionales y productos locales. El lobby bar es el punto de encuentro ideal para disfrutar de un café o un cóctel en un ambiente relajado. El hotel también cuenta con una pequeña sala de reuniones con capacidad para 20 personas, ideal para pequeños eventos corporativos, y ofrece WiFi de alta velocidad gratuito en todas las instalaciones.\n\nUna de las ventajas más apreciadas por los huéspedes es su ubicación estratégica que permite explorar caminando el casco histórico, la zona comercial y la costanera de Gualeguaychú. Durante la temporada de Carnaval, el hotel ofrece servicio de traslado al Corsódromo y paquetes especiales que incluyen entradas al espectáculo.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "reservas@hotelplaza.com.ar",
+        "workEmail": "info@hotelplaza.com.ar",
+        "homePhone": "+543446428910",
+        "mobilePhone": "+5493446123456",
+        "website": "https://www.hotelplaza-gualeguaychu.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "HOME"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/hotelplazagchu",
+        "instagram": "https://instagram.com/hotelplaza_gchu",
+        "twitter": "https://twitter.com/HotelPlazaGchu"
+    },
+    "price": {
+        "basePrice": {
+            "price": 22000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 15,
+            "monthly": 25,
+            "lastMinute": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2820",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.0101",
+            "long": "-58.5172"
+        },
+        "street": "Calle Alberdi",
+        "number": "478",
+        "city": "Gualeguaychú",
+        "neighborhood": "Centro"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
+            "caption": "Lobby del hotel",
+            "description": "Elegante recepción y área de estar del Hotel Plaza",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
+                "caption": "Recepción",
+                "description": "Área de recepción con personal atento 24 horas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación estándar",
+                "description": "Cómodas habitaciones con decoración contemporánea",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación superior",
+                "description": "Habitaciones amplias con área de descanso",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg",
+                "caption": "Suite",
+                "description": "Suites elegantes con espacios separados",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/244133/pexels-photo-244133.jpeg",
+                "caption": "Restaurante El Dorado",
+                "description": "Restaurante con gastronomía regional",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Lobby bar",
+                "description": "Bar con selección de cócteles y cafetería",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/162539/architecture-building-hotel-travel-162539.jpeg",
+                "caption": "Fachada",
+                "description": "Fachada exterior del Hotel Plaza",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/189333/pexels-photo-189333.jpeg",
+                "caption": "Sala de reuniones",
+                "description": "Espacio para eventos y reuniones de negocios",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "00:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "13:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 48,
+        "minNights": 1,
+        "maxNights": 30,
+        "bedrooms": 24,
+        "beds": 36,
+        "bathrooms": 24,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Recepción 24 horas",
+            "Desayuno buffet incluido",
+            "Servicio de lavandería disponible con cargo adicional",
+            "Servicio de traslado al Corsódromo durante temporada de Carnaval",
+            "Personal multilingüe (español, inglés, portugués)"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Hotel Plaza - Alojamiento 3 estrellas en centro de Gualeguaychú | Entre Ríos",
+        "seoDescription": "Hotel boutique de 3 estrellas en pleno centro de Gualeguaychú. Habitaciones confortables, restaurante, desayuno incluido y excelente ubicación cerca del Carnaval.",
+        "seoKeywords": [
+            "hotel",
+            "gualeguaychu",
+            "entre ríos",
+            "carnaval",
+            "3 estrellas",
+            "centro",
+            "restaurante",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Hotel con buena gestión y mantenimiento constante. Ocupa un edificio histórico renovado. Alta demanda durante el Carnaval.",
+        "favorite": true
+    },
+    "tags": ["gualeguaychu", "hotel", "city-center", "business-travel", "carnival"],
+    "features": [
+        {
+            "name": "city_view",
+            "hostReWriteName": "Vistas al Centro Histórico",
+            "comments": "Habitaciones superiores y suites con vistas a la ciudad"
+        },
+        {
+            "name": "unique_design",
+            "hostReWriteName": "Edificio histórico renovado",
+            "comments": "El hotel ocupa un edificio de los años 40 completamente renovado"
+        },
+        {
+            "name": "workspace",
+            "hostReWriteName": "Áreas de trabajo",
+            "comments": "Todas las habitaciones cuentan con escritorio y hay un business center disponible"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": true,
+            "additionalCost": {
+                "price": 1500,
+                "currency": "ARS"
+            }
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": true,
+            "additionalCost": {
+                "price": 500,
+                "currency": "ARS"
+            }
+        },
+        {
+            "name": "coffee_maker",
+            "isOptional": false
+        },
+        {
+            "name": "hair_dryer",
+            "isOptional": false
+        },
+        {
+            "name": "iron",
+            "isOptional": true,
+            "additionalCost": {
+                "price": 300,
+                "currency": "ARS"
+            }
+        },
+        {
+            "name": "washer",
+            "isOptional": true,
+            "additionalCost": {
+                "price": 2000,
+                "currency": "ARS"
+            }
+        },
+        {
+            "name": "elevator",
+            "isOptional": false
+        },
+        {
+            "name": "smoke_detector",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        },
+        {
+            "name": "workspace",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿El hotel cuenta con estacionamiento?",
+            "answer": "No contamos con estacionamiento propio, pero tenemos convenio con una playa de estacionamiento a media cuadra con tarifa preferencial para nuestros huéspedes.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Se admiten mascotas?",
+            "answer": "Lamentablemente no admitimos mascotas, excepto perros guía para personas con discapacidad visual.",
+            "category": "policies"
+        },
+        {
+            "question": "¿Ofrecen servicio de traslado durante el Carnaval?",
+            "answer": "Sí, durante la temporada de Carnaval (enero y febrero) ofrecemos servicio de traslado ida y vuelta al Corsódromo. El servicio tiene un costo adicional y debe reservarse con anticipación en recepción.",
+            "category": "services"
+        },
+        {
+            "question": "¿Qué incluye el desayuno buffet?",
+            "answer": "Nuestro desayuno buffet incluye opciones saladas y dulces: facturas, tostadas, medialunas, sándwiches variados, yogur, cereales, frutas de estación, jugos naturales, café, té, e infusiones. Se sirve de 7:00 a 10:30 hs.",
+            "category": "dining"
+        },
+        {
+            "question": "¿A qué distancia están las playas?",
+            "answer": "Las playas más populares de Gualeguaychú (Ñandubaysal y Norte) se encuentran a aproximadamente 15-20 minutos en auto. Ofrecemos información y asistencia para llegar mediante transporte público o taxi.",
+            "category": "location"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "El Carnaval de Gualeguaychú",
+            "content": "El Carnaval de Gualeguaychú es considerado el más importante de Argentina y uno de los más destacados de Sudamérica. Se celebra cada sábado de enero y febrero en el Corsódromo, un circuito especialmente diseñado con capacidad para más de 35.000 espectadores. Tres comparsas principales (Marí Marí, Kamarr y O'Bahía) compiten con espectaculares trajes, carrozas, música y bailes. Las entradas suelen agotarse con anticipación, por lo que recomendamos reservarlas junto con su alojamiento. Desde el Hotel Plaza ofrecemos paquetes especiales que incluyen alojamiento, desayuno, entradas y traslados al Corsódromo. A diferencia de otros carnavales, el de Gualeguaychú se caracteriza por su elaborada producción artística, con más de 200 bailarines por comparsa y trajes que pueden pesar hasta 25kg y contener miles de plumas. Para complementar la experiencia, durante el día puede visitar los galpones donde se confeccionan trajes y carrozas, para conocer el trabajo artesanal que hay detrás del espectáculo.",
+            "category": "events"
+        },
+        {
+            "title": "Gastronomía local",
+            "content": "La gastronomía de Gualeguaychú refleja la rica tradición culinaria de Entre Ríos, con influencia de inmigrantes italianos y españoles. Los platos típicos incluyen pescados de río como el dorado, surubí y patí, preparados a la parrilla o en guisos. El chajá, postre emblemático de la región, consiste en capas de bizcochuelo, crema, merengue y dulce de leche, es imperdible para los amantes de lo dulce. Nuestro restaurante El Dorado ofrece una selección de estos platos tradicionales con un toque contemporáneo. Para explorar más opciones, recomendamos visitar El Navegante en la costanera, especializado en pescados; La Zoila para carnes a la parrilla; y Panadería La Central para probar facturas y masas finas típicas. Los sábados por la mañana, la Feria de Productores en la Plaza Belgrano ofrece productos artesanales como quesos, embutidos, miel y dulces regionales, ideal para llevar un recuerdo gastronómico de la ciudad.",
+            "category": "gastronomy"
+        },
+        {
+            "title": "Actividades y excursiones",
+            "content": "Gualeguaychú ofrece actividades para todos los gustos durante todo el año. La playa Ñandubaysal, a 15 minutos en auto, es ideal para disfrutar del río con su arena blanca y aguas tranquilas, perfecta para familias. En la ciudad, el Parque Unzué, con sus 116 hectáreas, ofrece espacios verdes, canchas deportivas y áreas para picnic. Los amantes de la historia pueden visitar el Teatro Gualeguaychú (1914), la Catedral San José y el Museo Ferroviario. Para contacto con la naturaleza, la Reserva Natural Las Piedras, a 10km del centro, permite avistamiento de aves y caminatas. Desde el hotel podemos organizar excursiones a estancias cercanas donde experimentar la vida rural, participar en cabalgatas y degustar asados tradicionales. Si su estadía coincide con luna llena, no se pierda los paseos nocturnos en lancha por el río Gualeguaychú para disfrutar del paisaje iluminado por la luna, una experiencia romántica y peculiar de la región.",
+            "category": "activities"
+        },
+        {
+            "title": "Historia del hotel",
+            "content": "El edificio que hoy alberga al Hotel Plaza fue construido en 1943 como residencia de la familia Méndez, importantes comerciantes locales vinculados a la exportación de productos agrícolas. La casa, ejemplo destacado de arquitectura racionalista, fue diseñada por el arquitecto italiano Gino Pompei, quien dejó su huella en varios edificios emblemáticos de la ciudad. En 1985, la propiedad fue adquirida y transformada en hotel, manteniendo elementos arquitectónicos originales como los pisos de mosaico, escaleras de mármol de Carrara y algunas aberturas de madera. La última renovación importante se realizó en 2018, actualizando completamente las instalaciones pero respetando y poniendo en valor los elementos patrimoniales. El nombre 'Plaza' hace honor a su ubicación cercana a la Plaza Principal (San Martín) y a la antigua costumbre de denominar así a los hoteles céntricos de las ciudades de provincia argentinas. A lo largo de los años, el hotel ha alojado a personalidades destacadas de la cultura, la política y el deporte que han visitado Gualeguaychú.",
+            "category": "history"
+        }
+    ]
+}
