@@ -8,8 +8,10 @@ import type {
     SocialNetworkType,
     TagType
 } from '../common.types';
-import type { AccommodationTypeEnum, AmenitiesTypeEnum } from '../enums.types';
+import type { AccommodationTypeEnum } from '../enums.types';
+import type { AmenityType } from './amenity.types';
 import type { DestinationType } from './destination.types';
+import type { FeatureType } from './feature.types';
 import type { UserType } from './user.types';
 
 /**
@@ -142,12 +144,10 @@ export interface AccommodationRatingType {
  * User-submitted review about an accommodation.
  */
 export interface AccommodationReviewType extends BaseEntityType {
-    userId: string; // UUID of user
-    user?: UserType;
     accommodationId: string;
     accommodation?: AccommodationType;
-    title: string;
-    content: string;
+    title?: string;
+    content?: string;
     rating: AccommodationRatingType;
 }
 
@@ -163,7 +163,7 @@ export interface AccommodationFaqType extends BaseEntityType {
 }
 
 /**
- * Content to use fro AI to responde question about the accommodation.
+ * Content to use for AI to respond to questions about the accommodation.
  */
 export interface AccommodationIaDataType extends BaseEntityType {
     accommodationId: string;
@@ -171,31 +171,6 @@ export interface AccommodationIaDataType extends BaseEntityType {
     title: string;
     content: string;
     category?: string;
-}
-
-/**
- * Features object related to an accommodation.
- */
-export interface AccommodationFeaturesType extends BaseEntityType {
-    accommodationId: string;
-    accommodation?: AccommodationType;
-    description?: string;
-    icon?: string;
-}
-
-/**
- * Amenity object used to define services/extras offered in an accommodation.
- */
-export interface AccommodationAmenitiesType extends BaseEntityType {
-    accommodationId: string;
-    accommodation?: AccommodationType;
-    description?: string;
-    icon?: string;
-    isBuiltin: boolean;
-    isOptional: boolean;
-    additionalCost?: BasePriceType;
-    additionalCostPercent?: number;
-    type?: AmenitiesTypeEnum;
 }
 
 /**
@@ -213,8 +188,8 @@ export interface AccommodationType extends BaseEntityType {
     destinationId: string;
     destination?: DestinationType;
     location: FullLocationType;
-    features?: AccommodationFeaturesType[];
-    amenities?: AccommodationAmenitiesType[];
+    features?: FeatureType[];
+    amenities?: AmenityType[];
     media?: MediaType;
     rating: AccommodationRatingType;
     reviews?: AccommodationReviewType[];
