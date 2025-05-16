@@ -6,6 +6,7 @@ export * from './accommodationFaq.model';
 export * from './accommodationFeature.model';
 export * from './accommodationIaData.model';
 export * from './accommodationReview.model';
+export * from './amenity.model';
 export * from './bookmark.model';
 export * from './destination.model';
 export * from './destinationAttraction.model';

@@ -1,14 +1,18 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
+import { and, eq } from 'drizzle-orm';
+import { db } from '../client';
 import {
     AccommodationAmenityModel,
     type AccommodationAmenityRecord,
     AccommodationModel,
-    type SelectAccommodationAmenityFilter
+    AmenityModel
 } from '../model';
+import { accommodationAmenities } from '../schema';
 import type {
     InsertAccommodationAmenity,
     PaginationParams,
+    SelectAccommodationAmenityFilter,
     UpdateAccommodationAmenityData
 } from '../types/db-types';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
@@ -46,17 +50,17 @@ export class AccommodationAmenityService {
     }
 
     /**
-     * Create a new amenity entry.
-     * @param data - The data for the new amenity entry.
-     * @param actor - The user creating the amenity entry.
-     * @returns The created amenity record.
+     * Create a new accommodation-amenity relationship.
+     * @param data - The data for the new relationship.
+     * @param actor - The user creating the relationship.
+     * @returns The created relationship record.
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(
         data: InsertAccommodationAmenity,
         actor: UserType
     ): Promise<AccommodationAmenityRecord> {
-        log.info('creating accommodation amenity', 'create', { actor: actor.id });
+        log.info('creating accommodation amenity relationship', 'create', { actor: actor.id });
 
         try {
             // Verify accommodation exists
@@ -67,59 +71,30 @@ export class AccommodationAmenityService {
                 throw new Error(`Accommodation ${data.accommodationId} not found`);
             }
 
-            // Check if actor is owner or admin
-            AccommodationAmenityService.assertOwnerOrAdmin(accommodation.ownerId, actor);
-
-            const dataWithAudit: InsertAccommodationAmenity = {
-                ...data,
-                createdById: actor.id,
-                updatedById: actor.id
-            };
-            const createdAmenity = await AccommodationAmenityModel.createAmenity(dataWithAudit);
-            log.info('accommodation amenity created successfully', 'create', {
-                amenityId: createdAmenity.id
-            });
-            return createdAmenity;
-        } catch (error) {
-            log.error('failed to create accommodation amenity', 'create', error, {
-                actor: actor.id
-            });
-            throw error;
-        }
-    }
-
-    /**
-     * Get a single amenity entry by ID.
-     * @param id - The ID of the amenity entry to fetch.
-     * @param actor - The user performing the action.
-     * @returns The amenity record.
-     * @throws Error if amenity entry is not found or actor is not authorized.
-     */
-    async getById(id: string, actor: UserType): Promise<AccommodationAmenityRecord> {
-        log.info('fetching amenity by id', 'getById', { amenityId: id, actor: actor.id });
-
-        try {
-            const amenity = await AccommodationAmenityModel.getAmenityById(id);
-            const existingAmenity = assertExists(amenity, `Amenity ${id} not found`);
-
-            // Get the accommodation to check ownership
-            const accommodation = await AccommodationModel.getAccommodationById(
-                existingAmenity.accommodationId
-            );
-            if (!accommodation) {
-                throw new Error(`Accommodation ${existingAmenity.accommodationId} not found`);
+            // Verify amenity exists
+            const amenity = await AmenityModel.getAmenityById(data.amenityId);
+            if (!amenity) {
+                throw new Error(`Amenity ${data.amenityId} not found`);
             }
 
             // Check if actor is owner or admin
             AccommodationAmenityService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
-            log.info('amenity fetched successfully', 'getById', {
-                amenityId: existingAmenity.id
+            const relationData: InsertAccommodationAmenity = {
+                ...data,
+                createdById: actor.id,
+                updatedById: actor.id
+            };
+
+            const createdRelation =
+                await AccommodationAmenityModel.createAmenityRelation(relationData);
+            log.info('accommodation amenity relationship created successfully', 'create', {
+                relationId: `${createdRelation.accommodationId}-${createdRelation.amenityId}`
             });
-            return existingAmenity;
+
+            return createdRelation;
         } catch (error) {
-            log.error('failed to fetch amenity by id', 'getById', error, {
-                amenityId: id,
+            log.error('failed to create accommodation amenity relationship', 'create', error, {
                 actor: actor.id
             });
             throw error;
@@ -127,19 +102,77 @@ export class AccommodationAmenityService {
     }
 
     /**
-     * List amenity entries for an accommodation.
-     * @param accommodationId - The ID of the accommodation.
+     * Get a single accommodation-amenity relationship by IDs.
+     * @param accommodationId - The accommodation ID.
+     * @param amenityId - The amenity ID.
+     * @param actor - The user performing the action.
+     * @returns The relationship record.
+     * @throws Error if relationship is not found or actor is not authorized.
+     */
+    async getByIds(
+        accommodationId: string,
+        amenityId: string,
+        actor: UserType
+    ): Promise<AccommodationAmenityRecord> {
+        log.info('fetching accommodation amenity relationship by IDs', 'getByIds', {
+            accommodationId,
+            amenityId,
+            actor: actor.id
+        });
+
+        // Get the accommodation to check ownership
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
+        if (!accommodation) {
+            throw new Error(`Accommodation ${accommodationId} not found`);
+        }
+
+        // Check if actor is owner or admin
+        AccommodationAmenityService.assertOwnerOrAdmin(accommodation.ownerId, actor);
+
+        try {
+            const relation = await AccommodationAmenityModel.getAmenityRelation(
+                accommodationId,
+                amenityId
+            );
+            const existingRelation = assertExists(
+                relation,
+                `Relationship between accommodation ${accommodationId} and amenity ${amenityId} not found`
+            );
+
+            log.info('accommodation amenity relationship fetched successfully', 'getByIds', {
+                relationId: `${existingRelation.accommodationId}-${existingRelation.amenityId}`
+            });
+
+            return existingRelation;
+        } catch (error) {
+            log.error(
+                'failed to fetch accommodation amenity relationship by IDs',
+                'getByIds',
+                error,
+                {
+                    accommodationId,
+                    amenityId,
+                    actor: actor.id
+                }
+            );
+            throw error;
+        }
+    }
+
+    /**
+     * List accommodation-amenity relationships for a specific accommodation.
+     * @param accommodationId - The accommodation ID.
      * @param actor - The user performing the action.
      * @param filter - Pagination options.
-     * @returns Array of amenity records.
+     * @returns Array of relationship records.
      * @throws Error if accommodation is not found, actor is not authorized, or listing fails.
      */
-    async list(
+    async listByAccommodation(
         accommodationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationAmenityRecord[]> {
-        log.info('listing amenities for accommodation', 'list', {
+        log.info('listing amenity relationships for accommodation', 'listByAccommodation', {
             accommodationId,
             actor: actor.id,
             filter
@@ -158,44 +191,52 @@ export class AccommodationAmenityService {
                 includeDeleted: false
             };
 
-            const amenities = await AccommodationAmenityModel.listAmenities(amenityFilter);
-            log.info('amenities listed successfully', 'list', {
+            const relations = await AccommodationAmenityModel.listAmenityRelations(amenityFilter);
+            log.info('amenity relationships listed successfully', 'listByAccommodation', {
                 accommodationId,
-                count: amenities.length
+                count: relations.length
             });
-            return amenities;
+
+            return relations;
         } catch (error) {
-            log.error('failed to list amenities', 'list', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            log.error(
+                'failed to list amenity relationships for accommodation',
+                'listByAccommodation',
+                error,
+                {
+                    accommodationId,
+                    actor: actor.id
+                }
+            );
             throw error;
         }
     }
 
     /**
-     * Update fields on an existing amenity entry.
-     * @param id - The ID of the amenity entry to update.
+     * Update fields on an existing accommodation-amenity relationship.
+     * @param accommodationId - The accommodation ID.
+     * @param amenityId - The amenity ID.
      * @param changes - The partial fields to update.
      * @param actor - The user performing the action.
-     * @returns The updated amenity record.
-     * @throws Error if amenity entry is not found, actor is not authorized, or update fails.
+     * @returns The updated relationship record.
+     * @throws Error if relationship is not found, actor is not authorized, or update fails.
      */
     async update(
-        id: string,
+        accommodationId: string,
+        amenityId: string,
         changes: UpdateAccommodationAmenityData,
         actor: UserType
     ): Promise<AccommodationAmenityRecord> {
-        log.info('updating amenity', 'update', { amenityId: id, actor: actor.id });
-
-        const existingAmenity = await this.getById(id, actor);
+        log.info('updating accommodation amenity relationship', 'update', {
+            accommodationId,
+            amenityId,
+            actor: actor.id
+        });
 
         // Get the accommodation to check ownership
-        const accommodation = await AccommodationModel.getAccommodationById(
-            existingAmenity.accommodationId
-        );
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
         if (!accommodation) {
-            throw new Error(`Accommodation ${existingAmenity.accommodationId} not found`);
+            throw new Error(`Accommodation ${accommodationId} not found`);
         }
 
         // Check if actor is owner or admin
@@ -204,21 +245,44 @@ export class AccommodationAmenityService {
         const dataToUpdate = sanitizePartialUpdate(changes);
 
         try {
-            const dataWithAudit: UpdateAccommodationAmenityData = {
-                ...dataToUpdate,
-                updatedById: actor.id
-            };
-            const updatedAmenity = await AccommodationAmenityModel.updateAmenity(
-                existingAmenity.id,
-                dataWithAudit
+            // First, update the regular fields
+            await AccommodationAmenityModel.updateAmenityRelation(
+                accommodationId,
+                amenityId,
+                dataToUpdate
             );
-            log.info('amenity updated successfully', 'update', {
-                amenityId: updatedAmenity.id
+
+            // Then update the audit field with a direct query
+            await db
+                .update(accommodationAmenities)
+                .set({ updatedById: actor.id })
+                .where(
+                    and(
+                        eq(accommodationAmenities.accommodationId, accommodationId),
+                        eq(accommodationAmenities.amenityId, amenityId)
+                    )
+                );
+
+            // Fetch the updated record
+            const relation = await AccommodationAmenityModel.getAmenityRelation(
+                accommodationId,
+                amenityId
+            );
+            if (!relation) {
+                throw new Error(
+                    `Failed to retrieve updated relation for accommodation ${accommodationId} and amenity ${amenityId}`
+                );
+            }
+
+            log.info('accommodation amenity relationship updated successfully', 'update', {
+                relationId: `${relation.accommodationId}-${relation.amenityId}`
             });
-            return updatedAmenity;
+
+            return relation;
         } catch (error) {
-            log.error('failed to update amenity', 'update', error, {
-                amenityId: id,
+            log.error('failed to update accommodation amenity relationship', 'update', error, {
+                accommodationId,
+                amenityId,
                 actor: actor.id
             });
             throw error;
@@ -226,33 +290,38 @@ export class AccommodationAmenityService {
     }
 
     /**
-     * Soft-delete an amenity entry by setting the deletedAt timestamp.
-     * @param id - The ID of the amenity entry to delete.
+     * Soft-delete an accommodation-amenity relationship.
+     * @param accommodationId - The accommodation ID.
+     * @param amenityId - The amenity ID.
      * @param actor - The user performing the action.
-     * @throws Error if amenity entry is not found, actor is not authorized, or deletion fails.
+     * @throws Error if relationship is not found, actor is not authorized, or deletion fails.
      */
-    async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting amenity', 'delete', { amenityId: id, actor: actor.id });
-
-        const existingAmenity = await this.getById(id, actor);
+    async delete(accommodationId: string, amenityId: string, actor: UserType): Promise<void> {
+        log.info('soft deleting accommodation amenity relationship', 'delete', {
+            accommodationId,
+            amenityId,
+            actor: actor.id
+        });
 
         // Get the accommodation to check ownership
-        const accommodation = await AccommodationModel.getAccommodationById(
-            existingAmenity.accommodationId
-        );
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
         if (!accommodation) {
-            throw new Error(`Accommodation ${existingAmenity.accommodationId} not found`);
+            throw new Error(`Accommodation ${accommodationId} not found`);
         }
 
         // Check if actor is owner or admin
         AccommodationAmenityService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
         try {
-            await AccommodationAmenityModel.softDeleteAmenity(id);
-            log.info('amenity soft deleted successfully', 'delete', { amenityId: id });
+            await AccommodationAmenityModel.softDeleteAmenityRelation(accommodationId, amenityId);
+            log.info('accommodation amenity relationship soft deleted successfully', 'delete', {
+                accommodationId,
+                amenityId
+            });
         } catch (error) {
-            log.error('failed to soft delete amenity', 'delete', error, {
-                amenityId: id,
+            log.error('failed to soft delete accommodation amenity relationship', 'delete', error, {
+                accommodationId,
+                amenityId,
                 actor: actor.id
             });
             throw error;
@@ -260,33 +329,38 @@ export class AccommodationAmenityService {
     }
 
     /**
-     * Restore a soft-deleted amenity entry by clearing the deletedAt timestamp.
-     * @param id - The ID of the amenity entry to restore.
+     * Restore a soft-deleted accommodation-amenity relationship.
+     * @param accommodationId - The accommodation ID.
+     * @param amenityId - The amenity ID.
      * @param actor - The user performing the action.
-     * @throws Error if amenity entry is not found, actor is not authorized, or restoration fails.
+     * @throws Error if relationship is not found, actor is not authorized, or restoration fails.
      */
-    async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring amenity', 'restore', { amenityId: id, actor: actor.id });
-
-        const existingAmenity = await this.getById(id, actor);
+    async restore(accommodationId: string, amenityId: string, actor: UserType): Promise<void> {
+        log.info('restoring accommodation amenity relationship', 'restore', {
+            accommodationId,
+            amenityId,
+            actor: actor.id
+        });
 
         // Get the accommodation to check ownership
-        const accommodation = await AccommodationModel.getAccommodationById(
-            existingAmenity.accommodationId
-        );
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
         if (!accommodation) {
-            throw new Error(`Accommodation ${existingAmenity.accommodationId} not found`);
+            throw new Error(`Accommodation ${accommodationId} not found`);
         }
 
         // Check if actor is owner or admin
         AccommodationAmenityService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
         try {
-            await AccommodationAmenityModel.restoreAmenity(id);
-            log.info('amenity restored successfully', 'restore', { amenityId: id });
+            await AccommodationAmenityModel.restoreAmenityRelation(accommodationId, amenityId);
+            log.info('accommodation amenity relationship restored successfully', 'restore', {
+                accommodationId,
+                amenityId
+            });
         } catch (error) {
-            log.error('failed to restore amenity', 'restore', error, {
-                amenityId: id,
+            log.error('failed to restore accommodation amenity relationship', 'restore', error, {
+                accommodationId,
+                amenityId,
                 actor: actor.id
             });
             throw error;
@@ -294,29 +368,95 @@ export class AccommodationAmenityService {
     }
 
     /**
-     * Permanently delete an amenity entry record from the database.
-     * @param id - The ID of the amenity entry to hard delete.
-     * @param actor - The user performing the action (must be an admin).
-     * @throws Error if amenity entry is not found, actor is not authorized, or deletion fails.
+     * Hard-delete an accommodation-amenity relationship.
+     * @param accommodationId - The accommodation ID.
+     * @param amenityId - The amenity ID.
+     * @param actor - The user performing the action.
+     * @throws Error if relationship is not found, actor is not authorized, or deletion fails.
      */
-    async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting amenity', 'hardDelete', { amenityId: id, actor: actor.id });
+    async hardDelete(accommodationId: string, amenityId: string, actor: UserType): Promise<void> {
+        log.info('hard deleting accommodation amenity relationship', 'hardDelete', {
+            accommodationId,
+            amenityId,
+            actor: actor.id
+        });
 
         // Only admins can hard delete
         if (!AccommodationAmenityService.isAdmin(actor)) {
-            throw new Error('Forbidden: Only admins can permanently delete amenities');
+            throw new Error('Forbidden: Only admins can permanently delete relationships');
         }
 
-        await this.getById(id, actor);
+        // Get the accommodation to check existence
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
+        if (!accommodation) {
+            throw new Error(`Accommodation ${accommodationId} not found`);
+        }
 
         try {
-            await AccommodationAmenityModel.hardDeleteAmenity(id);
-            log.info('amenity hard deleted successfully', 'hardDelete', { amenityId: id });
-        } catch (error) {
-            log.error('failed to hard delete amenity', 'hardDelete', error, {
-                amenityId: id,
-                actor: actor.id
+            await AccommodationAmenityModel.hardDeleteAmenityRelation(accommodationId, amenityId);
+            log.info('accommodation amenity relationship hard deleted successfully', 'hardDelete', {
+                accommodationId,
+                amenityId
             });
+        } catch (error) {
+            log.error(
+                'failed to hard delete accommodation amenity relationship',
+                'hardDelete',
+                error,
+                {
+                    accommodationId,
+                    amenityId,
+                    actor: actor.id
+                }
+            );
+            throw error;
+        }
+    }
+
+    /**
+     * Remove all amenity relationships for a specific accommodation.
+     * @param accommodationId - The accommodation ID.
+     * @param actor - The user performing the action.
+     * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
+     */
+    async removeAllFromAccommodation(accommodationId: string, actor: UserType): Promise<void> {
+        log.info(
+            'removing all amenity relationships from accommodation',
+            'removeAllFromAccommodation',
+            {
+                accommodationId,
+                actor: actor.id
+            }
+        );
+
+        // Get the accommodation to check ownership
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
+        if (!accommodation) {
+            throw new Error(`Accommodation ${accommodationId} not found`);
+        }
+
+        // Check if actor is owner or admin
+        AccommodationAmenityService.assertOwnerOrAdmin(accommodation.ownerId, actor);
+
+        try {
+            await AccommodationAmenityModel.deleteAllByAccommodation(accommodationId);
+            log.info(
+                'all amenity relationships removed from accommodation successfully',
+                'removeAllFromAccommodation',
+                {
+                    accommodationId
+                }
+            );
+        } catch (error) {
+            log.error(
+                'failed to remove all amenity relationships from accommodation',
+                'removeAllFromAccommodation',
+                error,
+                {
+                    accommodationId,
+                    actor: actor.id
+                }
+            );
             throw error;
         }
     }

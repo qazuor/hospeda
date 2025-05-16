@@ -12,6 +12,7 @@ import type {
 } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { accommodationAmenities } from './accommodation_amenity.dbschema';
 import { destinations } from './destination.dbschema';
 import { AccommodationTypePgEnum, StatePgEnum } from './enums.dbschema';
 import { entityTagRelations } from './r_entity_tag.dbschema';
@@ -20,7 +21,7 @@ import { users } from './user.dbschema';
 /**
  * accommodations table schema
  */
-export const accommodations: ReturnType<typeof pgTable> = pgTable(
+export const accommodations = pgTable(
     'accommodations',
     {
         /** Primary key */
@@ -65,9 +66,6 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
 
         /** Features JSONB */
         features: jsonb('features').$type<unknown[]>(),
-
-        /** Amenities JSONB */
-        amenities: jsonb('amenities').$type<unknown[]>(),
 
         /** Media JSONB */
         media: jsonb('media').$type<MediaType>(),
@@ -131,6 +129,9 @@ export const accommodationsRelations = relations(accommodations, ({ one, many })
 
     /** Destination of the listing */
     destination: one(destinations),
+
+    /** Amenities for this accommodation */
+    amenities: many(accommodationAmenities),
 
     /** Tags applied to this accommodation */
     tags: many(entityTagRelations)

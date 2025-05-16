@@ -130,9 +130,13 @@ export const AccommodationModel = {
                 query = query.where(isNull(accommodations.deletedAt));
             }
 
+            // Cast to a Record<string, PgColumn> to satisfy TypeScript
+            // biome-ignore lint/suspicious/noExplicitAny: This type assertion is necessary for the getOrderByColumn function
+            const schemaAsRecord = accommodations as any;
+
             // Use the getOrderByColumn utility
             const orderByColumn = getOrderByColumn(
-                accommodations,
+                schemaAsRecord,
                 filter.orderBy,
                 accommodations.createdAt
             );
