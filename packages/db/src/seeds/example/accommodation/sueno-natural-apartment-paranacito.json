@@ -1,0 +1,180 @@
+{
+    "slug": "sueno-natural-apartment-villa_paranacito",
+    "name": "sueno-natural-apartment",
+    "displayName": "Sueño Natural Apartamento",
+    "type": "APARTMENT",
+    "description": "Relájate y conecta con la naturaleza en Sueño Natural Apartamento, un espacio moderno y confortable ubicado en una zona tranquila de Paranacito, con un entorno verde cercano y acceso al Delta. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado para explorar el Delta y disfrutar del paisaje.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, con toques que recuerdan el entorno natural.\n\nSituado en un edificio tranquilo, ofrece un descanso reparador. Aunque no tiene vistas espectaculares, su proximidad a espacios verdes y la serenidad del barrio lo hacen ideal para recargar energías. Estás a pocos minutos en auto del centro de Paranacito y con fácil acceso a los puntos de embarque para recorrer el Delta. Una opción práctica y cómoda para tu visita.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@suenonaturalparanacito.com",
+        "mobilePhone": "+5493446111222",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 12800,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2100,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2843",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7220",
+            "long": "-59.1960"
+        },
+        "street": "Calle Los Álamos",
+        "number": "80",
+        "floor": "1",
+        "apartment": "B",
+        "city": "Paranacito",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Cerca de Paranacito y el Delta"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Sueño Natural - Apartamento tranquilo en Paranacito | Delta",
+        "seoDescription": "Apartamento moderno y sereno en Paranacito. Cerca del Delta. Ideal para parejas. Equipado y cómodo.",
+        "seoKeywords": [
+            "apartamento",
+            "paranacito",
+            "entre ríos",
+            "delta",
+            "tranquilo",
+            "parejas",
+            "equipado"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad funcional para turismo de Delta. En zona tranquila.",
+        "favorite": false,
+        "tags": [
+            "paranacito",
+            "apartment",
+            "paranacito-apartment",
+            "seed-example",
+            "nature",
+            "quiet"
+        ]
+    },
+    "features": [
+        {
+            "name": "private_entrance",
+            "hostReWriteName": null,
+            "comments": null
+        },
+        {
+            "name": "quiet_location",
+            "hostReWriteName": "Ubicación tranquila",
+            "comments": null
+        },
+        {
+            "name": "nature_proximity",
+            "hostReWriteName": "Cerca del Delta",
+            "comments": null
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

@@ -1,0 +1,189 @@
+{
+    "slug": "rio-silvestre-hotel-villa_paranacito",
+    "name": "rio-silvestre-hotel",
+    "displayName": "Rio Silvestre Hotel",
+    "type": "HOTEL",
+    "description": "Sumérgete en un ambiente natural y tranquilo en Rio Silvestre Hotel, ubicado en una zona serena de Paranacito, con vistas al entorno silvestre del Delta. Ideal para quienes buscan confort y contacto directo con la naturaleza del Delta.\n\nEl hotel cuenta con 18 habitaciones confortables, muchas de ellas con vista al entorno natural. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para relajarse. El hotel ofrece desayuno incluido en la tarifa, servido en un comedor con vista al exterior. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder fácilmente a los puntos de interés de Paranacito y es una excelente base para explorar el Delta en lancha. Rio Silvestre Hotel es la opción ideal para una estancia relajante en contacto con la belleza natural del Delta.",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "reservas@riosilvestreparanacito.com",
+        "mobilePhone": "+5493446111888",
+        "homePhone": "+543446488777",
+        "website": "https://www.riosilvestrehotelparanacito.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 22000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2843",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7280",
+            "long": "-59.1880"
+        },
+        "street": "Avenida Costanera S/N",
+        "number": null,
+        "city": "Paranacito",
+        "neighborhood": "Zona Ribereña"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada y entorno natural del hotel",
+            "description": "Vista exterior de Rio Silvestre Hotel rodeado de vegetación",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium con vista al entorno",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación triple",
+                "description": "Habitación con cama matrimonial y una individual",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador con vista al jardín",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 36,
+        "minNights": 1,
+        "maxNights": 14,
+        "bedrooms": 18,
+        "beds": 28,
+        "bathrooms": 18,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina exterior disponible en temporada",
+            "Desayuno incluido",
+            "Estacionamiento descubierto gratuito",
+            "Entorno natural cercano",
+            "Cerca del Delta"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Rio Silvestre Hotel - Naturaleza y piscina en Paranacito | Delta",
+        "seoDescription": "Hotel con jardín y piscina en Paranacito. Ideal para relax, cerca del Delta. Desayuno incluido.",
+        "seoKeywords": [
+            "hotel",
+            "paranacito",
+            "entre ríos",
+            "delta",
+            "piscina",
+            "naturaleza",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Hotel con enfoque en relax y naturaleza. Bien ubicado para turismo de Delta.",
+        "favorite": true,
+        "tags": [
+            "paranacito",
+            "hotel",
+            "paranacito-hotel",
+            "seed-example",
+            "swimming-pool",
+            "nature",
+            "riverside"
+        ]
+    },
+    "features": [
+        {
+            "name": "private_pool",
+            "hostReWriteName": "Piscina exterior",
+            "comments": null
+        },
+        {
+            "name": "nature_proximity",
+            "hostReWriteName": "Entorno natural",
+            "comments": "Ubicado en zona con vegetación cercana"
+        },
+        {
+            "name": "river_proximity",
+            "hostReWriteName": "Cerca del río",
+            "comments": "A poca distancia de la costanera"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "hair_dryer",
+            "isOptional": true
+        },
+        {
+            "name": "smoke_detector",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

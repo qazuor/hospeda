@@ -1,0 +1,170 @@
+{
+    "slug": "sueno-tranquilo-apartment-concepcion_del_uruguay",
+    "name": "sueno-tranquilo-apartment",
+    "displayName": "Sueño Tranquilo Apartamento",
+    "type": "APARTMENT",
+    "description": "Encuentra la paz en Sueño Tranquilo Apartamento, un espacio moderno y sereno ubicado en un barrio residencial de Concepción del Uruguay. Ideal para quienes buscan descansar en un entorno apacible, con fácil acceso en pocos minutos al centro y a la costanera.\n\nEl apartamento cuenta con un dormitorio con cama doble, baño completo, y un living-comedor integrado con cocina equipada (heladera, microondas, anafe). Es un espacio funcional y cómodo para una estadía relajante de hasta 3 personas (con sofá cama en el living).\n\nUbicado en un edificio tranquilo, ofrece un retiro después de un día explorando la ciudad. Aunque no está en el corazón del centro, su ubicación permite acceder rápidamente en auto o transporte público a las principales atracciones de 'La Histórica', incluyendo el centro histórico, la costanera y las playas. Es una opción perfecta para quienes valoran el descanso en un ambiente tranquilo.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@suenotranquilocdu.com",
+        "mobilePhone": "+5493442444111",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 12000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4920",
+            "long": "-58.2230"
+        },
+        "street": "Calle Los Sauces",
+        "number": "789",
+        "floor": "2",
+        "apartment": "A",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio de living-comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 2,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio residencial tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Cerca de transporte público"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Sueño Tranquilo - Apartamento sereno en Concepción del Uruguay",
+        "seoDescription": "Apartamento tranquilo y confortable en Concepción del Uruguay. Ideal para descanso. Cerca del centro y atracciones.",
+        "seoKeywords": [
+            "apartamento",
+            "concepción del uruguay",
+            "entre ríos",
+            "tranquilo",
+            "descanso",
+            "parejas",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad simple y funcional en zona residencial. Buena para estancias cortas.",
+        "favorite": false,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "apartment",
+        "concepcion-del-uruguay-apartment",
+        "seed-example",
+        "quiet"
+    ],
+    "features": [
+        {
+            "name": "private_entrance",
+            "hostReWriteName": null,
+            "comments": null
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

@@ -1,0 +1,195 @@
+{
+    "slug": "refugio-apacible-hotel-federacion",
+    "name": "refugio-apacible-hotel",
+    "displayName": "Refugio Apacible Hotel",
+    "type": "HOTEL",
+    "description": "Encuentra un ambiente apacible y relajante en Refugio Apacible Hotel, ubicado en una zona tranquila de Federación, ideal para quienes visitan la ciudad por sus termas y buscan un lugar sereno para descansar. Ofrece un ambiente calmado y servicios orientados al bienestar termal.\n\nEl hotel cuenta con 25 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto al Parque Termal de Federación, el Lago de Salto Grande y el centro de la ciudad. Refugio Apacible es la opción ideal para una estancia dedicada al descanso y al bienestar en Federación.",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "reservas@refugioapaciblefede.com",
+        "mobilePhone": "+5493454555888",
+        "homePhone": "+543454477999",
+        "website": "https://www.refugioapaciblehotelfede.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 21500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3220",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0000",
+            "long": "-57.8920"
+        },
+        "street": "Calle Los Lapachos",
+        "number": "80",
+        "city": "Federación",
+        "neighborhood": "Zona Residencial Tranquila"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada del hotel",
+            "description": "Vista exterior de Refugio Apacible Hotel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación triple",
+                "description": "Habitación con cama matrimonial y una individual",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 50,
+        "minNights": 1,
+        "maxNights": 14,
+        "bedrooms": 25,
+        "beds": 38,
+        "bathrooms": 25,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina exterior disponible en temporada",
+            "Desayuno incluido",
+            "Estacionamiento descubierto gratuito",
+            "Ambiente tranquilo"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Refugio Apacible Hotel - Tranquilidad y piscina en Federación",
+        "seoDescription": "Hotel con jardín y piscina en zona tranquila de Federación. Ideal para relax, cerca de Termas. Desayuno incluido.",
+        "seoKeywords": [
+            "hotel",
+            "federación",
+            "entre ríos",
+            "piscina",
+            "tranquilidad",
+            "termas federación",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Hotel con enfoque en relax y termas. Bien ubicado.",
+        "favorite": true,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "federacion",
+        "hotel",
+        "federacion-hotel",
+        "seed-example",
+        "swimming-pool",
+        "thermal",
+        "quiet"
+    ],
+    "features": [
+        {
+            "name": "private_pool",
+            "hostReWriteName": "Piscina exterior",
+            "comments": null
+        },
+        {
+            "name": "quiet_location",
+            "hostReWriteName": "Ubicación tranquila",
+            "comments": null
+        },
+        {
+            "name": "thermal_proximity",
+            "hostReWriteName": "Cerca de las Termas",
+            "comments": "A poca distancia en auto del Parque Termal"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "hair_dryer",
+            "isOptional": true
+        },
+        {
+            "name": "smoke_detector",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿Está incluida la entrada a las Termas?",
+            "answer": "No, la entrada al Parque Termal de Federación no está incluida en la tarifa del hotel.",
+            "category": "services"
+        }
+    ],
+    "iaData": []
+}

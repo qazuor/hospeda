@@ -1,0 +1,204 @@
+{
+    "slug": "mirador-natural-hotel-concepcion_del_uruguay",
+    "name": "mirador-natural-hotel",
+    "displayName": "Mirador Natural Hotel",
+    "type": "HOTEL",
+    "description": "Disfruta de la serenidad y las vistas en Mirador Natural Hotel, un refugio tranquilo en Concepción del Uruguay con hermosas vistas al entorno natural. Ubicado estratégicamente cerca de la costanera y con fácil acceso al centro, este hotel es ideal para quienes buscan paz y confort.\n\nEl hotel cuenta con 18 habitaciones confortables, muchas de ellas con balcón y vista panorámica al río o a zonas arboladas. Todas están equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y familiares.\n\nEntre nuestras instalaciones, destacamos un jardín con piscina y solárium, un espacio perfecto para relajarse disfrutando del paisaje. El hotel ofrece desayuno buffet incluido, servido en un comedor con vista al exterior. También contamos con un lobby acogedor y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder rápidamente a la costanera, la Isla del Puerto y zonas de esparcimiento al aire libre. El centro histórico y los sitios de interés de 'La Histórica' están a pocos minutos en auto. Mirador Natural Hotel es la opción ideal para una estancia relajante en contacto con la belleza natural de Concepción del Uruguay.",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "reservas@miradornaturalhotel.com",
+        "mobilePhone": "+5493442777888",
+        "homePhone": "+543442488999",
+        "website": "https://www.miradornaturalhotelcdu.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/miradornaturalhotelcdu"
+    },
+    "price": {
+        "basePrice": {
+            "price": 20000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4780",
+            "long": "-58.2380"
+        },
+        "street": "Avenida Costanera",
+        "number": "1500",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Zona Costanera"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada y entorno del hotel",
+            "description": "Vista exterior del Mirador Natural Hotel con vegetación",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium con vista",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación con balcón",
+                "description": "Habitación con balcón y vista",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Vista desde la habitación",
+                "description": "Vista al río desde un balcón",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador con vista al jardín",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "13:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 38,
+        "minNights": 1,
+        "maxNights": 20,
+        "bedrooms": 18,
+        "beds": 28,
+        "bathrooms": 18,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Muchas habitaciones con vistas al río o al jardín",
+            "Piscina exterior con solárium",
+            "Desayuno buffet incluido",
+            "Estacionamiento descubierto gratuito"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Mirador Natural Hotel - Vistas al río en Concepción del Uruguay",
+        "seoDescription": "Hotel con vistas panorámicas al río Uruguay en Concepción del Uruguay. Piscina, desayuno, habitaciones con balcón. Cerca de la costanera.",
+        "seoKeywords": [
+            "hotel",
+            "concepción del uruguay",
+            "entre ríos",
+            "vistas",
+            "río",
+            "piscina",
+            "costanera",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Hotel con buen diferencial por sus vistas. Promocionar el acceso a la costanera.",
+        "favorite": true,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "hotel",
+        "concepcion-del-uruguay-hotel",
+        "seed-example",
+        "river-view",
+        "swimming-pool",
+        "nature"
+    ],
+    "features": [
+        {
+            "name": "river_view",
+            "hostReWriteName": "Vistas al río",
+            "comments": "Vistas al río Uruguay desde muchas habitaciones y la piscina"
+        },
+        {
+            "name": "private_pool",
+            "hostReWriteName": "Piscina exterior",
+            "comments": "Piscina en el jardín con solárium"
+        },
+        {
+            "name": "garden",
+            "hostReWriteName": "Amplio jardín",
+            "comments": "Espacio verde alrededor del hotel"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "hair_dryer",
+            "isOptional": false
+        },
+        {
+            "name": "smoke_detector",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿El hotel tiene restaurante?",
+            "answer": "Contamos con un comedor donde se sirve el desayuno, pero no ofrecemos servicio de restaurante para almuerzo o cena.",
+            "category": "dining"
+        },
+        {
+            "question": "¿Está cerca de la Isla del Puerto?",
+            "answer": "La Isla del Puerto se encuentra a poca distancia en auto, o se puede acceder caminando por la pasarela desde la zona de la costanera.",
+            "category": "location"
+        }
+    ],
+    "iaData": []
+}

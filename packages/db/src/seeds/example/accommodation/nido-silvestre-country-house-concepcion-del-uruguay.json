@@ -1,0 +1,190 @@
+{
+    "slug": "nido-silvestre-country-house-concepcion_del_uruguay",
+    "name": "nido-silvestre-country-house",
+    "displayName": "Nido Silvestre Country House",
+    "type": "COUNTRY_HOUSE",
+    "description": "Adéntrate en la naturaleza salvaje en Nido Silvestre, una casa de campo ubicada en un entorno más agreste y natural cerca de Concepción del Uruguay. Ideal para amantes de la tranquilidad absoluta, la observación de aves y la flora nativa. Un verdadero nido en la naturaleza silvestre entrerriana.\n\nLa casa ofrece un espacio rústico pero cómodo, con dos dormitorios y un baño completo. El living-comedor es integrado con una cocina básica equipada con heladera y anafe. La electricidad es limitada y prioriza la iluminación y carga de dispositivos, fomentando la desconexión. La capacidad es para 4 personas.\n\nEl exterior es su mayor valor, rodeado de vegetación nativa. Un deck exterior permite disfrutar del paisaje y el sonido de las aves. Cuenta con un fogón y parrilla rústica. Es un lugar para apreciar la vida silvestre, caminar por los alrededores y disfrutar de noches estrelladas lejos de las luces de la ciudad. La propiedad se encuentra a una distancia considerable en auto del centro de Concepción del Uruguay, lo que garantiza la paz, pero requiere planificación para abastecerse y acceder a atracciones.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "info@nidosilvestrecdu.com",
+        "mobilePhone": "+5493442121565",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 20000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 4000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.5100",
+            "long": "-58.1950"
+        },
+        "street": "Camino a Estancia S/N",
+        "number": null,
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Zona Rural Remota"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "caption": "Casa rústica en la naturaleza",
+            "description": "Vista exterior de Nido Silvestre Country House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la casa rústica",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
+                "caption": "Interior",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio simple",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla rústica",
+                "description": "Área de parrilla exterior",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1268076/pexels-photo-1268076.jpeg",
+                "caption": "Entorno natural",
+                "description": "Paisaje rural con vegetación nativa",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "15:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "18:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 3,
+        "maxNights": 7,
+        "bedrooms": 2,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": true,
+        "extraInfo": [
+            "Entorno natural aislado",
+            "Electricidad limitada (prioriza luz y carga)",
+            "Ideal para amantes de la naturaleza y la desconexión",
+            "Requiere vehículo 4x4 en días de lluvia"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Nido Silvestre - Casa de Campo aislada en Concepción del Uruguay",
+        "seoDescription": "Casa de campo rústica en entorno natural cerca de Concepción del Uruguay. Ideal para desconexión, observación de aves y tranquilidad absoluta.",
+        "seoKeywords": [
+            "casa de campo",
+            "concepción del uruguay",
+            "entre ríos",
+            "rural",
+            "naturaleza",
+            "desconexión",
+            "silvestre",
+            "aislado"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad muy específica para turismo de naturaleza y aventura. Clientes que buscan aislamiento.",
+        "favorite": false,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "country-house",
+        "concepcion-del-uruguay-country-house",
+        "seed-example",
+        "nature",
+        "eco-friendly",
+        "remote"
+    ],
+    "features": [
+        {
+            "name": "private_garden",
+            "hostReWriteName": "Entorno natural exclusivo",
+            "comments": "Propiedad rodeada de vegetación nativa"
+        },
+        {
+            "name": "bbq_area",
+            "hostReWriteName": "Parrilla y fogón rústicos",
+            "comments": null
+        },
+        {
+            "name": "eco_friendly",
+            "hostReWriteName": "Conciencia ecológica",
+            "comments": "Uso limitado de electricidad, respeto por el entorno"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿Hay electricidad 24hs?",
+            "answer": "No, la electricidad es limitada y se prioriza para iluminación y carga básica. Es un lugar para desconectar.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Se necesita vehículo?",
+            "answer": "Sí, es indispensable venir en vehículo propio. En días de lluvia intensa, se recomienda vehículo 4x4.",
+            "category": "location"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Desconexión digital y conexión con la naturaleza",
+            "content": "Nido Silvestre es el lugar perfecto para un detox digital. La conexión a internet y señal de celular son limitadas, lo que te permitirá desconectar de las pantallas y reconectar contigo mismo y con la naturaleza. Dedica tu tiempo a observar aves, leer, meditar o simplemente disfrutar del silencio y la paz del entorno.",
+            "category": "wellness"
+        },
+        {
+            "title": "Preparativos para tu estadía",
+            "content": "Al ser un lugar remoto, es importante venir bien preparado. Recomendamos traer todos tus alimentos y bebidas, linterna, repelente extra fuerte, protector solar, calzado adecuado para caminar por senderos, y ropa para cambios de clima. La experiencia es rústica, pensada para quienes disfrutan de la aventura y la vida simple.",
+            "category": "information"
+        }
+    ]
+}

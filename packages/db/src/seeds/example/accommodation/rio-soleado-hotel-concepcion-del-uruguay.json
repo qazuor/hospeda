@@ -1,0 +1,197 @@
+{
+    "slug": "rio-soleado-hotel-concepcion_del_uruguay",
+    "name": "rio-soleado-hotel",
+    "displayName": "Rio Soleado Hotel",
+    "type": "HOTEL",
+    "description": "Disfruta de la brisa y la luz del río Uruguay en Rio Soleado Hotel, ubicado a solo una cuadra de la costanera de Concepción del Uruguay. Este hotel moderno ofrece una estancia cómoda y luminosa, ideal para quienes desean estar cerca de la acción del río y al mismo tiempo tener fácil acceso al centro histórico.\n\nEl hotel cuenta con 22 habitaciones, muchas de ellas con vista parcial o total al río. Todas están equipadas con aire acondicionado, calefacción, TV por cable, minibar y baño privado con secador de pelo. Ofrecemos habitaciones individuales, dobles y triples.\n\nEntre sus instalaciones, destacamos una terraza con solárium desde donde se puede apreciar el río. El hotel ofrece desayuno continental incluido en la tarifa, servido en un área común. También dispone de lobby con Wi-Fi gratuito en todo el edificio. Cuenta con estacionamiento descubierto limitado.\n\nSu ubicación privilegiada te permite acceder caminando a la costanera, la Isla del Puerto y disfrutar de las actividades al aire libre. El centro histórico, con sus museos y edificios emblemáticos, se encuentra a pocas cuadras. Rio Soleado Hotel es una excelente opción para disfrutar de Concepción del Uruguay, con el río siempre cerca.",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "info@riosoleadohotelcdu.com.ar",
+        "mobilePhone": "+5493442222555",
+        "homePhone": "+543442477888",
+        "website": "https://www.riosoleadohotelcdu.com",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/riosoleadohotelcdu"
+    },
+    "price": {
+        "basePrice": {
+            "price": 21000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4805",
+            "long": "-58.2355"
+        },
+        "street": "Calle Artigas",
+        "number": "50",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Zona Costanera"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
+            "caption": "Fachada del hotel",
+            "description": "Vista exterior del Rio Soleado Hotel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación",
+                "description": "Habitación doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación con vista",
+                "description": "Habitación con vista parcial al río",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Área de desayuno",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104881/pexels-photo-2104881.jpeg",
+                "caption": "Terraza",
+                "description": "Terraza con solárium",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "23:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "12:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 45,
+        "minNights": 1,
+        "maxNights": 20,
+        "bedrooms": 22,
+        "beds": 35,
+        "bathrooms": 22,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "A una cuadra de la costanera",
+            "Muchas habitaciones con vista al río",
+            "Desayuno continental incluido",
+            "Estacionamiento descubierto limitado"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Rio Soleado Hotel - A una cuadra de la costanera en Concepción del Uruguay",
+        "seoDescription": "Hotel moderno y luminoso cerca del río Uruguay en Concepción del Uruguay. Habitaciones con vista, desayuno incluido. Cerca de costanera y centro.",
+        "seoKeywords": [
+            "hotel",
+            "concepción del uruguay",
+            "entre ríos",
+            "costanera",
+            "río uruguay",
+            "céntrico",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Muy buena ubicación para turismo de río. Desayuno bien valorado por huéspedes.",
+        "favorite": false,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "hotel",
+        "concepcion-del-uruguay-hotel",
+        "seed-example",
+        "river-view",
+        "city-center"
+    ],
+    "features": [
+        {
+            "name": "river_view",
+            "hostReWriteName": "Vistas al río Uruguay",
+            "comments": "Muchas habitaciones con vista parcial o total al río"
+        },
+        {
+            "name": "city_center",
+            "hostReWriteName": "Cerca del centro",
+            "comments": "Ubicación a pocas cuadras del centro histórico"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "hair_dryer",
+            "isOptional": false
+        },
+        {
+            "name": "smoke_detector",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿El hotel tiene estacionamiento?",
+            "answer": "Contamos con estacionamiento descubierto dentro del predio con capacidad limitada. Se asigna por orden de llegada.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Está cerca de la playa Banco Pelay?",
+            "answer": "La playa Banco Pelay se encuentra a unos 10-15 minutos en auto o colectivo desde el hotel.",
+            "category": "location"
+        }
+    ],
+    "iaData": []
+}

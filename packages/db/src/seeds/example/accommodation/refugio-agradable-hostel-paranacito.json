@@ -1,0 +1,173 @@
+{
+    "slug": "refugio-agradable-hostel-villa_paranacito",
+    "name": "refugio-agradable-hostel",
+    "displayName": "Refugio Agradable Hostel",
+    "type": "HOSTEL",
+    "description": "Encuentra un espacio agradable y económico para tu estadía en Refugio Agradable Hostel, ubicado en el pueblo de Paranacito. Ideal para mochileros y viajeros que buscan un lugar amigable y bien ubicado para explorar el Delta y disfrutar de la vida local.\n\nEl hostel ofrece dormitorios compartidos (4 y 6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes incluyen una cocina equipada para uso de los huéspedes, un comedor social y un living con TV. Dispone de un pequeño patio.\n\nSu ubicación en el pueblo permite acceder caminando a comercios y servicios. Estás a poca distancia en auto de los puntos de acceso al Delta y las actividades fluviales. Es una base práctica y económica para explorar la zona, con un ambiente relajado.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "info@refugioagradableparanacito.com",
+        "mobilePhone": "+5493446111444",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 7000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2843",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7300",
+            "long": "-59.1900"
+        },
+        "street": "Calle Principal",
+        "number": "150",
+        "city": "Paranacito",
+        "neighborhood": "Centro"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
+            "caption": "Fachada del hostel",
+            "description": "Vista exterior de Refugio Agradable Hostel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
+                "caption": "Exterior",
+                "description": "Entrada al hostel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
+                "caption": "Habitación compartida",
+                "description": "Dormitorio con literas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina comunitaria",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6957069/pexels-photo-6957069.jpeg",
+                "caption": "Sala común",
+                "description": "Área de estar",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "11:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 18,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 4,
+        "beds": 16,
+        "bathrooms": 3,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Dormitorios compartidos y habitaciones privadas",
+            "Cocina comunitaria equipada",
+            "Ubicación céntrica en Paranacito",
+            "Cerca del Delta"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Refugio Agradable Hostel - Económico en Paranacito | Delta",
+        "seoDescription": "Hostel para viajeros en Paranacito. Dormitorios compartidos, habitaciones privadas, cocina comunitaria. Ambiente amigable, cerca Delta.",
+        "seoKeywords": [
+            "hostel",
+            "paranacito",
+            "entre ríos",
+            "delta",
+            "económico",
+            "amigable",
+            "compartido"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Opción de bajo costo en el pueblo. Atrae principalmente a mochileros interesados en el Delta.",
+        "favorite": false,
+        "tags": [
+            "paranacito",
+            "hostel",
+            "paranacito-hostel",
+            "seed-example",
+            "budget",
+            "nature",
+            "social"
+        ]
+    },
+    "features": [
+        {
+            "name": "shared_kitchen",
+            "hostReWriteName": "Cocina comunitaria",
+            "comments": "Cocina equipada para uso de huéspedes"
+        },
+        {
+            "name": "city_center",
+            "hostReWriteName": "Ubicación céntrica",
+            "comments": "Ubicado en el pueblo de Paranacito"
+        },
+        {
+            "name": "nature_proximity",
+            "hostReWriteName": "Cerca del Delta",
+            "comments": null
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

@@ -1,0 +1,184 @@
+{
+    "slug": "retiro-relajante-cabana-liebig",
+    "name": "retiro-relajante-cabana",
+    "displayName": "Retiro Relajante Cabaña",
+    "type": "CABIN",
+    "description": "Busca un espacio de relax en Retiro Relajante, una cómoda cabaña de madera ubicada en un entorno tranquilo de Liebig, cerca del río Uruguay. Ideal para parejas o viajeros que buscan un refugio apacible y bien ubicado para acceder a la historia de la localidad y disfrutar del río.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es sencilla y rústica, invitando a la relajación.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación. La ubicación en un barrio tranquilo de Liebig permite un rápido acceso en auto o caminando a los restos históricos del Frigorífico Liebig y al acceso al río. Retiro Relajante es tu base ideal para combinar la historia y la tranquilidad del río.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@retirorelajanteliebig.com",
+        "mobilePhone": "+5493446123999",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 15000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2800,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3262",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2350",
+            "long": "-58.0950"
+        },
+        "street": "Calle Los Pescadores",
+        "number": "50",
+        "city": "Liebig",
+        "neighborhood": "Barrio Ribereño"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "caption": "Cabaña junto al río",
+            "description": "Vista exterior de la cabaña con entorno verde",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la cabaña",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
+                "caption": "Interior",
+                "description": "Área de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio principal",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
+                "caption": "Altillo",
+                "description": "Espacio con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior cubierta",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 2,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Cabaña acogedora",
+            "Parrilla exterior",
+            "Ideal para parejas o familias pequeñas",
+            "Cerca del río y del Frigorífico Liebig"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Retiro Relajante - Cabaña en Liebig | Río Uruguay y Frigorífico Histórico",
+        "seoDescription": "Cabaña confortable para 4 personas en Liebig. Ideal para relax. Parrilla, jardín. Cerca del río y del histórico Frigorífico.",
+        "seoKeywords": [
+            "cabaña",
+            "liebig",
+            "entre ríos",
+            "río uruguay",
+            "frigorífico liebig",
+            "historia",
+            "pesca",
+            "escapada"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad simple pero bien ubicada para turismo histórico y de río. Énfasis en la tranquilidad.",
+        "favorite": false,
+        "tags": ["liebig", "cabin", "liebig-cabin", "seed-example", "riverside", "history"]
+    },
+    "features": [
+        {
+            "name": "bbq_area",
+            "hostReWriteName": "Parrilla cubierta",
+            "comments": null
+        },
+        {
+            "name": "private_garden",
+            "hostReWriteName": "Jardín simple",
+            "comments": null
+        },
+        {
+            "name": "river_proximity",
+            "hostReWriteName": "Cerca del río",
+            "comments": "A poca distancia del río Uruguay"
+        },
+        {
+            "name": "historical_proximity",
+            "hostReWriteName": "Cerca del Frigorífico Liebig",
+            "comments": "A poca distancia del pueblo y los restos históricos del frigorífico"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

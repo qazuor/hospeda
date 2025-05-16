@@ -1,0 +1,180 @@
+{
+    "slug": "refugio-calmado-apartment-gualeguaychu",
+    "name": "refugio-calmado-apartment",
+    "displayName": "Refugio Calmado Apartamento",
+    "type": "APARTMENT",
+    "description": "Disfruta de la calma y un ambiente sereno en Refugio Calmado, un apartamento ubicado en un barrio tranquilo de Gualeguaychú. Ideal para viajeros que buscan un espacio apacible para descansar, con fácil acceso a los puntos de interés de la ciudad, la costanera y el Carnaval.\n\nEl apartamento ofrece un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo alojar hasta 3 personas. La decoración es sencilla y funcional.\n\nSituado en un edificio tranquilo, ofrece un retiro pacífico. Estás a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. Refugio Calmado es una opción serena y confortable para tu estadía.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@refugiocalmadogchu.com",
+        "mobilePhone": "+5493446111555",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 12800,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2100,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2820",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.0100",
+            "long": "-58.5020"
+        },
+        "street": "Calle Entre Ríos",
+        "number": "500",
+        "floor": "1",
+        "apartment": "A",
+        "city": "Gualeguaychú",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Cerca de transporte público"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Refugio Calmado - Apartamento sereno en Gualeguaychú",
+        "seoDescription": "Apartamento moderno y tranquilo en Gualeguaychú. Ideal para descanso. Cerca del centro, costanera y Carnaval.",
+        "seoKeywords": [
+            "apartamento",
+            "gualeguaychú",
+            "entre ríos",
+            "tranquilo",
+            "descanso",
+            "parejas",
+            "carnaval gualeguaychu"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad simple y funcional en zona residencial. Buena para estancias cortas.",
+        "favorite": false,
+        "tags": [
+            "gualeguaychu",
+            "apartment",
+            "gualeguaychu-apartment",
+            "seed-example",
+            "quiet",
+            "carnival"
+        ]
+    },
+    "features": [
+        {
+            "name": "private_entrance",
+            "hostReWriteName": null,
+            "comments": null
+        },
+        {
+            "name": "quiet_location",
+            "hostReWriteName": "Ubicación tranquila",
+            "comments": null
+        },
+        {
+            "name": "carnival_proximity",
+            "hostReWriteName": "Cerca del Carnaval",
+            "comments": "Acceso conveniente al Corsódromo"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

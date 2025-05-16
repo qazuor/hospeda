@@ -1,0 +1,194 @@
+{
+    "slug": "nido-tranquilo-house-colon",
+    "name": "nido-tranquilo-house",
+    "displayName": "Nido Tranquilo House",
+    "type": "HOUSE",
+    "description": "Escapa a la tranquilidad en Nido Tranquilo House, una encantadora casa ubicada en una zona residencial apacible de Colón. Perfecta para familias o grupos de amigos que buscan un espacio amplio y privado para relajarse y disfrutar de las atracciones de la ciudad y sus alrededores.\n\nLa casa cuenta con tres dormitorios confortables, dos baños completos, una cocina totalmente equipada con comedor diario, y un living espacioso con TV. El diseño prioriza la comodidad y los espacios para compartir, con una decoración sencilla y funcional. Puede alojar hasta 6 personas cómodamente.\n\nEl exterior ofrece un amplio jardín parquizado, ideal para actividades al aire libre, y una galería cubierta con asador tradicional, perfecta para disfrutar de comidas al aire libre. También cuenta con entrada para vehículo dentro de la propiedad. La ubicación permite un acceso rápido en auto al centro, la costanera y las Termas de Colón, combinando la paz de un barrio residencial con la cercanía a los puntos de interés.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "info@nidotranquilo.com.ar",
+        "mobilePhone": "+5493442666999",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 21000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 4000,
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3280",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2190",
+            "long": "-58.1480"
+        },
+        "street": "Calle Los Aromos",
+        "number": "150",
+        "city": "Colón",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+            "caption": "Fachada de la casa",
+            "description": "Vista exterior de la casa con jardín",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la propiedad",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
+                "caption": "Living",
+                "description": "Sala de estar con sofás",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
+                "caption": "Galería y asador",
+                "description": "Espacio exterior con parrilla",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 6,
+        "minNights": 2,
+        "maxNights": 20,
+        "bedrooms": 3,
+        "beds": 4,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Amplio jardín",
+            "Estacionamiento descubierto dentro de la propiedad",
+            "Ideal para familias"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Nido Tranquilo House - Casa para familias en Colón, Entre Ríos",
+        "seoDescription": "Casa de 3 dormitorios en zona residencial de Colón. Ideal para familias. Jardín, asador, cerca del centro y termas. Capacidad 6 personas.",
+        "seoKeywords": [
+            "casa",
+            "colón",
+            "entre ríos",
+            "alojamiento familiar",
+            "jardín",
+            "asador",
+            "vacaciones"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Buena opción para familias numerosas. Ubicación conveniente.",
+        "favorite": true,
+        "tags": ["admin", "seed"]
+    },
+    "tags": ["colon", "house", "colon-house", "seed-example", "family-friendly", "garden", "bbq"],
+    "features": [
+        {
+            "name": "private_garden",
+            "hostReWriteName": "Jardín amplio",
+            "comments": "Jardín privado y parquizado"
+        },
+        {
+            "name": "bbq_area",
+            "hostReWriteName": "Quincho con asador",
+            "comments": "Galería cubierta con parrilla"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "oven",
+            "isOptional": false
+        },
+        {
+            "name": "hair_dryer",
+            "isOptional": true
+        },
+        {
+            "name": "iron",
+            "isOptional": true
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

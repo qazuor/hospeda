@@ -1,0 +1,222 @@
+{
+    "slug": "refugio-natural-country-house-gualeguaychu",
+    "name": "refugio-natural-country-house",
+    "displayName": "Refugio Natural Country House",
+    "type": "COUNTRY_HOUSE",
+    "description": "Adéntrate en la serenidad del campo entrerriano en Refugio Natural, una cómoda casa de campo ubicada en un entorno natural apacible cerca de Gualeguaychú. Ideal para familias y grupos que buscan un retiro tranquilo, rodeado de naturaleza, con amplios espacios para relajarse y disfrutar al aire libre.\n\nLa casa cuenta con tres dormitorios y dos baños completos, ofreciendo espacio y privacidad para hasta 8 personas. El living-comedor es amplio, integrado con una cocina bien equipada. La decoración es sencilla y funcional, pensada para una estancia relajada.\n\nEl exterior dispone de un amplio jardín con césped y árboles, una galería con asador y una mesa grande, perfecta para disfrutar de comidas al aire libre. También cuenta con una piscina para refrescarse en verano. Es un entorno seguro y tranquilo para relajarse. Aunque ofrece privacidad, la casa está a una distancia razonable en auto del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. Un lugar ideal para combinar la paz del campo con la diversión de la ciudad.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "reservas@refugionaturalgchu.com.ar",
+        "mobilePhone": "+5493446123890",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 31000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 5500,
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 15
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2820",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.0220",
+            "long": "-58.4900"
+        },
+        "street": "Camino a La Estancia S/N",
+        "number": null,
+        "city": "Gualeguaychú",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+            "caption": "Casa de campo con piscina",
+            "description": "Vista exterior de Refugio Natural Country House con piscina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la casa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Living",
+                "description": "Living-comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Piscina",
+                "description": "Piscina exterior",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
+                "caption": "Asador",
+                "description": "Área de asador con galería",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
+                "caption": "Jardín",
+                "description": "Jardín amplio",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "15:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "13:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 8,
+        "minNights": 2,
+        "maxNights": 20,
+        "bedrooms": 3,
+        "beds": 5,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Entorno rural tranquilo",
+            "Piscina privada",
+            "Parrilla exterior",
+            "Amplio jardín",
+            "Ideal para familias o grupos",
+            "Cerca de Gualeguaychú y el Carnaval"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Refugio Natural - Casa de Campo con Piscina cerca de Gualeguaychú | Carnaval",
+        "seoDescription": "Casa de campo con piscina y parque grande cerca de Gualeguaychú. Ideal para familias y grupos. Quincho con asador. Acceso a la ciudad y Carnaval.",
+        "seoKeywords": [
+            "casa de campo",
+            "gualeguaychú",
+            "entre ríos",
+            "rural",
+            "piscina",
+            "familiar",
+            "asador",
+            "carnaval gualeguaychu"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad atractiva para familias/grupos. Piscina y asador son puntos fuertes. Relevante en temporada de Carnaval.",
+        "favorite": true,
+        "tags": [
+            "gualeguaychu",
+            "country-house",
+            "gualeguaychu-country-house",
+            "seed-example",
+            "swimming-pool",
+            "family-friendly",
+            "bbq",
+            "carnival"
+        ]
+    },
+    "features": [
+        {
+            "name": "private_pool",
+            "hostReWriteName": "Piscina privada",
+            "comments": null
+        },
+        {
+            "name": "private_garden",
+            "hostReWriteName": "Amplio jardín",
+            "comments": null
+        },
+        {
+            "name": "bbq_area",
+            "hostReWriteName": "Área de asador",
+            "comments": null
+        },
+        {
+            "name": "carnival_proximity",
+            "hostReWriteName": "Cerca del Carnaval",
+            "comments": "Acceso conveniente al Corsódromo"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia está el Corsódromo?",
+            "answer": "El Corsódromo se encuentra a unos 10-15 minutos en auto desde la casa.",
+            "category": "location"
+        },
+        {
+            "question": "¿La piscina es climatizada?",
+            "answer": "No, la piscina es exterior y no está climatizada.",
+            "category": "amenities"
+        }
+    ],
+    "iaData": []
+}
