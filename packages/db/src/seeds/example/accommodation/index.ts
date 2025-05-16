@@ -20,11 +20,100 @@ import {
 import cabanaDelRioColon from './cabana-del-rio-colon.json';
 import campingRioVidaVillaParanacito from './camping-rio-vida-villa-paranacito.json';
 import casaTermasFederacion from './casa-termas-federacion.json';
-import hostelDelViajeroConcepcion from './hostel-del-viajero-concepcion.json';
+import horizonteAgradableCampingColon from './horizonte-agradable-camping-colon.json';
+import hostelDelViajeroConcepcionDelUruguay from './hostel-del-viajero-concepcion-del-uruguay.json';
 import hotelPlazaGualeguaychu from './hotel-plaza-gualeguaychu.json';
 import loftUrbanoConcordia from './loft-urbano-concordia.json';
+import miradorAgradableApartmentSanJose from './mirador-agradable-apartment-san-jose.json';
+import miradorApacibleCabanaUbajay from './mirador-apacible-cabana-ubajay.json';
+import miradorCalmadoApartmentConcepcionDelUruguay from './mirador-calmado-apartment-concepcion-del-uruguay.json';
+import miradorMaravillosoHotelParanacito from './mirador-maravilloso-hotel-paranacito.json';
+import miradorNaturalHotelConcepcionDelUruguay from './mirador-natural-hotel-concepcion-del-uruguay.json';
+import miradorRelajanteHostelConcepcionDelUruguay from './mirador-relajante-hostel-concepcion-del-uruguay.json';
+import miradorSoleadoHotelColon from './mirador-soleado-hotel-colon.json';
+import miradorTranquiloApartmentGualeguaychu from './mirador-tranquilo-apartment-gualeguaychu.json';
+import nidoCalmadoRoomConcordia from './nido-calmado-room-concordia.json';
+import nidoMaravillosoCountryHouseConcepcionDelUruguay from './nido-maravilloso-country-house-concepcion-del-uruguay.json';
+import nidoNaturalRoomGualeguaychu from './nido-natural-room-gualeguaychu.json';
+import nidoSilvestreCountryHouseConcepcionDelUruguay from './nido-silvestre-country-house-concepcion-del-uruguay.json';
+import nidoSilvestreHostelUbajay from './nido-silvestre-hostel-ubajay.json';
+import nidoSilvestreHotelGualeguaychu from './nido-silvestre-hotel-gualeguaychu.json';
+import nidoSoleadoCabanaFederacion from './nido-soleado-cabana-federacion.json';
+import nidoSoleadoCampingParanacito from './nido-soleado-camping-paranacito.json';
+import nidoTranquiloApartmentSanJose from './nido-tranquilo-apartment-san-jose.json';
+import nidoTranquiloHostelFederacion from './nido-tranquilo-hostel-federacion.json';
+import nidoTranquiloHouseColon from './nido-tranquilo-house-colon.json';
+import paraisoAcogedorCabanaGualeguaychu from './paraiso-acogedor-cabana-gualeguaychu.json';
+import paraisoAgradableHotelConcepcionDelUruguay from './paraiso-agradable-hotel-concepcion-del-uruguay.json';
+import paraisoApacibleCampingConcordia from './paraiso-apacible-camping-concordia.json';
+import paraisoApacibleCampingLiebig from './paraiso-apacible-camping-liebig.json';
+import paraisoCalidoCabanaSanJose from './paraiso-calido-cabana-san-jose.json';
+import paraisoCalidoCountryHouseColon from './paraiso-calido-country-house-colon.json';
+import paraisoEncantadoRoomGualeguaychu from './paraiso-encantado-room-gualeguaychu.json';
+import paraisoNaturalHotelUbajay from './paraiso-natural-hotel-ubajay.json';
+import paraisoRelajanteCountryHouseParanacito from './paraiso-relajante-country-house-paranacito.json';
+import paraisoTranquiloCountryHouseConcepcionDelUruguay from './paraiso-tranquilo-country-house-concepcion-del-uruguay.json';
+import paraisoTranquiloRoomConcepcionDelUruguay from './paraiso-tranquilo-room-concepcion-del-uruguay.json';
+import refugioAcogedorRoomConcepcionDelUruguay from './refugio-acogedor-room-concepcion-del-uruguay.json';
+import refugioAgradableHostelParanacito from './refugio-agradable-hostel-paranacito.json';
+import refugioApacibleCampingParanacito from './refugio-apacible-camping-paranacito.json';
+import refugioApacibleHotelFederacion from './refugio-apacible-hotel-federacion.json';
+import refugioCalmadoApartmentGualeguaychu from './refugio-calmado-apartment-gualeguaychu.json';
+import refugioEncantadoRoomSanJose from './refugio-encantado-room-san-jose.json';
+import refugioMaravillosoCabanaColon from './refugio-maravilloso-cabana-colon.json';
+import refugioNaturalCountryHouseGualeguaychu from './refugio-natural-country-house-gualeguaychu.json';
+import refugioRelajanteHotelConcordia from './refugio-relajante-hotel-concordia.json';
+import refugioSilvestreHotelColon from './refugio-silvestre-hotel-colon.json';
+import refugioSoleadoApartmentConcepcionDelUruguay from './refugio-soleado-apartment-concepcion-del-uruguay.json';
+import refugioSoleadoRoomGualeguaychu from './refugio-soleado-room-gualeguaychu.json';
+import refugioTranquiloHouseUbajay from './refugio-tranquilo-house-ubajay.json';
+import retiroAgradableCabanaColon from './retiro-agradable-cabana-colon.json';
+import retiroAgradableHouseConcordia from './retiro-agradable-house-concordia.json';
+import retiroApacibleCabanaParanacito from './retiro-apacible-cabana-paranacito.json';
+import retiroCalidoHostelConcepcionDelUruguay from './retiro-calido-hostel-concepcion-del-uruguay.json';
+import retiroEncantadoApartmentConcepcionDelUruguay from './retiro-encantado-apartment-concepcion-del-uruguay.json';
+import retiroEncantadoCampingColon from './retiro-encantado-camping-colon.json';
+import retiroEncantadoCountryHouseUbajay from './retiro-encantado-country-house-ubajay.json';
+import retiroNaturalCampingFederacion from './retiro-natural-camping-federacion.json';
+import retiroNaturalCountryHouseSanJose from './retiro-natural-country-house-san-jose.json';
+import retiroRelajanteCabanaLiebig from './retiro-relajante-cabana-liebig.json';
 import retiroSoleadoCabanaChajari from './retiro-soleado-cabana-chajari.json';
+import rinconAgradableCampingUbajay from './rincon-agradable-camping-ubajay.json';
+import rinconCalmadoRoomParanacito from './rincon-calmado-room-paranacito.json';
+import rinconMaravillosoRoomConcepcionDelUruguay from './rincon-maravilloso-room-concepcion-del-uruguay.json';
+import rinconNaturalRoomColon from './rincon-natural-room-colon.json';
+import rinconRelajanteHotelSanJose from './rincon-relajante-hotel-san-jose.json';
+import rinconSilvestreHostelFederacion from './rincon-silvestre-hostel-federacion.json';
+import rinconSoleadoHostelConcepcionDelUruguay from './rincon-soleado-hostel-concepcion-del-uruguay.json';
+import rinconTranquiloCampingConcepcionDelUruguay from './rincon-tranquilo-camping-concepcion-del-uruguay.json';
+import rioApacibleHouseConcepcionDelUruguay from './rio-apacible-house-concepcion-del-uruguay.json';
+import rioCalmadoCampingUbajay from './rio-calmado-camping-ubajay.json';
+import rioEncantadoCampingIbicuy from './rio-encantado-camping-ibicuy.json';
+import rioNaturalApartmentConcepcionDelUruguay from './rio-natural-apartment-concepcion-del-uruguay.json';
+import rioRelajanteApartmentFederacion from './rio-relajante-apartment-federacion.json';
+import rioSilvestreHotelParanacito from './rio-silvestre-hotel-paranacito.json';
+import rioSoleadoCabanaChajari from './rio-soleado-cabana-chajari.json';
+import rioSoleadoHostelSanJose from './rio-soleado-hostel-san-jose.json';
+import rioSoleadoHotelConcepcionDelUruguay from './rio-soleado-hotel-concepcion-del-uruguay.json';
+import senderoCalidoApartmentUbajay from './sendero-calido-apartment-ubajay.json';
+import senderoCalmadoHouseSanJose from './sendero-calmado-house-san-jose.json';
+import senderoEncantadoHouseParanacito from './sendero-encantado-house-paranacito.json';
+import senderoMaravillosoCampingConcepcionDelUruguay from './sendero-maravilloso-camping-concepcion-del-uruguay.json';
 import senderoNaturalCountryHouseChajari from './sendero-natural-country-house-chajari.json';
+import senderoRelajanteApartmentConcordia from './sendero-relajante-apartment-concordia.json';
+import senderoTranquiloCountryHouseGualeguaychu from './sendero-tranquilo-country-house-gualeguaychu.json';
+import suenoAcogedorRoomConcordia from './sueno-acogedor-room-concordia.json';
+import suenoAgradableApartmentColon from './sueno-agradable-apartment-colon.json';
+import suenoApacibleCampingSanJose from './sueno-apacible-camping-san-jose.json';
+import suenoCalidoApartmentColon from './sueno-calido-apartment-colon.json';
+import suenoCalidoApartmentConcordia from './sueno-calido-apartment-concordia.json';
+import suenoCalmadoHostelGualeguaychu from './sueno-calmado-hostel-gualeguaychu.json';
+import suenoNaturalApartmentFederacion from './sueno-natural-apartment-federacion.json';
+import suenoNaturalApartmentParanacito from './sueno-natural-apartment-paranacito.json';
+import suenoRelajanteRoomUbajay from './sueno-relajante-room-ubajay.json';
+import suenoSoleadoCabanaConcepcionDelUruguay from './sueno-soleado-cabana-concepcion-del-uruguay.json';
+import suenoSoleadoHouseColon from './sueno-soleado-house-colon.json';
+import suenoTranquiloApartmentConcepcionDelUruguay from './sueno-tranquilo-apartment-concepcion-del-uruguay.json';
 
 // Define interfaces for seed data
 interface AccommodationSeedData {
@@ -89,8 +178,97 @@ export async function seedExampleAccommodations() {
             loftUrbanoConcordia,
             hotelPlazaGualeguaychu,
             casaTermasFederacion,
-            hostelDelViajeroConcepcion,
-            campingRioVidaVillaParanacito
+            hostelDelViajeroConcepcionDelUruguay,
+            campingRioVidaVillaParanacito,
+            rioSoleadoCabanaChajari,
+            suenoAgradableApartmentColon,
+            suenoCalidoApartmentColon,
+            nidoTranquiloHouseColon,
+            refugioSilvestreHotelColon,
+            horizonteAgradableCampingColon,
+            miradorSoleadoHotelColon,
+            retiroEncantadoCampingColon,
+            refugioMaravillosoCabanaColon,
+            suenoSoleadoHouseColon,
+            retiroAgradableCabanaColon,
+            paraisoCalidoCountryHouseColon,
+            rinconNaturalRoomColon,
+            retiroEncantadoApartmentConcepcionDelUruguay,
+            rinconMaravillosoRoomConcepcionDelUruguay,
+            miradorNaturalHotelConcepcionDelUruguay,
+            nidoMaravillosoCountryHouseConcepcionDelUruguay,
+            refugioSoleadoApartmentConcepcionDelUruguay,
+            paraisoTranquiloCountryHouseConcepcionDelUruguay,
+            rioSoleadoHotelConcepcionDelUruguay,
+            rioApacibleHouseConcepcionDelUruguay,
+            miradorRelajanteHostelConcepcionDelUruguay,
+            retiroCalidoHostelConcepcionDelUruguay,
+            rinconSoleadoHostelConcepcionDelUruguay,
+            senderoMaravillosoCampingConcepcionDelUruguay,
+            suenoTranquiloApartmentConcepcionDelUruguay,
+            rioNaturalApartmentConcepcionDelUruguay,
+            paraisoTranquiloRoomConcepcionDelUruguay,
+            miradorCalmadoApartmentConcepcionDelUruguay,
+            nidoSilvestreCountryHouseConcepcionDelUruguay,
+            refugioAcogedorRoomConcepcionDelUruguay,
+            suenoSoleadoCabanaConcepcionDelUruguay,
+            paraisoAgradableHotelConcepcionDelUruguay,
+            rinconTranquiloCampingConcepcionDelUruguay,
+            suenoAcogedorRoomConcordia,
+            retiroAgradableHouseConcordia,
+            senderoRelajanteApartmentConcordia,
+            suenoCalidoApartmentConcordia,
+            refugioRelajanteHotelConcordia,
+            paraisoApacibleCampingConcordia,
+            nidoCalmadoRoomConcordia,
+            nidoSoleadoCabanaFederacion,
+            suenoNaturalApartmentFederacion,
+            rioRelajanteApartmentFederacion,
+            retiroNaturalCampingFederacion,
+            refugioApacibleHotelFederacion,
+            nidoTranquiloHostelFederacion,
+            rinconSilvestreHostelFederacion,
+            refugioSoleadoRoomGualeguaychu,
+            senderoTranquiloCountryHouseGualeguaychu,
+            nidoNaturalRoomGualeguaychu,
+            miradorTranquiloApartmentGualeguaychu,
+            paraisoAcogedorCabanaGualeguaychu,
+            refugioCalmadoApartmentGualeguaychu,
+            suenoCalmadoHostelGualeguaychu,
+            paraisoEncantadoRoomGualeguaychu,
+            nidoSilvestreHotelGualeguaychu,
+            refugioNaturalCountryHouseGualeguaychu,
+            rioEncantadoCampingIbicuy,
+            paraisoApacibleCampingLiebig,
+            retiroRelajanteCabanaLiebig,
+            refugioApacibleCampingParanacito,
+            miradorMaravillosoHotelParanacito,
+            paraisoRelajanteCountryHouseParanacito,
+            retiroApacibleCabanaParanacito,
+            rinconCalmadoRoomParanacito,
+            suenoNaturalApartmentParanacito,
+            senderoEncantadoHouseParanacito,
+            refugioAgradableHostelParanacito,
+            nidoSoleadoCampingParanacito,
+            rioSilvestreHotelParanacito,
+            miradorAgradableApartmentSanJose,
+            paraisoCalidoCabanaSanJose,
+            retiroNaturalCountryHouseSanJose,
+            rinconRelajanteHotelSanJose,
+            suenoApacibleCampingSanJose,
+            senderoCalmadoHouseSanJose,
+            refugioEncantadoRoomSanJose,
+            nidoTranquiloApartmentSanJose,
+            rioSoleadoHostelSanJose,
+            miradorApacibleCabanaUbajay,
+            paraisoNaturalHotelUbajay,
+            retiroEncantadoCountryHouseUbajay,
+            rinconAgradableCampingUbajay,
+            suenoRelajanteRoomUbajay,
+            senderoCalidoApartmentUbajay,
+            refugioTranquiloHouseUbajay,
+            nidoSilvestreHostelUbajay,
+            rioCalmadoCampingUbajay
         ];
 
         // Process each accommodation
@@ -130,7 +308,7 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
 
         // Extract destination from slug
         const slugParts = data.slug.split('-');
-        const destinationName = slugParts[slugParts.length - 1]; // Last part is the destination
+        const destinationName = slugParts[slugParts.length - 1]?.replace(/_/g, '-'); // Last part is the destination
 
         // Get destination ID from name
         const [destinationRecord] = await db
