@@ -16,24 +16,24 @@ export async function seedRequiredAmenities() {
             // Climate control amenities
             {
                 name: 'air_conditioning',
-                displayName: 'Air Conditioning',
-                description: 'Cool air system for hot days',
+                displayName: 'Aire Acondicionado',
+                description: 'Sistema de aire frío para días calurosos',
                 icon: 'air_conditioning',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.CLIMATE_CONTROL
             },
             {
                 name: 'heating',
-                displayName: 'Heating',
-                description: 'Heating system for cold days',
+                displayName: 'Calefacción',
+                description: 'Sistema de calefacción para días fríos',
                 icon: 'heating',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.CLIMATE_CONTROL
             },
             {
                 name: 'ceiling_fan',
-                displayName: 'Ceiling Fan',
-                description: 'Ceiling fan for air circulation',
+                displayName: 'Ventilador de Techo',
+                description: 'Ventilador de techo para circulación de aire',
                 icon: 'fan',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.CLIMATE_CONTROL
@@ -43,23 +43,23 @@ export async function seedRequiredAmenities() {
             {
                 name: 'wifi',
                 displayName: 'WiFi',
-                description: 'Wireless internet connection',
+                description: 'Conexión inalámbrica a internet',
                 icon: 'wifi',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.CONNECTIVITY
             },
             {
                 name: 'ethernet',
-                displayName: 'Wired Internet',
-                description: 'Wired ethernet connection',
+                displayName: 'Internet por Cable',
+                description: 'Conexión de internet por cable ethernet',
                 icon: 'ethernet',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.CONNECTIVITY
             },
             {
                 name: 'usb_outlets',
-                displayName: 'USB Charging Outlets',
-                description: 'Outlets with USB charging ports',
+                displayName: 'Enchufes con USB',
+                description: 'Enchufes con puertos de carga USB',
                 icon: 'usb',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.CONNECTIVITY
@@ -68,24 +68,24 @@ export async function seedRequiredAmenities() {
             // Entertainment amenities
             {
                 name: 'tv',
-                displayName: 'TV',
-                description: 'Television set',
+                displayName: 'Televisión',
+                description: 'Televisor en la propiedad',
                 icon: 'tv',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.ENTERTAINMENT
             },
             {
                 name: 'streaming_service',
-                displayName: 'Streaming Services',
-                description: 'Access to Netflix, Disney+, or similar',
+                displayName: 'Servicios de Streaming',
+                description: 'Acceso a Netflix, Disney+ u otros similares',
                 icon: 'streaming',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.ENTERTAINMENT
             },
             {
                 name: 'board_games',
-                displayName: 'Board Games',
-                description: 'Collection of board games for entertainment',
+                displayName: 'Juegos de Mesa',
+                description: 'Colección de juegos de mesa para entretenimiento',
                 icon: 'games',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.ENTERTAINMENT
@@ -94,32 +94,32 @@ export async function seedRequiredAmenities() {
             // Kitchen amenities
             {
                 name: 'kitchen',
-                displayName: 'Full Kitchen',
-                description: 'Complete kitchen with cooking facilities',
+                displayName: 'Cocina Completa',
+                description: 'Cocina completa con instalaciones para cocinar',
                 icon: 'kitchen',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.KITCHEN
             },
             {
                 name: 'refrigerator',
-                displayName: 'Refrigerator',
-                description: 'Refrigerator for food storage',
+                displayName: 'Heladera',
+                description: 'Heladera para almacenar alimentos',
                 icon: 'fridge',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.KITCHEN
             },
             {
                 name: 'microwave',
-                displayName: 'Microwave',
-                description: 'Microwave oven',
+                displayName: 'Microondas',
+                description: 'Horno microondas',
                 icon: 'microwave',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.KITCHEN
             },
             {
                 name: 'coffee_maker',
-                displayName: 'Coffee Maker',
-                description: 'Device for brewing coffee',
+                displayName: 'Cafetera',
+                description: 'Dispositivo para preparar café',
                 icon: 'coffee',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.KITCHEN
@@ -128,32 +128,32 @@ export async function seedRequiredAmenities() {
             // Bed and bath amenities
             {
                 name: 'washer',
-                displayName: 'Washing Machine',
-                description: 'Clothes washing machine',
+                displayName: 'Lavarropas',
+                description: 'Máquina para lavar ropa',
                 icon: 'washer',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.BED_AND_BATH
             },
             {
                 name: 'dryer',
-                displayName: 'Clothes Dryer',
-                description: 'Machine for drying clothes',
+                displayName: 'Secarropas',
+                description: 'Máquina para secar ropa',
                 icon: 'dryer',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.BED_AND_BATH
             },
             {
                 name: 'iron',
-                displayName: 'Iron',
-                description: 'Clothes iron and ironing board',
+                displayName: 'Plancha',
+                description: 'Plancha para ropa con tabla de planchar',
                 icon: 'iron',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.BED_AND_BATH
             },
             {
                 name: 'hair_dryer',
-                displayName: 'Hair Dryer',
-                description: 'Device for drying hair',
+                displayName: 'Secador de Pelo',
+                description: 'Dispositivo para secar el cabello',
                 icon: 'hair_dryer',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.BED_AND_BATH
@@ -162,32 +162,32 @@ export async function seedRequiredAmenities() {
             // Outdoors amenities
             {
                 name: 'pool',
-                displayName: 'Swimming Pool',
-                description: 'Swimming pool for guests',
+                displayName: 'Piscina',
+                description: 'Piscina para los huéspedes',
                 icon: 'pool',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.OUTDOORS
             },
             {
                 name: 'hot_tub',
-                displayName: 'Hot Tub',
-                description: 'Hot tub or jacuzzi',
+                displayName: 'Jacuzzi',
+                description: 'Jacuzzi o hidromasaje',
                 icon: 'hot_tub',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.OUTDOORS
             },
             {
                 name: 'bbq_grill',
-                displayName: 'BBQ Grill',
-                description: 'Barbecue grill for outdoor cooking',
+                displayName: 'Parrilla',
+                description: 'Parrilla para cocinar al aire libre',
                 icon: 'grill',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.OUTDOORS
             },
             {
                 name: 'private_patio',
-                displayName: 'Private Patio/Balcony',
-                description: 'Private outdoor space',
+                displayName: 'Patio/Balcón Privado',
+                description: 'Espacio exterior privado',
                 icon: 'balcony',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.OUTDOORS
@@ -196,16 +196,16 @@ export async function seedRequiredAmenities() {
             // Accessibility amenities
             {
                 name: 'wheelchair_accessible',
-                displayName: 'Wheelchair Accessible',
-                description: 'Suitable for wheelchair users',
+                displayName: 'Accesible para Sillas de Ruedas',
+                description: 'Adaptado para usuarios de sillas de ruedas',
                 icon: 'wheelchair',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.ACCESSIBILITY
             },
             {
                 name: 'elevator',
-                displayName: 'Elevator',
-                description: 'Building has an elevator',
+                displayName: 'Ascensor',
+                description: 'El edificio cuenta con ascensor',
                 icon: 'elevator',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.ACCESSIBILITY
@@ -214,24 +214,24 @@ export async function seedRequiredAmenities() {
             // Safety amenities
             {
                 name: 'smoke_detector',
-                displayName: 'Smoke Detector',
-                description: 'Fire and smoke detection system',
+                displayName: 'Detector de Humo',
+                description: 'Sistema de detección de fuego y humo',
                 icon: 'smoke_detector',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.SAFETY
             },
             {
                 name: 'fire_extinguisher',
-                displayName: 'Fire Extinguisher',
-                description: 'Device for putting out small fires',
+                displayName: 'Extintor de Incendios',
+                description: 'Dispositivo para apagar pequeños incendios',
                 icon: 'fire_extinguisher',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.SAFETY
             },
             {
                 name: 'first_aid_kit',
-                displayName: 'First Aid Kit',
-                description: 'Basic medical supplies',
+                displayName: 'Botiquín de Primeros Auxilios',
+                description: 'Suministros médicos básicos',
                 icon: 'first_aid',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.SAFETY
@@ -240,24 +240,24 @@ export async function seedRequiredAmenities() {
             // Family-friendly amenities
             {
                 name: 'crib',
-                displayName: 'Baby Crib',
-                description: 'Crib for infants',
+                displayName: 'Cuna para Bebés',
+                description: 'Cuna para infantes',
                 icon: 'crib',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.FAMILY_FRIENDLY
             },
             {
                 name: 'high_chair',
-                displayName: 'High Chair',
-                description: 'Chair for feeding young children',
+                displayName: 'Silla Alta para Niños',
+                description: 'Silla para alimentar a niños pequeños',
                 icon: 'high_chair',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.FAMILY_FRIENDLY
             },
             {
                 name: 'childproofing',
-                displayName: 'Childproofing Features',
-                description: 'Safety features for young children',
+                displayName: 'Protecciones para Niños',
+                description: 'Características de seguridad para niños pequeños',
                 icon: 'childproof',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.FAMILY_FRIENDLY
@@ -266,16 +266,16 @@ export async function seedRequiredAmenities() {
             // Work-friendly amenities
             {
                 name: 'workspace',
-                displayName: 'Dedicated Workspace',
-                description: 'Area suitable for working',
+                displayName: 'Espacio de Trabajo',
+                description: 'Área adecuada para trabajar',
                 icon: 'desk',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.WORK_FRIENDLY
             },
             {
                 name: 'printer',
-                displayName: 'Printer',
-                description: 'Printer available for use',
+                displayName: 'Impresora',
+                description: 'Impresora disponible para uso',
                 icon: 'printer',
                 isBuiltin: true,
                 type: AmenitiesTypeEnum.WORK_FRIENDLY
@@ -294,7 +294,7 @@ export async function seedRequiredAmenities() {
                     ...amenityData,
                     state: StateEnum.ACTIVE,
                     adminInfo: {
-                        notes: 'Built-in amenity created during system seeding',
+                        notes: 'Comodidad incorporada durante la inicialización del sistema',
                         favorite: true
                     },
                     createdAt: new Date(),

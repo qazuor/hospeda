@@ -16,43 +16,43 @@ export async function seedRequiredFeatures() {
             // Location features
             {
                 name: 'mountain_view',
-                displayName: 'Mountain View',
-                description: 'Property offers views of mountains or hills',
+                displayName: 'Vista a Montañas',
+                description: 'Propiedad con vistas a montañas o colinas',
                 icon: 'mountain',
                 isBuiltin: true
             },
             {
                 name: 'river_view',
-                displayName: 'River View',
-                description: 'Property offers views of a river',
+                displayName: 'Vista al Río',
+                description: 'Propiedad con vistas a un río',
                 icon: 'river',
                 isBuiltin: true
             },
             {
                 name: 'beach_front',
-                displayName: 'Beachfront',
-                description: 'Property is located directly on the beach',
+                displayName: 'Frente a la Playa',
+                description: 'Propiedad ubicada directamente en la playa',
                 icon: 'beach',
                 isBuiltin: true
             },
             {
                 name: 'forest_view',
-                displayName: 'Forest View',
-                description: 'Property offers views of forests or woods',
+                displayName: 'Vista al Bosque',
+                description: 'Propiedad con vistas a bosques o zonas arboladas',
                 icon: 'forest',
                 isBuiltin: true
             },
             {
                 name: 'city_view',
-                displayName: 'City View',
-                description: 'Property offers views of the city',
+                displayName: 'Vista a la Ciudad',
+                description: 'Propiedad con vistas a la ciudad',
                 icon: 'city',
                 isBuiltin: true
             },
             {
                 name: 'lakefront',
-                displayName: 'Lakefront',
-                description: 'Property is located directly on a lake',
+                displayName: 'Frente al Lago',
+                description: 'Propiedad ubicada directamente en un lago',
                 icon: 'lake',
                 isBuiltin: true
             },
@@ -60,43 +60,43 @@ export async function seedRequiredFeatures() {
             // Property type features
             {
                 name: 'private_entrance',
-                displayName: 'Private Entrance',
-                description: 'Property has a private entrance for guests',
+                displayName: 'Entrada Privada',
+                description: 'Propiedad con entrada privada para huéspedes',
                 icon: 'door',
                 isBuiltin: true
             },
             {
                 name: 'private_bathroom',
-                displayName: 'Private Bathroom',
-                description: 'Property has a private bathroom for guests',
+                displayName: 'Baño Privado',
+                description: 'Propiedad con baño privado para huéspedes',
                 icon: 'bathroom',
                 isBuiltin: true
             },
             {
                 name: 'private_pool',
-                displayName: 'Private Pool',
-                description: 'Property has a private pool for guests',
+                displayName: 'Piscina Privada',
+                description: 'Propiedad con piscina privada para huéspedes',
                 icon: 'pool',
                 isBuiltin: true
             },
             {
                 name: 'private_garden',
-                displayName: 'Private Garden',
-                description: 'Property has a private garden for guests',
+                displayName: 'Jardín Privado',
+                description: 'Propiedad con jardín privado para huéspedes',
                 icon: 'garden',
                 isBuiltin: true
             },
             {
                 name: 'pet_friendly',
-                displayName: 'Pet Friendly',
-                description: 'Property allows pets',
+                displayName: 'Admite Mascotas',
+                description: 'Propiedad que permite mascotas',
                 icon: 'pet',
                 isBuiltin: true
             },
             {
                 name: 'smoking_allowed',
-                displayName: 'Smoking Allowed',
-                description: 'Property allows smoking',
+                displayName: 'Se Permite Fumar',
+                description: 'Propiedad donde se permite fumar',
                 icon: 'smoking',
                 isBuiltin: true
             },
@@ -104,29 +104,29 @@ export async function seedRequiredFeatures() {
             // Special features
             {
                 name: 'eco_friendly',
-                displayName: 'Eco-Friendly',
-                description: 'Property uses sustainable practices',
+                displayName: 'Ecológico',
+                description: 'Propiedad que utiliza prácticas sostenibles',
                 icon: 'eco',
                 isBuiltin: true
             },
             {
                 name: 'historic_property',
-                displayName: 'Historic Property',
-                description: 'Property with historical significance',
+                displayName: 'Propiedad Histórica',
+                description: 'Propiedad con significado histórico',
                 icon: 'history',
                 isBuiltin: true
             },
             {
                 name: 'unique_design',
-                displayName: 'Unique Design',
-                description: 'Property with unique architectural features',
+                displayName: 'Diseño Único',
+                description: 'Propiedad con características arquitectónicas únicas',
                 icon: 'design',
                 isBuiltin: true
             },
             {
                 name: 'luxury',
-                displayName: 'Luxury',
-                description: 'Property with luxury amenities and finishes',
+                displayName: 'Lujo',
+                description: 'Propiedad con comodidades y acabados de lujo',
                 icon: 'luxury',
                 isBuiltin: true
             }
@@ -144,7 +144,7 @@ export async function seedRequiredFeatures() {
                     ...featureData,
                     state: StateEnum.ACTIVE,
                     adminInfo: {
-                        notes: 'Built-in feature created during system seeding',
+                        notes: 'Característica incorporada durante la inicialización del sistema',
                         favorite: true
                     },
                     createdAt: new Date(),
