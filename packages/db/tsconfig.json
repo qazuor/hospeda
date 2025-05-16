@@ -9,8 +9,9 @@
         "esModuleInterop": true,
         "module": "ESNext",
         "target": "ES2022",
-        "types": ["node"]
+        "types": ["node"],
+        "resolveJsonModule": true
     },
-    "include": ["src/**/*.ts"],
+    "include": ["src/**/*.ts", "src/**/*.json"],
     "exclude": ["dist", "node_modules"]
 }
