@@ -1,0 +1,275 @@
+{
+    "slug": "retiro-soleado-cabana-chajari",
+    "name": "retiro-soleado-cabana",
+    "displayName": "Retiro Soleado - Cabaña",
+    "type": "CABIN",
+    "description": "Escondida entre naranjos y mandarinos, a solo 5 km del centro de Chajarí, Retiro Soleado ofrece una experiencia auténtica en una cabaña de madera construida con técnicas tradicionales combinadas con comodidades modernas. Esta acogedora cabaña de 70 m² es el refugio perfecto para parejas o familias pequeñas que buscan paz, contacto con la naturaleza y la cultura citrícola característica de la región.\n\nLa cabaña cuenta con un dormitorio principal con cama queen size y vistas al naranjal, y un entrepiso abierto con dos camas individuales, ideal para niños o huéspedes adicionales. El baño completo incluye una amplia ducha con vista al jardín privado. El espacio de living-comedor con su estufa a leña crea un ambiente cálido y acogedor durante las noches frescas, mientras que la cocina completamente equipada permite a los huéspedes preparar desde platos sencillos hasta elaboradas comidas utilizando productos locales.\n\nEl verdadero encanto de Retiro Soleado se encuentra en sus espacios exteriores. Una amplia galería techada rodea la cabaña, ofreciendo un lugar perfecto para disfrutar del desayuno mientras se observan los pájaros o para relajarse en las hamacas durante las tardes cálidas. El jardín privado incluye un fogón para noches estrelladas, un quincho con asador tradicional, y acceso directo a senderos que serpentean entre las plantaciones de cítricos.\n\nDurante su estadía, podrá participar en actividades agrícolas (según temporada), como la cosecha de mandarinas, naranjas o limones; explorar los senderos naturales que recorren la propiedad de 3 hectáreas; o simplemente relajarse en este entorno tranquilo, distante del estrés urbano pero lo suficientemente cerca para disfrutar de todas las comodidades de la ciudad, incluido el complejo termal de Chajarí que se encuentra a 12 minutos en auto.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "info@retirosoleado.com.ar",
+        "mobilePhone": "+5493456123789",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/retiro_soleado"
+    },
+    "price": {
+        "basePrice": {
+            "price": 16000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 3000,
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 10,
+            "monthly": 20,
+            "lastMinute": 15
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3228",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-30.7423",
+            "long": "-58.0351"
+        },
+        "street": "Ruta Provincial 3",
+        "number": "Km 5",
+        "city": "Chajarí",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "caption": "Cabaña entre naranjos",
+            "description": "Vista exterior de la cabaña rodeada de árboles cítricos",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "caption": "Exterior de la cabaña",
+                "description": "Fachada de la cabaña de madera",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4050318/pexels-photo-4050318.jpeg",
+                "caption": "Interior acogedor",
+                "description": "Sala de estar con estufa a leña",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4050319/pexels-photo-4050319.jpeg",
+                "caption": "Cocina equipada",
+                "description": "Cocina con elementos artesanales y modernos",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6775268/pexels-photo-6775268.jpeg",
+                "caption": "Dormitorio principal",
+                "description": "Habitación con cama queen y vistas al jardín",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489102/pexels-photo-6489102.jpeg",
+                "caption": "Entrepiso",
+                "description": "Área con dos camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489100/pexels-photo-6489100.jpeg",
+                "caption": "Baño completo",
+                "description": "Baño con ducha y vista al jardín",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997963/pexels-photo-5997963.jpeg",
+                "caption": "Galería exterior",
+                "description": "Espacio techado con hamacas y sillones",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997974/pexels-photo-5997974.jpeg",
+                "caption": "Quincho con asador",
+                "description": "Área exterior para asados y reuniones",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1268076/pexels-photo-1268076.jpeg",
+                "caption": "Plantación de cítricos",
+                "description": "Senderos entre naranjos y mandarinos",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "15:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "13:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 2,
+        "maxNights": 14,
+        "bedrooms": 1,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Se admiten mascotas con previo aviso",
+            "La cabaña es atendida por sus dueños, que viven en la misma propiedad en una casa separada",
+            "Desayuno con productos caseros y de estación incluido en la tarifa",
+            "Posibilidad de participar en actividades agrícolas según temporada"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Retiro Soleado - Cabaña entre naranjos en Chajarí, Entre Ríos",
+        "seoDescription": "Acogedora cabaña de madera en plantación de cítricos cerca de Chajarí. Experiencia rural auténtica con confort moderno, para parejas y familias pequeñas.",
+        "seoKeywords": [
+            "cabaña",
+            "chajarí",
+            "entre ríos",
+            "cítricos",
+            "naturaleza",
+            "rural",
+            "termas"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad atendida por sus dueños, que son muy atentos y comparten experiencias agrícolas con los huéspedes. Visibilidad alta en búsquedas de turismo rural.",
+        "favorite": true
+    },
+    "tags": ["chajari", "cabin", "rural", "citrus-plantation", "nature", "couples"],
+    "features": [
+        {
+            "name": "private_garden",
+            "hostReWriteName": "Jardín en naranjal",
+            "comments": "Jardín privado rodeado de árboles cítricos"
+        },
+        {
+            "name": "private_entrance",
+            "hostReWriteName": null,
+            "comments": null
+        },
+        {
+            "name": "pet_friendly",
+            "hostReWriteName": "Acepta mascotas",
+            "comments": "Se permiten mascotas con previo aviso, ideal para perros por el amplio espacio exterior"
+        },
+        {
+            "name": "eco_friendly",
+            "hostReWriteName": "Sustentable",
+            "comments": "Utilizamos energía solar parcial, compostaje y productos de limpieza ecológicos"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "coffee_maker",
+            "isOptional": false
+        },
+        {
+            "name": "bbq_grill",
+            "isOptional": false
+        },
+        {
+            "name": "hair_dryer",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿Es necesario contar con vehículo para alojarse?",
+            "answer": "Aunque no es estrictamente necesario, recomendamos contar con vehículo propio para mayor comodidad. Estamos a 5 km del centro de Chajarí y el transporte público es limitado. Para huéspedes sin vehículo, podemos coordinar traslados al centro o a las termas con costo adicional.",
+            "category": "location"
+        },
+        {
+            "question": "¿Qué se puede hacer en la propiedad y alrededores?",
+            "answer": "En la propiedad: caminar por los senderos entre cítricos, participar en actividades agrícolas según temporada, disfrutar del fogón nocturno y observar aves locales. En los alrededores: visitar el Complejo Termal de Chajarí (12 min. en auto), recorrer el centro histórico de la ciudad, hacer excursiones al río Uruguay (20 min.) o visitar establecimientos productores de cítricos y miel de la zona.",
+            "category": "activities"
+        },
+        {
+            "question": "¿Se puede cosechar fruta de los árboles?",
+            "answer": "¡Por supuesto! Dependiendo de la temporada (principalmente de abril a octubre), los huéspedes pueden cosechar naranjas, mandarinas o limones para consumo durante su estadía. Incluso organizamos mini-tours por la plantación explicando el proceso de cultivo orgánico que practicamos.",
+            "category": "experiences"
+        },
+        {
+            "question": "¿Cómo funcionan los desayunos incluidos?",
+            "answer": "Cada mañana dejamos en la cabaña una canasta con productos frescos: pan casero, dulces artesanales, frutas de estación de nuestra producción, huevos de campo y leche. También incluimos café, té, mate y jugo de naranja recién exprimido (en temporada). Adaptamos el menú a restricciones alimentarias con aviso previo.",
+            "category": "services"
+        },
+        {
+            "question": "¿Hay suficiente privacidad en la cabaña?",
+            "answer": "Absolutamente. Aunque los propietarios vivimos en la misma propiedad, la cabaña está ubicada a 80 metros de la casa principal, con vegetación que garantiza total privacidad. Estamos disponibles para asistencia, pero respetamos el espacio de nuestros huéspedes. El jardín y la galería son de uso exclusivo.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Historia de los cítricos en Chajarí",
+            "content": "Chajarí es conocida como la 'Capital Nacional de la Citricultura' por su destacada producción de naranjas, mandarinas, limones y pomelos. La tradición citrícola comenzó a principios del siglo XX con inmigrantes italianos y españoles, quienes trajeron las primeras plantas y técnicas de cultivo. La combinación del clima subtropical sin heladas severas, suelos arcillosos ricos en nutrientes y disponibilidad de agua convirtieron a esta región en ideal para estos cultivos. Nuestra plantación familiar comenzó en 1967 cuando Don Roberto Pérez adquirió estas tierras para dedicarse a la producción de mandarinas. Tres generaciones después, mantenemos la tradición incorporando técnicas orgánicas y sostenibles. La producción citrícola en la región tiene dos temporadas principales: naranjas y limones de mayo a septiembre, y mandarinas de marzo a octubre, con variedades tempranas, medias y tardías que permiten extender los periodos de cosecha. Durante su estadía, dependiendo de la época, podrá participar en la recolección manual y conocer el proceso completo desde la flor hasta la fruta lista para consumo.",
+            "category": "history"
+        },
+        {
+            "title": "Termas de Chajarí",
+            "content": "El Complejo Termal de Chajarí es uno de los más modernos de Entre Ríos, inaugurado en 2001. A solo 12 minutos en auto desde nuestra cabaña, estas termas se distinguen por sus aguas que emergen a 41°C desde más de 900 metros de profundidad, ricas en minerales como sodio, calcio, magnesio y sulfatos con propiedades terapéuticas, especialmente para afecciones reumáticas, respiratorias y dermatológicas. El complejo cuenta con 8 piscinas de diferentes temperaturas, desde 30°C hasta 41°C, tanto cubiertas como al aire libre. Para quienes viajan con niños, el parque acuático anexo es una excelente opción con toboganes y juegos acuáticos. Recomendamos la visita de medio día a las termas (mañana o tarde) combinando con otras actividades en la zona para un día completo. Los martes y jueves suelen ser los días menos concurridos, ideal para quienes buscan mayor tranquilidad. No olvide llevar traje de baño, toalla, ojotas y gorro de baño (obligatorio en algunas piscinas). En recepción encontrará descuentos especiales para nuestros huéspedes e información detallada sobre tratamientos específicos disponibles.",
+            "category": "wellness"
+        },
+        {
+            "title": "Observación de aves",
+            "content": "La región de Chajarí, ubicada en el corredor del río Uruguay, alberga una extraordinaria diversidad de aves típicas del espinal entrerriano y la selva en galería. Nuestra propiedad, con su mezcla de cultivos cítricos, vegetación nativa y pequeñas zonas húmedas, es un microhábitat que atrae numerosas especies durante todo el año. Entre las aves más comunes que podrá observar sin esfuerzo desde la galería de la cabaña se encuentran: cardenales de copete rojo, benteveos, horneros (ave nacional argentina), cotorras, carpinteros, calandrias y tordos. Con un poco más de paciencia y suerte, especialmente al amanecer, es posible avistar espécies más esquivas como martín pescador, picaflores, ipacaá (gallineta) y varias rapaces como chimangos y caranchos. Disponemos de guías de aves y binoculares para préstamo, así como un punto de alimentación cerca de la cabaña que atrae muchas especies, ideal para fotografía. Para los más entusiastas, podemos organizar salidas guiadas a la Reserva Natural Mocoretá (a 40 minutos de distancia), donde es posible observar más de 150 especies diferentes en un solo día, incluyendo algunas en peligro de extinción como el cardenal amarillo.",
+            "category": "nature"
+        },
+        {
+            "title": "Gastronomía local",
+            "content": "La gastronomía de Chajarí y sus alrededores combina influencias criollas, italianas y españolas, utilizando productos frescos de la zona. Los cítricos están presentes en muchos platos y postres locales, desde el tradicional chajá (postre de merengue, crema y bizcochuelo) hasta licores artesanales de mandarina o naranja que puede probar en la ciudad. La carne a la parrilla es infaltable, con el asado de costillar vacuno como protagonista, acompañado de chimichurri casero. Los pescados de río como el dorado, la boga y el surubí son otras especialidades, preparados a la parrilla o en escabeche. En la cabaña encontrará un recetario con platos típicos que puede preparar utilizando productos locales disponibles en el mercado de productores, abierto los jueves y sábados en la plaza central. Si prefiere comer fuera, recomendamos 'La Casona del Fundador' para cocina tradicional argentina; 'Sabores Cítricos' para platos innovadores con productos de la zona; y para un almuerzo informal, las empanadas de 'Don Pepe' son una institución local. Los dulces caseros, tanto de frutas cítricas como de batata y membrillo, son ideales para llevar como recuerdo gastronómico de la región.",
+            "category": "gastronomy"
+        }
+    ]
+}
