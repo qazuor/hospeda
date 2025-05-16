@@ -1,6 +1,7 @@
 import { logger } from '@repo/logger';
 import { seedRequiredAmenities } from './amenities.required.seed';
 import { seedDestinations } from './destination';
+import { seedRequiredFeatures } from './features.required.seed';
 import { seedPermissions } from './permissions.required.seed';
 import { seedRoles } from './roles.required.seed';
 import { seedAdminUser } from './user.required.seed';
@@ -18,6 +19,7 @@ export async function seedRequiredData() {
         await seedAdminUser();
         await seedDestinations();
         await seedRequiredAmenities();
+        await seedRequiredFeatures();
 
         logger.info('Successfully seeded all required data', 'seedRequiredData');
     } catch (error) {
@@ -28,6 +30,7 @@ export async function seedRequiredData() {
 
 export * from './amenities.required.seed';
 export * from './destination';
+export * from './features.required.seed';
 export * from './permissions.required.seed';
 export * from './roles.required.seed';
 export * from './user.required.seed';
