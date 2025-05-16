@@ -1,0 +1,213 @@
+{
+    "slug": "rincon-soleado-hostel-concepcion_del_uruguay",
+    "name": "rincon-soleado-hostel",
+    "displayName": "Rincón Soleado Hostel",
+    "type": "HOSTEL",
+    "description": "Disfruta de la luz y un ambiente vibrante en Rincón Soleado Hostel, ubicado en el corazón de Concepción del Uruguay. Ideal para jóvenes viajeros y mochileros que buscan socializar y estar cerca de la acción. Su diseño moderno y luminoso crea un espacio muy agradable para tu estadía.\n\nEl hostel cuenta con dormitorios compartidos (4, 6 y 10 camas) equipados con literas robustas y lockers individuales. También ofrecemos algunas habitaciones privadas dobles y triples. Los baños son compartidos, separados por género y con duchas de agua caliente 24hs. Las áreas comunes son amplias y luminosas: una gran cocina equipada, un comedor espacioso, un living con puff y TV, y un patio interior con mesas y sillas.\n\nLa ubicación es inmejorable, a pocas cuadras de la plaza principal, la peatonal, bares, restaurantes y la costanera. Es muy fácil moverse a pie desde aquí. El hostel organiza actividades sociales como noches de pizza, juegos o salidas grupales para fomentar la interacción entre huéspedes de todo el mundo. Rincón Soleado es tu base ideal para explorar 'La Histórica' y hacer nuevos amigos.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "info@rinconsoleadocdu.com",
+        "mobilePhone": "+5493442555999",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/rinconsoleado_hostel",
+        "facebook": "https://facebook.com/rinconsoleadohostel"
+    },
+    "price": {
+        "basePrice": {
+            "price": 7200,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21,
+            "towelRental": 400
+        },
+        "discounts": {
+            "weekly": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4850",
+            "long": "-58.2315"
+        },
+        "street": "Calle Eva Perón",
+        "number": "680",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Centro"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
+            "caption": "Interior del hostel",
+            "description": "Dormitorio compartido luminoso",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
+                "caption": "Dormitorio 6 camas",
+                "description": "Habitación compartida con literas y lockers",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6969518/pexels-photo-6969518.jpeg",
+                "caption": "Habitación privada",
+                "description": "Habitación doble privada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina comunitaria amplia",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6957069/pexels-photo-6957069.jpeg",
+                "caption": "Living",
+                "description": "Sala de estar luminosa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7005428/pexels-photo-7005428.jpeg",
+                "caption": "Patio",
+                "description": "Patio interior para socializar",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "00:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "12:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 30,
+        "minNights": 1,
+        "maxNights": 15,
+        "bedrooms": 6,
+        "beds": 28,
+        "bathrooms": 5,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Ubicación muy céntrica",
+            "Ambiente social",
+            "Cocina comunitaria amplia",
+            "Patio interior",
+            "Alquiler de toallas"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Rincón Soleado Hostel - Céntrico y luminoso en Concepción del Uruguay",
+        "seoDescription": "Hostel en el centro de Concepción del Uruguay. Dormitorios y privadas, cocina equipada, ambiente social. Ideal para mochileros.",
+        "seoKeywords": [
+            "hostel",
+            "concepción del uruguay",
+            "entre ríos",
+            "céntrico",
+            "mochilero",
+            "social",
+            "económico",
+            "luminoso"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Excelente ubicación para jóvenes. Mucha luz natural.",
+        "favorite": true,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "hostel",
+        "concepcion-del-uruguay-hostel",
+        "seed-example",
+        "city-center",
+        "social",
+        "budget"
+    ],
+    "features": [
+        {
+            "name": "shared_kitchen",
+            "hostReWriteName": "Cocina comunitaria amplia",
+            "comments": null
+        },
+        {
+            "name": "communal_area",
+            "hostReWriteName": "Espacios sociales luminosos",
+            "comments": "Living y patio para socializar"
+        },
+        {
+            "name": "city_center",
+            "hostReWriteName": "Ubicación céntrica",
+            "comments": "A pocas cuadras de la plaza principal y peatonal"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        },
+        {
+            "name": "board_games",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿Se puede ir caminando a la costanera?",
+            "answer": "Sí, la costanera se encuentra a unos 10-15 minutos caminando desde el hostel.",
+            "category": "location"
+        },
+        {
+            "question": "¿Ofrecen desayuno?",
+            "answer": "No, el desayuno no está incluido, pero puedes prepararlo en nuestra cocina comunitaria.",
+            "category": "dining"
+        },
+        {
+            "question": "¿Tienen lockers en los dormitorios compartidos?",
+            "answer": "Sí, cada cama en los dormitorios compartidos tiene un locker individual. Debes traer tu propio candado o puedes comprar uno en recepción.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": []
+}

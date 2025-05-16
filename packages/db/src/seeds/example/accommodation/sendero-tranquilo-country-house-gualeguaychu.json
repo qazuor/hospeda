@@ -1,0 +1,211 @@
+{
+    "slug": "sendero-tranquilo-country-house-gualeguaychu",
+    "name": "sendero-tranquilo-country-house",
+    "displayName": "Sendero Tranquilo Country House",
+    "type": "COUNTRY_HOUSE",
+    "description": "Encuentra la tranquilidad y el espacio en Sendero Tranquilo Country House, una cómoda casa de campo ubicada en las afueras de Gualeguaychú. Ideal para familias o grupos que buscan desconectar del bullicio de la ciudad y disfrutar de la naturaleza, pero con fácil acceso a sus atracciones, incluyendo el famoso Carnaval.\n\nLa casa cuenta con tres dormitorios y dos baños completos, ofreciendo privacidad y espacio para hasta 7 personas. El living-comedor es amplio, integrado con una cocina bien equipada. La decoración es sencilla y funcional, pensada para una estadía relajada.\n\nEl exterior dispone de un amplio jardín con césped y árboles, una galería con asador y una mesa grande, perfecta para disfrutar de comidas al aire libre. Es un entorno seguro y tranquilo para relajarse. Aunque ofrece privacidad, la casa está a una distancia razonable en auto del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. Un lugar ideal para combinar la paz del campo con la diversión de la ciudad.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@senderotranquilogchu.com.ar",
+        "mobilePhone": "+5493446123567",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 28000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 5000,
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2820",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.0150",
+            "long": "-58.4950"
+        },
+        "street": "Camino a la Costa S/N",
+        "number": null,
+        "city": "Gualeguaychú",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+            "caption": "Casa de campo",
+            "description": "Vista exterior de Sendero Tranquilo Country House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la casa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Living",
+                "description": "Living-comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
+                "caption": "Asador",
+                "description": "Área de asador con galería",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
+                "caption": "Jardín",
+                "description": "Jardín amplio",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 7,
+        "minNights": 2,
+        "maxNights": 20,
+        "bedrooms": 3,
+        "beds": 5,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Entorno rural tranquilo",
+            "Parrilla exterior",
+            "Amplio jardín",
+            "Ideal para familias o grupos",
+            "Cerca de Gualeguaychú y el Carnaval"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Sendero Tranquilo - Casa de Campo cerca de Gualeguaychú | Carnaval",
+        "seoDescription": "Casa de campo cómoda para 7 personas cerca de Gualeguaychú. Entorno tranquilo, jardín, asador. Acceso a la ciudad y Carnaval.",
+        "seoKeywords": [
+            "casa de campo",
+            "gualeguaychú",
+            "entre ríos",
+            "rural",
+            "tranquilo",
+            "familiar",
+            "asador",
+            "carnaval gualeguaychu"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad simple pero funcional para grupos. Relevante en temporada de Carnaval.",
+        "favorite": false,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "gualeguaychu",
+        "country-house",
+        "gualeguaychu-country-house",
+        "seed-example",
+        "nature",
+        "family-friendly",
+        "carnival"
+    ],
+    "features": [
+        {
+            "name": "bbq_area",
+            "hostReWriteName": "Área de asador",
+            "comments": null
+        },
+        {
+            "name": "private_garden",
+            "hostReWriteName": "Amplio jardín",
+            "comments": null
+        },
+        {
+            "name": "carnival_proximity",
+            "hostReWriteName": "Cerca del Carnaval",
+            "comments": "Acceso conveniente al Corsódromo"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia está el Corsódromo?",
+            "answer": "El Corsódromo se encuentra a unos 10-15 minutos en auto desde la casa.",
+            "category": "location"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Playas de Gualeguaychú",
+            "content": "Gualeguaychú cuenta con hermosas playas sobre el río Uruguay, como Ñandubaysal y Norte. Ofrecen amplias extensiones de arena, servicios y actividades para disfrutar del sol y el río en temporada de verano.",
+            "category": "nature"
+        }
+    ]
+}

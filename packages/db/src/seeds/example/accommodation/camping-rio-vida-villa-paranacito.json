@@ -1,5 +1,5 @@
 {
-    "slug": "camping-rio-vida-villa-paranacito",
+    "slug": "camping-rio-vida-villa_paranacito",
     "name": "camping-rio-vida",
     "displayName": "Camping Río Vida",
     "type": "CAMPING",
@@ -158,7 +158,7 @@
         "favorite": true
     },
     "tags": [
-        "villa-paranacito",
+        "villa_paranacito",
         "camping",
         "delta",
         "island",

@@ -1,0 +1,187 @@
+{
+    "slug": "paraiso-agradable-hotel-concepcion_del_uruguay",
+    "name": "paraiso-agradable-hotel",
+    "displayName": "Paraíso Agradable Hotel",
+    "type": "HOTEL",
+    "description": "Experimenta una estancia agradable en Paraíso Agradable Hotel, un hotel con encanto ubicado en una zona conveniente de Concepción del Uruguay. Ofrece un ambiente relajado, servicios de calidad y fácil acceso a los puntos de interés de la ciudad, ideal para turistas que buscan confort y buena atención.\n\nEl hotel dispone de 28 habitaciones, incluyendo opciones Standard y Superior, todas equipadas con aire acondicionado, calefacción, TV, minibar y baño privado. Las habitaciones Superior son más amplias o cuentan con alguna comodidad adicional. La decoración es clásica y confortable.\n\nEntre sus instalaciones, cuenta con un área de piscina exterior con solárium en el jardín, un espacio ideal para descansar. El hotel ofrece desayuno buffet incluido, servido en su comedor. También dispone de un lobby acogedor y Wi-Fi gratuito en todas las áreas. Ofrece estacionamiento descubierto en el predio.\n\nSu ubicación permite llegar en pocos minutos en auto al centro histórico, la costanera, la Terminal de Ómnibus y las playas. Un hotel agradable para disfrutar de una estancia cómoda en Concepción del Uruguay.",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "reservas@paraisoagradablehotel.com",
+        "mobilePhone": "+5493442111444",
+        "homePhone": "+543442499000",
+        "website": "https://www.paraisoagradablehotelcdu.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 19500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4820",
+            "long": "-58.2330"
+        },
+        "street": "Calle Alem",
+        "number": "350",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Centro Ampliado"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada del hotel",
+            "description": "Vista exterior de Paraíso Agradable Hotel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación Standard",
+                "description": "Habitación doble standard",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación Superior",
+                "description": "Habitación superior más amplia",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "23:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "12:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 55,
+        "minNights": 1,
+        "maxNights": 25,
+        "bedrooms": 28,
+        "beds": 40,
+        "bathrooms": 28,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina exterior",
+            "Desayuno buffet incluido",
+            "Estacionamiento descubierto",
+            "Recepción con horario amplio"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Paraíso Agradable Hotel - Confort y piscina en Concepción del Uruguay",
+        "seoDescription": "Hotel cómodo con piscina en Concepción del Uruguay. Habitaciones confortables, desayuno incluido. Buena ubicación cerca del centro.",
+        "seoKeywords": [
+            "hotel",
+            "concepción del uruguay",
+            "entre ríos",
+            "piscina",
+            "confort",
+            "alojamiento",
+            "céntrico"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Hotel clásico, buena atención y servicios. Target familiar y turístico.",
+        "favorite": true,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "hotel",
+        "concepcion-del-uruguay-hotel",
+        "seed-example",
+        "swimming-pool",
+        "family-friendly"
+    ],
+    "features": [
+        {
+            "name": "private_pool",
+            "hostReWriteName": "Piscina exterior",
+            "comments": null
+        },
+        {
+            "name": "city_center",
+            "hostReWriteName": "Cerca del centro",
+            "comments": null
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "hair_dryer",
+            "isOptional": false
+        },
+        {
+            "name": "smoke_detector",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

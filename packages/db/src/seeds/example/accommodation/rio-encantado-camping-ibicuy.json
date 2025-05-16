@@ -1,0 +1,182 @@
+{
+    "slug": "rio-encantado-camping-ibicuy",
+    "name": "rio-encantado-camping",
+    "displayName": "Rio Encantado Camping",
+    "type": "CAMPING",
+    "description": "Sumérgete en la magia del Delta entrerriano en Rio Encantado Camping, un espacio único ubicado en un entorno natural exuberante cerca de Ibicuy. Ideal para campistas y amantes de la pesca, la navegación y la naturaleza, que buscan una experiencia auténtica en el Delta.\n\nEl camping ofrece parcelas amplias con sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, pensado para disfrutar del río y el entorno.\n\nSu ubicación privilegiada sobre un brazo del río ofrece acceso directo al agua, ideal para pesca, navegación (se pueden botar lanchas pequeñas o kayaks) y avistaje de aves. El entorno es muy tranquilo y natural. Ibicuy, el pueblo más cercano, ofrece servicios básicos. Un lugar encantador para una aventura en el Delta.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "reservas@rioencantadoibicuy.com.ar",
+        "mobilePhone": "+5493446111888",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 4500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21,
+            "perPerson": 2200
+        },
+        "discounts": {
+            "weekly": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2840",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7450",
+            "long": "-59.1800"
+        },
+        "street": "Camino a Isla S/N",
+        "number": null,
+        "city": "Ibicuy",
+        "neighborhood": "Zona de Delta"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+            "caption": "Camping a orillas del río",
+            "description": "Vista del camping con acceso al río",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+                "caption": "Río",
+                "description": "Acceso al brazo del río",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
+                "caption": "Acampe",
+                "description": "Espacio para carpas con sombra",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
+                "caption": "Parcelas",
+                "description": "Vista de las parcelas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
+                "caption": "Baños",
+                "description": "Instalaciones sanitarias",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "12:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "19:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 40,
+        "minNights": 1,
+        "maxNights": 15,
+        "bedrooms": null,
+        "beds": null,
+        "bathrooms": 2,
+        "smokingAllowed": true,
+        "extraInfo": [
+            "Parcelas con sombra y parrilla",
+            "Acceso directo al río",
+            "Ideal para pesca y actividades náuticas",
+            "Entorno Delta"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Rio Encantado Camping - Delta entrerriano en Ibicuy | Pesca y Naturaleza",
+        "seoDescription": "Camping a orillas del río en Ibicuy, Delta entrerriano. Ideal para pesca y actividades náuticas. Parcelas con sombra y parrilla.",
+        "seoKeywords": [
+            "camping",
+            "ibicuy",
+            "entre ríos",
+            "delta",
+            "río",
+            "pesca",
+            "naturaleza",
+            "acampar"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Camping con enfoque en pesca y Delta. Requiere vehículo para acceder. Temporada alta de pesca y verano.",
+        "favorite": true,
+        "tags": [
+            "ibicuy",
+            "camping",
+            "ibicuy-camping",
+            "seed-example",
+            "nature",
+            "fishing",
+            "riverside"
+        ]
+    },
+    "features": [
+        {
+            "name": "river_access",
+            "hostReWriteName": "Acceso directo al río",
+            "comments": "Ideal para pesca y botar embarcaciones pequeñas"
+        },
+        {
+            "name": "shaded_area",
+            "hostReWriteName": "Sombra natural",
+            "comments": null
+        },
+        {
+            "name": "bbq_area",
+            "hostReWriteName": "Parrilla individual",
+            "comments": null
+        }
+    ],
+    "amenities": [
+        {
+            "name": "bbq_grill",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿Se pueden botar lanchas?",
+            "answer": "Sí, es posible botar lanchas pequeñas y kayaks desde la costa del camping.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Hay proveeduría cerca?",
+            "answer": "No contamos con proveeduría. Debes abastecerte en Ibicuy, a unos minutos en auto.",
+            "category": "services"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Explorando el Delta de Ibicuy",
+            "content": "La zona de Ibicuy es parte del vasto Delta del Paraná. Es un laberinto de islas, arroyos y vegetación exuberante. Puedes explorar en lancha, pescar, o simplemente disfrutar de la tranquilidad del entorno. Es un ecosistema rico en flora y fauna, ideal para el avistaje de aves y la fotografía de naturaleza.",
+            "category": "nature"
+        },
+        {
+            "title": "Pesca deportiva en Ibicuy",
+            "content": "Ibicuy es un destino popular para la pesca deportiva, especialmente de especies como dorados, surubíes y bogas en temporada. El camping Rio Encantado, al estar a orillas del río, es un excelente punto para pescar desde la costa o salir a navegar en busca de los mejores pesqueros.",
+            "category": "activities"
+        }
+    ]
+}

@@ -1,0 +1,243 @@
+{
+    "slug": "nido-maravilloso-country-house-concepcion_del_uruguay",
+    "name": "nido-maravilloso-country-house",
+    "displayName": "Nido Maravilloso Country House",
+    "type": "COUNTRY_HOUSE",
+    "description": "Encuentra tu 'Nido Maravilloso' en esta encantadora casa de campo ubicada en un entorno rural sereno cerca de Concepción del Uruguay. Ideal para quienes buscan desconectar, disfrutar de la paz del campo y pasar tiempo de calidad en familia o con amigos. La propiedad ofrece un ambiente cálido y todas las comodidades para una estancia inolvidable.\n\nLa casa, con su estilo rústico renovado, cuenta con tres dormitorios confortables y dos baños completos. El living-comedor es amplio y acogedor, con grandes ventanales que ofrecen vistas al parque. La cocina es independiente y está completamente equipada para que prepares tus comidas con facilidad. La capacidad es para 7 personas.\n\nEl exterior es ideal para disfrutar al aire libre. Dispone de un extenso parque con árboles, una piscina para refrescarse, una galería con asador y horno de barro, y un espacio de fogón para las noches estrelladas. Es un lugar perfecto para juegos al aire libre, observar aves y simplemente relajarse en contacto con la naturaleza.\n\nSituada a corta distancia en auto de Concepción del Uruguay, tendrás acceso rápido al centro histórico, la costanera y otros atractivos. También es una base ideal para visitar el Palacio San José y explorar los caminos rurales de la zona. Nido Maravilloso es tu refugio perfecto en el campo entrerriano.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "info@nidomaravillosocdu.com.ar",
+        "mobilePhone": "+5493442888999",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/nidomaravilloso_cdu"
+    },
+    "price": {
+        "basePrice": {
+            "price": 30000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 5500,
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 15
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4950",
+            "long": "-58.2100"
+        },
+        "street": "Camino Vecinal Este S/N",
+        "number": null,
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+            "caption": "Casa de campo en entorno natural",
+            "description": "Vista exterior de Nido Maravilloso Country House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la casa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Living",
+                "description": "Amplio living con chimenea",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina independiente equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Piscina",
+                "description": "Piscina exterior",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
+                "caption": "Quincho",
+                "description": "Quincho con parrilla y horno de barro",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
+                "caption": "Parque",
+                "description": "Extenso parque con árboles",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "15:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "13:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 7,
+        "minNights": 2,
+        "maxNights": 25,
+        "bedrooms": 3,
+        "beds": 5,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina privada",
+            "Quincho con parrilla y horno de barro",
+            "Amplio parque",
+            "Entorno rural tranquilo",
+            "Chimenea a leña"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Nido Maravilloso - Casa de Campo en Concepción del Uruguay con Piscina",
+        "seoDescription": "Casa rural para 7 personas cerca de Concepción del Uruguay. Piscina, quincho, horno de barro, parque grande. Ideal familia/grupos.",
+        "seoKeywords": [
+            "casa de campo",
+            "concepción del uruguay",
+            "entre ríos",
+            "rural",
+            "piscina",
+            "familiar",
+            "asador",
+            "naturaleza"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad atractiva por sus instalaciones exteriores y entorno. Buena capacidad.",
+        "favorite": true,
+        "tags": ["admin", "seed"]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "country-house",
+        "concepcion-del-uruguay-country-house",
+        "seed-example",
+        "swimming-pool",
+        "family-friendly",
+        "bbq",
+        "nature"
+    ],
+    "features": [
+        {
+            "name": "private_pool",
+            "hostReWriteName": "Piscina privada",
+            "comments": null
+        },
+        {
+            "name": "private_garden",
+            "hostReWriteName": "Gran parque arbolado",
+            "comments": null
+        },
+        {
+            "name": "bbq_area",
+            "hostReWriteName": "Quincho completo",
+            "comments": "Quincho con parrilla y horno de barro"
+        },
+        {
+            "name": "fireplace",
+            "hostReWriteName": "Chimenea",
+            "comments": "Chimenea a leña en el living"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "microwave",
+            "isOptional": false
+        },
+        {
+            "name": "oven",
+            "isOptional": false
+        },
+        {
+            "name": "bbq_grill",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia está el Palacio San José?",
+            "answer": "El Palacio San José se encuentra a unos 20-25 minutos en auto desde la propiedad.",
+            "category": "location"
+        },
+        {
+            "question": "¿Puedo llevar a mi mascota?",
+            "answer": "Sí, se permiten mascotas con previo aviso. Por favor, consulta las condiciones.",
+            "category": "policies"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Turismo rural en los alrededores de Concepción del Uruguay",
+            "content": "La zona rural que rodea Concepción del Uruguay ofrece diversas opciones para el turismo rural. Puedes visitar estancias históricas, participar en actividades de campo, o simplemente disfrutar de los paisajes y la tranquilidad. Muchos productores locales venden productos de granja, quesos, dulces y embutidos. Es un área ideal para el agroturismo y para experimentar la vida en el campo entrerriano.",
+            "category": "activities"
+        },
+        {
+            "title": "Observación de aves en el río Uruguay",
+            "content": "El área del río Uruguay es un excelente punto para la observación de aves. Con binoculares, desde la costanera o zonas rurales cercanas, puedes avistar una gran variedad de especies, incluyendo aves acuáticas, rapaces y pájaros cantores típicos de la región del litoral.",
+            "category": "nature"
+        }
+    ]
+}

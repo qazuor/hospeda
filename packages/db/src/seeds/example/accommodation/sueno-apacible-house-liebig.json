@@ -1,0 +1,189 @@
+{
+    "slug": "sueno-apacible-house-liebig",
+    "name": "sueno-apacible-house",
+    "displayName": "Sueño Apacible House",
+    "type": "HOUSE",
+    "description": "Disfruta de la paz y el espacio en Sueño Apacible House, una cómoda casa ubicada en un barrio tranquilo de Liebig. Ideal para familias o grupos de amigos que buscan un lugar propio para descansar y disfrutar de la serenidad del pueblo histórico y el río Uruguay.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio funcional. Está equipada con lo esencial para una estadía confortable. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con parrilla, ideal para disfrutar de asados al aire libre. La ubicación en un barrio tranquilo garantiza serenidad. Estás a una distancia conveniente en auto o caminando de los restos históricos del Frigorífico Liebig y del acceso al río. Una opción práctica y apacible para tu estadía en Liebig.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@suenoapacibleliebig.com.ar",
+        "mobilePhone": "+5493446123654",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 17000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 3200,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3262",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2360",
+            "long": "-58.0930"
+        },
+        "street": "Calle Los Ciruelos",
+        "number": "88",
+        "city": "Liebig",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+            "caption": "Casa en Liebig",
+            "description": "Vista exterior de Sueño Apacible House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la propiedad",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
+                "caption": "Living comedor",
+                "description": "Espacio integrado de living y comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 5,
+        "minNights": 2,
+        "maxNights": 15,
+        "bedrooms": 2,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio residencial tranquilo",
+            "Parrilla exterior",
+            "Ideal para familias",
+            "Cerca del Frigorífico Histórico y el río"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Sueño Apacible House - Casa en Liebig para familias | Frigorífico y Río",
+        "seoDescription": "Casa cómoda para 5 personas en Liebig. Ideal familias. Parrilla, jardín. Cerca del Frigorífico Histórico y río Uruguay.",
+        "seoKeywords": [
+            "casa",
+            "liebig",
+            "entre ríos",
+            "familiar",
+            "tranquilo",
+            "parrilla",
+            "frigorífico liebig",
+            "río uruguay"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad simple y funcional. Atrae familias que buscan tranquilidad y cercanía a los puntos de interés de Liebig.",
+        "favorite": false,
+        "tags": [
+            "liebig",
+            "house",
+            "liebig-house",
+            "seed-example",
+            "family-friendly",
+            "bbq",
+            "history",
+            "riverside"
+        ]
+    },
+    "features": [
+        {
+            "name": "bbq_area",
+            "hostReWriteName": "Parrilla exterior",
+            "comments": null
+        },
+        {
+            "name": "private_garden",
+            "hostReWriteName": "Jardín simple",
+            "comments": null
+        },
+        {
+            "name": "historical_proximity",
+            "hostReWriteName": "Cerca del Frigorífico Liebig",
+            "comments": "A poca distancia del pueblo y los restos históricos del frigorífico"
+        },
+        {
+            "name": "river_proximity",
+            "hostReWriteName": "Cerca del río",
+            "comments": "A poca distancia del río Uruguay"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "air_conditioning",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "tv",
+            "isOptional": false
+        },
+        {
+            "name": "kitchen",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": false
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}

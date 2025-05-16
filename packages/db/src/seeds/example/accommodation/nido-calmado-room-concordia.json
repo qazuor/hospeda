@@ -1,0 +1,149 @@
+{
+    "slug": "nido-calmado-room-concordia",
+    "name": "nido-calmado-room",
+    "displayName": "Nido Calmado Habitación",
+    "type": "ROOM",
+    "description": "Encuentra un espacio tranquilo para tu descanso en Nido Calmado, una habitación privada en una casa familiar ubicada en un barrio residencial apacible de Concordia. Ideal para viajeros que valoran la serenidad y un ambiente hogareño, con fácil acceso a los puntos de interés de la ciudad.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar una pequeña área de cocina básica con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común para relajarse.\n\nLa casa se encuentra en un barrio tranquilo, garantizando un buen descanso. Estás a una distancia conveniente en auto o transporte público del centro de Concordia, las Termas y el Lago de Salto Grande. Los anfitriones ofrecen un trato amable, haciendo de tu estancia una experiencia calmada y agradable.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@nidocalmadocoy.com",
+        "mobilePhone": "+5493454555777",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {},
+    "price": {
+        "basePrice": {
+            "price": 5500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3200",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.3900",
+            "long": "-58.0060"
+        },
+        "street": "Calle Los Álamos",
+        "number": "180",
+        "city": "Concordia",
+        "neighborhood": "Barrio Residencial Tranquilo"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
+            "caption": "Interior de la habitación",
+            "description": "Vista de la habitación privada",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
+                "caption": "Habitación",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
+                "caption": "Baño",
+                "description": "Baño compartido",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
+                "caption": "Espacio común",
+                "description": "Área con heladera y microondas",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 2,
+        "minNights": 1,
+        "maxNights": 5,
+        "bedrooms": 1,
+        "beds": 1,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Habitación en casa de familia",
+            "Baño compartido",
+            "Acceso a cocina básica compartida",
+            "Barrio tranquilo"
+        ]
+    },
+    "seo": {
+        "seoTitle": "Nido Calmado - Habitación privada y tranquila en Concordia",
+        "seoDescription": "Habitación privada económica y serena en casa familiar en Concordia. Baño compartido, acceso a cocina básica. Ideal para descansar.",
+        "seoKeywords": [
+            "habitación",
+            "concordia",
+            "entre ríos",
+            "económico",
+            "tranquilo",
+            "alojamiento",
+            "compartido"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Opción básica y económica. Atrae a viajeros que priorizan el descanso.",
+        "favorite": false,
+        "tags": ["admin", "seed"]
+    },
+    "tags": ["concordia", "room", "concordia-room", "seed-example", "budget", "quiet"],
+    "features": [
+        {
+            "name": "shared_kitchen",
+            "hostReWriteName": "Cocina básica compartida",
+            "comments": null
+        },
+        {
+            "name": "quiet_location",
+            "hostReWriteName": "Ubicación tranquila",
+            "comments": "Barrio residencial apacible"
+        }
+    ],
+    "amenities": [
+        {
+            "name": "wifi",
+            "isOptional": false
+        },
+        {
+            "name": "heating",
+            "isOptional": false
+        },
+        {
+            "name": "refrigerator",
+            "isOptional": true
+        },
+        {
+            "name": "microwave",
+            "isOptional": true
+        },
+        {
+            "name": "fire_extinguisher",
+            "isOptional": false
+        },
+        {
+            "name": "first_aid_kit",
+            "isOptional": false
+        }
+    ],
+    "faqs": [],
+    "iaData": []
+}
