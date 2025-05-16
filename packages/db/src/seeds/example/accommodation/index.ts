@@ -16,8 +16,14 @@ import {
     users
 } from '../../../schema';
 
-import retiroSoleadoCabanaChajari from './retiro-soleado-cabana-chajari.json';
 // Import accommodation data
+import cabanaDelRioColon from './cabana-del-rio-colon.json';
+import campingRioVidaVillaParanacito from './camping-rio-vida-villa-paranacito.json';
+import casaTermasFederacion from './casa-termas-federacion.json';
+import hostelDelViajeroConcepcion from './hostel-del-viajero-concepcion.json';
+import hotelPlazaGualeguaychu from './hotel-plaza-gualeguaychu.json';
+import loftUrbanoConcordia from './loft-urbano-concordia.json';
+import retiroSoleadoCabanaChajari from './retiro-soleado-cabana-chajari.json';
 import senderoNaturalCountryHouseChajari from './sendero-natural-country-house-chajari.json';
 
 // Define interfaces for seed data
@@ -78,8 +84,13 @@ export async function seedExampleAccommodations() {
         // Array of all accommodation data objects
         const allAccommodations = [
             senderoNaturalCountryHouseChajari,
-            retiroSoleadoCabanaChajari
-            // We'll add more as we create them
+            retiroSoleadoCabanaChajari,
+            cabanaDelRioColon,
+            loftUrbanoConcordia,
+            hotelPlazaGualeguaychu,
+            casaTermasFederacion,
+            hostelDelViajeroConcepcion,
+            campingRioVidaVillaParanacito
         ];
 
         // Process each accommodation
