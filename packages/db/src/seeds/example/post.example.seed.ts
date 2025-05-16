@@ -1,6 +1,6 @@
 import { logger } from '@repo/logger';
 import { PostCategoryEnum, PriceCurrencyEnum, StateEnum, VisibilityEnum } from '@repo/types';
-import { eq } from 'drizzle-orm';
+import { eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../client';
 import { posts } from '../../schema/post.dbschema';
 import { postSponsors } from '../../schema/post_sponsor.dbschema';
@@ -15,10 +15,7 @@ export async function seedPosts(): Promise<void> {
 
     try {
         // Check if example posts already exist
-        const existingPosts = await db
-            .select()
-            .from(posts)
-            .where((p) => p.name.like('example%'));
+        const existingPosts = await db.select().from(posts).where(ilike(posts.name, 'example%'));
 
         if (existingPosts.length >= 5) {
             logger.info('Example posts already exist, skipping...', 'seedPosts');
@@ -29,9 +26,7 @@ export async function seedPosts(): Promise<void> {
         const authors = await db
             .select()
             .from(users)
-            .where((u) => {
-                return u.name.like('admin').or(u.name.like('example_editor%'));
-            });
+            .where(or(ilike(users.name, 'admin'), ilike(users.name, 'example_editor%')));
 
         if (authors.length === 0) {
             throw new Error('No authors found for posts. Make sure admin and editor users exist.');

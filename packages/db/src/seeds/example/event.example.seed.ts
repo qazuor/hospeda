@@ -6,6 +6,7 @@ import {
     StateEnum,
     VisibilityEnum
 } from '@repo/types';
+import { ilike, or } from 'drizzle-orm';
 import { db } from '../../client';
 import { destinations } from '../../schema/destination.dbschema';
 import { events } from '../../schema/event.dbschema';
@@ -21,10 +22,7 @@ export async function seedEvents(): Promise<void> {
 
     try {
         // Check if example events already exist
-        const existingEvents = await db
-            .select()
-            .from(events)
-            .where((e) => e.name.like('example%'));
+        const existingEvents = await db.select().from(events).where(ilike(events.name, 'example%'));
 
         if (existingEvents.length >= 5) {
             logger.info('Example events already exist, skipping...', 'seedEvents');
@@ -35,12 +33,7 @@ export async function seedEvents(): Promise<void> {
         const authors = await db
             .select()
             .from(users)
-            .where((u) => {
-                return u.name
-                    .like('admin')
-                    .or(u.name.like('example_editor%'))
-                    .or(u.name.like('example_client%'));
-            });
+            .where(or(ilike(users.name, 'editor%'), ilike(users.name, 'client%')));
 
         if (authors.length === 0) {
             throw new Error('No authors found for events. Make sure users exist.');
@@ -50,7 +43,7 @@ export async function seedEvents(): Promise<void> {
         const existingOrganizers = await db
             .select()
             .from(eventOrganizers)
-            .where((o) => o.name.like('example%'));
+            .where(ilike(eventOrganizers.name, 'example%'));
 
         const organizersToCreate = 3 - existingOrganizers.length;
 
@@ -113,7 +106,7 @@ export async function seedEvents(): Promise<void> {
         const existingLocations = await db
             .select()
             .from(eventLocations)
-            .where((l) => l.name.like('example%'));
+            .where(ilike(eventLocations.name, 'example%'));
 
         const locationsToCreate = 3 - existingLocations.length;
 
