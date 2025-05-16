@@ -1,5 +1,7 @@
 import { logger } from '@repo/logger';
 import { seedExampleAccommodations } from 'src/seeds/example/accommodation';
+import { seedAccommodationReviews } from './accommodation-review.example.seed';
+import { seedDestinationReviews } from './destination-review.example.seed';
 import { seedEvents } from './event.example.seed';
 import { seedPosts } from './post.example.seed';
 import { seedSponsors } from './sponsor.example.seed';
@@ -9,10 +11,11 @@ import { seedExampleUsers } from './user.example.seed';
  * Seeds all example data in the correct order:
  * 1. Example Users
  * 2. Accommodations
- * 3. Sponsors
- * 4. Posts (some sponsored)
- * 5. Events
- * 6. Reviews are seeded within accommodations and destinations
+ * 3. Accommodation Reviews
+ * 4. Destination Reviews
+ * 5. Sponsors
+ * 6. Posts (some sponsored)
+ * 7. Events
  */
 export async function seedExampleData(): Promise<void> {
     logger.info('Starting example data seeding process...', 'seedExampleData');
@@ -27,6 +30,16 @@ export async function seedExampleData(): Promise<void> {
         logger.info('Seeding accommodations...', 'seedExampleData');
         await seedExampleAccommodations();
         logger.info('Accommodations seeded successfully', 'seedExampleData');
+
+        // Seed accommodation reviews
+        logger.info('Seeding accommodation reviews...', 'seedExampleData');
+        await seedAccommodationReviews();
+        logger.info('Accommodation reviews seeded successfully', 'seedExampleData');
+
+        // Seed destination reviews
+        logger.info('Seeding destination reviews...', 'seedExampleData');
+        await seedDestinationReviews();
+        logger.info('Destination reviews seeded successfully', 'seedExampleData');
 
         // Seed sponsors
         logger.info('Seeding sponsors...', 'seedExampleData');
