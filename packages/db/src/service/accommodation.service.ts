@@ -24,8 +24,9 @@ import {
     type AmenityRecord,
     EntityTagModel,
     type EntityTagRecord,
+    FeatureModel,
+    type FeatureRecord,
     type SelectAccommodationFaqFilter,
-    type SelectAccommodationFeatureFilter,
     type SelectAccommodationIaDataFilter
 } from '../model';
 import { accommodations } from '../schema';
@@ -34,6 +35,7 @@ import type {
     InsertEntityTagRelation,
     PaginationParams,
     SelectAccommodationAmenityFilter,
+    SelectAccommodationFeatureFilter,
     SelectAccommodationFilter
 } from '../types/db-types';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
@@ -84,7 +86,7 @@ export class AccommodationService {
 
     /**
      * Create a new accommodation.
-     * @param data - The data for the new accommodation.
+     * @param data - The data for the new accommodation (InsertAccommodation type from db-types)
      * @param actor - The user creating the accommodation (must be an admin or the owner).
      * @returns The created accommodation record.
      * @throws Error if actor is not authorized or creation fails.
@@ -335,7 +337,7 @@ export class AccommodationService {
      * @param ownerId - The ID of the owner.
      * @param actor - The user performing the action.
      * @param filter - Pagination options.
-     * @returns An array of accommodation records.
+     * @returns Array of accommodation records.
      * @throws Error if actor is not authorized or listing fails.
      */
     async getByOwner(
@@ -676,7 +678,7 @@ export class AccommodationService {
      * Get top-rated accommodations.
      * @param limit - The maximum number of accommodations to return.
      * @param actor - The user performing the action.
-     * @returns An array of top-rated accommodation records.
+     * @returns Array of top-rated accommodation records.
      * @throws Error if listing fails.
      */
     async getTopRated(limit: number, actor: UserType): Promise<AccommodationRecord[]> {
@@ -738,7 +740,7 @@ export class AccommodationService {
      * @param query - The search query.
      * @param actor - The user performing the action.
      * @param filter - Pagination options.
-     * @returns An array of matching accommodation records.
+     * @returns Array of matching accommodation records.
      * @throws Error if search fails.
      */
     async searchFullText(
@@ -843,7 +845,7 @@ export class AccommodationService {
         accommodationId: string,
         actor: UserType,
         filter: PaginationParams = {}
-    ): Promise<AccommodationFeatureRecord[]> {
+    ): Promise<FeatureRecord[]> {
         log.info('listing features for accommodation', 'listFeatures', {
             accommodationId,
             actor: actor.id,
@@ -854,17 +856,30 @@ export class AccommodationService {
         await this.getById(accommodationId, actor);
 
         try {
+            // Get all the feature relations for this accommodation
             const featureFilter: SelectAccommodationFeatureFilter = {
                 accommodationId,
                 ...filter,
                 includeDeleted: false
             };
 
-            const features = await AccommodationFeatureModel.listFeatures(featureFilter);
+            // First, get all the accommodation-feature relations
+            const relations = await AccommodationFeatureModel.listFeatureRelations(featureFilter);
+
+            // Then get the actual feature records for each relation
+            const features: FeatureRecord[] = [];
+            for (const relation of relations) {
+                const feature = await FeatureModel.getFeatureById(relation.featureId);
+                if (feature && !feature.deletedAt) {
+                    features.push(feature);
+                }
+            }
+
             log.info('features listed successfully', 'listFeatures', {
                 accommodationId,
                 count: features.length
             });
+
             return features;
         } catch (error) {
             log.error('failed to list features', 'listFeatures', error, {
@@ -1037,19 +1052,25 @@ export class AccommodationService {
 
     /**
      * Add a feature to an accommodation.
+     * This creates a relationship record in the accommodation_features table.
      * @param accommodationId - The ID of the accommodation.
-     * @param data - The feature data.
+     * @param featureId - The ID of the feature to add.
+     * @param hostReWriteName - Optional custom name for the feature.
+     * @param comments - Optional comments about the feature.
      * @param actor - The user performing the action.
-     * @returns The created feature record.
-     * @throws Error if accommodation is not found, actor is not authorized, or creation fails.
+     * @returns The created relationship record and the feature.
+     * @throws Error if accommodation or feature is not found, actor is not authorized, or creation fails.
      */
     async addFeature(
         accommodationId: string,
-        data: Record<string, unknown>,
+        featureId: string,
+        hostReWriteName: string | null,
+        comments: string | null,
         actor: UserType
-    ): Promise<AccommodationFeatureRecord> {
+    ): Promise<{ relation: AccommodationFeatureRecord; feature: FeatureRecord }> {
         log.info('adding feature to accommodation', 'addFeature', {
             accommodationId,
+            featureId,
             actor: actor.id
         });
 
@@ -1058,23 +1079,38 @@ export class AccommodationService {
         // Check if actor is owner or admin
         AccommodationService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
+        // Verify feature exists
+        const feature = await FeatureModel.getFeatureById(featureId);
+        if (!feature) {
+            throw new Error(`Feature ${featureId} not found`);
+        }
+
         try {
-            const featureData = {
-                ...data,
-                accommodationId: accommodation.id,
+            // Create the relationship
+            const relationData = {
+                accommodationId,
+                featureId,
+                hostReWriteName,
+                comments,
                 createdById: actor.id,
                 updatedById: actor.id
             };
 
-            const feature = await AccommodationFeatureModel.createFeature(featureData);
-            log.info('feature added successfully', 'addFeature', {
+            const relation = await AccommodationFeatureModel.createFeatureRelation(relationData);
+
+            log.info('feature added to accommodation successfully', 'addFeature', {
                 accommodationId,
-                featureId: feature.id
+                featureId
             });
-            return feature;
+
+            return {
+                relation,
+                feature
+            };
         } catch (error) {
-            log.error('failed to add feature', 'addFeature', error, {
+            log.error('failed to add feature to accommodation', 'addFeature', error, {
                 accommodationId,
+                featureId,
                 actor: actor.id
             });
             throw error;
@@ -1186,7 +1222,7 @@ export class AccommodationService {
     ): Promise<
         AccommodationRecord & {
             amenities: AmenityRecord[];
-            features: AccommodationFeatureRecord[];
+            features: FeatureRecord[];
             faqs: AccommodationFaqRecord[];
             iaData: AccommodationIaDataRecord[];
             reviews: AccommodationReviewRecord[];
@@ -1291,7 +1327,7 @@ export class AccommodationService {
      * @param accommodationId - The ID of the accommodation to find similar ones for.
      * @param limit - The maximum number of recommendations to return.
      * @param actor - The user performing the action.
-     * @returns An array of similar accommodation records.
+     * @returns Array of similar accommodation records.
      * @throws Error if accommodation is not found or recommendation fails.
      */
     async recommendSimilar(

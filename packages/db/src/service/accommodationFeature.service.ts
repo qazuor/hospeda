@@ -1,16 +1,16 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
+import { and, eq } from 'drizzle-orm';
+import { db } from '../client';
 import {
     AccommodationFeatureModel,
     type AccommodationFeatureRecord,
     AccommodationModel,
-    type SelectAccommodationFeatureFilter
+    FeatureModel,
+    type FeatureRecord
 } from '../model';
-import type {
-    InsertAccommodationFeature,
-    PaginationParams,
-    UpdateAccommodationFeatureData
-} from '../types/db-types';
+import { accommodationFeatures } from '../schema';
+import type { PaginationParams, SelectAccommodationFeatureFilter } from '../types/db-types';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
 
 const log = logger.createLogger('AccommodationFeatureService');
@@ -46,42 +46,67 @@ export class AccommodationFeatureService {
     }
 
     /**
-     * Create a new feature entry.
-     * @param data - The data for the new feature entry.
-     * @param actor - The user creating the feature entry.
-     * @returns The created feature record.
+     * Create a new accommodation-feature relationship.
+     * @param accommodationId - The ID of the accommodation.
+     * @param featureId - The ID of the feature.
+     * @param hostReWriteName - Optional custom name for the feature.
+     * @param comments - Optional comments about the feature.
+     * @param actor - The user creating the relationship.
+     * @returns The created relationship record and the feature.
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(
-        data: InsertAccommodationFeature,
+        accommodationId: string,
+        featureId: string,
+        hostReWriteName: string | null,
+        comments: string | null,
         actor: UserType
-    ): Promise<AccommodationFeatureRecord> {
-        log.info('creating accommodation feature', 'create', { actor: actor.id });
+    ): Promise<{ relation: AccommodationFeatureRecord; feature: FeatureRecord }> {
+        log.info('creating accommodation feature relationship', 'create', {
+            accommodationId,
+            featureId,
+            actor: actor.id
+        });
 
         try {
             // Verify accommodation exists
-            const accommodation = await AccommodationModel.getAccommodationById(
-                data.accommodationId
-            );
+            const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
             if (!accommodation) {
-                throw new Error(`Accommodation ${data.accommodationId} not found`);
+                throw new Error(`Accommodation ${accommodationId} not found`);
+            }
+
+            // Verify feature exists
+            const feature = await FeatureModel.getFeatureById(featureId);
+            if (!feature) {
+                throw new Error(`Feature ${featureId} not found`);
             }
 
             // Check if actor is owner or admin
             AccommodationFeatureService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
-            const dataWithAudit: InsertAccommodationFeature = {
-                ...data,
+            const relationData = {
+                accommodationId,
+                featureId,
+                hostReWriteName,
+                comments,
                 createdById: actor.id,
                 updatedById: actor.id
             };
-            const createdFeature = await AccommodationFeatureModel.createFeature(dataWithAudit);
-            log.info('accommodation feature created successfully', 'create', {
-                featureId: createdFeature.id
+
+            const relation = await AccommodationFeatureModel.createFeatureRelation(relationData);
+
+            log.info('accommodation feature relationship created successfully', 'create', {
+                relationId: `${relation.accommodationId}-${relation.featureId}`
             });
-            return createdFeature;
+
+            return {
+                relation,
+                feature
+            };
         } catch (error) {
-            log.error('failed to create accommodation feature', 'create', error, {
+            log.error('failed to create accommodation feature relationship', 'create', error, {
+                accommodationId,
+                featureId,
                 actor: actor.id
             });
             throw error;
@@ -89,57 +114,77 @@ export class AccommodationFeatureService {
     }
 
     /**
-     * Get a single feature entry by ID.
-     * @param id - The ID of the feature entry to fetch.
+     * Get a single accommodation-feature relationship by IDs.
+     * @param accommodationId - The accommodation ID.
+     * @param featureId - The feature ID.
      * @param actor - The user performing the action.
-     * @returns The feature record.
-     * @throws Error if feature entry is not found or actor is not authorized.
+     * @returns The relationship record.
+     * @throws Error if relationship is not found or actor is not authorized.
      */
-    async getById(id: string, actor: UserType): Promise<AccommodationFeatureRecord> {
-        log.info('fetching feature by id', 'getById', { featureId: id, actor: actor.id });
+    async getByIds(
+        accommodationId: string,
+        featureId: string,
+        actor: UserType
+    ): Promise<AccommodationFeatureRecord> {
+        log.info('fetching accommodation feature relationship by IDs', 'getByIds', {
+            accommodationId,
+            featureId,
+            actor: actor.id
+        });
+
+        // Get the accommodation to check ownership
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
+        if (!accommodation) {
+            throw new Error(`Accommodation ${accommodationId} not found`);
+        }
+
+        // Check if actor is owner or admin
+        AccommodationFeatureService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
         try {
-            const feature = await AccommodationFeatureModel.getFeatureById(id);
-            const existingFeature = assertExists(feature, `Feature ${id} not found`);
-
-            // Get the accommodation to check ownership
-            const accommodation = await AccommodationModel.getAccommodationById(
-                existingFeature.accommodationId
+            const relation = await AccommodationFeatureModel.getFeatureRelation(
+                accommodationId,
+                featureId
             );
-            if (!accommodation) {
-                throw new Error(`Accommodation ${existingFeature.accommodationId} not found`);
-            }
+            const existingRelation = assertExists(
+                relation,
+                `Relationship between accommodation ${accommodationId} and feature ${featureId} not found`
+            );
 
-            // Check if actor is owner or admin
-            AccommodationFeatureService.assertOwnerOrAdmin(accommodation.ownerId, actor);
-
-            log.info('feature fetched successfully', 'getById', {
-                featureId: existingFeature.id
+            log.info('accommodation feature relationship fetched successfully', 'getByIds', {
+                relationId: `${existingRelation.accommodationId}-${existingRelation.featureId}`
             });
-            return existingFeature;
+
+            return existingRelation;
         } catch (error) {
-            log.error('failed to fetch feature by id', 'getById', error, {
-                featureId: id,
-                actor: actor.id
-            });
+            log.error(
+                'failed to fetch accommodation feature relationship by IDs',
+                'getByIds',
+                error,
+                {
+                    accommodationId,
+                    featureId,
+                    actor: actor.id
+                }
+            );
             throw error;
         }
     }
 
     /**
-     * List feature entries for an accommodation.
-     * @param accommodationId - The ID of the accommodation.
+     * List accommodation-feature relationships for a specific accommodation.
+     * @param accommodationId - The accommodation ID.
      * @param actor - The user performing the action.
      * @param filter - Pagination options.
-     * @returns Array of feature records.
+     * @returns Array of relationship records.
      * @throws Error if accommodation is not found, actor is not authorized, or listing fails.
      */
-    async list(
+    async listByAccommodation(
         accommodationId: string,
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationFeatureRecord[]> {
-        log.info('listing features for accommodation', 'list', {
+        log.info('listing feature relationships for accommodation', 'listByAccommodation', {
             accommodationId,
             actor: actor.id,
             filter
@@ -158,44 +203,52 @@ export class AccommodationFeatureService {
                 includeDeleted: false
             };
 
-            const features = await AccommodationFeatureModel.listFeatures(featureFilter);
-            log.info('features listed successfully', 'list', {
+            const relations = await AccommodationFeatureModel.listFeatureRelations(featureFilter);
+            log.info('feature relationships listed successfully', 'listByAccommodation', {
                 accommodationId,
-                count: features.length
+                count: relations.length
             });
-            return features;
+
+            return relations;
         } catch (error) {
-            log.error('failed to list features', 'list', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            log.error(
+                'failed to list feature relationships for accommodation',
+                'listByAccommodation',
+                error,
+                {
+                    accommodationId,
+                    actor: actor.id
+                }
+            );
             throw error;
         }
     }
 
     /**
-     * Update fields on an existing feature entry.
-     * @param id - The ID of the feature entry to update.
-     * @param changes - The partial fields to update.
+     * Update fields on an existing accommodation-feature relationship.
+     * @param accommodationId - The accommodation ID.
+     * @param featureId - The feature ID.
+     * @param changes - The changes to apply.
      * @param actor - The user performing the action.
-     * @returns The updated feature record.
-     * @throws Error if feature entry is not found, actor is not authorized, or update fails.
+     * @returns The updated relationship record.
+     * @throws Error if relationship is not found, actor is not authorized, or update fails.
      */
     async update(
-        id: string,
-        changes: UpdateAccommodationFeatureData,
+        accommodationId: string,
+        featureId: string,
+        changes: Partial<AccommodationFeatureRecord>,
         actor: UserType
     ): Promise<AccommodationFeatureRecord> {
-        log.info('updating feature', 'update', { featureId: id, actor: actor.id });
-
-        const existingFeature = await this.getById(id, actor);
+        log.info('updating accommodation feature relationship', 'update', {
+            accommodationId,
+            featureId,
+            actor: actor.id
+        });
 
         // Get the accommodation to check ownership
-        const accommodation = await AccommodationModel.getAccommodationById(
-            existingFeature.accommodationId
-        );
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
         if (!accommodation) {
-            throw new Error(`Accommodation ${existingFeature.accommodationId} not found`);
+            throw new Error(`Accommodation ${accommodationId} not found`);
         }
 
         // Check if actor is owner or admin
@@ -204,21 +257,44 @@ export class AccommodationFeatureService {
         const dataToUpdate = sanitizePartialUpdate(changes);
 
         try {
-            const dataWithAudit: UpdateAccommodationFeatureData = {
-                ...dataToUpdate,
-                updatedById: actor.id
-            };
-            const updatedFeature = await AccommodationFeatureModel.updateFeature(
-                existingFeature.id,
-                dataWithAudit
+            // First, update the regular fields
+            await AccommodationFeatureModel.updateFeatureRelation(
+                accommodationId,
+                featureId,
+                dataToUpdate
             );
-            log.info('feature updated successfully', 'update', {
-                featureId: updatedFeature.id
+
+            // Then update the audit field with a direct query
+            await db
+                .update(accommodationFeatures)
+                .set({ updatedById: actor.id })
+                .where(
+                    and(
+                        eq(accommodationFeatures.accommodationId, accommodationId),
+                        eq(accommodationFeatures.featureId, featureId)
+                    )
+                );
+
+            // Fetch the updated record
+            const relation = await AccommodationFeatureModel.getFeatureRelation(
+                accommodationId,
+                featureId
+            );
+            if (!relation) {
+                throw new Error(
+                    `Failed to retrieve updated relation for accommodation ${accommodationId} and feature ${featureId}`
+                );
+            }
+
+            log.info('accommodation feature relationship updated successfully', 'update', {
+                relationId: `${relation.accommodationId}-${relation.featureId}`
             });
-            return updatedFeature;
+
+            return relation;
         } catch (error) {
-            log.error('failed to update feature', 'update', error, {
-                featureId: id,
+            log.error('failed to update accommodation feature relationship', 'update', error, {
+                accommodationId,
+                featureId,
                 actor: actor.id
             });
             throw error;
@@ -226,33 +302,38 @@ export class AccommodationFeatureService {
     }
 
     /**
-     * Soft-delete a feature entry by setting the deletedAt timestamp.
-     * @param id - The ID of the feature entry to delete.
+     * Soft-delete an accommodation-feature relationship.
+     * @param accommodationId - The accommodation ID.
+     * @param featureId - The feature ID.
      * @param actor - The user performing the action.
-     * @throws Error if feature entry is not found, actor is not authorized, or deletion fails.
+     * @throws Error if relationship is not found, actor is not authorized, or deletion fails.
      */
-    async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting feature', 'delete', { featureId: id, actor: actor.id });
-
-        const existingFeature = await this.getById(id, actor);
+    async delete(accommodationId: string, featureId: string, actor: UserType): Promise<void> {
+        log.info('soft deleting accommodation feature relationship', 'delete', {
+            accommodationId,
+            featureId,
+            actor: actor.id
+        });
 
         // Get the accommodation to check ownership
-        const accommodation = await AccommodationModel.getAccommodationById(
-            existingFeature.accommodationId
-        );
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
         if (!accommodation) {
-            throw new Error(`Accommodation ${existingFeature.accommodationId} not found`);
+            throw new Error(`Accommodation ${accommodationId} not found`);
         }
 
         // Check if actor is owner or admin
         AccommodationFeatureService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
         try {
-            await AccommodationFeatureModel.softDeleteFeature(id);
-            log.info('feature soft deleted successfully', 'delete', { featureId: id });
+            await AccommodationFeatureModel.softDeleteFeatureRelation(accommodationId, featureId);
+            log.info('accommodation feature relationship soft deleted successfully', 'delete', {
+                accommodationId,
+                featureId
+            });
         } catch (error) {
-            log.error('failed to soft delete feature', 'delete', error, {
-                featureId: id,
+            log.error('failed to soft delete accommodation feature relationship', 'delete', error, {
+                accommodationId,
+                featureId,
                 actor: actor.id
             });
             throw error;
@@ -260,33 +341,38 @@ export class AccommodationFeatureService {
     }
 
     /**
-     * Restore a soft-deleted feature entry by clearing the deletedAt timestamp.
-     * @param id - The ID of the feature entry to restore.
+     * Restore a soft-deleted accommodation-feature relationship.
+     * @param accommodationId - The accommodation ID.
+     * @param featureId - The feature ID.
      * @param actor - The user performing the action.
-     * @throws Error if feature entry is not found, actor is not authorized, or restoration fails.
+     * @throws Error if relationship is not found, actor is not authorized, or restoration fails.
      */
-    async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring feature', 'restore', { featureId: id, actor: actor.id });
-
-        const existingFeature = await this.getById(id, actor);
+    async restore(accommodationId: string, featureId: string, actor: UserType): Promise<void> {
+        log.info('restoring accommodation feature relationship', 'restore', {
+            accommodationId,
+            featureId,
+            actor: actor.id
+        });
 
         // Get the accommodation to check ownership
-        const accommodation = await AccommodationModel.getAccommodationById(
-            existingFeature.accommodationId
-        );
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
         if (!accommodation) {
-            throw new Error(`Accommodation ${existingFeature.accommodationId} not found`);
+            throw new Error(`Accommodation ${accommodationId} not found`);
         }
 
         // Check if actor is owner or admin
         AccommodationFeatureService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
         try {
-            await AccommodationFeatureModel.restoreFeature(id);
-            log.info('feature restored successfully', 'restore', { featureId: id });
+            await AccommodationFeatureModel.restoreFeatureRelation(accommodationId, featureId);
+            log.info('accommodation feature relationship restored successfully', 'restore', {
+                accommodationId,
+                featureId
+            });
         } catch (error) {
-            log.error('failed to restore feature', 'restore', error, {
-                featureId: id,
+            log.error('failed to restore accommodation feature relationship', 'restore', error, {
+                accommodationId,
+                featureId,
                 actor: actor.id
             });
             throw error;
@@ -294,29 +380,95 @@ export class AccommodationFeatureService {
     }
 
     /**
-     * Permanently delete a feature entry record from the database.
-     * @param id - The ID of the feature entry to hard delete.
-     * @param actor - The user performing the action (must be an admin).
-     * @throws Error if feature entry is not found, actor is not authorized, or deletion fails.
+     * Hard-delete an accommodation-feature relationship.
+     * @param accommodationId - The accommodation ID.
+     * @param featureId - The feature ID.
+     * @param actor - The user performing the action.
+     * @throws Error if relationship is not found, actor is not authorized, or deletion fails.
      */
-    async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting feature', 'hardDelete', { featureId: id, actor: actor.id });
+    async hardDelete(accommodationId: string, featureId: string, actor: UserType): Promise<void> {
+        log.info('hard deleting accommodation feature relationship', 'hardDelete', {
+            accommodationId,
+            featureId,
+            actor: actor.id
+        });
 
         // Only admins can hard delete
         if (!AccommodationFeatureService.isAdmin(actor)) {
-            throw new Error('Forbidden: Only admins can permanently delete features');
+            throw new Error('Forbidden: Only admins can permanently delete relationships');
         }
 
-        await this.getById(id, actor);
+        // Get the accommodation to check existence
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
+        if (!accommodation) {
+            throw new Error(`Accommodation ${accommodationId} not found`);
+        }
 
         try {
-            await AccommodationFeatureModel.hardDeleteFeature(id);
-            log.info('feature hard deleted successfully', 'hardDelete', { featureId: id });
-        } catch (error) {
-            log.error('failed to hard delete feature', 'hardDelete', error, {
-                featureId: id,
-                actor: actor.id
+            await AccommodationFeatureModel.hardDeleteFeatureRelation(accommodationId, featureId);
+            log.info('accommodation feature relationship hard deleted successfully', 'hardDelete', {
+                accommodationId,
+                featureId
             });
+        } catch (error) {
+            log.error(
+                'failed to hard delete accommodation feature relationship',
+                'hardDelete',
+                error,
+                {
+                    accommodationId,
+                    featureId,
+                    actor: actor.id
+                }
+            );
+            throw error;
+        }
+    }
+
+    /**
+     * Remove all feature relationships for a specific accommodation.
+     * @param accommodationId - The accommodation ID.
+     * @param actor - The user performing the action.
+     * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
+     */
+    async removeAllFromAccommodation(accommodationId: string, actor: UserType): Promise<void> {
+        log.info(
+            'removing all feature relationships from accommodation',
+            'removeAllFromAccommodation',
+            {
+                accommodationId,
+                actor: actor.id
+            }
+        );
+
+        // Get the accommodation to check ownership
+        const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
+        if (!accommodation) {
+            throw new Error(`Accommodation ${accommodationId} not found`);
+        }
+
+        // Check if actor is owner or admin
+        AccommodationFeatureService.assertOwnerOrAdmin(accommodation.ownerId, actor);
+
+        try {
+            await AccommodationFeatureModel.deleteAllByAccommodation(accommodationId);
+            log.info(
+                'all feature relationships removed from accommodation successfully',
+                'removeAllFromAccommodation',
+                {
+                    accommodationId
+                }
+            );
+        } catch (error) {
+            log.error(
+                'failed to remove all feature relationships from accommodation',
+                'removeAllFromAccommodation',
+                error,
+                {
+                    accommodationId,
+                    actor: actor.id
+                }
+            );
             throw error;
         }
     }

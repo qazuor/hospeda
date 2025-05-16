@@ -1,9 +1,9 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { eq, ilike, isNull } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../client';
 import { accommodationFeatures } from '../schema/accommodation_feature.dbschema';
+import type { SelectAccommodationFeatureFilter } from '../types/db-types';
 import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
 
 /**
@@ -22,189 +22,301 @@ export type AccommodationFeatureRecord = InferSelectModel<typeof accommodationFe
 export type CreateAccommodationFeatureData = InferInsertModel<typeof accommodationFeatures>;
 
 /**
- * Fields allowed for updating an accommodation feature.
- */
-export type UpdateAccommodationFeatureData = UpdateData<CreateAccommodationFeatureData>;
-
-/**
- * Filter options for listing features.
- */
-export interface SelectAccommodationFeatureFilter extends BaseSelectFilter {
-    /** ID of the accommodation */
-    accommodationId: string;
-    /** Optional fuzzy search on description */
-    query?: string;
-    /** Include soft-deleted if true */
-    includeDeleted?: boolean;
-}
-
-/**
  * AccommodationFeatureModel provides CRUD operations for the accommodation_features table.
  */
 export const AccommodationFeatureModel = {
     /**
-     * Create a new accommodation feature.
-     *
-     * @param data - Fields required to create the feature
-     * @returns The created feature record
+     * Create a new accommodation feature relation.
+     * @param data - Fields required to create the feature relation
+     * @returns The created feature relation record
      */
-    async createFeature(data: CreateAccommodationFeatureData): Promise<AccommodationFeatureRecord> {
+    async createFeatureRelation(
+        data: CreateAccommodationFeatureData
+    ): Promise<AccommodationFeatureRecord> {
         try {
-            log.info('creating accommodation feature', 'createFeature', data);
+            log.info('creating accommodation feature relation', 'createFeatureRelation', data);
             const rows = castReturning<AccommodationFeatureRecord>(
                 await db.insert(accommodationFeatures).values(data).returning()
             );
-            const feature = assertExists(rows[0], 'createFeature: no feature returned');
-            log.query('insert', 'accommodation_features', data, feature);
-            return feature;
+            const featureRelation = assertExists(
+                rows[0],
+                'createFeatureRelation: no relation returned'
+            );
+            log.query('insert', 'accommodation_features', data, featureRelation);
+            return featureRelation;
         } catch (error) {
-            log.error('createFeature failed', 'createFeature', error);
+            log.error('createFeatureRelation failed', 'createFeatureRelation', error);
             throw error;
         }
     },
 
     /**
-     * Fetch a single feature by ID.
-     *
-     * @param id - UUID of the feature
-     * @returns The feature record or undefined if not found
+     * Fetch a single feature relation by accommodation ID and feature ID.
+     * @param accommodationId - UUID of the accommodation
+     * @param featureId - UUID of the feature
+     * @returns The feature relation record or undefined if not found
      */
-    async getFeatureById(id: string): Promise<AccommodationFeatureRecord | undefined> {
+    async getFeatureRelation(
+        accommodationId: string,
+        featureId: string
+    ): Promise<AccommodationFeatureRecord | undefined> {
         try {
-            log.info('fetching feature by id', 'getFeatureById', { id });
-            const [feature] = (await db
+            log.info('fetching feature relation', 'getFeatureRelation', {
+                accommodationId,
+                featureId
+            });
+            const [relation] = await db
                 .select()
                 .from(accommodationFeatures)
-                .where(eq(accommodationFeatures.id, id))
-                .limit(1)) as AccommodationFeatureRecord[];
-            log.query('select', 'accommodation_features', { id }, feature);
-            return feature;
+                .where(
+                    and(
+                        eq(accommodationFeatures.accommodationId, accommodationId),
+                        eq(accommodationFeatures.featureId, featureId)
+                    )
+                )
+                .limit(1);
+
+            log.query('select', 'accommodation_features', { accommodationId, featureId }, relation);
+            return relation as AccommodationFeatureRecord | undefined;
         } catch (error) {
-            log.error('getFeatureById failed', 'getFeatureById', error);
+            log.error('getFeatureRelation failed', 'getFeatureRelation', error);
             throw error;
         }
     },
 
     /**
      * List features for a given accommodation.
-     *
      * @param filter - Filtering and pagination options
-     * @returns Array of feature records
+     * @returns Array of feature relation records
      */
-    async listFeatures(
+    async listFeatureRelations(
         filter: SelectAccommodationFeatureFilter
     ): Promise<AccommodationFeatureRecord[]> {
         try {
-            log.info('listing features', 'listFeatures', filter);
+            log.info('listing feature relations', 'listFeatureRelations', filter);
 
-            let query = rawSelect(
-                db
-                    .select()
-                    .from(accommodationFeatures)
-                    .where(eq(accommodationFeatures.accommodationId, filter.accommodationId))
-            );
+            let query = rawSelect(db.select().from(accommodationFeatures));
 
-            if (filter.query) {
-                const term = `%${filter.query}%`;
-                query = query.where(ilike(accommodationFeatures.description, term));
+            if (filter.accommodationId) {
+                query = query.where(
+                    eq(accommodationFeatures.accommodationId, filter.accommodationId)
+                );
             }
+
+            if (filter.featureId) {
+                query = query.where(eq(accommodationFeatures.featureId, filter.featureId));
+            }
+
             if (!filter.includeDeleted) {
                 query = query.where(isNull(accommodationFeatures.deletedAt));
             }
 
             const rows = (await query
                 .limit(filter.limit ?? 20)
-                .offset(filter.offset ?? 0)
-                .orderBy(accommodationFeatures.createdAt, 'desc')) as AccommodationFeatureRecord[];
+                .offset(filter.offset ?? 0)) as AccommodationFeatureRecord[];
 
             log.query('select', 'accommodation_features', filter, rows);
             return rows;
         } catch (error) {
-            log.error('listFeatures failed', 'listFeatures', error);
+            log.error('listFeatureRelations failed', 'listFeatureRelations', error);
             throw error;
         }
     },
 
     /**
-     * Update fields on an existing feature.
-     *
-     * @param id - UUID of the feature to update
+     * Update fields on an existing feature relation.
+     * @param accommodationId - UUID of the accommodation
+     * @param featureId - UUID of the feature
      * @param changes - Partial fields to update
-     * @returns The updated feature record
+     * @returns The updated feature relation record
      */
-    async updateFeature(
-        id: string,
-        changes: UpdateAccommodationFeatureData
+    async updateFeatureRelation(
+        accommodationId: string,
+        featureId: string,
+        changes: Partial<CreateAccommodationFeatureData>
     ): Promise<AccommodationFeatureRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating feature', 'updateFeature', { id, changes: dataToUpdate });
+            log.info('updating feature relation', 'updateFeatureRelation', {
+                accommodationId,
+                featureId,
+                changes: dataToUpdate
+            });
+
             const rows = castReturning<AccommodationFeatureRecord>(
                 await db
                     .update(accommodationFeatures)
                     .set(dataToUpdate)
-                    .where(eq(accommodationFeatures.id, id))
+                    .where(
+                        and(
+                            eq(accommodationFeatures.accommodationId, accommodationId),
+                            eq(accommodationFeatures.featureId, featureId)
+                        )
+                    )
                     .returning()
             );
-            const updated = assertExists(rows[0], `updateFeature: no feature found for id ${id}`);
-            log.query('update', 'accommodation_features', { id, changes: dataToUpdate }, updated);
+
+            const updated = assertExists(
+                rows[0],
+                `updateFeatureRelation: no relation found for accommodationId ${accommodationId} and featureId ${featureId}`
+            );
+
+            log.query(
+                'update',
+                'accommodation_features',
+                {
+                    accommodationId,
+                    featureId,
+                    changes: dataToUpdate
+                },
+                updated
+            );
+
             return updated;
         } catch (error) {
-            log.error('updateFeature failed', 'updateFeature', error);
+            log.error('updateFeatureRelation failed', 'updateFeatureRelation', error);
             throw error;
         }
     },
 
     /**
-     * Soft-delete a feature by setting the deletedAt timestamp.
-     *
-     * @param id - UUID of the feature
+     * Soft-delete a feature relation by setting the deletedAt timestamp.
+     * @param accommodationId - UUID of the accommodation
+     * @param featureId - UUID of the feature
      */
-    async softDeleteFeature(id: string): Promise<void> {
+    async softDeleteFeatureRelation(accommodationId: string, featureId: string): Promise<void> {
         try {
-            log.info('soft deleting feature', 'softDeleteFeature', { id });
+            log.info('soft deleting feature relation', 'softDeleteFeatureRelation', {
+                accommodationId,
+                featureId
+            });
+
             await db
                 .update(accommodationFeatures)
                 .set({ deletedAt: new Date() })
-                .where(eq(accommodationFeatures.id, id));
-            log.query('update', 'accommodation_features', { id }, { deleted: true });
+                .where(
+                    and(
+                        eq(accommodationFeatures.accommodationId, accommodationId),
+                        eq(accommodationFeatures.featureId, featureId)
+                    )
+                );
+
+            log.query(
+                'update',
+                'accommodation_features',
+                {
+                    accommodationId,
+                    featureId
+                },
+                { deleted: true }
+            );
         } catch (error) {
-            log.error('softDeleteFeature failed', 'softDeleteFeature', error);
+            log.error('softDeleteFeatureRelation failed', 'softDeleteFeatureRelation', error);
             throw error;
         }
     },
 
     /**
-     * Restore a soft-deleted feature by clearing the deletedAt timestamp.
-     *
-     * @param id - UUID of the feature
+     * Restore a soft-deleted feature relation by clearing the deletedAt timestamp.
+     * @param accommodationId - UUID of the accommodation
+     * @param featureId - UUID of the feature
      */
-    async restoreFeature(id: string): Promise<void> {
+    async restoreFeatureRelation(accommodationId: string, featureId: string): Promise<void> {
         try {
-            log.info('restoring feature', 'restoreFeature', { id });
+            log.info('restoring feature relation', 'restoreFeatureRelation', {
+                accommodationId,
+                featureId
+            });
+
             await db
                 .update(accommodationFeatures)
                 .set({ deletedAt: null })
-                .where(eq(accommodationFeatures.id, id));
-            log.query('update', 'accommodation_features', { id }, { restored: true });
+                .where(
+                    and(
+                        eq(accommodationFeatures.accommodationId, accommodationId),
+                        eq(accommodationFeatures.featureId, featureId)
+                    )
+                );
+
+            log.query(
+                'update',
+                'accommodation_features',
+                {
+                    accommodationId,
+                    featureId
+                },
+                { restored: true }
+            );
         } catch (error) {
-            log.error('restoreFeature failed', 'restoreFeature', error);
+            log.error('restoreFeatureRelation failed', 'restoreFeatureRelation', error);
             throw error;
         }
     },
 
     /**
-     * Permanently delete a feature record from the database.
-     *
-     * @param id - UUID of the feature
+     * Permanently delete a feature relation record from the database.
+     * @param accommodationId - UUID of the accommodation
+     * @param featureId - UUID of the feature
      */
-    async hardDeleteFeature(id: string): Promise<void> {
+    async hardDeleteFeatureRelation(accommodationId: string, featureId: string): Promise<void> {
         try {
-            log.info('hard deleting feature', 'hardDeleteFeature', { id });
-            await db.delete(accommodationFeatures).where(eq(accommodationFeatures.id, id));
-            log.query('delete', 'accommodation_features', { id }, { deleted: true });
+            log.info('hard deleting feature relation', 'hardDeleteFeatureRelation', {
+                accommodationId,
+                featureId
+            });
+
+            await db
+                .delete(accommodationFeatures)
+                .where(
+                    and(
+                        eq(accommodationFeatures.accommodationId, accommodationId),
+                        eq(accommodationFeatures.featureId, featureId)
+                    )
+                );
+
+            log.query(
+                'delete',
+                'accommodation_features',
+                {
+                    accommodationId,
+                    featureId
+                },
+                { deleted: true }
+            );
         } catch (error) {
-            log.error('hardDeleteFeature failed', 'hardDeleteFeature', error);
+            log.error('hardDeleteFeatureRelation failed', 'hardDeleteFeatureRelation', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Delete all feature relations for a specific accommodation.
+     * @param accommodationId - UUID of the accommodation
+     */
+    async deleteAllByAccommodation(accommodationId: string): Promise<void> {
+        try {
+            log.info(
+                'deleting all feature relations for accommodation',
+                'deleteAllByAccommodation',
+                {
+                    accommodationId
+                }
+            );
+
+            await db
+                .delete(accommodationFeatures)
+                .where(eq(accommodationFeatures.accommodationId, accommodationId));
+
+            log.query(
+                'delete',
+                'accommodation_features',
+                {
+                    accommodationId
+                },
+                { deleted: true }
+            );
+        } catch (error) {
+            log.error('deleteAllByAccommodation failed', 'deleteAllByAccommodation', error);
             throw error;
         }
     }

@@ -12,6 +12,7 @@ export * from './destinationReview.service';
 export * from './event.service';
 export * from './eventLocation.service';
 export * from './eventOrganizer.service';
+export * from './feature.service';
 export * from './permission.service';
 export * from './post.service';
 export * from './postSponsor.service';

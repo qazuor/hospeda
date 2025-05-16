@@ -15,6 +15,7 @@ import type {
     entityTagRelations,
     eventLocations,
     eventOrganizers,
+    features,
     permissions,
     postSponsors,
     postSponsorships,
@@ -150,6 +151,24 @@ export interface SelectAccommodationAmenityFilter extends BaseSelectFilter {
     amenityId?: string;
     /** Filter by optional status */
     isOptional?: boolean;
+}
+
+/**
+ * Filter options for listing features.
+ */
+export interface SelectFeatureFilter extends BaseSelectFilter {
+    /** Filter by built-in status */
+    isBuiltin?: boolean;
+}
+
+/**
+ * Filter options for listing accommodation features.
+ */
+export interface SelectAccommodationFeatureFilter extends BaseSelectFilter {
+    /** Filter by accommodation ID */
+    accommodationId?: string;
+    /** Filter by feature ID */
+    featureId?: string;
 }
 
 /**
@@ -338,6 +357,7 @@ export type InsertAccommodationAmenity = InferInsertModel<typeof accommodationAm
 export type InsertAmenity = InferInsertModel<typeof amenities>;
 export type InsertAccommodationFaq = InferInsertModel<typeof accommodationFaqs>;
 export type InsertAccommodationFeature = InferInsertModel<typeof accommodationFeatures>;
+export type InsertFeature = InferInsertModel<typeof features>;
 export type InsertAccommodationIaData = InferInsertModel<typeof accommodationIaData>;
 export type InsertAccommodationReview = InferInsertModel<typeof accommodationReviews>;
 export type InsertUserBookmark = InferInsertModel<typeof userBookmarks>;
@@ -368,6 +388,7 @@ export type UpdateAccommodationAmenityData = UpdateData<InsertAccommodationAmeni
 export type UpdateAmenityData = UpdateData<InsertAmenity>;
 export type UpdateAccommodationFaqData = UpdateData<InsertAccommodationFaq>;
 export type UpdateAccommodationFeatureData = UpdateData<InsertAccommodationFeature>;
+export type UpdateFeatureData = UpdateData<InsertFeature>;
 export type UpdateAccommodationIaData = UpdateData<InsertAccommodationIaData>;
 export type UpdateAccommodationReviewData = UpdateData<InsertAccommodationReview>;
 export type UpdateUserBookmarkData = UpdateData<InsertUserBookmark>;

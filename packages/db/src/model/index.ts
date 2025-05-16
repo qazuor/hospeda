@@ -15,6 +15,7 @@ export * from './entityTag.model';
 export * from './event.model';
 export * from './eventLocation.model';
 export * from './eventOrganizer.model';
+export * from './feature.model';
 export * from './permission.model';
 export * from './post.model';
 export * from './postSponsor.model';
