@@ -1,4 +1,4 @@
-import { parseMainSchema } from './main.schema';
+import { parseMainSchema } from './main.schema.js';
 
 const env = import.meta.env;
 

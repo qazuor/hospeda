@@ -10,7 +10,7 @@ import {
     UserModel,
     UserPermissionModel,
     type UserPermissionRecord
-} from '../model';
+} from '../model/index.js';
 import type {
     InsertPermission,
     InsertRolePermission,
@@ -18,8 +18,8 @@ import type {
     PaginationParams,
     SelectPermissionFilter,
     UpdatePermissionData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('PermissionService');
 

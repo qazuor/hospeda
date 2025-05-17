@@ -8,11 +8,11 @@ import {
 } from '@repo/types';
 import { ilike, or } from 'drizzle-orm';
 import { db } from '../../client';
-import { destinations } from '../../schema/destination.dbschema';
-import { events } from '../../schema/event.dbschema';
-import { eventLocations } from '../../schema/event_location.dbschema';
-import { eventOrganizers } from '../../schema/event_organizer.dbschema';
-import { users } from '../../schema/user.dbschema';
+import { destinations } from '../../schema/destination.dbschema.js';
+import { events } from '../../schema/event.dbschema.js';
+import { eventLocations } from '../../schema/event_location.dbschema.js';
+import { eventOrganizers } from '../../schema/event_organizer.dbschema.js';
+import { users } from '../../schema/user.dbschema.js';
 
 /**
  * Seeds example events

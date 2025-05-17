@@ -1,13 +1,13 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type EntityTypeEnum, type UserType } from '@repo/types';
-import { BookmarkModel, type BookmarkRecord } from '../model';
+import { BookmarkModel, type BookmarkRecord } from '../model/index.js';
 import type {
     InsertUserBookmark,
     PaginationParams,
     SelectBookmarkFilter,
     UpdateUserBookmarkData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('BookmarkService');
 

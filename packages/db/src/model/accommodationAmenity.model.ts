@@ -1,13 +1,18 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, eq, isNull } from 'drizzle-orm';
-import { db } from '../client';
-import { accommodationAmenities } from '../schema/accommodation_amenity.dbschema';
+import { db } from '../client.js';
+import { accommodationAmenities } from '../schema/accommodation_amenity.dbschema.js';
 import type {
     SelectAccommodationAmenityFilter,
     UpdateAccommodationAmenityData
-} from '../types/db-types';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import {
+    assertExists,
+    castReturning,
+    rawSelect,
+    sanitizePartialUpdate
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for AccommodationAmenityModel operations.

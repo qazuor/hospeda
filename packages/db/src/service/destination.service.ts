@@ -5,6 +5,7 @@ import {
     EntityTypeEnum,
     type UserType
 } from '@repo/types';
+import { BookmarkModel } from '../model/bookmark.model.js';
 import {
     DestinationAttractionModel,
     type DestinationAttractionRecord,
@@ -16,8 +17,7 @@ import {
     type EntityTagRecord,
     TagModel,
     type TagRecord
-} from '../model';
-import { BookmarkModel } from '../model/bookmark.model';
+} from '../model/index.js';
 import type {
     InsertDestination,
     InsertDestinationAttraction,
@@ -27,8 +27,8 @@ import type {
     SelectDestinationAttractionFilter,
     SelectDestinationFilter,
     UpdateDestinationData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('DestinationService');
 

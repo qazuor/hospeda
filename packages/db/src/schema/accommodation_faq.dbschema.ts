@@ -1,11 +1,11 @@
 import type { AdminInfoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { accommodations } from './accommodation.dbschema';
-import { StatePgEnum } from './enums.dbschema';
-import { accommodationFaqRelations } from './r_accommodation_faq.dbschema';
-import { entityTagRelations } from './r_entity_tag.dbschema';
-import { users } from './user.dbschema';
+import { accommodations } from './accommodation.dbschema.js';
+import { StatePgEnum } from './enums.dbschema.js';
+import { accommodationFaqRelations } from './r_accommodation_faq.dbschema.js';
+import { entityTagRelations } from './r_entity_tag.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * accommodation_faqs table schema

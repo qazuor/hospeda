@@ -1,20 +1,20 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client';
-import { eventLocations } from '../schema/event_location.dbschema';
+import { db } from '../client.js';
+import { eventLocations } from '../schema/event_location.dbschema.js';
 import type {
     InsertEventLocation,
     SelectEventLocationFilter,
     UpdateEventLocationData
-} from '../types/db-types';
+} from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for event location model operations.

@@ -2,16 +2,16 @@ import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import { db } from '../client';
-import { tags } from '../schema/tag.dbschema';
-import type { InsertTag, SelectTagFilter, UpdateTagData } from '../types/db-types';
+import { db } from '../client.js';
+import { tags } from '../schema/tag.dbschema.js';
+import type { InsertTag, SelectTagFilter, UpdateTagData } from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for tag model operations.

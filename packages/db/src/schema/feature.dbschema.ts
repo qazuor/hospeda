@@ -1,10 +1,10 @@
 import type { AdminInfoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { accommodationFeatures } from './accommodation_feature.dbschema';
-import { StatePgEnum } from './enums.dbschema';
-import { entityTagRelations } from './r_entity_tag.dbschema';
-import { users } from './user.dbschema';
+import { accommodationFeatures } from './accommodation_feature.dbschema.js';
+import { StatePgEnum } from './enums.dbschema.js';
+import { entityTagRelations } from './r_entity_tag.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * features table schema

@@ -6,7 +6,7 @@ import {
     type UserType
 } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../client';
+import { db } from '../client.js';
 import {
     AccommodationAmenityModel,
     type AccommodationAmenityRecord,
@@ -28,8 +28,8 @@ import {
     type FeatureRecord,
     type SelectAccommodationFaqFilter,
     type SelectAccommodationIaDataFilter
-} from '../model';
-import { accommodations } from '../schema';
+} from '../model/index.js';
+import { accommodations } from '../schema/index.js';
 import type {
     InsertAccommodation,
     InsertEntityTagRelation,
@@ -37,8 +37,8 @@ import type {
     SelectAccommodationAmenityFilter,
     SelectAccommodationFeatureFilter,
     SelectAccommodationFilter
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('AccommodationService');
 

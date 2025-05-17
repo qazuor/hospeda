@@ -5,13 +5,13 @@ import {
     type AccommodationFaqRecord,
     AccommodationModel,
     type SelectAccommodationFaqFilter
-} from '../model';
+} from '../model/index.js';
 import type {
     InsertAccommodationFaq,
     PaginationParams,
     UpdateAccommodationFaqData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('AccommodationFaqService');
 

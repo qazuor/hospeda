@@ -1,16 +1,16 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
-import { db } from '../client';
-import { users } from '../schema/user.dbschema';
-import type { InsertUser, SelectUserFilter, UpdateUserData } from '../types/db-types';
+import { db } from '../client.js';
+import { users } from '../schema/user.dbschema.js';
+import type { InsertUser, SelectUserFilter, UpdateUserData } from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 // Scoped logger for user model operations
 const log = logger.createLogger('UserModel');

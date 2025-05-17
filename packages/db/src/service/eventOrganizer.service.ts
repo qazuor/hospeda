@@ -5,7 +5,7 @@ import {
     EventOrganizerModel,
     type EventOrganizerRecord,
     type EventRecord
-} from '../model';
+} from '../model/index.js';
 import type {
     InsertEventOrganizer,
     PaginationParams,
@@ -13,8 +13,8 @@ import type {
     SelectEventOrganizerFilter,
     UpdateEventData,
     UpdateEventOrganizerData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('EventOrganizerService');
 

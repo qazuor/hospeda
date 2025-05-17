@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { SlugRegex } from '../../utils/utils';
-import { AccommodationDiscountInfoSchema } from './discountInfo.schema';
+import { SlugRegex } from '../../utils/utils.js';
+import { AccommodationDiscountInfoSchema } from './discountInfo.schema.js';
 
 /**
  * Zod schema for a accommodation other discount.

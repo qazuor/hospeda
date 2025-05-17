@@ -7,12 +7,12 @@ import type {
     SeoType,
     SocialNetworkType,
     TagType
-} from '../common.types';
-import type { AccommodationTypeEnum } from '../enums.types';
-import type { AmenityType } from './amenity.types';
-import type { DestinationType } from './destination.types';
-import type { FeatureType } from './feature.types';
-import type { UserType } from './user.types';
+} from '../common.types.js';
+import type { AccommodationTypeEnum } from '../enums.types.js';
+import type { AmenityType } from './amenity.types.js';
+import type { DestinationType } from './destination.types.js';
+import type { FeatureType } from './feature.types.js';
+import type { UserType } from './user.types.js';
 
 /**
  * Represents optional fees info.

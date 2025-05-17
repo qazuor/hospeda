@@ -2,16 +2,12 @@
     "extends": "@repo/typescript-config/base.json",
     "compilerOptions": {
         "outDir": "dist",
-        "composite": true,
-        "incremental": true,
-        "baseUrl": ".",
-        "moduleResolution": "node",
-        "esModuleInterop": true,
-        "module": "ESNext",
-        "target": "ES2022",
-        "types": ["node"],
-        "resolveJsonModule": true
+        "rootDir": "src",
+        "declaration": true,
+        "declarationMap": true,
+        "strict": true,
+        "types": ["node"]
     },
-    "include": ["src/**/*.ts", "src/**/*.json"],
-    "exclude": ["dist", "node_modules"]
+    "include": ["src"],
+    "exclude": ["dist", "node_modules", "src/seeds"]
 }

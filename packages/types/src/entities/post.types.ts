@@ -7,12 +7,12 @@ import type {
     SeoType,
     SocialNetworkType,
     TagType
-} from '../common.types';
-import type { ClientTypeEnum, PostCategoryEnum, VisibilityEnum } from '../enums.types';
-import type { AccommodationType } from './accommodation.types';
-import type { DestinationType } from './destination.types';
-import type { EventType } from './event.types';
-import type { UserType } from './user.types';
+} from '../common.types.js';
+import type { ClientTypeEnum, PostCategoryEnum, VisibilityEnum } from '../enums.types.js';
+import type { AccommodationType } from './accommodation.types.js';
+import type { DestinationType } from './destination.types.js';
+import type { EventType } from './event.types.js';
+import type { UserType } from './user.types.js';
 
 /**
  * Entity that sponsors a post, typically a business or advertiser.

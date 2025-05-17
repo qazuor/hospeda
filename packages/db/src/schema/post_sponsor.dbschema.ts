@@ -1,9 +1,9 @@
 import type { AdminInfoType, ContactInfoType, SocialNetworkType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { ClientTypePgEnum, StatePgEnum } from './enums.dbschema';
-import { postSponsorships } from './post_sponsorship.dbschema';
-import { users } from './user.dbschema';
+import { ClientTypePgEnum, StatePgEnum } from './enums.dbschema.js';
+import { postSponsorships } from './post_sponsorship.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * post_sponsors table schema

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TimeRegExp } from '../../utils/utils';
+import { TimeRegExp } from '../../utils/utils.js';
 
 /**
  * Zod schema for a accommodation schedule info.

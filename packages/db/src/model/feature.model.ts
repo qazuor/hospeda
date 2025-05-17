@@ -1,16 +1,16 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client';
-import { features } from '../schema/feature.dbschema';
-import type { InsertFeature, SelectFeatureFilter, UpdateFeatureData } from '../types/db-types';
+import { db } from '../client.js';
+import { features } from '../schema/feature.dbschema.js';
+import type { InsertFeature, SelectFeatureFilter, UpdateFeatureData } from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for feature model operations.

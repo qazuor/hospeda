@@ -1,10 +1,10 @@
 // export interface PostType extends BaseEntityType {
 
 import { z } from 'zod';
-import { BaseEntitySchema, MediaSchema, SeoSchema, TagSchema } from '../common.schema';
-import { PostCategoryEnumSchema, VisibilityEnumSchema } from '../enums.schema';
-import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils';
-import { PostSponsorshipSchema } from './post/sponsorship.schema';
+import { BaseEntitySchema, MediaSchema, SeoSchema, TagSchema } from '../common.schema.js';
+import { PostCategoryEnumSchema, VisibilityEnumSchema } from '../enums.schema.js';
+import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils.js';
+import { PostSponsorshipSchema } from './post/sponsorship.schema.js';
 
 // }
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { AccommodationDiscountInfoSchema } from './discountInfo.schema';
-import { AccommodationOtherDiscountSchema } from './otherDiscount.schema';
+import { AccommodationDiscountInfoSchema } from './discountInfo.schema.js';
+import { AccommodationOtherDiscountSchema } from './otherDiscount.schema.js';
 
 /**
  * Zod schema for a accommodation discounts.

@@ -1,10 +1,10 @@
 import type { AdminInfoType, BasePriceType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, doublePrecision, jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { accommodations } from './accommodation.dbschema';
-import { amenities } from './amenity.dbschema';
-import { StatePgEnum } from './enums.dbschema';
-import { users } from './user.dbschema';
+import { accommodations } from './accommodation.dbschema.js';
+import { amenities } from './amenity.dbschema.js';
+import { StatePgEnum } from './enums.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * accommodation_amenities table schema - relationships between accommodations and amenities

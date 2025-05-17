@@ -1,11 +1,11 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../client';
-import { FeatureModel, type FeatureRecord } from '../model/feature.model';
-import { features } from '../schema/feature.dbschema';
-import type { InsertFeature, SelectFeatureFilter, UpdateFeatureData } from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+import { db } from '../client.js';
+import { FeatureModel, type FeatureRecord } from '../model/feature.model.js';
+import { features } from '../schema/feature.dbschema.js';
+import type { InsertFeature, SelectFeatureFilter, UpdateFeatureData } from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('FeatureService');
 

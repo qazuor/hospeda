@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getBooleanOrUndefined } from '../utils';
+import { getBooleanOrUndefined } from '../utils.js';
 
 export const LoggerSchema = z.object({
     LEVEL: z.enum(['LOG', 'INFO', 'WARN', 'ERROR', 'DEBUG']),

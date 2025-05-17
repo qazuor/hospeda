@@ -4,11 +4,11 @@ import {
     ContactInfoSchema,
     FullLocationSchema,
     SocialNetworkSchema
-} from '../common.schema';
-import { omittedBaseEntityFieldsForActions } from '../utils/utils';
-import { BookmarkSchema } from './bookmark.schema';
-import { UserProfileSchema } from './user/profile.schema';
-import { UserSettingsSchema } from './user/settings.schema';
+} from '../common.schema.js';
+import { omittedBaseEntityFieldsForActions } from '../utils/utils.js';
+import { BookmarkSchema } from './bookmark.schema.js';
+import { UserProfileSchema } from './user/profile.schema.js';
+import { UserSettingsSchema } from './user/settings.schema.js';
 
 /**
  * Zod schema for user entity.

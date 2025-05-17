@@ -10,13 +10,13 @@ import {
     uniqueIndex,
     uuid
 } from 'drizzle-orm/pg-core';
-import { accommodations } from './accommodation.dbschema';
-import { destinations } from './destination.dbschema';
-import { PostCategoryPgEnum, StatePgEnum, VisibilityPgEnum } from './enums.dbschema';
-import { events } from './event.dbschema';
-import { postSponsorships } from './post_sponsorship.dbschema';
-import { entityTagRelations } from './r_entity_tag.dbschema';
-import { users } from './user.dbschema';
+import { accommodations } from './accommodation.dbschema.js';
+import { destinations } from './destination.dbschema.js';
+import { PostCategoryPgEnum, StatePgEnum, VisibilityPgEnum } from './enums.dbschema.js';
+import { events } from './event.dbschema.js';
+import { postSponsorships } from './post_sponsorship.dbschema.js';
+import { entityTagRelations } from './r_entity_tag.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * posts table schema

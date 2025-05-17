@@ -1,12 +1,13 @@
 {
-    "extends": "@repo/typescript-config/react-library.json",
+    "extends": "@repo/typescript-config/react-library.json", // Hereda del base (que tiene paths base)
     "compilerOptions": {
+        // Considera heredar estas opciones del base si es posible
         "outDir": "dist",
         "target": "ESNext",
         "module": "ESNext",
         "moduleResolution": "bundler",
-        "strict": true,
-        "lib": ["ESNext", "DOM"]
+        "strict": true, // Ya está en base.json
+        "lib": ["ESNext", "DOM"] // Se fusiona con libs del base
     },
     "include": ["src"],
     "exclude": ["dist", "build", "node_modules"]

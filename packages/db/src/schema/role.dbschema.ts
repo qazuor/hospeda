@@ -1,10 +1,10 @@
 import type { AdminInfoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { StatePgEnum } from './enums.dbschema';
-import { permissions } from './permission.dbschema';
-import { rolePermissions } from './r_role_permission.dbschema';
-import { users } from './user.dbschema';
+import { StatePgEnum } from './enums.dbschema.js';
+import { permissions } from './permission.dbschema.js';
+import { rolePermissions } from './r_role_permission.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * roles table schema

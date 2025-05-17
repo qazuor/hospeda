@@ -15,7 +15,7 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { pgEnum } from 'drizzle-orm/pg-core';
-import { enumToTuple } from '../utils/db-utils';
+import { enumToTuple } from '../utils/db-utils.js';
 
 /**
  * PostgreSQL native ENUM for entity types.

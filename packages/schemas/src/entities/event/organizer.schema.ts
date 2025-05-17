@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BaseEntitySchema, ContactInfoSchema, SocialNetworkSchema } from '../../common.schema';
+import { BaseEntitySchema, ContactInfoSchema, SocialNetworkSchema } from '../../common.schema.js';
 
 /**
  * Zod schema for a event organizer entity.

@@ -7,9 +7,9 @@ import type {
     SeoType,
     SocialNetworkType,
     TagType
-} from '../common.types';
-import type { EventCategoryEnum, RecurrenceTypeEnum, VisibilityEnum } from '../enums.types';
-import type { UserType } from './user.types';
+} from '../common.types.js';
+import type { EventCategoryEnum, RecurrenceTypeEnum, VisibilityEnum } from '../enums.types.js';
+import type { UserType } from './user.types.js';
 
 /**
  * Defines the schedule of an event, including recurrence.

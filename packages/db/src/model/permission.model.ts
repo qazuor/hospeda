@@ -1,20 +1,20 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client';
-import { permissions } from '../schema/permission.dbschema';
+import { db } from '../client.js';
+import { permissions } from '../schema/permission.dbschema.js';
 import type {
     InsertPermission,
     SelectPermissionFilter,
     UpdatePermissionData
-} from '../types/db-types';
+} from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for permission model operations.

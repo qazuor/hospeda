@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { BaseEntitySchema } from '../common.schema';
-import { omittedBaseEntityFieldsForActions } from '../utils/utils';
+import { BaseEntitySchema } from '../common.schema.js';
+import { omittedBaseEntityFieldsForActions } from '../utils/utils.js';
 
 /**
  * Zod schema for role entity.

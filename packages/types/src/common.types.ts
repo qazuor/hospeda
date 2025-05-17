@@ -1,5 +1,5 @@
-import type { UserType } from './entities/user.types';
-import type { PreferedContactEnum, PriceCurrencyEnum, StateEnum } from './enums.types';
+import type { UserType } from './entities/user.types.js';
+import type { PreferedContactEnum, PriceCurrencyEnum, StateEnum } from './enums.types.js';
 
 /**
  * Internal admin notes and tags used for moderation and search.

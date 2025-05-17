@@ -1,10 +1,15 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, ilike, isNull, or } from 'drizzle-orm';
-import type { BaseSelectFilter, UpdateData } from 'src/types/db-types';
-import { db } from '../client';
-import { accommodationFaqs } from '../schema/accommodation_faq.dbschema';
-import { assertExists, castReturning, rawSelect, sanitizePartialUpdate } from '../utils/db-utils';
+import { db } from '../client.js';
+import { accommodationFaqs } from '../schema/accommodation_faq.dbschema.js';
+import type { BaseSelectFilter, UpdateData } from '../types/db-types.js';
+import {
+    assertExists,
+    castReturning,
+    rawSelect,
+    sanitizePartialUpdate
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for AccommodationFaqModel operations.

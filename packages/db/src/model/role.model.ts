@@ -1,16 +1,16 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client';
-import { roles } from '../schema/role.dbschema';
-import type { InsertRole, SelectRoleFilter, UpdateRoleData } from '../types/db-types';
+import { db } from '../client.js';
+import { roles } from '../schema/role.dbschema.js';
+import type { InsertRole, SelectRoleFilter, UpdateRoleData } from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for role model operations.

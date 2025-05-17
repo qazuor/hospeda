@@ -26,7 +26,7 @@ import type {
     userBookmarks,
     userPermissions,
     users
-} from '../schema';
+} from '../schema/index.js';
 
 /**
  * Common types shared across DB models.

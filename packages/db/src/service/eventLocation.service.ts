@@ -5,15 +5,15 @@ import {
     type EventLocationRecord,
     EventModel,
     type EventRecord
-} from '../model';
+} from '../model/index.js';
 import type {
     InsertEventLocation,
     PaginationParams,
     SelectEventFilter,
     SelectEventLocationFilter,
     UpdateEventLocationData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('EventLocationService');
 

@@ -4,7 +4,7 @@ import {
     PriceCurrencyEnumSchema,
     StateEnumSchema,
     TagColorEnumSchema
-} from './enums.schema';
+} from './enums.schema.js';
 
 /**
  * Zod schema for admin metadata.

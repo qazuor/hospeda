@@ -1,17 +1,17 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import { and, eq } from 'drizzle-orm';
-import { db } from '../client';
+import { db } from '../client.js';
 import {
     AccommodationFeatureModel,
     type AccommodationFeatureRecord,
     AccommodationModel,
     FeatureModel,
     type FeatureRecord
-} from '../model';
-import { accommodationFeatures } from '../schema';
-import type { PaginationParams, SelectAccommodationFeatureFilter } from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../model/index.js';
+import { accommodationFeatures } from '../schema/index.js';
+import type { PaginationParams, SelectAccommodationFeatureFilter } from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('AccommodationFeatureService');
 

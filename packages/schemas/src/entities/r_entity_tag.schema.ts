@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EntityTypeEnumSchema } from '../enums.schema';
+import { EntityTypeEnumSchema } from '../enums.schema.js';
 
 /**
  * Zod schema entity/tag relationship.

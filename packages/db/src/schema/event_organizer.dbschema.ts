@@ -1,10 +1,10 @@
 import type { AdminInfoType, ContactInfoType, SocialNetworkType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { StatePgEnum } from './enums.dbschema';
-import { events } from './event.dbschema';
-import { entityTagRelations } from './r_entity_tag.dbschema';
-import { users } from './user.dbschema';
+import { StatePgEnum } from './enums.dbschema.js';
+import { events } from './event.dbschema.js';
+import { entityTagRelations } from './r_entity_tag.dbschema.js';
+import { users } from './user.dbschema.js';
 
 export const eventOrganizers: ReturnType<typeof pgTable> = pgTable(
     'event_organizers',

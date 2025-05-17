@@ -5,14 +5,14 @@ import {
     PostSponsorModel,
     PostSponsorshipModel,
     type PostSponsorshipRecord
-} from '../model';
+} from '../model/index.js';
 import type {
     InsertPostSponsorship,
     PaginationParams,
     SelectPostSponsorshipFilter,
     UpdatePostSponsorshipData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('PostSponsorshipService');
 

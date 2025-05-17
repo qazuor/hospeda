@@ -1,8 +1,8 @@
 import type { AdminInfoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { EntityTypePgEnum, StatePgEnum } from './enums.dbschema';
-import { users } from './user.dbschema';
+import { EntityTypePgEnum, StatePgEnum } from './enums.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * user_bookmarks table schema
