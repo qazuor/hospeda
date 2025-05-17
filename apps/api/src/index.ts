@@ -1,50 +1,21 @@
-import { apiV1Router } from '@/routes/v1';
-import type { Env } from '@/types';
 import { serve } from '@hono/node-server';
-import { getLoggerConfigs, getMainConfigs } from '@repo/config/server';
-import { configureLogger, logger } from '@repo/logger';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { logger as honoLogger } from 'hono/logger';
-configureLogger(getLoggerConfigs());
+import { logger } from '@repo/logger';
+import { app } from './app';
 
-const app = new Hono<Env>();
+const PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000;
 
-app.use(
-    '*',
-    honoLogger((str: string) => {
-        const [method, path, status] = str.split(' ');
-        logger.info(`${method} ${path} - ${status}`);
-    })
-);
+console.info(`Starting API server on port ${PORT}`);
 
-app.use(
-    '*',
-    cors({
-        origin: ['http://localhost:4321', 'http://localhost:5173'],
-        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-        allowHeaders: ['Content-Type', 'Authorization'],
-        exposeHeaders: ['Content-Length', 'X-Request-Id'],
-        maxAge: 86400,
-        credentials: true
-    })
-);
+serve({
+    fetch: app.fetch,
+    port: PORT
+});
 
-// Error handling
-// app.onError(errorHandler);
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', 'API:UnhandledRejection', { reason, promise });
+});
 
-// Health check
-app.get('/health', (c) => c.json({ status: 'ok' }));
-
-// API routes (versioned)
-app.route('/api/v1', apiV1Router);
-
-serve(
-    {
-        fetch: app.fetch,
-        port: getMainConfigs().API_PORT
-    },
-    (info) => {
-        logger.info(`Server is running on ${getMainConfigs().API_HOST}:${info.port}`);
-    }
-);
+process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', 'API:UncaughtException', error);
+    process.exit(1);
+});

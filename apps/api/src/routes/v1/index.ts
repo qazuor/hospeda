@@ -1,23 +1,12 @@
-import type { Env } from '@/types';
 import { Hono } from 'hono';
-import { accommodationRouter } from './accommodations';
+import { adminRoutes } from './admin';
+import { publicRoutes } from './public';
 
-const apiV1Router = new Hono<Env>();
+// Create the v1 router
+const apiV1Routes = new Hono();
 
-apiV1Router.get('/text', (c) => {
-    return c.text('Hello V1 Hono API text!');
-});
-apiV1Router.get('/json', (c) => {
-    return c.json({ value: 'Hello V1 Hono API in Json!' });
-});
+// Register the admin and public routes
+apiV1Routes.route('/admin', adminRoutes);
+apiV1Routes.route('/public', publicRoutes);
 
-// Mount all entity routes
-apiV1Router.route('/accommodations', accommodationRouter);
-
-// Auth routes
-// apiV1Router.route('/auth', authRouter);
-
-// Email routes
-// apiV1Router.route('/email', emailRouter);
-
-export { apiV1Router };
+export { apiV1Routes };

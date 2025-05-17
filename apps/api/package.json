@@ -1,29 +1,25 @@
 {
     "name": "api",
-    "version": "0.0.0",
-    "files": ["dist"],
+    "version": "0.0.1",
     "private": true,
-    "type": "module",
     "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "license": "MIT",
     "scripts": {
-        "build": "tsc",
         "dev": "tsx watch src/index.ts",
-        "check-types": "tsc --noEmit",
-        "test": "vitest run",
-        "test:watch": "vitest",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "clean": "rm -rf node_modules dist",
         "lint": "biome check .",
         "format": "biome format --write .",
-        "check": "biome check --write .",
-        "clean": "rm -rf node_modules && rm -rf dist"
+        "check-types": "tsc --noEmit"
     },
     "dependencies": {
         "@hono/node-server": "^1.14.1",
+        "@hono/zod-validator": "^0.5.0",
         "hono": "^4.7.8",
         "zod": "^3.24.4",
-        "@hono/zod-validator": "^0.5.0",
+        "jose": "^5.2.3",
         "@repo/config": "workspace:*",
+        "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/types": "workspace:*",
         "@repo/utils": "workspace:*",
@@ -31,7 +27,7 @@
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^20.11.17",
+        "@types/node": "^22.15.3",
         "tsx": "^4.7.1",
         "typescript": "^5.8.3"
     }
