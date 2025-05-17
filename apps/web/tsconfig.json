@@ -1,5 +1,12 @@
 {
-  "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+    "extends": "@repo/typescript-config/base.json",
+    "compilerOptions": {
+        "jsx": "react-jsx",
+        "module": "ESNext",
+        "target": "ES2022",
+        "moduleResolution": "bundler",
+        "lib": ["DOM", "ES2022"]
+    },
+    "include": [".astro/types.d.ts", "**/*"],
+    "exclude": ["dist"]
 }

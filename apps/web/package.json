@@ -4,20 +4,20 @@
     "version": "0.0.0",
     "private": true,
     "scripts": {
-        "dev": "pnpm exec astro dev",
-        "build": "pnpm exec astro build",
-        "preview": "pnpm exec astro preview",
-        "astro": "pnpm exec astro",
+        "dev": "astro dev",
+        "build": "astro build",
+        "preview": "astro preview",
         "lint": "biome check .",
         "format": "biome format --write .",
         "check": "biome check --write .",
-        "clean": "rm -rf node_modules && rm -rf dist"
+        "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
+        "astro": "^5.2.5",
         "@astrojs/react": "^3.0.9",
         "@astrojs/tailwind": "^5.1.0",
+        "@astrojs/vercel": "^8.1.4",
         "@nanostores/react": "^0.7.1",
-        "astro": "^5.2.5",
         "i18next": "^23.10.0",
         "nanostores": "^0.9.5",
         "react": "^18.2.0",
@@ -30,11 +30,10 @@
         "@repo/logger": "workspace:*"
     },
     "devDependencies": {
-        "@astrojs/vercel": "^8.1.4",
+        "@repo/tailwind-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
         "@types/react": "^18.2.64",
         "@types/react-dom": "^18.2.21",
-        "typescript": "^5.4.2",
-        "@repo/tailwind-config": "workspace:*",
-        "@repo/typescript-config": "workspace:*"
+        "typescript": "^5.4.2"
     }
 }
