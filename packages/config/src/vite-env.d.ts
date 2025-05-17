@@ -15,7 +15,6 @@ interface ConfigMetaEnv {
 
 interface ImportMetaEnv extends ConfigMetaEnv {}
 
-// biome-ignore lint/correctness/noUnusedVariables: <explanation>
 interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
