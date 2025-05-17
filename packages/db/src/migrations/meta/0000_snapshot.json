@@ -1,0 +1,3988 @@
+{
+    "id": "416a7a88-777d-48a1-bc40-041c4884fbca",
+    "prevId": "00000000-0000-0000-0000-000000000000",
+    "version": "5",
+    "dialect": "pg",
+    "tables": {
+        "accommodations": {
+            "name": "accommodations",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "slug": {
+                    "name": "slug",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "type": {
+                    "name": "type",
+                    "type": "accommodation_type_enum",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "contact_info": {
+                    "name": "contact_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "social_networks": {
+                    "name": "social_networks",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "price": {
+                    "name": "price",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "destination_id": {
+                    "name": "destination_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "owner_id": {
+                    "name": "owner_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "location": {
+                    "name": "location",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "media": {
+                    "name": "media",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "rating": {
+                    "name": "rating",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "schedule": {
+                    "name": "schedule",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "extra_info": {
+                    "name": "extra_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_featured": {
+                    "name": "is_featured",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "seo": {
+                    "name": "seo",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "accommodations_slug_key": {
+                    "name": "accommodations_slug_key",
+                    "columns": ["slug"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "accommodations_destination_id_destinations_id_fk": {
+                    "name": "accommodations_destination_id_destinations_id_fk",
+                    "tableFrom": "accommodations",
+                    "tableTo": "destinations",
+                    "columnsFrom": ["destination_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "accommodations_owner_id_users_id_fk": {
+                    "name": "accommodations_owner_id_users_id_fk",
+                    "tableFrom": "accommodations",
+                    "tableTo": "users",
+                    "columnsFrom": ["owner_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "accommodations_created_by_id_users_id_fk": {
+                    "name": "accommodations_created_by_id_users_id_fk",
+                    "tableFrom": "accommodations",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodations_updated_by_id_users_id_fk": {
+                    "name": "accommodations_updated_by_id_users_id_fk",
+                    "tableFrom": "accommodations",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodations_deleted_by_id_users_id_fk": {
+                    "name": "accommodations_deleted_by_id_users_id_fk",
+                    "tableFrom": "accommodations",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "accommodation_amenities": {
+            "name": "accommodation_amenities",
+            "schema": "",
+            "columns": {
+                "accommodation_id": {
+                    "name": "accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "amenity_id": {
+                    "name": "amenity_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "is_optional": {
+                    "name": "is_optional",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "additional_cost": {
+                    "name": "additional_cost",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "additional_cost_percent": {
+                    "name": "additional_cost_percent",
+                    "type": "double precision",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "accommodation_amenities_accommodation_id_accommodations_id_fk": {
+                    "name": "accommodation_amenities_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "accommodation_amenities",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "accommodation_amenities_amenity_id_amenities_id_fk": {
+                    "name": "accommodation_amenities_amenity_id_amenities_id_fk",
+                    "tableFrom": "accommodation_amenities",
+                    "tableTo": "amenities",
+                    "columnsFrom": ["amenity_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "accommodation_amenities_created_by_id_users_id_fk": {
+                    "name": "accommodation_amenities_created_by_id_users_id_fk",
+                    "tableFrom": "accommodation_amenities",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_amenities_updated_by_id_users_id_fk": {
+                    "name": "accommodation_amenities_updated_by_id_users_id_fk",
+                    "tableFrom": "accommodation_amenities",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_amenities_deleted_by_id_users_id_fk": {
+                    "name": "accommodation_amenities_deleted_by_id_users_id_fk",
+                    "tableFrom": "accommodation_amenities",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "accommodation_faqs": {
+            "name": "accommodation_faqs",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "accommodation_id": {
+                    "name": "accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "question": {
+                    "name": "question",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "answer": {
+                    "name": "answer",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "category": {
+                    "name": "category",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "accommodation_faqs_accommodation_id_accommodations_id_fk": {
+                    "name": "accommodation_faqs_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "accommodation_faqs",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "accommodation_faqs_created_by_id_users_id_fk": {
+                    "name": "accommodation_faqs_created_by_id_users_id_fk",
+                    "tableFrom": "accommodation_faqs",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_faqs_updated_by_id_users_id_fk": {
+                    "name": "accommodation_faqs_updated_by_id_users_id_fk",
+                    "tableFrom": "accommodation_faqs",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_faqs_deleted_by_id_users_id_fk": {
+                    "name": "accommodation_faqs_deleted_by_id_users_id_fk",
+                    "tableFrom": "accommodation_faqs",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "accommodation_features": {
+            "name": "accommodation_features",
+            "schema": "",
+            "columns": {
+                "accommodation_id": {
+                    "name": "accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "feature_id": {
+                    "name": "feature_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "host_rewrite_name": {
+                    "name": "host_rewrite_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "comments": {
+                    "name": "comments",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "accommodation_features_accommodation_id_accommodations_id_fk": {
+                    "name": "accommodation_features_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "accommodation_features",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "accommodation_features_feature_id_features_id_fk": {
+                    "name": "accommodation_features_feature_id_features_id_fk",
+                    "tableFrom": "accommodation_features",
+                    "tableTo": "features",
+                    "columnsFrom": ["feature_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "accommodation_features_created_by_id_users_id_fk": {
+                    "name": "accommodation_features_created_by_id_users_id_fk",
+                    "tableFrom": "accommodation_features",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_features_updated_by_id_users_id_fk": {
+                    "name": "accommodation_features_updated_by_id_users_id_fk",
+                    "tableFrom": "accommodation_features",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_features_deleted_by_id_users_id_fk": {
+                    "name": "accommodation_features_deleted_by_id_users_id_fk",
+                    "tableFrom": "accommodation_features",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "accommodation_ia_data": {
+            "name": "accommodation_ia_data",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "accommodation_id": {
+                    "name": "accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "title": {
+                    "name": "title",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "content": {
+                    "name": "content",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "category": {
+                    "name": "category",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "accommodation_ia_data_accommodation_id_accommodations_id_fk": {
+                    "name": "accommodation_ia_data_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "accommodation_ia_data",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "accommodation_ia_data_created_by_id_users_id_fk": {
+                    "name": "accommodation_ia_data_created_by_id_users_id_fk",
+                    "tableFrom": "accommodation_ia_data",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_ia_data_updated_by_id_users_id_fk": {
+                    "name": "accommodation_ia_data_updated_by_id_users_id_fk",
+                    "tableFrom": "accommodation_ia_data",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_ia_data_deleted_by_id_users_id_fk": {
+                    "name": "accommodation_ia_data_deleted_by_id_users_id_fk",
+                    "tableFrom": "accommodation_ia_data",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "accommodation_reviews": {
+            "name": "accommodation_reviews",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "title": {
+                    "name": "title",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "content": {
+                    "name": "content",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "rating": {
+                    "name": "rating",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "accommodation_reviews_created_by_id_users_id_fk": {
+                    "name": "accommodation_reviews_created_by_id_users_id_fk",
+                    "tableFrom": "accommodation_reviews",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_reviews_updated_by_id_users_id_fk": {
+                    "name": "accommodation_reviews_updated_by_id_users_id_fk",
+                    "tableFrom": "accommodation_reviews",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_reviews_deleted_by_id_users_id_fk": {
+                    "name": "accommodation_reviews_deleted_by_id_users_id_fk",
+                    "tableFrom": "accommodation_reviews",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "amenities": {
+            "name": "amenities",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "icon": {
+                    "name": "icon",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_builtin": {
+                    "name": "is_builtin",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "type": {
+                    "name": "type",
+                    "type": "amenities_type_enum",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "amenities_created_by_id_users_id_fk": {
+                    "name": "amenities_created_by_id_users_id_fk",
+                    "tableFrom": "amenities",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "amenities_updated_by_id_users_id_fk": {
+                    "name": "amenities_updated_by_id_users_id_fk",
+                    "tableFrom": "amenities",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "amenities_deleted_by_id_users_id_fk": {
+                    "name": "amenities_deleted_by_id_users_id_fk",
+                    "tableFrom": "amenities",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "user_bookmarks": {
+            "name": "user_bookmarks",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "owner_id": {
+                    "name": "owner_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "entity_type": {
+                    "name": "entity_type",
+                    "type": "entity_type_enum",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "entity_id": {
+                    "name": "entity_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "user_bookmarks_owner_entity_key": {
+                    "name": "user_bookmarks_owner_entity_key",
+                    "columns": ["owner_id", "entity_type", "entity_id"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "user_bookmarks_owner_id_users_id_fk": {
+                    "name": "user_bookmarks_owner_id_users_id_fk",
+                    "tableFrom": "user_bookmarks",
+                    "tableTo": "users",
+                    "columnsFrom": ["owner_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "user_bookmarks_created_by_id_users_id_fk": {
+                    "name": "user_bookmarks_created_by_id_users_id_fk",
+                    "tableFrom": "user_bookmarks",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "user_bookmarks_updated_by_id_users_id_fk": {
+                    "name": "user_bookmarks_updated_by_id_users_id_fk",
+                    "tableFrom": "user_bookmarks",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "user_bookmarks_deleted_by_id_users_id_fk": {
+                    "name": "user_bookmarks_deleted_by_id_users_id_fk",
+                    "tableFrom": "user_bookmarks",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "destinations": {
+            "name": "destinations",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "slug": {
+                    "name": "slug",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "summary": {
+                    "name": "summary",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "media": {
+                    "name": "media",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_featured": {
+                    "name": "is_featured",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "visibility": {
+                    "name": "visibility",
+                    "type": "visibility_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'PUBLIC'"
+                },
+                "seo": {
+                    "name": "seo",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "location": {
+                    "name": "location",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "destinations_slug_key": {
+                    "name": "destinations_slug_key",
+                    "columns": ["slug"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "destinations_created_by_id_users_id_fk": {
+                    "name": "destinations_created_by_id_users_id_fk",
+                    "tableFrom": "destinations",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "destinations_updated_by_id_users_id_fk": {
+                    "name": "destinations_updated_by_id_users_id_fk",
+                    "tableFrom": "destinations",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "destinations_deleted_by_id_users_id_fk": {
+                    "name": "destinations_deleted_by_id_users_id_fk",
+                    "tableFrom": "destinations",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "destination_attractions": {
+            "name": "destination_attractions",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "slug": {
+                    "name": "slug",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "icon": {
+                    "name": "icon",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "destination_attractions_slug_key": {
+                    "name": "destination_attractions_slug_key",
+                    "columns": ["slug"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "destination_attractions_created_by_id_users_id_fk": {
+                    "name": "destination_attractions_created_by_id_users_id_fk",
+                    "tableFrom": "destination_attractions",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "destination_attractions_updated_by_id_users_id_fk": {
+                    "name": "destination_attractions_updated_by_id_users_id_fk",
+                    "tableFrom": "destination_attractions",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "destination_attractions_deleted_by_id_users_id_fk": {
+                    "name": "destination_attractions_deleted_by_id_users_id_fk",
+                    "tableFrom": "destination_attractions",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "destination_reviews": {
+            "name": "destination_reviews",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "title": {
+                    "name": "title",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "content": {
+                    "name": "content",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "rating": {
+                    "name": "rating",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "destination_reviews_created_by_id_users_id_fk": {
+                    "name": "destination_reviews_created_by_id_users_id_fk",
+                    "tableFrom": "destination_reviews",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "destination_reviews_updated_by_id_users_id_fk": {
+                    "name": "destination_reviews_updated_by_id_users_id_fk",
+                    "tableFrom": "destination_reviews",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "destination_reviews_deleted_by_id_users_id_fk": {
+                    "name": "destination_reviews_deleted_by_id_users_id_fk",
+                    "tableFrom": "destination_reviews",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "events": {
+            "name": "events",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "slug": {
+                    "name": "slug",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "summary": {
+                    "name": "summary",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "media": {
+                    "name": "media",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "category": {
+                    "name": "category",
+                    "type": "event_category_enum",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "date": {
+                    "name": "date",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "author_id": {
+                    "name": "author_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "location_id": {
+                    "name": "location_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "organizer_id": {
+                    "name": "organizer_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "pricing": {
+                    "name": "pricing",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "contact": {
+                    "name": "contact",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "visibility": {
+                    "name": "visibility",
+                    "type": "visibility_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'PUBLIC'"
+                },
+                "seo": {
+                    "name": "seo",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_featured": {
+                    "name": "is_featured",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "events_slug_key": {
+                    "name": "events_slug_key",
+                    "columns": ["slug"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "events_author_id_users_id_fk": {
+                    "name": "events_author_id_users_id_fk",
+                    "tableFrom": "events",
+                    "tableTo": "users",
+                    "columnsFrom": ["author_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "events_location_id_event_locations_id_fk": {
+                    "name": "events_location_id_event_locations_id_fk",
+                    "tableFrom": "events",
+                    "tableTo": "event_locations",
+                    "columnsFrom": ["location_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "events_organizer_id_event_organizers_id_fk": {
+                    "name": "events_organizer_id_event_organizers_id_fk",
+                    "tableFrom": "events",
+                    "tableTo": "event_organizers",
+                    "columnsFrom": ["organizer_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "events_created_by_id_users_id_fk": {
+                    "name": "events_created_by_id_users_id_fk",
+                    "tableFrom": "events",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "events_updated_by_id_users_id_fk": {
+                    "name": "events_updated_by_id_users_id_fk",
+                    "tableFrom": "events",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "events_deleted_by_id_users_id_fk": {
+                    "name": "events_deleted_by_id_users_id_fk",
+                    "tableFrom": "events",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "event_locations": {
+            "name": "event_locations",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "zip_code": {
+                    "name": "zip_code",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "country": {
+                    "name": "country",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "coordinates": {
+                    "name": "coordinates",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "street": {
+                    "name": "street",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "number": {
+                    "name": "number",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "floor": {
+                    "name": "floor",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "apartment": {
+                    "name": "apartment",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "neighborhood": {
+                    "name": "neighborhood",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "city": {
+                    "name": "city",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deparment": {
+                    "name": "deparment",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "place_name": {
+                    "name": "place_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "event_locations_name_key": {
+                    "name": "event_locations_name_key",
+                    "columns": ["name"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "event_locations_created_by_id_users_id_fk": {
+                    "name": "event_locations_created_by_id_users_id_fk",
+                    "tableFrom": "event_locations",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "event_locations_updated_by_id_users_id_fk": {
+                    "name": "event_locations_updated_by_id_users_id_fk",
+                    "tableFrom": "event_locations",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "event_locations_deleted_by_id_users_id_fk": {
+                    "name": "event_locations_deleted_by_id_users_id_fk",
+                    "tableFrom": "event_locations",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "event_organizers": {
+            "name": "event_organizers",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "logo": {
+                    "name": "logo",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "contact_info": {
+                    "name": "contact_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "social": {
+                    "name": "social",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "event_organizers_name_key": {
+                    "name": "event_organizers_name_key",
+                    "columns": ["name"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "event_organizers_created_by_id_users_id_fk": {
+                    "name": "event_organizers_created_by_id_users_id_fk",
+                    "tableFrom": "event_organizers",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "event_organizers_updated_by_id_users_id_fk": {
+                    "name": "event_organizers_updated_by_id_users_id_fk",
+                    "tableFrom": "event_organizers",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "event_organizers_deleted_by_id_users_id_fk": {
+                    "name": "event_organizers_deleted_by_id_users_id_fk",
+                    "tableFrom": "event_organizers",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "features": {
+            "name": "features",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "icon": {
+                    "name": "icon",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_builtin": {
+                    "name": "is_builtin",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "features_created_by_id_users_id_fk": {
+                    "name": "features_created_by_id_users_id_fk",
+                    "tableFrom": "features",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "features_updated_by_id_users_id_fk": {
+                    "name": "features_updated_by_id_users_id_fk",
+                    "tableFrom": "features",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "features_deleted_by_id_users_id_fk": {
+                    "name": "features_deleted_by_id_users_id_fk",
+                    "tableFrom": "features",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "permissions": {
+            "name": "permissions",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_builtin": {
+                    "name": "is_builtin",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "is_deprecated": {
+                    "name": "is_deprecated",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "permissions_name_key": {
+                    "name": "permissions_name_key",
+                    "columns": ["name"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "permissions_created_by_id_users_id_fk": {
+                    "name": "permissions_created_by_id_users_id_fk",
+                    "tableFrom": "permissions",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "permissions_updated_by_id_users_id_fk": {
+                    "name": "permissions_updated_by_id_users_id_fk",
+                    "tableFrom": "permissions",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "permissions_deleted_by_id_users_id_fk": {
+                    "name": "permissions_deleted_by_id_users_id_fk",
+                    "tableFrom": "permissions",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "posts": {
+            "name": "posts",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "slug": {
+                    "name": "slug",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "category": {
+                    "name": "category",
+                    "type": "post_category_enum",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "title": {
+                    "name": "title",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "summary": {
+                    "name": "summary",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "content": {
+                    "name": "content",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "media": {
+                    "name": "media",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "sponsorship_id": {
+                    "name": "sponsorship_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "related_destination_id": {
+                    "name": "related_destination_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "related_accommodation_id": {
+                    "name": "related_accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "related_event_id": {
+                    "name": "related_event_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "visibility": {
+                    "name": "visibility",
+                    "type": "visibility_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'PUBLIC'"
+                },
+                "seo": {
+                    "name": "seo",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_featured": {
+                    "name": "is_featured",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "is_news": {
+                    "name": "is_news",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "is_featured_in_website": {
+                    "name": "is_featured_in_website",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "expires_at": {
+                    "name": "expires_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "likes": {
+                    "name": "likes",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": 0
+                },
+                "comments": {
+                    "name": "comments",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": 0
+                },
+                "shares": {
+                    "name": "shares",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": 0
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "posts_slug_key": {
+                    "name": "posts_slug_key",
+                    "columns": ["slug"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "posts_sponsorship_id_post_sponsorships_id_fk": {
+                    "name": "posts_sponsorship_id_post_sponsorships_id_fk",
+                    "tableFrom": "posts",
+                    "tableTo": "post_sponsorships",
+                    "columnsFrom": ["sponsorship_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "posts_related_destination_id_destinations_id_fk": {
+                    "name": "posts_related_destination_id_destinations_id_fk",
+                    "tableFrom": "posts",
+                    "tableTo": "destinations",
+                    "columnsFrom": ["related_destination_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "posts_related_accommodation_id_accommodations_id_fk": {
+                    "name": "posts_related_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "posts",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["related_accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "posts_related_event_id_events_id_fk": {
+                    "name": "posts_related_event_id_events_id_fk",
+                    "tableFrom": "posts",
+                    "tableTo": "events",
+                    "columnsFrom": ["related_event_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "posts_created_by_id_users_id_fk": {
+                    "name": "posts_created_by_id_users_id_fk",
+                    "tableFrom": "posts",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "posts_updated_by_id_users_id_fk": {
+                    "name": "posts_updated_by_id_users_id_fk",
+                    "tableFrom": "posts",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "posts_deleted_by_id_users_id_fk": {
+                    "name": "posts_deleted_by_id_users_id_fk",
+                    "tableFrom": "posts",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "post_sponsors": {
+            "name": "post_sponsors",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "type": {
+                    "name": "type",
+                    "type": "client_type_enum",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "logo": {
+                    "name": "logo",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "social": {
+                    "name": "social",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "contact": {
+                    "name": "contact",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "post_sponsors_name_key": {
+                    "name": "post_sponsors_name_key",
+                    "columns": ["name"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "post_sponsors_created_by_id_users_id_fk": {
+                    "name": "post_sponsors_created_by_id_users_id_fk",
+                    "tableFrom": "post_sponsors",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "post_sponsors_updated_by_id_users_id_fk": {
+                    "name": "post_sponsors_updated_by_id_users_id_fk",
+                    "tableFrom": "post_sponsors",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "post_sponsors_deleted_by_id_users_id_fk": {
+                    "name": "post_sponsors_deleted_by_id_users_id_fk",
+                    "tableFrom": "post_sponsors",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "post_sponsorships": {
+            "name": "post_sponsorships",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "sponsor_id": {
+                    "name": "sponsor_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "post_id": {
+                    "name": "post_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "message": {
+                    "name": "message",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "paid": {
+                    "name": "paid",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "paid_at": {
+                    "name": "paid_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "from_date": {
+                    "name": "from_date",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "to_date": {
+                    "name": "to_date",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_highlighted": {
+                    "name": "is_highlighted",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "post_sponsorships_sponsor_post_key": {
+                    "name": "post_sponsorships_sponsor_post_key",
+                    "columns": ["sponsor_id", "post_id"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "post_sponsorships_sponsor_id_post_sponsors_id_fk": {
+                    "name": "post_sponsorships_sponsor_id_post_sponsors_id_fk",
+                    "tableFrom": "post_sponsorships",
+                    "tableTo": "post_sponsors",
+                    "columnsFrom": ["sponsor_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "post_sponsorships_post_id_posts_id_fk": {
+                    "name": "post_sponsorships_post_id_posts_id_fk",
+                    "tableFrom": "post_sponsorships",
+                    "tableTo": "posts",
+                    "columnsFrom": ["post_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "post_sponsorships_created_by_id_users_id_fk": {
+                    "name": "post_sponsorships_created_by_id_users_id_fk",
+                    "tableFrom": "post_sponsorships",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "post_sponsorships_updated_by_id_users_id_fk": {
+                    "name": "post_sponsorships_updated_by_id_users_id_fk",
+                    "tableFrom": "post_sponsorships",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "post_sponsorships_deleted_by_id_users_id_fk": {
+                    "name": "post_sponsorships_deleted_by_id_users_id_fk",
+                    "tableFrom": "post_sponsorships",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "r_accommodation_faq": {
+            "name": "r_accommodation_faq",
+            "schema": "",
+            "columns": {
+                "accommodation_id": {
+                    "name": "accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "faq_id": {
+                    "name": "faq_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "r_accommodation_faq_accommodation_id_accommodations_id_fk": {
+                    "name": "r_accommodation_faq_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "r_accommodation_faq",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "r_accommodation_faq_faq_id_accommodation_faqs_id_fk": {
+                    "name": "r_accommodation_faq_faq_id_accommodation_faqs_id_fk",
+                    "tableFrom": "r_accommodation_faq",
+                    "tableTo": "accommodation_faqs",
+                    "columnsFrom": ["faq_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_accommodation_faq_accommodation_id_faq_id_pk": {
+                    "name": "r_accommodation_faq_accommodation_id_faq_id_pk",
+                    "columns": ["accommodation_id", "faq_id"]
+                }
+            },
+            "uniqueConstraints": {}
+        },
+        "r_accommodation_ia_data": {
+            "name": "r_accommodation_ia_data",
+            "schema": "",
+            "columns": {
+                "accommodation_id": {
+                    "name": "accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "ia_data_id": {
+                    "name": "ia_data_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "r_accommodation_ia_data_accommodation_id_accommodations_id_fk": {
+                    "name": "r_accommodation_ia_data_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "r_accommodation_ia_data",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "r_accommodation_ia_data_ia_data_id_accommodation_ia_data_id_fk": {
+                    "name": "r_accommodation_ia_data_ia_data_id_accommodation_ia_data_id_fk",
+                    "tableFrom": "r_accommodation_ia_data",
+                    "tableTo": "accommodation_ia_data",
+                    "columnsFrom": ["ia_data_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_accommodation_ia_data_accommodation_id_ia_data_id_pk": {
+                    "name": "r_accommodation_ia_data_accommodation_id_ia_data_id_pk",
+                    "columns": ["accommodation_id", "ia_data_id"]
+                }
+            },
+            "uniqueConstraints": {}
+        },
+        "r_accommodation_review": {
+            "name": "r_accommodation_review",
+            "schema": "",
+            "columns": {
+                "accommodation_id": {
+                    "name": "accommodation_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "review_id": {
+                    "name": "review_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "r_accommodation_review_accommodation_id_accommodations_id_fk": {
+                    "name": "r_accommodation_review_accommodation_id_accommodations_id_fk",
+                    "tableFrom": "r_accommodation_review",
+                    "tableTo": "accommodations",
+                    "columnsFrom": ["accommodation_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "r_accommodation_review_review_id_accommodation_reviews_id_fk": {
+                    "name": "r_accommodation_review_review_id_accommodation_reviews_id_fk",
+                    "tableFrom": "r_accommodation_review",
+                    "tableTo": "accommodation_reviews",
+                    "columnsFrom": ["review_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_accommodation_review_accommodation_id_review_id_pk": {
+                    "name": "r_accommodation_review_accommodation_id_review_id_pk",
+                    "columns": ["accommodation_id", "review_id"]
+                }
+            },
+            "uniqueConstraints": {}
+        },
+        "r_destination_attraction": {
+            "name": "r_destination_attraction",
+            "schema": "",
+            "columns": {
+                "destination_id": {
+                    "name": "destination_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "attraction_id": {
+                    "name": "attraction_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "r_destination_attraction_destination_id_destinations_id_fk": {
+                    "name": "r_destination_attraction_destination_id_destinations_id_fk",
+                    "tableFrom": "r_destination_attraction",
+                    "tableTo": "destinations",
+                    "columnsFrom": ["destination_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "r_destination_attraction_attraction_id_destination_attractions_id_fk": {
+                    "name": "r_destination_attraction_attraction_id_destination_attractions_id_fk",
+                    "tableFrom": "r_destination_attraction",
+                    "tableTo": "destination_attractions",
+                    "columnsFrom": ["attraction_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_destination_attraction_destination_id_attraction_id_pk": {
+                    "name": "r_destination_attraction_destination_id_attraction_id_pk",
+                    "columns": ["destination_id", "attraction_id"]
+                }
+            },
+            "uniqueConstraints": {}
+        },
+        "r_destination_review": {
+            "name": "r_destination_review",
+            "schema": "",
+            "columns": {
+                "destination_id": {
+                    "name": "destination_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "review_id": {
+                    "name": "review_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "r_destination_review_destination_id_destinations_id_fk": {
+                    "name": "r_destination_review_destination_id_destinations_id_fk",
+                    "tableFrom": "r_destination_review",
+                    "tableTo": "destinations",
+                    "columnsFrom": ["destination_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "r_destination_review_review_id_destination_reviews_id_fk": {
+                    "name": "r_destination_review_review_id_destination_reviews_id_fk",
+                    "tableFrom": "r_destination_review",
+                    "tableTo": "destination_reviews",
+                    "columnsFrom": ["review_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_destination_review_destination_id_review_id_pk": {
+                    "name": "r_destination_review_destination_id_review_id_pk",
+                    "columns": ["destination_id", "review_id"]
+                }
+            },
+            "uniqueConstraints": {}
+        },
+        "r_entity_tag": {
+            "name": "r_entity_tag",
+            "schema": "",
+            "columns": {
+                "entity_type": {
+                    "name": "entity_type",
+                    "type": "entity_type_enum",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "entity_id": {
+                    "name": "entity_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "tag_id": {
+                    "name": "tag_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "r_entity_tag_tag_id_tags_id_fk": {
+                    "name": "r_entity_tag_tag_id_tags_id_fk",
+                    "tableFrom": "r_entity_tag",
+                    "tableTo": "tags",
+                    "columnsFrom": ["tag_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_entity_tag_entity_type_entity_id_tag_id_pk": {
+                    "name": "r_entity_tag_entity_type_entity_id_tag_id_pk",
+                    "columns": ["entity_type", "entity_id", "tag_id"]
+                }
+            },
+            "uniqueConstraints": {}
+        },
+        "r_role_permission": {
+            "name": "r_role_permission",
+            "schema": "",
+            "columns": {
+                "role_id": {
+                    "name": "role_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "permission_id": {
+                    "name": "permission_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "r_role_permission_role_id_roles_id_fk": {
+                    "name": "r_role_permission_role_id_roles_id_fk",
+                    "tableFrom": "r_role_permission",
+                    "tableTo": "roles",
+                    "columnsFrom": ["role_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "r_role_permission_permission_id_permissions_id_fk": {
+                    "name": "r_role_permission_permission_id_permissions_id_fk",
+                    "tableFrom": "r_role_permission",
+                    "tableTo": "permissions",
+                    "columnsFrom": ["permission_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_role_permission_role_id_permission_id_pk": {
+                    "name": "r_role_permission_role_id_permission_id_pk",
+                    "columns": ["role_id", "permission_id"]
+                }
+            },
+            "uniqueConstraints": {}
+        },
+        "r_user_permission": {
+            "name": "r_user_permission",
+            "schema": "",
+            "columns": {
+                "user_id": {
+                    "name": "user_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "permission_id": {
+                    "name": "permission_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "r_user_permission_user_id_users_id_fk": {
+                    "name": "r_user_permission_user_id_users_id_fk",
+                    "tableFrom": "r_user_permission",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "r_user_permission_permission_id_permissions_id_fk": {
+                    "name": "r_user_permission_permission_id_permissions_id_fk",
+                    "tableFrom": "r_user_permission",
+                    "tableTo": "permissions",
+                    "columnsFrom": ["permission_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {
+                "r_user_permission_user_id_permission_id_pk": {
+                    "name": "r_user_permission_user_id_permission_id_pk",
+                    "columns": ["user_id", "permission_id"]
+                }
+            },
+            "uniqueConstraints": {}
+        },
+        "roles": {
+            "name": "roles",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_builtin": {
+                    "name": "is_builtin",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "is_deprecated": {
+                    "name": "is_deprecated",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "is_default": {
+                    "name": "is_default",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "roles_name_key": {
+                    "name": "roles_name_key",
+                    "columns": ["name"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "roles_created_by_id_users_id_fk": {
+                    "name": "roles_created_by_id_users_id_fk",
+                    "tableFrom": "roles",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "roles_updated_by_id_users_id_fk": {
+                    "name": "roles_updated_by_id_users_id_fk",
+                    "tableFrom": "roles",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "roles_deleted_by_id_users_id_fk": {
+                    "name": "roles_deleted_by_id_users_id_fk",
+                    "tableFrom": "roles",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "tags": {
+            "name": "tags",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "owner_id": {
+                    "name": "owner_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "notes": {
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "color": {
+                    "name": "color",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "icon": {
+                    "name": "icon",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "tags_owner_name_key": {
+                    "name": "tags_owner_name_key",
+                    "columns": ["owner_id", "name"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "tags_owner_id_users_id_fk": {
+                    "name": "tags_owner_id_users_id_fk",
+                    "tableFrom": "tags",
+                    "tableTo": "users",
+                    "columnsFrom": ["owner_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "tags_created_by_id_users_id_fk": {
+                    "name": "tags_created_by_id_users_id_fk",
+                    "tableFrom": "tags",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "tags_updated_by_id_users_id_fk": {
+                    "name": "tags_updated_by_id_users_id_fk",
+                    "tableFrom": "tags",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "tags_deleted_by_id_users_id_fk": {
+                    "name": "tags_deleted_by_id_users_id_fk",
+                    "tableFrom": "tags",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        },
+        "users": {
+            "name": "users",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "display_name": {
+                    "name": "display_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "user_name": {
+                    "name": "user_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "password_hash": {
+                    "name": "password_hash",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "first_name": {
+                    "name": "first_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "last_name": {
+                    "name": "last_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "brith_date": {
+                    "name": "brith_date",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "state": {
+                    "name": "state",
+                    "type": "state_enum",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'ACTIVE'"
+                },
+                "admin_info": {
+                    "name": "admin_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "contact_info": {
+                    "name": "contact_info",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "location": {
+                    "name": "location",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "social_networks": {
+                    "name": "social_networks",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "email_verified": {
+                    "name": "email_verified",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "phone_verified": {
+                    "name": "phone_verified",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "profile": {
+                    "name": "profile",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "settings": {
+                    "name": "settings",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "role_id": {
+                    "name": "role_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "deleted_by_id": {
+                    "name": "deleted_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {
+                "users_user_name_key": {
+                    "name": "users_user_name_key",
+                    "columns": ["user_name"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "users_role_id_roles_id_fk": {
+                    "name": "users_role_id_roles_id_fk",
+                    "tableFrom": "users",
+                    "tableTo": "roles",
+                    "columnsFrom": ["role_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "users_created_by_id_users_id_fk": {
+                    "name": "users_created_by_id_users_id_fk",
+                    "tableFrom": "users",
+                    "tableTo": "users",
+                    "columnsFrom": ["created_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "users_updated_by_id_users_id_fk": {
+                    "name": "users_updated_by_id_users_id_fk",
+                    "tableFrom": "users",
+                    "tableTo": "users",
+                    "columnsFrom": ["updated_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "users_deleted_by_id_users_id_fk": {
+                    "name": "users_deleted_by_id_users_id_fk",
+                    "tableFrom": "users",
+                    "tableTo": "users",
+                    "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {}
+        }
+    },
+    "enums": {
+        "accommodation_type_enum": {
+            "name": "accommodation_type_enum",
+            "values": {
+                "APARTMENT": "APARTMENT",
+                "HOUSE": "HOUSE",
+                "COUNTRY_HOUSE": "COUNTRY_HOUSE",
+                "CABIN": "CABIN",
+                "HOTEL": "HOTEL",
+                "HOSTEL": "HOSTEL",
+                "CAMPING": "CAMPING",
+                "ROOM": "ROOM"
+            }
+        },
+        "amenities_type_enum": {
+            "name": "amenities_type_enum",
+            "values": {
+                "CLIMATE_CONTROL": "CLIMATE_CONTROL",
+                "CONNECTIVITY": "CONNECTIVITY",
+                "ENTERTAINMENT": "ENTERTAINMENT",
+                "KITCHEN": "KITCHEN",
+                "BED_AND_BATH": "BED_AND_BATH",
+                "OUTDOORS": "OUTDOORS",
+                "ACCESSIBILITY": "ACCESSIBILITY",
+                "SERVICES": "SERVICES",
+                "SAFETY": "SAFETY",
+                "FAMILY_FRIENDLY": "FAMILY_FRIENDLY",
+                "WORK_FRIENDLY": "WORK_FRIENDLY",
+                "GENERAL_APPLIANCES": "GENERAL_APPLIANCES"
+            }
+        },
+        "builtin_permission_type_enum": {
+            "name": "builtin_permission_type_enum",
+            "values": {
+                "USER_CREATE": "USER_CREATE",
+                "USER_UPDATE": "USER_UPDATE",
+                "USER_DELETE": "USER_DELETE",
+                "DESTINATION_CREATE": "DESTINATION_CREATE",
+                "DESTINATION_UPDATE": "DESTINATION_UPDATE",
+                "DESTINATION_DELETE": "DESTINATION_DELETE",
+                "ACCOMMODATION_CREATE": "ACCOMMODATION_CREATE",
+                "ACCOMMODATION_UPDATE": "ACCOMMODATION_UPDATE",
+                "ACCOMMODATION_DELETE": "ACCOMMODATION_DELETE",
+                "EVENT_CREATE": "EVENT_CREATE",
+                "EVENT_UPDATE": "EVENT_UPDATE",
+                "EVENT_DELETE": "EVENT_DELETE",
+                "POST_CREATE": "POST_CREATE",
+                "POST_UPDATE": "POST_UPDATE",
+                "POST_DELETE": "POST_DELETE"
+            }
+        },
+        "builtin_role_type_enum": {
+            "name": "builtin_role_type_enum",
+            "values": {
+                "ADMIN": "ADMIN",
+                "EDITOR": "EDITOR",
+                "CLIENT": "CLIENT",
+                "USER": "USER"
+            }
+        },
+        "client_type_enum": {
+            "name": "client_type_enum",
+            "values": {
+                "POST_SPONSOR": "POST_SPONSOR",
+                "ADVERTISER": "ADVERTISER",
+                "HOST": "HOST"
+            }
+        },
+        "entity_type_enum": {
+            "name": "entity_type_enum",
+            "values": {
+                "ACCOMMODATION": "ACCOMMODATION",
+                "DESTINATION": "DESTINATION",
+                "USER": "USER",
+                "POST": "POST",
+                "EVENT": "EVENT"
+            }
+        },
+        "event_category_enum": {
+            "name": "event_category_enum",
+            "values": {
+                "MUSIC": "MUSIC",
+                "CULTURE": "CULTURE",
+                "SPORTS": "SPORTS",
+                "GASTRONOMY": "GASTRONOMY",
+                "FESTIVAL": "FESTIVAL",
+                "NATURE": "NATURE",
+                "THEATER": "THEATER",
+                "WORKSHOP": "WORKSHOP",
+                "OTHER": "OTHER"
+            }
+        },
+        "post_category_enum": {
+            "name": "post_category_enum",
+            "values": {
+                "EVENTS": "EVENTS",
+                "CULTURE": "CULTURE",
+                "GASTRONOMY": "GASTRONOMY",
+                "NATURE": "NATURE",
+                "TOURISM": "TOURISM",
+                "GENERAL": "GENERAL",
+                "SPORT": "SPORT"
+            }
+        },
+        "prefered_contact_enum": {
+            "name": "prefered_contact_enum",
+            "values": {
+                "HOME": "HOME",
+                "WORK": "WORK",
+                "MOBILE": "MOBILE"
+            }
+        },
+        "price_currency_enum": {
+            "name": "price_currency_enum",
+            "values": {
+                "ARS": "ARS",
+                "USD": "USD"
+            }
+        },
+        "recurrence_type_enum": {
+            "name": "recurrence_type_enum",
+            "values": {
+                "NONE": "NONE",
+                "DAILY": "DAILY",
+                "WEEKLY": "WEEKLY",
+                "MONTHLY": "MONTHLY",
+                "YEARLY": "YEARLY"
+            }
+        },
+        "state_enum": {
+            "name": "state_enum",
+            "values": {
+                "ACTIVE": "ACTIVE",
+                "INACTIVE": "INACTIVE",
+                "PENDING": "PENDING",
+                "DELETED": "DELETED"
+            }
+        },
+        "tag_color_enum": {
+            "name": "tag_color_enum",
+            "values": {
+                "RED": "RED",
+                "BLUE": "BLUE",
+                "GREEN": "GREEN",
+                "YELLOW": "YELLOW",
+                "ORANGE": "ORANGE",
+                "PURPLE": "PURPLE",
+                "PINK": "PINK",
+                "BROWN": "BROWN",
+                "GREY": "GREY",
+                "WHITE": "WHITE",
+                "CYAN": "CYAN",
+                "MAGENTA": "MAGENTA",
+                "LIGHT_BLUE": "LIGHT_BLUE",
+                "LIGHT_GREEN": "LIGHT_GREEN"
+            }
+        },
+        "visibility_enum": {
+            "name": "visibility_enum",
+            "values": {
+                "PUBLIC": "PUBLIC",
+                "DRAFT": "DRAFT",
+                "PRIVATE": "PRIVATE"
+            }
+        }
+    },
+    "schemas": {},
+    "_meta": {
+        "columns": {},
+        "schemas": {},
+        "tables": {}
+    }
+}
