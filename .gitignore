@@ -33,3 +33,7 @@ dist/
 
 NOTES.txt
 *.tsbuildinfo
+
+.vercel
+.astro
+
