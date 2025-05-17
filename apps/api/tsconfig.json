@@ -2,7 +2,6 @@
     "extends": "@repo/typescript-config/base.json",
     "compilerOptions": {
         "outDir": "dist",
-        "rootDir": "../../",
         "target": "ES2022",
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
@@ -10,6 +9,7 @@
         "types": ["node"],
         "resolveJsonModule": true,
         "baseUrl": ".",
+        "rootDir": "../../",
         "paths": {
             "@/*": ["./src/*"],
             "@repo/config": ["../../packages/config/src/index.ts"],

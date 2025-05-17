@@ -5,13 +5,13 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "tsc -b && vite build",
+        "build": "vite build",
+        "preview": "vite preview",
         "lint": "biome check .",
         "format": "biome format --write .",
         "check": "biome check --write .",
-        "clean": "rm -rf node_modules && rm -rf dist",
-        "check-types": "tsc --noEmit",
-        "preview": "vite preview"
+        "clean": "rm -rf node_modules dist",
+        "check-types": "tsc --noEmit"
     },
     "dependencies": {
         "react": "^19.1.0",
@@ -27,7 +27,6 @@
         "@types/react": "^19.1.2",
         "@types/react-dom": "^19.1.2",
         "@vitejs/plugin-react": "^4.4.1",
-        "globals": "^16.0.0",
         "typescript": "~5.8.3",
         "vite": "^6.3.5"
     }
