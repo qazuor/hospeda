@@ -30,3 +30,6 @@ yarn-error.log*
 dist/
 
 .env
+
+NOTES.txt
+*.tsbuildinfo
