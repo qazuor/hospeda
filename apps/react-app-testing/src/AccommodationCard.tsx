@@ -78,42 +78,31 @@ export default function AccommodationCard({ apiUrl }: AccommodationCardProps): J
                             <div>
                                 <div>
                                     <strong>Price:</strong>{' '}
-                                    {accommodation.price?.basePrice.currency}{' '}
-                                    {accommodation.price?.basePrice.price}
                                     <div>
                                         <strong>Additional Fees:</strong>
                                         <div>
                                             <strong>Cleaning:</strong>{' '}
-                                            {accommodation.price?.additionalFees?.cleaning}
                                         </div>
                                         <div>
                                             <strong>Service:</strong>{' '}
-                                            {accommodation.price?.additionalFees?.cleaning}
                                         </div>
                                         <div>
                                             <strong>Tax Percentage:</strong>{' '}
-                                            {accommodation.price?.additionalFees?.taxPercent}
                                         </div>
                                     </div>
                                     <div>
                                         <strong>Discounts:</strong>
                                         <div>
                                             <strong>Last Minute:</strong>{' '}
-                                            {accommodation.price?.discounts?.lastMinute}%
                                         </div>
                                         <div>
                                             <strong>Monthly:</strong>{' '}
-                                            {accommodation.price?.discounts?.monthly}%
                                         </div>
                                         <div>
                                             <strong>Weekly:</strong>{' '}
-                                            {accommodation.price?.discounts?.weekly}%
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div>
-                                <strong>Amenities</strong> {accommodation.amenities.join(', ')}
                             </div>
                         </div>
                     ))
