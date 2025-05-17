@@ -1,10 +1,10 @@
 import type { AdminInfoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { accommodations } from './accommodation.dbschema';
-import { StatePgEnum } from './enums.dbschema';
-import { features } from './feature.dbschema';
-import { users } from './user.dbschema';
+import { accommodations } from './accommodation.dbschema.js';
+import { StatePgEnum } from './enums.dbschema.js';
+import { features } from './feature.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * accommodation_features table schema - relationships between accommodations and features

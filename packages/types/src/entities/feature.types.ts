@@ -1,5 +1,5 @@
-import type { AdminInfoType, BaseEntityType } from '../common.types';
-import type { AccommodationType } from './accommodation.types';
+import type { AdminInfoType, BaseEntityType } from '../common.types.js';
+import type { AccommodationType } from './accommodation.types.js';
 
 /**
  * Base feature that can be applied to accommodations

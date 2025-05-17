@@ -7,18 +7,18 @@ import {
     SeoSchema,
     SocialNetworkSchema,
     TagSchema
-} from '../common.schema';
-import { AccommodationTypeEnumSchema } from '../enums.schema';
-import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils';
-import { AccommodationAmenitiesSchema } from './accommodation/amenities.schema';
-import { AccommodationExtraInfoSchema } from './accommodation/extraInfo.schema';
-import { AccommodationFaqSchema } from './accommodation/faq.schema';
-import { AccommodationFeaturesSchema } from './accommodation/features.schema';
-import { AccommodationIaDataSchema } from './accommodation/iaData.schema';
-import { AccommodationPriceSchema } from './accommodation/price.schema';
-import { AccommodationRatingSchema } from './accommodation/rating.schema';
-import { AccommodationReviewSchema } from './accommodation/review.schema';
-import { AccommodationScheduleSchema } from './accommodation/schedule.schema';
+} from '../common.schema.js';
+import { AccommodationTypeEnumSchema } from '../enums.schema.js';
+import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils.js';
+import { AccommodationAmenitiesSchema } from './accommodation/amenities.schema.js';
+import { AccommodationExtraInfoSchema } from './accommodation/extraInfo.schema.js';
+import { AccommodationFaqSchema } from './accommodation/faq.schema.js';
+import { AccommodationFeaturesSchema } from './accommodation/features.schema.js';
+import { AccommodationIaDataSchema } from './accommodation/iaData.schema.js';
+import { AccommodationPriceSchema } from './accommodation/price.schema.js';
+import { AccommodationRatingSchema } from './accommodation/rating.schema.js';
+import { AccommodationReviewSchema } from './accommodation/review.schema.js';
+import { AccommodationScheduleSchema } from './accommodation/schedule.schema.js';
 
 /**
  * Zod schema for a Accommodation entity.

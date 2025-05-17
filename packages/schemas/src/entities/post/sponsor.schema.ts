@@ -1,9 +1,9 @@
 // export interface PostSponsorType extends BaseEntityType {
 
 import { z } from 'zod';
-import { BaseEntitySchema, ContactInfoSchema, SocialNetworkSchema } from '../../common.schema';
-import { ClientTypeEnumSchema } from '../../enums.schema';
-import { PostSponsorshipSchema } from './sponsorship.schema';
+import { BaseEntitySchema, ContactInfoSchema, SocialNetworkSchema } from '../../common.schema.js';
+import { ClientTypeEnumSchema } from '../../enums.schema.js';
+import { PostSponsorshipSchema } from './sponsorship.schema.js';
 
 // }
 

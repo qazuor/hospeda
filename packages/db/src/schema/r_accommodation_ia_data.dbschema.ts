@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
-import { accommodations } from './accommodation.dbschema';
-import { accommodationIaData } from './accommodation_ia_data.dbschema';
+import { accommodations } from './accommodation.dbschema.js';
+import { accommodationIaData } from './accommodation_ia_data.dbschema.js';
 
 /**
  * r_accommodation_ia_data join table

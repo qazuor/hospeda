@@ -1,9 +1,9 @@
 export {
     getLoggerConfigs as getLoggerClientConfigs,
     getMainConfigs as getMainClientConfigs
-} from './client';
+} from './client.js';
 export {
     getDBConfigs,
     getLoggerConfigs as getLoggerServerConfigs,
     getMainConfigs as getMainServerConfigs
-} from './server';
+} from './server.js';

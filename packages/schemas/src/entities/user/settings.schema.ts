@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UserNotificationsSchema } from './notifications.schema';
+import { UserNotificationsSchema } from './notifications.schema.js';
 
 /**
  * Zod schema for user settings.

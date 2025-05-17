@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { BaseEntitySchema, BasePriceSchema } from '../../common.schema';
-import { AmenitiesTypeEnumSchema } from '../../enums.schema';
+import { BaseEntitySchema, BasePriceSchema } from '../../common.schema.js';
+import { AmenitiesTypeEnumSchema } from '../../enums.schema.js';
 
 /**
  * Zod schema for a accommodation amenities entity.

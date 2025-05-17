@@ -2,10 +2,10 @@ import { logger } from '@repo/logger';
 import type { EntityTypeEnum } from '@repo/types';
 import type { InferSelectModel } from 'drizzle-orm';
 import { and, eq } from 'drizzle-orm';
-import { db } from '../client';
-import { entityTagRelations } from '../schema/r_entity_tag.dbschema';
-import type { InsertEntityTagRelation, SelectEntityTagRelationFilter } from '../types/db-types';
-import { assertExists, castReturning } from '../utils/db-utils';
+import { db } from '../client.js';
+import { entityTagRelations } from '../schema/r_entity_tag.dbschema.js';
+import type { InsertEntityTagRelation, SelectEntityTagRelationFilter } from '../types/db-types.js';
+import { assertExists, castReturning } from '../utils/db-utils.js';
 
 /**
  * Scoped logger for entity tag relation model operations.

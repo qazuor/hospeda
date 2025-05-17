@@ -2,10 +2,10 @@ import { logger } from '@repo/logger';
 import type { EntityTypeEnum } from '@repo/types';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, count, desc, eq, sql } from 'drizzle-orm';
-import { userBookmarks } from 'src/schema';
-import type { SelectBookmarkFilter } from 'src/types/db-types';
-import { db } from '../client';
-import { assertExists, castReturning } from '../utils/db-utils';
+import { db } from '../client.js';
+import { userBookmarks } from '../schema/index.js';
+import type { SelectBookmarkFilter } from '../types/db-types.js';
+import { assertExists, castReturning } from '../utils/db-utils.js';
 
 /**
  * Scoped logger for bookmark model operations.

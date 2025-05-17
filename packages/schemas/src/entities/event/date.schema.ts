@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RecurrenceTypeEnumSchema } from '../../enums.schema';
+import { RecurrenceTypeEnumSchema } from '../../enums.schema.js';
 
 /**
  * Zod schema for a event date info.

@@ -8,11 +8,11 @@ import type {
 } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { EventCategoryPgEnum, StatePgEnum, VisibilityPgEnum } from './enums.dbschema';
-import { eventLocations } from './event_location.dbschema';
-import { eventOrganizers } from './event_organizer.dbschema';
-import { entityTagRelations } from './r_entity_tag.dbschema';
-import { users } from './user.dbschema';
+import { EventCategoryPgEnum, StatePgEnum, VisibilityPgEnum } from './enums.dbschema.js';
+import { eventLocations } from './event_location.dbschema.js';
+import { eventOrganizers } from './event_organizer.dbschema.js';
+import { entityTagRelations } from './r_entity_tag.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * events table schema

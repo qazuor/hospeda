@@ -5,11 +5,11 @@ import {
     MediaSchema,
     SeoSchema,
     TagSchema
-} from '../common.schema';
-import { EventCategoryEnumSchema, VisibilityEnumSchema } from '../enums.schema';
-import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils';
-import { EventDateSchema } from './event/date.schema';
-import { EventPriceSchema } from './event/price.schema';
+} from '../common.schema.js';
+import { EventCategoryEnumSchema, VisibilityEnumSchema } from '../enums.schema.js';
+import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils.js';
+import { EventDateSchema } from './event/date.schema.js';
+import { EventPriceSchema } from './event/price.schema.js';
 
 /**
  * Zod schema for a event entity.

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { BaseEntitySchema } from '../../common.schema';
-import { AccommodationRatingSchema } from './rating.schema';
+import { BaseEntitySchema } from '../../common.schema.js';
+import { AccommodationRatingSchema } from './rating.schema.js';
 
 /**
  * Zod schema for a accommodation review entity.

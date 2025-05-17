@@ -40,5 +40,6 @@
             "cache": false,
             "persistent": true
         }
-    }
+    },
+    "concurrency": "20"
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { BaseEntitySchema } from '../../common.schema';
-import { DestinationRatingSchema } from './rating.schema';
+import { BaseEntitySchema } from '../../common.schema.js';
+import { DestinationRatingSchema } from './rating.schema.js';
 
 /**
  * Zod schema for a destination review entity.

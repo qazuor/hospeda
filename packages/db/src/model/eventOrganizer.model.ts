@@ -1,20 +1,20 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client';
-import { eventOrganizers } from '../schema/event_organizer.dbschema';
+import { db } from '../client.js';
+import { eventOrganizers } from '../schema/event_organizer.dbschema.js';
 import type {
     InsertEventOrganizer,
     SelectEventOrganizerFilter,
     UpdateEventOrganizerData
-} from '../types/db-types';
+} from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for EventOrganizerModel operations.

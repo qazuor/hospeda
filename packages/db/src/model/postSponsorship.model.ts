@@ -1,20 +1,20 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client';
-import { postSponsorships } from '../schema/post_sponsorship.dbschema';
+import { db } from '../client.js';
+import { postSponsorships } from '../schema/post_sponsorship.dbschema.js';
 import type {
     InsertPostSponsorship,
     SelectPostSponsorshipFilter,
     UpdatePostSponsorshipData
-} from '../types/db-types';
+} from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for PostSponsorshipModel operations.

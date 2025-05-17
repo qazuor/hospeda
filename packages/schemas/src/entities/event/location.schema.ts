@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BaseEntitySchema, BaseLocationSchema } from '../../common.schema';
+import { BaseEntitySchema, BaseLocationSchema } from '../../common.schema.js';
 
 /**
  * Zod schema for a event location entity.

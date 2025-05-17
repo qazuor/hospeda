@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { AccommodationAdditionalFeesInfoSchema } from './additionalFeesInfo.schema';
-import { AccommodationOtherAdditionalFeesSchema } from './otherAdditionalFees.schema';
+import { AccommodationAdditionalFeesInfoSchema } from './additionalFeesInfo.schema.js';
+import { AccommodationOtherAdditionalFeesSchema } from './otherAdditionalFees.schema.js';
 
 /**
  * Zod schema for a accommodation adittional fees.

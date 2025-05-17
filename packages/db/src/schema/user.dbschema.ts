@@ -8,11 +8,11 @@ import type {
 } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { userBookmarks } from './bookmark.dbschema';
-import { StatePgEnum } from './enums.dbschema';
-import { permissions } from './permission.dbschema';
-import { userPermissions } from './r_user_permission.dbschema';
-import { roles } from './role.dbschema';
+import { userBookmarks } from './bookmark.dbschema.js';
+import { StatePgEnum } from './enums.dbschema.js';
+import { permissions } from './permission.dbschema.js';
+import { userPermissions } from './r_user_permission.dbschema.js';
+import { roles } from './role.dbschema.js';
 
 /**
  * users table schema

@@ -14,6 +14,17 @@
         "resolveJsonModule": true,
         "skipLibCheck": true,
         "strict": true,
-        "target": "ES2022"
+        "target": "ES2022",
+
+        "baseUrl": "./",
+        "paths": {
+            "@repo/config/*": ["../config/src/*"],
+            "@repo/db/*": ["../db/src/*"],
+            "@repo/logger/*": ["../logger/src/*"],
+            "@repo/schemas/*": ["../schemas/src/*"],
+            "@repo/types/*": ["../types/src/*"],
+            "@repo/ui/*": ["../ui/src/*"],
+            "@repo/utils/*": ["../utils/src/*"]
+        }
     }
 }

@@ -1,16 +1,16 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client';
-import { posts } from '../schema/post.dbschema';
-import type { InsertPost, SelectPostFilter, UpdatePostData } from '../types/db-types';
+import { db } from '../client.js';
+import { posts } from '../schema/post.dbschema.js';
+import type { InsertPost, SelectPostFilter, UpdatePostData } from '../types/db-types.js';
 import {
     assertExists,
     castReturning,
     getOrderByColumn,
     prepareLikeQuery,
     sanitizePartialUpdate
-} from '../utils/db-utils';
+} from '../utils/db-utils.js';
 
 /**
  * Scoped logger for post model operations.

@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
-import { permissions } from './permission.dbschema';
-import { users } from './user.dbschema';
+import { permissions } from './permission.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * Join table between users and permissions.

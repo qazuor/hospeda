@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BasePriceSchema } from '../../common.schema';
+import { BasePriceSchema } from '../../common.schema.js';
 
 /**
  * Zod schema for a accommodation discount info

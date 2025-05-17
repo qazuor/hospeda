@@ -1,11 +1,11 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../client';
-import { AmenityModel, type AmenityRecord } from '../model/amenity.model';
-import { amenities } from '../schema/amenity.dbschema';
-import type { InsertAmenity, SelectAmenityFilter, UpdateAmenityData } from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+import { db } from '../client.js';
+import { AmenityModel, type AmenityRecord } from '../model/amenity.model.js';
+import { amenities } from '../schema/amenity.dbschema.js';
+import type { InsertAmenity, SelectAmenityFilter, UpdateAmenityData } from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('AmenityService');
 

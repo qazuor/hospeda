@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import { count, eq } from 'drizzle-orm';
-import { db } from '../client';
+import { db } from '../client.js';
 import {
     PermissionModel,
     RoleModel,
@@ -10,8 +10,8 @@ import {
     type RoleRecord,
     UserModel,
     type UserRecord
-} from '../model';
-import { users } from '../schema/user.dbschema';
+} from '../model/index.js';
+import { users } from '../schema/user.dbschema.js';
 import type {
     InsertRole,
     InsertRolePermission,
@@ -19,8 +19,8 @@ import type {
     SelectRoleFilter,
     UpdateRoleData,
     UpdateUserData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('RoleService');
 

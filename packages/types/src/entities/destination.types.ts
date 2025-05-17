@@ -4,9 +4,9 @@ import type {
     MediaType,
     SeoType,
     TagType
-} from '../common.types';
-import type { VisibilityEnum } from '../enums.types';
-import type { UserType } from './user.types';
+} from '../common.types.js';
+import type { VisibilityEnum } from '../enums.types.js';
+import type { UserType } from './user.types.js';
 
 /**
  * Individual point of interest or attraction inside a destination.

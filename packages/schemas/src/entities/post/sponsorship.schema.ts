@@ -1,7 +1,7 @@
 // export interface PostSponsorshipType extends BaseEntityType {
 
 import { z } from 'zod';
-import { BasePriceSchema } from '../../common.schema';
+import { BasePriceSchema } from '../../common.schema.js';
 
 // }
 

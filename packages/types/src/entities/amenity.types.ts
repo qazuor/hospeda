@@ -1,6 +1,6 @@
-import type { AdminInfoType, BaseEntityType, BasePriceType } from '../common.types';
-import type { AmenitiesTypeEnum } from '../enums.types';
-import type { AccommodationType } from './accommodation.types';
+import type { AdminInfoType, BaseEntityType, BasePriceType } from '../common.types.js';
+import type { AmenitiesTypeEnum } from '../enums.types.js';
+import type { AccommodationType } from './accommodation.types.js';
 
 /**
  * Base amenity that can be applied to accommodations

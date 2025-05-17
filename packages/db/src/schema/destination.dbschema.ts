@@ -1,9 +1,9 @@
 import type { AdminInfoType, BaseLocationType, MediaType, SeoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { StatePgEnum, VisibilityPgEnum } from './enums.dbschema';
-import { entityTagRelations } from './r_entity_tag.dbschema';
-import { users } from './user.dbschema';
+import { StatePgEnum, VisibilityPgEnum } from './enums.dbschema.js';
+import { entityTagRelations } from './r_entity_tag.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * destinations table schema

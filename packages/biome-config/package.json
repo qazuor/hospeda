@@ -6,6 +6,9 @@
     "exports": {
         ".": "./biome.json"
     },
+    "scripts": {
+        "clean": "rm -rf node_modules && rm -rf dist"
+    },
     "devDependencies": {
         "@biomejs/biome": "1.9.4"
     }

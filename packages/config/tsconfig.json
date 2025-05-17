@@ -1,16 +1,12 @@
 {
-    "extends": "@repo/typescript-config/react-library.json",
+    "extends": "@repo/typescript-config/base.json",
     "compilerOptions": {
-        "target": "ES2021",
-        "module": "ESNext",
-        "moduleResolution": "Node",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "declaration": true,
         "outDir": "dist",
-        "types": ["vite/client", "node"]
+        "rootDir": "src",
+        "declaration": true,
+        "declarationMap": true,
+        "strict": true
     },
-    "include": ["src", "vite-env.d.ts"],
-    "exclude": ["dist", "build", "node_modules"]
+    "include": ["src"],
+    "exclude": ["dist", "node_modules"]
 }

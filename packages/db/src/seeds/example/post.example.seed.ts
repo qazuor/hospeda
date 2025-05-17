@@ -2,10 +2,10 @@ import { logger } from '@repo/logger';
 import { PostCategoryEnum, PriceCurrencyEnum, StateEnum, VisibilityEnum } from '@repo/types';
 import { eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../client';
-import { posts } from '../../schema/post.dbschema';
-import { postSponsors } from '../../schema/post_sponsor.dbschema';
-import { postSponsorships } from '../../schema/post_sponsorship.dbschema';
-import { users } from '../../schema/user.dbschema';
+import { posts } from '../../schema/post.dbschema.js';
+import { postSponsors } from '../../schema/post_sponsor.dbschema.js';
+import { postSponsorships } from '../../schema/post_sponsorship.dbschema.js';
+import { users } from '../../schema/user.dbschema.js';
 
 /**
  * Seeds example posts, some with sponsorships

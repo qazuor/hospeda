@@ -1,11 +1,11 @@
 import type { AdminInfoType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { destinations } from './destination.dbschema';
-import { StatePgEnum } from './enums.dbschema';
-import { destinationAttractionRelations } from './r_destination_attraction.dbschema';
-import { entityTagRelations } from './r_entity_tag.dbschema';
-import { users } from './user.dbschema';
+import { destinations } from './destination.dbschema.js';
+import { StatePgEnum } from './enums.dbschema.js';
+import { destinationAttractionRelations } from './r_destination_attraction.dbschema.js';
+import { entityTagRelations } from './r_entity_tag.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * destination_attractions table schema

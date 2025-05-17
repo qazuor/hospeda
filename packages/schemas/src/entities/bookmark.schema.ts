@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { BaseEntitySchema } from '../common.schema';
-import { EntityTypeEnumSchema } from '../enums.schema';
-import { omittedBaseEntityFieldsForActions } from '../utils/utils';
+import { BaseEntitySchema } from '../common.schema.js';
+import { EntityTypeEnumSchema } from '../enums.schema.js';
+import { omittedBaseEntityFieldsForActions } from '../utils/utils.js';
 
 /**
  * Zod schema for user bookmarks.

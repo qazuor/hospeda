@@ -12,12 +12,12 @@ import type {
 } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { accommodationAmenities } from './accommodation_amenity.dbschema';
-import { accommodationFeatures } from './accommodation_feature.dbschema';
-import { destinations } from './destination.dbschema';
-import { AccommodationTypePgEnum, StatePgEnum } from './enums.dbschema';
-import { entityTagRelations } from './r_entity_tag.dbschema';
-import { users } from './user.dbschema';
+import { accommodationAmenities } from './accommodation_amenity.dbschema.js';
+import { accommodationFeatures } from './accommodation_feature.dbschema.js';
+import { destinations } from './destination.dbschema.js';
+import { AccommodationTypePgEnum, StatePgEnum } from './enums.dbschema.js';
+import { entityTagRelations } from './r_entity_tag.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * accommodations table schema

@@ -1,9 +1,9 @@
 import type { BasePriceType } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { posts } from './post.dbschema';
-import { postSponsors } from './post_sponsor.dbschema';
-import { users } from './user.dbschema';
+import { posts } from './post.dbschema.js';
+import { postSponsors } from './post_sponsor.dbschema.js';
+import { users } from './user.dbschema.js';
 
 /**
  * post_sponsorships table schema

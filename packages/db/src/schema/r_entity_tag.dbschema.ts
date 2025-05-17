@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
-import { EntityTypePgEnum } from './enums.dbschema';
-import { tags } from './tag.dbschema';
+import { EntityTypePgEnum } from './enums.dbschema.js';
+import { tags } from './tag.dbschema.js';
 
 /**
  * r_entity_tag join table

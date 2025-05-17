@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { BaseEntitySchema, BaseLocationSchema, MediaSchema, SeoSchema } from '../common.schema';
-import { VisibilityEnumSchema } from '../enums.schema';
-import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils';
-import { DestinationAttractionsSchema } from './destination/attraction.schema';
-import { DestinationRatingSchema } from './destination/rating.schema';
-import { DestinationReviewSchema } from './destination/review.schema';
+import { BaseEntitySchema, BaseLocationSchema, MediaSchema, SeoSchema } from '../common.schema.js';
+import { VisibilityEnumSchema } from '../enums.schema.js';
+import { SlugRegex, omittedBaseEntityFieldsForActions } from '../utils/utils.js';
+import { DestinationAttractionsSchema } from './destination/attraction.schema.js';
+import { DestinationRatingSchema } from './destination/rating.schema.js';
+import { DestinationReviewSchema } from './destination/review.schema.js';
 
 /**
  * Zod schema for a tag entity.

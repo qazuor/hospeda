@@ -3,12 +3,12 @@ import type {
     ContactInfoType,
     FullLocationType,
     SocialNetworkType
-} from '../common.types';
-import type { EntityTypeEnum, StateEnum } from '../enums.types';
-import type { AccommodationType } from './accommodation.types';
-import type { DestinationType } from './destination.types';
-import type { EventType } from './event.types';
-import type { PostType } from './post.types';
+} from '../common.types.js';
+import type { EntityTypeEnum, StateEnum } from '../enums.types.js';
+import type { AccommodationType } from './accommodation.types.js';
+import type { DestinationType } from './destination.types.js';
+import type { EventType } from './event.types.js';
+import type { PostType } from './post.types.js';
 
 /**
  * Accommodation bookmarked by a user for quick access.

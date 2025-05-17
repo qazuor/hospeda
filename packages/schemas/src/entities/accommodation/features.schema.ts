@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BaseEntitySchema } from '../../common.schema';
+import { BaseEntitySchema } from '../../common.schema.js';
 
 /**
  * Zod schema for a accommodation feature entity.

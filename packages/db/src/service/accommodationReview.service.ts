@@ -4,13 +4,13 @@ import {
     AccommodationModel,
     AccommodationReviewModel,
     type AccommodationReviewRecord
-} from '../model';
+} from '../model/index.js';
 import type {
     InsertAccommodationReview,
     PaginationParams,
     UpdateAccommodationReviewData
-} from '../types/db-types';
-import { assertExists, sanitizePartialUpdate } from '../utils/db-utils';
+} from '../types/db-types.js';
+import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
 const log = logger.createLogger('AccommodationReviewService');
 
