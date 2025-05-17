@@ -1,5 +1,5 @@
 {
-    "name": "react-app",
+    "name": "@app/react-test",
     "private": true,
     "version": "0.0.0",
     "type": "module",
