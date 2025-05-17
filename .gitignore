@@ -37,3 +37,5 @@ NOTES.txt
 .vercel
 .astro
 
+
+packages/db/src/migrations/meta/_journal.json
