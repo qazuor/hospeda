@@ -4,10 +4,7 @@
         "outDir": "dist",
         "rootDir": "src",
         "declaration": true,
-        "declarationMap": true,
-        "composite": true,
-        "incremental": true,
-        "strict": true
+        "declarationMap": true
     },
     "include": ["src"],
     "exclude": ["dist", "node_modules"]
