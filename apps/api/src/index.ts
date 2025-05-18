@@ -2,9 +2,9 @@ import { serve } from '@hono/node-server';
 import { logger } from '@repo/logger';
 import { app } from './app';
 
-const PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000;
+const PORT = process.env.VITE_API_PORT ? Number.parseInt(process.env.VITE_API_PORT, 10) : 3000;
 
-console.info(`Starting API server on port ${PORT}`);
+console.info(`Starting API server on port ${process.env.VITE_API_HOST}:${PORT}`);
 
 serve({
     fetch: app.fetch,
