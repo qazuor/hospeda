@@ -82,18 +82,7 @@ export interface FindParams extends PaginationParams {
  * @example
  * type UpdateUserData = UpdateData<InsertUser>;
  */
-export type UpdateData<T extends object> = Partial<
-    Omit<
-        T,
-        | 'id'
-        | 'createdAt'
-        | 'updatedAt'
-        | 'deletedAt'
-        | 'createdById'
-        | 'updatedById'
-        | 'deletedById'
-    >
->;
+export type UpdateData<T extends object> = Partial<Omit<T, 'id' | 'createdAt' | 'createdById'>>;
 
 /**
  * Base filter options for listing entities.
