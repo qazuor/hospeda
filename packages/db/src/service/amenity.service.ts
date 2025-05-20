@@ -1,9 +1,6 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
-import { eq } from 'drizzle-orm';
-import { db } from '../client.js';
 import { AmenityModel, type AmenityRecord } from '../model/amenity.model.js';
-import { amenities } from '../schema/amenity.dbschema.js';
 import type { InsertAmenity, SelectAmenityFilter, UpdateAmenityData } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
@@ -130,17 +127,14 @@ export class AmenityService {
         const dataToUpdate = sanitizePartialUpdate(changes);
 
         try {
-            // First update the regular fields
-            await AmenityModel.updateAmenity(existingAmenity.id, dataToUpdate);
+            // Include updatedById in the update data
+            const updateData: UpdateAmenityData = {
+                ...dataToUpdate,
+                updatedById: actor.id
+            };
 
-            // Then update the audit field with a direct query
-            await db.update(amenities).set({ updatedById: actor.id }).where(eq(amenities.id, id));
-
-            // Fetch the updated record
-            const updatedAmenity = await AmenityModel.getAmenityById(id);
-            if (!updatedAmenity) {
-                throw new Error(`Failed to retrieve updated amenity: ${id}`);
-            }
+            // Use the model to perform the update
+            const updatedAmenity = await AmenityModel.updateAmenity(existingAmenity.id, updateData);
 
             log.info('amenity updated successfully', 'update', {
                 amenityId: updatedAmenity.id
@@ -170,13 +164,13 @@ export class AmenityService {
         await this.getById(id, actor);
 
         try {
-            await db
-                .update(amenities)
-                .set({
-                    deletedAt: new Date(),
-                    deletedById: actor.id
-                })
-                .where(eq(amenities.id, id));
+            // Use the model to update deleteAt and deletedById
+            const updateData: UpdateAmenityData = {
+                deletedAt: new Date(),
+                deletedById: actor.id
+            };
+
+            await AmenityModel.updateAmenity(id, updateData);
 
             log.info('amenity soft deleted successfully', 'delete', { amenityId: id });
         } catch (error) {
@@ -203,13 +197,13 @@ export class AmenityService {
         await this.getById(id, actor);
 
         try {
-            await db
-                .update(amenities)
-                .set({
-                    deletedAt: null,
-                    deletedById: null
-                })
-                .where(eq(amenities.id, id));
+            // Use the model to clear deletedAt and deletedById
+            const updateData: UpdateAmenityData = {
+                deletedAt: null,
+                deletedById: null
+            };
+
+            await AmenityModel.updateAmenity(id, updateData);
 
             log.info('amenity restored successfully', 'restore', { amenityId: id });
         } catch (error) {
