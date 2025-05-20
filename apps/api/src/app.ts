@@ -1,8 +1,11 @@
+import { initDb } from '@/utils/db';
 import { logger } from '@repo/logger';
 import { Hono } from 'hono';
 import { errorMiddleware } from './middleware/error';
 import { loggerMiddleware } from './middleware/logger';
 import { apiV1Routes } from './routes/v1';
+
+initDb();
 
 // Create the main Hono app
 const app = new Hono();
