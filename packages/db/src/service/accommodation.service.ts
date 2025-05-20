@@ -5,8 +5,6 @@ import {
     EntityTypeEnum,
     type UserType
 } from '@repo/types';
-import { eq } from 'drizzle-orm';
-import { db } from '../client.js';
 import {
     AccommodationAmenityModel,
     type AccommodationAmenityRecord,
@@ -29,14 +27,14 @@ import {
     type SelectAccommodationFaqFilter,
     type SelectAccommodationIaDataFilter
 } from '../model/index.js';
-import { accommodations } from '../schema/index.js';
 import type {
     InsertAccommodation,
     InsertEntityTagRelation,
     PaginationParams,
     SelectAccommodationAmenityFilter,
     SelectAccommodationFeatureFilter,
-    SelectAccommodationFilter
+    SelectAccommodationFilter,
+    UpdateAccommodationData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
@@ -184,7 +182,7 @@ export class AccommodationService {
      */
     async update(
         id: string,
-        changes: Partial<InsertAccommodation>,
+        changes: Partial<UpdateAccommodationData>,
         actor: UserType
     ): Promise<AccommodationRecord> {
         log.info('updating accommodation', 'update', {
@@ -200,20 +198,21 @@ export class AccommodationService {
         const dataToUpdate = sanitizePartialUpdate(changes);
 
         try {
-            // First update with non-audit fields
-            await AccommodationModel.updateAccommodation(existingAccommodation.id, dataToUpdate);
+            // Add updatedById only to the final update object
+            const updateData: UpdateAccommodationData = {
+                ...(dataToUpdate as UpdateAccommodationData)
+            };
 
-            // Then update the updatedById field directly
-            await db
-                .update(accommodations)
-                .set({ updatedById: actor.id })
-                .where(eq(accommodations.id, id));
-
-            // Get the latest version
-            const updatedAccommodation = await AccommodationModel.getAccommodationById(id);
-            if (!updatedAccommodation) {
-                throw new Error(`Failed to retrieve updated accommodation: ${id}`);
+            // Only add updatedById if it exists in UpdateAccommodationData
+            if ('updatedById' in updateData) {
+                updateData.updatedById = actor.id;
             }
+
+            // Use the model for the update instead of direct db access
+            const updatedAccommodation = await AccommodationModel.updateAccommodation(
+                id,
+                updateData
+            );
 
             log.info('accommodation updated successfully', 'update', {
                 accommodationId: updatedAccommodation.id
@@ -244,14 +243,13 @@ export class AccommodationService {
         AccommodationService.assertOwnerOrAdmin(existingAccommodation.ownerId, actor);
 
         try {
-            // Direct update of deletedAt and deletedById
-            await db
-                .update(accommodations)
-                .set({
-                    deletedAt: new Date(),
-                    deletedById: actor.id
-                })
-                .where(eq(accommodations.id, id));
+            // Use the model for soft-deletion with the deletedById field
+            const updateData: UpdateAccommodationData = {
+                deletedAt: new Date(),
+                deletedById: actor.id
+            };
+
+            await AccommodationModel.updateAccommodation(id, updateData);
 
             log.info('accommodation soft deleted successfully', 'delete', {
                 accommodationId: existingAccommodation.id
@@ -280,14 +278,13 @@ export class AccommodationService {
         AccommodationService.assertOwnerOrAdmin(existingAccommodation.ownerId, actor);
 
         try {
-            // Direct update of deletedAt and deletedById
-            await db
-                .update(accommodations)
-                .set({
-                    deletedAt: null,
-                    deletedById: null
-                })
-                .where(eq(accommodations.id, id));
+            // Use the model for restoration
+            const updateData: UpdateAccommodationData = {
+                deletedAt: null,
+                deletedById: null
+            };
+
+            await AccommodationModel.updateAccommodation(id, updateData);
 
             log.info('accommodation restored successfully', 'restore', {
                 accommodationId: existingAccommodation.id
