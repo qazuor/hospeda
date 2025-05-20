@@ -1,7 +1,5 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
-import { count, eq } from 'drizzle-orm';
-import { db } from '../client.js';
 import {
     PermissionModel,
     RoleModel,
@@ -11,7 +9,6 @@ import {
     UserModel,
     type UserRecord
 } from '../model/index.js';
-import { users } from '../schema/user.dbschema.js';
 import type {
     InsertRole,
     InsertRolePermission,
@@ -600,18 +597,16 @@ export class RoleService {
         assertExists(await RoleModel.getRoleById(roleId), `Role ${roleId} not found`);
 
         try {
-            // Count users filtered by roleId directly using Drizzle, alias the count
-            // Provide default result for type safety, although count without group by always returns one row
-            const [result = { count: '0' }] = await db
-                .select({
-                    count: count() // Alias the count result
-                })
-                .from(users)
-                .where(eq(users.roleId, roleId));
+            // Use UserModel.listUsers and count the results instead of direct DB query
+            const users = await UserModel.listUsers({
+                roleId,
+                includeDeleted: false,
+                // We're only interested in the count, so we can fetch all users
+                // You could optimize this by adding a count method to the UserModel if needed
+                limit: 1000000
+            });
 
-            // Parse the count from the result. Drizzle count is a string.
-            const userCount = Number.parseInt(result.count as string, 10);
-
+            const userCount = users.length;
             log.info('user count by role successful', 'countUsers', { roleId, count: userCount });
             return userCount;
         } catch (error) {
