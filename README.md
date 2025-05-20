@@ -57,12 +57,14 @@ The backend API server that provides endpoints for accessing and managing all pl
 Database layer using Drizzle ORM and PostgreSQL. Provides models, types, and services for data access.
 
 Key features:
+
 - Strongly typed database schema
 - SQL migrations
 - Repository pattern with model and service layers
 - Soft delete functionality
 - Comprehensive logging
 - Audit fields tracking
+- [View DB Documentation](./packages/db/README.md)
 
 ### @repo/logger
 
@@ -87,12 +89,15 @@ TypeScript type definitions for all entities, providing type safety across the e
 Shared utility functions for common tasks like string manipulation, date formatting, array operations, and more.
 
 Key utilities:
+
 - String formatting and manipulation
 - Date parsing and formatting
 - Array and object operations
 - Validation helpers
 - Currency formatting
 - Type guards and assertions
+
+- [View Utils Documentation](./packages/utils/README.md)
 
 ## Getting Started
 
