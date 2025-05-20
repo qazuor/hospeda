@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { eventLocations } from '../schema/event_location.dbschema.js';
 import type {
     InsertEventLocation,
@@ -39,6 +39,7 @@ export const EventLocationModel = {
     async createLocation(data: InsertEventLocation): Promise<EventLocationRecord> {
         try {
             log.info('creating event location', 'createLocation', data);
+            const db = getDb();
             const rows = castReturning<EventLocationRecord>(
                 await db.insert(eventLocations).values(data).returning()
             );
@@ -60,6 +61,7 @@ export const EventLocationModel = {
     async getLocationById(id: string): Promise<EventLocationRecord | undefined> {
         try {
             log.info('fetching location by id', 'getLocationById', { id });
+            const db = getDb();
             const [loc] = await db
                 .select()
                 .from(eventLocations)
@@ -82,7 +84,7 @@ export const EventLocationModel = {
     async listLocations(filter: SelectEventLocationFilter): Promise<EventLocationRecord[]> {
         try {
             log.info('listing locations', 'listLocations', filter);
-
+            const db = getDb();
             let query = db.select().from(eventLocations).$dynamic();
 
             if (filter.query) {
@@ -173,6 +175,7 @@ export const EventLocationModel = {
                 id,
                 changes: dataToUpdate
             });
+            const db = getDb();
             const rows = castReturning<EventLocationRecord>(
                 await db
                     .update(eventLocations)
@@ -197,6 +200,7 @@ export const EventLocationModel = {
     async softDeleteLocation(id: string): Promise<void> {
         try {
             log.info('soft deleting location', 'softDeleteLocation', { id });
+            const db = getDb();
             await db
                 .update(eventLocations)
                 .set({ deletedAt: new Date() })
@@ -216,6 +220,7 @@ export const EventLocationModel = {
     async restoreLocation(id: string): Promise<void> {
         try {
             log.info('restoring location', 'restoreLocation', { id });
+            const db = getDb();
             await db
                 .update(eventLocations)
                 .set({ deletedAt: null })
@@ -235,6 +240,7 @@ export const EventLocationModel = {
     async hardDeleteLocation(id: string): Promise<void> {
         try {
             log.info('hard deleting location', 'hardDeleteLocation', { id });
+            const db = getDb();
             await db.delete(eventLocations).where(eq(eventLocations.id, id));
             log.query('delete', 'event_locations', { id }, { deleted: true });
         } catch (error) {

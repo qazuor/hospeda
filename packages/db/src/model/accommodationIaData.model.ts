@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { accommodationIaData } from '../schema/accommodation_ia_data.dbschema.js';
 import type { BaseSelectFilter, UpdateData } from '../types/db-types.js';
 import {
@@ -56,6 +56,7 @@ export const AccommodationIaDataModel = {
     async createIaData(data: CreateAccommodationIaData): Promise<AccommodationIaDataRecord> {
         try {
             log.info('creating accommodation IA data', 'createIaData', data);
+            const db = getDb();
             const rows = castReturning<AccommodationIaDataRecord>(
                 await db.insert(accommodationIaData).values(data).returning()
             );
@@ -77,6 +78,7 @@ export const AccommodationIaDataModel = {
     async getIaDataById(id: string): Promise<AccommodationIaDataRecord | undefined> {
         try {
             log.info('fetching IA data by id', 'getIaDataById', { id });
+            const db = getDb();
             const [iaData] = (await db
                 .select()
                 .from(accommodationIaData)
@@ -101,7 +103,7 @@ export const AccommodationIaDataModel = {
     ): Promise<AccommodationIaDataRecord[]> {
         try {
             log.info('listing IA data entries', 'listIaData', filter);
-
+            const db = getDb();
             let query = rawSelect(
                 db
                     .select()
@@ -149,6 +151,7 @@ export const AccommodationIaDataModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating IA data', 'updateIaData', { id, changes: dataToUpdate });
+            const db = getDb();
             const rows = castReturning<AccommodationIaDataRecord>(
                 await db
                     .update(accommodationIaData)
@@ -173,6 +176,7 @@ export const AccommodationIaDataModel = {
     async softDeleteIaData(id: string): Promise<void> {
         try {
             log.info('soft deleting IA data', 'softDeleteIaData', { id });
+            const db = getDb();
             await db
                 .update(accommodationIaData)
                 .set({ deletedAt: new Date() })
@@ -192,6 +196,7 @@ export const AccommodationIaDataModel = {
     async restoreIaData(id: string): Promise<void> {
         try {
             log.info('restoring IA data', 'restoreIaData', { id });
+            const db = getDb();
             await db
                 .update(accommodationIaData)
                 .set({ deletedAt: null })
@@ -211,6 +216,7 @@ export const AccommodationIaDataModel = {
     async hardDeleteIaData(id: string): Promise<void> {
         try {
             log.info('hard deleting IA data', 'hardDeleteIaData', { id });
+            const db = getDb();
             await db.delete(accommodationIaData).where(eq(accommodationIaData.id, id));
             log.query('delete', 'accommodation_ia_data', { id }, { deleted: true });
         } catch (error) {

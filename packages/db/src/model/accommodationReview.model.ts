@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, isNull } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { accommodationReviews } from '../schema/accommodation_review.dbschema.js';
 import type { BaseSelectFilter, UpdateData } from '../types/db-types.js';
 import {
@@ -54,6 +54,7 @@ export const AccommodationReviewModel = {
     async createReview(data: CreateAccommodationReviewData): Promise<AccommodationReviewRecord> {
         try {
             log.info('creating accommodation review', 'createReview', data);
+            const db = getDb();
             const rows = castReturning<AccommodationReviewRecord>(
                 await db.insert(accommodationReviews).values(data).returning()
             );
@@ -75,6 +76,7 @@ export const AccommodationReviewModel = {
     async getReviewById(id: string): Promise<AccommodationReviewRecord | undefined> {
         try {
             log.info('fetching review by id', 'getReviewById', { id });
+            const db = getDb();
             const [review] = (await db
                 .select()
                 .from(accommodationReviews)
@@ -99,7 +101,7 @@ export const AccommodationReviewModel = {
     ): Promise<AccommodationReviewRecord[]> {
         try {
             log.info('listing reviews', 'listReviews', filter);
-
+            const db = getDb();
             let query = rawSelect(
                 db
                     .select()
@@ -138,6 +140,7 @@ export const AccommodationReviewModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating review', 'updateReview', { id, changes: dataToUpdate });
+            const db = getDb();
             const rows = castReturning<AccommodationReviewRecord>(
                 await db
                     .update(accommodationReviews)
@@ -162,6 +165,7 @@ export const AccommodationReviewModel = {
     async softDeleteReview(id: string): Promise<void> {
         try {
             log.info('soft deleting review', 'softDeleteReview', { id });
+            const db = getDb();
             await db
                 .update(accommodationReviews)
                 .set({ deletedAt: new Date() })
@@ -181,6 +185,7 @@ export const AccommodationReviewModel = {
     async restoreReview(id: string): Promise<void> {
         try {
             log.info('restoring review', 'restoreReview', { id });
+            const db = getDb();
             await db
                 .update(accommodationReviews)
                 .set({ deletedAt: null })
@@ -200,6 +205,7 @@ export const AccommodationReviewModel = {
     async hardDeleteReview(id: string): Promise<void> {
         try {
             log.info('hard deleting review', 'hardDeleteReview', { id });
+            const db = getDb();
             await db.delete(accommodationReviews).where(eq(accommodationReviews.id, id));
             log.query('delete', 'accommodation_review', { id }, { deleted: true });
         } catch (error) {

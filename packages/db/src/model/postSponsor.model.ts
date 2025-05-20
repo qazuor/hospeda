@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { postSponsors } from '../schema/post_sponsor.dbschema.js';
 import type {
     InsertPostSponsor,
@@ -39,6 +39,7 @@ export const PostSponsorModel = {
     async createSponsor(data: InsertPostSponsor): Promise<PostSponsorRecord> {
         try {
             log.info('creating post sponsor', 'createSponsor', data);
+            const db = getDb();
             const rows = castReturning<PostSponsorRecord>(
                 await db.insert(postSponsors).values(data).returning()
             );
@@ -60,6 +61,7 @@ export const PostSponsorModel = {
     async getSponsorById(id: string): Promise<PostSponsorRecord | undefined> {
         try {
             log.info('fetching sponsor by id', 'getSponsorById', { id });
+            const db = getDb();
             const [sponsor] = await db
                 .select()
                 .from(postSponsors)
@@ -82,7 +84,7 @@ export const PostSponsorModel = {
     async listSponsors(filter: SelectPostSponsorFilter): Promise<PostSponsorRecord[]> {
         try {
             log.info('listing sponsors', 'listSponsors', filter);
-
+            const db = getDb();
             let query = db.select().from(postSponsors).$dynamic();
 
             if (filter.query) {
@@ -154,6 +156,7 @@ export const PostSponsorModel = {
                 id,
                 changes: dataToUpdate
             });
+            const db = getDb();
             const rows = castReturning<PostSponsorRecord>(
                 await db
                     .update(postSponsors)
@@ -178,6 +181,7 @@ export const PostSponsorModel = {
     async softDeleteSponsor(id: string): Promise<void> {
         try {
             log.info('soft deleting sponsor', 'softDeleteSponsor', { id });
+            const db = getDb();
             await db
                 .update(postSponsors)
                 .set({ deletedAt: new Date() })
@@ -197,6 +201,7 @@ export const PostSponsorModel = {
     async restoreSponsor(id: string): Promise<void> {
         try {
             log.info('restoring sponsor', 'restoreSponsor', { id });
+            const db = getDb();
             await db.update(postSponsors).set({ deletedAt: null }).where(eq(postSponsors.id, id));
             log.query('update', 'post_sponsor', { id }, { restored: true });
         } catch (error) {
@@ -213,6 +218,7 @@ export const PostSponsorModel = {
     async hardDeleteSponsor(id: string): Promise<void> {
         try {
             log.info('hard deleting sponsor', 'hardDeleteSponsor', { id });
+            const db = getDb();
             await db.delete(postSponsors).where(eq(postSponsors.id, id));
             log.query('delete', 'post_sponsor', { id }, { deleted: true });
         } catch (error) {

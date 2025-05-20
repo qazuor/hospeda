@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { users } from '../schema/user.dbschema.js';
 import type { InsertUser, SelectUserFilter, UpdateUserData } from '../types/db-types.js';
 import {
@@ -33,6 +33,7 @@ export const UserModel = {
     async createUser(data: InsertUser): Promise<UserRecord> {
         try {
             log.info('creating a new user', 'createUser', data);
+            const db = getDb();
             const rows = castReturning<UserRecord>(await db.insert(users).values(data).returning());
             const user = assertExists(rows[0], 'createUser: no user returned');
             log.query('insert', 'users', data, user);
@@ -52,6 +53,7 @@ export const UserModel = {
     async getUserById(id: string): Promise<UserRecord | undefined> {
         try {
             log.info('fetching user by id', 'getUserById', { id });
+            const db = getDb();
             const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1); // No need to cast as any, Drizzle handles this with select()
             log.query('select', 'users', { id }, user);
             return user ? (user as UserRecord) : undefined; // Cast the potentially found user
@@ -70,6 +72,7 @@ export const UserModel = {
     async getUserByUsername(username: string): Promise<UserRecord | undefined> {
         try {
             log.info('fetching user by username', 'getUserByUsername', { username });
+            const db = getDb();
             const [user] = await db
                 .select()
                 .from(users)
@@ -98,6 +101,7 @@ export const UserModel = {
             log.info('fetching user by email', 'getUserByEmail', { email });
             // Querying JSONB ->> 'key' is common in PostgreSQL for text access
             // Using sql template tag for direct DB syntax is often necessary for JSONB
+            const db = getDb();
             const [user] = await db
                 .select()
                 .from(users)
@@ -124,7 +128,7 @@ export const UserModel = {
     async listUsers(filter: SelectUserFilter): Promise<UserRecord[]> {
         try {
             log.info('listing users', 'listUsers', filter);
-
+            const db = getDb();
             let query = db.select().from(users).$dynamic(); // Use $dynamic() for conditional where clauses
 
             if (filter.query) {
@@ -187,6 +191,7 @@ export const UserModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating user', 'updateUser', { id, dataToUpdate });
+            const db = getDb();
             const rows = castReturning<UserRecord>(
                 await db.update(users).set(dataToUpdate).where(eq(users.id, id)).returning()
             );
@@ -207,6 +212,7 @@ export const UserModel = {
     async softDeleteUser(id: string): Promise<void> {
         try {
             log.info('soft deleting user', 'softDeleteUser', { id });
+            const db = getDb();
             await db.update(users).set({ deletedAt: new Date() }).where(eq(users.id, id));
             log.query('update', 'users', { id }, { deleted: true });
         } catch (error) {
@@ -223,6 +229,7 @@ export const UserModel = {
     async restoreUser(id: string): Promise<void> {
         try {
             log.info('restoring user', 'restoreUser', { id });
+            const db = getDb();
             await db.update(users).set({ deletedAt: null }).where(eq(users.id, id));
             log.query('update', 'users', { id }, { restored: true });
         } catch (error) {
@@ -239,6 +246,7 @@ export const UserModel = {
     async hardDeleteUser(id: string): Promise<void> {
         try {
             log.info('hard deleting user', 'hardDeleteUser', { id });
+            const db = getDb();
             await db.delete(users).where(eq(users.id, id));
             log.query('delete', 'users', { id }, { deleted: true });
         } catch (error) {

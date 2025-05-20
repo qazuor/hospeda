@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { amenities } from '../schema/amenity.dbschema.js';
 import type { InsertAmenity, SelectAmenityFilter, UpdateAmenityData } from '../types/db-types.js';
 import {
@@ -34,6 +34,7 @@ export const AmenityModel = {
     async createAmenity(data: InsertAmenity): Promise<AmenityRecord> {
         try {
             log.info('creating a new amenity', 'createAmenity', data);
+            const db = getDb();
             const rows = castReturning<AmenityRecord>(
                 await db.insert(amenities).values(data).returning()
             );
@@ -54,6 +55,7 @@ export const AmenityModel = {
     async getAmenityById(id: string): Promise<AmenityRecord | undefined> {
         try {
             log.info('fetching amenity by id', 'getAmenityById', { id });
+            const db = getDb();
             const [amenity] = await db
                 .select()
                 .from(amenities)
@@ -76,6 +78,7 @@ export const AmenityModel = {
     async listAmenities(filter: SelectAmenityFilter): Promise<AmenityRecord[]> {
         try {
             log.info('listing amenities', 'listAmenities', filter);
+            const db = getDb();
             let query = db.select().from(amenities).$dynamic();
 
             if (filter.query) {
@@ -145,7 +148,7 @@ export const AmenityModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating amenity', 'updateAmenity', { id, changes: dataToUpdate });
-
+            const db = getDb();
             const rows = castReturning<AmenityRecord>(
                 await db.update(amenities).set(dataToUpdate).where(eq(amenities.id, id)).returning()
             );
@@ -166,6 +169,7 @@ export const AmenityModel = {
     async softDeleteAmenity(id: string): Promise<void> {
         try {
             log.info('soft deleting amenity', 'softDeleteAmenity', { id });
+            const db = getDb();
             await db.update(amenities).set({ deletedAt: new Date() }).where(eq(amenities.id, id));
 
             log.query('update', 'amenities', { id }, { deleted: true });
@@ -182,6 +186,7 @@ export const AmenityModel = {
     async restoreAmenity(id: string): Promise<void> {
         try {
             log.info('restoring amenity', 'restoreAmenity', { id });
+            const db = getDb();
             await db
                 .update(amenities)
                 .set({ deletedAt: null, deletedById: null })
@@ -201,6 +206,7 @@ export const AmenityModel = {
     async hardDeleteAmenity(id: string): Promise<void> {
         try {
             log.info('hard deleting amenity', 'hardDeleteAmenity', { id });
+            const db = getDb();
             await db.delete(amenities).where(eq(amenities.id, id));
             log.query('delete', 'amenities', { id }, { deleted: true });
         } catch (error) {

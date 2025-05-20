@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, eq } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { userPermissions } from '../schema/r_user_permission.dbschema.js';
 import type { BaseSelectFilter } from '../types/db-types.js';
 import { assertExists, castReturning, rawSelect } from '../utils/db-utils.js';
@@ -34,6 +34,7 @@ export const UserPermissionModel = {
     async createRelation(data: CreateUserPermissionData): Promise<UserPermissionRecord> {
         try {
             log.info('creating user-permission relation', 'createRelation', data);
+            const db = getDb();
             const rows = castReturning<UserPermissionRecord>(
                 await db.insert(userPermissions).values(data).returning()
             );
@@ -56,7 +57,7 @@ export const UserPermissionModel = {
     async listByUser(userId: string, filter?: BaseSelectFilter): Promise<UserPermissionRecord[]> {
         try {
             log.info('listing user-permission relations by user', 'listByUser', { userId, filter });
-
+            const db = getDb();
             let query = rawSelect(
                 db.select().from(userPermissions).where(eq(userPermissions.userId, userId))
             );
@@ -93,7 +94,7 @@ export const UserPermissionModel = {
                 permissionId,
                 filter
             });
-
+            const db = getDb();
             let query = rawSelect(
                 db
                     .select()
@@ -129,6 +130,7 @@ export const UserPermissionModel = {
                 userId,
                 permissionId
             });
+            const db = getDb();
             await db
                 .delete(userPermissions)
                 .where(
@@ -161,6 +163,7 @@ export const UserPermissionModel = {
             permissionId
         });
         try {
+            const db = getDb();
             const [relation] = await db
                 .select()
                 .from(userPermissions)
@@ -199,6 +202,7 @@ export const UserPermissionModel = {
             userId
         });
         try {
+            const db = getDb();
             await db.delete(userPermissions).where(eq(userPermissions.userId, userId));
             log.info(
                 'all user-permission relations for user deleted successfully',

@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { features } from '../schema/feature.dbschema.js';
 import type { InsertFeature, SelectFeatureFilter, UpdateFeatureData } from '../types/db-types.js';
 import {
@@ -34,6 +34,7 @@ export const FeatureModel = {
     async createFeature(data: InsertFeature): Promise<FeatureRecord> {
         try {
             log.info('creating a new feature', 'createFeature', data);
+            const db = getDb();
             const rows = castReturning<FeatureRecord>(
                 await db.insert(features).values(data).returning()
             );
@@ -54,6 +55,7 @@ export const FeatureModel = {
     async getFeatureById(id: string): Promise<FeatureRecord | undefined> {
         try {
             log.info('fetching feature by id', 'getFeatureById', { id });
+            const db = getDb();
             const [feature] = await db.select().from(features).where(eq(features.id, id)).limit(1);
 
             log.query('select', 'features', { id }, feature);
@@ -72,6 +74,7 @@ export const FeatureModel = {
     async listFeatures(filter: SelectFeatureFilter): Promise<FeatureRecord[]> {
         try {
             log.info('listing features', 'listFeatures', filter);
+            const db = getDb();
             let query = db.select().from(features).$dynamic();
 
             if (filter.query) {
@@ -137,7 +140,7 @@ export const FeatureModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating feature', 'updateFeature', { id, changes: dataToUpdate });
-
+            const db = getDb();
             const rows = castReturning<FeatureRecord>(
                 await db.update(features).set(dataToUpdate).where(eq(features.id, id)).returning()
             );
@@ -158,6 +161,7 @@ export const FeatureModel = {
     async softDeleteFeature(id: string): Promise<void> {
         try {
             log.info('soft deleting feature', 'softDeleteFeature', { id });
+            const db = getDb();
             await db.update(features).set({ deletedAt: new Date() }).where(eq(features.id, id));
 
             log.query('update', 'features', { id }, { deleted: true });
@@ -174,6 +178,7 @@ export const FeatureModel = {
     async restoreFeature(id: string): Promise<void> {
         try {
             log.info('restoring feature', 'restoreFeature', { id });
+            const db = getDb();
             await db
                 .update(features)
                 .set({ deletedAt: null, deletedById: null })
@@ -193,6 +198,7 @@ export const FeatureModel = {
     async hardDeleteFeature(id: string): Promise<void> {
         try {
             log.info('hard deleting feature', 'hardDeleteFeature', { id });
+            const db = getDb();
             await db.delete(features).where(eq(features.id, id));
             log.query('delete', 'features', { id }, { deleted: true });
         } catch (error) {

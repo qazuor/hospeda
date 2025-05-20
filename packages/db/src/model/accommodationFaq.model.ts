@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { accommodationFaqs } from '../schema/accommodation_faq.dbschema.js';
 import type { BaseSelectFilter, UpdateData } from '../types/db-types.js';
 import {
@@ -56,6 +56,7 @@ export const AccommodationFaqModel = {
     async createFaq(data: CreateAccommodationFaqData): Promise<AccommodationFaqRecord> {
         try {
             log.info('creating accommodation FAQ', 'createFaq', data);
+            const db = getDb();
             const rows = castReturning<AccommodationFaqRecord>(
                 await db.insert(accommodationFaqs).values(data).returning()
             );
@@ -77,6 +78,7 @@ export const AccommodationFaqModel = {
     async getFaqById(id: string): Promise<AccommodationFaqRecord | undefined> {
         try {
             log.info('fetching FAQ by id', 'getFaqById', { id });
+            const db = getDb();
             const [faq] = (await db
                 .select()
                 .from(accommodationFaqs)
@@ -99,7 +101,7 @@ export const AccommodationFaqModel = {
     async listFaqs(filter: SelectAccommodationFaqFilter): Promise<AccommodationFaqRecord[]> {
         try {
             log.info('listing FAQs', 'listFaqs', filter);
-
+            const db = getDb();
             let query = rawSelect(
                 db
                     .select()
@@ -147,6 +149,7 @@ export const AccommodationFaqModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating FAQ', 'updateFaq', { id, changes: dataToUpdate });
+            const db = getDb();
             const rows = castReturning<AccommodationFaqRecord>(
                 await db
                     .update(accommodationFaqs)
@@ -171,6 +174,7 @@ export const AccommodationFaqModel = {
     async softDeleteFaq(id: string): Promise<void> {
         try {
             log.info('soft deleting FAQ', 'softDeleteFaq', { id });
+            const db = getDb();
             await db
                 .update(accommodationFaqs)
                 .set({ deletedAt: new Date() })
@@ -190,6 +194,7 @@ export const AccommodationFaqModel = {
     async restoreFaq(id: string): Promise<void> {
         try {
             log.info('restoring FAQ', 'restoreFaq', { id });
+            const db = getDb();
             await db
                 .update(accommodationFaqs)
                 .set({ deletedAt: null })
@@ -209,6 +214,7 @@ export const AccommodationFaqModel = {
     async hardDeleteFaq(id: string): Promise<void> {
         try {
             log.info('hard deleting FAQ', 'hardDeleteFaq', { id });
+            const db = getDb();
             await db.delete(accommodationFaqs).where(eq(accommodationFaqs.id, id));
             log.query('delete', 'accommodation_faq', { id }, { deleted: true });
         } catch (error) {

@@ -6,6 +6,39 @@ Database layer for the Hospeda monorepo using Drizzle ORM with PostgreSQL.
 
 The `@repo/db` package provides the complete data access layer for the Hospeda platform. It's built using Drizzle ORM with a PostgreSQL database and implements a layered architecture with schemas, models, and services to ensure clean separation of concerns.
 
+## Setup
+
+The package follows a dependency injection pattern, allowing the consuming application to manage its own database connection.
+
+### 1. Initialize the database connection in your application
+
+```typescript
+import { Pool } from 'pg';
+import { initializeDb } from '@repo/db';
+
+// Create your PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+// Initialize the database with the pool
+initializeDb(pool);
+```
+
+### 2. Use the services and models
+
+```typescript
+import { UserService, AccommodationService } from '@repo/db';
+
+// Create instances of services
+const userService = new UserService();
+const accommodationService = new AccommodationService();
+
+// Use services
+const users = await userService.list({ limit: 10 }, actor);
+const accommodations = await accommodationService.list({ limit: 10 }, actor);
+```
+
 ## Features
 
 - **TypeScript Integration**: Full type safety from database to application code
@@ -551,22 +584,57 @@ Manages user accounts and profiles.
 
 ## Usage
 
-### Setting Up the Database
+### Setting Up the Database and usage
 
 ```typescript
-// Load environment variables
-import 'dotenv/config';
-import { db } from '@repo/db';
+/**
+ * This example shows how to use the package from a consuming application.
+ */
 
-async function initializeDatabase() {
-  try {
-    // Run migrations and seed required data
-    // This would normally be done via CLI commands
-    console.log('Database initialized');
-  } catch (error) {
-    console.error('Failed to initialize database:', error);
-  }
+// Import required dependencies
+import { Pool } from 'pg';
+import { initializeDb, UserService, BuiltinRoleTypeEnum } from '@repo/db';
+
+// Create a database connection pool
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL
+});
+
+// Initialize the database with the pool
+initializeDb(pool);
+
+// Example function showing how to use the services
+async function listAdminUsers() {
+    try {
+        // Create a service instance
+        const userService = new UserService();
+        // Create an actor object (the current user performing the operation)
+        const actor = {
+            id: '00000000-0000-0000-0000-000000000000',
+            roleId: BuiltinRoleTypeEnum.ADMIN,
+            name: 'Admin User'
+        };
+        // Get admin users
+        const adminRole = await userService.getByRole('admin-role-id', actor);
+        console.log('Admin users:', adminRole);
+        return adminRole;
+    } catch (error) {
+        console.error('Error listing admin users:', error);
+        throw error;
+    }
 }
+
+// Example of using an async function in a script
+listAdminUsers()
+    .then(() => {
+        console.log('Finished successfully');
+        pool.end(); // Important: Close the pool when done
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+        pool.end(); // Important: Close the pool even on error
+        process.exit(1);
+    });
 ```
 
 ### Using the Service Layer (Recommended)

@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { events } from '../schema/event.dbschema.js';
 import type { InsertEvent, SelectEventFilter, UpdateEventData } from '../types/db-types.js';
 import {
@@ -35,6 +35,7 @@ export const EventModel = {
     async createEvent(data: InsertEvent): Promise<EventRecord> {
         try {
             log.info('creating a new event', 'createEvent', data);
+            const db = getDb();
             const rows = castReturning<EventRecord>(
                 await db.insert(events).values(data).returning()
             );
@@ -56,6 +57,7 @@ export const EventModel = {
     async getEventById(id: string): Promise<EventRecord | undefined> {
         try {
             log.info('fetching event by id', 'getEventById', { id });
+            const db = getDb();
             const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
             log.query('select', 'events', { id }, event);
             return event ? (event as EventRecord) : undefined;
@@ -74,6 +76,7 @@ export const EventModel = {
     async listEvents(filter: SelectEventFilter): Promise<EventRecord[]> {
         try {
             log.info('listing events', 'listEvents', filter);
+            const db = getDb();
             let query = db.select().from(events).$dynamic();
 
             if (filter.query) {
@@ -163,6 +166,7 @@ export const EventModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating event', 'updateEvent', { id, changes: dataToUpdate });
+            const db = getDb();
             const rows = castReturning<EventRecord>(
                 await db.update(events).set(dataToUpdate).where(eq(events.id, id)).returning()
             );
@@ -183,6 +187,7 @@ export const EventModel = {
     async softDeleteEvent(id: string): Promise<void> {
         try {
             log.info('soft deleting event', 'softDeleteEvent', { id });
+            const db = getDb();
             await db.update(events).set({ deletedAt: new Date() }).where(eq(events.id, id));
             log.query('update', 'events', { id }, { deleted: true });
         } catch (error) {
@@ -199,6 +204,7 @@ export const EventModel = {
     async restoreEvent(id: string): Promise<void> {
         try {
             log.info('restoring event', 'restoreEvent', { id });
+            const db = getDb();
             await db.update(events).set({ deletedAt: null }).where(eq(events.id, id));
             log.query('update', 'events', { id }, { restored: true });
         } catch (error) {
@@ -215,6 +221,7 @@ export const EventModel = {
     async hardDeleteEvent(id: string): Promise<void> {
         try {
             log.info('hard deleting event', 'hardDeleteEvent', { id });
+            const db = getDb();
             await db.delete(events).where(eq(events.id, id));
             log.query('delete', 'events', { id }, { deleted: true });
         } catch (error) {

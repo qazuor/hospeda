@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { posts } from '../schema/post.dbschema.js';
 import type { InsertPost, SelectPostFilter, UpdatePostData } from '../types/db-types.js';
 import {
@@ -35,6 +35,7 @@ export const PostModel = {
     async createPost(data: InsertPost): Promise<PostRecord> {
         try {
             log.info('creating a new post', 'createPost', data);
+            const db = getDb();
             const rows = castReturning<PostRecord>(await db.insert(posts).values(data).returning());
             const post = assertExists(rows[0], 'createPost: no record returned');
             log.query('insert', 'posts', data, post);
@@ -54,6 +55,7 @@ export const PostModel = {
     async getPostById(id: string): Promise<PostRecord | undefined> {
         try {
             log.info('fetching post by id', 'getPostById', { id });
+            const db = getDb();
             const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
             log.query('select', 'posts', { id }, post);
             return post ? (post as PostRecord) : undefined;
@@ -72,6 +74,7 @@ export const PostModel = {
     async listPosts(filter: SelectPostFilter): Promise<PostRecord[]> {
         try {
             log.info('listing posts', 'listPosts', filter);
+            const db = getDb();
             let query = db.select().from(posts).$dynamic();
 
             if (filter.query) {
@@ -174,6 +177,7 @@ export const PostModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating post', 'updatePost', { id, dataToUpdate });
+            const db = getDb();
             const rows = castReturning<PostRecord>(
                 await db.update(posts).set(dataToUpdate).where(eq(posts.id, id)).returning()
             );
@@ -194,6 +198,7 @@ export const PostModel = {
     async softDeletePost(id: string): Promise<void> {
         try {
             log.info('soft deleting post', 'softDeletePost', { id });
+            const db = getDb();
             await db.update(posts).set({ deletedAt: new Date() }).where(eq(posts.id, id));
             log.query('update', 'posts', { id }, { deleted: true });
         } catch (error) {
@@ -210,6 +215,7 @@ export const PostModel = {
     async restorePost(id: string): Promise<void> {
         try {
             log.info('restoring post', 'restorePost', { id });
+            const db = getDb();
             await db.update(posts).set({ deletedAt: null }).where(eq(posts.id, id));
             log.query('update', 'posts', { id }, { restored: true });
         } catch (error) {
@@ -226,6 +232,7 @@ export const PostModel = {
     async hardDeletePost(id: string): Promise<void> {
         try {
             log.info('hard deleting post', 'hardDeletePost', { id });
+            const db = getDb();
             await db.delete(posts).where(eq(posts.id, id));
             log.query('delete', 'posts', { id }, { deleted: true });
         } catch (error) {

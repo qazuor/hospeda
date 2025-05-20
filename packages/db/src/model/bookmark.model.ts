@@ -2,7 +2,7 @@ import { logger } from '@repo/logger';
 import type { EntityTypeEnum } from '@repo/types';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, count, desc, eq, sql } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { userBookmarks } from '../schema/index.js';
 import type { SelectBookmarkFilter } from '../types/db-types.js';
 import { assertExists, castReturning } from '../utils/db-utils.js';
@@ -52,6 +52,7 @@ export const BookmarkModel = {
     async insertBookmark(data: InsertUserBookmark): Promise<BookmarkRecord> {
         try {
             log.info('inserting bookmark', 'insertBookmark', data);
+            const db = getDb();
             const rows = castReturning<BookmarkRecord>(
                 await db.insert(userBookmarks).values(data).returning()
             );
@@ -74,6 +75,7 @@ export const BookmarkModel = {
     async selectBookmarkById(id: string): Promise<BookmarkRecord | undefined> {
         log.info('selecting bookmark by id', 'selectBookmarkById', { id });
         try {
+            const db = getDb();
             const [bookmark] = await db
                 .select()
                 .from(userBookmarks)
@@ -102,6 +104,7 @@ export const BookmarkModel = {
             { id }
         );
         try {
+            const db = getDb();
             const [bookmark] = await db
                 .select()
                 .from(userBookmarks)
@@ -129,6 +132,7 @@ export const BookmarkModel = {
     async selectBookmarks(filter: SelectBookmarkFilter): Promise<BookmarkRecord[]> {
         log.info('selecting bookmarks with filter', 'selectBookmarks', filter);
         try {
+            const db = getDb();
             let query = db.select().from(userBookmarks).$dynamic();
 
             const conditions = [];
@@ -171,6 +175,7 @@ export const BookmarkModel = {
     async updateBookmark(id: string, data: UpdateUserBookmarkData): Promise<BookmarkRecord> {
         try {
             log.info('updating bookmark', 'updateBookmark', { id, data });
+            const db = getDb();
             const rows = castReturning<BookmarkRecord>(
                 await db
                     .update(userBookmarks)
@@ -198,6 +203,7 @@ export const BookmarkModel = {
     async hardDeleteBookmark(id: string): Promise<void> {
         try {
             log.info('hard deleting bookmark', 'hardDeleteBookmark', { id });
+            const db = getDb();
             await db.delete(userBookmarks).where(eq(userBookmarks.id, id));
             log.query('delete', 'user_bookmarks', { id }, { deleted: true });
         } catch (error) {
@@ -216,6 +222,7 @@ export const BookmarkModel = {
     async countByOwnerId(ownerId: string): Promise<number> {
         log.info('counting bookmarks by owner', 'countByOwnerId', { ownerId });
         try {
+            const db = getDb();
             const [result] = await db
                 .select({ count: count() })
                 .from(userBookmarks)
@@ -246,6 +253,7 @@ export const BookmarkModel = {
     async exists(ownerId: string, entityType: EntityTypeEnum, entityId: string): Promise<boolean> {
         log.debug('checking bookmark existence', 'exists', { ownerId, entityType, entityId });
         try {
+            const db = getDb();
             const [bookmark] = await db
                 .select({ id: userBookmarks.id })
                 .from(userBookmarks)
@@ -280,6 +288,7 @@ export const BookmarkModel = {
     async hardDeleteAllByOwnerId(ownerId: string): Promise<void> {
         log.info('hard deleting all bookmarks by owner', 'hardDeleteAllByOwnerId', { ownerId });
         try {
+            const db = getDb();
             await db.delete(userBookmarks).where(eq(userBookmarks.ownerId, ownerId));
             log.query('delete', 'user_bookmarks', { ownerId }, { deleted: true });
         } catch (error) {
@@ -296,6 +305,7 @@ export const BookmarkModel = {
     async hardDeleteOlderThan(cutoffDate: Date): Promise<void> {
         log.info('purging old bookmarks', 'hardDeleteOlderThan', { cutoffDate });
         try {
+            const db = getDb();
             await db
                 .delete(userBookmarks)
                 .where(
@@ -323,6 +333,7 @@ export const BookmarkModel = {
     ): Promise<Array<{ entityType: EntityTypeEnum; entityId: string; bookmarkCount: number }>> {
         log.info('getting most bookmarked entities', 'getMostBookmarkedEntities', { limit });
         try {
+            const db = getDb();
             const results = await db
                 .select({
                     entityType: userBookmarks.entityType,

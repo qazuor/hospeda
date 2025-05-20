@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { roles } from '../schema/role.dbschema.js';
 import type { InsertRole, SelectRoleFilter, UpdateRoleData } from '../types/db-types.js';
 import {
@@ -35,6 +35,7 @@ export const RoleModel = {
     async createRole(data: InsertRole): Promise<RoleRecord> {
         try {
             log.info('creating a new role', 'createRole', data);
+            const db = getDb();
             const rows = castReturning<RoleRecord>(await db.insert(roles).values(data).returning());
             const role = assertExists(rows[0], 'createRole: no role returned');
             log.query('insert', 'roles', data, role);
@@ -54,6 +55,7 @@ export const RoleModel = {
     async getRoleById(id: string): Promise<RoleRecord | undefined> {
         try {
             log.info('fetching role by id', 'getRoleById', { id });
+            const db = getDb();
             const [role] = await db.select().from(roles).where(eq(roles.id, id)).limit(1);
             log.query('select', 'roles', { id }, role);
             return role ? (role as RoleRecord) : undefined;
@@ -72,6 +74,7 @@ export const RoleModel = {
     async getRoleByName(name: string): Promise<RoleRecord | undefined> {
         try {
             log.info('fetching role by name', 'getRoleByName', { name });
+            const db = getDb();
             const [role] = await db.select().from(roles).where(eq(roles.name, name)).limit(1);
             log.query('select', 'roles', { name }, role);
             return role ? (role as RoleRecord) : undefined;
@@ -90,6 +93,7 @@ export const RoleModel = {
     async listRoles(filter: SelectRoleFilter): Promise<RoleRecord[]> {
         try {
             log.info('listing roles', 'listRoles', filter);
+            const db = getDb();
             let query = db.select().from(roles).$dynamic();
 
             if (filter.query) {
@@ -160,6 +164,7 @@ export const RoleModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating role', 'updateRole', { id, dataToUpdate });
+            const db = getDb();
             const rows = castReturning<RoleRecord>(
                 await db.update(roles).set(dataToUpdate).where(eq(roles.id, id)).returning()
             );
@@ -180,6 +185,7 @@ export const RoleModel = {
     async softDeleteRole(id: string): Promise<void> {
         try {
             log.info('soft deleting role', 'softDeleteRole', { id });
+            const db = getDb();
             await db.update(roles).set({ deletedAt: new Date() }).where(eq(roles.id, id));
             log.query('update', 'roles', { id }, { deleted: true });
         } catch (error) {
@@ -196,6 +202,7 @@ export const RoleModel = {
     async restoreRole(id: string): Promise<void> {
         try {
             log.info('restoring role', 'restoreRole', { id });
+            const db = getDb();
             await db.update(roles).set({ deletedAt: null }).where(eq(roles.id, id));
             log.query('update', 'roles', { id }, { restored: true });
         } catch (error) {
@@ -212,6 +219,7 @@ export const RoleModel = {
     async hardDeleteRole(id: string): Promise<void> {
         try {
             log.info('hard deleting role', 'hardDeleteRole', { id });
+            const db = getDb();
             await db.delete(roles).where(eq(roles.id, id));
             log.query('delete', 'roles', { id }, { deleted: true });
         } catch (error) {

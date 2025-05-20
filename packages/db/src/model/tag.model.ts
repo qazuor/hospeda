@@ -2,7 +2,7 @@ import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { tags } from '../schema/tag.dbschema.js';
 import type { InsertTag, SelectTagFilter, UpdateTagData } from '../types/db-types.js';
 import {
@@ -36,6 +36,7 @@ export const TagModel = {
     async createTag(data: InsertTag): Promise<TagRecord> {
         try {
             log.info('creating a new tag', 'createTag', data);
+            const db = getDb();
             const rows = castReturning<TagRecord>(await db.insert(tags).values(data).returning());
             const tag = assertExists(rows[0], 'createTag: no record returned');
             log.query('insert', 'tags', data, tag);
@@ -55,6 +56,7 @@ export const TagModel = {
     async getTagById(id: string): Promise<TagRecord | undefined> {
         try {
             log.info('fetching tag by id', 'getTagById', { id });
+            const db = getDb();
             const [tag] = await db.select().from(tags).where(eq(tags.id, id)).limit(1);
             log.query('select', 'tags', { id }, tag);
             return tag ? (tag as TagRecord) : undefined;
@@ -73,6 +75,7 @@ export const TagModel = {
     async listTags(filter: SelectTagFilter): Promise<TagRecord[]> {
         try {
             log.info('listing tags', 'listTags', filter);
+            const db = getDb();
             let query = db.select().from(tags).$dynamic();
 
             if (filter.query) {
@@ -144,6 +147,7 @@ export const TagModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating tag', 'updateTag', { id, dataToUpdate });
+            const db = getDb();
             const rows = castReturning<TagRecord>(
                 await db.update(tags).set(dataToUpdate).where(eq(tags.id, id)).returning()
             );
@@ -164,6 +168,7 @@ export const TagModel = {
     async softDeleteTag(id: string): Promise<void> {
         try {
             log.info('soft deleting tag', 'softDeleteTag', { id });
+            const db = getDb();
             await db.update(tags).set({ deletedAt: new Date() }).where(eq(tags.id, id));
             log.query('update', 'tags', { id }, { deleted: true });
         } catch (error) {
@@ -180,6 +185,7 @@ export const TagModel = {
     async restoreTag(id: string): Promise<void> {
         try {
             log.info('restoring tag', 'restoreTag', { id });
+            const db = getDb();
             await db.update(tags).set({ deletedAt: null }).where(eq(tags.id, id));
             log.query('update', 'tags', { id }, { restored: true });
         } catch (error) {
@@ -196,6 +202,7 @@ export const TagModel = {
     async hardDeleteTag(id: string): Promise<void> {
         try {
             log.info('hard deleting tag', 'hardDeleteTag', { id });
+            const db = getDb();
             await db.delete(tags).where(eq(tags.id, id));
             log.query('delete', 'tags', { id }, { deleted: true });
         } catch (error) {
