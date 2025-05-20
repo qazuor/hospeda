@@ -1,7 +1,5 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
-import { and, eq } from 'drizzle-orm';
-import { db } from '../client.js';
 import {
     AccommodationFeatureModel,
     type AccommodationFeatureRecord,
@@ -9,7 +7,6 @@ import {
     FeatureModel,
     type FeatureRecord
 } from '../model/index.js';
-import { accommodationFeatures } from '../schema/index.js';
 import type { PaginationParams, SelectAccommodationFeatureFilter } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
@@ -257,40 +254,24 @@ export class AccommodationFeatureService {
         const dataToUpdate = sanitizePartialUpdate(changes);
 
         try {
-            // First, update the regular fields
-            await AccommodationFeatureModel.updateFeatureRelation(
+            // Add the updatedById to the update data
+            const updateData = {
+                ...dataToUpdate,
+                updatedById: actor.id
+            };
+
+            // Use the model to update
+            const updatedRelation = await AccommodationFeatureModel.updateFeatureRelation(
                 accommodationId,
                 featureId,
-                dataToUpdate
+                updateData
             );
-
-            // Then update the audit field with a direct query
-            await db
-                .update(accommodationFeatures)
-                .set({ updatedById: actor.id })
-                .where(
-                    and(
-                        eq(accommodationFeatures.accommodationId, accommodationId),
-                        eq(accommodationFeatures.featureId, featureId)
-                    )
-                );
-
-            // Fetch the updated record
-            const relation = await AccommodationFeatureModel.getFeatureRelation(
-                accommodationId,
-                featureId
-            );
-            if (!relation) {
-                throw new Error(
-                    `Failed to retrieve updated relation for accommodation ${accommodationId} and feature ${featureId}`
-                );
-            }
 
             log.info('accommodation feature relationship updated successfully', 'update', {
-                relationId: `${relation.accommodationId}-${relation.featureId}`
+                relationId: `${updatedRelation.accommodationId}-${updatedRelation.featureId}`
             });
 
-            return relation;
+            return updatedRelation;
         } catch (error) {
             log.error('failed to update accommodation feature relationship', 'update', error, {
                 accommodationId,
