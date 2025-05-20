@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, eq, isNull } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { accommodationAmenities } from '../schema/accommodation_amenity.dbschema.js';
 import type {
     SelectAccommodationAmenityFilter,
@@ -43,6 +43,7 @@ export const AccommodationAmenityModel = {
     ): Promise<AccommodationAmenityRecord> {
         try {
             log.info('creating accommodation amenity relation', 'createAmenityRelation', data);
+            const db = getDb();
             const rows = castReturning<AccommodationAmenityRecord>(
                 await db.insert(accommodationAmenities).values(data).returning()
             );
@@ -73,6 +74,7 @@ export const AccommodationAmenityModel = {
                 accommodationId,
                 amenityId
             });
+            const db = getDb();
             const [relation] = await db
                 .select()
                 .from(accommodationAmenities)
@@ -107,7 +109,7 @@ export const AccommodationAmenityModel = {
     ): Promise<AccommodationAmenityRecord[]> {
         try {
             log.info('listing amenity relations', 'listAmenityRelations', filter);
-
+            const db = getDb();
             let query = rawSelect(db.select().from(accommodationAmenities));
 
             if (filter.accommodationId) {
@@ -159,7 +161,7 @@ export const AccommodationAmenityModel = {
                 amenityId,
                 changes: dataToUpdate
             });
-
+            const db = getDb();
             const rows = castReturning<AccommodationAmenityRecord>(
                 await db
                     .update(accommodationAmenities)
@@ -207,7 +209,7 @@ export const AccommodationAmenityModel = {
                 accommodationId,
                 amenityId
             });
-
+            const db = getDb();
             await db
                 .update(accommodationAmenities)
                 .set({ deletedAt: new Date() })
@@ -244,7 +246,7 @@ export const AccommodationAmenityModel = {
                 accommodationId,
                 amenityId
             });
-
+            const db = getDb();
             await db
                 .update(accommodationAmenities)
                 .set({ deletedAt: null })
@@ -281,7 +283,7 @@ export const AccommodationAmenityModel = {
                 accommodationId,
                 amenityId
             });
-
+            const db = getDb();
             await db
                 .delete(accommodationAmenities)
                 .where(
@@ -319,7 +321,7 @@ export const AccommodationAmenityModel = {
                     accommodationId
                 }
             );
-
+            const db = getDb();
             await db
                 .delete(accommodationAmenities)
                 .where(eq(accommodationAmenities.accommodationId, accommodationId));

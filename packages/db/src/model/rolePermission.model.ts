@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, eq } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { rolePermissions } from '../schema/r_role_permission.dbschema.js';
 import type { BaseSelectFilter } from '../types/db-types.js';
 import { assertExists, castReturning, rawSelect } from '../utils/db-utils.js';
@@ -34,6 +34,7 @@ export const RolePermissionModel = {
     async createRelation(data: CreateRolePermissionData): Promise<RolePermissionRecord> {
         try {
             log.info('creating role-permission relation', 'createRelation', data);
+            const db = getDb();
             const rows = castReturning<RolePermissionRecord>(
                 await db.insert(rolePermissions).values(data).returning()
             );
@@ -56,7 +57,7 @@ export const RolePermissionModel = {
     async listByRole(roleId: string, filter?: BaseSelectFilter): Promise<RolePermissionRecord[]> {
         try {
             log.info('listing role-permission relations by role', 'listByRole', { roleId, filter });
-
+            const db = getDb();
             let query = rawSelect(
                 db.select().from(rolePermissions).where(eq(rolePermissions.roleId, roleId))
             );
@@ -93,7 +94,7 @@ export const RolePermissionModel = {
                 permissionId,
                 filter
             });
-
+            const db = getDb();
             let query = rawSelect(
                 db
                     .select()
@@ -129,6 +130,7 @@ export const RolePermissionModel = {
                 roleId,
                 permissionId
             });
+            const db = getDb();
             await db
                 .delete(rolePermissions)
                 .where(
@@ -161,6 +163,7 @@ export const RolePermissionModel = {
             permissionId
         });
         try {
+            const db = getDb();
             const [relation] = await db
                 .select()
                 .from(rolePermissions)
@@ -199,6 +202,7 @@ export const RolePermissionModel = {
             roleId
         });
         try {
+            const db = getDb();
             await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
             log.info(
                 'all role-permission relations for role deleted successfully',

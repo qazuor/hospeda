@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { destinations } from '../schema/destination.dbschema.js';
 import type {
     InsertDestination,
@@ -39,6 +39,7 @@ export const DestinationModel = {
     async createDestination(data: InsertDestination): Promise<DestinationRecord> {
         try {
             log.info('creating a new destination', 'createDestination', data);
+            const db = getDb();
             const rows = castReturning<DestinationRecord>(
                 await db.insert(destinations).values(data).returning()
             );
@@ -60,6 +61,7 @@ export const DestinationModel = {
     async getDestinationById(id: string): Promise<DestinationRecord | undefined> {
         try {
             log.info('fetching destination by id', 'getDestinationById', { id });
+            const db = getDb();
             const [dest] = await db
                 .select()
                 .from(destinations)
@@ -82,6 +84,7 @@ export const DestinationModel = {
     async listDestinations(filter: SelectDestinationFilter): Promise<DestinationRecord[]> {
         try {
             log.info('listing destinations', 'listDestinations', filter);
+            const db = getDb();
             let query = db.select().from(destinations).$dynamic();
 
             if (filter.query) {
@@ -159,6 +162,7 @@ export const DestinationModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating destination', 'updateDestination', { id, changes: dataToUpdate });
+            const db = getDb();
             const rows = castReturning<DestinationRecord>(
                 await db
                     .update(destinations)
@@ -186,6 +190,7 @@ export const DestinationModel = {
     async softDeleteDestination(id: string): Promise<void> {
         try {
             log.info('soft deleting destination', 'softDeleteDestination', { id });
+            const db = getDb();
             await db
                 .update(destinations)
                 .set({ deletedAt: new Date() })
@@ -205,6 +210,7 @@ export const DestinationModel = {
     async restoreDestination(id: string): Promise<void> {
         try {
             log.info('restoring destination', 'restoreDestination', { id });
+            const db = getDb();
             await db.update(destinations).set({ deletedAt: null }).where(eq(destinations.id, id));
             log.query('update', 'destinations', { id }, { restored: true });
         } catch (error) {
@@ -221,6 +227,7 @@ export const DestinationModel = {
     async hardDeleteDestination(id: string): Promise<void> {
         try {
             log.info('hard deleting destination', 'hardDeleteDestination', { id });
+            const db = getDb();
             await db.delete(destinations).where(eq(destinations.id, id));
             log.query('delete', 'destinations', { id }, { deleted: true });
         } catch (error) {

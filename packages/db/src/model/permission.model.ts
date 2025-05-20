@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { permissions } from '../schema/permission.dbschema.js';
 import type {
     InsertPermission,
@@ -39,6 +39,7 @@ export const PermissionModel = {
     async createPermission(data: InsertPermission): Promise<PermissionRecord> {
         try {
             log.info('creating a new permission', 'createPermission', data);
+            const db = getDb();
             const rows = castReturning<PermissionRecord>(
                 await db.insert(permissions).values(data).returning()
             );
@@ -60,6 +61,7 @@ export const PermissionModel = {
     async getPermissionById(id: string): Promise<PermissionRecord | undefined> {
         try {
             log.info('fetching permission by id', 'getPermissionById', { id });
+            const db = getDb();
             const [perm] = await db
                 .select()
                 .from(permissions)
@@ -82,6 +84,7 @@ export const PermissionModel = {
     async listPermissions(filter: SelectPermissionFilter): Promise<PermissionRecord[]> {
         try {
             log.info('listing permissions', 'listPermissions', filter);
+            const db = getDb();
             let query = db.select().from(permissions).$dynamic();
 
             if (filter.query) {
@@ -150,6 +153,7 @@ export const PermissionModel = {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
             log.info('updating permission', 'updatePermission', { id, dataToUpdate });
+            const db = getDb();
             const rows = castReturning<PermissionRecord>(
                 await db
                     .update(permissions)
@@ -177,6 +181,7 @@ export const PermissionModel = {
     async softDeletePermission(id: string): Promise<void> {
         try {
             log.info('soft deleting permission', 'softDeletePermission', { id });
+            const db = getDb();
             await db
                 .update(permissions)
                 .set({ deletedAt: new Date() })
@@ -196,6 +201,7 @@ export const PermissionModel = {
     async restorePermission(id: string): Promise<void> {
         try {
             log.info('restoring permission', 'restorePermission', { id });
+            const db = getDb();
             await db.update(permissions).set({ deletedAt: null }).where(eq(permissions.id, id));
             log.query('update', 'permissions', { id }, { restored: true });
         } catch (error) {
@@ -212,6 +218,7 @@ export const PermissionModel = {
     async hardDeletePermission(id: string): Promise<void> {
         try {
             log.info('hard deleting permission', 'hardDeletePermission', { id });
+            const db = getDb();
             await db.delete(permissions).where(eq(permissions.id, id));
             log.query('delete', 'permissions', { id }, { deleted: true });
         } catch (error) {

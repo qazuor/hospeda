@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { destinationAttractions } from '../schema/destination_attraction.dbschema.js';
 import type {
     InsertDestinationAttraction,
@@ -41,6 +41,7 @@ export const DestinationAttractionModel = {
     ): Promise<DestinationAttractionRecord> {
         try {
             log.info('creating destination attraction', 'createAttraction', data);
+            const db = getDb();
             const rows = castReturning<DestinationAttractionRecord>(
                 await db.insert(destinationAttractions).values(data).returning()
             );
@@ -62,6 +63,7 @@ export const DestinationAttractionModel = {
     async getAttractionById(id: string): Promise<DestinationAttractionRecord | undefined> {
         try {
             log.info('fetching attraction by id', 'getAttractionById', { id });
+            const db = getDb();
             const [attr] = await db
                 .select()
                 .from(destinationAttractions)
@@ -86,7 +88,7 @@ export const DestinationAttractionModel = {
     ): Promise<DestinationAttractionRecord[]> {
         try {
             log.info('listing attractions', 'listAttractions', filter);
-
+            const db = getDb();
             let query = db.select().from(destinationAttractions).$dynamic();
 
             if (filter.query) {
@@ -158,6 +160,7 @@ export const DestinationAttractionModel = {
                 id,
                 changes: dataToUpdate
             });
+            const db = getDb();
             const rows = castReturning<DestinationAttractionRecord>(
                 await db
                     .update(destinationAttractions)
@@ -185,6 +188,7 @@ export const DestinationAttractionModel = {
     async softDeleteAttraction(id: string): Promise<void> {
         try {
             log.info('soft deleting attraction', 'softDeleteAttraction', { id });
+            const db = getDb();
             await db
                 .update(destinationAttractions)
                 .set({ deletedAt: new Date() })
@@ -204,6 +208,7 @@ export const DestinationAttractionModel = {
     async restoreAttraction(id: string): Promise<void> {
         try {
             log.info('restoring attraction', 'restoreAttraction', { id });
+            const db = getDb();
             await db
                 .update(destinationAttractions)
                 .set({ deletedAt: null })
@@ -223,6 +228,7 @@ export const DestinationAttractionModel = {
     async hardDeleteAttraction(id: string): Promise<void> {
         try {
             log.info('hard deleting attraction', 'hardDeleteAttraction', { id });
+            const db = getDb();
             await db.delete(destinationAttractions).where(eq(destinationAttractions.id, id));
             log.query('delete', 'destination_attractions', { id }, { deleted: true });
         } catch (error) {

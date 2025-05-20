@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
-import { db } from '../client.js';
+import { getDb } from '../client.js';
 import { eventOrganizers } from '../schema/event_organizer.dbschema.js';
 import type {
     InsertEventOrganizer,
@@ -39,6 +39,7 @@ export const EventOrganizerModel = {
     async createOrganizer(data: InsertEventOrganizer): Promise<EventOrganizerRecord> {
         try {
             log.info('creating event organizer', 'createOrganizer', data);
+            const db = getDb();
             const rows = castReturning<EventOrganizerRecord>(
                 await db.insert(eventOrganizers).values(data).returning()
             );
@@ -60,6 +61,7 @@ export const EventOrganizerModel = {
     async getOrganizerById(id: string): Promise<EventOrganizerRecord | undefined> {
         try {
             log.info('fetching organizer by id', 'getOrganizerById', { id });
+            const db = getDb();
             const [org] = await db
                 .select()
                 .from(eventOrganizers)
@@ -82,7 +84,7 @@ export const EventOrganizerModel = {
     async listOrganizers(filter: SelectEventOrganizerFilter): Promise<EventOrganizerRecord[]> {
         try {
             log.info('listing organizers', 'listOrganizers', filter);
-
+            const db = getDb();
             let query = db.select().from(eventOrganizers).$dynamic();
 
             if (filter.query) {
@@ -153,6 +155,7 @@ export const EventOrganizerModel = {
                 id,
                 changes: dataToUpdate
             });
+            const db = getDb();
             const rows = castReturning<EventOrganizerRecord>(
                 await db
                     .update(eventOrganizers)
@@ -180,6 +183,7 @@ export const EventOrganizerModel = {
     async softDeleteOrganizer(id: string): Promise<void> {
         try {
             log.info('soft deleting organizer', 'softDeleteOrganizer', { id });
+            const db = getDb();
             await db
                 .update(eventOrganizers)
                 .set({ deletedAt: new Date() })
@@ -199,6 +203,7 @@ export const EventOrganizerModel = {
     async restoreOrganizer(id: string): Promise<void> {
         try {
             log.info('restoring organizer', 'restoreOrganizer', { id });
+            const db = getDb();
             await db
                 .update(eventOrganizers)
                 .set({ deletedAt: null })
@@ -218,6 +223,7 @@ export const EventOrganizerModel = {
     async hardDeleteOrganizer(id: string): Promise<void> {
         try {
             log.info('hard deleting organizer', 'hardDeleteOrganizer', { id });
+            const db = getDb();
             await db.delete(eventOrganizers).where(eq(eventOrganizers.id, id));
             log.query('delete', 'event_organizer', { id }, { deleted: true });
         } catch (error) {
