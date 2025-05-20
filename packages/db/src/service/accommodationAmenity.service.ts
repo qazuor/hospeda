@@ -1,14 +1,11 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
-import { and, eq } from 'drizzle-orm';
-import { db } from '../client.js';
 import {
     AccommodationAmenityModel,
     type AccommodationAmenityRecord,
     AccommodationModel,
     AmenityModel
 } from '../model/index.js';
-import { accommodationAmenities } from '../schema/index.js';
 import type {
     InsertAccommodationAmenity,
     PaginationParams,
@@ -245,40 +242,24 @@ export class AccommodationAmenityService {
         const dataToUpdate = sanitizePartialUpdate(changes);
 
         try {
-            // First, update the regular fields
-            await AccommodationAmenityModel.updateAmenityRelation(
+            // Include updatedById in the data to update
+            const updateData: UpdateAccommodationAmenityData = {
+                ...dataToUpdate,
+                updatedById: actor.id
+            };
+
+            // Use the model to update
+            const updatedRelation = await AccommodationAmenityModel.updateAmenityRelation(
                 accommodationId,
                 amenityId,
-                dataToUpdate
+                updateData
             );
-
-            // Then update the audit field with a direct query
-            await db
-                .update(accommodationAmenities)
-                .set({ updatedById: actor.id })
-                .where(
-                    and(
-                        eq(accommodationAmenities.accommodationId, accommodationId),
-                        eq(accommodationAmenities.amenityId, amenityId)
-                    )
-                );
-
-            // Fetch the updated record
-            const relation = await AccommodationAmenityModel.getAmenityRelation(
-                accommodationId,
-                amenityId
-            );
-            if (!relation) {
-                throw new Error(
-                    `Failed to retrieve updated relation for accommodation ${accommodationId} and amenity ${amenityId}`
-                );
-            }
 
             log.info('accommodation amenity relationship updated successfully', 'update', {
-                relationId: `${relation.accommodationId}-${relation.amenityId}`
+                relationId: `${updatedRelation.accommodationId}-${updatedRelation.amenityId}`
             });
 
-            return relation;
+            return updatedRelation;
         } catch (error) {
             log.error('failed to update accommodation amenity relationship', 'update', error, {
                 accommodationId,
