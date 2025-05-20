@@ -1,9 +1,6 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
-import { eq } from 'drizzle-orm';
-import { db } from '../client.js';
 import { FeatureModel, type FeatureRecord } from '../model/feature.model.js';
-import { features } from '../schema/feature.dbschema.js';
 import type { InsertFeature, SelectFeatureFilter, UpdateFeatureData } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
@@ -130,17 +127,14 @@ export class FeatureService {
         const dataToUpdate = sanitizePartialUpdate(changes);
 
         try {
-            // First update the regular fields
-            await FeatureModel.updateFeature(existingFeature.id, dataToUpdate);
+            // Include the updatedById in the update data
+            const updateData: UpdateFeatureData = {
+                ...dataToUpdate,
+                updatedById: actor.id
+            };
 
-            // Then update the audit field with a direct query
-            await db.update(features).set({ updatedById: actor.id }).where(eq(features.id, id));
-
-            // Fetch the updated record
-            const updatedFeature = await FeatureModel.getFeatureById(id);
-            if (!updatedFeature) {
-                throw new Error(`Failed to retrieve updated feature: ${id}`);
-            }
+            // Use the model to update
+            const updatedFeature = await FeatureModel.updateFeature(existingFeature.id, updateData);
 
             log.info('feature updated successfully', 'update', {
                 featureId: updatedFeature.id
@@ -170,13 +164,13 @@ export class FeatureService {
         await this.getById(id, actor);
 
         try {
-            await db
-                .update(features)
-                .set({
-                    deletedAt: new Date(),
-                    deletedById: actor.id
-                })
-                .where(eq(features.id, id));
+            // Use the model to update deletedAt and deletedById
+            const updateData: UpdateFeatureData = {
+                deletedAt: new Date(),
+                deletedById: actor.id
+            };
+
+            await FeatureModel.updateFeature(id, updateData);
 
             log.info('feature soft deleted successfully', 'delete', { featureId: id });
         } catch (error) {
@@ -203,13 +197,13 @@ export class FeatureService {
         await this.getById(id, actor);
 
         try {
-            await db
-                .update(features)
-                .set({
-                    deletedAt: null,
-                    deletedById: null
-                })
-                .where(eq(features.id, id));
+            // Use the model to clear deletedAt and deletedById
+            const updateData: UpdateFeatureData = {
+                deletedAt: null,
+                deletedById: null
+            };
+
+            await FeatureModel.updateFeature(id, updateData);
 
             log.info('feature restored successfully', 'restore', { featureId: id });
         } catch (error) {
