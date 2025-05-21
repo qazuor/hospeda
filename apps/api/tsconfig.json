@@ -1,6 +1,7 @@
 {
     "extends": "@repo/typescript-config/base.json",
     "compilerOptions": {
+        "strict": true,
         "outDir": "dist",
         "target": "ES2022",
         "module": "NodeNext",
@@ -23,9 +24,7 @@
             "@repo/types": ["../../packages/types/src/index.ts"],
             "@repo/types/*": ["../../packages/types/src/*"],
             "@repo/utils": ["../../packages/utils/src/index.ts"],
-            "@repo/utils/*": ["../../packages/utils/src/*"],
-            "@repo/tailwind-config": ["../../packages/tailwind-config/src/index.ts"],
-            "@repo/tailwind-config/*": ["../../packages/tailwind-config/src/*"]
+            "@repo/utils/*": ["../../packages/utils/src/*"]
         }
     },
     "include": ["src"],

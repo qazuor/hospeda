@@ -1,14 +1,16 @@
 import { serve } from '@hono/node-server';
 import { logger } from '@repo/logger';
+import 'dotenv/config';
 import { app } from './app';
 
-const PORT = process.env.VITE_API_PORT ? Number.parseInt(process.env.VITE_API_PORT, 10) : 3000;
+const PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000;
 
-console.info(`Starting API server on port ${process.env.VITE_API_HOST}:${PORT}`);
+// console.info(`Starting API server on port ${PORT}`);
 
 serve({
     fetch: app.fetch,
-    port: PORT
+    port: PORT,
+    hostname: '0.0.0.0'
 });
 
 process.on('unhandledRejection', (reason, promise) => {

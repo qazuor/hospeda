@@ -1,0 +1,21 @@
+app = "hospeda-api"
+
+[build]
+  dockerfile = "../../Dockerfile.api"
+  context = "../.."
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+
+[[services]]
+  internal_port = 3000 # o el puerto que use tu app (Hono por default usa 3000)
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443

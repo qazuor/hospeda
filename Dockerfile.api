@@ -1,0 +1,22 @@
+# Etapa única: runtime
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copiar el build generado localmente
+COPY apps/api/dist ./dist
+
+# Copiar el package.json generado para producción (por el script)
+COPY apps/api/package.prod.json ./package.json
+
+# Instalar dependencias de producción
+RUN npm install -g pnpm && pnpm install --prod
+
+# Configurar entorno
+ENV NODE_ENV=production
+
+# Exponer el puerto de la app
+EXPOSE 3000
+
+# Ejecutar la app
+CMD ["node", "dist/index.js"]
