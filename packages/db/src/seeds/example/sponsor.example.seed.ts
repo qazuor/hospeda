@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { ClientTypeEnum, StateEnum } from '@repo/types';
 import { eq, ilike } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { postSponsors, users } from '../../schema';
 
 /**
@@ -11,6 +11,8 @@ export async function seedSponsors() {
     logger.info('Starting to seed example sponsors', 'seedSponsors');
 
     try {
+        const db = getDb();
+
         // Get admin user for ownership
         const [adminUser] = await db.select().from(users).where(eq(users.userName, 'admin'));
 

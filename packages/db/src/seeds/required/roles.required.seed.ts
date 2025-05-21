@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, StateEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { roles } from '../../schema';
 
 /**
@@ -11,6 +11,8 @@ export async function seedRoles() {
     logger.info('Starting to seed roles', 'seedRoles');
 
     try {
+        const db = getDb();
+
         // Define the built-in roles
         const builtinRoles = [
             {

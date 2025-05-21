@@ -1,10 +1,10 @@
 import { logger } from '@repo/logger';
-import { seedRequiredAmenities } from './amenities.required.seed';
+import { seedRequiredAmenities } from './amenities.required.seed.js';
 import { seedDestinations } from './destination';
-import { seedRequiredFeatures } from './features.required.seed';
-import { seedPermissions } from './permissions.required.seed';
-import { seedRoles } from './roles.required.seed';
-import { seedAdminUser } from './user.required.seed';
+import { seedRequiredFeatures } from './features.required.seed.js';
+import { seedPermissions } from './permissions.required.seed.js';
+import { seedRoles } from './roles.required.seed.js';
+import { seedAdminUser } from './user.required.seed.js';
 
 /**
  * Seeds all required data in the correct order
@@ -28,9 +28,9 @@ export async function seedRequiredData() {
     }
 }
 
-export * from './amenities.required.seed';
+export * from './amenities.required.seed.js';
 export * from './destination';
-export * from './features.required.seed';
-export * from './permissions.required.seed';
-export * from './roles.required.seed';
-export * from './user.required.seed';
+export * from './features.required.seed.js';
+export * from './permissions.required.seed.js';
+export * from './roles.required.seed.js';
+export * from './user.required.seed.js';

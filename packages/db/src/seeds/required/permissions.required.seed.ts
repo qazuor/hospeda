@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { BuiltinPermissionTypeEnum, BuiltinRoleTypeEnum, StateEnum } from '@repo/types';
 import { and, eq } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { permissions, rolePermissions, roles } from '../../schema';
 
 /**
@@ -11,6 +11,8 @@ export async function seedPermissions() {
     logger.info('Starting to seed permissions', 'seedPermissions');
 
     try {
+        const db = getDb();
+
         // Define the built-in permissions
         const builtinPermissions = Object.values(BuiltinPermissionTypeEnum).map((permName) => ({
             id: crypto.randomUUID(),

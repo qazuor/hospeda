@@ -2,7 +2,7 @@ import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, PreferedContactEnum, StateEnum } from '@repo/types';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { roles, users } from '../../schema';
 
 /**
@@ -12,6 +12,8 @@ export async function seedAdminUser() {
     logger.info('Starting to seed admin user', 'seedAdminUser');
 
     try {
+        const db = getDb();
+
         // Check if admin user already exists
         const existingAdmin = await db.select().from(users).where(eq(users.userName, 'admin'));
 

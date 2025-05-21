@@ -1,11 +1,11 @@
 import { logger } from '@repo/logger';
-import { seedExampleAccommodations } from 'src/seeds/example/accommodation';
-import { seedAccommodationReviews } from './accommodation-review.example.seed';
-import { seedDestinationReviews } from './destination-review.example.seed';
-import { seedEvents } from './event.example.seed';
-import { seedPosts } from './post.example.seed';
-import { seedSponsors } from './sponsor.example.seed';
-import { seedExampleUsers } from './user.example.seed';
+import { seedExampleAccommodations } from './accommodation';
+import { seedAccommodationReviews } from './accommodation-review.example.seed.js';
+import { seedDestinationReviews } from './destination-review.example.seed.js';
+import { seedEvents } from './event.example.seed.js';
+import { seedPosts } from './post.example.seed.js';
+import { seedSponsors } from './sponsor.example.seed.js';
+import { seedExampleUsers } from './user.example.seed.js';
 
 /**
  * Seeds all example data in the correct order:

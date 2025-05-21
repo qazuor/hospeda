@@ -7,7 +7,7 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { ilike, or } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { destinations } from '../../schema/destination.dbschema.js';
 import { events } from '../../schema/event.dbschema.js';
 import { eventLocations } from '../../schema/event_location.dbschema.js';
@@ -21,6 +21,8 @@ export async function seedEvents(): Promise<void> {
     logger.info('Starting example events seed...', 'seedEvents');
 
     try {
+        const db = getDb();
+
         // Check if example events already exist
         const existingEvents = await db.select().from(events).where(ilike(events.name, 'example%'));
 

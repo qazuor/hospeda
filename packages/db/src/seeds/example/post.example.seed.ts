@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { PostCategoryEnum, PriceCurrencyEnum, StateEnum, VisibilityEnum } from '@repo/types';
 import { eq, ilike, or } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { posts } from '../../schema/post.dbschema.js';
 import { postSponsors } from '../../schema/post_sponsor.dbschema.js';
 import { postSponsorships } from '../../schema/post_sponsorship.dbschema.js';
@@ -14,6 +14,8 @@ export async function seedPosts(): Promise<void> {
     logger.info('Starting example posts seed...', 'seedPosts');
 
     try {
+        const db = getDb();
+
         // Check if example posts already exist
         const existingPosts = await db.select().from(posts).where(ilike(posts.name, 'example%'));
 
@@ -478,7 +480,7 @@ La gastronomía entrerriana es una expresión viva de la cultura e identidad de 
         const insertedPostsResult = await db.insert(posts).values(examplePosts).returning();
 
         // Normalize to array of posts with 'id'
-        type InsertedPost = (typeof examplePosts)[number] & { id: number };
+        type InsertedPost = (typeof examplePosts)[number] & { id: string };
         const insertedPostsArray: InsertedPost[] = Array.isArray(insertedPostsResult)
             ? insertedPostsResult
             : (insertedPostsResult?.rows ?? []);
@@ -553,8 +555,8 @@ La gastronomía entrerriana es una expresión viva de la cultura e identidad de 
 
             // Normalize to array
             type InsertedSponsorship = (typeof sponsorshipsData)[number] & {
-                id: number;
-                postId: number;
+                id: string;
+                postId: string;
             };
             const insertedSponsorships: InsertedSponsorship[] = Array.isArray(
                 insertedSponsorshipsResult

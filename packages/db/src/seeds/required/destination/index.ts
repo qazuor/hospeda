@@ -1,18 +1,18 @@
 import { logger } from '@repo/logger';
-import { seedChajariDestination } from 'src/seeds/required/destination/chajarí.required.seed';
-import { seedColonDestination } from 'src/seeds/required/destination/colon.required.seed';
-import { seedConcepcionDelUruguayDestination } from 'src/seeds/required/destination/concepcion-del-uruguay.required.seed';
-import { seedConcordiaDestination } from 'src/seeds/required/destination/concordia.required.seed';
-import { seedFederacionDestination } from 'src/seeds/required/destination/federacion.required.seed';
-import { seedGualeguaychuDestination } from 'src/seeds/required/destination/gualeguaychu.required.seed';
-import { seedIbicuyDestination } from 'src/seeds/required/destination/ibicuy.required.seed';
-import { seedLiebigDestination } from 'src/seeds/required/destination/liebig.required.seed';
-import { seedPuertoYeruaDestination } from 'src/seeds/required/destination/puerto-yerua.required.seed';
-import { seedSanJoseDestination } from 'src/seeds/required/destination/san-jose.required.seed';
-import { seedSantaAnaDestination } from 'src/seeds/required/destination/santa-ana.required.seed';
-import { seedUbajayDestination } from 'src/seeds/required/destination/ubajay.required.seed';
-import { seedVillaElisaDestination } from 'src/seeds/required/destination/villa-elisa.required.seed';
-import { seedVillaParanacitoDestination } from 'src/seeds/required/destination/villa-paranacito.required.seed';
+import { seedChajariDestination } from './chajarí.required.seed.js';
+import { seedColonDestination } from './colon.required.seed.js';
+import { seedConcepcionDelUruguayDestination } from './concepcion-del-uruguay.required.seed.js';
+import { seedConcordiaDestination } from './concordia.required.seed.js';
+import { seedFederacionDestination } from './federacion.required.seed.js';
+import { seedGualeguaychuDestination } from './gualeguaychu.required.seed.js';
+import { seedIbicuyDestination } from './ibicuy.required.seed.js';
+import { seedLiebigDestination } from './liebig.required.seed.js';
+import { seedPuertoYeruaDestination } from './puerto-yerua.required.seed.js';
+import { seedSanJoseDestination } from './san-jose.required.seed.js';
+import { seedSantaAnaDestination } from './santa-ana.required.seed.js';
+import { seedUbajayDestination } from './ubajay.required.seed.js';
+import { seedVillaElisaDestination } from './villa-elisa.required.seed.js';
+import { seedVillaParanacitoDestination } from './villa-paranacito.required.seed.js';
 
 /**
  * Seeds all required destinations
@@ -43,18 +43,17 @@ export async function seedDestinations() {
     }
 }
 
-export * from './chajarí.required.seed';
-export * from './colon.required.seed';
-export * from './concepcion-del-uruguay.required.seed';
-export * from './concordia.required.seed';
-export * from './federacion.required.seed';
-export * from './gualeguaychu.required.seed';
-export * from './liebig.required.seed';
-export * from './puerto-yerua.required.seed';
-export * from './san-jose.required.seed';
-export * from './santa-ana.required.seed';
-export * from './ubajay.required.seed';
-export * from './villa-elisa.required.seed';
-export * from './villa-paranacito.required.seed';
-
-export * from './ibicuy.required.seed';
+export * from './chajarí.required.seed.js';
+export * from './colon.required.seed.js';
+export * from './concepcion-del-uruguay.required.seed.js';
+export * from './concordia.required.seed.js';
+export * from './federacion.required.seed.js';
+export * from './gualeguaychu.required.seed.js';
+export * from './ibicuy.required.seed.js';
+export * from './liebig.required.seed.js';
+export * from './puerto-yerua.required.seed.js';
+export * from './san-jose.required.seed.js';
+export * from './santa-ana.required.seed.js';
+export * from './ubajay.required.seed.js';
+export * from './villa-elisa.required.seed.js';
+export * from './villa-paranacito.required.seed.js';

@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { type AccommodationTypeEnum, EntityTypeEnum, StateEnum, TagColorEnum } from '@repo/types';
 import { eq, sql } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client.js';
 import {
     accommodationAmenities,
     accommodationFaqs,
@@ -19,7 +19,6 @@ import {
 import retiroSoleadoCabanaChajari from './chajari/retiro-soleado-cabana-chajari.json';
 import rioSoleadoCabanaChajari from './chajari/rio-soleado-cabana-chajari.json';
 import senderoNaturalCountryHouseChajari from './chajari/sendero-natural-country-house-chajari.json';
-// Import accommodation data
 import cabanaDelRioColon from './colon/cabana-del-rio-colon.json';
 import horizonteAgradableCampingColon from './colon/horizonte-agradable-camping-colon.json';
 import miradorSoleadoHotelColon from './colon/mirador-soleado-hotel-colon.json';
@@ -163,6 +162,8 @@ export async function seedExampleAccommodations() {
     logger.info('Starting to seed example accommodations', 'seedExampleAccommodations');
 
     try {
+        const db = getDb();
+
         // Get admin user for ownership
         const [adminUser] = await db.select().from(users).where(eq(users.name, 'admin'));
 
@@ -292,6 +293,8 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
     logger.info(`Processing accommodation: ${data.slug}`, 'processAccommodation');
 
     try {
+        const db = getDb();
+
         // Check if accommodation already exists
         const existingAccommodation = await db
             .select()
