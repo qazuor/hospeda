@@ -1,3 +1,4 @@
+import { healthRoutes } from '@/routes/health';
 import { initDb } from '@/utils/db';
 import { logger } from '@repo/logger';
 import { Hono } from 'hono';
@@ -23,16 +24,9 @@ app.get('/', (c) => {
     });
 });
 
-// Health check endpoint
-app.get('/health', (c) => {
-    return c.json({
-        status: 'ok',
-        timestamp: new Date().toISOString()
-    });
-});
-
 // API routes
 app.route('/api/v1', apiV1Routes);
+app.route('/health', healthRoutes);
 
 // 404 handler
 app.notFound((c) => {
