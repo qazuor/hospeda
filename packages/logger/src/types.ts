@@ -191,6 +191,12 @@ export interface LoggerCategory {
 }
 
 /**
+ * Type for custom logger methods
+ * @template T The type of parameters the custom logger accepts
+ */
+export type CustomLoggerMethod<T> = (params: T, options?: LoggerOptions) => void;
+
+/**
  * Logger interface with all methods
  */
 export interface ILogger {
@@ -261,4 +267,40 @@ export interface ILogger {
      * @deprecated Use registerCategory instead which returns a logger
      */
     createLogger(categoryKey: string): ILogger;
+
+    /**
+     * Register a custom logger method
+     * @template T The type of parameters the custom logger accepts
+     * @param methodName - Name of the custom logger method
+     * @param level - Log level to use for this method
+     * @param defaultLabel - Default label to use for this method (optional)
+     * @returns The logger instance for chaining
+     *
+     * @example
+     * ```typescript
+     * interface QueryParams {
+     *   table: string;
+     *   action: string;
+     *   params: Record<string, unknown>;
+     *   result: unknown;
+     * }
+     *
+     * // Register the query method on the dbLogger
+     * dbLogger.registerLogMethod<QueryParams>('query', LogLevel.INFO, 'SQL');
+     *
+     * // Use the custom method
+     * dbLogger.query({
+     *   table: 'users',
+     *   action: 'insert',
+     *   params: { name: 'John' },
+     *   result: { id: 1, name: 'John' }
+     * });
+     * ```
+     */
+    registerLogMethod<_T>(methodName: string, level: LogLevel, defaultLabel?: string): ILogger;
+
+    /**
+     * Dynamic property access for custom logger methods
+     */
+    [key: string]: unknown;
 }
