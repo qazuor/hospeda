@@ -10,6 +10,7 @@ A powerful, configurable logger for Node.js applications with support for catego
 - Object expansion with configurable depth
 - Text truncation for long messages
 - Environment variable configuration
+- Custom logging methods for specialized use cases
 
 ## Installation
 
@@ -101,6 +102,41 @@ logger.info('Complex object', 'DATA', {
 });
 ```
 
+## Custom Logger Methods
+
+You can register custom logger methods for specialized logging needs:
+
+```typescript
+import logger, { LogLevel } from '@repo/logger';
+
+// Create a database logger
+const dbLogger = logger.registerCategory('Database', 'DB', {
+  color: LoggerColors.BLUE
+});
+
+// Define a type for database queries
+interface QueryParams {
+  table: string;
+  action: string;
+  params: Record<string, unknown>;
+  result: unknown;
+}
+
+// Register a custom method for logging queries
+dbLogger.registerLogMethod<QueryParams>('query', LogLevel.INFO, 'SQL');
+
+// Now you can use the custom method
+dbLogger.query({
+  table: 'users',
+  action: 'insert',
+  params: { name: 'John', email: 'john@example.com' },
+  result: { id: 1, name: 'John', email: 'john@example.com' }
+});
+
+// Output will include category, level, timestamp, and formatted parameters
+// Database 💡 [INFO] [2023-10-01 12:00:00] [SQL] => { table: "users", action: "insert", ... }
+```
+
 ## Available Colors
 
 The logger provides a set of predefined colors through the `LoggerColors` enum:
@@ -136,5 +172,6 @@ const dbLogger = logger.registerCategory('Database', 'DB', {
 - `error(value, label?, options?)` - Error log
 - `debug(value, label?, options?)` - Debug log
 - `registerCategory(name, key, options)` - Register a new category and return a logger for it
+- `registerLogMethod<T>(methodName, level, defaultLabel?)` - Register a custom logging method
 - `configure(config)` - Configure the logger
 - `resetConfig()` - Reset to default configuration

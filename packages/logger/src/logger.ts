@@ -15,6 +15,11 @@ import {
 } from './types.js';
 
 /**
+ * Store for custom logger methods
+ */
+const customLogMethods = new Map<string, { level: LogLevel; defaultLabel?: string }>();
+
+/**
  * Check if a log level should be displayed
  * @param level - Log level to check
  * @param options - Optional logging options
@@ -137,12 +142,48 @@ export function debug(value: unknown, label?: string, options?: LoggerOptions): 
 }
 
 /**
+ * Register a custom log method for the logger
+ * @param methodName - Name of the method to register
+ * @param level - Log level to use for this method
+ * @param defaultLabel - Default label to use for this method (optional)
+ * @param categoryKey - Category key if this is for a specific category logger
+ * @returns The logger instance with the registered method
+ */
+function registerCustomLogMethod<T>(
+    methodName: string,
+    level: LogLevel,
+    defaultLabel?: string,
+    categoryKey?: string
+): ILogger {
+    // Store the custom method configuration
+    customLogMethods.set(methodName, { level, defaultLabel });
+
+    // Create the custom method implementation
+    const customMethod = (params: T, options?: LoggerOptions) => {
+        const mergedOptions = {
+            ...options,
+            category: categoryKey || options?.category
+        };
+        logWithLevel(level, params, defaultLabel, mergedOptions);
+    };
+
+    // Add the method to the main logger if not category-specific
+    if (!categoryKey) {
+        (logger as ILogger & { [key: string]: unknown })[methodName] = customMethod;
+        return logger;
+    }
+
+    // For category loggers, return the logger from createLogger
+    return createLogger(categoryKey);
+}
+
+/**
  * Create a logger with a predefined category
  * @param categoryKey - Key of the category to use
  * @returns Logger with predefined category
  */
 export function createLogger(categoryKey: string): ILogger {
-    return {
+    const categoryLogger: ILogger = {
         log: (value: unknown, label?: string, options?: LoggerOptions) =>
             log(value, label, { ...options, category: categoryKey }),
         info: (value: unknown, label?: string, options?: LoggerOptions) =>
@@ -156,8 +197,32 @@ export function createLogger(categoryKey: string): ILogger {
         registerCategory,
         configure: configureLogger,
         resetConfig: resetLoggerConfig,
-        createLogger
+        createLogger,
+        registerLogMethod: <T>(
+            methodName: string,
+            level: LogLevel,
+            defaultLabel?: string
+        ): ILogger => {
+            // Store method configuration
+            customLogMethods.set(methodName, { level, defaultLabel });
+
+            // Create and attach the method to this category logger
+            (categoryLogger as ILogger)[methodName] = (params: T, options?: LoggerOptions) => {
+                logWithLevel(level, params, defaultLabel, { ...options, category: categoryKey });
+            };
+
+            return categoryLogger;
+        }
     };
+
+    // Add any existing custom methods to this category logger
+    customLogMethods.forEach(({ level, defaultLabel }, methodName) => {
+        (categoryLogger as ILogger)[methodName] = (params: unknown, options?: LoggerOptions) => {
+            logWithLevel(level, params, defaultLabel, { ...options, category: categoryKey });
+        };
+    });
+
+    return categoryLogger;
 }
 
 /**
@@ -186,6 +251,27 @@ export function registerCategory(
 export function resetLogger(): void {
     resetLoggerConfig();
     clearCategories();
+    customLogMethods.clear();
+
+    // Remove all custom methods from the logger
+    const knownMethods = [
+        'log',
+        'info',
+        'warn',
+        'error',
+        'debug',
+        'registerCategory',
+        'configure',
+        'resetConfig',
+        'createLogger',
+        'registerLogMethod'
+    ];
+
+    for (const key of Object.keys(logger)) {
+        if (!knownMethods.includes(key)) {
+            delete (logger as Record<string, unknown>)[key];
+        }
+    }
 }
 
 /**
@@ -200,5 +286,8 @@ export const logger: ILogger = {
     registerCategory,
     configure: configureLogger,
     resetConfig: resetLoggerConfig,
-    createLogger
+    createLogger,
+    registerLogMethod: <T>(methodName: string, level: LogLevel, defaultLabel?: string): ILogger => {
+        return registerCustomLogMethod<T>(methodName, level, defaultLabel);
+    }
 };

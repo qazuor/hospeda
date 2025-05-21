@@ -8,8 +8,8 @@ import { getCategoryByKey } from './categories.js';
 import { getConfig } from './config.js';
 import { LogLevel, type LoggerColorType, type LoggerOptions } from './types.js';
 
-// Define ChalkFunction type for color functions
-type ChalkFunction = (...text: string[]) => string;
+// Define ChalkFunction as a function that takes a string and returns a string
+type ChalkFunction = (text: string) => string;
 
 /**
  * Icons for different log levels
@@ -99,6 +99,7 @@ export function formatValue(
             // Expand all levels
             return JSON.stringify(value, null, 2);
         }
+
         if (expandLevels === 0) {
             // Don't expand at all
             return '[Object]';

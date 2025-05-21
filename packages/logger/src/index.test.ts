@@ -4,10 +4,11 @@ import logger, {
     LoggerColors,
     configureLogger,
     createLogger,
+    registerCategory,
     type LoggerCategoryOptions,
     type LoggerOptions
 } from './index.js';
-import { registerCategory, resetLogger } from './logger.js';
+import { resetLogger } from './logger.js';
 
 describe('Logger', () => {
     beforeEach(() => {
@@ -182,5 +183,77 @@ describe('Logger', () => {
 
         blueLogger.info('API request received');
         expect(console.info).toHaveBeenCalled();
+    });
+
+    it('should register and use custom logger methods', () => {
+        // Register a custom method on the main logger
+        logger.registerLogMethod('http', LogLevel.INFO, 'HTTP');
+
+        // Use the custom method
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        (logger as any).http({ method: 'GET', url: '/api/users', status: 200 });
+        expect(console.info).toHaveBeenCalledWith(expect.stringContaining('[HTTP]'));
+
+        // Register a method for a specific category
+        const dbLogger = logger.registerCategory('Database', 'DB', {
+            color: LoggerColors.BLUE
+        });
+
+        // Define the custom method on the category logger
+        dbLogger.registerLogMethod('query', LogLevel.DEBUG, 'SQL');
+
+        // Use the custom method
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        (dbLogger as any).query({
+            table: 'users',
+            action: 'select',
+            params: { id: 1 },
+            result: { id: 1, name: 'John' }
+        });
+
+        expect(console.debug).toHaveBeenCalledWith(
+            expect.stringContaining('Database'),
+            expect.stringContaining('[SQL]')
+        );
+    });
+
+    it('should pass custom logger method parameters correctly', () => {
+        // Define a type for query parameters
+        interface QueryParams {
+            table: string;
+            action: string;
+            params: Record<string, unknown>;
+            result: unknown;
+        }
+
+        // Create a database logger
+        const dbLogger = logger.registerCategory('Database', 'DB', {
+            color: LoggerColors.CYAN
+        });
+
+        // Register the query method
+        dbLogger.registerLogMethod<QueryParams>('query', LogLevel.INFO, 'QUERY');
+
+        // Test parameters
+        const queryParams: QueryParams = {
+            table: 'users',
+            action: 'insert',
+            params: { name: 'Jane', email: 'jane@example.com' },
+            result: { id: 2, name: 'Jane', email: 'jane@example.com' }
+        };
+
+        // Use the custom method
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        (dbLogger as any).query(queryParams);
+
+        // Verify the output contains the parameters
+        expect(console.info).toHaveBeenCalledWith(
+            expect.stringContaining('Database'),
+            expect.stringContaining('[QUERY]'),
+            expect.stringContaining('table'),
+            expect.stringContaining('users'),
+            expect.stringContaining('action'),
+            expect.stringContaining('insert')
+        );
     });
 });

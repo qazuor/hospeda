@@ -3,6 +3,7 @@
  * @module logger
  */
 
+export { registerCategoryInternal } from './categories.js';
 export { configureLogger, resetLoggerConfig } from './config.js';
 export {
     createLogger,
@@ -11,6 +12,7 @@ export {
     info,
     log,
     logger,
+    registerCategory,
     warn
 } from './logger.js';
 export * from './types.js';
