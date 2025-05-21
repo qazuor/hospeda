@@ -67,7 +67,7 @@ export function toSlug(str: string, options?: SlugifyOptions): string {
             ...options
         });
     } catch (error) {
-        logger.error(`Failed to generate slug for string: ${str}`, 'Utils:String', error);
+        logger.error(error, `Utils:String | Failed to generate slug for string: ${str}`);
         return '';
     }
 }
