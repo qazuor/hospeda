@@ -37,7 +37,7 @@
         "@repo/schemas": "workspace:*",
         "@repo/types": "workspace:*",
         "@repo/utils": "workspace:*",
-        "bcrypt": "^6.0.0",
+        "bcryptjs": "^3.0.2",
         "drizzle-orm": "^0.29.5"
     },
     "devDependencies": {
