@@ -1,9 +1,9 @@
 ---
-import { getLangFromUrl } from '../utils/i18n';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import { getLangFromUrl } from '@/utils/i18n';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
 import { ViewTransitions } from 'astro:transitions';
-import '../styles/global.css';
+import '@/styles/global.css';
 
 const lang = getLangFromUrl(Astro.url);
 

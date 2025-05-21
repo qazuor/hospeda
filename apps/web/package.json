@@ -13,27 +13,34 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
-        "astro": "^5.2.5",
         "@astrojs/react": "^3.0.9",
         "@astrojs/tailwind": "^5.1.0",
         "@astrojs/vercel": "^8.1.4",
         "@nanostores/react": "^0.7.1",
+        "@repo/config": "workspace:*",
+        "@repo/db": "workspace:*",
+        "@repo/logger": "workspace:*",
+        "@repo/types": "workspace:*",
+        "@repo/utils": "workspace:*",
+        "astro": "^5.2.5",
         "i18next": "^23.10.0",
         "nanostores": "^0.9.5",
+        "pg": "^8.11.3",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-i18next": "^14.0.5",
-        "tailwindcss": "^3.4.1",
-        "@repo/types": "workspace:*",
-        "@repo/utils": "workspace:*",
-        "@repo/config": "workspace:*",
-        "@repo/logger": "workspace:*"
+        "tailwindcss": "^3.4.1"
     },
     "devDependencies": {
         "@repo/tailwind-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
+        "@types/pg": "^8.10.9",
         "@types/react": "^18.2.64",
         "@types/react-dom": "^18.2.21",
         "typescript": "^5.4.2"
+    },
+    "packageManager": "pnpm@8.15.6",
+    "engines": {
+        "node": ">=18"
     }
 }

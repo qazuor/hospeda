@@ -1,12 +1,12 @@
+import { fetchUpdatedInfo } from '@/data/api';
 import { useEffect, useState } from 'react';
-import { fetchUpdatedInfo } from '../data/api';
 
 export default function DynamicRating({
     id,
     initialRating,
     initialReviews
 }: {
-    id: number;
+    id: string;
     initialRating: string;
     initialReviews: number;
 }) {
@@ -14,7 +14,7 @@ export default function DynamicRating({
     const [reviews, setReviews] = useState(initialReviews);
 
     useEffect(() => {
-        fetchUpdatedInfo(String(id)).then((data) => {
+        fetchUpdatedInfo(id).then((data) => {
             setRating(data.rating);
             setReviews(data.reviews);
         });

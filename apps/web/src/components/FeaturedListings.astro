@@ -1,9 +1,9 @@
 ---
-import { getFeaturedAccommodations } from '../data/accommodations';
-import { formatPrice } from '../utils/utils';
+import { getFeaturedAccommodations } from '@/data/accommodations';
+import { formatPrice } from '@/utils/formatters';
 
 // Featured listings component
-const listings = getFeaturedAccommodations();
+const listings = await getFeaturedAccommodations();
 ---
 
 <section class='py-16 bg-white dark:bg-gray-800'>
@@ -30,8 +30,11 @@ const listings = getFeaturedAccommodations();
                             class='block aspect-w-16 aspect-h-9 relative overflow-hidden'
                         >
                             <img
-                                src={listing.image}
-                                alt={listing.title}
+                                src={
+                                    listing.media?.featuredImage?.url ||
+                                    'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg'
+                                }
+                                alt={listing.displayName}
                                 class='w-full h-56 object-cover transition duration-300 hover:scale-105'
                             />
                         </a>
@@ -40,16 +43,20 @@ const listings = getFeaturedAccommodations();
                             <a href={`/alojamientos/${listing.id}`} class='block'>
                                 <div class='flex justify-between items-start mb-2'>
                                     <h3 class='text-lg font-bold line-clamp-2 hover:text-primary-500 transition'>
-                                        {listing.title}
+                                        {listing.displayName}
                                     </h3>
                                 </div>
 
-                                <p class='text-gray-600 dark:text-gray-400 text-sm mb-3'>{listing.location}</p>
+                                <p class='text-gray-600 dark:text-gray-400 text-sm mb-3'>
+                                    {listing.location?.city}, {listing.location?.state}
+                                </p>
 
                                 <div class='flex flex-wrap gap-2 mb-4'>
-                                    {listing.features.map((feature) => (
+                                    {(listing.features || []).slice(0, 3).map((featureRelation) => (
                                         <span class='bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs px-2 py-1 rounded'>
-                                            {feature}
+                                            {featureRelation.feature?.displayName ||
+                                                featureRelation.hostReWriteName ||
+                                                ''}
                                         </span>
                                     ))}
                                 </div>
@@ -63,17 +70,20 @@ const listings = getFeaturedAccommodations();
                                                 viewBox='0 0 20 20'
                                                 fill='currentColor'
                                             >
+                                                <title>Rating star</title>
                                                 <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
                                             </svg>
-                                            <span class='ml-1 font-medium'>{listing.rating}</span>
+                                            <span class='ml-1 font-medium'>
+                                                {listing.rating?.cleanliness?.toFixed(1) || '4.5'}
+                                            </span>
                                             <span class='ml-1 text-gray-600 dark:text-gray-400 text-sm'>
-                                                ({listing.reviews})
+                                                ({listing._count?.reviews || listing.reviews?.length || 0})
                                             </span>
                                         </div>
                                     </div>
                                     <div>
                                         <p class='text-gray-900 dark:text-white font-bold'>
-                                            {formatPrice(listing.price)}
+                                            {formatPrice(listing.price?.price || 0)}
                                         </p>
                                         <p class='text-gray-600 dark:text-gray-400 text-xs text-right'>por noche</p>
                                     </div>
