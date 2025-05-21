@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, isNull } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -10,11 +10,6 @@ import {
     rawSelect,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for AccommodationReviewModel operations.
- */
-const log = logger.createLogger('AccommodationReviewModel');
 
 /**
  * Full accommodation review record as returned by the database.
@@ -53,16 +48,21 @@ export const AccommodationReviewModel = {
      */
     async createReview(data: CreateAccommodationReviewData): Promise<AccommodationReviewRecord> {
         try {
-            log.info('creating accommodation review', 'createReview', data);
+            dbLogger.info(data, 'creating accommodation review');
             const db = getDb();
             const rows = castReturning<AccommodationReviewRecord>(
                 await db.insert(accommodationReviews).values(data).returning()
             );
             const review = assertExists(rows[0], 'createReview: no review returned');
-            log.query('insert', 'accommodation_review', data, review);
+            dbLogger.query({
+                table: 'accommodation_review',
+                action: 'insert',
+                params: data,
+                result: review
+            });
             return review;
         } catch (error) {
-            log.error('createReview failed', 'createReview', error);
+            dbLogger.error(error, 'createReview failed');
             throw error;
         }
     },
@@ -75,17 +75,22 @@ export const AccommodationReviewModel = {
      */
     async getReviewById(id: string): Promise<AccommodationReviewRecord | undefined> {
         try {
-            log.info('fetching review by id', 'getReviewById', { id });
+            dbLogger.info({ id }, 'fetching review by id');
             const db = getDb();
             const [review] = (await db
                 .select()
                 .from(accommodationReviews)
                 .where(eq(accommodationReviews.id, id))
                 .limit(1)) as AccommodationReviewRecord[];
-            log.query('select', 'accommodation_review', { id }, review);
+            dbLogger.query({
+                table: 'accommodation_review',
+                action: 'select',
+                params: { id },
+                result: review
+            });
             return review;
         } catch (error) {
-            log.error('getReviewById failed', 'getReviewById', error);
+            dbLogger.error(error, 'getReviewById failed');
             throw error;
         }
     },
@@ -100,7 +105,7 @@ export const AccommodationReviewModel = {
         filter: SelectAccommodationReviewFilter
     ): Promise<AccommodationReviewRecord[]> {
         try {
-            log.info('listing reviews', 'listReviews', filter);
+            dbLogger.info(filter, 'listing reviews');
             const db = getDb();
             let query = rawSelect(
                 db
@@ -118,10 +123,15 @@ export const AccommodationReviewModel = {
                 .offset(filter.offset ?? 0)
                 .orderBy(accommodationReviews.createdAt, 'desc')) as AccommodationReviewRecord[];
 
-            log.query('select', 'accommodation_review', filter, rows);
+            dbLogger.query({
+                table: 'accommodation_review',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listReviews failed', 'listReviews', error);
+            dbLogger.error(error, 'listReviews failed');
             throw error;
         }
     },
@@ -139,7 +149,7 @@ export const AccommodationReviewModel = {
     ): Promise<AccommodationReviewRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating review', 'updateReview', { id, changes: dataToUpdate });
+            dbLogger.info({ id, changes: dataToUpdate }, 'updating review');
             const db = getDb();
             const rows = castReturning<AccommodationReviewRecord>(
                 await db
@@ -149,10 +159,15 @@ export const AccommodationReviewModel = {
                     .returning()
             );
             const updated = assertExists(rows[0], `updateReview: no review found for id ${id}`);
-            log.query('update', 'accommodation_review', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'accommodation_review',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateReview failed', 'updateReview', error);
+            dbLogger.error(error, 'updateReview failed');
             throw error;
         }
     },
@@ -164,15 +179,20 @@ export const AccommodationReviewModel = {
      */
     async softDeleteReview(id: string): Promise<void> {
         try {
-            log.info('soft deleting review', 'softDeleteReview', { id });
+            dbLogger.info({ id }, 'soft deleting review');
             const db = getDb();
             await db
                 .update(accommodationReviews)
                 .set({ deletedAt: new Date() })
                 .where(eq(accommodationReviews.id, id));
-            log.query('update', 'accommodation_review', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'accommodation_review',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteReview failed', 'softDeleteReview', error);
+            dbLogger.error(error, 'softDeleteReview failed');
             throw error;
         }
     },
@@ -184,15 +204,20 @@ export const AccommodationReviewModel = {
      */
     async restoreReview(id: string): Promise<void> {
         try {
-            log.info('restoring review', 'restoreReview', { id });
+            dbLogger.info({ id }, 'restoring review');
             const db = getDb();
             await db
                 .update(accommodationReviews)
                 .set({ deletedAt: null })
                 .where(eq(accommodationReviews.id, id));
-            log.query('update', 'accommodation_review', { id }, { restored: true });
+            dbLogger.query({
+                table: 'accommodation_review',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreReview failed', 'restoreReview', error);
+            dbLogger.error(error, 'restoreReview failed');
             throw error;
         }
     },
@@ -204,12 +229,17 @@ export const AccommodationReviewModel = {
      */
     async hardDeleteReview(id: string): Promise<void> {
         try {
-            log.info('hard deleting review', 'hardDeleteReview', { id });
+            dbLogger.info({ id }, 'hard deleting review');
             const db = getDb();
             await db.delete(accommodationReviews).where(eq(accommodationReviews.id, id));
-            log.query('delete', 'accommodation_review', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'accommodation_review',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteReview failed', 'hardDeleteReview', error);
+            dbLogger.error(error, 'hardDeleteReview failed');
             throw error;
         }
     }

@@ -40,7 +40,7 @@ export const AccommodationModel = {
             );
             const acc = assertExists(rows[0], 'createAccommodation: no accommodation returned');
             dbLogger.query({
-                table: 'accommodation',
+                table: 'accommodations',
                 action: 'insert',
                 params: data,
                 result: acc
@@ -68,7 +68,7 @@ export const AccommodationModel = {
                 .where(eq(accommodations.id, id))
                 .limit(1);
             dbLogger.query({
-                table: 'accommodation',
+                table: 'accommodations',
                 action: 'select',
                 params: { id },
                 result: acc
@@ -157,7 +157,7 @@ export const AccommodationModel = {
                 .offset(filter.offset ?? 0)) as AccommodationRecord[];
 
             dbLogger.query({
-                table: 'accommodation',
+                table: 'accommodations',
                 action: 'select',
                 params: filter,
                 result: rows
@@ -202,7 +202,7 @@ export const AccommodationModel = {
                 `updateAccommodation: no accommodation found for id ${id}`
             );
             dbLogger.query({
-                table: 'accommodation',
+                table: 'accommodations',
                 action: 'update',
                 params: { id, changes: dataToUpdate },
                 result: updated
@@ -228,7 +228,7 @@ export const AccommodationModel = {
                 .set({ deletedAt: new Date() })
                 .where(eq(accommodations.id, id));
             dbLogger.query({
-                table: 'accommodation',
+                table: 'accommodations',
                 action: 'update',
                 params: { id },
                 result: { deleted: true }
@@ -253,7 +253,7 @@ export const AccommodationModel = {
                 .set({ deletedAt: null })
                 .where(eq(accommodations.id, id));
             dbLogger.query({
-                table: 'accommodation',
+                table: 'accommodations',
                 action: 'update',
                 params: { id },
                 result: { restored: true }
@@ -275,7 +275,7 @@ export const AccommodationModel = {
             const db = getDb();
             await db.delete(accommodations).where(eq(accommodations.id, id));
             dbLogger.query({
-                table: 'accommodation',
+                table: 'accommodations',
                 action: 'delete',
                 params: { id },
                 result: { deleted: true }

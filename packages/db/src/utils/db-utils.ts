@@ -1,13 +1,6 @@
-import { logger } from '@repo/logger';
 import type { AccommodationType, UserType } from '@repo/types';
 import type { PgColumn } from 'drizzle-orm/pg-core'; // Import PgColumn type
-
-/**
- * Utility helpers for database-level operations.
- */
-export function logQueryStart(operation: string) {
-    logger.info(`[DB] Executing: ${operation}`);
-}
+import { dbLogger } from './logger.js';
 
 /**
  * Converts a TypeScript string enum to a readonly string tuple
@@ -145,10 +138,12 @@ export function getOrderByColumn<TSchema extends Record<string, PgColumn<any, an
     if (orderByString) {
         // Log a warning if the requested orderBy string is not found as a property on the schema
         // The schema object itself might not have a getName() method, so logging the available keys is more helpful.
-        logger.warn(
-            `Attempted to order by unknown property "${orderByString}" on schema`,
-            'getOrderByColumn',
-            { requestedOrderBy: orderByString, availableKeys: Object.keys(schema) }
+        dbLogger.warn(
+            {
+                requestedOrderBy: orderByString,
+                availableKeys: Object.keys(schema)
+            },
+            `Attempted to order by unknown property "${orderByString}" on schema`
         );
     }
 

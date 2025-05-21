@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -17,11 +17,6 @@ import {
 } from '../utils/db-utils.js';
 
 /**
- * Scoped logger for destination model operations.
- */
-const log = logger.createLogger('DestinationModel');
-
-/**
  * Full destination record as returned by the database.
  */
 export type DestinationRecord = InferSelectModel<typeof destinations>;
@@ -38,16 +33,21 @@ export const DestinationModel = {
      */
     async createDestination(data: InsertDestination): Promise<DestinationRecord> {
         try {
-            log.info('creating a new destination', 'createDestination', data);
+            dbLogger.info(data, 'creating a new destination');
             const db = getDb();
             const rows = castReturning<DestinationRecord>(
                 await db.insert(destinations).values(data).returning()
             );
             const dest = assertExists(rows[0], 'createDestination: no destination returned');
-            log.query('insert', 'destinations', data, dest);
+            dbLogger.query({
+                table: 'destinations',
+                action: 'insert',
+                params: data,
+                result: dest
+            });
             return dest;
         } catch (error) {
-            log.error('createDestination failed', 'createDestination', error);
+            dbLogger.error(error, 'createDestination failed');
             throw error;
         }
     },
@@ -60,17 +60,22 @@ export const DestinationModel = {
      */
     async getDestinationById(id: string): Promise<DestinationRecord | undefined> {
         try {
-            log.info('fetching destination by id', 'getDestinationById', { id });
+            dbLogger.info({ id }, 'fetching destination by id');
             const db = getDb();
             const [dest] = await db
                 .select()
                 .from(destinations)
                 .where(eq(destinations.id, id))
                 .limit(1);
-            log.query('select', 'destinations', { id }, dest);
+            dbLogger.query({
+                table: 'destinations',
+                action: 'select',
+                params: { id },
+                result: dest
+            });
             return dest ? (dest as DestinationRecord) : undefined;
         } catch (error) {
-            log.error('getDestinationById failed', 'getDestinationById', error);
+            dbLogger.error(error, 'getDestinationById failed');
             throw error;
         }
     },
@@ -83,7 +88,7 @@ export const DestinationModel = {
      */
     async listDestinations(filter: SelectDestinationFilter): Promise<DestinationRecord[]> {
         try {
-            log.info('listing destinations', 'listDestinations', filter);
+            dbLogger.info(filter, 'listing destinations');
             const db = getDb();
             let query = db.select().from(destinations).$dynamic();
 
@@ -140,10 +145,15 @@ export const DestinationModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as DestinationRecord[];
 
-            log.query('select', 'destinations', filter, rows);
+            dbLogger.query({
+                table: 'destinations',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listDestinations failed', 'listDestinations', error);
+            dbLogger.error(error, 'listDestinations failed');
             throw error;
         }
     },
@@ -161,7 +171,13 @@ export const DestinationModel = {
     ): Promise<DestinationRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating destination', 'updateDestination', { id, changes: dataToUpdate });
+            dbLogger.info(
+                {
+                    id,
+                    changes: dataToUpdate
+                },
+                'updating destination'
+            );
             const db = getDb();
             const rows = castReturning<DestinationRecord>(
                 await db
@@ -174,10 +190,15 @@ export const DestinationModel = {
                 rows[0],
                 `updateDestination: no destination found for id ${id}`
             );
-            log.query('update', 'destinations', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'destinations',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateDestination failed', 'updateDestination', error);
+            dbLogger.error(error, 'updateDestination failed');
             throw error;
         }
     },
@@ -189,15 +210,20 @@ export const DestinationModel = {
      */
     async softDeleteDestination(id: string): Promise<void> {
         try {
-            log.info('soft deleting destination', 'softDeleteDestination', { id });
+            dbLogger.info({ id }, 'soft deleting destination');
             const db = getDb();
             await db
                 .update(destinations)
                 .set({ deletedAt: new Date() })
                 .where(eq(destinations.id, id));
-            log.query('update', 'destinations', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'destinations',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteDestination failed', 'softDeleteDestination', error);
+            dbLogger.error(error, 'softDeleteDestination failed');
             throw error;
         }
     },
@@ -209,12 +235,17 @@ export const DestinationModel = {
      */
     async restoreDestination(id: string): Promise<void> {
         try {
-            log.info('restoring destination', 'restoreDestination', { id });
+            dbLogger.info({ id }, 'restoring destination');
             const db = getDb();
             await db.update(destinations).set({ deletedAt: null }).where(eq(destinations.id, id));
-            log.query('update', 'destinations', { id }, { restored: true });
+            dbLogger.query({
+                table: 'destinations',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreDestination failed', 'restoreDestination', error);
+            dbLogger.error(error, 'restoreDestination failed');
             throw error;
         }
     },
@@ -226,12 +257,17 @@ export const DestinationModel = {
      */
     async hardDeleteDestination(id: string): Promise<void> {
         try {
-            log.info('hard deleting destination', 'hardDeleteDestination', { id });
+            dbLogger.info({ id }, 'hard deleting destination');
             const db = getDb();
             await db.delete(destinations).where(eq(destinations.id, id));
-            log.query('delete', 'destinations', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'destinations',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteDestination failed', 'hardDeleteDestination', error);
+            dbLogger.error(error, 'hardDeleteDestination failed');
             throw error;
         }
     }

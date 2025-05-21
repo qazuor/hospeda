@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -11,11 +11,6 @@ import {
     prepareLikeQuery,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for feature model operations.
- */
-const log = logger.createLogger('FeatureModel');
 
 /**
  * Full feature record as returned by the database.
@@ -33,16 +28,16 @@ export const FeatureModel = {
      */
     async createFeature(data: InsertFeature): Promise<FeatureRecord> {
         try {
-            log.info('creating a new feature', 'createFeature', data);
+            dbLogger.info(data, 'creating a new feature');
             const db = getDb();
             const rows = castReturning<FeatureRecord>(
                 await db.insert(features).values(data).returning()
             );
             const feature = assertExists(rows[0], 'createFeature: no feature returned');
-            log.query('insert', 'features', data, feature);
+            dbLogger.query({ table: 'features', action: 'insert', params: data, result: feature });
             return feature;
         } catch (error) {
-            log.error('createFeature failed', 'createFeature', error);
+            dbLogger.error(error, 'createFeature failed');
             throw error;
         }
     },
@@ -54,14 +49,19 @@ export const FeatureModel = {
      */
     async getFeatureById(id: string): Promise<FeatureRecord | undefined> {
         try {
-            log.info('fetching feature by id', 'getFeatureById', { id });
+            dbLogger.info({ id }, 'fetching feature by id');
             const db = getDb();
             const [feature] = await db.select().from(features).where(eq(features.id, id)).limit(1);
 
-            log.query('select', 'features', { id }, feature);
+            dbLogger.query({
+                table: 'features',
+                action: 'select',
+                params: { id },
+                result: feature
+            });
             return feature as FeatureRecord | undefined;
         } catch (error) {
-            log.error('getFeatureById failed', 'getFeatureById', error);
+            dbLogger.error(error, 'getFeatureById failed');
             throw error;
         }
     },
@@ -73,7 +73,7 @@ export const FeatureModel = {
      */
     async listFeatures(filter: SelectFeatureFilter): Promise<FeatureRecord[]> {
         try {
-            log.info('listing features', 'listFeatures', filter);
+            dbLogger.info(filter, 'listing features');
             const db = getDb();
             let query = db.select().from(features).$dynamic();
 
@@ -122,10 +122,10 @@ export const FeatureModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as FeatureRecord[];
 
-            log.query('select', 'features', filter, rows);
+            dbLogger.query({ table: 'features', action: 'select', params: filter, result: rows });
             return rows;
         } catch (error) {
-            log.error('listFeatures failed', 'listFeatures', error);
+            dbLogger.error(error, 'listFeatures failed');
             throw error;
         }
     },
@@ -139,17 +139,22 @@ export const FeatureModel = {
     async updateFeature(id: string, changes: UpdateFeatureData): Promise<FeatureRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating feature', 'updateFeature', { id, changes: dataToUpdate });
+            dbLogger.info({ id, changes: dataToUpdate }, 'updating feature');
             const db = getDb();
             const rows = castReturning<FeatureRecord>(
                 await db.update(features).set(dataToUpdate).where(eq(features.id, id)).returning()
             );
 
             const updated = assertExists(rows[0], `updateFeature: no feature found for id ${id}`);
-            log.query('update', 'features', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'features',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateFeature failed', 'updateFeature', error);
+            dbLogger.error(error, 'updateFeature failed');
             throw error;
         }
     },
@@ -160,13 +165,18 @@ export const FeatureModel = {
      */
     async softDeleteFeature(id: string): Promise<void> {
         try {
-            log.info('soft deleting feature', 'softDeleteFeature', { id });
+            dbLogger.info({ id }, 'soft deleting feature');
             const db = getDb();
             await db.update(features).set({ deletedAt: new Date() }).where(eq(features.id, id));
 
-            log.query('update', 'features', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'features',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteFeature failed', 'softDeleteFeature', error);
+            dbLogger.error(error, 'softDeleteFeature failed');
             throw error;
         }
     },
@@ -177,16 +187,21 @@ export const FeatureModel = {
      */
     async restoreFeature(id: string): Promise<void> {
         try {
-            log.info('restoring feature', 'restoreFeature', { id });
+            dbLogger.info({ id }, 'restoring feature');
             const db = getDb();
             await db
                 .update(features)
                 .set({ deletedAt: null, deletedById: null })
                 .where(eq(features.id, id));
 
-            log.query('update', 'features', { id }, { restored: true });
+            dbLogger.query({
+                table: 'features',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreFeature failed', 'restoreFeature', error);
+            dbLogger.error(error, 'restoreFeature failed');
             throw error;
         }
     },
@@ -197,12 +212,17 @@ export const FeatureModel = {
      */
     async hardDeleteFeature(id: string): Promise<void> {
         try {
-            log.info('hard deleting feature', 'hardDeleteFeature', { id });
+            dbLogger.info({ id }, 'hard deleting feature');
             const db = getDb();
             await db.delete(features).where(eq(features.id, id));
-            log.query('delete', 'features', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'features',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteFeature failed', 'hardDeleteFeature', error);
+            dbLogger.error(error, 'hardDeleteFeature failed');
             throw error;
         }
     }

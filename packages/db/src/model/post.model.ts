@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -11,11 +11,6 @@ import {
     prepareLikeQuery,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for post model operations.
- */
-const log = logger.createLogger('PostModel');
 
 /**
  * Full post record as returned by the database.
@@ -34,14 +29,14 @@ export const PostModel = {
      */
     async createPost(data: InsertPost): Promise<PostRecord> {
         try {
-            log.info('creating a new post', 'createPost', data);
+            dbLogger.info(data, 'creating a new post');
             const db = getDb();
             const rows = castReturning<PostRecord>(await db.insert(posts).values(data).returning());
             const post = assertExists(rows[0], 'createPost: no record returned');
-            log.query('insert', 'posts', data, post);
+            dbLogger.query({ table: 'posts', action: 'insert', params: data, result: post });
             return post;
         } catch (error) {
-            log.error('createPost failed', 'createPost', error);
+            dbLogger.error(error, 'createPost failed');
             throw error;
         }
     },
@@ -54,13 +49,13 @@ export const PostModel = {
      */
     async getPostById(id: string): Promise<PostRecord | undefined> {
         try {
-            log.info('fetching post by id', 'getPostById', { id });
+            dbLogger.info({ id }, 'fetching post by id');
             const db = getDb();
             const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
-            log.query('select', 'posts', { id }, post);
+            dbLogger.query({ table: 'posts', action: 'select', params: { id }, result: post });
             return post ? (post as PostRecord) : undefined;
         } catch (error) {
-            log.error('getPostById failed', 'getPostById', error);
+            dbLogger.error(error, 'getPostById failed');
             throw error;
         }
     },
@@ -73,7 +68,7 @@ export const PostModel = {
      */
     async listPosts(filter: SelectPostFilter): Promise<PostRecord[]> {
         try {
-            log.info('listing posts', 'listPosts', filter);
+            dbLogger.info(filter, 'listing posts');
             const db = getDb();
             let query = db.select().from(posts).$dynamic();
 
@@ -158,10 +153,10 @@ export const PostModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as PostRecord[];
 
-            log.query('select', 'posts', filter, rows);
+            dbLogger.query({ table: 'posts', action: 'select', params: filter, result: rows });
             return rows;
         } catch (error) {
-            log.error('listPosts failed', 'listPosts', error);
+            dbLogger.error(error, 'listPosts failed');
             throw error;
         }
     },
@@ -176,16 +171,21 @@ export const PostModel = {
     async updatePost(id: string, changes: UpdatePostData): Promise<PostRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating post', 'updatePost', { id, dataToUpdate });
+            dbLogger.info({ id, dataToUpdate }, 'updating post');
             const db = getDb();
             const rows = castReturning<PostRecord>(
                 await db.update(posts).set(dataToUpdate).where(eq(posts.id, id)).returning()
             );
             const updated = assertExists(rows[0], `updatePost: no post found for id ${id}`);
-            log.query('update', 'posts', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'posts',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updatePost failed', 'updatePost', error);
+            dbLogger.error(error, 'updatePost failed');
             throw error;
         }
     },
@@ -197,12 +197,17 @@ export const PostModel = {
      */
     async softDeletePost(id: string): Promise<void> {
         try {
-            log.info('soft deleting post', 'softDeletePost', { id });
+            dbLogger.info({ id }, 'soft deleting post');
             const db = getDb();
             await db.update(posts).set({ deletedAt: new Date() }).where(eq(posts.id, id));
-            log.query('update', 'posts', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'posts',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeletePost failed', 'softDeletePost', error);
+            dbLogger.error(error, 'softDeletePost failed');
             throw error;
         }
     },
@@ -214,12 +219,17 @@ export const PostModel = {
      */
     async restorePost(id: string): Promise<void> {
         try {
-            log.info('restoring post', 'restorePost', { id });
+            dbLogger.info({ id }, 'restoring post');
             const db = getDb();
             await db.update(posts).set({ deletedAt: null }).where(eq(posts.id, id));
-            log.query('update', 'posts', { id }, { restored: true });
+            dbLogger.query({
+                table: 'posts',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restorePost failed', 'restorePost', error);
+            dbLogger.error(error, 'restorePost failed');
             throw error;
         }
     },
@@ -231,12 +241,17 @@ export const PostModel = {
      */
     async hardDeletePost(id: string): Promise<void> {
         try {
-            log.info('hard deleting post', 'hardDeletePost', { id });
+            dbLogger.info({ id }, 'hard deleting post');
             const db = getDb();
             await db.delete(posts).where(eq(posts.id, id));
-            log.query('delete', 'posts', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'posts',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeletePost failed', 'hardDeletePost', error);
+            dbLogger.error(error, 'hardDeletePost failed');
             throw error;
         }
     }

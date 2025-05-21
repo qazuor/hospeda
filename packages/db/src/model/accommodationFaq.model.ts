@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -10,11 +10,6 @@ import {
     rawSelect,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for AccommodationFaqModel operations.
- */
-const log = logger.createLogger('AccommodationFaqModel');
 
 /**
  * Full accommodation FAQ record as returned by the database.
@@ -55,16 +50,21 @@ export const AccommodationFaqModel = {
      */
     async createFaq(data: CreateAccommodationFaqData): Promise<AccommodationFaqRecord> {
         try {
-            log.info('creating accommodation FAQ', 'createFaq', data);
+            dbLogger.info(data, 'creating accommodation FAQ');
             const db = getDb();
             const rows = castReturning<AccommodationFaqRecord>(
                 await db.insert(accommodationFaqs).values(data).returning()
             );
             const faq = assertExists(rows[0], 'createFaq: no FAQ returned');
-            log.query('insert', 'accommodation_faq', data, faq);
+            dbLogger.query({
+                table: 'accommodation_faq',
+                action: 'insert',
+                params: data,
+                result: faq
+            });
             return faq;
         } catch (error) {
-            log.error('createFaq failed', 'createFaq', error);
+            dbLogger.error(error, 'createFaq failed');
             throw error;
         }
     },
@@ -77,17 +77,22 @@ export const AccommodationFaqModel = {
      */
     async getFaqById(id: string): Promise<AccommodationFaqRecord | undefined> {
         try {
-            log.info('fetching FAQ by id', 'getFaqById', { id });
+            dbLogger.info({ id }, 'fetching FAQ by id');
             const db = getDb();
             const [faq] = (await db
                 .select()
                 .from(accommodationFaqs)
                 .where(eq(accommodationFaqs.id, id))
                 .limit(1)) as AccommodationFaqRecord[];
-            log.query('select', 'accommodation_faq', { id }, faq);
+            dbLogger.query({
+                table: 'accommodation_faq',
+                action: 'select',
+                params: { id },
+                result: faq
+            });
             return faq;
         } catch (error) {
-            log.error('getFaqById failed', 'getFaqById', error);
+            dbLogger.error(error, 'getFaqById failed');
             throw error;
         }
     },
@@ -100,7 +105,7 @@ export const AccommodationFaqModel = {
      */
     async listFaqs(filter: SelectAccommodationFaqFilter): Promise<AccommodationFaqRecord[]> {
         try {
-            log.info('listing FAQs', 'listFaqs', filter);
+            dbLogger.info(filter, 'listing FAQs');
             const db = getDb();
             let query = rawSelect(
                 db
@@ -127,10 +132,15 @@ export const AccommodationFaqModel = {
                 .offset(filter.offset ?? 0)
                 .orderBy(accommodationFaqs.createdAt, 'desc')) as AccommodationFaqRecord[];
 
-            log.query('select', 'accommodation_faq', filter, rows);
+            dbLogger.query({
+                table: 'accommodation_faq',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listFaqs failed', 'listFaqs', error);
+            dbLogger.error(error, 'listFaqs failed');
             throw error;
         }
     },
@@ -148,7 +158,7 @@ export const AccommodationFaqModel = {
     ): Promise<AccommodationFaqRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating FAQ', 'updateFaq', { id, changes: dataToUpdate });
+            dbLogger.info({ id, changes: dataToUpdate }, 'updating FAQ');
             const db = getDb();
             const rows = castReturning<AccommodationFaqRecord>(
                 await db
@@ -158,10 +168,15 @@ export const AccommodationFaqModel = {
                     .returning()
             );
             const updated = assertExists(rows[0], `updateFaq: no FAQ found for id ${id}`);
-            log.query('update', 'accommodation_faq', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'accommodation_faq',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateFaq failed', 'updateFaq', error);
+            dbLogger.error(error, 'updateFaq failed');
             throw error;
         }
     },
@@ -173,15 +188,20 @@ export const AccommodationFaqModel = {
      */
     async softDeleteFaq(id: string): Promise<void> {
         try {
-            log.info('soft deleting FAQ', 'softDeleteFaq', { id });
+            dbLogger.info({ id }, 'soft deleting FAQ');
             const db = getDb();
             await db
                 .update(accommodationFaqs)
                 .set({ deletedAt: new Date() })
                 .where(eq(accommodationFaqs.id, id));
-            log.query('update', 'accommodation_faq', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'accommodation_faq',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteFaq failed', 'softDeleteFaq', error);
+            dbLogger.error(error, 'softDeleteFaq failed');
             throw error;
         }
     },
@@ -193,15 +213,20 @@ export const AccommodationFaqModel = {
      */
     async restoreFaq(id: string): Promise<void> {
         try {
-            log.info('restoring FAQ', 'restoreFaq', { id });
+            dbLogger.info({ id }, 'restoring FAQ');
             const db = getDb();
             await db
                 .update(accommodationFaqs)
                 .set({ deletedAt: null })
                 .where(eq(accommodationFaqs.id, id));
-            log.query('update', 'accommodation_faq', { id }, { restored: true });
+            dbLogger.query({
+                table: 'accommodation_faq',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreFaq failed', 'restoreFaq', error);
+            dbLogger.error(error, 'restoreFaq failed');
             throw error;
         }
     },
@@ -213,12 +238,17 @@ export const AccommodationFaqModel = {
      */
     async hardDeleteFaq(id: string): Promise<void> {
         try {
-            log.info('hard deleting FAQ', 'hardDeleteFaq', { id });
+            dbLogger.info({ id }, 'hard deleting FAQ');
             const db = getDb();
             await db.delete(accommodationFaqs).where(eq(accommodationFaqs.id, id));
-            log.query('delete', 'accommodation_faq', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'accommodation_faq',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteFaq failed', 'hardDeleteFaq', error);
+            dbLogger.error(error, 'hardDeleteFaq failed');
             throw error;
         }
     }

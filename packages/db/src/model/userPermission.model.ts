@@ -1,15 +1,10 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, eq } from 'drizzle-orm';
 import { getDb } from '../client.js';
 import { userPermissions } from '../schema/r_user_permission.dbschema.js';
 import type { BaseSelectFilter } from '../types/db-types.js';
 import { assertExists, castReturning, rawSelect } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for user-permission relation model operations.
- */
-const log = logger.createLogger('UserPermissionModel');
 
 /**
  * Full user-permission relation record as returned by the database.
@@ -33,16 +28,21 @@ export const UserPermissionModel = {
      */
     async createRelation(data: CreateUserPermissionData): Promise<UserPermissionRecord> {
         try {
-            log.info('creating user-permission relation', 'createRelation', data);
+            dbLogger.info(data, 'creating user-permission relation');
             const db = getDb();
             const rows = castReturning<UserPermissionRecord>(
                 await db.insert(userPermissions).values(data).returning()
             );
             const relation = assertExists(rows[0], 'createRelation: no record returned');
-            log.query('insert', 'r_user_permission', data, relation);
+            dbLogger.query({
+                table: 'r_user_permission',
+                action: 'insert',
+                params: data,
+                result: relation
+            });
             return relation;
         } catch (error) {
-            log.error('createRelation failed', 'createRelation', error);
+            dbLogger.error(error, 'createRelation failed');
             throw error;
         }
     },
@@ -56,7 +56,13 @@ export const UserPermissionModel = {
      */
     async listByUser(userId: string, filter?: BaseSelectFilter): Promise<UserPermissionRecord[]> {
         try {
-            log.info('listing user-permission relations by user', 'listByUser', { userId, filter });
+            dbLogger.info(
+                {
+                    userId,
+                    filter
+                },
+                'listing user-permission relations by user'
+            );
             const db = getDb();
             let query = rawSelect(
                 db.select().from(userPermissions).where(eq(userPermissions.userId, userId))
@@ -70,10 +76,15 @@ export const UserPermissionModel = {
             }
 
             const rows = (await query) as UserPermissionRecord[];
-            log.query('select', 'r_user_permission', { userId, filter }, rows);
+            dbLogger.query({
+                table: 'r_user_permission',
+                action: 'select',
+                params: { userId, filter },
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listByUser failed', 'listByUser', error);
+            dbLogger.error(error, 'listByUser failed');
             throw error;
         }
     },
@@ -90,10 +101,13 @@ export const UserPermissionModel = {
         filter?: BaseSelectFilter
     ): Promise<UserPermissionRecord[]> {
         try {
-            log.info('listing user-permission relations by permission', 'listByPermission', {
-                permissionId,
-                filter
-            });
+            dbLogger.info(
+                {
+                    permissionId,
+                    filter
+                },
+                'listing user-permission relations by permission'
+            );
             const db = getDb();
             let query = rawSelect(
                 db
@@ -110,10 +124,15 @@ export const UserPermissionModel = {
             }
 
             const rows = (await query) as UserPermissionRecord[];
-            log.query('select', 'r_user_permission', { permissionId, filter }, rows);
+            dbLogger.query({
+                table: 'r_user_permission',
+                action: 'select',
+                params: { permissionId, filter },
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listByPermission failed', 'listByPermission', error);
+            dbLogger.error(error, 'listByPermission failed');
             throw error;
         }
     },
@@ -126,10 +145,7 @@ export const UserPermissionModel = {
      */
     async deleteRelation(userId: string, permissionId: string): Promise<void> {
         try {
-            log.info('deleting user-permission relation', 'deleteRelation', {
-                userId,
-                permissionId
-            });
+            dbLogger.info({ userId, permissionId }, 'deleting user-permission relation');
             const db = getDb();
             await db
                 .delete(userPermissions)
@@ -139,9 +155,14 @@ export const UserPermissionModel = {
                         eq(userPermissions.permissionId, permissionId)
                     )
                 );
-            log.query('delete', 'r_user_permission', { userId, permissionId }, { deleted: true });
+            dbLogger.query({
+                table: 'r_user_permission',
+                action: 'delete',
+                params: { userId, permissionId },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('deleteRelation failed', 'deleteRelation', error);
+            dbLogger.error(error, 'deleteRelation failed');
             throw error;
         }
     },
@@ -158,10 +179,13 @@ export const UserPermissionModel = {
         userId: string,
         permissionId: string
     ): Promise<UserPermissionRecord | undefined> {
-        log.debug('checking user-permission relation existence', 'getByUserIdAndPermissionId', {
-            userId,
-            permissionId
-        });
+        dbLogger.debug(
+            {
+                userId,
+                permissionId
+            },
+            'checking user-permission relation existence'
+        );
         try {
             const db = getDb();
             const [relation] = await db
@@ -175,19 +199,17 @@ export const UserPermissionModel = {
                 )
                 .limit(1); // Limit to 1 as we only need to know if it exists
 
-            log.debug('user-permission relation check result', 'getByUserIdAndPermissionId', {
-                userId,
-                permissionId,
-                exists: !!relation
-            });
+            dbLogger.debug(
+                {
+                    userId,
+                    permissionId,
+                    exists: !!relation
+                },
+                'user-permission relation check result'
+            );
             return relation;
         } catch (error) {
-            log.error(
-                'failed to check user-permission relation existence',
-                'getByUserIdAndPermissionId',
-                error,
-                { userId, permissionId }
-            );
+            dbLogger.error(error, 'failed to check user-permission relation existence');
             throw error;
         }
     },
@@ -198,24 +220,16 @@ export const UserPermissionModel = {
      * @throws Error if deletion fails.
      */
     async deleteAllByUserId(userId: string): Promise<void> {
-        log.info('deleting all user-permission relations for user', 'deleteAllByUserId', {
-            userId
-        });
+        dbLogger.info({ userId }, 'deleting all user-permission relations for user');
         try {
             const db = getDb();
             await db.delete(userPermissions).where(eq(userPermissions.userId, userId));
-            log.info(
-                'all user-permission relations for user deleted successfully',
-                'deleteAllByUserId',
-                { userId }
+            dbLogger.info(
+                { userId },
+                'all user-permission relations for user deleted successfully'
             );
         } catch (error) {
-            log.error(
-                'failed to delete all user-permission relations for user',
-                'deleteAllByUserId',
-                error,
-                { userId }
-            );
+            dbLogger.error(error, 'failed to delete all user-permission relations for user');
             throw error;
         }
     }

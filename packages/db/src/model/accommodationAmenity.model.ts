@@ -1,23 +1,18 @@
-import { logger } from '@repo/logger';
-import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { and, eq, isNull } from 'drizzle-orm';
-import { getDb } from '../client.js';
-import { accommodationAmenities } from '../schema/accommodation_amenity.dbschema.js';
+import { getDb } from '@repo/db/client.js';
+import { accommodationAmenities } from '@repo/db/schema/accommodation_amenity.dbschema.js';
 import type {
     SelectAccommodationAmenityFilter,
     UpdateAccommodationAmenityData
-} from '../types/db-types.js';
+} from '@repo/db/types/db-types.js';
 import {
     assertExists,
     castReturning,
     rawSelect,
     sanitizePartialUpdate
-} from '../utils/db-utils.js';
-
-/**
- * Scoped logger for AccommodationAmenityModel operations.
- */
-const log = logger.createLogger('AccommodationAmenityModel');
+} from '@repo/db/utils/db-utils.js';
+import { dbLogger } from '@repo/db/utils/logger.js';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 
 /**
  * Full accommodation amenity record as returned by the database.
@@ -42,7 +37,7 @@ export const AccommodationAmenityModel = {
         data: CreateAccommodationAmenityData
     ): Promise<AccommodationAmenityRecord> {
         try {
-            log.info('creating accommodation amenity relation', 'createAmenityRelation', data);
+            dbLogger.info(data, 'creating accommodation amenity relation');
             const db = getDb();
             const rows = castReturning<AccommodationAmenityRecord>(
                 await db.insert(accommodationAmenities).values(data).returning()
@@ -51,10 +46,15 @@ export const AccommodationAmenityModel = {
                 rows[0],
                 'createAmenityRelation: no relation returned'
             );
-            log.query('insert', 'accommodation_amenities', data, amenityRelation);
+            dbLogger.query({
+                table: 'accommodation_amenities',
+                action: 'insert',
+                params: data,
+                result: amenityRelation
+            });
             return amenityRelation;
         } catch (error) {
-            log.error('createAmenityRelation failed', 'createAmenityRelation', error);
+            dbLogger.error(error, 'createAmenityRelation failed');
             throw error;
         }
     },
@@ -70,10 +70,7 @@ export const AccommodationAmenityModel = {
         amenityId: string
     ): Promise<AccommodationAmenityRecord | undefined> {
         try {
-            log.info('fetching amenity relation', 'getAmenityRelation', {
-                accommodationId,
-                amenityId
-            });
+            dbLogger.info({ accommodationId, amenityId }, 'fetching amenity relation');
             const db = getDb();
             const [relation] = await db
                 .select()
@@ -86,15 +83,15 @@ export const AccommodationAmenityModel = {
                 )
                 .limit(1);
 
-            log.query(
-                'select',
-                'accommodation_amenities',
-                { accommodationId, amenityId },
-                relation
-            );
+            dbLogger.query({
+                table: 'accommodation_amenities',
+                action: 'select',
+                params: { accommodationId, amenityId },
+                result: relation
+            });
             return relation as AccommodationAmenityRecord | undefined;
         } catch (error) {
-            log.error('getAmenityRelation failed', 'getAmenityRelation', error);
+            dbLogger.error(error, 'getAmenityRelation failed');
             throw error;
         }
     },
@@ -108,7 +105,7 @@ export const AccommodationAmenityModel = {
         filter: SelectAccommodationAmenityFilter
     ): Promise<AccommodationAmenityRecord[]> {
         try {
-            log.info('listing amenity relations', 'listAmenityRelations', filter);
+            dbLogger.info(filter, 'listing amenity relations');
             const db = getDb();
             let query = rawSelect(db.select().from(accommodationAmenities));
 
@@ -134,10 +131,15 @@ export const AccommodationAmenityModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as AccommodationAmenityRecord[];
 
-            log.query('select', 'accommodation_amenities', filter, rows);
+            dbLogger.query({
+                table: 'accommodation_amenities',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listAmenityRelations failed', 'listAmenityRelations', error);
+            dbLogger.error(error, 'listAmenityRelations failed');
             throw error;
         }
     },
@@ -156,11 +158,10 @@ export const AccommodationAmenityModel = {
     ): Promise<AccommodationAmenityRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating amenity relation', 'updateAmenityRelation', {
-                accommodationId,
-                amenityId,
-                changes: dataToUpdate
-            });
+            dbLogger.info(
+                { accommodationId, amenityId, changes: dataToUpdate },
+                'updating amenity relation'
+            );
             const db = getDb();
             const rows = castReturning<AccommodationAmenityRecord>(
                 await db
@@ -180,20 +181,20 @@ export const AccommodationAmenityModel = {
                 `updateAmenityRelation: no relation found for accommodationId ${accommodationId} and amenityId ${amenityId}`
             );
 
-            log.query(
-                'update',
-                'accommodation_amenities',
-                {
+            dbLogger.query({
+                table: 'accommodation_amenities',
+                action: 'update',
+                params: {
                     accommodationId,
                     amenityId,
                     changes: dataToUpdate
                 },
-                updated
-            );
+                result: updated
+            });
 
             return updated;
         } catch (error) {
-            log.error('updateAmenityRelation failed', 'updateAmenityRelation', error);
+            dbLogger.error(error, 'updateAmenityRelation failed');
             throw error;
         }
     },
@@ -205,10 +206,7 @@ export const AccommodationAmenityModel = {
      */
     async softDeleteAmenityRelation(accommodationId: string, amenityId: string): Promise<void> {
         try {
-            log.info('soft deleting amenity relation', 'softDeleteAmenityRelation', {
-                accommodationId,
-                amenityId
-            });
+            dbLogger.info({ accommodationId, amenityId }, 'soft deleting amenity relation');
             const db = getDb();
             await db
                 .update(accommodationAmenities)
@@ -220,17 +218,17 @@ export const AccommodationAmenityModel = {
                     )
                 );
 
-            log.query(
-                'update',
-                'accommodation_amenities',
-                {
+            dbLogger.query({
+                table: 'accommodation_amenities',
+                action: 'update',
+                params: {
                     accommodationId,
                     amenityId
                 },
-                { deleted: true }
-            );
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteAmenityRelation failed', 'softDeleteAmenityRelation', error);
+            dbLogger.error(error, 'softDeleteAmenityRelation failed');
             throw error;
         }
     },
@@ -242,10 +240,7 @@ export const AccommodationAmenityModel = {
      */
     async restoreAmenityRelation(accommodationId: string, amenityId: string): Promise<void> {
         try {
-            log.info('restoring amenity relation', 'restoreAmenityRelation', {
-                accommodationId,
-                amenityId
-            });
+            dbLogger.info({ accommodationId, amenityId }, 'restoring amenity relation');
             const db = getDb();
             await db
                 .update(accommodationAmenities)
@@ -257,17 +252,17 @@ export const AccommodationAmenityModel = {
                     )
                 );
 
-            log.query(
-                'update',
-                'accommodation_amenities',
-                {
+            dbLogger.query({
+                table: 'accommodation_amenities',
+                action: 'update',
+                params: {
                     accommodationId,
                     amenityId
                 },
-                { restored: true }
-            );
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreAmenityRelation failed', 'restoreAmenityRelation', error);
+            dbLogger.error(error, 'restoreAmenityRelation failed');
             throw error;
         }
     },
@@ -279,10 +274,7 @@ export const AccommodationAmenityModel = {
      */
     async hardDeleteAmenityRelation(accommodationId: string, amenityId: string): Promise<void> {
         try {
-            log.info('hard deleting amenity relation', 'hardDeleteAmenityRelation', {
-                accommodationId,
-                amenityId
-            });
+            dbLogger.info({ accommodationId, amenityId }, 'hard deleting amenity relation');
             const db = getDb();
             await db
                 .delete(accommodationAmenities)
@@ -293,17 +285,17 @@ export const AccommodationAmenityModel = {
                     )
                 );
 
-            log.query(
-                'delete',
-                'accommodation_amenities',
-                {
+            dbLogger.query({
+                table: 'accommodation_amenities',
+                action: 'delete',
+                params: {
                     accommodationId,
                     amenityId
                 },
-                { deleted: true }
-            );
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteAmenityRelation failed', 'hardDeleteAmenityRelation', error);
+            dbLogger.error(error, 'hardDeleteAmenityRelation failed');
             throw error;
         }
     },
@@ -314,28 +306,27 @@ export const AccommodationAmenityModel = {
      */
     async deleteAllByAccommodation(accommodationId: string): Promise<void> {
         try {
-            log.info(
-                'deleting all amenity relations for accommodation',
-                'deleteAllByAccommodation',
+            dbLogger.info(
                 {
                     accommodationId
-                }
+                },
+                'deleting all amenity relations for accommodation'
             );
             const db = getDb();
             await db
                 .delete(accommodationAmenities)
                 .where(eq(accommodationAmenities.accommodationId, accommodationId));
 
-            log.query(
-                'delete',
-                'accommodation_amenities',
-                {
+            dbLogger.query({
+                table: 'accommodation_amenities',
+                action: 'delete',
+                params: {
                     accommodationId
                 },
-                { deleted: true }
-            );
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('deleteAllByAccommodation failed', 'deleteAllByAccommodation', error);
+            dbLogger.error(error, 'deleteAllByAccommodation failed');
             throw error;
         }
     }

@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -11,11 +11,6 @@ import {
     prepareLikeQuery,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for event model operations.
- */
-const log = logger.createLogger('EventModel');
 
 /**
  * Full event record as returned by the database.
@@ -34,16 +29,21 @@ export const EventModel = {
      */
     async createEvent(data: InsertEvent): Promise<EventRecord> {
         try {
-            log.info('creating a new event', 'createEvent', data);
+            dbLogger.info(data, 'creating a new event');
             const db = getDb();
             const rows = castReturning<EventRecord>(
                 await db.insert(events).values(data).returning()
             );
             const event = assertExists(rows[0], 'createEvent: no record returned');
-            log.query('insert', 'events', data, event);
+            dbLogger.query({
+                table: 'events',
+                action: 'insert',
+                params: data,
+                result: event
+            });
             return event;
         } catch (error) {
-            log.error('createEvent failed', 'createEvent', error);
+            dbLogger.error(error, 'createEvent failed');
             throw error;
         }
     },
@@ -56,13 +56,18 @@ export const EventModel = {
      */
     async getEventById(id: string): Promise<EventRecord | undefined> {
         try {
-            log.info('fetching event by id', 'getEventById', { id });
+            dbLogger.info({ id }, 'fetching event by id');
             const db = getDb();
             const [event] = await db.select().from(events).where(eq(events.id, id)).limit(1);
-            log.query('select', 'events', { id }, event);
+            dbLogger.query({
+                table: 'events',
+                action: 'select',
+                params: { id },
+                result: event
+            });
             return event ? (event as EventRecord) : undefined;
         } catch (error) {
-            log.error('getEventById failed', 'getEventById', error);
+            dbLogger.error(error, 'getEventById failed');
             throw error;
         }
     },
@@ -75,7 +80,7 @@ export const EventModel = {
      */
     async listEvents(filter: SelectEventFilter): Promise<EventRecord[]> {
         try {
-            log.info('listing events', 'listEvents', filter);
+            dbLogger.info(filter, 'listing events');
             const db = getDb();
             let query = db.select().from(events).$dynamic();
 
@@ -147,10 +152,15 @@ export const EventModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as EventRecord[];
 
-            log.query('select', 'events', filter, rows);
+            dbLogger.query({
+                table: 'events',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listEvents failed', 'listEvents', error);
+            dbLogger.error(error, 'listEvents failed');
             throw error;
         }
     },
@@ -165,16 +175,21 @@ export const EventModel = {
     async updateEvent(id: string, changes: UpdateEventData): Promise<EventRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating event', 'updateEvent', { id, changes: dataToUpdate });
+            dbLogger.info({ id, changes: dataToUpdate }, 'updating event');
             const db = getDb();
             const rows = castReturning<EventRecord>(
                 await db.update(events).set(dataToUpdate).where(eq(events.id, id)).returning()
             );
             const updated = assertExists(rows[0], `updateEvent: no event found for id ${id}`);
-            log.query('update', 'events', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'events',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateEvent failed', 'updateEvent', error);
+            dbLogger.error(error, 'updateEvent failed');
             throw error;
         }
     },
@@ -186,12 +201,17 @@ export const EventModel = {
      */
     async softDeleteEvent(id: string): Promise<void> {
         try {
-            log.info('soft deleting event', 'softDeleteEvent', { id });
+            dbLogger.info({ id }, 'soft deleting event');
             const db = getDb();
             await db.update(events).set({ deletedAt: new Date() }).where(eq(events.id, id));
-            log.query('update', 'events', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'events',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteEvent failed', 'softDeleteEvent', error);
+            dbLogger.error(error, 'softDeleteEvent failed');
             throw error;
         }
     },
@@ -203,12 +223,17 @@ export const EventModel = {
      */
     async restoreEvent(id: string): Promise<void> {
         try {
-            log.info('restoring event', 'restoreEvent', { id });
+            dbLogger.info({ id }, 'restoring event');
             const db = getDb();
             await db.update(events).set({ deletedAt: null }).where(eq(events.id, id));
-            log.query('update', 'events', { id }, { restored: true });
+            dbLogger.query({
+                table: 'events',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreEvent failed', 'restoreEvent', error);
+            dbLogger.error(error, 'restoreEvent failed');
             throw error;
         }
     },
@@ -220,12 +245,17 @@ export const EventModel = {
      */
     async hardDeleteEvent(id: string): Promise<void> {
         try {
-            log.info('hard deleting event', 'hardDeleteEvent', { id });
+            dbLogger.info({ id }, 'hard deleting event');
             const db = getDb();
             await db.delete(events).where(eq(events.id, id));
-            log.query('delete', 'events', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'events',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteEvent failed', 'hardDeleteEvent', error);
+            dbLogger.error(error, 'hardDeleteEvent failed');
             throw error;
         }
     }

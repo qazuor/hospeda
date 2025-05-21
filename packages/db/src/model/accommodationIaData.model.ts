@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -10,11 +10,6 @@ import {
     rawSelect,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for AccommodationIaDataModel operations.
- */
-const log = logger.createLogger('AccommodationIaDataModel');
 
 /**
  * Full accommodation IA data record as returned by the database.
@@ -55,16 +50,21 @@ export const AccommodationIaDataModel = {
      */
     async createIaData(data: CreateAccommodationIaData): Promise<AccommodationIaDataRecord> {
         try {
-            log.info('creating accommodation IA data', 'createIaData', data);
+            dbLogger.info(data, 'creating accommodation IA data');
             const db = getDb();
             const rows = castReturning<AccommodationIaDataRecord>(
                 await db.insert(accommodationIaData).values(data).returning()
             );
             const iaData = assertExists(rows[0], 'createIaData: no IA data returned');
-            log.query('insert', 'accommodation_ia_data', data, iaData);
+            dbLogger.query({
+                table: 'accommodation_ia_data',
+                action: 'insert',
+                params: data,
+                result: iaData
+            });
             return iaData;
         } catch (error) {
-            log.error('createIaData failed', 'createIaData', error);
+            dbLogger.error(error, 'createIaData failed');
             throw error;
         }
     },
@@ -77,17 +77,22 @@ export const AccommodationIaDataModel = {
      */
     async getIaDataById(id: string): Promise<AccommodationIaDataRecord | undefined> {
         try {
-            log.info('fetching IA data by id', 'getIaDataById', { id });
+            dbLogger.info({ id }, 'fetching IA data by id');
             const db = getDb();
             const [iaData] = (await db
                 .select()
                 .from(accommodationIaData)
                 .where(eq(accommodationIaData.id, id))
                 .limit(1)) as AccommodationIaDataRecord[];
-            log.query('select', 'accommodation_ia_data', { id }, iaData);
+            dbLogger.query({
+                table: 'accommodation_ia_data',
+                action: 'select',
+                params: { id },
+                result: iaData
+            });
             return iaData;
         } catch (error) {
-            log.error('getIaDataById failed', 'getIaDataById', error);
+            dbLogger.error(error, 'getIaDataById failed');
             throw error;
         }
     },
@@ -102,7 +107,7 @@ export const AccommodationIaDataModel = {
         filter: SelectAccommodationIaDataFilter
     ): Promise<AccommodationIaDataRecord[]> {
         try {
-            log.info('listing IA data entries', 'listIaData', filter);
+            dbLogger.info(filter, 'listing IA data entries');
             const db = getDb();
             let query = rawSelect(
                 db
@@ -129,10 +134,15 @@ export const AccommodationIaDataModel = {
                 .offset(filter.offset ?? 0)
                 .orderBy(accommodationIaData.createdAt, 'desc')) as AccommodationIaDataRecord[];
 
-            log.query('select', 'accommodation_ia_data', filter, rows);
+            dbLogger.query({
+                table: 'accommodation_ia_data',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listIaData failed', 'listIaData', error);
+            dbLogger.error(error, 'listIaData failed');
             throw error;
         }
     },
@@ -150,7 +160,7 @@ export const AccommodationIaDataModel = {
     ): Promise<AccommodationIaDataRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating IA data', 'updateIaData', { id, changes: dataToUpdate });
+            dbLogger.info({ id, changes: dataToUpdate }, 'updating IA data');
             const db = getDb();
             const rows = castReturning<AccommodationIaDataRecord>(
                 await db
@@ -160,10 +170,15 @@ export const AccommodationIaDataModel = {
                     .returning()
             );
             const updated = assertExists(rows[0], `updateIaData: no IA data found for id ${id}`);
-            log.query('update', 'accommodation_ia_data', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'accommodation_ia_data',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateIaData failed', 'updateIaData', error);
+            dbLogger.error(error, 'updateIaData failed');
             throw error;
         }
     },
@@ -175,15 +190,20 @@ export const AccommodationIaDataModel = {
      */
     async softDeleteIaData(id: string): Promise<void> {
         try {
-            log.info('soft deleting IA data', 'softDeleteIaData', { id });
+            dbLogger.info({ id }, 'soft deleting IA data');
             const db = getDb();
             await db
                 .update(accommodationIaData)
                 .set({ deletedAt: new Date() })
                 .where(eq(accommodationIaData.id, id));
-            log.query('update', 'accommodation_ia_data', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'accommodation_ia_data',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteIaData failed', 'softDeleteIaData', error);
+            dbLogger.error(error, 'softDeleteIaData failed');
             throw error;
         }
     },
@@ -195,15 +215,20 @@ export const AccommodationIaDataModel = {
      */
     async restoreIaData(id: string): Promise<void> {
         try {
-            log.info('restoring IA data', 'restoreIaData', { id });
+            dbLogger.info({ id }, 'restoring IA data');
             const db = getDb();
             await db
                 .update(accommodationIaData)
                 .set({ deletedAt: null })
                 .where(eq(accommodationIaData.id, id));
-            log.query('update', 'accommodation_ia_data', { id }, { restored: true });
+            dbLogger.query({
+                table: 'accommodation_ia_data',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreIaData failed', 'restoreIaData', error);
+            dbLogger.error(error, 'restoreIaData failed');
             throw error;
         }
     },
@@ -215,12 +240,17 @@ export const AccommodationIaDataModel = {
      */
     async hardDeleteIaData(id: string): Promise<void> {
         try {
-            log.info('hard deleting IA data', 'hardDeleteIaData', { id });
+            dbLogger.info({ id }, 'hard deleting IA data');
             const db = getDb();
             await db.delete(accommodationIaData).where(eq(accommodationIaData.id, id));
-            log.query('delete', 'accommodation_ia_data', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'accommodation_ia_data',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteIaData failed', 'hardDeleteIaData', error);
+            dbLogger.error(error, 'hardDeleteIaData failed');
             throw error;
         }
     }

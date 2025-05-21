@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { EntityTypeEnum } from '@repo/types';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, count, desc, eq, sql } from 'drizzle-orm';
@@ -6,11 +6,6 @@ import { getDb } from '../client.js';
 import { userBookmarks } from '../schema/index.js';
 import type { SelectBookmarkFilter } from '../types/db-types.js';
 import { assertExists, castReturning } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for bookmark model operations.
- */
-const log = logger.createLogger('BookmarkModel');
 
 /**
  * Full bookmark record as returned by the database.
@@ -51,16 +46,21 @@ export const BookmarkModel = {
      */
     async insertBookmark(data: InsertUserBookmark): Promise<BookmarkRecord> {
         try {
-            log.info('inserting bookmark', 'insertBookmark', data);
+            dbLogger.info(data, 'inserting bookmark');
             const db = getDb();
             const rows = castReturning<BookmarkRecord>(
                 await db.insert(userBookmarks).values(data).returning()
             );
             const bookmark = assertExists(rows[0], 'insertBookmark: no record returned');
-            log.query('insert', 'user_bookmarks', data, bookmark);
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'insert',
+                params: data,
+                result: bookmark
+            });
             return bookmark;
         } catch (error) {
-            log.error('insertBookmark failed', 'insertBookmark', error);
+            dbLogger.error(error, 'insertBookmark failed');
             throw error;
         }
     },
@@ -73,7 +73,7 @@ export const BookmarkModel = {
      * @throws Error if the database query fails.
      */
     async selectBookmarkById(id: string): Promise<BookmarkRecord | undefined> {
-        log.info('selecting bookmark by id', 'selectBookmarkById', { id });
+        dbLogger.info({ id }, 'selecting bookmark by id');
         try {
             const db = getDb();
             const [bookmark] = await db
@@ -82,10 +82,15 @@ export const BookmarkModel = {
                 .where(and(eq(userBookmarks.id, id), sql`${userBookmarks.deletedAt} is null`)) // Only non-deleted
                 .limit(1);
 
-            log.query('select', 'user_bookmarks', { id }, bookmark);
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'select',
+                params: { id },
+                result: bookmark
+            });
             return bookmark;
         } catch (error) {
-            log.error('selectBookmarkById failed', 'selectBookmarkById', error);
+            dbLogger.error(error, 'selectBookmarkById failed');
             throw error;
         }
     },
@@ -98,11 +103,7 @@ export const BookmarkModel = {
      * @throws Error if the database query fails.
      */
     async selectBookmarkByIdIncludingDeleted(id: string): Promise<BookmarkRecord | undefined> {
-        log.info(
-            'selecting bookmark by id including deleted',
-            'selectBookmarkByIdIncludingDeleted',
-            { id }
-        );
+        dbLogger.info({ id }, 'selecting bookmark by id including deleted');
         try {
             const db = getDb();
             const [bookmark] = await db
@@ -111,14 +112,15 @@ export const BookmarkModel = {
                 .where(eq(userBookmarks.id, id))
                 .limit(1);
 
-            log.query('select', 'user_bookmarks', { id, includeDeleted: true }, bookmark);
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'select',
+                params: { id, includeDeleted: true },
+                result: bookmark
+            });
             return bookmark;
         } catch (error) {
-            log.error(
-                'selectBookmarkByIdIncludingDeleted failed',
-                'selectBookmarkByIdIncludingDeleted',
-                error
-            );
+            dbLogger.error(error, 'selectBookmarkByIdIncludingDeleted failed');
             throw error;
         }
     },
@@ -130,7 +132,7 @@ export const BookmarkModel = {
      * @throws Error if listing fails.
      */
     async selectBookmarks(filter: SelectBookmarkFilter): Promise<BookmarkRecord[]> {
-        log.info('selecting bookmarks with filter', 'selectBookmarks', filter);
+        dbLogger.info(filter, 'selecting bookmarks with filter');
         try {
             const db = getDb();
             let query = db.select().from(userBookmarks).$dynamic();
@@ -157,10 +159,15 @@ export const BookmarkModel = {
                 .orderBy(desc(userBookmarks.createdAt));
 
             const bookmarks = await query;
-            log.query('select', 'user_bookmarks', filter, bookmarks);
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'select',
+                params: filter,
+                result: bookmarks
+            });
             return bookmarks;
         } catch (error) {
-            log.error('selectBookmarks failed', 'selectBookmarks', error);
+            dbLogger.error(error, 'selectBookmarks failed');
             throw error;
         }
     },
@@ -174,7 +181,7 @@ export const BookmarkModel = {
      */
     async updateBookmark(id: string, data: UpdateUserBookmarkData): Promise<BookmarkRecord> {
         try {
-            log.info('updating bookmark', 'updateBookmark', { id, data });
+            dbLogger.info({ id, data }, 'updating bookmark');
             const db = getDb();
             const rows = castReturning<BookmarkRecord>(
                 await db
@@ -187,10 +194,15 @@ export const BookmarkModel = {
                 rows[0],
                 `updateBookmark: record ${id} not found or not updated`
             );
-            log.query('update', 'user_bookmarks', { id, data }, bookmark);
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'update',
+                params: { id, data },
+                result: bookmark
+            });
             return bookmark;
         } catch (error) {
-            log.error('updateBookmark failed', 'updateBookmark', error);
+            dbLogger.error(error, 'updateBookmark failed');
             throw error;
         }
     },
@@ -202,12 +214,17 @@ export const BookmarkModel = {
      */
     async hardDeleteBookmark(id: string): Promise<void> {
         try {
-            log.info('hard deleting bookmark', 'hardDeleteBookmark', { id });
+            dbLogger.info({ id }, 'hard deleting bookmark');
             const db = getDb();
             await db.delete(userBookmarks).where(eq(userBookmarks.id, id));
-            log.query('delete', 'user_bookmarks', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteBookmark failed', 'hardDeleteBookmark', error);
+            dbLogger.error(error, 'hardDeleteBookmark failed');
             throw error;
         }
     },
@@ -220,7 +237,7 @@ export const BookmarkModel = {
      * @throws Error if the database query fails.
      */
     async countByOwnerId(ownerId: string): Promise<number> {
-        log.info('counting bookmarks by owner', 'countByOwnerId', { ownerId });
+        dbLogger.info({ ownerId }, 'counting bookmarks by owner');
         try {
             const db = getDb();
             const [result] = await db
@@ -233,10 +250,15 @@ export const BookmarkModel = {
             // Drizzle count is a string, safely parse to number using explicit conversion
             const bookmarkCount = Number.parseInt(String(result?.count ?? '0'), 10);
 
-            log.query('select count', 'user_bookmarks', { ownerId }, { count: bookmarkCount });
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'select count',
+                params: { ownerId },
+                result: { count: bookmarkCount }
+            });
             return bookmarkCount;
         } catch (error) {
-            log.error('countByOwnerId failed', 'countByOwnerId', error);
+            dbLogger.error(error, 'countByOwnerId failed');
             throw error;
         }
     },
@@ -251,7 +273,7 @@ export const BookmarkModel = {
      * @throws Error if the database query fails.
      */
     async exists(ownerId: string, entityType: EntityTypeEnum, entityId: string): Promise<boolean> {
-        log.debug('checking bookmark existence', 'exists', { ownerId, entityType, entityId });
+        dbLogger.debug({ ownerId, entityType, entityId }, 'checking bookmark existence');
         try {
             const db = getDb();
             const [bookmark] = await db
@@ -267,15 +289,18 @@ export const BookmarkModel = {
                 )
                 .limit(1);
 
-            log.debug('bookmark existence check result', 'exists', {
-                ownerId,
-                entityType,
-                entityId,
-                exists: !!bookmark
-            });
+            dbLogger.debug(
+                {
+                    ownerId,
+                    entityType,
+                    entityId,
+                    exists: !!bookmark
+                },
+                'bookmark existence check result'
+            );
             return !!bookmark;
         } catch (error) {
-            log.error('bookmark existence check failed', 'exists', error);
+            dbLogger.error(error, 'bookmark existence check failed');
             throw error;
         }
     },
@@ -286,13 +311,18 @@ export const BookmarkModel = {
      * @throws Error if deletion fails.
      */
     async hardDeleteAllByOwnerId(ownerId: string): Promise<void> {
-        log.info('hard deleting all bookmarks by owner', 'hardDeleteAllByOwnerId', { ownerId });
+        dbLogger.info({ ownerId }, 'hard deleting all bookmarks by owner');
         try {
             const db = getDb();
             await db.delete(userBookmarks).where(eq(userBookmarks.ownerId, ownerId));
-            log.query('delete', 'user_bookmarks', { ownerId }, { deleted: true });
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'delete',
+                params: { ownerId },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteAllByOwnerId failed', 'hardDeleteAllByOwnerId', error);
+            dbLogger.error(error, 'hardDeleteAllByOwnerId failed');
             throw error;
         }
     },
@@ -303,7 +333,7 @@ export const BookmarkModel = {
      * @throws Error if deletion fails.
      */
     async hardDeleteOlderThan(cutoffDate: Date): Promise<void> {
-        log.info('purging old bookmarks', 'hardDeleteOlderThan', { cutoffDate });
+        dbLogger.info({ cutoffDate }, 'purging old bookmarks');
         try {
             const db = getDb();
             await db
@@ -314,9 +344,14 @@ export const BookmarkModel = {
                         sql`${userBookmarks.deletedAt} < ${cutoffDate}`
                     )
                 );
-            log.query('delete', 'user_bookmarks', { cutoffDate }, { purged: true });
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'delete',
+                params: { cutoffDate },
+                result: { purged: true }
+            });
         } catch (error) {
-            log.error('hardDeleteOlderThan failed', 'hardDeleteOlderThan', error);
+            dbLogger.error(error, 'hardDeleteOlderThan failed');
             throw error;
         }
     },
@@ -331,7 +366,7 @@ export const BookmarkModel = {
     async getMostBookmarkedEntities(
         limit: number
     ): Promise<Array<{ entityType: EntityTypeEnum; entityId: string; bookmarkCount: number }>> {
-        log.info('getting most bookmarked entities', 'getMostBookmarkedEntities', { limit });
+        dbLogger.info({ limit }, 'getting most bookmarked entities');
         try {
             const db = getDb();
             const results = await db
@@ -353,10 +388,15 @@ export const BookmarkModel = {
                 bookmarkCount: Number.parseInt(String(row.bookmarkCount), 10)
             }));
 
-            log.query('select grouped count', 'user_bookmarks', { limit }, formattedResults);
+            dbLogger.query({
+                table: 'user_bookmarks',
+                action: 'select grouped count',
+                params: { limit },
+                result: formattedResults
+            });
             return formattedResults;
         } catch (error) {
-            log.error('getMostBookmarkedEntities failed', 'getMostBookmarkedEntities', error);
+            dbLogger.error(error, 'getMostBookmarkedEntities failed');
             throw error;
         }
     }

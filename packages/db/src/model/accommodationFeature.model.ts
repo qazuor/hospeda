@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, eq, isNull } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -10,11 +10,6 @@ import {
     rawSelect,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for AccommodationFeatureModel operations.
- */
-const log = logger.createLogger('AccommodationFeatureModel');
 
 /**
  * Full accommodation feature record as returned by the database.
@@ -39,7 +34,7 @@ export const AccommodationFeatureModel = {
         data: CreateAccommodationFeatureData
     ): Promise<AccommodationFeatureRecord> {
         try {
-            log.info('creating accommodation feature relation', 'createFeatureRelation', data);
+            dbLogger.info(data, 'creating accommodation feature relation');
             const db = getDb();
             const rows = castReturning<AccommodationFeatureRecord>(
                 await db.insert(accommodationFeatures).values(data).returning()
@@ -48,10 +43,15 @@ export const AccommodationFeatureModel = {
                 rows[0],
                 'createFeatureRelation: no relation returned'
             );
-            log.query('insert', 'accommodation_features', data, featureRelation);
+            dbLogger.query({
+                table: 'accommodation_features',
+                action: 'insert',
+                params: data,
+                result: featureRelation
+            });
             return featureRelation;
         } catch (error) {
-            log.error('createFeatureRelation failed', 'createFeatureRelation', error);
+            dbLogger.error(error, 'createFeatureRelation failed');
             throw error;
         }
     },
@@ -67,10 +67,7 @@ export const AccommodationFeatureModel = {
         featureId: string
     ): Promise<AccommodationFeatureRecord | undefined> {
         try {
-            log.info('fetching feature relation', 'getFeatureRelation', {
-                accommodationId,
-                featureId
-            });
+            dbLogger.info({ accommodationId, featureId }, 'fetching feature relation');
             const db = getDb();
             const [relation] = await db
                 .select()
@@ -83,10 +80,15 @@ export const AccommodationFeatureModel = {
                 )
                 .limit(1);
 
-            log.query('select', 'accommodation_features', { accommodationId, featureId }, relation);
+            dbLogger.query({
+                table: 'accommodation_features',
+                action: 'select',
+                params: { accommodationId, featureId },
+                result: relation
+            });
             return relation as AccommodationFeatureRecord | undefined;
         } catch (error) {
-            log.error('getFeatureRelation failed', 'getFeatureRelation', error);
+            dbLogger.error(error, 'getFeatureRelation failed');
             throw error;
         }
     },
@@ -100,7 +102,7 @@ export const AccommodationFeatureModel = {
         filter: SelectAccommodationFeatureFilter
     ): Promise<AccommodationFeatureRecord[]> {
         try {
-            log.info('listing feature relations', 'listFeatureRelations', filter);
+            dbLogger.info(filter, 'listing feature relations');
             const db = getDb();
             let query = rawSelect(db.select().from(accommodationFeatures));
 
@@ -122,10 +124,15 @@ export const AccommodationFeatureModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as AccommodationFeatureRecord[];
 
-            log.query('select', 'accommodation_features', filter, rows);
+            dbLogger.query({
+                table: 'accommodation_features',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listFeatureRelations failed', 'listFeatureRelations', error);
+            dbLogger.error(error, 'listFeatureRelations failed');
             throw error;
         }
     },
@@ -144,11 +151,10 @@ export const AccommodationFeatureModel = {
     ): Promise<AccommodationFeatureRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating feature relation', 'updateFeatureRelation', {
-                accommodationId,
-                featureId,
-                changes: dataToUpdate
-            });
+            dbLogger.info(
+                { accommodationId, featureId, changes: dataToUpdate },
+                'updating feature relation'
+            );
             const db = getDb();
             const rows = castReturning<AccommodationFeatureRecord>(
                 await db
@@ -168,20 +174,16 @@ export const AccommodationFeatureModel = {
                 `updateFeatureRelation: no relation found for accommodationId ${accommodationId} and featureId ${featureId}`
             );
 
-            log.query(
-                'update',
-                'accommodation_features',
-                {
-                    accommodationId,
-                    featureId,
-                    changes: dataToUpdate
-                },
-                updated
-            );
+            dbLogger.query({
+                table: 'accommodation_features',
+                action: 'update',
+                params: { accommodationId, featureId, changes: dataToUpdate },
+                result: updated
+            });
 
             return updated;
         } catch (error) {
-            log.error('updateFeatureRelation failed', 'updateFeatureRelation', error);
+            dbLogger.error(error, 'updateFeatureRelation failed');
             throw error;
         }
     },
@@ -193,10 +195,7 @@ export const AccommodationFeatureModel = {
      */
     async softDeleteFeatureRelation(accommodationId: string, featureId: string): Promise<void> {
         try {
-            log.info('soft deleting feature relation', 'softDeleteFeatureRelation', {
-                accommodationId,
-                featureId
-            });
+            dbLogger.info({ accommodationId, featureId }, 'soft deleting feature relation');
             const db = getDb();
             await db
                 .update(accommodationFeatures)
@@ -208,17 +207,14 @@ export const AccommodationFeatureModel = {
                     )
                 );
 
-            log.query(
-                'update',
-                'accommodation_features',
-                {
-                    accommodationId,
-                    featureId
-                },
-                { deleted: true }
-            );
+            dbLogger.query({
+                table: 'accommodation_features',
+                action: 'update',
+                params: { accommodationId, featureId },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteFeatureRelation failed', 'softDeleteFeatureRelation', error);
+            dbLogger.error(error, 'softDeleteFeatureRelation failed');
             throw error;
         }
     },
@@ -230,10 +226,7 @@ export const AccommodationFeatureModel = {
      */
     async restoreFeatureRelation(accommodationId: string, featureId: string): Promise<void> {
         try {
-            log.info('restoring feature relation', 'restoreFeatureRelation', {
-                accommodationId,
-                featureId
-            });
+            dbLogger.info({ accommodationId, featureId }, 'restoring feature relation');
             const db = getDb();
             await db
                 .update(accommodationFeatures)
@@ -245,17 +238,14 @@ export const AccommodationFeatureModel = {
                     )
                 );
 
-            log.query(
-                'update',
-                'accommodation_features',
-                {
-                    accommodationId,
-                    featureId
-                },
-                { restored: true }
-            );
+            dbLogger.query({
+                table: 'accommodation_features',
+                action: 'update',
+                params: { accommodationId, featureId },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreFeatureRelation failed', 'restoreFeatureRelation', error);
+            dbLogger.error(error, 'restoreFeatureRelation failed');
             throw error;
         }
     },
@@ -267,10 +257,7 @@ export const AccommodationFeatureModel = {
      */
     async hardDeleteFeatureRelation(accommodationId: string, featureId: string): Promise<void> {
         try {
-            log.info('hard deleting feature relation', 'hardDeleteFeatureRelation', {
-                accommodationId,
-                featureId
-            });
+            dbLogger.info({ accommodationId, featureId }, 'hard deleting feature relation');
             const db = getDb();
             await db
                 .delete(accommodationFeatures)
@@ -281,17 +268,14 @@ export const AccommodationFeatureModel = {
                     )
                 );
 
-            log.query(
-                'delete',
-                'accommodation_features',
-                {
-                    accommodationId,
-                    featureId
-                },
-                { deleted: true }
-            );
+            dbLogger.query({
+                table: 'accommodation_features',
+                action: 'delete',
+                params: { accommodationId, featureId },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteFeatureRelation failed', 'hardDeleteFeatureRelation', error);
+            dbLogger.error(error, 'hardDeleteFeatureRelation failed');
             throw error;
         }
     },
@@ -302,28 +286,20 @@ export const AccommodationFeatureModel = {
      */
     async deleteAllByAccommodation(accommodationId: string): Promise<void> {
         try {
-            log.info(
-                'deleting all feature relations for accommodation',
-                'deleteAllByAccommodation',
-                {
-                    accommodationId
-                }
-            );
+            dbLogger.info({ accommodationId }, 'deleting all feature relations for accommodation');
             const db = getDb();
             await db
                 .delete(accommodationFeatures)
                 .where(eq(accommodationFeatures.accommodationId, accommodationId));
 
-            log.query(
-                'delete',
-                'accommodation_features',
-                {
-                    accommodationId
-                },
-                { deleted: true }
-            );
+            dbLogger.query({
+                table: 'accommodation_features',
+                action: 'delete',
+                params: { accommodationId },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('deleteAllByAccommodation failed', 'deleteAllByAccommodation', error);
+            dbLogger.error(error, 'deleteAllByAccommodation failed');
             throw error;
         }
     }
