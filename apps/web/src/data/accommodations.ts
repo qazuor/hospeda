@@ -1,193 +1,163 @@
-import type { Accommodation } from '../types/Accommodation';
+import { publicUser } from '@/lib/db';
+import { AccommodationService } from '@repo/db';
+import type { AccommodationType } from '@repo/types';
 
-export const accommodations: Record<string, Accommodation[]> = {
-    '1': [
-        {
-            id: 1,
-            title: 'Cabaña frente al río con vista panorámica',
-            description: 'Hermosa cabaña con vista directa al río Uruguay.',
-            location: 'Concepción del Uruguay, Entre Ríos',
-            price: 15000,
-            rating: 4.9,
-            reviews: 28,
-            image: 'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-            images: [
-                'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-                'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-                'https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg',
-                'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg'
-            ],
-            features: ['2 habitaciones', 'Cocina completa', 'Vista al río', 'Parrilla']
-        },
-        {
-            id: 2,
-            title: 'Apartamento céntrico moderno',
-            description: 'Moderno apartamento en el centro de la ciudad.',
-            location: 'Concepción del Uruguay, Entre Ríos',
-            price: 12000,
-            rating: 4.7,
-            reviews: 42,
-            image: 'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-            images: [
-                'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-                'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-                'https://images.pexels.com/photos/2523959/pexels-photo-2523959.jpeg',
-                'https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg',
-                'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg'
-            ],
-            features: ['1 habitación', 'Baño privado', 'Cocina equipada', 'WiFi']
-        }
-    ],
-    '2': [
-        {
-            id: 3,
-            title: 'Casa familiar con pileta y jardín',
-            description: 'Espaciosa casa ideal para grupos y familias.',
-            location: 'Gualeguaychú, Entre Ríos',
-            price: 18000,
-            rating: 4.8,
-            reviews: 35,
-            image: 'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-            images: [
-                'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-                'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-                'https://images.pexels.com/photos/213811/pexels-photo-213811.jpeg',
-                'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-                'https://images.pexels.com/photos/1643389/pexels-photo-1643389.jpeg',
-                'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg'
-            ],
-            features: ['3 habitaciones', 'Parque', 'Pileta', 'Estacionamiento privado']
-        },
-        {
-            id: 4,
-            title: 'Loft moderno cerca del corsódromo',
-            description: 'Ideal para disfrutar el carnaval y la vida nocturna.',
-            location: 'Gualeguaychú, Entre Ríos',
-            price: 13000,
-            rating: 4.6,
-            reviews: 22,
-            image: 'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-            images: [
-                'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-                'https://images.pexels.com/photos/1643389/pexels-photo-1643389.jpeg',
-                'https://images.pexels.com/photos/2523959/pexels-photo-2523959.jpeg',
-                'https://images.pexels.com/photos/2360673/pexels-photo-2360673.jpeg',
-                'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-                'https://images.pexels.com/photos/213811/pexels-photo-213811.jpeg',
-                'https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg'
-            ],
-            features: ['1 ambiente', 'Cocina integrada', 'Aire acondicionado', 'WiFi']
-        }
-    ],
-    '3': [
-        {
-            id: 5,
-            title: 'Departamento frente al lago Salto Grande',
-            description: 'Disfrutá de la tranquilidad y la vista al lago.',
-            location: 'Concordia, Entre Ríos',
-            price: 14000,
-            rating: 4.7,
-            reviews: 30,
-            image: 'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-            images: [
-                'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-                'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-                'https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg',
-                'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-                'https://images.pexels.com/photos/2360673/pexels-photo-2360673.jpeg',
-                'https://images.pexels.com/photos/213811/pexels-photo-213811.jpeg',
-                'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-                'https://images.pexels.com/photos/2523959/pexels-photo-2523959.jpeg'
-            ],
-            features: ['2 habitaciones', 'Balcón con vista', 'WiFi', 'Cochera']
-        },
-        {
-            id: 6,
-            title: 'Cabaña en zona de termas',
-            description: 'A metros del parque termal, ideal para descansar.',
-            location: 'Concordia, Entre Ríos',
-            price: 11000,
-            rating: 4.5,
-            reviews: 18,
-            image: 'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-            images: [
-                'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-                'https://images.pexels.com/photos/2523959/pexels-photo-2523959.jpeg',
-                'https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg',
-                'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-                'https://images.pexels.com/photos/2360673/pexels-photo-2360673.jpeg',
-                'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-                'https://images.pexels.com/photos/1643389/pexels-photo-1643389.jpeg',
-                'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-                'https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg'
-            ],
-            features: ['1 dormitorio', 'Cocina', 'Parrilla', 'WiFi']
-        }
-    ],
-    '4': [
-        {
-            id: 7,
-            title: 'Bungalow dentro del complejo termal',
-            description: 'Acceso directo al parque acuático y termas.',
-            location: 'Federación, Entre Ríos',
-            price: 16000,
-            rating: 4.9,
-            reviews: 40,
-            image: 'https://images.pexels.com/photos/2360673/pexels-photo-2360673.jpeg',
-            images: [
-                'https://images.pexels.com/photos/2360673/pexels-photo-2360673.jpeg',
-                'https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg',
-                'https://images.pexels.com/photos/1643389/pexels-photo-1643389.jpeg',
-                'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg',
-                'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-                'https://images.pexels.com/photos/213811/pexels-photo-213811.jpeg',
-                'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-                'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg',
-                'https://images.pexels.com/photos/262048/pexels-photo-262048.jpeg',
-                'https://images.pexels.com/photos/2523959/pexels-photo-2523959.jpeg'
-            ],
-            features: ['2 habitaciones', 'Aire acondicionado', 'WiFi', 'Cochera']
-        },
-        {
-            id: 8,
-            title: 'Cabaña rústica con vista al lago',
-            description: 'Perfecta para descansar y disfrutar de la naturaleza.',
-            location: 'Federación, Entre Ríos',
-            price: 12500,
-            rating: 4.6,
-            reviews: 25,
-            image: 'https://images.pexels.com/photos/2360673/pexels-photo-2360673.jpeg',
-            images: [
-                'https://images.pexels.com/photos/2360673/pexels-photo-2360673.jpeg',
-                'https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg',
-                'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg'
-            ],
-            features: ['1 habitación', 'Galería con parrilla', 'Vista al lago', 'Estacionamiento']
-        }
-    ]
-};
+/**
+ * Maps a database accommodation record to our application's Accommodation type
+ * @param record - Accommodation record from database
+ * @returns Formatted Accommodation object
+ */
 
-export function getAllAccommodations() {
-    return Object.values(accommodations).flat();
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+function mapAccommodationRecord(record: any): AccommodationType {
+    return {
+        ...record,
+        // Ensure these properties exist even if not in the original record
+        id: record.id,
+        name: record.name || '',
+        displayName: record.displayName || '',
+        slug: record.slug || '',
+        type: record.type || 'APARTMENT',
+        description: record.description || '',
+        media: record.media || {
+            featuredImage: {
+                url: 'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
+                state: 'ACTIVE'
+            }
+        },
+        price: record.price || { price: 0, currency: 'ARS' },
+        features: record.features || [],
+        amenities: record.amenities || [],
+        rating: record.rating || {
+            cleanliness: 4.5,
+            hospitality: 4.5,
+            services: 4.5,
+            accuracy: 4.5,
+            communication: 4.5,
+            location: 4.5
+        },
+        reviews: record.reviews || [],
+        state: record.state || 'ACTIVE',
+        extraInfo: record.extraInfo || {
+            capacity: 2,
+            minNights: 1,
+            bedrooms: 1,
+            beds: 1,
+            bathrooms: 1,
+            smokingAllowed: false
+        },
+        isFeatured: record.isFeatured || false
+    };
 }
 
-export function getAccommodationsByDestination(id: string) {
-    return accommodations[id] || [];
-}
-
-export function getAccommodationById(id: string) {
-    return getAllAccommodations().find((a) => a.id === Number(id));
-}
-
-export function getFeaturedAccommodations() {
-    const indexes = new Set<number>();
-
-    const allAccommodations: Accommodation[] = getAllAccommodations();
-
-    while (indexes.size < 3 && indexes.size < allAccommodations.length) {
-        const randomIndex = Math.floor(Math.random() * allAccommodations.length);
-        indexes.add(randomIndex);
+/**
+ * Fetches all accommodations
+ * @returns Array of accommodations
+ */
+export async function getAllAccommodations(): Promise<AccommodationType[]> {
+    try {
+        const accommodationService = new AccommodationService();
+        const records = await accommodationService.list({ limit: 20 }, publicUser);
+        const accommodations = [];
+        for (const record of records) {
+            const features = await accommodationService.listFeatures(record.id, publicUser);
+            const amenities = await accommodationService.listAmenities(record.id, publicUser);
+            const reviews = await accommodationService.listReviews(record.id, publicUser);
+            accommodations.push(
+                mapAccommodationRecord({
+                    ...record,
+                    features,
+                    amenities,
+                    reviews
+                })
+            );
+        }
+        return accommodations;
+    } catch (error) {
+        console.error('Error fetching accommodations:', error);
+        return [];
     }
-    const randomIndexes = Array.from(indexes);
-    return randomIndexes.map((i) => allAccommodations[i]);
+}
+
+/**
+ * Fetches accommodations for a specific destination
+ * @param id - Destination ID
+ * @returns Array of accommodations for the destination
+ */
+export async function getAccommodationsByDestination(id: string): Promise<AccommodationType[]> {
+    try {
+        const accommodationService = new AccommodationService();
+        const records = await accommodationService.listByDestination(id, publicUser, { limit: 20 });
+        return records.map(mapAccommodationRecord);
+    } catch (error) {
+        console.error(`Error fetching accommodations for destination ${id}:`, error);
+        return [];
+    }
+}
+
+/**
+ * Fetches a specific accommodation by ID
+ * @param id - Accommodation ID
+ * @returns The accommodation or undefined if not found
+ */
+export async function getAccommodationById(id: string): Promise<AccommodationType | undefined> {
+    try {
+        const accommodationService = new AccommodationService();
+        const record = await accommodationService.getWithDetails(id, publicUser);
+        if (!record) return undefined;
+        return mapAccommodationRecord(record);
+    } catch (error) {
+        console.error(`Error fetching accommodation ${id}:`, error);
+        return undefined;
+    }
+}
+
+/**
+ * Fetches featured accommodations
+ * @param limit - Maximum number of accommodations to return
+ * @returns Array of featured accommodations
+ */
+export async function getFeaturedAccommodations(limit = 3): Promise<AccommodationType[]> {
+    try {
+        const accommodationService = new AccommodationService();
+        // Try to get featured accommodations first
+        const records = await accommodationService.list(
+            {
+                isFeatured: true,
+                limit
+            },
+            publicUser
+        );
+
+        // If we don't have enough featured accommodations, supplement with top rated ones
+        if (records.length < limit) {
+            const topRated = await accommodationService.getTopRated(
+                limit - records.length,
+                publicUser
+            );
+            // Make sure we don't have duplicates
+            const existingIds = records.map((rec) => rec.id);
+            const uniqueTopRated = topRated.filter((rec) => !existingIds.includes(rec.id));
+            records.push(...uniqueTopRated.slice(0, limit - records.length));
+        }
+
+        return records.map(mapAccommodationRecord);
+    } catch (error) {
+        console.error('Error fetching featured accommodations:', error);
+
+        // Get all accommodations and pick random ones as a fallback
+        const allAccommodations = await getAllAccommodations();
+        if (allAccommodations.length > 0) {
+            const indexes = new Set<number>();
+            while (indexes.size < limit && indexes.size < allAccommodations.length) {
+                const randomIndex = Math.floor(Math.random() * allAccommodations.length);
+                indexes.add(randomIndex);
+            }
+            return Array.from(indexes)
+                .map((i) => allAccommodations[i])
+                .filter((a): a is AccommodationType => a !== undefined);
+        }
+
+        return [];
+    }
 }

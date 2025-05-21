@@ -1,8 +1,8 @@
-import { defaultLocale, ui } from '../i18n/config';
+import { defaultLocale, ui } from '@/i18n/config';
 
 export function getLangFromUrl(url: URL) {
     const [, lang] = url.pathname.split('/');
-    if (lang in ui) {
+    if (lang && lang in ui) {
         return lang as keyof typeof ui;
     }
     return defaultLocale;

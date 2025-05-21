@@ -1,5 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
-import { defaultLocale, locales } from './i18n/config';
+import { defaultLocale, locales } from '@/i18n/config';
 
 export const onRequest = defineMiddleware(async ({ url, redirect }, next) => {
     const pathname = url.pathname;

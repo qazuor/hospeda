@@ -1,7 +1,7 @@
 ---
 // Popular destinations component
-import { getDestinations } from '../data/destinations';
-const destinations = getDestinations();
+import { getDestinations } from '@/data/destinations';
+const destinations = await getDestinations();
 ---
 
 <section class='py-16 bg-gray-50 dark:bg-gray-900'>
@@ -16,18 +16,21 @@ const destinations = getDestinations();
 
         <div class='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
             {
-                destinations.map((destination) => (
+                destinations.slice(0, 4).map((destination) => (
                     <a href={`/destinos/${destination.id}`} class='group'>
                         <div class='relative rounded-lg overflow-hidden shadow-md h-64 transform transition duration-300 group-hover:shadow-xl group-hover:-translate-y-1'>
                             <img
-                                src={destination.image}
-                                alt={`Destino turístico ${destination.name}`}
+                                src={
+                                    destination.media?.featuredImage?.url ||
+                                    'https://images.pexels.com/photos/208701/pexels-photo-208701.jpeg'
+                                }
+                                alt={`Destino turístico ${destination.displayName}`}
                                 class='w-full h-full object-cover transition duration-300 group-hover:scale-105'
                             />
                             <div class='absolute inset-0 bg-gradient-to-t from-black/70 to-transparent' />
                             <div class='absolute bottom-0 left-0 p-4 text-white'>
-                                <h3 class='text-xl font-bold mb-1'>{destination.name}</h3>
-                                <p class='text-sm opacity-90'>{destination.properties}</p>
+                                <h3 class='text-xl font-bold mb-1'>{destination.displayName}</h3>
+                                <p class='text-sm opacity-90'>{destination._count?.accommodations || 0} alojamientos</p>
                             </div>
                         </div>
                     </a>
