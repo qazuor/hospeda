@@ -1,6 +1,6 @@
 import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, type UserProfile, type UserType } from '@repo/types';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import {
     BookmarkModel,
     type BookmarkRecord,
