@@ -1,14 +1,16 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Liebig destination
  */
 export async function seedLiebigDestination() {
-    logger.info('Starting to seed Liebig destination', 'seedLiebigDestination');
+    dbLogger.info({ location: 'seedLiebigDestination' }, 'Starting to seed Liebig destination');
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,7 +20,10 @@ export async function seedLiebigDestination() {
             .where(eq(destinations.slug, 'liebig-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info('Liebig destination already exists, skipping', 'seedLiebigDestination');
+            dbLogger.info(
+                { location: 'seedLiebigDestination' },
+                'Liebig destination already exists, skipping'
+            );
             return;
         }
 
@@ -185,10 +190,16 @@ La tranquilidad del lugar, combinada con su rica historia y su entorno natural p
             updatedAt: new Date()
         });
 
-        logger.info('Liebig destination created successfully', 'seedLiebigDestination');
-        logger.query('insert', 'destinations', { name: 'liebig' }, liebigDestination);
+        dbLogger.info(
+            { location: 'seedLiebigDestination' },
+            'Liebig destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'liebig' }, liebigDestination);
     } catch (error) {
-        logger.error('Failed to seed Liebig destination', 'seedLiebigDestination', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Liebig destination in seedLiebigDestination'
+        );
         throw error;
     }
 }

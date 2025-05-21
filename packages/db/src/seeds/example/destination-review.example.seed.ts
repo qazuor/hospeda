@@ -1,14 +1,17 @@
-import { logger } from '@repo/logger';
 import { StateEnum } from '@repo/types';
 import { eq, ilike } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { destinationReviews, destinations, users } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds example destination reviews
  */
 export async function seedDestinationReviews() {
-    logger.info('Starting to seed example destination reviews', 'seedDestinationReviews');
+    dbLogger.info(
+        { location: 'seedDestinationReviews' },
+        'Starting to seed example destination reviews'
+    );
 
     try {
         const db = getDb();
@@ -20,9 +23,9 @@ export async function seedDestinationReviews() {
             .where(ilike(destinationReviews.name, 'example_review%'));
 
         if (existingReviews.length > 0) {
-            logger.info(
-                `${existingReviews.length} example destination reviews already exist, skipping`,
-                'seedDestinationReviews'
+            dbLogger.info(
+                { location: 'seedDestinationReviews' },
+                `${existingReviews.length} example destination reviews already exist, skipping`
             );
             return;
         }
@@ -108,18 +111,21 @@ export async function seedDestinationReviews() {
         // Insert reviews
         const insertedReviews = await db.insert(destinationReviews).values(reviewsData).returning();
 
-        logger.info(
-            `Created ${reviewsData.length} example destination reviews successfully`,
-            'seedDestinationReviews'
+        dbLogger.info(
+            { location: 'seedDestinationReviews' },
+            `Created ${reviewsData.length} example destination reviews successfully`
         );
-        logger.query(
+        dbLogger.query(
             'insert',
             'destination_reviews',
             { count: reviewsData.length },
             insertedReviews
         );
     } catch (error) {
-        logger.error('Failed to seed example destination reviews', 'seedDestinationReviews', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed example destination reviews in seedDestinationReviews'
+        );
         throw error;
     }
 }

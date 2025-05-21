@@ -1,14 +1,16 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Ubajay destination
  */
 export async function seedUbajayDestination() {
-    logger.info('Starting to seed Ubajay destination', 'seedUbajayDestination');
+    dbLogger.info({ location: 'seedUbajayDestination' }, 'Starting to seed Ubajay destination');
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,7 +20,10 @@ export async function seedUbajayDestination() {
             .where(eq(destinations.slug, 'ubajay-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info('Ubajay destination already exists, skipping', 'seedUbajayDestination');
+            dbLogger.info(
+                { location: 'seedUbajayDestination' },
+                'Ubajay destination already exists, skipping'
+            );
             return;
         }
 
@@ -183,10 +188,16 @@ Para los turistas que visitan la región, Ubajay representa una base estratégic
             updatedAt: new Date()
         });
 
-        logger.info('Ubajay destination created successfully', 'seedUbajayDestination');
-        logger.query('insert', 'destinations', { name: 'ubajay' }, ubajayDestination);
+        dbLogger.info(
+            { location: 'seedUbajayDestination' },
+            'Ubajay destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'ubajay' }, ubajayDestination);
     } catch (error) {
-        logger.error('Failed to seed Ubajay destination', 'seedUbajayDestination', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Ubajay destination in seedUbajayDestination'
+        );
         throw error;
     }
 }

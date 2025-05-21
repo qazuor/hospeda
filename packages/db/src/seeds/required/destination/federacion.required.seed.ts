@@ -1,14 +1,19 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Federación destination
  */
 export async function seedFederacionDestination() {
-    logger.info('Starting to seed Federación destination', 'seedFederacionDestination');
+    dbLogger.info(
+        { location: 'seedFederacionDestination' },
+        'Starting to seed Federación destination'
+    );
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,9 +23,9 @@ export async function seedFederacionDestination() {
             .where(eq(destinations.slug, 'federacion-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info(
-                'Federación destination already exists, skipping',
-                'seedFederacionDestination'
+            dbLogger.info(
+                { location: 'seedFederacionDestination' },
+                'Federación destination already exists, skipping'
             );
             return;
         }
@@ -184,10 +189,16 @@ La infraestructura turística de Federación es moderna y completa, con hoteles,
             updatedAt: new Date()
         });
 
-        logger.info('Federación destination created successfully', 'seedFederacionDestination');
-        logger.query('insert', 'destinations', { name: 'federacion' }, federacionDestination);
+        dbLogger.info(
+            { location: 'seedFederacionDestination' },
+            'Federación destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'federacion' }, federacionDestination);
     } catch (error) {
-        logger.error('Failed to seed Federación destination', 'seedFederacionDestination', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Federación destination in seedFederacionDestination'
+        );
         throw error;
     }
 }

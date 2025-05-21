@@ -1,14 +1,19 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Villa Paranacito destination
  */
 export async function seedVillaParanacitoDestination() {
-    logger.info('Starting to seed Villa Paranacito destination', 'seedVillaParanacitoDestination');
+    dbLogger.info(
+        { location: 'seedVillaParanacitoDestination' },
+        'Starting to seed Villa Paranacito destination'
+    );
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,9 +23,9 @@ export async function seedVillaParanacitoDestination() {
             .where(eq(destinations.slug, 'villa-paranacito-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info(
-                'Villa Paranacito destination already exists, skipping',
-                'seedVillaParanacitoDestination'
+            dbLogger.info(
+                { location: 'seedVillaParanacitoDestination' },
+                'Villa Paranacito destination already exists, skipping'
             );
             return;
         }
@@ -184,21 +189,20 @@ La infraestructura turística incluye cabañas, bungalows y campings, muchos de 
             updatedAt: new Date()
         });
 
-        logger.info(
-            'Villa Paranacito destination created successfully',
-            'seedVillaParanacitoDestination'
+        dbLogger.info(
+            { location: 'seedVillaParanacitoDestination' },
+            'Villa Paranacito destination created successfully'
         );
-        logger.query(
+        dbLogger.query(
             'insert',
             'destinations',
             { name: 'villa-paranacito' },
             villaParanacitoDestination
         );
     } catch (error) {
-        logger.error(
-            'Failed to seed Villa Paranacito destination',
-            'seedVillaParanacitoDestination',
-            error
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Villa Paranacito destination in seedVillaParanacitoDestination'
         );
         throw error;
     }

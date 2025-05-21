@@ -1,4 +1,3 @@
-import { logger } from '@repo/logger';
 import { type AccommodationTypeEnum, EntityTypeEnum, StateEnum, TagColorEnum } from '@repo/types';
 import { eq, sql } from 'drizzle-orm';
 import { getDb } from '../../../client.js';
@@ -16,6 +15,7 @@ import {
     users
 } from '../../../schema';
 
+import { dbLogger } from '../../../utils/logger.js';
 import retiroSoleadoCabanaChajari from './chajari/retiro-soleado-cabana-chajari.json';
 import rioSoleadoCabanaChajari from './chajari/rio-soleado-cabana-chajari.json';
 import senderoNaturalCountryHouseChajari from './chajari/sendero-natural-country-house-chajari.json';
@@ -159,7 +159,10 @@ interface AccommodationSeedData {
  * Seeds example accommodations
  */
 export async function seedExampleAccommodations() {
-    logger.info('Starting to seed example accommodations', 'seedExampleAccommodations');
+    dbLogger.info(
+        { location: 'seedExampleAccommodations' },
+        'Starting to seed example accommodations'
+    );
 
     try {
         const db = getDb();
@@ -277,9 +280,15 @@ export async function seedExampleAccommodations() {
             await processAccommodation(accommodationData as AccommodationSeedData, adminUser.id);
         }
 
-        logger.info('Successfully seeded example accommodations', 'seedExampleAccommodations');
+        dbLogger.info(
+            { location: 'seedExampleAccommodations' },
+            'Successfully seeded example accommodations'
+        );
     } catch (error) {
-        logger.error('Failed to seed example accommodations', 'seedExampleAccommodations', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed example accommodations in seedExampleAccommodations'
+        );
         throw error;
     }
 }
@@ -290,7 +299,7 @@ export async function seedExampleAccommodations() {
  * @param ownerId The ID of the owner (usually admin)
  */
 async function processAccommodation(data: AccommodationSeedData, ownerId: string) {
-    logger.info(`Processing accommodation: ${data.slug}`, 'processAccommodation');
+    dbLogger.info({ location: 'processAccommodation' }, `Processing accommodation: ${data.slug}`);
 
     try {
         const db = getDb();
@@ -302,9 +311,9 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
             .where(eq(accommodations.slug, data.slug));
 
         if (existingAccommodation.length > 0) {
-            logger.info(
-                `Accommodation ${data.slug} already exists, skipping`,
-                'processAccommodation'
+            dbLogger.info(
+                { location: 'processAccommodation' },
+                `Accommodation ${data.slug} already exists, skipping`
             );
             return;
         }
@@ -320,9 +329,9 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
             .where(eq(destinations.name, destinationName));
 
         if (!destinationRecord) {
-            logger.warn(
-                `Destination "${destinationName}" not found, using default destination`,
-                'processAccommodation'
+            dbLogger.warn(
+                { location: 'processAccommodation' },
+                `Destination "${destinationName}" not found, using default destination`
             );
             throw new Error(
                 `Destination "${destinationName}" not found. Please seed destinations first.`
@@ -332,7 +341,10 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
         const destinationId = destinationRecord.id;
 
         // Create the initial accommodation
-        logger.info(`Creating base accommodation record: ${data.slug}`, 'processAccommodation');
+        dbLogger.info(
+            { location: 'processAccommodation' },
+            `Creating base accommodation record: ${data.slug}`
+        );
         const accommodationResult = await db
             .insert(accommodations)
             .values({
@@ -360,12 +372,12 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
             throw new Error(`No ID returned for created accommodation: ${data.slug}`);
         }
 
-        logger.query('insert', 'accommodations', { slug: data.slug }, { id: accommodationId });
+        dbLogger.query('insert', 'accommodations', { slug: data.slug }, { id: accommodationId });
 
         // Update with additional data using sql to correctly handle JSONB types
-        logger.info(
-            `Updating accommodation with additional data: ${data.slug}`,
-            'processAccommodation'
+        dbLogger.info(
+            { location: 'processAccommodation' },
+            `Updating accommodation with additional data: ${data.slug}`
         );
         await db
             .update(accommodations)
@@ -391,13 +403,13 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
             })
             .where(eq(accommodations.id, accommodationId));
 
-        logger.query('update', 'accommodations', { slug: data.slug }, { updated: true });
+        dbLogger.query('update', 'accommodations', { slug: data.slug }, { updated: true });
 
         // Add tags
         if (data.tags && data.tags.length > 0) {
-            logger.info(
-                `Adding ${data.tags.length} tags to accommodation: ${data.slug}`,
-                'processAccommodation'
+            dbLogger.info(
+                { location: 'processAccommodation' },
+                `Adding ${data.tags.length} tags to accommodation: ${data.slug}`
             );
 
             for (const tagName of data.tags) {
@@ -433,7 +445,7 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
                         tagId: tag.id
                     });
 
-                    logger.query(
+                    dbLogger.query(
                         'insert',
                         'r_entity_tag',
                         {
@@ -448,9 +460,9 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
 
         // Add features
         if (data.features && data.features.length > 0) {
-            logger.info(
-                `Adding ${data.features.length} features to accommodation: ${data.slug}`,
-                'processAccommodation'
+            dbLogger.info(
+                { location: 'processAccommodation' },
+                `Adding ${data.features.length} features to accommodation: ${data.slug}`
             );
 
             for (const featureData of data.features) {
@@ -461,9 +473,9 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
                     .where(eq(features.name, featureData.name));
 
                 if (!feature) {
-                    logger.warn(
-                        `Feature "${featureData.name}" not found, skipping`,
-                        'processAccommodation'
+                    dbLogger.warn(
+                        { location: 'processAccommodation' },
+                        `Feature "${featureData.name}" not found, skipping`
                     );
                     continue;
                 }
@@ -480,7 +492,7 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
                         updatedAt: new Date()
                     });
 
-                    logger.query(
+                    dbLogger.query(
                         'insert',
                         'accommodation_features',
                         {
@@ -495,9 +507,9 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
 
         // Add amenities
         if (data.amenities && data.amenities.length > 0) {
-            logger.info(
-                `Adding ${data.amenities.length} amenities to accommodation: ${data.slug}`,
-                'processAccommodation'
+            dbLogger.info(
+                { location: 'processAccommodation' },
+                `Adding ${data.amenities.length} amenities to accommodation: ${data.slug}`
             );
 
             for (const amenityData of data.amenities) {
@@ -508,9 +520,9 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
                     .where(eq(amenities.name, amenityData.name));
 
                 if (!amenity) {
-                    logger.warn(
-                        `Amenity "${amenityData.name}" not found, skipping`,
-                        'processAccommodation'
+                    dbLogger.warn(
+                        { location: 'processAccommodation' },
+                        `Amenity "${amenityData.name}" not found, skipping`
                     );
                     continue;
                 }
@@ -530,7 +542,7 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
                         updatedAt: new Date()
                     });
 
-                    logger.query(
+                    dbLogger.query(
                         'insert',
                         'accommodation_amenities',
                         {
@@ -545,9 +557,9 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
 
         // Add FAQs
         if (data.faqs && data.faqs.length > 0) {
-            logger.info(
-                `Adding ${data.faqs.length} FAQs to accommodation: ${data.slug}`,
-                'processAccommodation'
+            dbLogger.info(
+                { location: 'processAccommodation' },
+                `Adding ${data.faqs.length} FAQs to accommodation: ${data.slug}`
             );
 
             for (const faqData of data.faqs) {
@@ -568,7 +580,7 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
                     updatedAt: new Date()
                 });
 
-                logger.query(
+                dbLogger.query(
                     'insert',
                     'accommodation_faqs',
                     {
@@ -582,9 +594,9 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
 
         // Add IA data
         if (data.iaData && data.iaData.length > 0) {
-            logger.info(
-                `Adding ${data.iaData.length} IA data entries to accommodation: ${data.slug}`,
-                'processAccommodation'
+            dbLogger.info(
+                { location: 'processAccommodation' },
+                `Adding ${data.iaData.length} IA data entries to accommodation: ${data.slug}`
             );
 
             for (const iaDataEntry of data.iaData) {
@@ -605,7 +617,7 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
                     updatedAt: new Date()
                 });
 
-                logger.query(
+                dbLogger.query(
                     'insert',
                     'accommodation_ia_data',
                     {
@@ -617,12 +629,14 @@ async function processAccommodation(data: AccommodationSeedData, ownerId: string
             }
         }
 
-        logger.info(`Completed processing accommodation: ${data.slug}`, 'processAccommodation');
+        dbLogger.info(
+            { location: 'processAccommodation' },
+            `Completed processing accommodation: ${data.slug}`
+        );
     } catch (error) {
-        logger.error(
-            `Failed to process accommodation: ${data.slug}`,
-            'processAccommodation',
-            error
+        dbLogger.error(
+            error as Error,
+            `Failed to process accommodation: ${data.slug} in processAccommodation`
         );
         throw error;
     }

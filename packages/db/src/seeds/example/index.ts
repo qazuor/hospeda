@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '../../utils/logger.js';
 import { seedExampleAccommodations } from './accommodation';
 import { seedAccommodationReviews } from './accommodation-review.example.seed.js';
 import { seedDestinationReviews } from './destination-review.example.seed.js';
@@ -18,47 +18,47 @@ import { seedExampleUsers } from './user.example.seed.js';
  * 7. Events
  */
 export async function seedExampleData(): Promise<void> {
-    logger.info('Starting example data seeding process...', 'seedExampleData');
+    dbLogger.info({ location: 'seedExampleData' }, 'Starting example data seeding process...');
 
     try {
         // Seed example users first
-        logger.info('Seeding example users...', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Seeding example users...');
         await seedExampleUsers();
-        logger.info('Example users seeded successfully', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Example users seeded successfully');
 
         // Seed accommodations
-        logger.info('Seeding accommodations...', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Seeding accommodations...');
         await seedExampleAccommodations();
-        logger.info('Accommodations seeded successfully', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Accommodations seeded successfully');
 
         // Seed accommodation reviews
-        logger.info('Seeding accommodation reviews...', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Seeding accommodation reviews...');
         await seedAccommodationReviews();
-        logger.info('Accommodation reviews seeded successfully', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Accommodation reviews seeded successfully');
 
         // Seed destination reviews
-        logger.info('Seeding destination reviews...', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Seeding destination reviews...');
         await seedDestinationReviews();
-        logger.info('Destination reviews seeded successfully', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Destination reviews seeded successfully');
 
         // Seed sponsors
-        logger.info('Seeding sponsors...', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Seeding sponsors...');
         await seedSponsors();
-        logger.info('Sponsors seeded successfully', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Sponsors seeded successfully');
 
         // Seed posts
-        logger.info('Seeding posts...', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Seeding posts...');
         await seedPosts();
-        logger.info('Posts seeded successfully', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Posts seeded successfully');
 
         // Seed events
-        logger.info('Seeding events...', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Seeding events...');
         await seedEvents();
-        logger.info('Events seeded successfully', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'Events seeded successfully');
 
-        logger.info('All example data seeded successfully!', 'seedExampleData');
+        dbLogger.info({ location: 'seedExampleData' }, 'All example data seeded successfully!');
     } catch (error) {
-        logger.error('Error seeding example data', 'seedExampleData', error);
+        dbLogger.error(error as Error, 'Error seeding example data in seedExampleData');
         throw error;
     }
 }

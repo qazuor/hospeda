@@ -1,14 +1,19 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Gualeguaychú destination
  */
 export async function seedGualeguaychuDestination() {
-    logger.info('Starting to seed Gualeguaychú destination', 'seedGualeguaychuDestination');
+    dbLogger.info(
+        { location: 'seedGualeguaychuDestination' },
+        'Starting to seed Gualeguaychú destination'
+    );
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,9 +23,9 @@ export async function seedGualeguaychuDestination() {
             .where(eq(destinations.slug, 'gualeguaychu-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info(
-                'Gualeguaychú destination already exists, skipping',
-                'seedGualeguaychuDestination'
+            dbLogger.info(
+                { location: 'seedGualeguaychuDestination' },
+                'Gualeguaychú destination already exists, skipping'
             );
             return;
         }
@@ -184,13 +189,15 @@ Durante todo el año, Gualeguaychú mantiene una activa agenda cultural con fest
             updatedAt: new Date()
         });
 
-        logger.info('Gualeguaychú destination created successfully', 'seedGualeguaychuDestination');
-        logger.query('insert', 'destinations', { name: 'gualeguaychu' }, gualeguaychuDestination);
+        dbLogger.info(
+            { location: 'seedGualeguaychuDestination' },
+            'Gualeguaychú destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'gualeguaychu' }, gualeguaychuDestination);
     } catch (error) {
-        logger.error(
-            'Failed to seed Gualeguaychú destination',
-            'seedGualeguaychuDestination',
-            error
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Gualeguaychú destination in seedGualeguaychuDestination'
         );
         throw error;
     }

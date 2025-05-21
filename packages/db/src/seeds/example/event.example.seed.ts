@@ -1,4 +1,3 @@
-import { logger } from '@repo/logger';
 import {
     EventCategoryEnum,
     PreferedContactEnum,
@@ -13,12 +12,13 @@ import { events } from '../../schema/event.dbschema.js';
 import { eventLocations } from '../../schema/event_location.dbschema.js';
 import { eventOrganizers } from '../../schema/event_organizer.dbschema.js';
 import { users } from '../../schema/user.dbschema.js';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds example events
  */
 export async function seedEvents(): Promise<void> {
-    logger.info('Starting example events seed...', 'seedEvents');
+    dbLogger.info({ location: 'seedEvents' }, 'Starting example events seed...');
 
     try {
         const db = getDb();
@@ -27,7 +27,7 @@ export async function seedEvents(): Promise<void> {
         const existingEvents = await db.select().from(events).where(ilike(events.name, 'example%'));
 
         if (existingEvents.length >= 5) {
-            logger.info('Example events already exist, skipping...', 'seedEvents');
+            dbLogger.info({ location: 'seedEvents' }, 'Example events already exist, skipping...');
             return;
         }
 
@@ -52,7 +52,10 @@ export async function seedEvents(): Promise<void> {
         let allOrganizers = [...existingOrganizers];
 
         if (organizersToCreate > 0) {
-            logger.info(`Creating ${organizersToCreate} new event organizers...`, 'seedEvents');
+            dbLogger.info(
+                { location: 'seedEvents' },
+                `Creating ${organizersToCreate} new event organizers...`
+            );
 
             const organizersData = Array.from({ length: organizersToCreate }, (_, i) => {
                 const index = i + existingOrganizers.length + 1;
@@ -90,15 +93,15 @@ export async function seedEvents(): Promise<void> {
                 ? createdOrganizers
                 : (createdOrganizers?.rows ?? []);
 
-            logger.query(
+            dbLogger.query(
                 'insert',
                 'event_organizers',
                 { count: organizersData.length },
                 { count: createdOrganizersArray.length }
             );
-            logger.info(
-                `Created ${createdOrganizersArray.length} event organizers successfully`,
-                'seedEvents'
+            dbLogger.info(
+                { location: 'seedEvents' },
+                `Created ${createdOrganizersArray.length} event organizers successfully`
             );
 
             allOrganizers = [...allOrganizers, ...createdOrganizersArray];
@@ -118,7 +121,10 @@ export async function seedEvents(): Promise<void> {
         const allDestinations = await db.select().from(destinations);
 
         if (locationsToCreate > 0 && allDestinations.length > 0) {
-            logger.info(`Creating ${locationsToCreate} new event locations...`, 'seedEvents');
+            dbLogger.info(
+                { location: 'seedEvents' },
+                `Creating ${locationsToCreate} new event locations...`
+            );
 
             const locationsData = Array.from({ length: locationsToCreate }, (_, i) => {
                 const index = i + existingLocations.length + 1;
@@ -158,15 +164,15 @@ export async function seedEvents(): Promise<void> {
                 ? createdLocations
                 : (createdLocations?.rows ?? []);
 
-            logger.query(
+            dbLogger.query(
                 'insert',
                 'event_locations',
                 { count: locationsData.length },
                 { count: createdLocationsArray.length }
             );
-            logger.info(
-                `Created ${createdLocationsArray.length} event locations successfully`,
-                'seedEvents'
+            dbLogger.info(
+                { location: 'seedEvents' },
+                `Created ${createdLocationsArray.length} event locations successfully`
             );
 
             allLocations = [...allLocations, ...createdLocationsArray];
@@ -174,7 +180,10 @@ export async function seedEvents(): Promise<void> {
 
         // Create example events
         if (allLocations.length === 0 || allOrganizers.length === 0) {
-            logger.warn('No locations or organizers available for events', 'seedEvents');
+            dbLogger.warn(
+                { location: 'seedEvents' },
+                'No locations or organizers available for events'
+            );
             return;
         }
 
@@ -609,10 +618,18 @@ La exposición no solo busca maravillar con la belleza de nuestra fauna, sino ta
                 ? insertedEvents.rows.length
                 : 0;
 
-        logger.query('insert', 'events', { count: exampleEvents.length }, { count: insertedCount });
-        logger.info(`Created ${insertedCount} example events successfully`, 'seedEvents');
+        dbLogger.query(
+            'insert',
+            'events',
+            { count: exampleEvents.length },
+            { count: insertedCount }
+        );
+        dbLogger.info(
+            { location: 'seedEvents' },
+            `Created ${insertedCount} example events successfully`
+        );
     } catch (error) {
-        logger.error('Failed to seed example events', 'seedEvents', error);
+        dbLogger.error(error as Error, 'Failed to seed example events in seedEvents');
         throw error;
     }
 }

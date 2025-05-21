@@ -1,14 +1,19 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Puerto Yeruá destination
  */
 export async function seedPuertoYeruaDestination() {
-    logger.info('Starting to seed Puerto Yeruá destination', 'seedPuertoYeruaDestination');
+    dbLogger.info(
+        { location: 'seedPuertoYeruaDestination' },
+        'Starting to seed Puerto Yeruá destination'
+    );
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,9 +23,9 @@ export async function seedPuertoYeruaDestination() {
             .where(eq(destinations.slug, 'puerto-yerua-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info(
-                'Puerto Yeruá destination already exists, skipping',
-                'seedPuertoYeruaDestination'
+            dbLogger.info(
+                { location: 'seedPuertoYeruaDestination' },
+                'Puerto Yeruá destination already exists, skipping'
             );
             return;
         }
@@ -189,13 +194,15 @@ Puerto Yeruá representa un destino ideal para quienes buscan desconectar, disfr
             updatedAt: new Date()
         });
 
-        logger.info('Puerto Yeruá destination created successfully', 'seedPuertoYeruaDestination');
-        logger.query('insert', 'destinations', { name: 'puerto-yerua' }, puertoYeruaDestination);
+        dbLogger.info(
+            { location: 'seedPuertoYeruaDestination' },
+            'Puerto Yeruá destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'puerto-yerua' }, puertoYeruaDestination);
     } catch (error) {
-        logger.error(
-            'Failed to seed Puerto Yeruá destination',
-            'seedPuertoYeruaDestination',
-            error
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Puerto Yeruá destination in seedPuertoYeruaDestination'
         );
         throw error;
     }

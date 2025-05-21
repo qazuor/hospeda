@@ -1,14 +1,14 @@
-import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, StateEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { roles } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds the required roles
  */
 export async function seedRoles() {
-    logger.info('Starting to seed roles', 'seedRoles');
+    dbLogger.info({ location: 'seedRoles' }, 'Starting to seed roles');
 
     try {
         const db = getDb();
@@ -89,7 +89,7 @@ export async function seedRoles() {
         const rolesToCreate = existingRoles.filter((item) => !item.exists).map((item) => item.role);
 
         if (rolesToCreate.length === 0) {
-            logger.info('All roles already exist, skipping', 'seedRoles');
+            dbLogger.info({ location: 'seedRoles' }, 'All roles already exist, skipping');
             return;
         }
 
@@ -97,13 +97,13 @@ export async function seedRoles() {
 
         if (Array.isArray(createdRoles)) {
             for (const role of createdRoles) {
-                logger.query('insert', 'roles', { name: role.name }, role);
+                dbLogger.query('insert', 'roles', { name: role.name }, role);
             }
 
-            logger.info(`Created ${createdRoles.length} new roles`, 'seedRoles');
+            dbLogger.info({ location: 'seedRoles' }, `Created ${createdRoles.length} new roles`);
         }
     } catch (error) {
-        logger.error('Failed to seed roles', 'seedRoles', error);
+        dbLogger.error(error as Error, 'Failed to seed roles in seedRoles');
         throw error;
     }
 }

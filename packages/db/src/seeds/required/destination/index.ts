@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '../../../utils/logger.js';
 import { seedChajariDestination } from './chajarí.required.seed.js';
 import { seedColonDestination } from './colon.required.seed.js';
 import { seedConcepcionDelUruguayDestination } from './concepcion-del-uruguay.required.seed.js';
@@ -18,7 +18,7 @@ import { seedVillaParanacitoDestination } from './villa-paranacito.required.seed
  * Seeds all required destinations
  */
 export async function seedDestinations() {
-    logger.info('Starting to seed all required destinations', 'seedDestinations');
+    dbLogger.info({ location: 'seedDestinations' }, 'Starting to seed all required destinations');
 
     try {
         await seedColonDestination();
@@ -36,9 +36,12 @@ export async function seedDestinations() {
         await seedSantaAnaDestination();
         await seedIbicuyDestination();
 
-        logger.info('All required destinations seeded successfully', 'seedDestinations');
+        dbLogger.info(
+            { location: 'seedDestinations' },
+            'All required destinations seeded successfully'
+        );
     } catch (error) {
-        logger.error('Failed to seed required destinations', 'seedDestinations', error);
+        dbLogger.error(error as Error, 'Failed to seed required destinations in seedDestinations');
         throw error;
     }
 }

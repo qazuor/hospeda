@@ -1,19 +1,22 @@
 #!/usr/bin/env node
-import { logger } from '@repo/logger';
 import 'dotenv/config';
 import { Pool } from 'pg';
 import { initializeDb } from '../client.js';
+import { dbLogger } from '../utils/logger.js';
 import { seedRequiredData } from './required/index.js';
 
 /**
  * Main entry point for seeding required data
  */
 async function main() {
-    logger.info('Starting required seed process', 'main');
+    dbLogger.info({ location: 'main' }, 'Starting required seed process');
 
     // Check if DATABASE_URL is defined
     if (!process.env.DATABASE_URL) {
-        logger.error('DATABASE_URL environment variable is not defined', 'main');
+        dbLogger.error(
+            new Error('DATABASE_URL environment variable is not defined'),
+            'Configuration error in main'
+        );
         process.exit(1);
     }
 
@@ -32,15 +35,15 @@ async function main() {
         // Close the database connection
         await pool.end();
 
-        logger.info('Required seed process completed successfully', 'main');
+        dbLogger.info({ location: 'main' }, 'Required seed process completed successfully');
     } catch (error) {
-        logger.error('Required seed process failed', 'main', error);
+        dbLogger.error(error as Error, 'Required seed process failed in main');
         process.exit(1);
     }
 }
 
 // Run the seed process
 main().catch((error) => {
-    logger.error('Unhandled error in required seed process', 'main', error);
+    dbLogger.error(error as Error, 'Unhandled error in required seed process in main');
     process.exit(1);
 });
