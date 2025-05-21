@@ -39,3 +39,4 @@ NOTES.txt
 
 
 packages/db/src/migrations/meta/_journal.json
+apps/api/package.prod.json
