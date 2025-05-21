@@ -13,6 +13,7 @@
         "check-types": "tsc --noEmit"
     },
     "dependencies": {
+        "@clerk/backend": "^1.32.3",
         "@hono/node-server": "^1.14.1",
         "@hono/zod-validator": "^0.5.0",
         "@repo/config": "workspace:*",

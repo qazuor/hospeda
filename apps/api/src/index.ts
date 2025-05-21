@@ -5,7 +5,7 @@ import { app } from './app';
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000;
 
-// console.info(`Starting API server on port ${PORT}`);
+logger.info(`Starting API server on port ${PORT}`);
 
 serve({
     fetch: app.fetch,
