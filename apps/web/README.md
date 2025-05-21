@@ -124,13 +124,91 @@ Para mantener un código limpio y modular, se propone organizar los componentes 
 
 ---
 
+## 🔌 Estrategia de Obtención de Datos (Build time & Runtime)
+
+El sitio público de `hosped.ar` obtiene datos desde dos fuentes principales:
+
+| Contexto         | Fuente de datos     | ¿Cómo se usa? |
+|------------------|---------------------|----------------|
+| **Build time**   | `@repo/db` services | Importando los servicios directamente desde el package, usando el `publicUser` como actor |
+| **Runtime** (SSR, CSR, islas React) | API pública (`/api/v1/public/...`) | Usando `fetch()` desde el cliente o desde SSR en Astro |
+
+### 📂 Estructura de fetchers
+
+```txt
+/src/lib/fetch
+├── db/
+│   ├── getHomeData.ts
+│   ├── getAllDestinations.ts
+│   ├── getAllDestinationSlugs.ts
+│   ├── getDestinationPageData.ts
+│   ├── getPostBySlug.ts
+│   └── getAllPostSlugs.ts
+├── api/
+│   ├── fetchAccommodationById.ts
+│   ├── fetchAccommodationsByDestination.ts
+│   ├── fetchSearchResults.ts
+│   ├── fetchPostBySlug.ts
+│   └── fetchEventById.ts
+└── utils/
+    └── getPublicUser.ts
+```
+
+### 📌 Estado actual de los fetchers
+
+#### Build-time (`@repo/db`)
+
+| Archivo | ¿Existe método? | Acción |
+|--------|------------------|--------|
+| `getHomeData.ts` | ✅ Sí | ✅ Implementado |
+| `getAllDestinations.ts` | ✅ Sí | ✅ Implementado |
+| `getAllDestinationSlugs.ts` | ✅ Sí | ✅ Implementado |
+| `getDestinationPageData.ts` | ⚠️ Parcial | 🔧 Requiere `getCompleteDestination(slug)` |
+| `getAllPostSlugs.ts` | ✅ Sí | ✅ Implementado |
+| `getPostBySlug.ts` | ✅ Sí | ✅ Implementado |
+
+#### Runtime (`API pública`)
+
+| Archivo | ¿Endpoint existe? | Acción |
+|--------|---------------------|--------|
+| `fetchAccommodationById.ts` | ✅ Sí | ✅ Implementado |
+| `fetchAccommodationsByDestination.ts` | ✅ Sí | ✅ Implementado |
+| `fetchSearchResults.ts` | ✅ Sí | ✅ Implementado |
+| `fetchPostBySlug.ts` | ✅ Sí | ✅ Implementado |
+| `fetchEventById.ts` | ✅ Sí | ✅ Implementado |
+
+### 📥 Nuevos métodos sugeridos para agregar
+
+- `DestinationService.getCompleteDestination(slug: string)`  
+  → Retorna el destino por slug, incluyendo: descripción, media, alojamientos, eventos y posts relacionados.  
+  → Usado para la página `/destinos/[slug]`.
+
+---
+
+### 🛠 Ejemplos
+
+#### Usar servicios en build-time
+
+```ts
+import { DestinationService } from '@repo/db';
+import { publicUser } from '@/lib/fetch/utils/getPublicUser';
+
+const service = new DestinationService();
+const destinations = await service.getFeatured(6, publicUser);
+```
+
+#### Usar API pública en runtime
+
+```ts
+const res = await fetch(`${import.meta.env.PUBLIC_API_URL}/api/v1/public/accommodations/${id}`);
+const { data } = await res.json();
+```
+
+---
+
 ## ✅ Próximos pasos sugeridos
 
 - [ ] Generar los `index.ts` para cada carpeta para facilitar imports
 - [ ] Implementar cron job de rebuild para rutas SSG
 - [ ] Agregar botón en el panel admin para forzar regeneración
 - [ ] Crear utilidades de fetch para cada tipo de entidad (destinos, alojamientos, etc.)
-
----
-
-¿Tenés dudas? Contactá a Leo en `/contacto` 😄
