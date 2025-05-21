@@ -22,14 +22,18 @@
         "clean": "turbo clean && rm -rf node_modules",
         "check-types": "turbo run check-types",
         "test": "turbo test",
-        "prepare": "husky install"
+        "prepare": "husky install",
+        "build:api": "pnpm --filter hospeda-api build",
+        "prepare:api:prod": "pnpm exec tsx scripts/generate-api-prod-package.ts",
+        "deploy:api": "pnpm build:api && pnpm prepare:api:prod && flyctl deploy --config apps/api/fly.toml --dockerfile Dockerfile.api"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
-        "turbo": "^2.5.3",
-        "husky": "^9.1.7",
         "@commitlint/cli": "^19.8.1",
-        "@commitlint/config-conventional": "^19.8.1"
+        "@commitlint/config-conventional": "^19.8.1",
+        "husky": "^9.1.7",
+        "tsx": "^4.19.4",
+        "turbo": "^2.5.3"
     },
     "packageManager": "pnpm@8.15.6",
     "engines": {

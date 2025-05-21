@@ -20,6 +20,9 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      tsx:
+        specifier: ^4.19.4
+        version: 4.19.4
       turbo:
         specifier: ^2.5.3
         version: 2.5.3
@@ -50,6 +53,9 @@ importers:
       '@repo/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
       hono:
         specifier: ^4.7.8
         version: 4.7.8
@@ -72,6 +78,9 @@ importers:
       '@types/pg':
         specifier: ^8.15.1
         version: 8.15.1
+      tsup:
+        specifier: ^8.4.0
+        version: 8.4.0(tsx@4.19.4)(typescript@5.8.3)
       tsx:
         specifier: ^4.7.1
         version: 4.19.4
@@ -120,7 +129,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ^6.3.5
-        version: 6.3.5(@types/node@22.15.3)
+        version: 6.3.5(@types/node@22.15.3)(tsx@4.19.4)
 
   apps/web:
     dependencies:
@@ -150,7 +159,7 @@ importers:
         version: link:../../packages/utils
       astro:
         specifier: ^5.2.5
-        version: 5.7.12(@types/node@22.15.3)(typescript@5.8.3)
+        version: 5.7.12(@types/node@22.15.3)(tsx@4.19.4)(typescript@5.8.3)
       i18next:
         specifier: ^23.10.0
         version: 23.16.8
@@ -292,7 +301,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: ^3.1.3
-        version: 3.1.3(@types/node@22.15.3)
+        version: 3.1.3(@types/node@22.15.3)(tsx@4.19.4)
 
   packages/schemas:
     dependencies:
@@ -323,7 +332,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: ^3.1.3
-        version: 3.1.3(@types/node@22.15.3)
+        version: 3.1.3(@types/node@22.15.3)(tsx@4.19.4)
 
   packages/tailwind-config:
     devDependencies:
@@ -406,7 +415,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: ^3.1.3
-        version: 3.1.3(@types/node@22.15.3)
+        version: 3.1.3(@types/node@22.15.3)(tsx@4.19.4)
 
 packages:
 
@@ -499,7 +508,7 @@ packages:
       astro: ^3.0.0 || ^4.0.0 || ^5.0.0
       tailwindcss: ^3.0.24
     dependencies:
-      astro: 5.7.12(@types/node@22.15.3)(typescript@5.8.3)
+      astro: 5.7.12(@types/node@22.15.3)(tsx@4.19.4)(typescript@5.8.3)
       autoprefixer: 10.4.21(postcss@8.5.3)
       postcss: 8.5.3
       postcss-load-config: 4.0.2(postcss@8.5.3)
@@ -533,7 +542,7 @@ packages:
       '@vercel/edge': 1.2.1
       '@vercel/nft': 0.29.2
       '@vercel/routing-utils': 5.0.4
-      astro: 5.7.12(@types/node@22.15.3)(typescript@5.8.3)
+      astro: 5.7.12(@types/node@22.15.3)(tsx@4.19.4)(typescript@5.8.3)
       esbuild: 0.25.4
       tinyglobby: 0.2.13
     transitivePeerDependencies:
@@ -2837,7 +2846,7 @@ packages:
       '@babel/plugin-transform-react-jsx-source': 7.27.1(@babel/core@7.27.1)
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.3.5(@types/node@22.15.3)
+      vite: 6.3.5(@types/node@22.15.3)(tsx@4.19.4)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2865,7 +2874,7 @@ packages:
       '@vitest/spy': 3.1.3
       estree-walker: 3.0.3
       magic-string: 0.30.17
-      vite: 6.3.5(@types/node@22.15.3)
+      vite: 6.3.5(@types/node@22.15.3)(tsx@4.19.4)
     dev: true
 
   /@vitest/pretty-format@3.1.3:
@@ -3015,7 +3024,7 @@ packages:
     engines: {node: '>=12'}
     dev: true
 
-  /astro@5.7.12(@types/node@22.15.3)(typescript@5.8.3):
+  /astro@5.7.12(@types/node@22.15.3)(tsx@4.19.4)(typescript@5.8.3):
     resolution: {integrity: sha512-UQOItiZz2hcv9PlHTQ6dNqFDIVNPnmwk6eyAjJqPE9O8EDHZK2JKtTRD0CBFN2Uqr0RE0TWP2gqDpLfsa5dJEA==}
     engines: {node: ^18.17.1 || ^20.3.0 || >=22.0.0, npm: '>=9.6.5', pnpm: '>=7.1.0'}
     hasBin: true
@@ -3072,7 +3081,7 @@ packages:
       unist-util-visit: 5.0.0
       unstorage: 1.16.0
       vfile: 6.0.3
-      vite: 6.3.5(@types/node@22.15.3)
+      vite: 6.3.5(@types/node@22.15.3)(tsx@4.19.4)
       vitefu: 1.0.6(vite@6.3.5)
       xxhash-wasm: 1.1.0
       yargs-parser: 21.1.1
@@ -4161,7 +4170,6 @@ packages:
     resolution: {integrity: sha512-kGzZ3LWWQcGIAmg6iWvXn0ei6WDtV26wzHRMwDSzmAbcXrTEXxHy6IehI6/4eT6VRKyMP1eF1VqwrVUmE/LR7A==}
     dependencies:
       resolve-pkg-maps: 1.0.0
-    dev: true
 
   /git-raw-commits@4.0.0:
     resolution: {integrity: sha512-ICsMM1Wk8xSGMowkOmPrzo2Fgmfo4bMHLNX6ytHjajRJUqvHOw/TFapQ+QG75c3X/tTDDhOSRPGC52dDbNM8FQ==}
@@ -5351,11 +5359,6 @@ packages:
     resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
     dev: true
 
-  /node-addon-api@8.3.1:
-    resolution: {integrity: sha512-lytcDEdxKjGJPTLEfW4mYMigRezMlyJY8W4wxJK8zE533Jlb8L8dRuObJFWg2P+AuOIxoCgKF+2Oq4d4Zd0OUA==}
-    engines: {node: ^18 || ^20 || >= 21}
-    dev: false
-
   /node-fetch-native@1.6.6:
     resolution: {integrity: sha512-8Mc2HhqPdlIfedsuZoc3yioPuzp6b+L5jRCRY1QzuWZh2EGJVQrGppC6V6cF0bLdbW0+O2YpqCA25aF/1lvipQ==}
     dev: false
@@ -6012,7 +6015,6 @@ packages:
 
   /resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
-    dev: true
 
   /resolve@1.22.10:
     resolution: {integrity: sha512-NPRy+/ncIMeDlTAsuqwKIiferiawhefFJtkNSW0qZJEqMEb+qBt/77B/jGeeek+F0uOeN05CDa6HXbbIgtVX4w==}
@@ -6529,7 +6531,6 @@ packages:
       get-tsconfig: 4.10.0
     optionalDependencies:
       fsevents: 2.3.3
-    dev: true
 
   /turbo-darwin-64@2.5.3:
     resolution: {integrity: sha512-YSItEVBUIvAGPUDpAB9etEmSqZI3T6BHrkBkeSErvICXn3dfqXUfeLx35LfptLDEbrzFUdwYFNmt8QXOwe9yaw==}
@@ -6835,7 +6836,7 @@ packages:
       vfile-message: 4.0.2
     dev: false
 
-  /vite-node@3.1.3(@types/node@22.15.3):
+  /vite-node@3.1.3(@types/node@22.15.3)(tsx@4.19.4):
     resolution: {integrity: sha512-uHV4plJ2IxCl4u1up1FQRrqclylKAogbtBfOTwcuJ28xFi+89PZ57BRh+naIRvH70HPwxy5QHYzg1OrEaC7AbA==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -6844,7 +6845,7 @@ packages:
       debug: 4.4.0
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 6.3.5(@types/node@22.15.3)
+      vite: 6.3.5(@types/node@22.15.3)(tsx@4.19.4)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -6899,7 +6900,7 @@ packages:
       fsevents: 2.3.3
     dev: false
 
-  /vite@6.3.5(@types/node@22.15.3):
+  /vite@6.3.5(@types/node@22.15.3)(tsx@4.19.4):
     resolution: {integrity: sha512-cZn6NDFE7wdTpINgs++ZJ4N49W2vRp8LCKrn3Ob1kYNtOo21vfDoaV5GzBfLU4MovSAB8uNRm4jgzVQZ+mBzPQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -6946,6 +6947,7 @@ packages:
       postcss: 8.5.3
       rollup: 4.40.2
       tinyglobby: 0.2.13
+      tsx: 4.19.4
     optionalDependencies:
       fsevents: 2.3.3
 
@@ -6957,10 +6959,10 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 6.3.5(@types/node@22.15.3)
+      vite: 6.3.5(@types/node@22.15.3)(tsx@4.19.4)
     dev: false
 
-  /vitest@3.1.3(@types/node@22.15.3):
+  /vitest@3.1.3(@types/node@22.15.3)(tsx@4.19.4):
     resolution: {integrity: sha512-188iM4hAHQ0km23TN/adso1q5hhwKqUpv+Sd6p5sOuh6FhQnRNW3IsiIpvxqahtBabsJ2SLZgmGSpcYK4wQYJw==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -7007,8 +7009,8 @@ packages:
       tinyglobby: 0.2.13
       tinypool: 1.0.2
       tinyrainbow: 2.0.0
-      vite: 6.3.5(@types/node@22.15.3)
-      vite-node: 3.1.3(@types/node@22.15.3)
+      vite: 6.3.5(@types/node@22.15.3)(tsx@4.19.4)
+      vite-node: 3.1.3(@types/node@22.15.3)(tsx@4.19.4)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - jiti
