@@ -1,14 +1,17 @@
-import { logger } from '@repo/logger';
 import { StateEnum } from '@repo/types';
 import { eq, ilike } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { accommodationReviews, accommodations, users } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds example accommodation reviews
  */
 export async function seedAccommodationReviews() {
-    logger.info('Starting to seed example accommodation reviews', 'seedAccommodationReviews');
+    dbLogger.info(
+        { location: 'seedAccommodationReviews' },
+        'Starting to seed example accommodation reviews'
+    );
 
     try {
         const db = getDb();
@@ -20,9 +23,9 @@ export async function seedAccommodationReviews() {
             .where(ilike(accommodationReviews.name, 'example_review%'));
 
         if (existingReviews.length > 0) {
-            logger.info(
-                `${existingReviews.length} example accommodation reviews already exist, skipping`,
-                'seedAccommodationReviews'
+            dbLogger.info(
+                { location: 'seedAccommodationReviews' },
+                `${existingReviews.length} example accommodation reviews already exist, skipping`
             );
             return;
         }
@@ -106,21 +109,20 @@ export async function seedAccommodationReviews() {
             .values(reviewsData)
             .returning();
 
-        logger.info(
-            `Created ${reviewsData.length} example accommodation reviews successfully`,
-            'seedAccommodationReviews'
+        dbLogger.info(
+            { location: 'seedAccommodationReviews' },
+            `Created ${reviewsData.length} example accommodation reviews successfully`
         );
-        logger.query(
+        dbLogger.query(
             'insert',
             'accommodation_reviews',
             { count: reviewsData.length },
             insertedReviews
         );
     } catch (error) {
-        logger.error(
-            'Failed to seed example accommodation reviews',
-            'seedAccommodationReviews',
-            error
+        dbLogger.error(
+            error as Error,
+            'Failed to seed example accommodation reviews in seedAccommodationReviews'
         );
         throw error;
     }

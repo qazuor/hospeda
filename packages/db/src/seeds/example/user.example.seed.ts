@@ -1,15 +1,15 @@
-import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, PreferedContactEnum, StateEnum } from '@repo/types';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { roles, users } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds example users with different roles and profiles
  */
 export async function seedExampleUsers() {
-    logger.info('Starting to seed example users', 'seedExampleUsers');
+    dbLogger.info({ location: 'seedExampleUsers' }, 'Starting to seed example users');
 
     try {
         const db = getDb();
@@ -437,18 +437,24 @@ export async function seedExampleUsers() {
                 .where(eq(users.userName, user.userName));
 
             if (existingUser.length > 0) {
-                logger.info(`User ${user.userName} already exists, skipping`, 'seedExampleUsers');
+                dbLogger.info(
+                    { location: 'seedExampleUsers' },
+                    `User ${user.userName} already exists, skipping`
+                );
                 continue;
             }
 
             const createdUser = await db.insert(users).values(user);
-            logger.info(`User ${user.userName} created successfully`, 'seedExampleUsers');
-            logger.query('insert', 'users', { userName: user.userName }, createdUser);
+            dbLogger.info(
+                { location: 'seedExampleUsers' },
+                `User ${user.userName} created successfully`
+            );
+            dbLogger.query('insert', 'users', { userName: user.userName }, createdUser);
         }
 
-        logger.info('Example users seeded successfully', 'seedExampleUsers');
+        dbLogger.info({ location: 'seedExampleUsers' }, 'Example users seeded successfully');
     } catch (error) {
-        logger.error('Failed to seed example users', 'seedExampleUsers', error);
+        dbLogger.error(error as Error, 'Failed to seed example users in seedExampleUsers');
         throw error;
     }
 }

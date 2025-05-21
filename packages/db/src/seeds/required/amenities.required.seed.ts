@@ -1,14 +1,14 @@
-import { logger } from '@repo/logger';
 import { AmenitiesTypeEnum, StateEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { amenities } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds required amenities into the system
  */
 export async function seedRequiredAmenities() {
-    logger.info('Starting to seed required amenities', 'seedRequiredAmenities');
+    dbLogger.info({ location: 'seedRequiredAmenities' }, 'Starting to seed required amenities');
 
     try {
         const db = getDb();
@@ -303,18 +303,27 @@ export async function seedRequiredAmenities() {
                     updatedAt: new Date()
                 });
 
-                logger.info(`Created amenity: ${amenityData.displayName}`, 'seedRequiredAmenities');
+                dbLogger.info(
+                    { location: 'seedRequiredAmenities' },
+                    `Created amenity: ${amenityData.displayName}`
+                );
             } else {
-                logger.info(
-                    `Amenity ${amenityData.displayName} already exists, skipping`,
-                    'seedRequiredAmenities'
+                dbLogger.info(
+                    { location: 'seedRequiredAmenities' },
+                    `Amenity ${amenityData.displayName} already exists, skipping`
                 );
             }
         }
 
-        logger.info('Successfully seeded required amenities', 'seedRequiredAmenities');
+        dbLogger.info(
+            { location: 'seedRequiredAmenities' },
+            'Successfully seeded required amenities'
+        );
     } catch (error) {
-        logger.error('Failed to seed required amenities', 'seedRequiredAmenities', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed required amenities in seedRequiredAmenities'
+        );
         throw error;
     }
 }

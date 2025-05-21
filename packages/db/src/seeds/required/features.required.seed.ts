@@ -1,14 +1,14 @@
-import { logger } from '@repo/logger';
 import { StateEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { features } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds required features into the system
  */
 export async function seedRequiredFeatures() {
-    logger.info('Starting to seed required features', 'seedRequiredFeatures');
+    dbLogger.info({ location: 'seedRequiredFeatures' }, 'Starting to seed required features');
 
     try {
         const db = getDb();
@@ -153,18 +153,24 @@ export async function seedRequiredFeatures() {
                     updatedAt: new Date()
                 });
 
-                logger.info(`Created feature: ${featureData.displayName}`, 'seedRequiredFeatures');
+                dbLogger.info(
+                    { location: 'seedRequiredFeatures' },
+                    `Created feature: ${featureData.displayName}`
+                );
             } else {
-                logger.info(
-                    `Feature ${featureData.displayName} already exists, skipping`,
-                    'seedRequiredFeatures'
+                dbLogger.info(
+                    { location: 'seedRequiredFeatures' },
+                    `Feature ${featureData.displayName} already exists, skipping`
                 );
             }
         }
 
-        logger.info('Successfully seeded required features', 'seedRequiredFeatures');
+        dbLogger.info(
+            { location: 'seedRequiredFeatures' },
+            'Successfully seeded required features'
+        );
     } catch (error) {
-        logger.error('Failed to seed required features', 'seedRequiredFeatures', error);
+        dbLogger.error(error as Error, 'Failed to seed required features in seedRequiredFeatures');
         throw error;
     }
 }

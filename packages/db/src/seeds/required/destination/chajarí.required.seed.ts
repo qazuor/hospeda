@@ -1,14 +1,16 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client.js';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Chajarí destination
  */
 export async function seedChajariDestination() {
-    logger.info('Starting to seed Chajarí destination', 'seedChajariDestination');
+    dbLogger.info({ location: 'seedChajariDestination' }, 'Starting to seed Chajarí destination');
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,7 +20,10 @@ export async function seedChajariDestination() {
             .where(eq(destinations.slug, 'chajari-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info('Chajarí destination already exists, skipping', 'seedChajariDestination');
+            dbLogger.info(
+                { location: 'seedChajariDestination' },
+                'Chajarí destination already exists, skipping'
+            );
             return;
         }
 
@@ -183,10 +188,16 @@ Chajarí ofrece una infraestructura turística completa, con hoteles, apart-hote
             updatedAt: new Date()
         });
 
-        logger.info('Chajarí destination created successfully', 'seedChajariDestination');
-        logger.query('insert', 'destinations', { name: 'chajari' }, chajariDestination);
+        dbLogger.info(
+            { location: 'seedChajariDestination' },
+            'Chajarí destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'chajari' }, chajariDestination);
     } catch (error) {
-        logger.error('Failed to seed Chajarí destination', 'seedChajariDestination', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Chajarí destination in seedChajariDestination'
+        );
         throw error;
     }
 }

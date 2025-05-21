@@ -1,14 +1,19 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Concordia destination
  */
 export async function seedConcordiaDestination() {
-    logger.info('Starting to seed Concordia destination', 'seedConcordiaDestination');
+    dbLogger.info(
+        { location: 'seedConcordiaDestination' },
+        'Starting to seed Concordia destination'
+    );
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,9 +23,9 @@ export async function seedConcordiaDestination() {
             .where(eq(destinations.slug, 'concordia-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info(
-                'Concordia destination already exists, skipping',
-                'seedConcordiaDestination'
+            dbLogger.info(
+                { location: 'seedConcordiaDestination' },
+                'Concordia destination already exists, skipping'
             );
             return;
         }
@@ -185,10 +190,16 @@ Los amantes de la naturaleza pueden disfrutar de las playas sobre el río Urugua
             updatedAt: new Date()
         });
 
-        logger.info('Concordia destination created successfully', 'seedConcordiaDestination');
-        logger.query('insert', 'destinations', { name: 'concordia' }, concordiaDestination);
+        dbLogger.info(
+            { location: 'seedConcordiaDestination' },
+            'Concordia destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'concordia' }, concordiaDestination);
     } catch (error) {
-        logger.error('Failed to seed Concordia destination', 'seedConcordiaDestination', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Concordia destination in seedConcordiaDestination'
+        );
         throw error;
     }
 }

@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '../../utils/logger.js';
 import { seedRequiredAmenities } from './amenities.required.seed.js';
 import { seedDestinations } from './destination';
 import { seedRequiredFeatures } from './features.required.seed.js';
@@ -10,7 +10,7 @@ import { seedAdminUser } from './user.required.seed.js';
  * Seeds all required data in the correct order
  */
 export async function seedRequiredData() {
-    logger.info('Starting to seed required data', 'seedRequiredData');
+    dbLogger.info({ location: 'seedRequiredData' }, 'Starting to seed required data');
 
     try {
         // Seed in order of dependencies
@@ -21,9 +21,9 @@ export async function seedRequiredData() {
         await seedRequiredAmenities();
         await seedRequiredFeatures();
 
-        logger.info('Successfully seeded all required data', 'seedRequiredData');
+        dbLogger.info({ location: 'seedRequiredData' }, 'Successfully seeded all required data');
     } catch (error) {
-        logger.error('Failed to seed required data', 'seedRequiredData', error);
+        dbLogger.error(error as Error, 'Failed to seed required data in seedRequiredData');
         throw error;
     }
 }

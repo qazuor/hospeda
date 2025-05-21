@@ -1,4 +1,3 @@
-import { logger } from '@repo/logger';
 import { PostCategoryEnum, PriceCurrencyEnum, StateEnum, VisibilityEnum } from '@repo/types';
 import { eq, ilike, or } from 'drizzle-orm';
 import { getDb } from '../../client.js';
@@ -6,12 +5,13 @@ import { posts } from '../../schema/post.dbschema.js';
 import { postSponsors } from '../../schema/post_sponsor.dbschema.js';
 import { postSponsorships } from '../../schema/post_sponsorship.dbschema.js';
 import { users } from '../../schema/user.dbschema.js';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds example posts, some with sponsorships
  */
 export async function seedPosts(): Promise<void> {
-    logger.info('Starting example posts seed...', 'seedPosts');
+    dbLogger.info({ location: 'seedPosts' }, 'Starting example posts seed...');
 
     try {
         const db = getDb();
@@ -20,7 +20,7 @@ export async function seedPosts(): Promise<void> {
         const existingPosts = await db.select().from(posts).where(ilike(posts.name, 'example%'));
 
         if (existingPosts.length >= 5) {
-            logger.info('Example posts already exist, skipping...', 'seedPosts');
+            dbLogger.info({ location: 'seedPosts' }, 'Example posts already exist, skipping...');
             return;
         }
 
@@ -488,13 +488,16 @@ La gastronomía entrerriana es una expresión viva de la cultura e identidad de 
         // For backward compatibility, alias insertedPosts to insertedPostsArray
         const insertedPosts = insertedPostsArray;
 
-        logger.query(
+        dbLogger.query(
             'insert',
             'posts',
             { count: examplePosts.length },
             { count: insertedPostsArray.length }
         );
-        logger.info(`Created ${insertedPostsArray.length} example posts successfully`, 'seedPosts');
+        dbLogger.info(
+            { location: 'seedPosts' },
+            `Created ${insertedPostsArray.length} example posts successfully`
+        );
 
         // Create sponsorships for some posts if sponsors exist
         if (sponsors.length > 0 && insertedPostsArray.length > 0) {
@@ -564,10 +567,10 @@ La gastronomía entrerriana es una expresión viva de la cultura e identidad de 
                 ? insertedSponsorshipsResult
                 : (insertedSponsorshipsResult?.rows ?? []);
 
-            logger.query('insert', 'post_sponsorships', sponsorshipsData, insertedSponsorships);
-            logger.info(
-                `Created ${insertedSponsorships.length} post sponsorships successfully`,
-                'seedPosts'
+            dbLogger.query('insert', 'post_sponsorships', sponsorshipsData, insertedSponsorships);
+            dbLogger.info(
+                { location: 'seedPosts' },
+                `Created ${insertedSponsorships.length} post sponsorships successfully`
             );
 
             // Update posts with sponsorship IDs
@@ -577,7 +580,7 @@ La gastronomía entrerriana es una expresión viva de la cultura e identidad de 
                     .set({ sponsorshipId: sponsorship.id })
                     .where(eq(posts.id, sponsorship.postId));
 
-                logger.query(
+                dbLogger.query(
                     'update',
                     'posts',
                     { sponsorshipId: sponsorship.id },
@@ -585,10 +588,13 @@ La gastronomía entrerriana es una expresión viva de la cultura e identidad de 
                 );
             }
 
-            logger.info('Updated posts with sponsorship IDs successfully', 'seedPosts');
+            dbLogger.info(
+                { location: 'seedPosts' },
+                'Updated posts with sponsorship IDs successfully'
+            );
         }
     } catch (error) {
-        logger.error('Failed to seed example posts', 'seedPosts', error);
+        dbLogger.error(error as Error, 'Failed to seed example posts in seedPosts');
         throw error;
     }
 }

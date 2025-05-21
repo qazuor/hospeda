@@ -1,17 +1,19 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Concepción del Uruguay destination
  */
 export async function seedConcepcionDelUruguayDestination() {
-    logger.info(
-        'Starting to seed Concepción del Uruguay destination',
-        'seedConcepcionDelUruguayDestination'
+    dbLogger.info(
+        { location: 'seedConcepcionDelUruguayDestination' },
+        'Starting to seed Concepción del Uruguay destination'
     );
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -21,9 +23,9 @@ export async function seedConcepcionDelUruguayDestination() {
             .where(eq(destinations.slug, 'concepcion-del-uruguay-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info(
-                'Concepción del Uruguay destination already exists, skipping',
-                'seedConcepcionDelUruguayDestination'
+            dbLogger.info(
+                { location: 'seedConcepcionDelUruguayDestination' },
+                'Concepción del Uruguay destination already exists, skipping'
             );
             return;
         }
@@ -190,21 +192,20 @@ A lo largo del año, Concepción del Uruguay mantiene una activa agenda cultural
             updatedAt: new Date()
         });
 
-        logger.info(
-            'Concepción del Uruguay destination created successfully',
-            'seedConcepcionDelUruguayDestination'
+        dbLogger.info(
+            { location: 'seedConcepcionDelUruguayDestination' },
+            'Concepción del Uruguay destination created successfully'
         );
-        logger.query(
+        dbLogger.query(
             'insert',
             'destinations',
             { name: 'concepcion-del-uruguay' },
             concepcionDelUruguayDestination
         );
     } catch (error) {
-        logger.error(
-            'Failed to seed Concepción del Uruguay destination',
-            'seedConcepcionDelUruguayDestination',
-            error
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Concepción del Uruguay destination in seedConcepcionDelUruguayDestination'
         );
         throw error;
     }

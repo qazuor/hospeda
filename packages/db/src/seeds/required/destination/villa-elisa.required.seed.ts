@@ -1,14 +1,19 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Villa Elisa destination
  */
 export async function seedVillaElisaDestination() {
-    logger.info('Starting to seed Villa Elisa destination', 'seedVillaElisaDestination');
+    dbLogger.info(
+        { location: 'seedVillaElisaDestination' },
+        'Starting to seed Villa Elisa destination'
+    );
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,9 +23,9 @@ export async function seedVillaElisaDestination() {
             .where(eq(destinations.slug, 'villa-elisa-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info(
-                'Villa Elisa destination already exists, skipping',
-                'seedVillaElisaDestination'
+            dbLogger.info(
+                { location: 'seedVillaElisaDestination' },
+                'Villa Elisa destination already exists, skipping'
             );
             return;
         }
@@ -185,10 +190,16 @@ La infraestructura de la ciudad incluye hoteles, apart-hoteles, cabañas y campi
             updatedAt: new Date()
         });
 
-        logger.info('Villa Elisa destination created successfully', 'seedVillaElisaDestination');
-        logger.query('insert', 'destinations', { name: 'villa-elisa' }, villaElisaDestination);
+        dbLogger.info(
+            { location: 'seedVillaElisaDestination' },
+            'Villa Elisa destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'villa-elisa' }, villaElisaDestination);
     } catch (error) {
-        logger.error('Failed to seed Villa Elisa destination', 'seedVillaElisaDestination', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Villa Elisa destination in seedVillaElisaDestination'
+        );
         throw error;
     }
 }

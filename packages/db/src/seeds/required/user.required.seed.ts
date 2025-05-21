@@ -1,15 +1,15 @@
-import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, PreferedContactEnum, StateEnum } from '@repo/types';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { roles, users } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds the required admin user
  */
 export async function seedAdminUser() {
-    logger.info('Starting to seed admin user', 'seedAdminUser');
+    dbLogger.info({ location: 'seedAdminUser' }, 'Starting to seed admin user');
 
     try {
         const db = getDb();
@@ -18,7 +18,7 @@ export async function seedAdminUser() {
         const existingAdmin = await db.select().from(users).where(eq(users.userName, 'admin'));
 
         if (existingAdmin.length > 0) {
-            logger.info('Admin user already exists, skipping', 'seedAdminUser');
+            dbLogger.info({ location: 'seedAdminUser' }, 'Admin user already exists, skipping');
             return;
         }
 
@@ -80,10 +80,10 @@ export async function seedAdminUser() {
             updatedAt: new Date()
         });
 
-        logger.info('Admin user created successfully', 'seedAdminUser');
-        logger.query('insert', 'users', { userName: 'admin' }, adminUser);
+        dbLogger.info({ location: 'seedAdminUser' }, 'Admin user created successfully');
+        dbLogger.query('insert', 'users', { userName: 'admin' }, adminUser);
     } catch (error) {
-        logger.error('Failed to seed admin user', 'seedAdminUser', error);
+        dbLogger.error(error as Error, 'Failed to seed admin user in seedAdminUser');
         throw error;
     }
 }

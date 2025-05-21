@@ -1,14 +1,19 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Santa Ana destination
  */
 export async function seedSantaAnaDestination() {
-    logger.info('Starting to seed Santa Ana destination', 'seedSantaAnaDestination');
+    dbLogger.info(
+        { location: 'seedSantaAnaDestination' },
+        'Starting to seed Santa Ana destination'
+    );
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,9 +23,9 @@ export async function seedSantaAnaDestination() {
             .where(eq(destinations.slug, 'santa-ana-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info(
-                'Santa Ana destination already exists, skipping',
-                'seedSantaAnaDestination'
+            dbLogger.info(
+                { location: 'seedSantaAnaDestination' },
+                'Santa Ana destination already exists, skipping'
             );
             return;
         }
@@ -188,10 +193,16 @@ Santa Ana representa un destino ideal para quienes buscan descubrir la autentici
             updatedAt: new Date()
         });
 
-        logger.info('Santa Ana destination created successfully', 'seedSantaAnaDestination');
-        logger.query('insert', 'destinations', { name: 'santa-ana' }, santaAnaDestination);
+        dbLogger.info(
+            { location: 'seedSantaAnaDestination' },
+            'Santa Ana destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'santa-ana' }, santaAnaDestination);
     } catch (error) {
-        logger.error('Failed to seed Santa Ana destination', 'seedSantaAnaDestination', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed Santa Ana destination in seedSantaAnaDestination'
+        );
         throw error;
     }
 }

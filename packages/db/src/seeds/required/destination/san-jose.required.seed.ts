@@ -1,14 +1,16 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the San José destination
  */
 export async function seedSanJoseDestination() {
-    logger.info('Starting to seed San José destination', 'seedSanJoseDestination');
+    dbLogger.info({ location: 'seedSanJoseDestination' }, 'Starting to seed San José destination');
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,7 +20,10 @@ export async function seedSanJoseDestination() {
             .where(eq(destinations.slug, 'san-jose-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info('San José destination already exists, skipping', 'seedSanJoseDestination');
+            dbLogger.info(
+                { location: 'seedSanJoseDestination' },
+                'San José destination already exists, skipping'
+            );
             return;
         }
 
@@ -182,10 +187,16 @@ La localidad mantiene vivas las tradiciones de sus ancestros a través de sus fi
             updatedAt: new Date()
         });
 
-        logger.info('San José destination created successfully', 'seedSanJoseDestination');
-        logger.query('insert', 'destinations', { name: 'san-jose' }, sanJoseDestination);
+        dbLogger.info(
+            { location: 'seedSanJoseDestination' },
+            'San José destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'san-jose' }, sanJoseDestination);
     } catch (error) {
-        logger.error('Failed to seed San José destination', 'seedSanJoseDestination', error);
+        dbLogger.error(
+            error as Error,
+            'Failed to seed San José destination in seedSanJoseDestination'
+        );
         throw error;
     }
 }

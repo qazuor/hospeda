@@ -1,14 +1,16 @@
-import { logger } from '@repo/logger';
 import { StateEnum, VisibilityEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../../client';
+import { getDb } from '../../../client';
 import { destinations } from '../../../schema';
+import { dbLogger } from '../../../utils/logger';
 
 /**
  * Seeds the Colón destination
  */
 export async function seedColonDestination() {
-    logger.info('Starting to seed Colón destination', 'seedColonDestination');
+    dbLogger.info({ location: 'seedColonDestination' }, 'Starting to seed Colón destination');
+
+    const db = getDb();
 
     try {
         // Check if destination already exists
@@ -18,7 +20,10 @@ export async function seedColonDestination() {
             .where(eq(destinations.slug, 'colon-entre-rios'));
 
         if (existingDestination.length > 0) {
-            logger.info('Colón destination already exists, skipping', 'seedColonDestination');
+            dbLogger.info(
+                { location: 'seedColonDestination' },
+                'Colón destination already exists, skipping'
+            );
             return;
         }
 
@@ -180,10 +185,13 @@ La gastronomía local destaca por sus pescados de río frescos, y durante todo e
             updatedAt: new Date()
         });
 
-        logger.info('Colón destination created successfully', 'seedColonDestination');
-        logger.query('insert', 'destinations', { name: 'colon' }, colonDestination);
+        dbLogger.info(
+            { location: 'seedColonDestination' },
+            'Colón destination created successfully'
+        );
+        dbLogger.query('insert', 'destinations', { name: 'colon' }, colonDestination);
     } catch (error) {
-        logger.error('Failed to seed Colón destination', 'seedColonDestination', error);
+        dbLogger.error(error as Error, 'Failed to seed Colón destination in seedColonDestination');
         throw error;
     }
 }

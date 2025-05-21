@@ -1,14 +1,14 @@
-import { logger } from '@repo/logger';
 import { ClientTypeEnum, StateEnum } from '@repo/types';
 import { eq, ilike } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { postSponsors, users } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds example post sponsors
  */
 export async function seedSponsors() {
-    logger.info('Starting to seed example sponsors', 'seedSponsors');
+    dbLogger.info({ location: 'seedSponsors' }, 'Starting to seed example sponsors');
 
     try {
         const db = getDb();
@@ -27,7 +27,7 @@ export async function seedSponsors() {
             .where(ilike(postSponsors.name, 'sponsor-example-entrerriano'));
 
         if (existingSponsors.length > 0) {
-            logger.info('Example sponsors already exist, skipping', 'seedSponsors');
+            dbLogger.info({ location: 'seedSponsors' }, 'Example sponsors already exist, skipping');
             return;
         }
 
@@ -115,12 +115,12 @@ export async function seedSponsors() {
         // Insert the sponsors
         for (const sponsor of sponsors) {
             await db.insert(postSponsors).values(sponsor);
-            logger.info(`Created sponsor: ${sponsor.displayName}`, 'seedSponsors');
+            dbLogger.info({ location: 'seedSponsors' }, `Created sponsor: ${sponsor.displayName}`);
         }
 
-        logger.info('Successfully seeded example sponsors', 'seedSponsors');
+        dbLogger.info({ location: 'seedSponsors' }, 'Successfully seeded example sponsors');
     } catch (error) {
-        logger.error('Failed to seed example sponsors', 'seedSponsors', error);
+        dbLogger.error(error as Error, 'Failed to seed example sponsors in seedSponsors');
         throw error;
     }
 }

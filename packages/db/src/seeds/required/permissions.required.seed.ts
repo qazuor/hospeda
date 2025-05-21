@@ -1,14 +1,14 @@
-import { logger } from '@repo/logger';
 import { BuiltinPermissionTypeEnum, BuiltinRoleTypeEnum, StateEnum } from '@repo/types';
 import { and, eq } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { permissions, rolePermissions, roles } from '../../schema';
+import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds the required permissions and assigns them to roles
  */
 export async function seedPermissions() {
-    logger.info('Starting to seed permissions', 'seedPermissions');
+    dbLogger.info({ location: 'seedPermissions' }, 'Starting to seed permissions');
 
     try {
         const db = getDb();
@@ -46,7 +46,10 @@ export async function seedPermissions() {
             .map((item) => item.permission);
 
         if (permissionsToCreate.length === 0) {
-            logger.info('All permissions already exist, skipping creation', 'seedPermissions');
+            dbLogger.info(
+                { location: 'seedPermissions' },
+                'All permissions already exist, skipping creation'
+            );
         } else {
             const createdPermissions = await db
                 .insert(permissions)
@@ -55,18 +58,18 @@ export async function seedPermissions() {
 
             if (Array.isArray(createdPermissions)) {
                 for (const permission of createdPermissions) {
-                    logger.query('insert', 'permissions', { name: permission.name }, permission);
+                    dbLogger.query('insert', 'permissions', { name: permission.name }, permission);
                 }
 
-                logger.info(
-                    `Created ${createdPermissions.length} new permissions`,
-                    'seedPermissions'
+                dbLogger.info(
+                    { location: 'seedPermissions' },
+                    `Created ${createdPermissions.length} new permissions`
                 );
             }
         }
 
         // Now assign permissions to roles
-        logger.info('Assigning permissions to roles', 'seedPermissions');
+        dbLogger.info({ location: 'seedPermissions' }, 'Assigning permissions to roles');
 
         // Get all roles
         const allRoles = await db.select().from(roles);
@@ -123,7 +126,7 @@ export async function seedPermissions() {
                         permissionId: permission.id
                     });
 
-                    logger.query(
+                    dbLogger.query(
                         'insert',
                         'role_permissions',
                         {
@@ -135,12 +138,15 @@ export async function seedPermissions() {
                 }
             }
 
-            logger.info(`Assigned permissions to role: ${role.name}`, 'seedPermissions');
+            dbLogger.info(
+                { location: 'seedPermissions' },
+                `Assigned permissions to role: ${role.name}`
+            );
         }
 
-        logger.info('Finished assigning permissions to roles', 'seedPermissions');
+        dbLogger.info({ location: 'seedPermissions' }, 'Finished assigning permissions to roles');
     } catch (error) {
-        logger.error('Failed to seed permissions', 'seedPermissions', error);
+        dbLogger.error(error as Error, 'Failed to seed permissions in seedPermissions');
         throw error;
     }
 }
