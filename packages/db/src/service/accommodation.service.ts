@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import {
     type AccommodationRatingType,
     BuiltinRoleTypeEnum,
@@ -38,8 +38,6 @@ import type {
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
-const log = logger.createLogger('AccommodationService');
-
 /**
  * Service layer for managing accommodation operations.
  * Handles business logic, authorization, and interacts with the AccommodationModel and related models.
@@ -62,10 +60,13 @@ export class AccommodationService {
      */
     private static assertOwnerOrAdmin(ownerId: string, actor: UserType): void {
         if (actor.id !== ownerId && !AccommodationService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertOwnerOrAdmin', {
-                actorId: actor.id,
-                requiredOwnerId: ownerId
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredOwnerId: ownerId
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -77,7 +78,7 @@ export class AccommodationService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!AccommodationService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -90,7 +91,7 @@ export class AccommodationService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertAccommodation, actor: UserType): Promise<AccommodationRecord> {
-        log.info('creating accommodation', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating accommodation');
 
         // Check if actor is owner or admin
         AccommodationService.assertOwnerOrAdmin(data.ownerId, actor);
@@ -102,13 +103,16 @@ export class AccommodationService {
                 updatedById: actor.id
             });
 
-            log.info('accommodation created successfully', 'create', {
-                accommodationId: createdAccommodation.id
-            });
+            dbLogger.info(
+                {
+                    accommodationId: createdAccommodation.id
+                },
+                'accommodation created successfully'
+            );
 
             return createdAccommodation;
         } catch (error) {
-            log.error('failed to create accommodation', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create accommodation');
             throw error;
         }
     }
@@ -121,10 +125,13 @@ export class AccommodationService {
      * @throws Error if accommodation is not found.
      */
     async getById(id: string, actor: UserType): Promise<AccommodationRecord> {
-        log.info('fetching accommodation by id', 'getById', {
-            accommodationId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId: id,
+                actor: actor.id
+            },
+            'fetching accommodation by id'
+        );
 
         try {
             const accommodation = await AccommodationModel.getAccommodationById(id);
@@ -133,15 +140,15 @@ export class AccommodationService {
                 `Accommodation ${id} not found`
             );
 
-            log.info('accommodation fetched successfully', 'getById', {
-                accommodationId: existingAccommodation.id
-            });
+            dbLogger.info(
+                {
+                    accommodationId: existingAccommodation.id
+                },
+                'accommodation fetched successfully'
+            );
             return existingAccommodation;
         } catch (error) {
-            log.error('failed to fetch accommodation by id', 'getById', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch accommodation by id');
             throw error;
         }
     }
@@ -154,20 +161,20 @@ export class AccommodationService {
      * @throws Error if listing fails.
      */
     async list(filter: SelectAccommodationFilter, actor: UserType): Promise<AccommodationRecord[]> {
-        log.info('listing accommodations', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing accommodations');
 
         try {
             const accommodations = await AccommodationModel.listAccommodations(filter);
-            log.info('accommodations listed successfully', 'list', {
-                count: accommodations.length,
-                filter
-            });
+            dbLogger.info(
+                {
+                    count: accommodations.length,
+                    filter
+                },
+                'accommodations listed successfully'
+            );
             return accommodations;
         } catch (error) {
-            log.error('failed to list accommodations', 'list', error, {
-                filter,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list accommodations');
             throw error;
         }
     }
@@ -185,10 +192,13 @@ export class AccommodationService {
         changes: Partial<UpdateAccommodationData>,
         actor: UserType
     ): Promise<AccommodationRecord> {
-        log.info('updating accommodation', 'update', {
-            accommodationId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId: id,
+                actor: actor.id
+            },
+            'updating accommodation'
+        );
 
         const existingAccommodation = await this.getById(id, actor);
 
@@ -214,16 +224,16 @@ export class AccommodationService {
                 updateData
             );
 
-            log.info('accommodation updated successfully', 'update', {
-                accommodationId: updatedAccommodation.id
-            });
+            dbLogger.info(
+                {
+                    accommodationId: updatedAccommodation.id
+                },
+                'accommodation updated successfully'
+            );
 
             return updatedAccommodation;
         } catch (error) {
-            log.error('failed to update accommodation', 'update', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update accommodation');
             throw error;
         }
     }
@@ -235,7 +245,13 @@ export class AccommodationService {
      * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting accommodation', 'delete', { accommodationId: id, actor: actor.id });
+        dbLogger.info(
+            {
+                accommodationId: id,
+                actor: actor.id
+            },
+            'soft deleting accommodation'
+        );
 
         const existingAccommodation = await this.getById(id, actor);
 
@@ -251,14 +267,14 @@ export class AccommodationService {
 
             await AccommodationModel.updateAccommodation(id, updateData);
 
-            log.info('accommodation soft deleted successfully', 'delete', {
-                accommodationId: existingAccommodation.id
-            });
+            dbLogger.info(
+                {
+                    accommodationId: existingAccommodation.id
+                },
+                'accommodation soft deleted successfully'
+            );
         } catch (error) {
-            log.error('failed to soft delete accommodation', 'delete', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete accommodation');
             throw error;
         }
     }
@@ -270,7 +286,13 @@ export class AccommodationService {
      * @throws Error if accommodation is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring accommodation', 'restore', { accommodationId: id, actor: actor.id });
+        dbLogger.info(
+            {
+                accommodationId: id,
+                actor: actor.id
+            },
+            'restoring accommodation'
+        );
 
         const existingAccommodation = await this.getById(id, actor);
 
@@ -286,14 +308,14 @@ export class AccommodationService {
 
             await AccommodationModel.updateAccommodation(id, updateData);
 
-            log.info('accommodation restored successfully', 'restore', {
-                accommodationId: existingAccommodation.id
-            });
+            dbLogger.info(
+                {
+                    accommodationId: existingAccommodation.id
+                },
+                'accommodation restored successfully'
+            );
         } catch (error) {
-            log.error('failed to restore accommodation', 'restore', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore accommodation');
             throw error;
         }
     }
@@ -305,10 +327,13 @@ export class AccommodationService {
      * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting accommodation', 'hardDelete', {
-            accommodationId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId: id,
+                actor: actor.id
+            },
+            'hard deleting accommodation'
+        );
 
         // Only admins can hard delete
         AccommodationService.assertAdmin(actor);
@@ -317,14 +342,9 @@ export class AccommodationService {
 
         try {
             await AccommodationModel.hardDeleteAccommodation(id);
-            log.info('accommodation hard deleted successfully', 'hardDelete', {
-                accommodationId: id
-            });
+            dbLogger.info({ accommodationId: id }, 'accommodation hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete accommodation', 'hardDelete', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete accommodation');
             throw error;
         }
     }
@@ -342,11 +362,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('fetching accommodations by owner id', 'getByOwner', {
-            ownerId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                ownerId,
+                actor: actor.id,
+                filter
+            },
+            'fetching accommodations by owner id'
+        );
 
         // Check if actor is owner or admin
         AccommodationService.assertOwnerOrAdmin(ownerId, actor);
@@ -359,16 +382,16 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(accommodationFilter);
-            log.info('accommodations by owner fetched successfully', 'getByOwner', {
-                ownerId,
-                count: accommodations.length
-            });
+            dbLogger.info(
+                {
+                    ownerId,
+                    count: accommodations.length
+                },
+                'accommodations by owner fetched successfully'
+            );
             return accommodations;
         } catch (error) {
-            log.error('failed to fetch accommodations by owner', 'getByOwner', error, {
-                ownerId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch accommodations by owner');
             throw error;
         }
     }
@@ -386,11 +409,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('fetching accommodations by type', 'getByType', {
-            type,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                type,
+                actor: actor.id,
+                filter
+            },
+            'fetching accommodations by type'
+        );
 
         try {
             const accommodationFilter: SelectAccommodationFilter = {
@@ -400,16 +426,16 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(accommodationFilter);
-            log.info('accommodations by type fetched successfully', 'getByType', {
-                type,
-                count: accommodations.length
-            });
+            dbLogger.info(
+                {
+                    type,
+                    count: accommodations.length
+                },
+                'accommodations by type fetched successfully'
+            );
             return accommodations;
         } catch (error) {
-            log.error('failed to fetch accommodations by type', 'getByType', error, {
-                type,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch accommodations by type');
             throw error;
         }
     }
@@ -427,11 +453,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('fetching accommodations by state', 'getByState', {
-            state,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                state,
+                actor: actor.id,
+                filter
+            },
+            'fetching accommodations by state'
+        );
 
         // Only admins can filter by state
         AccommodationService.assertAdmin(actor);
@@ -444,16 +473,16 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(accommodationFilter);
-            log.info('accommodations by state fetched successfully', 'getByState', {
-                state,
-                count: accommodations.length
-            });
+            dbLogger.info(
+                {
+                    state,
+                    count: accommodations.length
+                },
+                'accommodations by state fetched successfully'
+            );
             return accommodations;
         } catch (error) {
-            log.error('failed to fetch accommodations by state', 'getByState', error, {
-                state,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch accommodations by state');
             throw error;
         }
     }
@@ -471,11 +500,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('listing accommodations by destination', 'listByDestination', {
-            destinationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id,
+                filter
+            },
+            'listing accommodations by destination'
+        );
 
         try {
             const accommodationFilter: SelectAccommodationFilter = {
@@ -485,16 +517,16 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(accommodationFilter);
-            log.info('accommodations by destination listed successfully', 'listByDestination', {
-                destinationId,
-                count: accommodations.length
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    count: accommodations.length
+                },
+                'accommodations by destination listed successfully'
+            );
             return accommodations;
         } catch (error) {
-            log.error('failed to list accommodations by destination', 'listByDestination', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list accommodations by destination');
             throw error;
         }
     }
@@ -512,10 +544,13 @@ export class AccommodationService {
         data: Record<string, unknown>,
         actor: UserType
     ): Promise<AccommodationReviewRecord> {
-        log.info('adding review to accommodation', 'addReview', {
-            accommodationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id
+            },
+            'adding review to accommodation'
+        );
 
         // Verify accommodation exists
         const accommodation = await this.getById(accommodationId, actor);
@@ -529,16 +564,16 @@ export class AccommodationService {
             };
 
             const review = await AccommodationReviewModel.createReview(reviewData);
-            log.info('review added successfully', 'addReview', {
-                accommodationId,
-                reviewId: review.id
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    reviewId: review.id
+                },
+                'review added successfully'
+            );
             return review;
         } catch (error) {
-            log.error('failed to add review', 'addReview', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add review');
             throw error;
         }
     }
@@ -556,11 +591,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationReviewRecord[]> {
-        log.info('listing reviews for accommodation', 'listReviews', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing reviews for accommodation'
+        );
 
         // Verify accommodation exists
         await this.getById(accommodationId, actor);
@@ -572,16 +610,16 @@ export class AccommodationService {
                 includeDeleted: false
             });
 
-            log.info('reviews listed successfully', 'listReviews', {
-                accommodationId,
-                count: reviews.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: reviews.length
+                },
+                'reviews listed successfully'
+            );
             return reviews;
         } catch (error) {
-            log.error('failed to list reviews', 'listReviews', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list reviews');
             throw error;
         }
     }
@@ -597,10 +635,13 @@ export class AccommodationService {
         accommodationId: string,
         actor: UserType
     ): Promise<AccommodationRatingType> {
-        log.info('calculating average rating for accommodation', 'getAverageRating', {
-            accommodationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id
+            },
+            'calculating average rating for accommodation'
+        );
 
         // Verify accommodation exists
         await this.getById(accommodationId, actor);
@@ -612,9 +653,12 @@ export class AccommodationService {
             });
 
             if (reviews.length === 0) {
-                log.info('no reviews found for rating calculation', 'getAverageRating', {
-                    accommodationId
-                });
+                dbLogger.info(
+                    {
+                        accommodationId
+                    },
+                    'no reviews found for rating calculation'
+                );
 
                 // Return default rating with zeros
                 return {
@@ -657,16 +701,16 @@ export class AccommodationService {
             averageRating.communication = Number((averageRating.communication / count).toFixed(1));
             averageRating.location = Number((averageRating.location / count).toFixed(1));
 
-            log.info('average rating calculated successfully', 'getAverageRating', {
-                accommodationId,
-                averageRating
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    averageRating
+                },
+                'average rating calculated successfully'
+            );
             return averageRating;
         } catch (error) {
-            log.error('failed to calculate average rating', 'getAverageRating', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to calculate average rating');
             throw error;
         }
     }
@@ -679,10 +723,13 @@ export class AccommodationService {
      * @throws Error if listing fails.
      */
     async getTopRated(limit: number, actor: UserType): Promise<AccommodationRecord[]> {
-        log.info('fetching top-rated accommodations', 'getTopRated', {
-            limit,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                limit,
+                actor: actor.id
+            },
+            'fetching top-rated accommodations'
+        );
 
         try {
             // First get all active accommodations
@@ -719,15 +766,15 @@ export class AccommodationService {
                 .slice(0, limit)
                 .map((item) => item.accommodation);
 
-            log.info('top-rated accommodations fetched successfully', 'getTopRated', {
-                count: topRated.length
-            });
+            dbLogger.info(
+                {
+                    count: topRated.length
+                },
+                'top-rated accommodations fetched successfully'
+            );
             return topRated;
         } catch (error) {
-            log.error('failed to fetch top-rated accommodations', 'getTopRated', error, {
-                limit,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch top-rated accommodations');
             throw error;
         }
     }
@@ -745,11 +792,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationRecord[]> {
-        log.info('searching accommodations', 'searchFullText', {
-            query,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                query,
+                actor: actor.id,
+                filter
+            },
+            'searching accommodations'
+        );
 
         try {
             const searchFilter: SelectAccommodationFilter = {
@@ -759,16 +809,16 @@ export class AccommodationService {
             };
 
             const accommodations = await AccommodationModel.listAccommodations(searchFilter);
-            log.info('accommodations search completed successfully', 'searchFullText', {
-                query,
-                count: accommodations.length
-            });
+            dbLogger.info(
+                {
+                    query,
+                    count: accommodations.length
+                },
+                'accommodations search completed successfully'
+            );
             return accommodations;
         } catch (error) {
-            log.error('failed to search accommodations', 'searchFullText', error, {
-                query,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to search accommodations');
             throw error;
         }
     }
@@ -786,11 +836,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AmenityRecord[]> {
-        log.info('listing amenities for accommodation', 'listAmenities', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing amenities for accommodation'
+        );
 
         // Verify accommodation exists
         await this.getById(accommodationId, actor);
@@ -815,17 +868,17 @@ export class AccommodationService {
                 }
             }
 
-            log.info('amenities listed successfully', 'listAmenities', {
-                accommodationId,
-                count: amenities.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: amenities.length
+                },
+                'amenities listed successfully'
+            );
 
             return amenities;
         } catch (error) {
-            log.error('failed to list amenities', 'listAmenities', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list amenities');
             throw error;
         }
     }
@@ -843,11 +896,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<FeatureRecord[]> {
-        log.info('listing features for accommodation', 'listFeatures', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing features for accommodation'
+        );
 
         // Verify accommodation exists
         await this.getById(accommodationId, actor);
@@ -872,17 +928,17 @@ export class AccommodationService {
                 }
             }
 
-            log.info('features listed successfully', 'listFeatures', {
-                accommodationId,
-                count: features.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: features.length
+                },
+                'features listed successfully'
+            );
 
             return features;
         } catch (error) {
-            log.error('failed to list features', 'listFeatures', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list features');
             throw error;
         }
     }
@@ -900,11 +956,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationFaqRecord[]> {
-        log.info('listing FAQs for accommodation', 'listFaqs', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing FAQs for accommodation'
+        );
 
         // Verify accommodation exists
         await this.getById(accommodationId, actor);
@@ -917,16 +976,16 @@ export class AccommodationService {
             };
 
             const faqs = await AccommodationFaqModel.listFaqs(faqFilter);
-            log.info('FAQs listed successfully', 'listFaqs', {
-                accommodationId,
-                count: faqs.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: faqs.length
+                },
+                'FAQs listed successfully'
+            );
             return faqs;
         } catch (error) {
-            log.error('failed to list FAQs', 'listFaqs', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list FAQs');
             throw error;
         }
     }
@@ -944,11 +1003,14 @@ export class AccommodationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationIaDataRecord[]> {
-        log.info('listing IA data for accommodation', 'listIaData', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing IA data for accommodation'
+        );
 
         const accommodation = await this.getById(accommodationId, actor);
 
@@ -963,16 +1025,16 @@ export class AccommodationService {
             };
 
             const iaData = await AccommodationIaDataModel.listIaData(iaDataFilter);
-            log.info('IA data listed successfully', 'listIaData', {
-                accommodationId,
-                count: iaData.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: iaData.length
+                },
+                'IA data listed successfully'
+            );
             return iaData;
         } catch (error) {
-            log.error('failed to list IA data', 'listIaData', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list IA data');
             throw error;
         }
     }
@@ -997,11 +1059,14 @@ export class AccommodationService {
         additionalCost: Record<string, unknown> | null = null,
         additionalCostPercent: number | null = null
     ): Promise<{ relation: AccommodationAmenityRecord; amenity: AmenityRecord }> {
-        log.info('adding amenity to accommodation', 'addAmenity', {
-            accommodationId,
-            amenityId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                amenityId,
+                actor: actor.id
+            },
+            'adding amenity to accommodation'
+        );
 
         const accommodation = await this.getById(accommodationId, actor);
 
@@ -1028,21 +1093,20 @@ export class AccommodationService {
 
             const relation = await AccommodationAmenityModel.createAmenityRelation(relationData);
 
-            log.info('amenity added to accommodation successfully', 'addAmenity', {
-                accommodationId,
-                amenityId
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    amenityId
+                },
+                'amenity added to accommodation successfully'
+            );
 
             return {
                 relation,
                 amenity
             };
         } catch (error) {
-            log.error('failed to add amenity to accommodation', 'addAmenity', error, {
-                accommodationId,
-                amenityId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add amenity to accommodation');
             throw error;
         }
     }
@@ -1065,11 +1129,14 @@ export class AccommodationService {
         comments: string | null,
         actor: UserType
     ): Promise<{ relation: AccommodationFeatureRecord; feature: FeatureRecord }> {
-        log.info('adding feature to accommodation', 'addFeature', {
-            accommodationId,
-            featureId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                featureId,
+                actor: actor.id
+            },
+            'adding feature to accommodation'
+        );
 
         const accommodation = await this.getById(accommodationId, actor);
 
@@ -1095,21 +1162,20 @@ export class AccommodationService {
 
             const relation = await AccommodationFeatureModel.createFeatureRelation(relationData);
 
-            log.info('feature added to accommodation successfully', 'addFeature', {
-                accommodationId,
-                featureId
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    featureId
+                },
+                'feature added to accommodation successfully'
+            );
 
             return {
                 relation,
                 feature
             };
         } catch (error) {
-            log.error('failed to add feature to accommodation', 'addFeature', error, {
-                accommodationId,
-                featureId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add feature to accommodation');
             throw error;
         }
     }
@@ -1127,10 +1193,13 @@ export class AccommodationService {
         data: Record<string, unknown>,
         actor: UserType
     ): Promise<AccommodationFaqRecord> {
-        log.info('adding FAQ to accommodation', 'addFaq', {
-            accommodationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id
+            },
+            'adding FAQ to accommodation'
+        );
 
         const accommodation = await this.getById(accommodationId, actor);
 
@@ -1146,16 +1215,16 @@ export class AccommodationService {
             };
 
             const faq = await AccommodationFaqModel.createFaq(faqData);
-            log.info('FAQ added successfully', 'addFaq', {
-                accommodationId,
-                faqId: faq.id
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    faqId: faq.id
+                },
+                'FAQ added successfully'
+            );
             return faq;
         } catch (error) {
-            log.error('failed to add FAQ', 'addFaq', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add FAQ');
             throw error;
         }
     }
@@ -1173,10 +1242,13 @@ export class AccommodationService {
         data: Record<string, unknown>,
         actor: UserType
     ): Promise<AccommodationIaDataRecord> {
-        log.info('adding IA data to accommodation', 'addIaData', {
-            accommodationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id
+            },
+            'adding IA data to accommodation'
+        );
 
         const accommodation = await this.getById(accommodationId, actor);
 
@@ -1192,16 +1264,16 @@ export class AccommodationService {
             };
 
             const iaData = await AccommodationIaDataModel.createIaData(iaDataData);
-            log.info('IA data added successfully', 'addIaData', {
-                accommodationId,
-                iaDataId: iaData.id
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    iaDataId: iaData.id
+                },
+                'IA data added successfully'
+            );
             return iaData;
         } catch (error) {
-            log.error('failed to add IA data', 'addIaData', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add IA data');
             throw error;
         }
     }
@@ -1225,10 +1297,13 @@ export class AccommodationService {
             reviews: AccommodationReviewRecord[];
         }
     > {
-        log.info('fetching accommodation with details', 'getWithDetails', {
-            accommodationId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId: id,
+                actor: actor.id
+            },
+            'fetching accommodation with details'
+        );
 
         try {
             // Get the base accommodation
@@ -1257,15 +1332,15 @@ export class AccommodationService {
                 reviews
             };
 
-            log.info('accommodation with details fetched successfully', 'getWithDetails', {
-                accommodationId: id
-            });
+            dbLogger.info(
+                {
+                    accommodationId: id
+                },
+                'accommodation with details fetched successfully'
+            );
             return result;
         } catch (error) {
-            log.error('failed to fetch accommodation with details', 'getWithDetails', error, {
-                accommodationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch accommodation with details');
             throw error;
         }
     }
@@ -1283,11 +1358,14 @@ export class AccommodationService {
         tagId: string,
         actor: UserType
     ): Promise<EntityTagRecord> {
-        log.info('adding tag to accommodation', 'addTag', {
-            accommodationId,
-            tagId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                tagId,
+                actor: actor.id
+            },
+            'adding tag to accommodation'
+        );
 
         const accommodation = await this.getById(accommodationId, actor);
 
@@ -1304,17 +1382,16 @@ export class AccommodationService {
             };
 
             const tagRelation = await EntityTagModel.createRelation(tagData);
-            log.info('tag added successfully', 'addTag', {
-                accommodationId,
-                tagId
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    tagId
+                },
+                'tag added successfully'
+            );
             return tagRelation;
         } catch (error) {
-            log.error('failed to add tag', 'addTag', error, {
-                accommodationId,
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add tag');
             throw error;
         }
     }
@@ -1332,11 +1409,14 @@ export class AccommodationService {
         limit: number,
         actor: UserType
     ): Promise<AccommodationRecord[]> {
-        log.info('recommending similar accommodations', 'recommendSimilar', {
-            accommodationId,
-            limit,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                limit,
+                actor: actor.id
+            },
+            'recommending similar accommodations'
+        );
 
         try {
             // Get the source accommodation
@@ -1355,17 +1435,16 @@ export class AccommodationService {
                 .filter((acc) => acc.id !== accommodationId)
                 .slice(0, limit);
 
-            log.info('similar accommodations recommended successfully', 'recommendSimilar', {
-                accommodationId,
-                count: recommendations.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: recommendations.length
+                },
+                'similar accommodations recommended successfully'
+            );
             return recommendations;
         } catch (error) {
-            log.error('failed to recommend similar accommodations', 'recommendSimilar', error, {
-                accommodationId,
-                limit,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to recommend similar accommodations');
             throw error;
         }
     }

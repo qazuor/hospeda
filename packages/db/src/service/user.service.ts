@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserProfile, type UserType } from '@repo/types';
 import bcrypt from 'bcryptjs';
 import {
@@ -20,8 +20,6 @@ import type {
     UpdateUserData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('UserService');
 
 /**
  * Service layer for managing user operations.
@@ -47,10 +45,13 @@ export class UserService {
      */
     private static assertOwnerOrAdmin(ownerId: string, actor: UserType): void {
         if (actor.id !== ownerId && !UserService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertOwnerOrAdmin', {
-                actorId: actor.id,
-                requiredOwnerId: ownerId
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredOwnerId: ownerId
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -62,7 +63,7 @@ export class UserService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!UserService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -75,7 +76,7 @@ export class UserService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertUser, actor: UserType): Promise<UserRecord> {
-        log.info('creating user', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating user');
 
         UserService.assertAdmin(actor);
 
@@ -89,10 +90,10 @@ export class UserService {
             };
 
             const createdUser = await UserModel.createUser(dataWithHashedPassword);
-            log.info('user created successfully', 'create', { userId: createdUser.id });
+            dbLogger.info({ userId: createdUser.id }, 'user created successfully');
             return createdUser;
         } catch (error) {
-            log.error('failed to create user', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create user');
             throw error;
         }
     }
@@ -105,14 +106,14 @@ export class UserService {
      * @throws Error if user is not found or actor is not authorized.
      */
     async getById(id: string, actor: UserType): Promise<UserRecord> {
-        log.info('fetching user by id', 'getById', { userId: id, actor: actor.id });
+        dbLogger.info({ userId: id, actor: actor.id }, 'fetching user by id');
 
         const user = await UserModel.getUserById(id);
         const existingUser = assertExists(user, `User ${id} not found`);
 
         UserService.assertOwnerOrAdmin(existingUser.id, actor);
 
-        log.info('user fetched successfully', 'getById', { userId: existingUser.id });
+        dbLogger.info({ userId: existingUser.id }, 'user fetched successfully');
         return existingUser;
     }
 
@@ -124,16 +125,16 @@ export class UserService {
      * @throws Error if actor is not authorized or listing fails.
      */
     async list(filter: SelectUserFilter, actor: UserType): Promise<UserRecord[]> {
-        log.info('listing users', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing users');
 
         UserService.assertAdmin(actor);
 
         try {
             const users = await UserModel.listUsers(filter);
-            log.info('users listed successfully', 'list', { count: users.length, filter });
+            dbLogger.info({ count: users.length, filter }, 'users listed successfully');
             return users;
         } catch (error) {
-            log.error('failed to list users', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list users');
             throw error;
         }
     }
@@ -147,7 +148,7 @@ export class UserService {
      * @throws Error if user is not found, actor is not authorized, or update fails.
      */
     async update(id: string, changes: UpdateUserData, actor: UserType): Promise<UserRecord> {
-        log.info('updating user', 'update', { userId: id, actor: actor.id });
+        dbLogger.info({ userId: id, actor: actor.id }, 'updating user');
 
         const existingUser = await this.getById(id, actor);
 
@@ -159,10 +160,10 @@ export class UserService {
                 updatedById: actor.id
             };
             const updatedUser = await UserModel.updateUser(existingUser.id, dataWithAudit);
-            log.info('user updated successfully', 'update', { userId: updatedUser.id });
+            dbLogger.info({ userId: updatedUser.id }, 'user updated successfully');
             return updatedUser;
         } catch (error) {
-            log.error('failed to update user', 'update', error, { userId: id, actor: actor.id });
+            dbLogger.error(error, 'failed to update user');
             throw error;
         }
     }
@@ -174,7 +175,7 @@ export class UserService {
      * @throws Error if user is not found, actor is not authorized, or soft-delete fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting user', 'delete', { userId: id, actor: actor.id });
+        dbLogger.info({ userId: id, actor: actor.id }, 'soft deleting user');
 
         UserService.assertAdmin(actor);
 
@@ -189,12 +190,9 @@ export class UserService {
                 deletedById: actor.id
             };
             await UserModel.updateUser(existingUser.id, changes);
-            log.info('user soft deleted successfully', 'delete', { userId: existingUser.id });
+            dbLogger.info({ userId: existingUser.id }, 'user soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete user', 'delete', error, {
-                userId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete user');
             throw error;
         }
     }
@@ -206,7 +204,7 @@ export class UserService {
      * @throws Error if user is not found, actor is not authorized, or restore fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring user', 'restore', { userId: id, actor: actor.id });
+        dbLogger.info({ userId: id, actor: actor.id }, 'restoring user');
 
         UserService.assertAdmin(actor);
 
@@ -221,9 +219,9 @@ export class UserService {
                 deletedById: null
             };
             await UserModel.updateUser(existingUser.id, changes);
-            log.info('user restored successfully', 'restore', { userId: existingUser.id });
+            dbLogger.info({ userId: existingUser.id }, 'user restored successfully');
         } catch (error) {
-            log.error('failed to restore user', 'restore', error, { userId: id, actor: actor.id });
+            dbLogger.error(error, 'failed to restore user');
             throw error;
         }
     }
@@ -235,7 +233,7 @@ export class UserService {
      * @throws Error if user is not found, actor is not authorized, or hard-delete fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting user', 'hardDelete', { userId: id, actor: actor.id });
+        dbLogger.info({ userId: id, actor: actor.id }, 'hard deleting user');
 
         UserService.assertAdmin(actor);
 
@@ -243,12 +241,9 @@ export class UserService {
 
         try {
             await UserModel.hardDeleteUser(id);
-            log.info('user hard deleted successfully', 'hardDelete', { userId: id });
+            dbLogger.info({ userId: id }, 'user hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete user', 'hardDelete', error, {
-                userId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete user');
             throw error;
         }
     }
@@ -261,7 +256,7 @@ export class UserService {
      * @throws Error if user is not found, actor is not authorized, or update fails.
      */
     async changePassword(userId: string, newPassword: string, actor: UserType): Promise<void> {
-        log.info('changing password for user', 'changePassword', { userId, actor: actor.id });
+        dbLogger.info({ userId, actor: actor.id }, 'changing password for user');
 
         const existingUser = await this.getById(userId, actor);
 
@@ -272,14 +267,9 @@ export class UserService {
                 updatedById: actor.id
             };
             await UserModel.updateUser(existingUser.id, changes);
-            log.info('password changed successfully', 'changePassword', {
-                userId: existingUser.id
-            });
+            dbLogger.info({ userId: existingUser.id }, 'password changed successfully');
         } catch (error) {
-            log.error('failed to change password', 'changePassword', error, {
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to change password');
             throw error;
         }
     }
@@ -297,7 +287,7 @@ export class UserService {
         actor: UserType,
         pagination: PaginationParams = {}
     ): Promise<UserRecord[]> {
-        log.info('fetching users by role', 'getByRole', { roleId, actor: actor.id, pagination });
+        dbLogger.info({ roleId, actor: actor.id, pagination }, 'fetching users by role');
 
         UserService.assertAdmin(actor);
 
@@ -309,16 +299,10 @@ export class UserService {
 
         try {
             const users = await UserModel.listUsers(filter);
-            log.info('users fetched by role successfully', 'getByRole', {
-                roleId,
-                count: users.length
-            });
+            dbLogger.info({ roleId, count: users.length }, 'users fetched by role successfully');
             return users;
         } catch (error) {
-            log.error('failed to fetch users by role', 'getByRole', error, {
-                roleId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch users by role');
             throw error;
         }
     }
@@ -331,19 +315,16 @@ export class UserService {
      * @throws Error if actor is not authorized or search fails.
      */
     async findByUsername(username: string, actor: UserType): Promise<UserRecord | undefined> {
-        log.info('finding user by username', 'findByUsername', { username, actor: actor.id });
+        dbLogger.info({ username, actor: actor.id }, 'finding user by username');
 
         UserService.assertAdmin(actor);
 
         try {
             const user = await UserModel.getUserByUsername(username);
-            log.info('user found by username', 'findByUsername', { username, found: !!user?.id });
+            dbLogger.info({ username, found: !!user?.id }, 'user found by username');
             return user;
         } catch (error) {
-            log.error('failed to find user by username', 'findByUsername', error, {
-                username,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to find user by username');
             throw error;
         }
     }
@@ -356,19 +337,16 @@ export class UserService {
      * @throws Error if actor is not authorized or search fails.
      */
     async findByEmail(email: string, actor: UserType): Promise<UserRecord | undefined> {
-        log.info('finding user by email', 'findByEmail', { email, actor: actor.id });
+        dbLogger.info({ email, actor: actor.id }, 'finding user by email');
 
         UserService.assertAdmin(actor);
 
         try {
             const user = await UserModel.getUserByEmail(email);
-            log.info('user found by email', 'findByEmail', { email, found: !!user?.id });
+            dbLogger.info({ email, found: !!user?.id }, 'user found by email');
             return user;
         } catch (error) {
-            log.error('failed to find user by email', 'findByEmail', error, {
-                email,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to find user by email');
             throw error;
         }
     }
@@ -383,7 +361,7 @@ export class UserService {
      * @throws Error if user is not found, actor is not authorized, or reset fails.
      */
     async resetPassword(userId: string, actor: UserType): Promise<void> {
-        log.info('resetting password for user', 'resetPassword', { userId, actor: actor.id });
+        dbLogger.info({ userId, actor: actor.id }, 'resetting password for user');
 
         UserService.assertAdmin(actor);
 
@@ -401,14 +379,12 @@ export class UserService {
                 updatedById: actor.id
             };
             await UserModel.updateUser(existingUser.id, changes);
-            log.info('password reset successfully (new hash set)', 'resetPassword', {
-                userId: existingUser.id
-            });
+            dbLogger.info(
+                { userId: existingUser.id },
+                'password reset successfully (new hash set)'
+            );
         } catch (error) {
-            log.error('failed to reset password', 'resetPassword', error, {
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to reset password');
             throw error;
         }
     }
@@ -422,7 +398,7 @@ export class UserService {
      * @throws Error if user or role is not found, actor is not authorized, or update fails.
      */
     async changeRole(userId: string, newRoleId: string, actor: UserType): Promise<UserRecord> {
-        log.info('changing role for user', 'changeRole', { userId, newRoleId, actor: actor.id });
+        dbLogger.info({ userId, newRoleId, actor: actor.id }, 'changing role for user');
 
         UserService.assertAdmin(actor);
 
@@ -438,17 +414,10 @@ export class UserService {
                 updatedById: actor.id
             };
             const updatedUser = await UserModel.updateUser(existingUser.id, changes);
-            log.info('user role changed successfully', 'changeRole', {
-                userId: updatedUser.id,
-                newRoleId
-            });
+            dbLogger.info({ userId: updatedUser.id, newRoleId }, 'user role changed successfully');
             return updatedUser;
         } catch (error) {
-            log.error('failed to change user role', 'changeRole', error, {
-                userId,
-                newRoleId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to change user role');
             throw error;
         }
     }
@@ -461,7 +430,7 @@ export class UserService {
      * @throws Error if actor is not authorized or listing fails.
      */
     async listAdmins(actor: UserType, pagination: PaginationParams = {}): Promise<UserRecord[]> {
-        log.info('listing admin users', 'listAdmins', { actor: actor.id, pagination });
+        dbLogger.info({ actor: actor.id, pagination }, 'listing admin users');
 
         UserService.assertAdmin(actor);
 
@@ -478,10 +447,10 @@ export class UserService {
             };
 
             const adminUsers = await UserModel.listUsers(filter);
-            log.info('admin users listed successfully', 'listAdmins', { count: adminUsers.length });
+            dbLogger.info({ count: adminUsers.length }, 'admin users listed successfully');
             return adminUsers;
         } catch (error) {
-            log.error('failed to list admin users', 'listAdmins', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to list admin users');
             throw error;
         }
     }
@@ -499,7 +468,7 @@ export class UserService {
         actor: UserType,
         pagination: PaginationParams = {}
     ): Promise<UserRecord[]> {
-        log.info('searching users', 'search', { query, actor: actor.id, pagination });
+        dbLogger.info({ query, actor: actor.id, pagination }, 'searching users');
 
         const filter: SelectUserFilter = {
             query,
@@ -523,7 +492,7 @@ export class UserService {
         actor: UserType,
         pagination: PaginationParams = {}
     ): Promise<UserRecord[]> {
-        log.info('fetching users by state', 'getByState', { state, actor: actor.id, pagination });
+        dbLogger.info({ state, actor: actor.id, pagination }, 'fetching users by state');
 
         UserService.assertAdmin(actor);
 
@@ -535,16 +504,10 @@ export class UserService {
 
         try {
             const users = await UserModel.listUsers(filter);
-            log.info('users fetched by state successfully', 'getByState', {
-                state,
-                count: users.length
-            });
+            dbLogger.info({ state, count: users.length }, 'users fetched by state successfully');
             return users;
         } catch (error) {
-            log.error('failed to fetch users by state', 'getByState', error, {
-                state,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch users by state');
             throw error;
         }
     }
@@ -562,11 +525,7 @@ export class UserService {
         permissionId: string,
         actor: UserType
     ): Promise<UserPermissionRecord> {
-        log.info('adding permission to user', 'addPermission', {
-            userId,
-            permissionId,
-            actor: actor.id
-        });
+        dbLogger.info({ userId, permissionId, actor: actor.id }, 'adding permission to user');
 
         UserService.assertAdmin(actor);
 
@@ -579,17 +538,10 @@ export class UserService {
 
         try {
             const relation = await UserPermissionModel.createRelation(data);
-            log.info('permission added to user successfully', 'addPermission', {
-                userId,
-                permissionId
-            });
+            dbLogger.info({ userId, permissionId }, 'permission added to user successfully');
             return relation;
         } catch (error) {
-            log.error('failed to add permission to user', 'addPermission', error, {
-                userId,
-                permissionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add permission to user');
             throw error;
         }
     }
@@ -602,26 +554,15 @@ export class UserService {
      * @throws Error if actor is not authorized or deletion fails.
      */
     async removePermission(userId: string, permissionId: string, actor: UserType): Promise<void> {
-        log.info('removing permission from user', 'removePermission', {
-            userId,
-            permissionId,
-            actor: actor.id
-        });
+        dbLogger.info({ userId, permissionId, actor: actor.id }, 'removing permission from user');
 
         UserService.assertAdmin(actor);
 
         try {
             await UserPermissionModel.deleteRelation(userId, permissionId);
-            log.info('permission removed from user successfully', 'removePermission', {
-                userId,
-                permissionId
-            });
+            dbLogger.info({ userId, permissionId }, 'permission removed from user successfully');
         } catch (error) {
-            log.error('failed to remove permission from user', 'removePermission', error, {
-                userId,
-                permissionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove permission from user');
             throw error;
         }
     }
@@ -639,11 +580,7 @@ export class UserService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<UserPermissionRecord[]> {
-        log.info('listing permissions for user', 'listPermissions', {
-            userId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ userId, actor: actor.id, filter }, 'listing permissions for user');
 
         const existingUser = await this.getById(userId, actor);
 
@@ -651,16 +588,13 @@ export class UserService {
             // Call the model method designed to list permissions for a user ID
             // Assuming a method like listPermissionsByUserId exists and accepts PaginationParams
             const permissions = await UserPermissionModel.listByUser(existingUser.id, filter);
-            log.info('permissions listed for user successfully', 'listPermissions', {
-                userId: existingUser.id,
-                count: permissions.length
-            });
+            dbLogger.info(
+                { userId: existingUser.id, count: permissions.length },
+                'permissions listed for user successfully'
+            );
             return permissions;
         } catch (error) {
-            log.error('failed to list permissions for user', 'listPermissions', error, {
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list permissions for user');
             throw error;
         }
     }
@@ -687,11 +621,7 @@ export class UserService {
         >,
         actor: UserType
     ): Promise<BookmarkRecord> {
-        log.info('adding bookmark for user', 'addBookmark', {
-            userId,
-            bookmarkData,
-            actor: actor.id
-        });
+        dbLogger.info({ userId, bookmarkData, actor: actor.id }, 'adding bookmark for user');
 
         UserService.assertOwnerOrAdmin(userId, actor);
 
@@ -704,17 +634,13 @@ export class UserService {
 
         try {
             const createdBookmark = await BookmarkModel.insertBookmark(data);
-            log.info('bookmark added for user successfully', 'addBookmark', {
-                userId,
-                bookmarkId: createdBookmark.id
-            });
+            dbLogger.info(
+                { userId, bookmarkId: createdBookmark.id },
+                'bookmark added for user successfully'
+            );
             return createdBookmark;
         } catch (error) {
-            log.error('failed to add bookmark for user', 'addBookmark', error, {
-                userId,
-                bookmarkData,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add bookmark for user');
             throw error;
         }
     }
@@ -726,7 +652,7 @@ export class UserService {
      * @throws Error if bookmark is not found, actor is not authorized (must be owner or admin), or deletion fails.
      */
     async removeBookmark(bookmarkId: string, actor: UserType): Promise<void> {
-        log.info('removing bookmark', 'removeBookmark', { bookmarkId, actor: actor.id });
+        dbLogger.info({ bookmarkId, actor: actor.id }, 'removing bookmark');
 
         const bookmark = assertExists(
             await BookmarkModel.selectBookmarkById(bookmarkId),
@@ -737,15 +663,9 @@ export class UserService {
 
         try {
             await BookmarkModel.hardDeleteBookmark(bookmarkId);
-            log.info('bookmark removed successfully', 'removeBookmark', {
-                bookmarkId,
-                actor: actor.id
-            });
+            dbLogger.info({ bookmarkId, actor: actor.id }, 'bookmark removed successfully');
         } catch (error) {
-            log.error('failed to remove bookmark', 'removeBookmark', error, {
-                bookmarkId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove bookmark');
             throw error;
         }
     }
@@ -763,11 +683,7 @@ export class UserService {
         actor: UserType,
         filter: Omit<SelectBookmarkFilter, 'ownerId'> = {}
     ): Promise<BookmarkRecord[]> {
-        log.info('listing bookmarks for user', 'listBookmarks', {
-            userId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ userId, actor: actor.id, filter }, 'listing bookmarks for user');
 
         const existingUser = await this.getById(userId, actor);
 
@@ -779,16 +695,13 @@ export class UserService {
 
         try {
             const bookmarks = await BookmarkModel.selectBookmarks(fullFilter);
-            log.info('bookmarks listed for user successfully', 'listBookmarks', {
-                userId: existingUser.id,
-                count: bookmarks.length
-            });
+            dbLogger.info(
+                { userId: existingUser.id, count: bookmarks.length },
+                'bookmarks listed for user successfully'
+            );
             return bookmarks;
         } catch (error) {
-            log.error('failed to list bookmarks for user', 'listBookmarks', error, {
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list bookmarks for user');
             throw error;
         }
     }
@@ -806,7 +719,7 @@ export class UserService {
         profileData: Partial<UserProfile>,
         actor: UserType
     ): Promise<UserRecord> {
-        log.info('updating user profile', 'updateProfile', { userId, actor: actor.id });
+        dbLogger.info({ userId, actor: actor.id }, 'updating user profile');
 
         const existingUser = await this.getById(userId, actor);
 
@@ -821,15 +734,10 @@ export class UserService {
                 updatedById: actor.id
             };
             const updatedUser = await UserModel.updateUser(existingUser.id, changes);
-            log.info('user profile updated successfully', 'updateProfile', {
-                userId: updatedUser.id
-            });
+            dbLogger.info({ userId: updatedUser.id }, 'user profile updated successfully');
             return updatedUser;
         } catch (error) {
-            log.error('failed to update user profile', 'updateProfile', error, {
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update user profile');
             throw error;
         }
     }

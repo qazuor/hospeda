@@ -1,10 +1,8 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import { FeatureModel, type FeatureRecord } from '../model/feature.model.js';
 import type { InsertFeature, SelectFeatureFilter, UpdateFeatureData } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('FeatureService');
 
 /**
  * Service layer for managing feature operations.
@@ -27,7 +25,7 @@ export class FeatureService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!FeatureService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -40,7 +38,7 @@ export class FeatureService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertFeature, actor: UserType): Promise<FeatureRecord> {
-        log.info('creating feature', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating feature');
 
         // Only admins can create features
         FeatureService.assertAdmin(actor);
@@ -52,10 +50,10 @@ export class FeatureService {
                 updatedById: actor.id
             };
             const createdFeature = await FeatureModel.createFeature(dataWithAudit);
-            log.info('feature created successfully', 'create', { featureId: createdFeature.id });
+            dbLogger.info({ featureId: createdFeature.id }, 'feature created successfully');
             return createdFeature;
         } catch (error) {
-            log.error('failed to create feature', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create feature');
             throw error;
         }
     }
@@ -68,19 +66,16 @@ export class FeatureService {
      * @throws Error if feature is not found.
      */
     async getById(id: string, actor: UserType): Promise<FeatureRecord> {
-        log.info('fetching feature by id', 'getById', { featureId: id, actor: actor.id });
+        dbLogger.info({ featureId: id, actor: actor.id }, 'fetching feature by id');
 
         try {
             const feature = await FeatureModel.getFeatureById(id);
             const existingFeature = assertExists(feature, `Feature ${id} not found`);
 
-            log.info('feature fetched successfully', 'getById', { featureId: existingFeature.id });
+            dbLogger.info({ featureId: existingFeature.id }, 'feature fetched successfully');
             return existingFeature;
         } catch (error) {
-            log.error('failed to fetch feature by id', 'getById', error, {
-                featureId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch feature by id');
             throw error;
         }
     }
@@ -93,17 +88,14 @@ export class FeatureService {
      * @throws Error if listing fails.
      */
     async list(filter: SelectFeatureFilter, actor: UserType): Promise<FeatureRecord[]> {
-        log.info('listing features', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing features');
 
         try {
             const features = await FeatureModel.listFeatures(filter);
-            log.info('features listed successfully', 'list', {
-                count: features.length,
-                filter
-            });
+            dbLogger.info({ count: features.length, filter }, 'features listed successfully');
             return features;
         } catch (error) {
-            log.error('failed to list features', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list features');
             throw error;
         }
     }
@@ -117,7 +109,7 @@ export class FeatureService {
      * @throws Error if feature is not found, actor is not authorized, or update fails.
      */
     async update(id: string, changes: UpdateFeatureData, actor: UserType): Promise<FeatureRecord> {
-        log.info('updating feature', 'update', { featureId: id, actor: actor.id });
+        dbLogger.info({ featureId: id, actor: actor.id }, 'updating feature');
 
         // Only admins can update features
         FeatureService.assertAdmin(actor);
@@ -136,15 +128,10 @@ export class FeatureService {
             // Use the model to update
             const updatedFeature = await FeatureModel.updateFeature(existingFeature.id, updateData);
 
-            log.info('feature updated successfully', 'update', {
-                featureId: updatedFeature.id
-            });
+            dbLogger.info({ featureId: updatedFeature.id }, 'feature updated successfully');
             return updatedFeature;
         } catch (error) {
-            log.error('failed to update feature', 'update', error, {
-                featureId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update feature');
             throw error;
         }
     }
@@ -156,7 +143,7 @@ export class FeatureService {
      * @throws Error if feature is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting feature', 'delete', { featureId: id, actor: actor.id });
+        dbLogger.info({ featureId: id, actor: actor.id }, 'soft deleting feature');
 
         // Only admins can delete features
         FeatureService.assertAdmin(actor);
@@ -172,12 +159,9 @@ export class FeatureService {
 
             await FeatureModel.updateFeature(id, updateData);
 
-            log.info('feature soft deleted successfully', 'delete', { featureId: id });
+            dbLogger.info({ featureId: id }, 'feature soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete feature', 'delete', error, {
-                featureId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete feature');
             throw error;
         }
     }
@@ -189,7 +173,7 @@ export class FeatureService {
      * @throws Error if feature is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring feature', 'restore', { featureId: id, actor: actor.id });
+        dbLogger.info({ featureId: id, actor: actor.id }, 'restoring feature');
 
         // Only admins can restore features
         FeatureService.assertAdmin(actor);
@@ -205,12 +189,9 @@ export class FeatureService {
 
             await FeatureModel.updateFeature(id, updateData);
 
-            log.info('feature restored successfully', 'restore', { featureId: id });
+            dbLogger.info({ featureId: id }, 'feature restored successfully');
         } catch (error) {
-            log.error('failed to restore feature', 'restore', error, {
-                featureId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore feature');
             throw error;
         }
     }
@@ -222,7 +203,7 @@ export class FeatureService {
      * @throws Error if feature is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting feature', 'hardDelete', { featureId: id, actor: actor.id });
+        dbLogger.info({ featureId: id, actor: actor.id }, 'hard deleting feature');
 
         // Only admins can hard delete
         FeatureService.assertAdmin(actor);
@@ -231,12 +212,9 @@ export class FeatureService {
 
         try {
             await FeatureModel.hardDeleteFeature(id);
-            log.info('feature hard deleted successfully', 'hardDelete', { featureId: id });
+            dbLogger.info({ featureId: id }, 'feature hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete feature', 'hardDelete', error, {
-                featureId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete feature');
             throw error;
         }
     }
@@ -252,10 +230,7 @@ export class FeatureService {
         actor: UserType,
         filter: Omit<SelectFeatureFilter, 'isBuiltin'> = {}
     ): Promise<FeatureRecord[]> {
-        log.info('fetching built-in features', 'getBuiltIn', {
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ actor: actor.id, filter }, 'fetching built-in features');
 
         try {
             const featureFilter: SelectFeatureFilter = {
@@ -265,14 +240,10 @@ export class FeatureService {
             };
 
             const features = await FeatureModel.listFeatures(featureFilter);
-            log.info('built-in features fetched successfully', 'getBuiltIn', {
-                count: features.length
-            });
+            dbLogger.info({ count: features.length }, 'built-in features fetched successfully');
             return features;
         } catch (error) {
-            log.error('failed to fetch built-in features', 'getBuiltIn', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch built-in features');
             throw error;
         }
     }
@@ -288,10 +259,7 @@ export class FeatureService {
         actor: UserType,
         filter: Omit<SelectFeatureFilter, 'isBuiltin'> = {}
     ): Promise<FeatureRecord[]> {
-        log.info('fetching custom features', 'getCustom', {
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ actor: actor.id, filter }, 'fetching custom features');
 
         try {
             const featureFilter: SelectFeatureFilter = {
@@ -301,14 +269,10 @@ export class FeatureService {
             };
 
             const features = await FeatureModel.listFeatures(featureFilter);
-            log.info('custom features fetched successfully', 'getCustom', {
-                count: features.length
-            });
+            dbLogger.info({ count: features.length }, 'custom features fetched successfully');
             return features;
         } catch (error) {
-            log.error('failed to fetch custom features', 'getCustom', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch custom features');
             throw error;
         }
     }

@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     EventLocationModel,
@@ -14,8 +14,6 @@ import type {
     UpdateEventLocationData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('EventLocationService');
 
 /**
  * Service layer for managing event location operations.
@@ -38,7 +36,7 @@ export class EventLocationService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!EventLocationService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -51,7 +49,7 @@ export class EventLocationService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertEventLocation, actor: UserType): Promise<EventLocationRecord> {
-        log.info('creating event location', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating event location');
 
         // Only admins can create locations
         EventLocationService.assertAdmin(actor);
@@ -63,12 +61,15 @@ export class EventLocationService {
                 updatedById: actor.id
             };
             const createdLocation = await EventLocationModel.createLocation(dataWithAudit);
-            log.info('event location created successfully', 'create', {
-                locationId: createdLocation.id
-            });
+            dbLogger.info(
+                {
+                    locationId: createdLocation.id
+                },
+                'event location created successfully'
+            );
             return createdLocation;
         } catch (error) {
-            log.error('failed to create event location', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create event location');
             throw error;
         }
     }
@@ -81,24 +82,27 @@ export class EventLocationService {
      * @throws Error if location is not found.
      */
     async getById(id: string, actor: UserType): Promise<EventLocationRecord> {
-        log.info('fetching location by id', 'getById', {
-            locationId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                locationId: id,
+                actor: actor.id
+            },
+            'fetching location by id'
+        );
 
         try {
             const location = await EventLocationModel.getLocationById(id);
             const existingLocation = assertExists(location, `Location ${id} not found`);
 
-            log.info('location fetched successfully', 'getById', {
-                locationId: existingLocation.id
-            });
+            dbLogger.info(
+                {
+                    locationId: existingLocation.id
+                },
+                'location fetched successfully'
+            );
             return existingLocation;
         } catch (error) {
-            log.error('failed to fetch location by id', 'getById', error, {
-                locationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch location by id');
             throw error;
         }
     }
@@ -111,20 +115,20 @@ export class EventLocationService {
      * @throws Error if listing fails.
      */
     async list(filter: SelectEventLocationFilter, actor: UserType): Promise<EventLocationRecord[]> {
-        log.info('listing locations', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing locations');
 
         try {
             const locations = await EventLocationModel.listLocations(filter);
-            log.info('locations listed successfully', 'list', {
-                count: locations.length,
-                filter
-            });
+            dbLogger.info(
+                {
+                    count: locations.length,
+                    filter
+                },
+                'locations listed successfully'
+            );
             return locations;
         } catch (error) {
-            log.error('failed to list locations', 'list', error, {
-                filter,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list locations');
             throw error;
         }
     }
@@ -142,7 +146,7 @@ export class EventLocationService {
         changes: UpdateEventLocationData,
         actor: UserType
     ): Promise<EventLocationRecord> {
-        log.info('updating location', 'update', { locationId: id, actor: actor.id });
+        dbLogger.info({ locationId: id, actor: actor.id }, 'updating location');
 
         // Only admins can update locations
         EventLocationService.assertAdmin(actor);
@@ -160,15 +164,15 @@ export class EventLocationService {
                 existingLocation.id,
                 dataWithAudit
             );
-            log.info('location updated successfully', 'update', {
-                locationId: updatedLocation.id
-            });
+            dbLogger.info(
+                {
+                    locationId: updatedLocation.id
+                },
+                'location updated successfully'
+            );
             return updatedLocation;
         } catch (error) {
-            log.error('failed to update location', 'update', error, {
-                locationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update location');
             throw error;
         }
     }
@@ -180,7 +184,7 @@ export class EventLocationService {
      * @throws Error if location is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting location', 'delete', { locationId: id, actor: actor.id });
+        dbLogger.info({ locationId: id, actor: actor.id }, 'soft deleting location');
 
         // Only admins can delete locations
         EventLocationService.assertAdmin(actor);
@@ -189,12 +193,9 @@ export class EventLocationService {
 
         try {
             await EventLocationModel.softDeleteLocation(id);
-            log.info('location soft deleted successfully', 'delete', { locationId: id });
+            dbLogger.info({ locationId: id }, 'location soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete location', 'delete', error, {
-                locationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete location');
             throw error;
         }
     }
@@ -206,7 +207,7 @@ export class EventLocationService {
      * @throws Error if location is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring location', 'restore', { locationId: id, actor: actor.id });
+        dbLogger.info({ locationId: id, actor: actor.id }, 'restoring location');
 
         // Only admins can restore locations
         EventLocationService.assertAdmin(actor);
@@ -215,12 +216,9 @@ export class EventLocationService {
 
         try {
             await EventLocationModel.restoreLocation(id);
-            log.info('location restored successfully', 'restore', { locationId: id });
+            dbLogger.info({ locationId: id }, 'location restored successfully');
         } catch (error) {
-            log.error('failed to restore location', 'restore', error, {
-                locationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore location');
             throw error;
         }
     }
@@ -232,7 +230,7 @@ export class EventLocationService {
      * @throws Error if location is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting location', 'hardDelete', { locationId: id, actor: actor.id });
+        dbLogger.info({ locationId: id, actor: actor.id }, 'hard deleting location');
 
         // Only admins can hard delete
         EventLocationService.assertAdmin(actor);
@@ -241,12 +239,9 @@ export class EventLocationService {
 
         try {
             await EventLocationModel.hardDeleteLocation(id);
-            log.info('location hard deleted successfully', 'hardDelete', { locationId: id });
+            dbLogger.info({ locationId: id }, 'location hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete location', 'hardDelete', error, {
-                locationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete location');
             throw error;
         }
     }
@@ -264,11 +259,14 @@ export class EventLocationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<EventRecord[]> {
-        log.info('listing events by location', 'listEvents', {
-            locationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                locationId,
+                actor: actor.id,
+                filter
+            },
+            'listing events by location'
+        );
 
         try {
             // Verify location exists
@@ -281,16 +279,16 @@ export class EventLocationService {
             };
 
             const events = await EventModel.listEvents(eventFilter);
-            log.info('events by location listed successfully', 'listEvents', {
-                locationId,
-                count: events.length
-            });
+            dbLogger.info(
+                {
+                    locationId,
+                    count: events.length
+                },
+                'events by location listed successfully'
+            );
             return events;
         } catch (error) {
-            log.error('failed to list events by location', 'listEvents', error, {
-                locationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list events by location');
             throw error;
         }
     }

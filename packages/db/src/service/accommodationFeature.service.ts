@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     AccommodationFeatureModel,
@@ -9,8 +9,6 @@ import {
 } from '../model/index.js';
 import type { PaginationParams, SelectAccommodationFeatureFilter } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('AccommodationFeatureService');
 
 /**
  * Service layer for managing accommodation feature operations.
@@ -34,10 +32,13 @@ export class AccommodationFeatureService {
      */
     private static assertOwnerOrAdmin(ownerId: string, actor: UserType): void {
         if (actor.id !== ownerId && !AccommodationFeatureService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertOwnerOrAdmin', {
-                actorId: actor.id,
-                requiredOwnerId: ownerId
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredOwnerId: ownerId
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -59,11 +60,14 @@ export class AccommodationFeatureService {
         comments: string | null,
         actor: UserType
     ): Promise<{ relation: AccommodationFeatureRecord; feature: FeatureRecord }> {
-        log.info('creating accommodation feature relationship', 'create', {
-            accommodationId,
-            featureId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                featureId,
+                actor: actor.id
+            },
+            'creating accommodation feature relationship'
+        );
 
         try {
             // Verify accommodation exists
@@ -92,20 +96,19 @@ export class AccommodationFeatureService {
 
             const relation = await AccommodationFeatureModel.createFeatureRelation(relationData);
 
-            log.info('accommodation feature relationship created successfully', 'create', {
-                relationId: `${relation.accommodationId}-${relation.featureId}`
-            });
+            dbLogger.info(
+                {
+                    relationId: `${relation.accommodationId}-${relation.featureId}`
+                },
+                'accommodation feature relationship created successfully'
+            );
 
             return {
                 relation,
                 feature
             };
         } catch (error) {
-            log.error('failed to create accommodation feature relationship', 'create', error, {
-                accommodationId,
-                featureId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to create accommodation feature relationship');
             throw error;
         }
     }
@@ -123,11 +126,14 @@ export class AccommodationFeatureService {
         featureId: string,
         actor: UserType
     ): Promise<AccommodationFeatureRecord> {
-        log.info('fetching accommodation feature relationship by IDs', 'getByIds', {
-            accommodationId,
-            featureId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                featureId,
+                actor: actor.id
+            },
+            'fetching accommodation feature relationship by IDs'
+        );
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
@@ -148,22 +154,16 @@ export class AccommodationFeatureService {
                 `Relationship between accommodation ${accommodationId} and feature ${featureId} not found`
             );
 
-            log.info('accommodation feature relationship fetched successfully', 'getByIds', {
-                relationId: `${existingRelation.accommodationId}-${existingRelation.featureId}`
-            });
+            dbLogger.info(
+                {
+                    relationId: `${existingRelation.accommodationId}-${existingRelation.featureId}`
+                },
+                'accommodation feature relationship fetched successfully'
+            );
 
             return existingRelation;
         } catch (error) {
-            log.error(
-                'failed to fetch accommodation feature relationship by IDs',
-                'getByIds',
-                error,
-                {
-                    accommodationId,
-                    featureId,
-                    actor: actor.id
-                }
-            );
+            dbLogger.error(error, 'failed to fetch accommodation feature relationship by IDs');
             throw error;
         }
     }
@@ -181,11 +181,14 @@ export class AccommodationFeatureService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationFeatureRecord[]> {
-        log.info('listing feature relationships for accommodation', 'listByAccommodation', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing feature relationships for accommodation'
+        );
 
         try {
             // Verify accommodation exists
@@ -201,22 +204,17 @@ export class AccommodationFeatureService {
             };
 
             const relations = await AccommodationFeatureModel.listFeatureRelations(featureFilter);
-            log.info('feature relationships listed successfully', 'listByAccommodation', {
-                accommodationId,
-                count: relations.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: relations.length
+                },
+                'feature relationships listed successfully'
+            );
 
             return relations;
         } catch (error) {
-            log.error(
-                'failed to list feature relationships for accommodation',
-                'listByAccommodation',
-                error,
-                {
-                    accommodationId,
-                    actor: actor.id
-                }
-            );
+            dbLogger.error(error, 'failed to list feature relationships for accommodation');
             throw error;
         }
     }
@@ -236,11 +234,14 @@ export class AccommodationFeatureService {
         changes: Partial<AccommodationFeatureRecord>,
         actor: UserType
     ): Promise<AccommodationFeatureRecord> {
-        log.info('updating accommodation feature relationship', 'update', {
-            accommodationId,
-            featureId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                featureId,
+                actor: actor.id
+            },
+            'updating accommodation feature relationship'
+        );
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
@@ -267,17 +268,16 @@ export class AccommodationFeatureService {
                 updateData
             );
 
-            log.info('accommodation feature relationship updated successfully', 'update', {
-                relationId: `${updatedRelation.accommodationId}-${updatedRelation.featureId}`
-            });
+            dbLogger.info(
+                {
+                    relationId: `${updatedRelation.accommodationId}-${updatedRelation.featureId}`
+                },
+                'accommodation feature relationship updated successfully'
+            );
 
             return updatedRelation;
         } catch (error) {
-            log.error('failed to update accommodation feature relationship', 'update', error, {
-                accommodationId,
-                featureId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update accommodation feature relationship');
             throw error;
         }
     }
@@ -290,11 +290,14 @@ export class AccommodationFeatureService {
      * @throws Error if relationship is not found, actor is not authorized, or deletion fails.
      */
     async delete(accommodationId: string, featureId: string, actor: UserType): Promise<void> {
-        log.info('soft deleting accommodation feature relationship', 'delete', {
-            accommodationId,
-            featureId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                featureId,
+                actor: actor.id
+            },
+            'soft deleting accommodation feature relationship'
+        );
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
@@ -307,16 +310,15 @@ export class AccommodationFeatureService {
 
         try {
             await AccommodationFeatureModel.softDeleteFeatureRelation(accommodationId, featureId);
-            log.info('accommodation feature relationship soft deleted successfully', 'delete', {
-                accommodationId,
-                featureId
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    featureId
+                },
+                'accommodation feature relationship soft deleted successfully'
+            );
         } catch (error) {
-            log.error('failed to soft delete accommodation feature relationship', 'delete', error, {
-                accommodationId,
-                featureId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete accommodation feature relationship');
             throw error;
         }
     }
@@ -329,11 +331,14 @@ export class AccommodationFeatureService {
      * @throws Error if relationship is not found, actor is not authorized, or restoration fails.
      */
     async restore(accommodationId: string, featureId: string, actor: UserType): Promise<void> {
-        log.info('restoring accommodation feature relationship', 'restore', {
-            accommodationId,
-            featureId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                featureId,
+                actor: actor.id
+            },
+            'restoring accommodation feature relationship'
+        );
 
         // Get the accommodation to check ownership
         const accommodation = await AccommodationModel.getAccommodationById(accommodationId);
@@ -346,16 +351,15 @@ export class AccommodationFeatureService {
 
         try {
             await AccommodationFeatureModel.restoreFeatureRelation(accommodationId, featureId);
-            log.info('accommodation feature relationship restored successfully', 'restore', {
-                accommodationId,
-                featureId
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    featureId
+                },
+                'accommodation feature relationship restored successfully'
+            );
         } catch (error) {
-            log.error('failed to restore accommodation feature relationship', 'restore', error, {
-                accommodationId,
-                featureId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore accommodation feature relationship');
             throw error;
         }
     }
@@ -368,11 +372,14 @@ export class AccommodationFeatureService {
      * @throws Error if relationship is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(accommodationId: string, featureId: string, actor: UserType): Promise<void> {
-        log.info('hard deleting accommodation feature relationship', 'hardDelete', {
-            accommodationId,
-            featureId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                featureId,
+                actor: actor.id
+            },
+            'hard deleting accommodation feature relationship'
+        );
 
         // Only admins can hard delete
         if (!AccommodationFeatureService.isAdmin(actor)) {
@@ -387,21 +394,15 @@ export class AccommodationFeatureService {
 
         try {
             await AccommodationFeatureModel.hardDeleteFeatureRelation(accommodationId, featureId);
-            log.info('accommodation feature relationship hard deleted successfully', 'hardDelete', {
-                accommodationId,
-                featureId
-            });
-        } catch (error) {
-            log.error(
-                'failed to hard delete accommodation feature relationship',
-                'hardDelete',
-                error,
+            dbLogger.info(
                 {
                     accommodationId,
-                    featureId,
-                    actor: actor.id
-                }
+                    featureId
+                },
+                'accommodation feature relationship hard deleted successfully'
             );
+        } catch (error) {
+            dbLogger.error(error, 'failed to hard delete accommodation feature relationship');
             throw error;
         }
     }
@@ -413,13 +414,12 @@ export class AccommodationFeatureService {
      * @throws Error if accommodation is not found, actor is not authorized, or deletion fails.
      */
     async removeAllFromAccommodation(accommodationId: string, actor: UserType): Promise<void> {
-        log.info(
-            'removing all feature relationships from accommodation',
-            'removeAllFromAccommodation',
+        dbLogger.info(
             {
                 accommodationId,
                 actor: actor.id
-            }
+            },
+            'removing all feature relationships from accommodation'
         );
 
         // Get the accommodation to check ownership
@@ -433,23 +433,14 @@ export class AccommodationFeatureService {
 
         try {
             await AccommodationFeatureModel.deleteAllByAccommodation(accommodationId);
-            log.info(
-                'all feature relationships removed from accommodation successfully',
-                'removeAllFromAccommodation',
+            dbLogger.info(
                 {
                     accommodationId
-                }
+                },
+                'all feature relationships removed from accommodation successfully'
             );
         } catch (error) {
-            log.error(
-                'failed to remove all feature relationships from accommodation',
-                'removeAllFromAccommodation',
-                error,
-                {
-                    accommodationId,
-                    actor: actor.id
-                }
-            );
+            dbLogger.error(error, 'failed to remove all feature relationships from accommodation');
             throw error;
         }
     }

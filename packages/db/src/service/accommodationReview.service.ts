@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { type AccommodationRatingType, BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     AccommodationModel,
@@ -11,8 +11,6 @@ import type {
     UpdateAccommodationReviewData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('AccommodationReviewService');
 
 /**
  * Service layer for managing accommodation review operations.
@@ -36,10 +34,13 @@ export class AccommodationReviewService {
      */
     private static assertCreatorOrAdmin(createdById: string, actor: UserType): void {
         if (actor.id !== createdById && !AccommodationReviewService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertCreatorOrAdmin', {
-                actorId: actor.id,
-                requiredCreatorId: createdById
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredCreatorId: createdById
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -55,7 +56,7 @@ export class AccommodationReviewService {
         data: InsertAccommodationReview,
         actor: UserType
     ): Promise<AccommodationReviewRecord> {
-        log.info('creating accommodation review', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating accommodation review');
 
         try {
             // Verify accommodation exists
@@ -72,14 +73,13 @@ export class AccommodationReviewService {
                 updatedById: actor.id
             };
             const createdReview = await AccommodationReviewModel.createReview(dataWithAudit);
-            log.info('accommodation review created successfully', 'create', {
-                reviewId: createdReview.id
-            });
+            dbLogger.info(
+                { reviewId: createdReview.id },
+                'accommodation review created successfully'
+            );
             return createdReview;
         } catch (error) {
-            log.error('failed to create accommodation review', 'create', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to create accommodation review');
             throw error;
         }
     }
@@ -92,21 +92,16 @@ export class AccommodationReviewService {
      * @throws Error if review is not found.
      */
     async getById(id: string, actor: UserType): Promise<AccommodationReviewRecord> {
-        log.info('fetching review by id', 'getById', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'fetching review by id');
 
         try {
             const review = await AccommodationReviewModel.getReviewById(id);
             const existingReview = assertExists(review, `Review ${id} not found`);
 
-            log.info('review fetched successfully', 'getById', {
-                reviewId: existingReview.id
-            });
+            dbLogger.info({ reviewId: existingReview.id }, 'review fetched successfully');
             return existingReview;
         } catch (error) {
-            log.error('failed to fetch review by id', 'getById', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch review by id');
             throw error;
         }
     }
@@ -124,11 +119,14 @@ export class AccommodationReviewService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationReviewRecord[]> {
-        log.info('listing reviews for accommodation', 'list', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing reviews for accommodation'
+        );
 
         try {
             // Verify accommodation exists
@@ -142,16 +140,16 @@ export class AccommodationReviewService {
                 ...filter,
                 includeDeleted: false
             });
-            log.info('reviews listed successfully', 'list', {
-                accommodationId,
-                count: reviews.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: reviews.length
+                },
+                'reviews listed successfully'
+            );
             return reviews;
         } catch (error) {
-            log.error('failed to list reviews', 'list', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list reviews');
             throw error;
         }
     }
@@ -169,7 +167,7 @@ export class AccommodationReviewService {
         changes: UpdateAccommodationReviewData,
         actor: UserType
     ): Promise<AccommodationReviewRecord> {
-        log.info('updating review', 'update', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'updating review');
 
         const existingReview = await this.getById(id, actor);
 
@@ -187,15 +185,10 @@ export class AccommodationReviewService {
                 existingReview.id,
                 dataWithAudit
             );
-            log.info('review updated successfully', 'update', {
-                reviewId: updatedReview.id
-            });
+            dbLogger.info({ reviewId: updatedReview.id }, 'review updated successfully');
             return updatedReview;
         } catch (error) {
-            log.error('failed to update review', 'update', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update review');
             throw error;
         }
     }
@@ -207,7 +200,7 @@ export class AccommodationReviewService {
      * @throws Error if review is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting review', 'delete', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'soft deleting review');
 
         const existingReview = await this.getById(id, actor);
 
@@ -216,12 +209,9 @@ export class AccommodationReviewService {
 
         try {
             await AccommodationReviewModel.softDeleteReview(id);
-            log.info('review soft deleted successfully', 'delete', { reviewId: id });
+            dbLogger.info({ reviewId: id }, 'review soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete review', 'delete', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete review');
             throw error;
         }
     }
@@ -233,7 +223,7 @@ export class AccommodationReviewService {
      * @throws Error if review is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring review', 'restore', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'restoring review');
 
         const existingReview = await this.getById(id, actor);
 
@@ -242,12 +232,9 @@ export class AccommodationReviewService {
 
         try {
             await AccommodationReviewModel.restoreReview(id);
-            log.info('review restored successfully', 'restore', { reviewId: id });
+            dbLogger.info({ reviewId: id }, 'review restored successfully');
         } catch (error) {
-            log.error('failed to restore review', 'restore', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore review');
             throw error;
         }
     }
@@ -259,7 +246,7 @@ export class AccommodationReviewService {
      * @throws Error if review is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting review', 'hardDelete', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'hard deleting review');
 
         // Only admins can hard delete
         if (!AccommodationReviewService.isAdmin(actor)) {
@@ -270,12 +257,9 @@ export class AccommodationReviewService {
 
         try {
             await AccommodationReviewModel.hardDeleteReview(id);
-            log.info('review hard deleted successfully', 'hardDelete', { reviewId: id });
+            dbLogger.info({ reviewId: id }, 'review hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete review', 'hardDelete', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete review');
             throw error;
         }
     }
@@ -291,10 +275,13 @@ export class AccommodationReviewService {
         accommodationId: string,
         actor: UserType
     ): Promise<AccommodationRatingType> {
-        log.info('calculating average rating for accommodation', 'getAverageRating', {
-            accommodationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id
+            },
+            'calculating average rating for accommodation'
+        );
 
         try {
             // Verify accommodation exists
@@ -310,9 +297,12 @@ export class AccommodationReviewService {
             });
 
             if (reviews.length === 0) {
-                log.info('no reviews found for rating calculation', 'getAverageRating', {
-                    accommodationId
-                });
+                dbLogger.info(
+                    {
+                        accommodationId
+                    },
+                    'no reviews found for rating calculation'
+                );
 
                 // Return default rating with zeros
                 return {
@@ -355,16 +345,16 @@ export class AccommodationReviewService {
                 averageRating[key] = Number((averageRating[key] / count).toFixed(1));
             }
 
-            log.info('average rating calculated successfully', 'getAverageRating', {
-                accommodationId,
-                reviewCount: count
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    reviewCount: count
+                },
+                'average rating calculated successfully'
+            );
             return averageRating;
         } catch (error) {
-            log.error('failed to calculate average rating', 'getAverageRating', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to calculate average rating');
             throw error;
         }
     }
@@ -377,10 +367,13 @@ export class AccommodationReviewService {
      * @throws Error if accommodation is not found or count fails.
      */
     async countByAccommodation(accommodationId: string, actor: UserType): Promise<number> {
-        log.info('counting reviews by accommodation', 'countByAccommodation', {
-            accommodationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id
+            },
+            'counting reviews by accommodation'
+        );
 
         try {
             // Verify accommodation exists
@@ -395,16 +388,16 @@ export class AccommodationReviewService {
                 includeDeleted: false
             });
 
-            log.info('reviews counted by accommodation successfully', 'countByAccommodation', {
-                accommodationId,
-                count: reviews.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: reviews.length
+                },
+                'reviews counted by accommodation successfully'
+            );
             return reviews.length;
         } catch (error) {
-            log.error('failed to count reviews by accommodation', 'countByAccommodation', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to count reviews by accommodation');
             throw error;
         }
     }

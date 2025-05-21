@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import {
     BuiltinRoleTypeEnum,
     type DestinationRatingType,
@@ -30,8 +30,6 @@ import type {
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
-const log = logger.createLogger('DestinationService');
-
 /**
  * Service layer for managing destination operations.
  * Handles business logic, authorization, and interacts with the DestinationModel and related models.
@@ -53,7 +51,7 @@ export class DestinationService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!DestinationService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -66,7 +64,7 @@ export class DestinationService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertDestination, actor: UserType): Promise<DestinationRecord> {
-        log.info('creating destination', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating destination');
 
         // Only admins can create destinations
         DestinationService.assertAdmin(actor);
@@ -78,12 +76,15 @@ export class DestinationService {
                 updatedById: actor.id
             };
             const createdDestination = await DestinationModel.createDestination(dataWithAudit);
-            log.info('destination created successfully', 'create', {
-                destinationId: createdDestination.id
-            });
+            dbLogger.info(
+                {
+                    destinationId: createdDestination.id
+                },
+                'destination created successfully'
+            );
             return createdDestination;
         } catch (error) {
-            log.error('failed to create destination', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create destination');
             throw error;
         }
     }
@@ -96,24 +97,27 @@ export class DestinationService {
      * @throws Error if destination is not found.
      */
     async getById(id: string, actor: UserType): Promise<DestinationRecord> {
-        log.info('fetching destination by id', 'getById', {
-            destinationId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId: id,
+                actor: actor.id
+            },
+            'fetching destination by id'
+        );
 
         try {
             const destination = await DestinationModel.getDestinationById(id);
             const existingDestination = assertExists(destination, `Destination ${id} not found`);
 
-            log.info('destination fetched successfully', 'getById', {
-                destinationId: existingDestination.id
-            });
+            dbLogger.info(
+                {
+                    destinationId: existingDestination.id
+                },
+                'destination fetched successfully'
+            );
             return existingDestination;
         } catch (error) {
-            log.error('failed to fetch destination by id', 'getById', error, {
-                destinationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch destination by id');
             throw error;
         }
     }
@@ -126,10 +130,13 @@ export class DestinationService {
      * @throws Error if destination is not found.
      */
     async getBySlug(slug: string, actor: UserType): Promise<DestinationRecord> {
-        log.info('fetching destination by slug', 'getBySlug', {
-            slug,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                slug,
+                actor: actor.id
+            },
+            'fetching destination by slug'
+        );
 
         try {
             // Use the listDestinations method with a filter for the slug
@@ -146,16 +153,16 @@ export class DestinationService {
                 `Destination with slug '${slug}' not found`
             );
 
-            log.info('destination fetched by slug successfully', 'getBySlug', {
-                destinationId: existingDestination.id,
-                slug
-            });
+            dbLogger.info(
+                {
+                    destinationId: existingDestination.id,
+                    slug
+                },
+                'destination fetched by slug successfully'
+            );
             return existingDestination;
         } catch (error) {
-            log.error('failed to fetch destination by slug', 'getBySlug', error, {
-                slug,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch destination by slug');
             throw error;
         }
     }
@@ -168,20 +175,20 @@ export class DestinationService {
      * @throws Error if listing fails.
      */
     async list(filter: SelectDestinationFilter, actor: UserType): Promise<DestinationRecord[]> {
-        log.info('listing destinations', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing destinations');
 
         try {
             const destinations = await DestinationModel.listDestinations(filter);
-            log.info('destinations listed successfully', 'list', {
-                count: destinations.length,
-                filter
-            });
+            dbLogger.info(
+                {
+                    count: destinations.length,
+                    filter
+                },
+                'destinations listed successfully'
+            );
             return destinations;
         } catch (error) {
-            log.error('failed to list destinations', 'list', error, {
-                filter,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list destinations');
             throw error;
         }
     }
@@ -199,10 +206,13 @@ export class DestinationService {
         changes: UpdateDestinationData,
         actor: UserType
     ): Promise<DestinationRecord> {
-        log.info('updating destination', 'update', {
-            destinationId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId: id,
+                actor: actor.id
+            },
+            'updating destination'
+        );
 
         // Only admins can update destinations
         DestinationService.assertAdmin(actor);
@@ -220,15 +230,15 @@ export class DestinationService {
                 existingDestination.id,
                 dataWithAudit
             );
-            log.info('destination updated successfully', 'update', {
-                destinationId: updatedDestination.id
-            });
+            dbLogger.info(
+                {
+                    destinationId: updatedDestination.id
+                },
+                'destination updated successfully'
+            );
             return updatedDestination;
         } catch (error) {
-            log.error('failed to update destination', 'update', error, {
-                destinationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update destination');
             throw error;
         }
     }
@@ -240,7 +250,13 @@ export class DestinationService {
      * @throws Error if destination is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting destination', 'delete', { destinationId: id, actor: actor.id });
+        dbLogger.info(
+            {
+                destinationId: id,
+                actor: actor.id
+            },
+            'soft deleting destination'
+        );
 
         // Only admins can delete destinations
         DestinationService.assertAdmin(actor);
@@ -249,12 +265,9 @@ export class DestinationService {
 
         try {
             await DestinationModel.softDeleteDestination(id);
-            log.info('destination soft deleted successfully', 'delete', { destinationId: id });
+            dbLogger.info({ destinationId: id }, 'destination soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete destination', 'delete', error, {
-                destinationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete destination');
             throw error;
         }
     }
@@ -266,7 +279,7 @@ export class DestinationService {
      * @throws Error if destination is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring destination', 'restore', { destinationId: id, actor: actor.id });
+        dbLogger.info({ destinationId: id, actor: actor.id }, 'restoring destination');
 
         // Only admins can restore destinations
         DestinationService.assertAdmin(actor);
@@ -275,12 +288,9 @@ export class DestinationService {
 
         try {
             await DestinationModel.restoreDestination(id);
-            log.info('destination restored successfully', 'restore', { destinationId: id });
+            dbLogger.info({ destinationId: id }, 'destination restored successfully');
         } catch (error) {
-            log.error('failed to restore destination', 'restore', error, {
-                destinationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore destination');
             throw error;
         }
     }
@@ -292,7 +302,13 @@ export class DestinationService {
      * @throws Error if destination is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting destination', 'hardDelete', { destinationId: id, actor: actor.id });
+        dbLogger.info(
+            {
+                destinationId: id,
+                actor: actor.id
+            },
+            'hard deleting destination'
+        );
 
         // Only admins can hard delete
         DestinationService.assertAdmin(actor);
@@ -301,12 +317,9 @@ export class DestinationService {
 
         try {
             await DestinationModel.hardDeleteDestination(id);
-            log.info('destination hard deleted successfully', 'hardDelete', { destinationId: id });
+            dbLogger.info({ destinationId: id }, 'destination hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete destination', 'hardDelete', error, {
-                destinationId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete destination');
             throw error;
         }
     }
@@ -324,11 +337,14 @@ export class DestinationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationRecord[]> {
-        log.info('fetching destinations by visibility', 'getByVisibility', {
-            visibility,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                visibility,
+                actor: actor.id,
+                filter
+            },
+            'fetching destinations by visibility'
+        );
 
         try {
             const destinationFilter: SelectDestinationFilter = {
@@ -338,16 +354,16 @@ export class DestinationService {
             };
 
             const destinations = await DestinationModel.listDestinations(destinationFilter);
-            log.info('destinations fetched by visibility successfully', 'getByVisibility', {
-                visibility,
-                count: destinations.length
-            });
+            dbLogger.info(
+                {
+                    visibility,
+                    count: destinations.length
+                },
+                'destinations fetched by visibility successfully'
+            );
             return destinations;
         } catch (error) {
-            log.error('failed to fetch destinations by visibility', 'getByVisibility', error, {
-                visibility,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch destinations by visibility');
             throw error;
         }
     }
@@ -365,10 +381,13 @@ export class DestinationService {
         data: InsertDestinationAttraction,
         actor: UserType
     ): Promise<DestinationAttractionRecord> {
-        log.info('adding attraction to destination', 'addAttraction', {
-            destinationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id
+            },
+            'adding attraction to destination'
+        );
 
         // Only admins can add attractions
         DestinationService.assertAdmin(actor);
@@ -384,16 +403,16 @@ export class DestinationService {
             };
 
             const attraction = await DestinationAttractionModel.createAttraction(attractionData);
-            log.info('attraction added to destination successfully', 'addAttraction', {
-                destinationId,
-                attractionId: attraction.id
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    attractionId: attraction.id
+                },
+                'attraction added to destination successfully'
+            );
             return attraction;
         } catch (error) {
-            log.error('failed to add attraction to destination', 'addAttraction', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add attraction to destination');
             throw error;
         }
     }
@@ -410,11 +429,14 @@ export class DestinationService {
         attractionId: string,
         actor: UserType
     ): Promise<void> {
-        log.info('removing attraction from destination', 'removeAttraction', {
-            destinationId,
-            attractionId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                attractionId,
+                actor: actor.id
+            },
+            'removing attraction from destination'
+        );
 
         // Only admins can remove attractions
         DestinationService.assertAdmin(actor);
@@ -424,16 +446,15 @@ export class DestinationService {
 
         try {
             await DestinationAttractionModel.softDeleteAttraction(attractionId);
-            log.info('attraction removed from destination successfully', 'removeAttraction', {
-                destinationId,
-                attractionId
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    attractionId
+                },
+                'attraction removed from destination successfully'
+            );
         } catch (error) {
-            log.error('failed to remove attraction from destination', 'removeAttraction', error, {
-                destinationId,
-                attractionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove attraction from destination');
             throw error;
         }
     }
@@ -451,11 +472,14 @@ export class DestinationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationAttractionRecord[]> {
-        log.info('listing attractions for destination', 'listAttractions', {
-            destinationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id,
+                filter
+            },
+            'listing attractions for destination'
+        );
 
         // Verify destination exists
         await this.getById(destinationId, actor);
@@ -467,16 +491,16 @@ export class DestinationService {
             };
 
             const attractions = await DestinationAttractionModel.listAttractions(attractionFilter);
-            log.info('attractions listed for destination successfully', 'listAttractions', {
-                destinationId,
-                count: attractions.length
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    count: attractions.length
+                },
+                'attractions listed for destination successfully'
+            );
             return attractions;
         } catch (error) {
-            log.error('failed to list attractions for destination', 'listAttractions', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list attractions for destination');
             throw error;
         }
     }
@@ -494,10 +518,13 @@ export class DestinationService {
         data: InsertDestinationReview,
         actor: UserType
     ): Promise<DestinationReviewRecord> {
-        log.info('adding review to destination', 'addReview', {
-            destinationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id
+            },
+            'adding review to destination'
+        );
 
         // Verify destination exists
         await this.getById(destinationId, actor);
@@ -511,16 +538,16 @@ export class DestinationService {
             };
 
             const review = await DestinationReviewModel.createReview(reviewData);
-            log.info('review added to destination successfully', 'addReview', {
-                destinationId,
-                reviewId: review.id
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    reviewId: review.id
+                },
+                'review added to destination successfully'
+            );
             return review;
         } catch (error) {
-            log.error('failed to add review to destination', 'addReview', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add review to destination');
             throw error;
         }
     }
@@ -533,11 +560,14 @@ export class DestinationService {
      * @throws Error if destination or review is not found, actor is not authorized, or deletion fails.
      */
     async removeReview(destinationId: string, reviewId: string, actor: UserType): Promise<void> {
-        log.info('removing review from destination', 'removeReview', {
-            destinationId,
-            reviewId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                reviewId,
+                actor: actor.id
+            },
+            'removing review from destination'
+        );
 
         // Verify destination exists
         await this.getById(destinationId, actor);
@@ -555,16 +585,15 @@ export class DestinationService {
 
         try {
             await DestinationReviewModel.softDeleteReview(reviewId);
-            log.info('review removed from destination successfully', 'removeReview', {
-                destinationId,
-                reviewId
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    reviewId
+                },
+                'review removed from destination successfully'
+            );
         } catch (error) {
-            log.error('failed to remove review from destination', 'removeReview', error, {
-                destinationId,
-                reviewId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove review from destination');
             throw error;
         }
     }
@@ -582,11 +611,14 @@ export class DestinationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationReviewRecord[]> {
-        log.info('listing reviews for destination', 'listReviews', {
-            destinationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id,
+                filter
+            },
+            'listing reviews for destination'
+        );
 
         // Verify destination exists
         await this.getById(destinationId, actor);
@@ -597,16 +629,16 @@ export class DestinationService {
                 ...filter,
                 includeDeleted: false
             });
-            log.info('reviews listed for destination successfully', 'listReviews', {
-                destinationId,
-                count: reviews.length
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    count: reviews.length
+                },
+                'reviews listed for destination successfully'
+            );
             return reviews;
         } catch (error) {
-            log.error('failed to list reviews for destination', 'listReviews', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list reviews for destination');
             throw error;
         }
     }
@@ -627,10 +659,13 @@ export class DestinationService {
         attractionCount: number;
         bookmarkCount: number;
     }> {
-        log.info('getting destination stats', 'getStats', {
-            destinationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id
+            },
+            'getting destination stats'
+        );
 
         // Verify destination exists
         await this.getById(destinationId, actor);
@@ -706,16 +741,16 @@ export class DestinationService {
                 bookmarkCount: bookmarks.length
             };
 
-            log.info('destination stats retrieved successfully', 'getStats', {
-                destinationId,
-                stats
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    stats
+                },
+                'destination stats retrieved successfully'
+            );
             return stats;
         } catch (error) {
-            log.error('failed to get destination stats', 'getStats', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get destination stats');
             throw error;
         }
     }
@@ -737,13 +772,16 @@ export class DestinationService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationRecord[]> {
-        log.info('finding destinations nearby', 'findNearby', {
-            latitude,
-            longitude,
-            radiusKm,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                latitude,
+                longitude,
+                radiusKm,
+                actor: actor.id,
+                filter
+            },
+            'finding destinations nearby'
+        );
 
         try {
             // Get all active destinations
@@ -771,20 +809,18 @@ export class DestinationService {
                 return distance <= radiusKm;
             });
 
-            log.info('nearby destinations found successfully', 'findNearby', {
-                count: nearbyDestinations.length,
-                latitude,
-                longitude,
-                radiusKm
-            });
+            dbLogger.info(
+                {
+                    count: nearbyDestinations.length,
+                    latitude,
+                    longitude,
+                    radiusKm
+                },
+                'nearby destinations found successfully'
+            );
             return nearbyDestinations;
         } catch (error) {
-            log.error('failed to find destinations nearby', 'findNearby', error, {
-                latitude,
-                longitude,
-                radiusKm,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to find destinations nearby');
             throw error;
         }
     }
@@ -829,10 +865,13 @@ export class DestinationService {
      * @throws Error if listing fails.
      */
     async listTop(limit: number, actor: UserType): Promise<DestinationRecord[]> {
-        log.info('listing top destinations', 'listTop', {
-            limit,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                limit,
+                actor: actor.id
+            },
+            'listing top destinations'
+        );
 
         try {
             // Get all active destinations
@@ -866,15 +905,13 @@ export class DestinationService {
                 .slice(0, limit)
                 .map((item) => item.destination);
 
-            log.info('top destinations listed successfully', 'listTop', {
-                count: topDestinations.length
-            });
+            dbLogger.info(
+                { count: topDestinations.length },
+                'top destinations listed successfully'
+            );
             return topDestinations;
         } catch (error) {
-            log.error('failed to list top destinations', 'listTop', error, {
-                limit,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list top destinations');
             throw error;
         }
     }
@@ -892,11 +929,14 @@ export class DestinationService {
         visibility: string,
         actor: UserType
     ): Promise<DestinationRecord> {
-        log.info('updating destination visibility', 'updateVisibility', {
-            destinationId: id,
-            visibility,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId: id,
+                visibility,
+                actor: actor.id
+            },
+            'updating destination visibility'
+        );
 
         // Only admins can update visibility
         DestinationService.assertAdmin(actor);
@@ -912,17 +952,16 @@ export class DestinationService {
                 existingDestination.id,
                 changes
             );
-            log.info('destination visibility updated successfully', 'updateVisibility', {
-                destinationId: updatedDestination.id,
-                visibility
-            });
+            dbLogger.info(
+                {
+                    destinationId: updatedDestination.id,
+                    visibility
+                },
+                'destination visibility updated successfully'
+            );
             return updatedDestination;
         } catch (error) {
-            log.error('failed to update destination visibility', 'updateVisibility', error, {
-                destinationId: id,
-                visibility,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update destination visibility');
             throw error;
         }
     }
@@ -935,10 +974,13 @@ export class DestinationService {
      * @throws Error if listing fails.
      */
     async getFeatured(limit: number, actor: UserType): Promise<DestinationRecord[]> {
-        log.info('getting featured destinations', 'getFeatured', {
-            limit,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                limit,
+                actor: actor.id
+            },
+            'getting featured destinations'
+        );
 
         try {
             const destinationFilter: SelectDestinationFilter = {
@@ -948,15 +990,15 @@ export class DestinationService {
             };
 
             const destinations = await DestinationModel.listDestinations(destinationFilter);
-            log.info('featured destinations retrieved successfully', 'getFeatured', {
-                count: destinations.length
-            });
+            dbLogger.info(
+                {
+                    count: destinations.length
+                },
+                'featured destinations retrieved successfully'
+            );
             return destinations;
         } catch (error) {
-            log.error('failed to get featured destinations', 'getFeatured', error, {
-                limit,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get featured destinations');
             throw error;
         }
     }
@@ -969,10 +1011,13 @@ export class DestinationService {
      * @throws Error if destination is not found or listing fails.
      */
     async getTags(destinationId: string, actor: UserType): Promise<TagRecord[]> {
-        log.info('getting tags for destination', 'getTags', {
-            destinationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id
+            },
+            'getting tags for destination'
+        );
 
         // Verify destination exists
         await this.getById(destinationId, actor);
@@ -991,16 +1036,16 @@ export class DestinationService {
                 }
             }
 
-            log.info('tags retrieved for destination successfully', 'getTags', {
-                destinationId,
-                count: tags.length
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    count: tags.length
+                },
+                'tags retrieved for destination successfully'
+            );
             return tags;
         } catch (error) {
-            log.error('failed to get tags for destination', 'getTags', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get tags for destination');
             throw error;
         }
     }
@@ -1014,11 +1059,14 @@ export class DestinationService {
      * @throws Error if destination or tag is not found, actor is not authorized, or creation fails.
      */
     async addTag(destinationId: string, tagId: string, actor: UserType): Promise<EntityTagRecord> {
-        log.info('adding tag to destination', 'addTag', {
-            destinationId,
-            tagId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                tagId,
+                actor: actor.id
+            },
+            'adding tag to destination'
+        );
 
         // Only admins can add tags to destinations
         DestinationService.assertAdmin(actor);
@@ -1040,17 +1088,16 @@ export class DestinationService {
             };
 
             const relation = await EntityTagModel.createRelation(relationData);
-            log.info('tag added to destination successfully', 'addTag', {
-                destinationId,
-                tagId
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    tagId
+                },
+                'tag added to destination successfully'
+            );
             return relation;
         } catch (error) {
-            log.error('failed to add tag to destination', 'addTag', error, {
-                destinationId,
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add tag to destination');
             throw error;
         }
     }
@@ -1063,11 +1110,14 @@ export class DestinationService {
      * @throws Error if destination or tag is not found, actor is not authorized, or removal fails.
      */
     async removeTag(destinationId: string, tagId: string, actor: UserType): Promise<void> {
-        log.info('removing tag from destination', 'removeTag', {
-            destinationId,
-            tagId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                tagId,
+                actor: actor.id
+            },
+            'removing tag from destination'
+        );
 
         // Only admins can remove tags from destinations
         DestinationService.assertAdmin(actor);
@@ -1077,16 +1127,15 @@ export class DestinationService {
 
         try {
             await EntityTagModel.deleteRelation(EntityTypeEnum.DESTINATION, destinationId, tagId);
-            log.info('tag removed from destination successfully', 'removeTag', {
-                destinationId,
-                tagId
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    tagId
+                },
+                'tag removed from destination successfully'
+            );
         } catch (error) {
-            log.error('failed to remove tag from destination', 'removeTag', error, {
-                destinationId,
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove tag from destination');
             throw error;
         }
     }
@@ -1099,10 +1148,13 @@ export class DestinationService {
      * @throws Error if destination is not found or count fails.
      */
     async getBookmarkCount(destinationId: string, actor: UserType): Promise<number> {
-        log.info('getting bookmark count for destination', 'getBookmarkCount', {
-            destinationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id
+            },
+            'getting bookmark count for destination'
+        );
 
         // Verify destination exists
         await this.getById(destinationId, actor);
@@ -1114,16 +1166,16 @@ export class DestinationService {
                 includeDeleted: false
             });
 
-            log.info('bookmark count retrieved successfully', 'getBookmarkCount', {
-                destinationId,
-                count: bookmarks.length
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    count: bookmarks.length
+                },
+                'bookmark count retrieved successfully'
+            );
             return bookmarks.length;
         } catch (error) {
-            log.error('failed to get bookmark count for destination', 'getBookmarkCount', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get bookmark count for destination');
             throw error;
         }
     }
@@ -1137,11 +1189,14 @@ export class DestinationService {
      * @throws Error if destination is not found or check fails.
      */
     async isBookmarked(destinationId: string, userId: string, actor: UserType): Promise<boolean> {
-        log.info('checking if destination is bookmarked', 'isBookmarked', {
-            destinationId,
-            userId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                userId,
+                actor: actor.id
+            },
+            'checking if destination is bookmarked'
+        );
 
         // Verify destination exists
         await this.getById(destinationId, actor);
@@ -1153,18 +1208,17 @@ export class DestinationService {
                 destinationId
             );
 
-            log.info('bookmark check completed successfully', 'isBookmarked', {
-                destinationId,
-                userId,
-                isBookmarked: exists
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    userId,
+                    isBookmarked: exists
+                },
+                'bookmark check completed successfully'
+            );
             return exists;
         } catch (error) {
-            log.error('failed to check if destination is bookmarked', 'isBookmarked', error, {
-                destinationId,
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to check if destination is bookmarked');
             throw error;
         }
     }
