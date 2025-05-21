@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -17,11 +17,6 @@ import {
 } from '../utils/db-utils.js';
 
 /**
- * Scoped logger for EventOrganizerModel operations.
- */
-const log = logger.createLogger('EventOrganizerModel');
-
-/**
  * Full event organizer record as returned by the database.
  */
 export type EventOrganizerRecord = InferSelectModel<typeof eventOrganizers>;
@@ -38,16 +33,21 @@ export const EventOrganizerModel = {
      */
     async createOrganizer(data: InsertEventOrganizer): Promise<EventOrganizerRecord> {
         try {
-            log.info('creating event organizer', 'createOrganizer', data);
+            dbLogger.info(data, 'creating event organizer');
             const db = getDb();
             const rows = castReturning<EventOrganizerRecord>(
                 await db.insert(eventOrganizers).values(data).returning()
             );
             const org = assertExists(rows[0], 'createOrganizer: no organizer returned');
-            log.query('insert', 'event_organizer', data, org);
+            dbLogger.query({
+                table: 'event_organizer',
+                action: 'insert',
+                params: data,
+                result: org
+            });
             return org;
         } catch (error) {
-            log.error('createOrganizer failed', 'createOrganizer', error);
+            dbLogger.error(error, 'createOrganizer failed');
             throw error;
         }
     },
@@ -60,17 +60,22 @@ export const EventOrganizerModel = {
      */
     async getOrganizerById(id: string): Promise<EventOrganizerRecord | undefined> {
         try {
-            log.info('fetching organizer by id', 'getOrganizerById', { id });
+            dbLogger.info({ id }, 'fetching organizer by id');
             const db = getDb();
             const [org] = await db
                 .select()
                 .from(eventOrganizers)
                 .where(eq(eventOrganizers.id, id))
                 .limit(1);
-            log.query('select', 'event_organizer', { id }, org);
+            dbLogger.query({
+                table: 'event_organizer',
+                action: 'select',
+                params: { id },
+                result: org
+            });
             return org ? (org as EventOrganizerRecord) : undefined;
         } catch (error) {
-            log.error('getOrganizerById failed', 'getOrganizerById', error);
+            dbLogger.error(error, 'getOrganizerById failed');
             throw error;
         }
     },
@@ -83,7 +88,7 @@ export const EventOrganizerModel = {
      */
     async listOrganizers(filter: SelectEventOrganizerFilter): Promise<EventOrganizerRecord[]> {
         try {
-            log.info('listing organizers', 'listOrganizers', filter);
+            dbLogger.info(filter, 'listing organizers');
             const db = getDb();
             let query = db.select().from(eventOrganizers).$dynamic();
 
@@ -130,10 +135,15 @@ export const EventOrganizerModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as EventOrganizerRecord[];
 
-            log.query('select', 'event_organizer', filter, rows);
+            dbLogger.query({
+                table: 'event_organizer',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listOrganizers failed', 'listOrganizers', error);
+            dbLogger.error(error, 'listOrganizers failed');
             throw error;
         }
     },
@@ -151,10 +161,7 @@ export const EventOrganizerModel = {
     ): Promise<EventOrganizerRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating organizer', 'updateOrganizer', {
-                id,
-                changes: dataToUpdate
-            });
+            dbLogger.info({ id, changes: dataToUpdate }, 'updating organizer');
             const db = getDb();
             const rows = castReturning<EventOrganizerRecord>(
                 await db
@@ -167,10 +174,15 @@ export const EventOrganizerModel = {
                 rows[0],
                 `updateOrganizer: no organizer found for id ${id}`
             );
-            log.query('update', 'event_organizer', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'event_organizer',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateOrganizer failed', 'updateOrganizer', error);
+            dbLogger.error(error, 'updateOrganizer failed');
             throw error;
         }
     },
@@ -182,15 +194,20 @@ export const EventOrganizerModel = {
      */
     async softDeleteOrganizer(id: string): Promise<void> {
         try {
-            log.info('soft deleting organizer', 'softDeleteOrganizer', { id });
+            dbLogger.info({ id }, 'soft deleting organizer');
             const db = getDb();
             await db
                 .update(eventOrganizers)
                 .set({ deletedAt: new Date() })
                 .where(eq(eventOrganizers.id, id));
-            log.query('update', 'event_organizer', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'event_organizer',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteOrganizer failed', 'softDeleteOrganizer', error);
+            dbLogger.error(error, 'softDeleteOrganizer failed');
             throw error;
         }
     },
@@ -202,15 +219,20 @@ export const EventOrganizerModel = {
      */
     async restoreOrganizer(id: string): Promise<void> {
         try {
-            log.info('restoring organizer', 'restoreOrganizer', { id });
+            dbLogger.info({ id }, 'restoring organizer');
             const db = getDb();
             await db
                 .update(eventOrganizers)
                 .set({ deletedAt: null })
                 .where(eq(eventOrganizers.id, id));
-            log.query('update', 'event_organizer', { id }, { restored: true });
+            dbLogger.query({
+                table: 'event_organizer',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreOrganizer failed', 'restoreOrganizer', error);
+            dbLogger.error(error, 'restoreOrganizer failed');
             throw error;
         }
     },
@@ -222,12 +244,17 @@ export const EventOrganizerModel = {
      */
     async hardDeleteOrganizer(id: string): Promise<void> {
         try {
-            log.info('hard deleting organizer', 'hardDeleteOrganizer', { id });
+            dbLogger.info({ id }, 'hard deleting organizer');
             const db = getDb();
             await db.delete(eventOrganizers).where(eq(eventOrganizers.id, id));
-            log.query('delete', 'event_organizer', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'event_organizer',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteOrganizer failed', 'hardDeleteOrganizer', error);
+            dbLogger.error(error, 'hardDeleteOrganizer failed');
             throw error;
         }
     }

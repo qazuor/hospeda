@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -17,11 +17,6 @@ import {
 } from '../utils/db-utils.js';
 
 /**
- * Scoped logger for permission model operations.
- */
-const log = logger.createLogger('PermissionModel');
-
-/**
  * Full permission record as returned by the database.
  */
 export type PermissionRecord = InferSelectModel<typeof permissions>;
@@ -38,16 +33,21 @@ export const PermissionModel = {
      */
     async createPermission(data: InsertPermission): Promise<PermissionRecord> {
         try {
-            log.info('creating a new permission', 'createPermission', data);
+            dbLogger.info(data, 'creating a new permission');
             const db = getDb();
             const rows = castReturning<PermissionRecord>(
                 await db.insert(permissions).values(data).returning()
             );
             const perm = assertExists(rows[0], 'createPermission: no permission returned');
-            log.query('insert', 'permissions', data, perm);
+            dbLogger.query({
+                table: 'permissions',
+                action: 'insert',
+                params: data,
+                result: perm
+            });
             return perm;
         } catch (error) {
-            log.error('createPermission failed', 'createPermission', error);
+            dbLogger.error(error, 'createPermission failed');
             throw error;
         }
     },
@@ -60,17 +60,22 @@ export const PermissionModel = {
      */
     async getPermissionById(id: string): Promise<PermissionRecord | undefined> {
         try {
-            log.info('fetching permission by id', 'getPermissionById', { id });
+            dbLogger.info({ id }, 'fetching permission by id');
             const db = getDb();
             const [perm] = await db
                 .select()
                 .from(permissions)
                 .where(eq(permissions.id, id))
                 .limit(1);
-            log.query('select', 'permissions', { id }, perm);
+            dbLogger.query({
+                table: 'permissions',
+                action: 'select',
+                params: { id },
+                result: perm
+            });
             return perm ? (perm as PermissionRecord) : undefined;
         } catch (error) {
-            log.error('getPermissionById failed', 'getPermissionById', error);
+            dbLogger.error(error, 'getPermissionById failed');
             throw error;
         }
     },
@@ -83,7 +88,7 @@ export const PermissionModel = {
      */
     async listPermissions(filter: SelectPermissionFilter): Promise<PermissionRecord[]> {
         try {
-            log.info('listing permissions', 'listPermissions', filter);
+            dbLogger.info(filter, 'listing permissions');
             const db = getDb();
             let query = db.select().from(permissions).$dynamic();
 
@@ -134,10 +139,15 @@ export const PermissionModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as PermissionRecord[];
 
-            log.query('select', 'permissions', filter, rows);
+            dbLogger.query({
+                table: 'permissions',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listPermissions failed', 'listPermissions', error);
+            dbLogger.error(error, 'listPermissions failed');
             throw error;
         }
     },
@@ -152,7 +162,7 @@ export const PermissionModel = {
     async updatePermission(id: string, changes: UpdatePermissionData): Promise<PermissionRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating permission', 'updatePermission', { id, dataToUpdate });
+            dbLogger.info({ id, dataToUpdate }, 'updating permission');
             const db = getDb();
             const rows = castReturning<PermissionRecord>(
                 await db
@@ -165,10 +175,15 @@ export const PermissionModel = {
                 rows[0],
                 `updatePermission: no permission found for id ${id}`
             );
-            log.query('update', 'permissions', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'permissions',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updatePermission failed', 'updatePermission', error);
+            dbLogger.error(error, 'updatePermission failed');
             throw error;
         }
     },
@@ -180,15 +195,20 @@ export const PermissionModel = {
      */
     async softDeletePermission(id: string): Promise<void> {
         try {
-            log.info('soft deleting permission', 'softDeletePermission', { id });
+            dbLogger.info({ id }, 'soft deleting permission');
             const db = getDb();
             await db
                 .update(permissions)
                 .set({ deletedAt: new Date() })
                 .where(eq(permissions.id, id));
-            log.query('update', 'permissions', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'permissions',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeletePermission failed', 'softDeletePermission', error);
+            dbLogger.error(error, 'softDeletePermission failed');
             throw error;
         }
     },
@@ -200,12 +220,17 @@ export const PermissionModel = {
      */
     async restorePermission(id: string): Promise<void> {
         try {
-            log.info('restoring permission', 'restorePermission', { id });
+            dbLogger.info({ id }, 'restoring permission');
             const db = getDb();
             await db.update(permissions).set({ deletedAt: null }).where(eq(permissions.id, id));
-            log.query('update', 'permissions', { id }, { restored: true });
+            dbLogger.query({
+                table: 'permissions',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restorePermission failed', 'restorePermission', error);
+            dbLogger.error(error, 'restorePermission failed');
             throw error;
         }
     },
@@ -217,12 +242,17 @@ export const PermissionModel = {
      */
     async hardDeletePermission(id: string): Promise<void> {
         try {
-            log.info('hard deleting permission', 'hardDeletePermission', { id });
+            dbLogger.info({ id }, 'hard deleting permission');
             const db = getDb();
             await db.delete(permissions).where(eq(permissions.id, id));
-            log.query('delete', 'permissions', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'permissions',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeletePermission failed', 'hardDeletePermission', error);
+            dbLogger.error(error, 'hardDeletePermission failed');
             throw error;
         }
     }

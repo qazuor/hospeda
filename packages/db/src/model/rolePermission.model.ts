@@ -1,15 +1,10 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, eq } from 'drizzle-orm';
 import { getDb } from '../client.js';
 import { rolePermissions } from '../schema/r_role_permission.dbschema.js';
 import type { BaseSelectFilter } from '../types/db-types.js';
 import { assertExists, castReturning, rawSelect } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for role-permission relation model operations.
- */
-const log = logger.createLogger('RolePermissionModel');
 
 /**
  * Full role-permission relation record as returned by the database.
@@ -33,16 +28,21 @@ export const RolePermissionModel = {
      */
     async createRelation(data: CreateRolePermissionData): Promise<RolePermissionRecord> {
         try {
-            log.info('creating role-permission relation', 'createRelation', data);
+            dbLogger.info(data, 'creating role-permission relation');
             const db = getDb();
             const rows = castReturning<RolePermissionRecord>(
                 await db.insert(rolePermissions).values(data).returning()
             );
             const relation = assertExists(rows[0], 'createRelation: no record returned');
-            log.query('insert', 'r_role_permission', data, relation);
+            dbLogger.query({
+                table: 'r_role_permission',
+                action: 'insert',
+                params: data,
+                result: relation
+            });
             return relation;
         } catch (error) {
-            log.error('createRelation failed', 'createRelation', error);
+            dbLogger.error(error, 'createRelation failed');
             throw error;
         }
     },
@@ -56,7 +56,13 @@ export const RolePermissionModel = {
      */
     async listByRole(roleId: string, filter?: BaseSelectFilter): Promise<RolePermissionRecord[]> {
         try {
-            log.info('listing role-permission relations by role', 'listByRole', { roleId, filter });
+            dbLogger.info(
+                {
+                    roleId,
+                    filter
+                },
+                'listing role-permission relations by role'
+            );
             const db = getDb();
             let query = rawSelect(
                 db.select().from(rolePermissions).where(eq(rolePermissions.roleId, roleId))
@@ -70,10 +76,15 @@ export const RolePermissionModel = {
             }
 
             const rows = (await query) as RolePermissionRecord[];
-            log.query('select', 'r_role_permission', { roleId, filter }, rows);
+            dbLogger.query({
+                table: 'r_role_permission',
+                action: 'select',
+                params: { roleId, filter },
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listByRole failed', 'listByRole', error);
+            dbLogger.error(error, 'listByRole failed');
             throw error;
         }
     },
@@ -90,10 +101,13 @@ export const RolePermissionModel = {
         filter?: BaseSelectFilter
     ): Promise<RolePermissionRecord[]> {
         try {
-            log.info('listing role-permission relations by permission', 'listByPermission', {
-                permissionId,
-                filter
-            });
+            dbLogger.info(
+                {
+                    permissionId,
+                    filter
+                },
+                'listing role-permission relations by permission'
+            );
             const db = getDb();
             let query = rawSelect(
                 db
@@ -110,10 +124,15 @@ export const RolePermissionModel = {
             }
 
             const rows = (await query) as RolePermissionRecord[];
-            log.query('select', 'r_role_permission', { permissionId, filter }, rows);
+            dbLogger.query({
+                table: 'r_role_permission',
+                action: 'select',
+                params: { permissionId, filter },
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listByPermission failed', 'listByPermission', error);
+            dbLogger.error(error, 'listByPermission failed');
             throw error;
         }
     },
@@ -126,10 +145,7 @@ export const RolePermissionModel = {
      */
     async deleteRelation(roleId: string, permissionId: string): Promise<void> {
         try {
-            log.info('deleting role-permission relation', 'deleteRelation', {
-                roleId,
-                permissionId
-            });
+            dbLogger.info({ roleId, permissionId }, 'deleting role-permission relation');
             const db = getDb();
             await db
                 .delete(rolePermissions)
@@ -139,9 +155,14 @@ export const RolePermissionModel = {
                         eq(rolePermissions.permissionId, permissionId)
                     )
                 );
-            log.query('delete', 'r_role_permission', { roleId, permissionId }, { deleted: true });
+            dbLogger.query({
+                table: 'r_role_permission',
+                action: 'delete',
+                params: { roleId, permissionId },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('deleteRelation failed', 'deleteRelation', error);
+            dbLogger.error(error, 'deleteRelation failed');
             throw error;
         }
     },
@@ -158,10 +179,13 @@ export const RolePermissionModel = {
         roleId: string,
         permissionId: string
     ): Promise<RolePermissionRecord | undefined> {
-        log.debug('checking role-permission relation existence', 'getByRoleIdAndPermissionId', {
-            roleId,
-            permissionId
-        });
+        dbLogger.debug(
+            {
+                roleId,
+                permissionId
+            },
+            'checking role-permission relation existence'
+        );
         try {
             const db = getDb();
             const [relation] = await db
@@ -175,19 +199,17 @@ export const RolePermissionModel = {
                 )
                 .limit(1); // Limit to 1 as we only need to know if it exists
 
-            log.debug('role-permission relation check result', 'getByRoleIdAndPermissionId', {
-                roleId,
-                permissionId,
-                exists: !!relation
-            });
+            dbLogger.debug(
+                {
+                    roleId,
+                    permissionId,
+                    exists: !!relation
+                },
+                'role-permission relation check result'
+            );
             return relation;
         } catch (error) {
-            log.error(
-                'failed to check role-permission relation existence',
-                'getByRoleIdAndPermissionId',
-                error,
-                { roleId, permissionId }
-            );
+            dbLogger.error(error, 'failed to check role-permission relation existence');
             throw error;
         }
     },
@@ -198,24 +220,16 @@ export const RolePermissionModel = {
      * @throws Error if deletion fails.
      */
     async deleteAllByRoleId(roleId: string): Promise<void> {
-        log.info('deleting all role-permission relations for role', 'deleteAllByRoleId', {
-            roleId
-        });
+        dbLogger.info({ roleId }, 'deleting all role-permission relations for role');
         try {
             const db = getDb();
             await db.delete(rolePermissions).where(eq(rolePermissions.roleId, roleId));
-            log.info(
-                'all role-permission relations for role deleted successfully',
-                'deleteAllByRoleId',
-                { roleId }
+            dbLogger.info(
+                { roleId },
+                'all role-permission relations for role deleted successfully'
             );
         } catch (error) {
-            log.error(
-                'failed to delete all role-permission relations for role',
-                'deleteAllByRoleId',
-                error,
-                { roleId }
-            );
+            dbLogger.error(error, 'failed to delete all role-permission relations for role');
             throw error;
         }
     }

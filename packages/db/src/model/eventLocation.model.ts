@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -17,11 +17,6 @@ import {
 } from '../utils/db-utils.js';
 
 /**
- * Scoped logger for event location model operations.
- */
-const log = logger.createLogger('EventLocationModel');
-
-/**
  * Full event location record as returned by the database.
  */
 export type EventLocationRecord = InferSelectModel<typeof eventLocations>;
@@ -38,16 +33,21 @@ export const EventLocationModel = {
      */
     async createLocation(data: InsertEventLocation): Promise<EventLocationRecord> {
         try {
-            log.info('creating event location', 'createLocation', data);
+            dbLogger.info(data, 'creating event location');
             const db = getDb();
             const rows = castReturning<EventLocationRecord>(
                 await db.insert(eventLocations).values(data).returning()
             );
             const loc = assertExists(rows[0], 'createLocation: no location returned');
-            log.query('insert', 'event_locations', data, loc);
+            dbLogger.query({
+                table: 'event_locations',
+                action: 'insert',
+                params: data,
+                result: loc
+            });
             return loc;
         } catch (error) {
-            log.error('createLocation failed', 'createLocation', error);
+            dbLogger.error(error, 'createLocation failed');
             throw error;
         }
     },
@@ -60,17 +60,22 @@ export const EventLocationModel = {
      */
     async getLocationById(id: string): Promise<EventLocationRecord | undefined> {
         try {
-            log.info('fetching location by id', 'getLocationById', { id });
+            dbLogger.info({ id }, 'fetching location by id');
             const db = getDb();
             const [loc] = await db
                 .select()
                 .from(eventLocations)
                 .where(eq(eventLocations.id, id))
                 .limit(1);
-            log.query('select', 'event_locations', { id }, loc);
+            dbLogger.query({
+                table: 'event_locations',
+                action: 'select',
+                params: { id },
+                result: loc
+            });
             return loc ? (loc as EventLocationRecord) : undefined;
         } catch (error) {
-            log.error('getLocationById failed', 'getLocationById', error);
+            dbLogger.error(error, 'getLocationById failed');
             throw error;
         }
     },
@@ -83,7 +88,7 @@ export const EventLocationModel = {
      */
     async listLocations(filter: SelectEventLocationFilter): Promise<EventLocationRecord[]> {
         try {
-            log.info('listing locations', 'listLocations', filter);
+            dbLogger.info(filter, 'listing locations');
             const db = getDb();
             let query = db.select().from(eventLocations).$dynamic();
 
@@ -150,10 +155,15 @@ export const EventLocationModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as EventLocationRecord[];
 
-            log.query('select', 'event_locations', filter, rows);
+            dbLogger.query({
+                table: 'event_locations',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listLocations failed', 'listLocations', error);
+            dbLogger.error(error, 'listLocations failed');
             throw error;
         }
     },
@@ -171,10 +181,7 @@ export const EventLocationModel = {
     ): Promise<EventLocationRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating location', 'updateLocation', {
-                id,
-                changes: dataToUpdate
-            });
+            dbLogger.info({ id, changes: dataToUpdate }, 'updating location');
             const db = getDb();
             const rows = castReturning<EventLocationRecord>(
                 await db
@@ -184,10 +191,15 @@ export const EventLocationModel = {
                     .returning()
             );
             const updated = assertExists(rows[0], `updateLocation: no location found for id ${id}`);
-            log.query('update', 'event_locations', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'event_locations',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateLocation failed', 'updateLocation', error);
+            dbLogger.error(error, 'updateLocation failed');
             throw error;
         }
     },
@@ -199,15 +211,20 @@ export const EventLocationModel = {
      */
     async softDeleteLocation(id: string): Promise<void> {
         try {
-            log.info('soft deleting location', 'softDeleteLocation', { id });
+            dbLogger.info({ id }, 'soft deleting location');
             const db = getDb();
             await db
                 .update(eventLocations)
                 .set({ deletedAt: new Date() })
                 .where(eq(eventLocations.id, id));
-            log.query('update', 'event_locations', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'event_locations',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteLocation failed', 'softDeleteLocation', error);
+            dbLogger.error(error, 'softDeleteLocation failed');
             throw error;
         }
     },
@@ -219,15 +236,20 @@ export const EventLocationModel = {
      */
     async restoreLocation(id: string): Promise<void> {
         try {
-            log.info('restoring location', 'restoreLocation', { id });
+            dbLogger.info({ id }, 'restoring location');
             const db = getDb();
             await db
                 .update(eventLocations)
                 .set({ deletedAt: null })
                 .where(eq(eventLocations.id, id));
-            log.query('update', 'event_locations', { id }, { restored: true });
+            dbLogger.query({
+                table: 'event_locations',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreLocation failed', 'restoreLocation', error);
+            dbLogger.error(error, 'restoreLocation failed');
             throw error;
         }
     },
@@ -239,12 +261,17 @@ export const EventLocationModel = {
      */
     async hardDeleteLocation(id: string): Promise<void> {
         try {
-            log.info('hard deleting location', 'hardDeleteLocation', { id });
+            dbLogger.info({ id }, 'hard deleting location');
             const db = getDb();
             await db.delete(eventLocations).where(eq(eventLocations.id, id));
-            log.query('delete', 'event_locations', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'event_locations',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteLocation failed', 'hardDeleteLocation', error);
+            dbLogger.error(error, 'hardDeleteLocation failed');
             throw error;
         }
     }

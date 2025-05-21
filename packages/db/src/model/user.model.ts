@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -11,9 +11,6 @@ import {
     prepareLikeQuery,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-// Scoped logger for user model operations
-const log = logger.createLogger('UserModel');
 
 /**
  * Full user record as returned by the database.
@@ -32,14 +29,14 @@ export const UserModel = {
      */
     async createUser(data: InsertUser): Promise<UserRecord> {
         try {
-            log.info('creating a new user', 'createUser', data);
+            dbLogger.info(data, 'creating a new user');
             const db = getDb();
             const rows = castReturning<UserRecord>(await db.insert(users).values(data).returning());
             const user = assertExists(rows[0], 'createUser: no user returned');
-            log.query('insert', 'users', data, user);
+            dbLogger.query({ table: 'users', action: 'insert', params: data, result: user });
             return user;
         } catch (error) {
-            log.error('createUser failed', 'createUser', error);
+            dbLogger.error(error, 'createUser failed');
             throw error;
         }
     },
@@ -52,13 +49,13 @@ export const UserModel = {
      */
     async getUserById(id: string): Promise<UserRecord | undefined> {
         try {
-            log.info('fetching user by id', 'getUserById', { id });
+            dbLogger.info({ id }, 'fetching user by id');
             const db = getDb();
             const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1); // No need to cast as any, Drizzle handles this with select()
-            log.query('select', 'users', { id }, user);
+            dbLogger.query({ table: 'users', action: 'select', params: { id }, result: user });
             return user ? (user as UserRecord) : undefined; // Cast the potentially found user
         } catch (error) {
-            log.error('getUserById failed', 'getUserById', error);
+            dbLogger.error(error, 'getUserById failed');
             throw error;
         }
     },
@@ -71,17 +68,22 @@ export const UserModel = {
      */
     async getUserByUsername(username: string): Promise<UserRecord | undefined> {
         try {
-            log.info('fetching user by username', 'getUserByUsername', { username });
+            dbLogger.info({ username }, 'fetching user by username');
             const db = getDb();
             const [user] = await db
                 .select()
                 .from(users)
                 .where(eq(users.userName, username))
                 .limit(1);
-            log.query('select', 'users', { username }, user);
+            dbLogger.query({
+                table: 'users',
+                action: 'select',
+                params: { username },
+                result: user
+            });
             return user ? (user as UserRecord) : undefined;
         } catch (error) {
-            log.error('getUserByUsername failed', 'getUserByUsername', error);
+            dbLogger.error(error, 'getUserByUsername failed');
             throw error;
         }
     },
@@ -98,7 +100,7 @@ export const UserModel = {
      */
     async getUserByEmail(email: string): Promise<UserRecord | undefined> {
         try {
-            log.info('fetching user by email', 'getUserByEmail', { email });
+            dbLogger.info({ email }, 'fetching user by email');
             // Querying JSONB ->> 'key' is common in PostgreSQL for text access
             // Using sql template tag for direct DB syntax is often necessary for JSONB
             const db = getDb();
@@ -111,10 +113,10 @@ export const UserModel = {
                 .where(sql`${users.contactInfo}->>'email'::text = ${email}`)
                 .limit(1);
 
-            log.query('select', 'users', { email }, user);
+            dbLogger.query({ table: 'users', action: 'select', params: { email }, result: user });
             return user ? (user as UserRecord) : undefined;
         } catch (error) {
-            log.error('getUserByEmail failed', 'getUserByEmail', error);
+            dbLogger.error(error, 'getUserByEmail failed');
             throw error;
         }
     },
@@ -127,7 +129,7 @@ export const UserModel = {
      */
     async listUsers(filter: SelectUserFilter): Promise<UserRecord[]> {
         try {
-            log.info('listing users', 'listUsers', filter);
+            dbLogger.info(filter, 'listing users');
             const db = getDb();
             let query = db.select().from(users).$dynamic(); // Use $dynamic() for conditional where clauses
 
@@ -172,10 +174,10 @@ export const UserModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as UserRecord[];
 
-            log.query('select', 'users', filter, rows);
+            dbLogger.query({ table: 'users', action: 'select', params: filter, result: rows });
             return rows;
         } catch (error) {
-            log.error('listUsers failed', 'listUsers', error);
+            dbLogger.error(error, 'listUsers failed');
             throw error;
         }
     },
@@ -190,16 +192,21 @@ export const UserModel = {
     async updateUser(id: string, changes: UpdateUserData): Promise<UserRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating user', 'updateUser', { id, dataToUpdate });
+            dbLogger.info({ id, dataToUpdate }, 'updating user');
             const db = getDb();
             const rows = castReturning<UserRecord>(
                 await db.update(users).set(dataToUpdate).where(eq(users.id, id)).returning()
             );
             const updated = assertExists(rows[0], `updateUser: no user found for id ${id}`);
-            log.query('update', 'users', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'users',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateUser failed', 'updateUser', error);
+            dbLogger.error(error, 'updateUser failed');
             throw error;
         }
     },
@@ -211,12 +218,17 @@ export const UserModel = {
      */
     async softDeleteUser(id: string): Promise<void> {
         try {
-            log.info('soft deleting user', 'softDeleteUser', { id });
+            dbLogger.info({ id }, 'soft deleting user');
             const db = getDb();
             await db.update(users).set({ deletedAt: new Date() }).where(eq(users.id, id));
-            log.query('update', 'users', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'users',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteUser failed', 'softDeleteUser', error);
+            dbLogger.error(error, 'softDeleteUser failed');
             throw error;
         }
     },
@@ -228,12 +240,17 @@ export const UserModel = {
      */
     async restoreUser(id: string): Promise<void> {
         try {
-            log.info('restoring user', 'restoreUser', { id });
+            dbLogger.info({ id }, 'restoring user');
             const db = getDb();
             await db.update(users).set({ deletedAt: null }).where(eq(users.id, id));
-            log.query('update', 'users', { id }, { restored: true });
+            dbLogger.query({
+                table: 'users',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreUser failed', 'restoreUser', error);
+            dbLogger.error(error, 'restoreUser failed');
             throw error;
         }
     },
@@ -245,12 +262,17 @@ export const UserModel = {
      */
     async hardDeleteUser(id: string): Promise<void> {
         try {
-            log.info('hard deleting user', 'hardDeleteUser', { id });
+            dbLogger.info({ id }, 'hard deleting user');
             const db = getDb();
             await db.delete(users).where(eq(users.id, id));
-            log.query('delete', 'users', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'users',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteUser failed', 'hardDeleteUser', error);
+            dbLogger.error(error, 'hardDeleteUser failed');
             throw error;
         }
     }

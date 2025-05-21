@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -15,11 +15,6 @@ import {
     prepareLikeQuery,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for destination attraction model operations.
- */
-const log = logger.createLogger('DestinationAttractionModel');
 
 /**
  * Full destination attraction record as returned by the database.
@@ -40,16 +35,21 @@ export const DestinationAttractionModel = {
         data: InsertDestinationAttraction
     ): Promise<DestinationAttractionRecord> {
         try {
-            log.info('creating destination attraction', 'createAttraction', data);
+            dbLogger.info(data, 'creating destination attraction');
             const db = getDb();
             const rows = castReturning<DestinationAttractionRecord>(
                 await db.insert(destinationAttractions).values(data).returning()
             );
             const attr = assertExists(rows[0], 'createAttraction: no attraction returned');
-            log.query('insert', 'destination_attractions', data, attr);
+            dbLogger.query({
+                table: 'destination_attractions',
+                action: 'insert',
+                params: data,
+                result: attr
+            });
             return attr;
         } catch (error) {
-            log.error('createAttraction failed', 'createAttraction', error);
+            dbLogger.error(error, 'createAttraction failed');
             throw error;
         }
     },
@@ -62,17 +62,22 @@ export const DestinationAttractionModel = {
      */
     async getAttractionById(id: string): Promise<DestinationAttractionRecord | undefined> {
         try {
-            log.info('fetching attraction by id', 'getAttractionById', { id });
+            dbLogger.info({ id }, 'fetching attraction by id');
             const db = getDb();
             const [attr] = await db
                 .select()
                 .from(destinationAttractions)
                 .where(eq(destinationAttractions.id, id))
                 .limit(1);
-            log.query('select', 'destination_attractions', { id }, attr);
+            dbLogger.query({
+                table: 'destination_attractions',
+                action: 'select',
+                params: { id },
+                result: attr
+            });
             return attr ? (attr as DestinationAttractionRecord) : undefined;
         } catch (error) {
-            log.error('getAttractionById failed', 'getAttractionById', error);
+            dbLogger.error(error, 'getAttractionById failed');
             throw error;
         }
     },
@@ -87,7 +92,7 @@ export const DestinationAttractionModel = {
         filter: SelectDestinationAttractionFilter
     ): Promise<DestinationAttractionRecord[]> {
         try {
-            log.info('listing attractions', 'listAttractions', filter);
+            dbLogger.info(filter, 'listing attractions');
             const db = getDb();
             let query = db.select().from(destinationAttractions).$dynamic();
 
@@ -135,10 +140,15 @@ export const DestinationAttractionModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as DestinationAttractionRecord[];
 
-            log.query('select', 'destination_attractions', filter, rows);
+            dbLogger.query({
+                table: 'destination_attractions',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listAttractions failed', 'listAttractions', error);
+            dbLogger.error(error, 'listAttractions failed');
             throw error;
         }
     },
@@ -156,10 +166,13 @@ export const DestinationAttractionModel = {
     ): Promise<DestinationAttractionRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating attraction', 'updateAttraction', {
-                id,
-                changes: dataToUpdate
-            });
+            dbLogger.info(
+                {
+                    id,
+                    changes: dataToUpdate
+                },
+                'updating attraction'
+            );
             const db = getDb();
             const rows = castReturning<DestinationAttractionRecord>(
                 await db
@@ -172,10 +185,15 @@ export const DestinationAttractionModel = {
                 rows[0],
                 `updateAttraction: no attraction found for id ${id}`
             );
-            log.query('update', 'destination_attractions', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'destination_attractions',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateAttraction failed', 'updateAttraction', error);
+            dbLogger.error(error, 'updateAttraction failed');
             throw error;
         }
     },
@@ -187,15 +205,20 @@ export const DestinationAttractionModel = {
      */
     async softDeleteAttraction(id: string): Promise<void> {
         try {
-            log.info('soft deleting attraction', 'softDeleteAttraction', { id });
+            dbLogger.info({ id }, 'soft deleting attraction');
             const db = getDb();
             await db
                 .update(destinationAttractions)
                 .set({ deletedAt: new Date() })
                 .where(eq(destinationAttractions.id, id));
-            log.query('update', 'destination_attractions', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'destination_attractions',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteAttraction failed', 'softDeleteAttraction', error);
+            dbLogger.error(error, 'softDeleteAttraction failed');
             throw error;
         }
     },
@@ -207,15 +230,20 @@ export const DestinationAttractionModel = {
      */
     async restoreAttraction(id: string): Promise<void> {
         try {
-            log.info('restoring attraction', 'restoreAttraction', { id });
+            dbLogger.info({ id }, 'restoring attraction');
             const db = getDb();
             await db
                 .update(destinationAttractions)
                 .set({ deletedAt: null })
                 .where(eq(destinationAttractions.id, id));
-            log.query('update', 'destination_attractions', { id }, { restored: true });
+            dbLogger.query({
+                table: 'destination_attractions',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreAttraction failed', 'restoreAttraction', error);
+            dbLogger.error(error, 'restoreAttraction failed');
             throw error;
         }
     },
@@ -227,12 +255,17 @@ export const DestinationAttractionModel = {
      */
     async hardDeleteAttraction(id: string): Promise<void> {
         try {
-            log.info('hard deleting attraction', 'hardDeleteAttraction', { id });
+            dbLogger.info({ id }, 'hard deleting attraction');
             const db = getDb();
             await db.delete(destinationAttractions).where(eq(destinationAttractions.id, id));
-            log.query('delete', 'destination_attractions', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'destination_attractions',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteAttraction failed', 'hardDeleteAttraction', error);
+            dbLogger.error(error, 'hardDeleteAttraction failed');
             throw error;
         }
     }

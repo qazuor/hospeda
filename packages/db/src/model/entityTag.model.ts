@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { EntityTypeEnum } from '@repo/types';
 import type { InferSelectModel } from 'drizzle-orm';
 import { and, eq } from 'drizzle-orm';
@@ -6,11 +6,6 @@ import { getDb } from '../client.js';
 import { entityTagRelations } from '../schema/r_entity_tag.dbschema.js';
 import type { InsertEntityTagRelation, SelectEntityTagRelationFilter } from '../types/db-types.js';
 import { assertExists, castReturning } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for entity tag relation model operations.
- */
-const log = logger.createLogger('EntityTagModel');
 
 /**
  * Full entity tag relation record as returned by the database.
@@ -29,16 +24,21 @@ export const EntityTagModel = {
      */
     async createRelation(data: InsertEntityTagRelation): Promise<EntityTagRecord> {
         try {
-            log.info('creating entity tag relation', 'createRelation', data);
+            dbLogger.info(data, 'creating entity tag relation');
             const db = getDb();
             const rows = castReturning<EntityTagRecord>(
                 await db.insert(entityTagRelations).values(data).returning()
             );
             const relation = assertExists(rows[0], 'createRelation: no record returned');
-            log.query('insert', 'r_entity_tag', data, relation);
+            dbLogger.query({
+                table: 'r_entity_tag',
+                action: 'insert',
+                params: data,
+                result: relation
+            });
             return relation;
         } catch (error) {
-            log.error('createRelation failed', 'createRelation', error);
+            dbLogger.error(error, 'createRelation failed');
             throw error;
         }
     },
@@ -51,7 +51,7 @@ export const EntityTagModel = {
      */
     async listRelations(filter: SelectEntityTagRelationFilter = {}): Promise<EntityTagRecord[]> {
         try {
-            log.info('listing entity tag relations', 'listRelations', filter);
+            dbLogger.info(filter, 'listing entity tag relations');
             const db = getDb();
             let query = db.select().from(entityTagRelations).$dynamic();
 
@@ -92,10 +92,15 @@ export const EntityTagModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as EntityTagRecord[];
 
-            log.query('select', 'r_entity_tag', filter, rows);
+            dbLogger.query({
+                table: 'r_entity_tag',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listRelations failed', 'listRelations', error);
+            dbLogger.error(error, 'listRelations failed');
             throw error;
         }
     },
@@ -113,11 +118,7 @@ export const EntityTagModel = {
         tagId: string
     ): Promise<void> {
         try {
-            log.info('deleting entity tag relation', 'deleteRelation', {
-                entityType,
-                entityId,
-                tagId
-            });
+            dbLogger.info({ entityType, entityId, tagId }, 'deleting entity tag relation');
             const db = getDb();
             await db
                 .delete(entityTagRelations)
@@ -128,9 +129,14 @@ export const EntityTagModel = {
                         eq(entityTagRelations.tagId, tagId)
                     )
                 );
-            log.query('delete', 'r_entity_tag', { entityType, entityId, tagId }, { deleted: true });
+            dbLogger.query({
+                table: 'r_entity_tag',
+                action: 'delete',
+                params: { entityType, entityId, tagId },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('deleteRelation failed', 'deleteRelation', error);
+            dbLogger.error(error, 'deleteRelation failed');
             throw error;
         }
     }

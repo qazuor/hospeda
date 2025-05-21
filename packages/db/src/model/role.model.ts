@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -11,11 +11,6 @@ import {
     prepareLikeQuery,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for role model operations.
- */
-const log = logger.createLogger('RoleModel');
 
 /**
  * Full role record as returned by the database.
@@ -34,14 +29,14 @@ export const RoleModel = {
      */
     async createRole(data: InsertRole): Promise<RoleRecord> {
         try {
-            log.info('creating a new role', 'createRole', data);
+            dbLogger.info(data, 'creating a new role');
             const db = getDb();
             const rows = castReturning<RoleRecord>(await db.insert(roles).values(data).returning());
             const role = assertExists(rows[0], 'createRole: no role returned');
-            log.query('insert', 'roles', data, role);
+            dbLogger.query({ table: 'roles', action: 'insert', params: data, result: role });
             return role;
         } catch (error) {
-            log.error('createRole failed', 'createRole', error);
+            dbLogger.error(error, 'createRole failed');
             throw error;
         }
     },
@@ -54,13 +49,13 @@ export const RoleModel = {
      */
     async getRoleById(id: string): Promise<RoleRecord | undefined> {
         try {
-            log.info('fetching role by id', 'getRoleById', { id });
+            dbLogger.info({ id }, 'fetching role by id');
             const db = getDb();
             const [role] = await db.select().from(roles).where(eq(roles.id, id)).limit(1);
-            log.query('select', 'roles', { id }, role);
+            dbLogger.query({ table: 'roles', action: 'select', params: { id }, result: role });
             return role ? (role as RoleRecord) : undefined;
         } catch (error) {
-            log.error('getRoleById failed', 'getRoleById', error);
+            dbLogger.error(error, 'getRoleById failed');
             throw error;
         }
     },
@@ -73,13 +68,13 @@ export const RoleModel = {
      */
     async getRoleByName(name: string): Promise<RoleRecord | undefined> {
         try {
-            log.info('fetching role by name', 'getRoleByName', { name });
+            dbLogger.info({ name }, 'fetching role by name');
             const db = getDb();
             const [role] = await db.select().from(roles).where(eq(roles.name, name)).limit(1);
-            log.query('select', 'roles', { name }, role);
+            dbLogger.query({ table: 'roles', action: 'select', params: { name }, result: role });
             return role ? (role as RoleRecord) : undefined;
         } catch (error) {
-            log.error('getRoleByName failed', 'getRoleByName', error);
+            dbLogger.error(error, 'getRoleByName failed');
             throw error;
         }
     },
@@ -92,7 +87,7 @@ export const RoleModel = {
      */
     async listRoles(filter: SelectRoleFilter): Promise<RoleRecord[]> {
         try {
-            log.info('listing roles', 'listRoles', filter);
+            dbLogger.info(filter, 'listing roles');
             const db = getDb();
             let query = db.select().from(roles).$dynamic();
 
@@ -145,10 +140,10 @@ export const RoleModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as RoleRecord[];
 
-            log.query('select', 'roles', filter, rows);
+            dbLogger.query({ table: 'roles', action: 'select', params: filter, result: rows });
             return rows;
         } catch (error) {
-            log.error('listRoles failed', 'listRoles', error);
+            dbLogger.error(error, 'listRoles failed');
             throw error;
         }
     },
@@ -163,16 +158,21 @@ export const RoleModel = {
     async updateRole(id: string, changes: UpdateRoleData): Promise<RoleRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating role', 'updateRole', { id, dataToUpdate });
+            dbLogger.info({ id, dataToUpdate }, 'updating role');
             const db = getDb();
             const rows = castReturning<RoleRecord>(
                 await db.update(roles).set(dataToUpdate).where(eq(roles.id, id)).returning()
             );
             const updated = assertExists(rows[0], `updateRole: no role found for id ${id}`);
-            log.query('update', 'roles', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'roles',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateRole failed', 'updateRole', error);
+            dbLogger.error(error, 'updateRole failed');
             throw error;
         }
     },
@@ -184,12 +184,17 @@ export const RoleModel = {
      */
     async softDeleteRole(id: string): Promise<void> {
         try {
-            log.info('soft deleting role', 'softDeleteRole', { id });
+            dbLogger.info({ id }, 'soft deleting role');
             const db = getDb();
             await db.update(roles).set({ deletedAt: new Date() }).where(eq(roles.id, id));
-            log.query('update', 'roles', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'roles',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteRole failed', 'softDeleteRole', error);
+            dbLogger.error(error, 'softDeleteRole failed');
             throw error;
         }
     },
@@ -201,12 +206,17 @@ export const RoleModel = {
      */
     async restoreRole(id: string): Promise<void> {
         try {
-            log.info('restoring role', 'restoreRole', { id });
+            dbLogger.info({ id }, 'restoring role');
             const db = getDb();
             await db.update(roles).set({ deletedAt: null }).where(eq(roles.id, id));
-            log.query('update', 'roles', { id }, { restored: true });
+            dbLogger.query({
+                table: 'roles',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreRole failed', 'restoreRole', error);
+            dbLogger.error(error, 'restoreRole failed');
             throw error;
         }
     },
@@ -218,12 +228,17 @@ export const RoleModel = {
      */
     async hardDeleteRole(id: string): Promise<void> {
         try {
-            log.info('hard deleting role', 'hardDeleteRole', { id });
+            dbLogger.info({ id }, 'hard deleting role');
             const db = getDb();
             await db.delete(roles).where(eq(roles.id, id));
-            log.query('delete', 'roles', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'roles',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteRole failed', 'hardDeleteRole', error);
+            dbLogger.error(error, 'hardDeleteRole failed');
             throw error;
         }
     }

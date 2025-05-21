@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -17,11 +17,6 @@ import {
 } from '../utils/db-utils.js';
 
 /**
- * Scoped logger for PostSponsorModel operations.
- */
-const log = logger.createLogger('PostSponsorModel');
-
-/**
  * Full post sponsor record as returned by the database.
  */
 export type PostSponsorRecord = InferSelectModel<typeof postSponsors>;
@@ -38,16 +33,21 @@ export const PostSponsorModel = {
      */
     async createSponsor(data: InsertPostSponsor): Promise<PostSponsorRecord> {
         try {
-            log.info('creating post sponsor', 'createSponsor', data);
+            dbLogger.info(data, 'creating post sponsor');
             const db = getDb();
             const rows = castReturning<PostSponsorRecord>(
                 await db.insert(postSponsors).values(data).returning()
             );
             const sponsor = assertExists(rows[0], 'createSponsor: no sponsor returned');
-            log.query('insert', 'post_sponsor', data, sponsor);
+            dbLogger.query({
+                table: 'post_sponsor',
+                action: 'insert',
+                params: data,
+                result: sponsor
+            });
             return sponsor;
         } catch (error) {
-            log.error('createSponsor failed', 'createSponsor', error);
+            dbLogger.error(error, 'createSponsor failed');
             throw error;
         }
     },
@@ -60,17 +60,22 @@ export const PostSponsorModel = {
      */
     async getSponsorById(id: string): Promise<PostSponsorRecord | undefined> {
         try {
-            log.info('fetching sponsor by id', 'getSponsorById', { id });
+            dbLogger.info({ id }, 'fetching sponsor by id');
             const db = getDb();
             const [sponsor] = await db
                 .select()
                 .from(postSponsors)
                 .where(eq(postSponsors.id, id))
                 .limit(1);
-            log.query('select', 'post_sponsor', { id }, sponsor);
+            dbLogger.query({
+                table: 'post_sponsor',
+                action: 'select',
+                params: { id },
+                result: sponsor
+            });
             return sponsor ? (sponsor as PostSponsorRecord) : undefined;
         } catch (error) {
-            log.error('getSponsorById failed', 'getSponsorById', error);
+            dbLogger.error(error, 'getSponsorById failed');
             throw error;
         }
     },
@@ -83,7 +88,7 @@ export const PostSponsorModel = {
      */
     async listSponsors(filter: SelectPostSponsorFilter): Promise<PostSponsorRecord[]> {
         try {
-            log.info('listing sponsors', 'listSponsors', filter);
+            dbLogger.info(filter, 'listing sponsors');
             const db = getDb();
             let query = db.select().from(postSponsors).$dynamic();
 
@@ -134,10 +139,15 @@ export const PostSponsorModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as PostSponsorRecord[];
 
-            log.query('select', 'post_sponsor', filter, rows);
+            dbLogger.query({
+                table: 'post_sponsor',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listSponsors failed', 'listSponsors', error);
+            dbLogger.error(error, 'listSponsors failed');
             throw error;
         }
     },
@@ -152,10 +162,13 @@ export const PostSponsorModel = {
     async updateSponsor(id: string, changes: UpdatePostSponsorData): Promise<PostSponsorRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating sponsor', 'updateSponsor', {
-                id,
-                changes: dataToUpdate
-            });
+            dbLogger.info(
+                {
+                    id,
+                    changes: dataToUpdate
+                },
+                'updating sponsor'
+            );
             const db = getDb();
             const rows = castReturning<PostSponsorRecord>(
                 await db
@@ -165,10 +178,15 @@ export const PostSponsorModel = {
                     .returning()
             );
             const updated = assertExists(rows[0], `updateSponsor: no sponsor found for id ${id}`);
-            log.query('update', 'post_sponsor', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'post_sponsor',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateSponsor failed', 'updateSponsor', error);
+            dbLogger.error(error, 'updateSponsor failed');
             throw error;
         }
     },
@@ -180,15 +198,20 @@ export const PostSponsorModel = {
      */
     async softDeleteSponsor(id: string): Promise<void> {
         try {
-            log.info('soft deleting sponsor', 'softDeleteSponsor', { id });
+            dbLogger.info({ id }, 'soft deleting sponsor');
             const db = getDb();
             await db
                 .update(postSponsors)
                 .set({ deletedAt: new Date() })
                 .where(eq(postSponsors.id, id));
-            log.query('update', 'post_sponsor', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'post_sponsor',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteSponsor failed', 'softDeleteSponsor', error);
+            dbLogger.error(error, 'softDeleteSponsor failed');
             throw error;
         }
     },
@@ -200,12 +223,17 @@ export const PostSponsorModel = {
      */
     async restoreSponsor(id: string): Promise<void> {
         try {
-            log.info('restoring sponsor', 'restoreSponsor', { id });
+            dbLogger.info({ id }, 'restoring sponsor');
             const db = getDb();
             await db.update(postSponsors).set({ deletedAt: null }).where(eq(postSponsors.id, id));
-            log.query('update', 'post_sponsor', { id }, { restored: true });
+            dbLogger.query({
+                table: 'post_sponsor',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreSponsor failed', 'restoreSponsor', error);
+            dbLogger.error(error, 'restoreSponsor failed');
             throw error;
         }
     },
@@ -217,12 +245,17 @@ export const PostSponsorModel = {
      */
     async hardDeleteSponsor(id: string): Promise<void> {
         try {
-            log.info('hard deleting sponsor', 'hardDeleteSponsor', { id });
+            dbLogger.info({ id }, 'hard deleting sponsor');
             const db = getDb();
             await db.delete(postSponsors).where(eq(postSponsors.id, id));
-            log.query('delete', 'post_sponsor', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'post_sponsor',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteSponsor failed', 'hardDeleteSponsor', error);
+            dbLogger.error(error, 'hardDeleteSponsor failed');
             throw error;
         }
     }
