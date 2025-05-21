@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     EventModel,
@@ -15,8 +15,6 @@ import type {
     UpdateEventOrganizerData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('EventOrganizerService');
 
 /**
  * Service layer for managing event organizer operations.
@@ -39,7 +37,7 @@ export class EventOrganizerService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!EventOrganizerService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -52,7 +50,7 @@ export class EventOrganizerService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertEventOrganizer, actor: UserType): Promise<EventOrganizerRecord> {
-        log.info('creating event organizer', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating event organizer');
 
         // Only admins can create organizers
         EventOrganizerService.assertAdmin(actor);
@@ -64,12 +62,15 @@ export class EventOrganizerService {
                 updatedById: actor.id
             };
             const createdOrganizer = await EventOrganizerModel.createOrganizer(dataWithAudit);
-            log.info('event organizer created successfully', 'create', {
-                organizerId: createdOrganizer.id
-            });
+            dbLogger.info(
+                {
+                    organizerId: createdOrganizer.id
+                },
+                'event organizer created successfully'
+            );
             return createdOrganizer;
         } catch (error) {
-            log.error('failed to create event organizer', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create event organizer');
             throw error;
         }
     }
@@ -82,24 +83,27 @@ export class EventOrganizerService {
      * @throws Error if organizer is not found.
      */
     async getById(id: string, actor: UserType): Promise<EventOrganizerRecord> {
-        log.info('fetching organizer by id', 'getById', {
-            organizerId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                organizerId: id,
+                actor: actor.id
+            },
+            'fetching organizer by id'
+        );
 
         try {
             const organizer = await EventOrganizerModel.getOrganizerById(id);
             const existingOrganizer = assertExists(organizer, `Organizer ${id} not found`);
 
-            log.info('organizer fetched successfully', 'getById', {
-                organizerId: existingOrganizer.id
-            });
+            dbLogger.info(
+                {
+                    organizerId: existingOrganizer.id
+                },
+                'organizer fetched successfully'
+            );
             return existingOrganizer;
         } catch (error) {
-            log.error('failed to fetch organizer by id', 'getById', error, {
-                organizerId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch organizer by id');
             throw error;
         }
     }
@@ -115,20 +119,20 @@ export class EventOrganizerService {
         filter: SelectEventOrganizerFilter,
         actor: UserType
     ): Promise<EventOrganizerRecord[]> {
-        log.info('listing organizers', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing organizers');
 
         try {
             const organizers = await EventOrganizerModel.listOrganizers(filter);
-            log.info('organizers listed successfully', 'list', {
-                count: organizers.length,
-                filter
-            });
+            dbLogger.info(
+                {
+                    count: organizers.length,
+                    filter
+                },
+                'organizers listed successfully'
+            );
             return organizers;
         } catch (error) {
-            log.error('failed to list organizers', 'list', error, {
-                filter,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list organizers');
             throw error;
         }
     }
@@ -146,7 +150,7 @@ export class EventOrganizerService {
         changes: UpdateEventOrganizerData,
         actor: UserType
     ): Promise<EventOrganizerRecord> {
-        log.info('updating organizer', 'update', { organizerId: id, actor: actor.id });
+        dbLogger.info({ organizerId: id, actor: actor.id }, 'updating organizer');
 
         // Only admins can update organizers
         EventOrganizerService.assertAdmin(actor);
@@ -164,15 +168,15 @@ export class EventOrganizerService {
                 existingOrganizer.id,
                 dataWithAudit
             );
-            log.info('organizer updated successfully', 'update', {
-                organizerId: updatedOrganizer.id
-            });
+            dbLogger.info(
+                {
+                    organizerId: updatedOrganizer.id
+                },
+                'organizer updated successfully'
+            );
             return updatedOrganizer;
         } catch (error) {
-            log.error('failed to update organizer', 'update', error, {
-                organizerId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update organizer');
             throw error;
         }
     }
@@ -184,7 +188,7 @@ export class EventOrganizerService {
      * @throws Error if organizer is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting organizer', 'delete', { organizerId: id, actor: actor.id });
+        dbLogger.info({ organizerId: id, actor: actor.id }, 'soft deleting organizer');
 
         // Only admins can delete organizers
         EventOrganizerService.assertAdmin(actor);
@@ -193,12 +197,9 @@ export class EventOrganizerService {
 
         try {
             await EventOrganizerModel.softDeleteOrganizer(id);
-            log.info('organizer soft deleted successfully', 'delete', { organizerId: id });
+            dbLogger.info({ organizerId: id }, 'organizer soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete organizer', 'delete', error, {
-                organizerId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete organizer');
             throw error;
         }
     }
@@ -210,7 +211,7 @@ export class EventOrganizerService {
      * @throws Error if organizer is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring organizer', 'restore', { organizerId: id, actor: actor.id });
+        dbLogger.info({ organizerId: id, actor: actor.id }, 'restoring organizer');
 
         // Only admins can restore organizers
         EventOrganizerService.assertAdmin(actor);
@@ -219,12 +220,9 @@ export class EventOrganizerService {
 
         try {
             await EventOrganizerModel.restoreOrganizer(id);
-            log.info('organizer restored successfully', 'restore', { organizerId: id });
+            dbLogger.info({ organizerId: id }, 'organizer restored successfully');
         } catch (error) {
-            log.error('failed to restore organizer', 'restore', error, {
-                organizerId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore organizer');
             throw error;
         }
     }
@@ -236,7 +234,13 @@ export class EventOrganizerService {
      * @throws Error if organizer is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting organizer', 'hardDelete', { organizerId: id, actor: actor.id });
+        dbLogger.info(
+            {
+                organizerId: id,
+                actor: actor.id
+            },
+            'hard deleting organizer'
+        );
 
         // Only admins can hard delete
         EventOrganizerService.assertAdmin(actor);
@@ -245,12 +249,9 @@ export class EventOrganizerService {
 
         try {
             await EventOrganizerModel.hardDeleteOrganizer(id);
-            log.info('organizer hard deleted successfully', 'hardDelete', { organizerId: id });
+            dbLogger.info({ organizerId: id }, 'organizer hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete organizer', 'hardDelete', error, {
-                organizerId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete organizer');
             throw error;
         }
     }
@@ -268,11 +269,14 @@ export class EventOrganizerService {
         organizerId: string,
         actor: UserType
     ): Promise<EventRecord> {
-        log.info('assigning organizer to event', 'assignToEvent', {
-            eventId,
-            organizerId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                eventId,
+                organizerId,
+                actor: actor.id
+            },
+            'assigning organizer to event'
+        );
 
         try {
             // Check if event exists
@@ -296,17 +300,16 @@ export class EventOrganizerService {
             };
 
             const updatedEvent = await EventModel.updateEvent(eventId, changes);
-            log.info('organizer assigned to event successfully', 'assignToEvent', {
-                eventId,
-                organizerId
-            });
+            dbLogger.info(
+                {
+                    eventId,
+                    organizerId
+                },
+                'organizer assigned to event successfully'
+            );
             return updatedEvent;
         } catch (error) {
-            log.error('failed to assign organizer to event', 'assignToEvent', error, {
-                eventId,
-                organizerId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to assign organizer to event');
             throw error;
         }
     }
@@ -324,11 +327,14 @@ export class EventOrganizerService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<EventRecord[]> {
-        log.info('listing events by organizer', 'listEvents', {
-            organizerId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                organizerId,
+                actor: actor.id,
+                filter
+            },
+            'listing events by organizer'
+        );
 
         try {
             // Verify organizer exists
@@ -341,16 +347,16 @@ export class EventOrganizerService {
             };
 
             const events = await EventModel.listEvents(eventFilter);
-            log.info('events by organizer listed successfully', 'listEvents', {
-                organizerId,
-                count: events.length
-            });
+            dbLogger.info(
+                {
+                    organizerId,
+                    count: events.length
+                },
+                'events by organizer listed successfully'
+            );
             return events;
         } catch (error) {
-            log.error('failed to list events by organizer', 'listEvents', error, {
-                organizerId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list events by organizer');
             throw error;
         }
     }

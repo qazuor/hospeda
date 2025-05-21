@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     DestinationAttractionModel,
@@ -12,8 +12,6 @@ import type {
     UpdateDestinationAttractionData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('DestinationAttractionService');
 
 /**
  * Service layer for managing destination attraction operations.
@@ -36,7 +34,7 @@ export class DestinationAttractionService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!DestinationAttractionService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -52,7 +50,7 @@ export class DestinationAttractionService {
         data: InsertDestinationAttraction,
         actor: UserType
     ): Promise<DestinationAttractionRecord> {
-        log.info('creating destination attraction', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating destination attraction');
 
         // Only admins can create attractions
         DestinationAttractionService.assertAdmin(actor);
@@ -65,14 +63,15 @@ export class DestinationAttractionService {
             };
             const createdAttraction =
                 await DestinationAttractionModel.createAttraction(dataWithAudit);
-            log.info('destination attraction created successfully', 'create', {
-                attractionId: createdAttraction.id
-            });
+            dbLogger.info(
+                {
+                    attractionId: createdAttraction.id
+                },
+                'destination attraction created successfully'
+            );
             return createdAttraction;
         } catch (error) {
-            log.error('failed to create destination attraction', 'create', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to create destination attraction');
             throw error;
         }
     }
@@ -85,24 +84,27 @@ export class DestinationAttractionService {
      * @throws Error if attraction is not found.
      */
     async getById(id: string, actor: UserType): Promise<DestinationAttractionRecord> {
-        log.info('fetching attraction by id', 'getById', {
-            attractionId: id,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                attractionId: id,
+                actor: actor.id
+            },
+            'fetching attraction by id'
+        );
 
         try {
             const attraction = await DestinationAttractionModel.getAttractionById(id);
             const existingAttraction = assertExists(attraction, `Attraction ${id} not found`);
 
-            log.info('attraction fetched successfully', 'getById', {
-                attractionId: existingAttraction.id
-            });
+            dbLogger.info(
+                {
+                    attractionId: existingAttraction.id
+                },
+                'attraction fetched successfully'
+            );
             return existingAttraction;
         } catch (error) {
-            log.error('failed to fetch attraction by id', 'getById', error, {
-                attractionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch attraction by id');
             throw error;
         }
     }
@@ -118,20 +120,20 @@ export class DestinationAttractionService {
         filter: SelectDestinationAttractionFilter,
         actor: UserType
     ): Promise<DestinationAttractionRecord[]> {
-        log.info('listing attractions', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing attractions');
 
         try {
             const attractions = await DestinationAttractionModel.listAttractions(filter);
-            log.info('attractions listed successfully', 'list', {
-                count: attractions.length,
-                filter
-            });
+            dbLogger.info(
+                {
+                    count: attractions.length,
+                    filter
+                },
+                'attractions listed successfully'
+            );
             return attractions;
         } catch (error) {
-            log.error('failed to list attractions', 'list', error, {
-                filter,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list attractions');
             throw error;
         }
     }
@@ -149,7 +151,7 @@ export class DestinationAttractionService {
         changes: UpdateDestinationAttractionData,
         actor: UserType
     ): Promise<DestinationAttractionRecord> {
-        log.info('updating attraction', 'update', { attractionId: id, actor: actor.id });
+        dbLogger.info({ attractionId: id, actor: actor.id }, 'updating attraction');
 
         // Only admins can update attractions
         DestinationAttractionService.assertAdmin(actor);
@@ -167,15 +169,15 @@ export class DestinationAttractionService {
                 existingAttraction.id,
                 dataWithAudit
             );
-            log.info('attraction updated successfully', 'update', {
-                attractionId: updatedAttraction.id
-            });
+            dbLogger.info(
+                {
+                    attractionId: updatedAttraction.id
+                },
+                'attraction updated successfully'
+            );
             return updatedAttraction;
         } catch (error) {
-            log.error('failed to update attraction', 'update', error, {
-                attractionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update attraction');
             throw error;
         }
     }
@@ -187,7 +189,7 @@ export class DestinationAttractionService {
      * @throws Error if attraction is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting attraction', 'delete', { attractionId: id, actor: actor.id });
+        dbLogger.info({ attractionId: id, actor: actor.id }, 'soft deleting attraction');
 
         // Only admins can delete attractions
         DestinationAttractionService.assertAdmin(actor);
@@ -196,12 +198,9 @@ export class DestinationAttractionService {
 
         try {
             await DestinationAttractionModel.softDeleteAttraction(id);
-            log.info('attraction soft deleted successfully', 'delete', { attractionId: id });
+            dbLogger.info({ attractionId: id }, 'attraction soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete attraction', 'delete', error, {
-                attractionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete attraction');
             throw error;
         }
     }
@@ -213,7 +212,7 @@ export class DestinationAttractionService {
      * @throws Error if attraction is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring attraction', 'restore', { attractionId: id, actor: actor.id });
+        dbLogger.info({ attractionId: id, actor: actor.id }, 'restoring attraction');
 
         // Only admins can restore attractions
         DestinationAttractionService.assertAdmin(actor);
@@ -222,12 +221,9 @@ export class DestinationAttractionService {
 
         try {
             await DestinationAttractionModel.restoreAttraction(id);
-            log.info('attraction restored successfully', 'restore', { attractionId: id });
+            dbLogger.info({ attractionId: id }, 'attraction restored successfully');
         } catch (error) {
-            log.error('failed to restore attraction', 'restore', error, {
-                attractionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore attraction');
             throw error;
         }
     }
@@ -239,7 +235,13 @@ export class DestinationAttractionService {
      * @throws Error if attraction is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting attraction', 'hardDelete', { attractionId: id, actor: actor.id });
+        dbLogger.info(
+            {
+                attractionId: id,
+                actor: actor.id
+            },
+            'hard deleting attraction'
+        );
 
         // Only admins can hard delete
         DestinationAttractionService.assertAdmin(actor);
@@ -248,12 +250,9 @@ export class DestinationAttractionService {
 
         try {
             await DestinationAttractionModel.hardDeleteAttraction(id);
-            log.info('attraction hard deleted successfully', 'hardDelete', { attractionId: id });
+            dbLogger.info({ attractionId: id }, 'attraction hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete attraction', 'hardDelete', error, {
-                attractionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete attraction');
             throw error;
         }
     }
@@ -266,10 +265,13 @@ export class DestinationAttractionService {
      * @throws Error if destination is not found or count fails.
      */
     async countByDestination(destinationId: string, actor: UserType): Promise<number> {
-        log.info('counting attractions by destination', 'countByDestination', {
-            destinationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id
+            },
+            'counting attractions by destination'
+        );
 
         try {
             // Verify destination exists
@@ -289,16 +291,16 @@ export class DestinationAttractionService {
             // or have a proper filter in the model method
             const count = attractions.length;
 
-            log.info('attractions counted by destination successfully', 'countByDestination', {
-                destinationId,
-                count
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    count
+                },
+                'attractions counted by destination successfully'
+            );
             return count;
         } catch (error) {
-            log.error('failed to count attractions by destination', 'countByDestination', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to count attractions by destination');
             throw error;
         }
     }
@@ -316,11 +318,14 @@ export class DestinationAttractionService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationAttractionRecord[]> {
-        log.info('searching attractions', 'search', {
-            query,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                query,
+                actor: actor.id,
+                filter
+            },
+            'searching attractions'
+        );
 
         try {
             const searchFilter: SelectDestinationAttractionFilter = {
@@ -330,16 +335,16 @@ export class DestinationAttractionService {
             };
 
             const attractions = await DestinationAttractionModel.listAttractions(searchFilter);
-            log.info('attractions search completed successfully', 'search', {
-                query,
-                count: attractions.length
-            });
+            dbLogger.info(
+                {
+                    query,
+                    count: attractions.length
+                },
+                'attractions search completed successfully'
+            );
             return attractions;
         } catch (error) {
-            log.error('failed to search attractions', 'search', error, {
-                query,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to search attractions');
             throw error;
         }
     }

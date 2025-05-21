@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     AccommodationFaqModel,
@@ -12,8 +12,6 @@ import type {
     UpdateAccommodationFaqData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('AccommodationFaqService');
 
 /**
  * Service layer for managing accommodation FAQ operations.
@@ -37,10 +35,13 @@ export class AccommodationFaqService {
      */
     private static assertOwnerOrAdmin(ownerId: string, actor: UserType): void {
         if (actor.id !== ownerId && !AccommodationFaqService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertOwnerOrAdmin', {
-                actorId: actor.id,
-                requiredOwnerId: ownerId
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredOwnerId: ownerId
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -53,7 +54,7 @@ export class AccommodationFaqService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertAccommodationFaq, actor: UserType): Promise<AccommodationFaqRecord> {
-        log.info('creating accommodation FAQ', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating accommodation FAQ');
 
         try {
             // Verify accommodation exists
@@ -73,12 +74,10 @@ export class AccommodationFaqService {
                 updatedById: actor.id
             };
             const createdFaq = await AccommodationFaqModel.createFaq(dataWithAudit);
-            log.info('accommodation FAQ created successfully', 'create', {
-                faqId: createdFaq.id
-            });
+            dbLogger.info({ faqId: createdFaq.id }, 'accommodation FAQ created successfully');
             return createdFaq;
         } catch (error) {
-            log.error('failed to create accommodation FAQ', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create accommodation FAQ');
             throw error;
         }
     }
@@ -91,7 +90,7 @@ export class AccommodationFaqService {
      * @throws Error if FAQ entry is not found or actor is not authorized.
      */
     async getById(id: string, actor: UserType): Promise<AccommodationFaqRecord> {
-        log.info('fetching FAQ by id', 'getById', { faqId: id, actor: actor.id });
+        dbLogger.info({ faqId: id, actor: actor.id }, 'fetching FAQ by id');
 
         try {
             const faq = await AccommodationFaqModel.getFaqById(id);
@@ -108,15 +107,10 @@ export class AccommodationFaqService {
             // Check if actor is owner or admin
             AccommodationFaqService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
-            log.info('FAQ fetched successfully', 'getById', {
-                faqId: existingFaq.id
-            });
+            dbLogger.info({ faqId: existingFaq.id }, 'FAQ fetched successfully');
             return existingFaq;
         } catch (error) {
-            log.error('failed to fetch FAQ by id', 'getById', error, {
-                faqId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch FAQ by id');
             throw error;
         }
     }
@@ -134,11 +128,14 @@ export class AccommodationFaqService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationFaqRecord[]> {
-        log.info('listing FAQs for accommodation', 'list', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing FAQs for accommodation'
+        );
 
         try {
             // Verify accommodation exists
@@ -154,16 +151,10 @@ export class AccommodationFaqService {
             };
 
             const faqs = await AccommodationFaqModel.listFaqs(faqFilter);
-            log.info('FAQs listed successfully', 'list', {
-                accommodationId,
-                count: faqs.length
-            });
+            dbLogger.info({ accommodationId, count: faqs.length }, 'FAQs listed successfully');
             return faqs;
         } catch (error) {
-            log.error('failed to list FAQs', 'list', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list FAQs');
             throw error;
         }
     }
@@ -181,7 +172,7 @@ export class AccommodationFaqService {
         changes: UpdateAccommodationFaqData,
         actor: UserType
     ): Promise<AccommodationFaqRecord> {
-        log.info('updating FAQ', 'update', { faqId: id, actor: actor.id });
+        dbLogger.info({ faqId: id, actor: actor.id }, 'updating FAQ');
 
         const existingFaq = await this.getById(id, actor);
 
@@ -204,15 +195,10 @@ export class AccommodationFaqService {
                 updatedById: actor.id
             };
             const updatedFaq = await AccommodationFaqModel.updateFaq(existingFaq.id, dataWithAudit);
-            log.info('FAQ updated successfully', 'update', {
-                faqId: updatedFaq.id
-            });
+            dbLogger.info({ faqId: updatedFaq.id }, 'FAQ updated successfully');
             return updatedFaq;
         } catch (error) {
-            log.error('failed to update FAQ', 'update', error, {
-                faqId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update FAQ');
             throw error;
         }
     }
@@ -224,7 +210,7 @@ export class AccommodationFaqService {
      * @throws Error if FAQ entry is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting FAQ', 'delete', { faqId: id, actor: actor.id });
+        dbLogger.info({ faqId: id, actor: actor.id }, 'soft deleting FAQ');
 
         const existingFaq = await this.getById(id, actor);
 
@@ -241,12 +227,9 @@ export class AccommodationFaqService {
 
         try {
             await AccommodationFaqModel.softDeleteFaq(id);
-            log.info('FAQ soft deleted successfully', 'delete', { faqId: id });
+            dbLogger.info({ faqId: id }, 'FAQ soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete FAQ', 'delete', error, {
-                faqId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete FAQ');
             throw error;
         }
     }
@@ -258,7 +241,7 @@ export class AccommodationFaqService {
      * @throws Error if FAQ entry is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring FAQ', 'restore', { faqId: id, actor: actor.id });
+        dbLogger.info({ faqId: id, actor: actor.id }, 'restoring FAQ');
 
         const existingFaq = await this.getById(id, actor);
 
@@ -275,12 +258,9 @@ export class AccommodationFaqService {
 
         try {
             await AccommodationFaqModel.restoreFaq(id);
-            log.info('FAQ restored successfully', 'restore', { faqId: id });
+            dbLogger.info({ faqId: id }, 'FAQ restored successfully');
         } catch (error) {
-            log.error('failed to restore FAQ', 'restore', error, {
-                faqId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore FAQ');
             throw error;
         }
     }
@@ -292,7 +272,7 @@ export class AccommodationFaqService {
      * @throws Error if FAQ entry is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting FAQ', 'hardDelete', { faqId: id, actor: actor.id });
+        dbLogger.info({ faqId: id, actor: actor.id }, 'hard deleting FAQ');
 
         // Only admins can hard delete
         if (!AccommodationFaqService.isAdmin(actor)) {
@@ -303,12 +283,9 @@ export class AccommodationFaqService {
 
         try {
             await AccommodationFaqModel.hardDeleteFaq(id);
-            log.info('FAQ hard deleted successfully', 'hardDelete', { faqId: id });
+            dbLogger.info({ faqId: id }, 'FAQ hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete FAQ', 'hardDelete', error, {
-                faqId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete FAQ');
             throw error;
         }
     }

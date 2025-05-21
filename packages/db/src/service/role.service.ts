@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     PermissionModel,
@@ -19,8 +19,6 @@ import type {
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
-const log = logger.createLogger('RoleService');
-
 /**
  * Service layer for managing role operations.
  * Handles business logic, authorization, and interacts with Role, User, and RolePermission models.
@@ -32,7 +30,7 @@ export class RoleService {
 
     private static assertAdmin(actor: UserType): void {
         if (!RoleService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -45,7 +43,7 @@ export class RoleService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertRole, actor: UserType): Promise<RoleRecord> {
-        log.info('creating role', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating role');
 
         RoleService.assertAdmin(actor);
 
@@ -56,10 +54,10 @@ export class RoleService {
                 updatedById: actor.id
             };
             const createdRole = await RoleModel.createRole(dataWithAudit);
-            log.info('role created successfully', 'create', { roleId: createdRole.id });
+            dbLogger.info({ roleId: createdRole.id }, 'role created successfully');
             return createdRole;
         } catch (error) {
-            log.error('failed to create role', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create role');
             throw error;
         }
     }
@@ -72,14 +70,14 @@ export class RoleService {
      * @throws Error if role is not found or actor is not authorized.
      */
     async getById(id: string, actor: UserType): Promise<RoleRecord> {
-        log.info('fetching role by id', 'getById', { roleId: id, actor: actor.id });
+        dbLogger.info({ roleId: id, actor: actor.id }, 'fetching role by id');
 
         RoleService.assertAdmin(actor);
 
         const role = await RoleModel.getRoleById(id);
         const existingRole = assertExists(role, `Role ${id} not found`);
 
-        log.info('role fetched successfully', 'getById', { roleId: existingRole.id });
+        dbLogger.info({ roleId: existingRole.id }, 'role fetched successfully');
         return existingRole;
     }
 
@@ -91,16 +89,16 @@ export class RoleService {
      * @throws Error if actor is not authorized or listing fails.
      */
     async list(filter: SelectRoleFilter, actor: UserType): Promise<RoleRecord[]> {
-        log.info('listing roles', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing roles');
 
         RoleService.assertAdmin(actor);
 
         try {
             const roles = await RoleModel.listRoles(filter);
-            log.info('roles listed successfully', 'list', { count: roles.length, filter });
+            dbLogger.info({ count: roles.length, filter }, 'roles listed successfully');
             return roles;
         } catch (error) {
-            log.error('failed to list roles', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list roles');
             throw error;
         }
     }
@@ -114,7 +112,7 @@ export class RoleService {
      * @throws Error if role is not found, actor is not authorized, or update fails.
      */
     async update(id: string, changes: UpdateRoleData, actor: UserType): Promise<RoleRecord> {
-        log.info('updating role', 'update', { roleId: id, actor: actor.id });
+        dbLogger.info({ roleId: id, actor: actor.id }, 'updating role');
 
         RoleService.assertAdmin(actor);
 
@@ -123,10 +121,10 @@ export class RoleService {
         const dataToUpdate = sanitizePartialUpdate(changes);
 
         if ('isBuiltIn' in dataToUpdate) {
-            log.warn('Attempted to change isBuiltIn status on role update', 'update', {
-                roleId: id,
-                actor: actor.id
-            });
+            dbLogger.warn(
+                { roleId: id, actor: actor.id },
+                'Attempted to change isBuiltIn status on role update'
+            );
             // Use assignment to undefined instead of delete to satisfy lint rule
             dataToUpdate.isBuiltIn = undefined;
         }
@@ -137,10 +135,10 @@ export class RoleService {
                 updatedById: actor.id
             };
             const updatedRole = await RoleModel.updateRole(existingRole.id, dataWithAudit);
-            log.info('role updated successfully', 'update', { roleId: updatedRole.id });
+            dbLogger.info({ roleId: updatedRole.id }, 'role updated successfully');
             return updatedRole;
         } catch (error) {
-            log.error('failed to update role', 'update', error, { roleId: id, actor: actor.id });
+            dbLogger.error(error, 'failed to update role');
             throw error;
         }
     }
@@ -152,7 +150,7 @@ export class RoleService {
      * @throws Error if role is not found, is built-in, actor is not authorized, or soft-delete fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting role', 'delete', { roleId: id, actor: actor.id });
+        dbLogger.info({ roleId: id, actor: actor.id }, 'soft deleting role');
 
         RoleService.assertAdmin(actor);
 
@@ -162,10 +160,10 @@ export class RoleService {
         );
 
         if (existingRole.isBuiltIn) {
-            log.warn('Attempted to soft delete a built-in role', 'delete', {
-                roleId: id,
-                actor: actor.id
-            });
+            dbLogger.warn(
+                { roleId: id, actor: actor.id },
+                'Attempted to soft delete a built-in role'
+            );
             throw new Error('Cannot delete built-in roles');
         }
 
@@ -175,12 +173,9 @@ export class RoleService {
                 deletedById: actor.id
             };
             await RoleModel.updateRole(existingRole.id, changes);
-            log.info('role soft deleted successfully', 'delete', { roleId: existingRole.id });
+            dbLogger.info({ roleId: existingRole.id }, 'role soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete role', 'delete', error, {
-                roleId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete role');
             throw error;
         }
     }
@@ -192,7 +187,7 @@ export class RoleService {
      * @throws Error if role is not found, actor is not authorized, or restore fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring role', 'restore', { roleId: id, actor: actor.id });
+        dbLogger.info({ roleId: id, actor: actor.id }, 'restoring role');
 
         RoleService.assertAdmin(actor);
 
@@ -210,9 +205,9 @@ export class RoleService {
             };
             // Use the original ID, assertExists ensures it exists
             await RoleModel.updateRole(id, changes);
-            log.info('role restored successfully', 'restore', { roleId: id });
+            dbLogger.info({ roleId: id }, 'role restored successfully');
         } catch (error) {
-            log.error('failed to restore role', 'restore', error, { roleId: id, actor: actor.id });
+            dbLogger.error(error, 'failed to restore role');
             throw error;
         }
     }
@@ -224,7 +219,7 @@ export class RoleService {
      * @throws Error if role is not found, is built-in, actor is not authorized, or hard-delete fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting role', 'hardDelete', { roleId: id, actor: actor.id });
+        dbLogger.info({ roleId: id, actor: actor.id }, 'hard deleting role');
 
         RoleService.assertAdmin(actor);
 
@@ -234,21 +229,18 @@ export class RoleService {
         );
 
         if (existingRole.isBuiltIn) {
-            log.warn('Attempted to hard delete a built-in role', 'hardDelete', {
-                roleId: id,
-                actor: actor.id
-            });
+            dbLogger.warn(
+                { roleId: id, actor: actor.id },
+                'Attempted to hard delete a built-in role'
+            );
             throw new Error('Cannot delete built-in roles');
         }
 
         try {
             await RoleModel.hardDeleteRole(id);
-            log.info('role hard deleted successfully', 'hardDelete', { roleId: id });
+            dbLogger.info({ roleId: id }, 'role hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete role', 'hardDelete', error, {
-                roleId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete role');
             throw error;
         }
     }
@@ -262,7 +254,7 @@ export class RoleService {
      * @throws Error if role or user is not found, actor is not authorized, or update fails.
      */
     async assignToUser(roleId: string, userId: string, actor: UserType): Promise<UserRecord> {
-        log.info('assigning role to user', 'assignToUser', { roleId, userId, actor: actor.id });
+        dbLogger.info({ roleId, userId, actor: actor.id }, 'assigning role to user');
 
         RoleService.assertAdmin(actor);
 
@@ -273,10 +265,9 @@ export class RoleService {
         );
 
         if (actor.id === userId && !RoleService.isAdmin(actor)) {
-            log.warn(
-                'Attempted to change own role without sufficient permissions',
-                'assignToUser',
-                { actorId: actor.id, userId }
+            dbLogger.warn(
+                { actorId: actor.id, userId },
+                'Attempted to change own role without sufficient permissions'
             );
             throw new Error('Forbidden: Cannot change your own role');
         }
@@ -287,14 +278,10 @@ export class RoleService {
                 updatedById: actor.id
             };
             const updatedUser = await UserModel.updateUser(existingUser.id, changes);
-            log.info('role assigned to user successfully', 'assignToUser', { roleId, userId });
+            dbLogger.info({ roleId, userId }, 'role assigned to user successfully');
             return updatedUser;
         } catch (error) {
-            log.error('failed to assign role to user', 'assignToUser', error, {
-                roleId,
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to assign role to user');
             throw error;
         }
     }
@@ -308,7 +295,7 @@ export class RoleService {
      * @throws Error if role or user is not found, role is a default role, actor is not authorized, or update fails.
      */
     async removeFromUser(roleId: string, userId: string, actor: UserType): Promise<UserRecord> {
-        log.info('removing role from user', 'removeFromUser', { roleId, userId, actor: actor.id });
+        dbLogger.info({ roleId, userId, actor: actor.id }, 'removing role from user');
 
         RoleService.assertAdmin(actor);
 
@@ -322,26 +309,27 @@ export class RoleService {
             'Default user role not found'
         );
         if (existingUser.roleId === roleId && roleId === defaultUserRole.id) {
-            log.warn(
-                'Attempted to remove the default role from a user who already has it',
-                'removeFromUser',
-                { roleId, userId }
+            dbLogger.warn(
+                { roleId, userId },
+                'Attempted to remove the default role from a user who already has it'
             );
             throw new Error('Cannot remove the default role if the user already has it');
         }
         if (existingUser.roleId !== roleId) {
-            log.warn('Attempted to remove a role that the user does not have', 'removeFromUser', {
-                roleId,
-                userId
-            });
+            dbLogger.warn(
+                {
+                    roleId,
+                    userId
+                },
+                'Attempted to remove a role that the user does not have'
+            );
             return existingUser;
         }
 
         if (actor.id === userId && !RoleService.isAdmin(actor)) {
-            log.warn(
-                'Attempted to change own role without sufficient permissions',
-                'removeFromUser',
-                { actorId: actor.id, userId }
+            dbLogger.warn(
+                { actorId: actor.id, userId },
+                'Attempted to change own role without sufficient permissions'
             );
             throw new Error('Forbidden: Cannot change your own role');
         }
@@ -352,18 +340,13 @@ export class RoleService {
                 updatedById: actor.id
             };
             const updatedUser = await UserModel.updateUser(existingUser.id, changes);
-            log.info('role removed from user, default role assigned', 'removeFromUser', {
-                roleId,
-                userId,
-                defaultRoleId: defaultUserRole.id
-            });
+            dbLogger.info(
+                { roleId, userId, defaultRoleId: defaultUserRole.id },
+                'role removed from user, default role assigned'
+            );
             return updatedUser;
         } catch (error) {
-            log.error('failed to remove role from user', 'removeFromUser', error, {
-                roleId,
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove role from user');
             throw error;
         }
     }
@@ -381,7 +364,7 @@ export class RoleService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<UserRecord[]> {
-        log.info('listing users by role', 'listUsers', { roleId, actor: actor.id, filter });
+        dbLogger.info({ roleId, actor: actor.id, filter }, 'listing users by role');
 
         RoleService.assertAdmin(actor);
 
@@ -389,16 +372,10 @@ export class RoleService {
 
         try {
             const users = await UserModel.listUsers({ roleId, ...filter, includeDeleted: false });
-            log.info('users listed by role successfully', 'listUsers', {
-                roleId,
-                count: users.length
-            });
+            dbLogger.info({ roleId, count: users.length }, 'users listed by role successfully');
             return users;
         } catch (error) {
-            log.error('failed to list users by role', 'listUsers', error, {
-                roleId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list users by role');
             throw error;
         }
     }
@@ -416,11 +393,7 @@ export class RoleService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<RolePermissionRecord[]> {
-        log.info('listing permissions for role', 'listPermissions', {
-            roleId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ roleId, actor: actor.id, filter }, 'listing permissions for role');
 
         RoleService.assertAdmin(actor);
 
@@ -431,16 +404,13 @@ export class RoleService {
 
         try {
             const permissions = await RolePermissionModel.listByRole(existingRole.id, filter);
-            log.info('permissions listed for role successfully', 'listPermissions', {
-                roleId: existingRole.id,
-                count: permissions.length
-            });
+            dbLogger.info(
+                { roleId: existingRole.id, count: permissions.length },
+                'permissions listed for role successfully'
+            );
             return permissions;
         } catch (error) {
-            log.error('failed to list permissions for role', 'listPermissions', error, {
-                roleId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list permissions for role');
             throw error;
         }
     }
@@ -458,11 +428,7 @@ export class RoleService {
         permissionId: string,
         actor: UserType
     ): Promise<RolePermissionRecord> {
-        log.info('assigning permission to role', 'assignPermission', {
-            roleId,
-            permissionId,
-            actor: actor.id
-        });
+        dbLogger.info({ roleId, permissionId, actor: actor.id }, 'assigning permission to role');
 
         RoleService.assertAdmin(actor);
 
@@ -479,17 +445,10 @@ export class RoleService {
 
         try {
             const relation = await RolePermissionModel.createRelation(data);
-            log.info('permission assigned to role successfully', 'assignPermission', {
-                roleId,
-                permissionId
-            });
+            dbLogger.info({ roleId, permissionId }, 'permission assigned to role successfully');
             return relation;
         } catch (error) {
-            log.error('failed to assign permission to role', 'assignPermission', error, {
-                roleId,
-                permissionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to assign permission to role');
             throw error;
         }
     }
@@ -502,26 +461,15 @@ export class RoleService {
      * @throws Error if actor is not authorized or deletion fails.
      */
     async removePermission(roleId: string, permissionId: string, actor: UserType): Promise<void> {
-        log.info('removing permission from role', 'removePermission', {
-            roleId,
-            permissionId,
-            actor: actor.id
-        });
+        dbLogger.info({ roleId, permissionId, actor: actor.id }, 'removing permission from role');
 
         RoleService.assertAdmin(actor);
 
         try {
             await RolePermissionModel.deleteRelation(roleId, permissionId);
-            log.info('permission removed from role successfully', 'removePermission', {
-                roleId,
-                permissionId
-            });
+            dbLogger.info({ roleId, permissionId }, 'permission removed from role successfully');
         } catch (error) {
-            log.error('failed to remove permission from role', 'removePermission', error, {
-                roleId,
-                permissionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove permission from role');
             throw error;
         }
     }
@@ -534,7 +482,7 @@ export class RoleService {
      * @throws Error if actor is not authorized or listing fails.
      */
     async listBuiltIn(actor: UserType, filter: PaginationParams = {}): Promise<RoleRecord[]> {
-        log.info('listing built-in roles', 'listBuiltIn', { actor: actor.id, filter });
+        dbLogger.info({ actor: actor.id, filter }, 'listing built-in roles');
 
         RoleService.assertAdmin(actor);
 
@@ -546,10 +494,10 @@ export class RoleService {
 
         try {
             const roles = await RoleModel.listRoles(roleFilter);
-            log.info('built-in roles listed successfully', 'listBuiltIn', { count: roles.length });
+            dbLogger.info({ count: roles.length }, 'built-in roles listed successfully');
             return roles;
         } catch (error) {
-            log.error('failed to list built-in roles', 'listBuiltIn', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to list built-in roles');
             throw error;
         }
     }
@@ -562,7 +510,7 @@ export class RoleService {
      * @throws Error if actor is not authorized or listing fails.
      */
     async listCustom(actor: UserType, filter: PaginationParams = {}): Promise<RoleRecord[]> {
-        log.info('listing custom roles', 'listCustom', { actor: actor.id, filter });
+        dbLogger.info({ actor: actor.id, filter }, 'listing custom roles');
 
         RoleService.assertAdmin(actor);
 
@@ -574,10 +522,10 @@ export class RoleService {
 
         try {
             const roles = await RoleModel.listRoles(roleFilter);
-            log.info('custom roles listed successfully', 'listCustom', { count: roles.length });
+            dbLogger.info({ count: roles.length }, 'custom roles listed successfully');
             return roles;
         } catch (error) {
-            log.error('failed to list custom roles', 'listCustom', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to list custom roles');
             throw error;
         }
     }
@@ -590,7 +538,7 @@ export class RoleService {
      * @throws Error if role is not found, actor is not authorized, or count fails.
      */
     async countUsers(roleId: string, actor: UserType): Promise<number> {
-        log.info('counting users by role', 'countUsers', { roleId, actor: actor.id });
+        dbLogger.info({ roleId, actor: actor.id }, 'counting users by role');
 
         RoleService.assertAdmin(actor);
 
@@ -607,13 +555,10 @@ export class RoleService {
             });
 
             const userCount = users.length;
-            log.info('user count by role successful', 'countUsers', { roleId, count: userCount });
+            dbLogger.info({ roleId, count: userCount }, 'user count by role successful');
             return userCount;
         } catch (error) {
-            log.error('failed to count users by role', 'countUsers', error, {
-                roleId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to count users by role');
             throw error;
         }
     }

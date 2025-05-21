@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, EntityTypeEnum, type UserType } from '@repo/types';
 import {
     EntityTagModel,
@@ -18,8 +18,6 @@ import type {
     UpdatePostData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('PostService');
 
 /**
  * Service layer for managing post operations.
@@ -43,10 +41,13 @@ export class PostService {
      */
     private static assertAuthorOrAdmin(authorId: string, actor: UserType): void {
         if (actor.id !== authorId && !PostService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertAuthorOrAdmin', {
-                actorId: actor.id,
-                requiredAuthorId: authorId
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredAuthorId: authorId
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -58,7 +59,7 @@ export class PostService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!PostService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -71,7 +72,7 @@ export class PostService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertPost, actor: UserType): Promise<PostRecord> {
-        log.info('creating post', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating post');
 
         try {
             const dataWithAudit: InsertPost = {
@@ -80,10 +81,10 @@ export class PostService {
                 updatedById: actor.id
             };
             const createdPost = await PostModel.createPost(dataWithAudit);
-            log.info('post created successfully', 'create', { postId: createdPost.id });
+            dbLogger.info({ postId: createdPost.id }, 'post created successfully');
             return createdPost;
         } catch (error) {
-            log.error('failed to create post', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create post');
             throw error;
         }
     }
@@ -96,19 +97,16 @@ export class PostService {
      * @throws Error if post is not found.
      */
     async getById(id: string, actor: UserType): Promise<PostRecord> {
-        log.info('fetching post by id', 'getById', { postId: id, actor: actor.id });
+        dbLogger.info({ postId: id, actor: actor.id }, 'fetching post by id');
 
         try {
             const post = await PostModel.getPostById(id);
             const existingPost = assertExists(post, `Post ${id} not found`);
 
-            log.info('post fetched successfully', 'getById', { postId: existingPost.id });
+            dbLogger.info({ postId: existingPost.id }, 'post fetched successfully');
             return existingPost;
         } catch (error) {
-            log.error('failed to fetch post by id', 'getById', error, {
-                postId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch post by id');
             throw error;
         }
     }
@@ -121,17 +119,14 @@ export class PostService {
      * @throws Error if listing fails.
      */
     async list(filter: SelectPostFilter, actor: UserType): Promise<PostRecord[]> {
-        log.info('listing posts', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing posts');
 
         try {
             const posts = await PostModel.listPosts(filter);
-            log.info('posts listed successfully', 'list', {
-                count: posts.length,
-                filter
-            });
+            dbLogger.info({ count: posts.length, filter }, 'posts listed successfully');
             return posts;
         } catch (error) {
-            log.error('failed to list posts', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list posts');
             throw error;
         }
     }
@@ -145,7 +140,7 @@ export class PostService {
      * @throws Error if post is not found, actor is not authorized, or update fails.
      */
     async update(id: string, changes: UpdatePostData, actor: UserType): Promise<PostRecord> {
-        log.info('updating post', 'update', { postId: id, actor: actor.id });
+        dbLogger.info({ postId: id, actor: actor.id }, 'updating post');
 
         const existingPost = await this.getById(id, actor);
 
@@ -160,13 +155,10 @@ export class PostService {
                 updatedById: actor.id
             };
             const updatedPost = await PostModel.updatePost(existingPost.id, dataWithAudit);
-            log.info('post updated successfully', 'update', { postId: updatedPost.id });
+            dbLogger.info({ postId: updatedPost.id }, 'post updated successfully');
             return updatedPost;
         } catch (error) {
-            log.error('failed to update post', 'update', error, {
-                postId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update post');
             throw error;
         }
     }
@@ -178,7 +170,7 @@ export class PostService {
      * @throws Error if post is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting post', 'delete', { postId: id, actor: actor.id });
+        dbLogger.info({ postId: id, actor: actor.id }, 'soft deleting post');
 
         const existingPost = await this.getById(id, actor);
 
@@ -187,12 +179,9 @@ export class PostService {
 
         try {
             await PostModel.softDeletePost(id);
-            log.info('post soft deleted successfully', 'delete', { postId: id });
+            dbLogger.info({ postId: id }, 'post soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete post', 'delete', error, {
-                postId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete post');
             throw error;
         }
     }
@@ -204,7 +193,7 @@ export class PostService {
      * @throws Error if post is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring post', 'restore', { postId: id, actor: actor.id });
+        dbLogger.info({ postId: id, actor: actor.id }, 'restoring post');
 
         const existingPost = await this.getById(id, actor);
 
@@ -213,12 +202,9 @@ export class PostService {
 
         try {
             await PostModel.restorePost(id);
-            log.info('post restored successfully', 'restore', { postId: id });
+            dbLogger.info({ postId: id }, 'post restored successfully');
         } catch (error) {
-            log.error('failed to restore post', 'restore', error, {
-                postId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore post');
             throw error;
         }
     }
@@ -230,7 +216,7 @@ export class PostService {
      * @throws Error if post is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting post', 'hardDelete', { postId: id, actor: actor.id });
+        dbLogger.info({ postId: id, actor: actor.id }, 'hard deleting post');
 
         // Only admins can hard delete
         PostService.assertAdmin(actor);
@@ -239,12 +225,9 @@ export class PostService {
 
         try {
             await PostModel.hardDeletePost(id);
-            log.info('post hard deleted successfully', 'hardDelete', { postId: id });
+            dbLogger.info({ postId: id }, 'post hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete post', 'hardDelete', error, {
-                postId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete post');
             throw error;
         }
     }
@@ -262,11 +245,7 @@ export class PostService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('fetching posts by category', 'getByCategory', {
-            category,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ category, actor: actor.id, filter }, 'fetching posts by category');
 
         try {
             const postFilter: SelectPostFilter = {
@@ -276,16 +255,13 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('posts fetched by category successfully', 'getByCategory', {
-                category,
-                count: posts.length
-            });
+            dbLogger.info(
+                { category, count: posts.length },
+                'posts fetched by category successfully'
+            );
             return posts;
         } catch (error) {
-            log.error('failed to fetch posts by category', 'getByCategory', error, {
-                category,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch posts by category');
             throw error;
         }
     }
@@ -303,11 +279,7 @@ export class PostService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('fetching posts by visibility', 'getByVisibility', {
-            visibility,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ visibility, actor: actor.id, filter }, 'fetching posts by visibility');
 
         try {
             const postFilter: SelectPostFilter = {
@@ -317,16 +289,13 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('posts fetched by visibility successfully', 'getByVisibility', {
-                visibility,
-                count: posts.length
-            });
+            dbLogger.info(
+                { visibility, count: posts.length },
+                'posts fetched by visibility successfully'
+            );
             return posts;
         } catch (error) {
-            log.error('failed to fetch posts by visibility', 'getByVisibility', error, {
-                visibility,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch posts by visibility');
             throw error;
         }
     }
@@ -349,11 +318,7 @@ export class PostService {
         >,
         actor: UserType
     ): Promise<PostSponsorshipRecord> {
-        log.info('adding sponsor to post', 'addSponsor', {
-            postId,
-            sponsorId,
-            actor: actor.id
-        });
+        dbLogger.info({ postId, sponsorId, actor: actor.id }, 'adding sponsor to post');
 
         // Only admins can assign sponsors
         PostService.assertAdmin(actor);
@@ -378,18 +343,13 @@ export class PostService {
 
             const sponsorship =
                 await PostSponsorshipModel.createSponsorship(sponsorshipDataWithIds);
-            log.info('sponsor added to post successfully', 'addSponsor', {
-                postId,
-                sponsorId,
-                sponsorshipId: sponsorship.id
-            });
+            dbLogger.info(
+                { postId, sponsorId, sponsorshipId: sponsorship.id },
+                'sponsor added to post successfully'
+            );
             return sponsorship;
         } catch (error) {
-            log.error('failed to add sponsor to post', 'addSponsor', error, {
-                postId,
-                sponsorId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add sponsor to post');
             throw error;
         }
     }
@@ -402,11 +362,7 @@ export class PostService {
      * @throws Error if post or sponsor is not found, actor is not authorized, or deletion fails.
      */
     async removeSponsor(postId: string, sponsorId: string, actor: UserType): Promise<void> {
-        log.info('removing sponsor from post', 'removeSponsor', {
-            postId,
-            sponsorId,
-            actor: actor.id
-        });
+        dbLogger.info({ postId, sponsorId, actor: actor.id }, 'removing sponsor from post');
 
         // Only admins can remove sponsors
         PostService.assertAdmin(actor);
@@ -428,16 +384,9 @@ export class PostService {
                 await PostSponsorshipModel.softDeleteSponsorship(sponsorship.id);
             }
 
-            log.info('sponsor removed from post successfully', 'removeSponsor', {
-                postId,
-                sponsorId
-            });
+            dbLogger.info({ postId, sponsorId }, 'sponsor removed from post successfully');
         } catch (error) {
-            log.error('failed to remove sponsor from post', 'removeSponsor', error, {
-                postId,
-                sponsorId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove sponsor from post');
             throw error;
         }
     }
@@ -451,11 +400,7 @@ export class PostService {
      * @throws Error if post or tag is not found, actor is not authorized, or creation fails.
      */
     async addTag(postId: string, tagId: string, actor: UserType): Promise<EntityTagRecord> {
-        log.info('adding tag to post', 'addTag', {
-            postId,
-            tagId,
-            actor: actor.id
-        });
+        dbLogger.info({ postId, tagId, actor: actor.id }, 'adding tag to post');
 
         const existingPost = await this.getById(postId, actor);
 
@@ -470,17 +415,10 @@ export class PostService {
             };
 
             const relation = await EntityTagModel.createRelation(relationData);
-            log.info('tag added to post successfully', 'addTag', {
-                postId,
-                tagId
-            });
+            dbLogger.info({ postId, tagId }, 'tag added to post successfully');
             return relation;
         } catch (error) {
-            log.error('failed to add tag to post', 'addTag', error, {
-                postId,
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add tag to post');
             throw error;
         }
     }
@@ -493,11 +431,7 @@ export class PostService {
      * @throws Error if post or tag is not found, actor is not authorized, or removal fails.
      */
     async removeTag(postId: string, tagId: string, actor: UserType): Promise<void> {
-        log.info('removing tag from post', 'removeTag', {
-            postId,
-            tagId,
-            actor: actor.id
-        });
+        dbLogger.info({ postId, tagId, actor: actor.id }, 'removing tag from post');
 
         const existingPost = await this.getById(postId, actor);
 
@@ -506,16 +440,9 @@ export class PostService {
 
         try {
             await EntityTagModel.deleteRelation(EntityTypeEnum.POST, postId, tagId);
-            log.info('tag removed from post successfully', 'removeTag', {
-                postId,
-                tagId
-            });
+            dbLogger.info({ postId, tagId }, 'tag removed from post successfully');
         } catch (error) {
-            log.error('failed to remove tag from post', 'removeTag', error, {
-                postId,
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove tag from post');
             throw error;
         }
     }
@@ -535,12 +462,10 @@ export class PostService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('getting posts by date range', 'getByDateRange', {
-            startDate,
-            endDate,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            { startDate, endDate, actor: actor.id, filter },
+            'getting posts by date range'
+        );
 
         try {
             // Get all active posts
@@ -562,16 +487,13 @@ export class PostService {
                 return dateB.getTime() - dateA.getTime();
             });
 
-            log.info('posts in date range retrieved successfully', 'getByDateRange', {
-                count: postsInRange.length
-            });
+            dbLogger.info(
+                { count: postsInRange.length },
+                'posts in date range retrieved successfully'
+            );
             return postsInRange;
         } catch (error) {
-            log.error('failed to get posts by date range', 'getByDateRange', error, {
-                startDate,
-                endDate,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get posts by date range');
             throw error;
         }
     }
@@ -584,10 +506,7 @@ export class PostService {
      * @throws Error if listing fails.
      */
     async getFeatured(limit: number, actor: UserType): Promise<PostRecord[]> {
-        log.info('getting featured posts', 'getFeatured', {
-            limit,
-            actor: actor.id
-        });
+        dbLogger.info({ limit, actor: actor.id }, 'getting featured posts');
 
         try {
             const postFilter: SelectPostFilter = {
@@ -597,15 +516,10 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('featured posts retrieved successfully', 'getFeatured', {
-                count: posts.length
-            });
+            dbLogger.info({ count: posts.length }, 'featured posts retrieved successfully');
             return posts;
         } catch (error) {
-            log.error('failed to get featured posts', 'getFeatured', error, {
-                limit,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get featured posts');
             throw error;
         }
     }
@@ -618,10 +532,7 @@ export class PostService {
      * @throws Error if listing fails.
      */
     async getNews(limit: number, actor: UserType): Promise<PostRecord[]> {
-        log.info('getting news posts', 'getNews', {
-            limit,
-            actor: actor.id
-        });
+        dbLogger.info({ limit, actor: actor.id }, 'getting news posts');
 
         try {
             const postFilter: SelectPostFilter = {
@@ -631,15 +542,10 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('news posts retrieved successfully', 'getNews', {
-                count: posts.length
-            });
+            dbLogger.info({ count: posts.length }, 'news posts retrieved successfully');
             return posts;
         } catch (error) {
-            log.error('failed to get news posts', 'getNews', error, {
-                limit,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get news posts');
             throw error;
         }
     }
@@ -657,11 +563,10 @@ export class PostService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('getting posts by related destination', 'getByRelatedDestination', {
-            destinationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            { destinationId, actor: actor.id, filter },
+            'getting posts by related destination'
+        );
 
         try {
             const postFilter: SelectPostFilter = {
@@ -671,25 +576,13 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info(
-                'posts by related destination retrieved successfully',
-                'getByRelatedDestination',
-                {
-                    destinationId,
-                    count: posts.length
-                }
+            dbLogger.info(
+                { destinationId, count: posts.length },
+                'posts by related destination retrieved successfully'
             );
             return posts;
         } catch (error) {
-            log.error(
-                'failed to get posts by related destination',
-                'getByRelatedDestination',
-                error,
-                {
-                    destinationId,
-                    actor: actor.id
-                }
-            );
+            dbLogger.error(error, 'failed to get posts by related destination');
             throw error;
         }
     }
@@ -707,11 +600,10 @@ export class PostService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('getting posts by related accommodation', 'getByRelatedAccommodation', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            { accommodationId, actor: actor.id, filter },
+            'getting posts by related accommodation'
+        );
 
         try {
             const postFilter: SelectPostFilter = {
@@ -721,25 +613,13 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info(
-                'posts by related accommodation retrieved successfully',
-                'getByRelatedAccommodation',
-                {
-                    accommodationId,
-                    count: posts.length
-                }
+            dbLogger.info(
+                { accommodationId, count: posts.length },
+                'posts by related accommodation retrieved successfully'
             );
             return posts;
         } catch (error) {
-            log.error(
-                'failed to get posts by related accommodation',
-                'getByRelatedAccommodation',
-                error,
-                {
-                    accommodationId,
-                    actor: actor.id
-                }
-            );
+            dbLogger.error(error, 'failed to get posts by related accommodation');
             throw error;
         }
     }
@@ -757,11 +637,7 @@ export class PostService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('getting posts by related event', 'getByRelatedEvent', {
-            eventId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ eventId, actor: actor.id, filter }, 'getting posts by related event');
 
         try {
             const postFilter: SelectPostFilter = {
@@ -771,16 +647,13 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('posts by related event retrieved successfully', 'getByRelatedEvent', {
-                eventId,
-                count: posts.length
-            });
+            dbLogger.info(
+                { eventId, count: posts.length },
+                'posts by related event retrieved successfully'
+            );
             return posts;
         } catch (error) {
-            log.error('failed to get posts by related event', 'getByRelatedEvent', error, {
-                eventId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get posts by related event');
             throw error;
         }
     }
@@ -793,10 +666,7 @@ export class PostService {
      * @throws Error if post is not found.
      */
     async getBySlug(slug: string, actor: UserType): Promise<PostRecord> {
-        log.info('fetching post by slug', 'getBySlug', {
-            slug,
-            actor: actor.id
-        });
+        dbLogger.info({ slug, actor: actor.id }, 'fetching post by slug');
 
         try {
             // Use the listPosts method with a filter for the slug
@@ -810,16 +680,10 @@ export class PostService {
             const post = posts.find((p) => p.slug === slug);
             const existingPost = assertExists(post, `Post with slug '${slug}' not found`);
 
-            log.info('post fetched by slug successfully', 'getBySlug', {
-                postId: existingPost.id,
-                slug
-            });
+            dbLogger.info({ postId: existingPost.id, slug }, 'post fetched by slug successfully');
             return existingPost;
         } catch (error) {
-            log.error('failed to fetch post by slug', 'getBySlug', error, {
-                slug,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch post by slug');
             throw error;
         }
     }
@@ -837,11 +701,7 @@ export class PostService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('searching posts', 'search', {
-            query,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ query, actor: actor.id, filter }, 'searching posts');
 
         try {
             const searchFilter: SelectPostFilter = {
@@ -851,16 +711,10 @@ export class PostService {
             };
 
             const posts = await PostModel.listPosts(searchFilter);
-            log.info('posts search completed successfully', 'search', {
-                query,
-                count: posts.length
-            });
+            dbLogger.info({ query, count: posts.length }, 'posts search completed successfully');
             return posts;
         } catch (error) {
-            log.error('failed to search posts', 'search', error, {
-                query,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to search posts');
             throw error;
         }
     }
@@ -873,10 +727,7 @@ export class PostService {
      * @throws Error if listing fails.
      */
     async getDrafts(actor: UserType, filter: PaginationParams = {}): Promise<PostRecord[]> {
-        log.info('getting draft posts', 'getDrafts', {
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ actor: actor.id, filter }, 'getting draft posts');
 
         try {
             const postFilter: SelectPostFilter = {
@@ -891,14 +742,10 @@ export class PostService {
             }
 
             const posts = await PostModel.listPosts(postFilter);
-            log.info('draft posts retrieved successfully', 'getDrafts', {
-                count: posts.length
-            });
+            dbLogger.info({ count: posts.length }, 'draft posts retrieved successfully');
             return posts;
         } catch (error) {
-            log.error('failed to get draft posts', 'getDrafts', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get draft posts');
             throw error;
         }
     }

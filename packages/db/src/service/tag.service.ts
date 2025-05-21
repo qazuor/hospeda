@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type EntityTypeEnum, type UserType } from '@repo/types';
 import { EntityTagModel, type EntityTagRecord, TagModel, type TagRecord } from '../model/index.js';
 import type {
@@ -10,8 +10,6 @@ import type {
     UpdateTagData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('TagService');
 
 /**
  * Service layer for managing tag operations.
@@ -35,10 +33,13 @@ export class TagService {
      */
     private static assertOwnerOrAdmin(ownerId: string, actor: UserType): void {
         if (actor.id !== ownerId && !TagService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertOwnerOrAdmin', {
-                actorId: actor.id,
-                requiredOwnerId: ownerId
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredOwnerId: ownerId
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -50,7 +51,7 @@ export class TagService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!TagService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -63,7 +64,7 @@ export class TagService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertTag, actor: UserType): Promise<TagRecord> {
-        log.info('creating tag', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating tag');
 
         // Check if actor is owner or admin
         TagService.assertOwnerOrAdmin(data.ownerId, actor);
@@ -75,10 +76,10 @@ export class TagService {
                 updatedById: actor.id
             };
             const createdTag = await TagModel.createTag(dataWithAudit);
-            log.info('tag created successfully', 'create', { tagId: createdTag.id });
+            dbLogger.info({ tagId: createdTag.id }, 'tag created successfully');
             return createdTag;
         } catch (error) {
-            log.error('failed to create tag', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create tag');
             throw error;
         }
     }
@@ -91,7 +92,7 @@ export class TagService {
      * @throws Error if tag is not found or actor is not authorized.
      */
     async getById(id: string, actor: UserType): Promise<TagRecord> {
-        log.info('fetching tag by id', 'getById', { tagId: id, actor: actor.id });
+        dbLogger.info({ tagId: id, actor: actor.id }, 'fetching tag by id');
 
         try {
             const tag = await TagModel.getTagById(id);
@@ -100,13 +101,10 @@ export class TagService {
             // Check if actor is owner or admin
             TagService.assertOwnerOrAdmin(existingTag.ownerId, actor);
 
-            log.info('tag fetched successfully', 'getById', { tagId: existingTag.id });
+            dbLogger.info({ tagId: existingTag.id }, 'tag fetched successfully');
             return existingTag;
         } catch (error) {
-            log.error('failed to fetch tag by id', 'getById', error, {
-                tagId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch tag by id');
             throw error;
         }
     }
@@ -119,7 +117,7 @@ export class TagService {
      * @throws Error if listing fails.
      */
     async list(filter: SelectTagFilter, actor: UserType): Promise<TagRecord[]> {
-        log.info('listing tags', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing tags');
 
         try {
             // If ownerId is specified, check if actor is owner or admin
@@ -128,13 +126,10 @@ export class TagService {
             }
 
             const tags = await TagModel.listTags(filter);
-            log.info('tags listed successfully', 'list', {
-                count: tags.length,
-                filter
-            });
+            dbLogger.info({ count: tags.length, filter }, 'tags listed successfully');
             return tags;
         } catch (error) {
-            log.error('failed to list tags', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list tags');
             throw error;
         }
     }
@@ -148,7 +143,7 @@ export class TagService {
      * @throws Error if tag is not found, actor is not authorized, or update fails.
      */
     async update(id: string, changes: UpdateTagData, actor: UserType): Promise<TagRecord> {
-        log.info('updating tag', 'update', { tagId: id, actor: actor.id });
+        dbLogger.info({ tagId: id, actor: actor.id }, 'updating tag');
 
         const existingTag = await this.getById(id, actor);
 
@@ -167,13 +162,10 @@ export class TagService {
                 throw new Error(`Failed to retrieve updated tag ${id}`);
             }
 
-            log.info('tag updated successfully', 'update', { tagId: updatedTag.id });
+            dbLogger.info({ tagId: updatedTag.id }, 'tag updated successfully');
             return updatedTag;
         } catch (error) {
-            log.error('failed to update tag', 'update', error, {
-                tagId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update tag');
             throw error;
         }
     }
@@ -185,7 +177,7 @@ export class TagService {
      * @throws Error if tag is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting tag', 'delete', { tagId: id, actor: actor.id });
+        dbLogger.info({ tagId: id, actor: actor.id }, 'soft deleting tag');
 
         const existingTag = await this.getById(id, actor);
 
@@ -195,12 +187,9 @@ export class TagService {
         try {
             // Use softDeleteTag method instead of updateTag with deletedAt
             await TagModel.softDeleteTag(id);
-            log.info('tag soft deleted successfully', 'delete', { tagId: existingTag.id });
+            dbLogger.info({ tagId: existingTag.id }, 'tag soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete tag', 'delete', error, {
-                tagId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete tag');
             throw error;
         }
     }
@@ -212,7 +201,7 @@ export class TagService {
      * @throws Error if tag is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring tag', 'restore', { tagId: id, actor: actor.id });
+        dbLogger.info({ tagId: id, actor: actor.id }, 'restoring tag');
 
         const existingTag = await this.getById(id, actor);
 
@@ -222,12 +211,9 @@ export class TagService {
         try {
             // Use restoreTag method instead of updateTag with deletedAt = null
             await TagModel.restoreTag(id);
-            log.info('tag restored successfully', 'restore', { tagId: existingTag.id });
+            dbLogger.info({ tagId: existingTag.id }, 'tag restored successfully');
         } catch (error) {
-            log.error('failed to restore tag', 'restore', error, {
-                tagId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore tag');
             throw error;
         }
     }
@@ -239,7 +225,7 @@ export class TagService {
      * @throws Error if tag is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting tag', 'hardDelete', { tagId: id, actor: actor.id });
+        dbLogger.info({ tagId: id, actor: actor.id }, 'hard deleting tag');
 
         // Only admins can hard delete
         TagService.assertAdmin(actor);
@@ -248,12 +234,9 @@ export class TagService {
 
         try {
             await TagModel.hardDeleteTag(existingTag.id);
-            log.info('tag hard deleted successfully', 'hardDelete', { tagId: existingTag.id });
+            dbLogger.info({ tagId: existingTag.id }, 'tag hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete tag', 'hardDelete', error, {
-                tagId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete tag');
             throw error;
         }
     }
@@ -273,12 +256,7 @@ export class TagService {
         tagId: string,
         actor: UserType
     ): Promise<EntityTagRecord> {
-        log.info('adding tag to entity', 'addToEntity', {
-            entityType,
-            entityId,
-            tagId,
-            actor: actor.id
-        });
+        dbLogger.info({ entityType, entityId, tagId, actor: actor.id }, 'adding tag to entity');
 
         // Verify tag exists and actor has permission
         const tag = await this.getById(tagId, actor);
@@ -291,19 +269,10 @@ export class TagService {
             };
 
             const relation = await EntityTagModel.createRelation(relationData);
-            log.info('tag added to entity successfully', 'addToEntity', {
-                entityType,
-                entityId,
-                tagId
-            });
+            dbLogger.info({ entityType, entityId, tagId }, 'tag added to entity successfully');
             return relation;
         } catch (error) {
-            log.error('failed to add tag to entity', 'addToEntity', error, {
-                entityType,
-                entityId,
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add tag to entity');
             throw error;
         }
     }
@@ -322,30 +291,16 @@ export class TagService {
         tagId: string,
         actor: UserType
     ): Promise<void> {
-        log.info('removing tag from entity', 'removeFromEntity', {
-            entityType,
-            entityId,
-            tagId,
-            actor: actor.id
-        });
+        dbLogger.info({ entityType, entityId, tagId, actor: actor.id }, 'removing tag from entity');
 
         // Verify tag exists and actor has permission
         await this.getById(tagId, actor);
 
         try {
             await EntityTagModel.deleteRelation(entityType, entityId, tagId);
-            log.info('tag removed from entity successfully', 'removeFromEntity', {
-                entityType,
-                entityId,
-                tagId
-            });
+            dbLogger.info({ entityType, entityId, tagId }, 'tag removed from entity successfully');
         } catch (error) {
-            log.error('failed to remove tag from entity', 'removeFromEntity', error, {
-                entityType,
-                entityId,
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove tag from entity');
             throw error;
         }
     }
@@ -365,12 +320,7 @@ export class TagService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<TagRecord[]> {
-        log.info('listing tags for entity', 'listForEntity', {
-            entityType,
-            entityId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ entityType, entityId, actor: actor.id, filter }, 'listing tags for entity');
 
         try {
             const relationFilter: SelectEntityTagRelationFilter = {
@@ -390,18 +340,13 @@ export class TagService {
                 }
             }
 
-            log.info('tags listed for entity successfully', 'listForEntity', {
-                entityType,
-                entityId,
-                count: tags.length
-            });
+            dbLogger.info(
+                { entityType, entityId, count: tags.length },
+                'tags listed for entity successfully'
+            );
             return tags;
         } catch (error) {
-            log.error('failed to list tags for entity', 'listForEntity', error, {
-                entityType,
-                entityId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list tags for entity');
             throw error;
         }
     }
@@ -419,11 +364,7 @@ export class TagService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<EntityTagRecord[]> {
-        log.info('listing entities by tag', 'listEntities', {
-            tagId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ tagId, actor: actor.id, filter }, 'listing entities by tag');
 
         // Verify tag exists and actor has permission
         await this.getById(tagId, actor);
@@ -435,16 +376,13 @@ export class TagService {
             };
 
             const relations = await EntityTagModel.listRelations(relationFilter);
-            log.info('entities listed by tag successfully', 'listEntities', {
-                tagId,
-                count: relations.length
-            });
+            dbLogger.info(
+                { tagId, count: relations.length },
+                'entities listed by tag successfully'
+            );
             return relations;
         } catch (error) {
-            log.error('failed to list entities by tag', 'listEntities', error, {
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list entities by tag');
             throw error;
         }
     }
@@ -462,7 +400,7 @@ export class TagService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<TagRecord[]> {
-        log.info('searching tags', 'search', { query, actor: actor.id, filter });
+        dbLogger.info({ query, actor: actor.id, filter }, 'searching tags');
 
         try {
             const searchFilter: SelectTagFilter = {
@@ -472,16 +410,10 @@ export class TagService {
             };
 
             const tags = await TagModel.listTags(searchFilter);
-            log.info('tags search completed successfully', 'search', {
-                query,
-                count: tags.length
-            });
+            dbLogger.info({ query, count: tags.length }, 'tags search completed successfully');
             return tags;
         } catch (error) {
-            log.error('failed to search tags', 'search', error, {
-                query,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to search tags');
             throw error;
         }
     }
@@ -494,7 +426,7 @@ export class TagService {
      * @throws Error if tag is not found, actor is not authorized, or count fails.
      */
     async getUsageCount(tagId: string, actor: UserType): Promise<number> {
-        log.info('getting tag usage count', 'getUsageCount', { tagId, actor: actor.id });
+        dbLogger.info({ tagId, actor: actor.id }, 'getting tag usage count');
 
         // Verify tag exists and actor has permission
         await this.getById(tagId, actor);
@@ -503,16 +435,10 @@ export class TagService {
             const relations = await EntityTagModel.listRelations({ tagId });
             const count = relations.length;
 
-            log.info('tag usage count retrieved successfully', 'getUsageCount', {
-                tagId,
-                count
-            });
+            dbLogger.info({ tagId, count }, 'tag usage count retrieved successfully');
             return count;
         } catch (error) {
-            log.error('failed to get tag usage count', 'getUsageCount', error, {
-                tagId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get tag usage count');
             throw error;
         }
     }
@@ -528,7 +454,7 @@ export class TagService {
         limit: number,
         actor: UserType
     ): Promise<Array<{ tag: TagRecord; count: number }>> {
-        log.info('listing most used tags', 'listMostUsed', { limit, actor: actor.id });
+        dbLogger.info({ limit, actor: actor.id }, 'listing most used tags');
 
         try {
             // Get all entity-tag relations
@@ -562,15 +488,10 @@ export class TagService {
                 }
             }
 
-            log.info('most used tags listed successfully', 'listMostUsed', {
-                count: result.length
-            });
+            dbLogger.info({ count: result.length }, 'most used tags listed successfully');
             return result;
         } catch (error) {
-            log.error('failed to list most used tags', 'listMostUsed', error, {
-                limit,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list most used tags');
             throw error;
         }
     }
@@ -590,12 +511,10 @@ export class TagService {
         tagIds: string[],
         actor: UserType
     ): Promise<EntityTagRecord[]> {
-        log.info('bulk adding tags to entity', 'bulkAdd', {
-            entityType,
-            entityId,
-            tagCount: tagIds.length,
-            actor: actor.id
-        });
+        dbLogger.info(
+            { entityType, entityId, tagCount: tagIds.length, actor: actor.id },
+            'bulk adding tags to entity'
+        );
 
         // Verify all tags exist and actor has permission
         for (const tagId of tagIds) {
@@ -616,19 +535,13 @@ export class TagService {
                 relations.push(relation);
             }
 
-            log.info('tags bulk added to entity successfully', 'bulkAdd', {
-                entityType,
-                entityId,
-                count: relations.length
-            });
+            dbLogger.info(
+                { entityType, entityId, count: relations.length },
+                'tags bulk added to entity successfully'
+            );
             return relations;
         } catch (error) {
-            log.error('failed to bulk add tags to entity', 'bulkAdd', error, {
-                entityType,
-                entityId,
-                tagIds,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to bulk add tags to entity');
             throw error;
         }
     }
@@ -647,12 +560,10 @@ export class TagService {
         tagIds: string[],
         actor: UserType
     ): Promise<void> {
-        log.info('bulk removing tags from entity', 'bulkRemove', {
-            entityType,
-            entityId,
-            tagCount: tagIds.length,
-            actor: actor.id
-        });
+        dbLogger.info(
+            { entityType, entityId, tagCount: tagIds.length, actor: actor.id },
+            'bulk removing tags from entity'
+        );
 
         // Verify all tags exist and actor has permission
         for (const tagId of tagIds) {
@@ -664,18 +575,12 @@ export class TagService {
                 await EntityTagModel.deleteRelation(entityType, entityId, tagId);
             }
 
-            log.info('tags bulk removed from entity successfully', 'bulkRemove', {
-                entityType,
-                entityId,
-                count: tagIds.length
-            });
+            dbLogger.info(
+                { entityType, entityId, count: tagIds.length },
+                'tags bulk removed from entity successfully'
+            );
         } catch (error) {
-            log.error('failed to bulk remove tags from entity', 'bulkRemove', error, {
-                entityType,
-                entityId,
-                tagIds,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to bulk remove tags from entity');
             throw error;
         }
     }

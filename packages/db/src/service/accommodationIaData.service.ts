@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     AccommodationIaDataModel,
@@ -12,8 +12,6 @@ import type {
     UpdateAccommodationIaData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('AccommodationIaDataService');
 
 /**
  * Service layer for managing accommodation IA data operations.
@@ -37,10 +35,13 @@ export class AccommodationIaDataService {
      */
     private static assertOwnerOrAdmin(ownerId: string, actor: UserType): void {
         if (actor.id !== ownerId && !AccommodationIaDataService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertOwnerOrAdmin', {
-                actorId: actor.id,
-                requiredOwnerId: ownerId
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredOwnerId: ownerId
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -56,7 +57,7 @@ export class AccommodationIaDataService {
         data: InsertAccommodationIaData,
         actor: UserType
     ): Promise<AccommodationIaDataRecord> {
-        log.info('creating accommodation IA data', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating accommodation IA data');
 
         try {
             // Verify accommodation exists
@@ -76,14 +77,13 @@ export class AccommodationIaDataService {
                 updatedById: actor.id
             };
             const createdIaData = await AccommodationIaDataModel.createIaData(dataWithAudit);
-            log.info('accommodation IA data created successfully', 'create', {
-                iaDataId: createdIaData.id
-            });
+            dbLogger.info(
+                { iaDataId: createdIaData.id },
+                'accommodation IA data created successfully'
+            );
             return createdIaData;
         } catch (error) {
-            log.error('failed to create accommodation IA data', 'create', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to create accommodation IA data');
             throw error;
         }
     }
@@ -96,7 +96,7 @@ export class AccommodationIaDataService {
      * @throws Error if IA data entry is not found or actor is not authorized.
      */
     async getById(id: string, actor: UserType): Promise<AccommodationIaDataRecord> {
-        log.info('fetching IA data by id', 'getById', { iaDataId: id, actor: actor.id });
+        dbLogger.info({ iaDataId: id, actor: actor.id }, 'fetching IA data by id');
 
         try {
             const iaData = await AccommodationIaDataModel.getIaDataById(id);
@@ -113,15 +113,10 @@ export class AccommodationIaDataService {
             // Check if actor is owner or admin
             AccommodationIaDataService.assertOwnerOrAdmin(accommodation.ownerId, actor);
 
-            log.info('IA data fetched successfully', 'getById', {
-                iaDataId: existingIaData.id
-            });
+            dbLogger.info({ iaDataId: existingIaData.id }, 'IA data fetched successfully');
             return existingIaData;
         } catch (error) {
-            log.error('failed to fetch IA data by id', 'getById', error, {
-                iaDataId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch IA data by id');
             throw error;
         }
     }
@@ -139,11 +134,14 @@ export class AccommodationIaDataService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationIaDataRecord[]> {
-        log.info('listing IA data for accommodation', 'list', {
-            accommodationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                actor: actor.id,
+                filter
+            },
+            'listing IA data for accommodation'
+        );
 
         try {
             // Verify accommodation exists
@@ -163,16 +161,16 @@ export class AccommodationIaDataService {
 
             const iaDataEntries = await AccommodationIaDataModel.listIaData(iaDataFilter);
 
-            log.info('IA data listed successfully', 'list', {
-                accommodationId,
-                count: iaDataEntries.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    count: iaDataEntries.length
+                },
+                'IA data listed successfully'
+            );
             return iaDataEntries;
         } catch (error) {
-            log.error('failed to list IA data', 'list', error, {
-                accommodationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list IA data');
             throw error;
         }
     }
@@ -190,7 +188,7 @@ export class AccommodationIaDataService {
         changes: UpdateAccommodationIaData,
         actor: UserType
     ): Promise<AccommodationIaDataRecord> {
-        log.info('updating IA data', 'update', { iaDataId: id, actor: actor.id });
+        dbLogger.info({ iaDataId: id, actor: actor.id }, 'updating IA data');
 
         const existingIaData = await this.getById(id, actor);
 
@@ -216,15 +214,10 @@ export class AccommodationIaDataService {
                 existingIaData.id,
                 dataWithAudit
             );
-            log.info('IA data updated successfully', 'update', {
-                iaDataId: updatedIaData.id
-            });
+            dbLogger.info({ iaDataId: updatedIaData.id }, 'IA data updated successfully');
             return updatedIaData;
         } catch (error) {
-            log.error('failed to update IA data', 'update', error, {
-                iaDataId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update IA data');
             throw error;
         }
     }
@@ -236,7 +229,7 @@ export class AccommodationIaDataService {
      * @throws Error if IA data entry is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting IA data', 'delete', { iaDataId: id, actor: actor.id });
+        dbLogger.info({ iaDataId: id, actor: actor.id }, 'soft deleting IA data');
 
         const existingIaData = await this.getById(id, actor);
 
@@ -253,12 +246,9 @@ export class AccommodationIaDataService {
 
         try {
             await AccommodationIaDataModel.softDeleteIaData(id);
-            log.info('IA data soft deleted successfully', 'delete', { iaDataId: id });
+            dbLogger.info({ iaDataId: id }, 'IA data soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete IA data', 'delete', error, {
-                iaDataId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete IA data');
             throw error;
         }
     }
@@ -270,7 +260,7 @@ export class AccommodationIaDataService {
      * @throws Error if IA data entry is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring IA data', 'restore', { iaDataId: id, actor: actor.id });
+        dbLogger.info({ iaDataId: id, actor: actor.id }, 'restoring IA data');
 
         const existingIaData = await this.getById(id, actor);
 
@@ -287,12 +277,9 @@ export class AccommodationIaDataService {
 
         try {
             await AccommodationIaDataModel.restoreIaData(id);
-            log.info('IA data restored successfully', 'restore', { iaDataId: id });
+            dbLogger.info({ iaDataId: id }, 'IA data restored successfully');
         } catch (error) {
-            log.error('failed to restore IA data', 'restore', error, {
-                iaDataId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore IA data');
             throw error;
         }
     }
@@ -304,7 +291,7 @@ export class AccommodationIaDataService {
      * @throws Error if IA data entry is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting IA data', 'hardDelete', { iaDataId: id, actor: actor.id });
+        dbLogger.info({ iaDataId: id, actor: actor.id }, 'hard deleting IA data');
 
         // Only admins can hard delete
         if (!AccommodationIaDataService.isAdmin(actor)) {
@@ -315,12 +302,9 @@ export class AccommodationIaDataService {
 
         try {
             await AccommodationIaDataModel.hardDeleteIaData(id);
-            log.info('IA data hard deleted successfully', 'hardDelete', { iaDataId: id });
+            dbLogger.info({ iaDataId: id }, 'IA data hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete IA data', 'hardDelete', error, {
-                iaDataId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete IA data');
             throw error;
         }
     }
@@ -340,12 +324,15 @@ export class AccommodationIaDataService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<AccommodationIaDataRecord[]> {
-        log.info('searching IA data by keyword', 'search', {
-            accommodationId,
-            query,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                accommodationId,
+                query,
+                actor: actor.id,
+                filter
+            },
+            'searching IA data by keyword'
+        );
 
         try {
             // Verify accommodation exists
@@ -366,18 +353,17 @@ export class AccommodationIaDataService {
 
             const iaDataEntries = await AccommodationIaDataModel.listIaData(searchFilter);
 
-            log.info('IA data search completed successfully', 'search', {
-                accommodationId,
-                query,
-                count: iaDataEntries.length
-            });
+            dbLogger.info(
+                {
+                    accommodationId,
+                    query,
+                    count: iaDataEntries.length
+                },
+                'IA data search completed successfully'
+            );
             return iaDataEntries;
         } catch (error) {
-            log.error('failed to search IA data', 'search', error, {
-                accommodationId,
-                query,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to search IA data');
             throw error;
         }
     }

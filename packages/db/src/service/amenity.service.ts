@@ -1,10 +1,8 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import { AmenityModel, type AmenityRecord } from '../model/amenity.model.js';
 import type { InsertAmenity, SelectAmenityFilter, UpdateAmenityData } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('AmenityService');
 
 /**
  * Service layer for managing amenity operations.
@@ -27,7 +25,7 @@ export class AmenityService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!AmenityService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -40,7 +38,7 @@ export class AmenityService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertAmenity, actor: UserType): Promise<AmenityRecord> {
-        log.info('creating amenity', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating amenity');
 
         // Only admins can create amenities
         AmenityService.assertAdmin(actor);
@@ -52,10 +50,10 @@ export class AmenityService {
                 updatedById: actor.id
             };
             const createdAmenity = await AmenityModel.createAmenity(dataWithAudit);
-            log.info('amenity created successfully', 'create', { amenityId: createdAmenity.id });
+            dbLogger.info({ amenityId: createdAmenity.id }, 'amenity created successfully');
             return createdAmenity;
         } catch (error) {
-            log.error('failed to create amenity', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create amenity');
             throw error;
         }
     }
@@ -68,19 +66,16 @@ export class AmenityService {
      * @throws Error if amenity is not found.
      */
     async getById(id: string, actor: UserType): Promise<AmenityRecord> {
-        log.info('fetching amenity by id', 'getById', { amenityId: id, actor: actor.id });
+        dbLogger.info({ amenityId: id, actor: actor.id }, 'fetching amenity by id');
 
         try {
             const amenity = await AmenityModel.getAmenityById(id);
             const existingAmenity = assertExists(amenity, `Amenity ${id} not found`);
 
-            log.info('amenity fetched successfully', 'getById', { amenityId: existingAmenity.id });
+            dbLogger.info({ amenityId: existingAmenity.id }, 'amenity fetched successfully');
             return existingAmenity;
         } catch (error) {
-            log.error('failed to fetch amenity by id', 'getById', error, {
-                amenityId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch amenity by id');
             throw error;
         }
     }
@@ -93,17 +88,14 @@ export class AmenityService {
      * @throws Error if listing fails.
      */
     async list(filter: SelectAmenityFilter, actor: UserType): Promise<AmenityRecord[]> {
-        log.info('listing amenities', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing amenities');
 
         try {
             const amenities = await AmenityModel.listAmenities(filter);
-            log.info('amenities listed successfully', 'list', {
-                count: amenities.length,
-                filter
-            });
+            dbLogger.info({ count: amenities.length, filter }, 'amenities listed successfully');
             return amenities;
         } catch (error) {
-            log.error('failed to list amenities', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list amenities');
             throw error;
         }
     }
@@ -117,7 +109,7 @@ export class AmenityService {
      * @throws Error if amenity is not found, actor is not authorized, or update fails.
      */
     async update(id: string, changes: UpdateAmenityData, actor: UserType): Promise<AmenityRecord> {
-        log.info('updating amenity', 'update', { amenityId: id, actor: actor.id });
+        dbLogger.info({ amenityId: id, actor: actor.id }, 'updating amenity');
 
         // Only admins can update amenities
         AmenityService.assertAdmin(actor);
@@ -136,15 +128,10 @@ export class AmenityService {
             // Use the model to perform the update
             const updatedAmenity = await AmenityModel.updateAmenity(existingAmenity.id, updateData);
 
-            log.info('amenity updated successfully', 'update', {
-                amenityId: updatedAmenity.id
-            });
+            dbLogger.info({ amenityId: updatedAmenity.id }, 'amenity updated successfully');
             return updatedAmenity;
         } catch (error) {
-            log.error('failed to update amenity', 'update', error, {
-                amenityId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update amenity');
             throw error;
         }
     }
@@ -156,7 +143,7 @@ export class AmenityService {
      * @throws Error if amenity is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting amenity', 'delete', { amenityId: id, actor: actor.id });
+        dbLogger.info({ amenityId: id, actor: actor.id }, 'soft deleting amenity');
 
         // Only admins can delete amenities
         AmenityService.assertAdmin(actor);
@@ -172,12 +159,9 @@ export class AmenityService {
 
             await AmenityModel.updateAmenity(id, updateData);
 
-            log.info('amenity soft deleted successfully', 'delete', { amenityId: id });
+            dbLogger.info({ amenityId: id }, 'amenity soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete amenity', 'delete', error, {
-                amenityId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete amenity');
             throw error;
         }
     }
@@ -189,7 +173,7 @@ export class AmenityService {
      * @throws Error if amenity is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring amenity', 'restore', { amenityId: id, actor: actor.id });
+        dbLogger.info({ amenityId: id, actor: actor.id }, 'restoring amenity');
 
         // Only admins can restore amenities
         AmenityService.assertAdmin(actor);
@@ -205,12 +189,9 @@ export class AmenityService {
 
             await AmenityModel.updateAmenity(id, updateData);
 
-            log.info('amenity restored successfully', 'restore', { amenityId: id });
+            dbLogger.info({ amenityId: id }, 'amenity restored successfully');
         } catch (error) {
-            log.error('failed to restore amenity', 'restore', error, {
-                amenityId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore amenity');
             throw error;
         }
     }
@@ -222,7 +203,7 @@ export class AmenityService {
      * @throws Error if amenity is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting amenity', 'hardDelete', { amenityId: id, actor: actor.id });
+        dbLogger.info({ amenityId: id, actor: actor.id }, 'hard deleting amenity');
 
         // Only admins can hard delete
         AmenityService.assertAdmin(actor);
@@ -231,12 +212,9 @@ export class AmenityService {
 
         try {
             await AmenityModel.hardDeleteAmenity(id);
-            log.info('amenity hard deleted successfully', 'hardDelete', { amenityId: id });
+            dbLogger.info({ amenityId: id }, 'amenity hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete amenity', 'hardDelete', error, {
-                amenityId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete amenity');
             throw error;
         }
     }
@@ -254,11 +232,7 @@ export class AmenityService {
         actor: UserType,
         filter: Omit<SelectAmenityFilter, 'type'> = {}
     ): Promise<AmenityRecord[]> {
-        log.info('fetching amenities by type', 'getByType', {
-            type,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ type, actor: actor.id, filter }, 'fetching amenities by type');
 
         try {
             const amenityFilter: SelectAmenityFilter = {
@@ -268,16 +242,13 @@ export class AmenityService {
             };
 
             const amenities = await AmenityModel.listAmenities(amenityFilter);
-            log.info('amenities fetched by type successfully', 'getByType', {
-                type,
-                count: amenities.length
-            });
+            dbLogger.info(
+                { type, count: amenities.length },
+                'amenities fetched by type successfully'
+            );
             return amenities;
         } catch (error) {
-            log.error('failed to fetch amenities by type', 'getByType', error, {
-                type,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch amenities by type');
             throw error;
         }
     }
@@ -293,10 +264,7 @@ export class AmenityService {
         actor: UserType,
         filter: Omit<SelectAmenityFilter, 'isBuiltin'> = {}
     ): Promise<AmenityRecord[]> {
-        log.info('fetching built-in amenities', 'getBuiltIn', {
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ actor: actor.id, filter }, 'fetching built-in amenities');
 
         try {
             const amenityFilter: SelectAmenityFilter = {
@@ -306,14 +274,10 @@ export class AmenityService {
             };
 
             const amenities = await AmenityModel.listAmenities(amenityFilter);
-            log.info('built-in amenities fetched successfully', 'getBuiltIn', {
-                count: amenities.length
-            });
+            dbLogger.info({ count: amenities.length }, 'built-in amenities fetched successfully');
             return amenities;
         } catch (error) {
-            log.error('failed to fetch built-in amenities', 'getBuiltIn', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch built-in amenities');
             throw error;
         }
     }
@@ -329,10 +293,7 @@ export class AmenityService {
         actor: UserType,
         filter: Omit<SelectAmenityFilter, 'isBuiltin'> = {}
     ): Promise<AmenityRecord[]> {
-        log.info('fetching custom amenities', 'getCustom', {
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ actor: actor.id, filter }, 'fetching custom amenities');
 
         try {
             const amenityFilter: SelectAmenityFilter = {
@@ -342,14 +303,10 @@ export class AmenityService {
             };
 
             const amenities = await AmenityModel.listAmenities(amenityFilter);
-            log.info('custom amenities fetched successfully', 'getCustom', {
-                count: amenities.length
-            });
+            dbLogger.info({ count: amenities.length }, 'custom amenities fetched successfully');
             return amenities;
         } catch (error) {
-            log.error('failed to fetch custom amenities', 'getCustom', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch custom amenities');
             throw error;
         }
     }

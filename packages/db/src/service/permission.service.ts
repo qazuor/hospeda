@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     PermissionModel,
@@ -21,8 +21,6 @@ import type {
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
 
-const log = logger.createLogger('PermissionService');
-
 /**
  * Service layer for managing permission operations.
  * Handles business logic, authorization, and interacts with Permission, Role, and User models,
@@ -35,7 +33,7 @@ export class PermissionService {
 
     private static assertAdmin(actor: UserType): void {
         if (!PermissionService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -48,7 +46,7 @@ export class PermissionService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertPermission, actor: UserType): Promise<PermissionRecord> {
-        log.info('creating permission', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating permission');
 
         PermissionService.assertAdmin(actor);
 
@@ -59,12 +57,15 @@ export class PermissionService {
                 updatedById: actor.id
             };
             const createdPermission = await PermissionModel.createPermission(dataWithAudit);
-            log.info('permission created successfully', 'create', {
-                permissionId: createdPermission.id
-            });
+            dbLogger.info(
+                {
+                    permissionId: createdPermission.id
+                },
+                'permission created successfully'
+            );
             return createdPermission;
         } catch (error) {
-            log.error('failed to create permission', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create permission');
             throw error;
         }
     }
@@ -77,16 +78,25 @@ export class PermissionService {
      * @throws Error if permission is not found or actor is not authorized.
      */
     async getById(id: string, actor: UserType): Promise<PermissionRecord> {
-        log.info('fetching permission by id', 'getById', { permissionId: id, actor: actor.id });
+        dbLogger.info(
+            {
+                permissionId: id,
+                actor: actor.id
+            },
+            'fetching permission by id'
+        );
 
         PermissionService.assertAdmin(actor);
 
         const permission = await PermissionModel.getPermissionById(id);
         const existingPermission = assertExists(permission, `Permission ${id} not found`);
 
-        log.info('permission fetched successfully', 'getById', {
-            permissionId: existingPermission.id
-        });
+        dbLogger.info(
+            {
+                permissionId: existingPermission.id
+            },
+            'permission fetched successfully'
+        );
         return existingPermission;
     }
 
@@ -98,19 +108,22 @@ export class PermissionService {
      * @throws Error if actor is not authorized or listing fails.
      */
     async list(filter: SelectPermissionFilter, actor: UserType): Promise<PermissionRecord[]> {
-        log.info('listing permissions', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing permissions');
 
         PermissionService.assertAdmin(actor);
 
         try {
             const permissions = await PermissionModel.listPermissions(filter);
-            log.info('permissions listed successfully', 'list', {
-                count: permissions.length,
-                filter
-            });
+            dbLogger.info(
+                {
+                    count: permissions.length,
+                    filter
+                },
+                'permissions listed successfully'
+            );
             return permissions;
         } catch (error) {
-            log.error('failed to list permissions', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list permissions');
             throw error;
         }
     }
@@ -128,7 +141,7 @@ export class PermissionService {
         changes: UpdatePermissionData,
         actor: UserType
     ): Promise<PermissionRecord> {
-        log.info('updating permission', 'update', { permissionId: id, actor: actor.id });
+        dbLogger.info({ permissionId: id, actor: actor.id }, 'updating permission');
 
         PermissionService.assertAdmin(actor);
 
@@ -148,15 +161,15 @@ export class PermissionService {
                 existingPermission.id,
                 dataWithAudit
             );
-            log.info('permission updated successfully', 'update', {
-                permissionId: updatedPermission.id
-            });
+            dbLogger.info(
+                {
+                    permissionId: updatedPermission.id
+                },
+                'permission updated successfully'
+            );
             return updatedPermission;
         } catch (error) {
-            log.error('failed to update permission', 'update', error, {
-                permissionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update permission');
             throw error;
         }
     }
@@ -168,7 +181,7 @@ export class PermissionService {
      * @throws Error if permission is not found, actor is not authorized, or soft-delete fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting permission', 'delete', { permissionId: id, actor: actor.id });
+        dbLogger.info({ permissionId: id, actor: actor.id }, 'soft deleting permission');
 
         PermissionService.assertAdmin(actor);
 
@@ -183,12 +196,9 @@ export class PermissionService {
                 deletedById: actor.id
             };
             await PermissionModel.updatePermission(id, changes);
-            log.info('permission soft deleted successfully', 'delete', { permissionId: id });
+            dbLogger.info({ permissionId: id }, 'permission soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete permission', 'delete', error, {
-                permissionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete permission');
             throw error;
         }
     }
@@ -200,7 +210,7 @@ export class PermissionService {
      * @throws Error if permission is not found, actor is not authorized, or restore fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring permission', 'restore', { permissionId: id, actor: actor.id });
+        dbLogger.info({ permissionId: id, actor: actor.id }, 'restoring permission');
 
         PermissionService.assertAdmin(actor);
 
@@ -215,12 +225,9 @@ export class PermissionService {
                 deletedById: null
             };
             await PermissionModel.updatePermission(id, changes);
-            log.info('permission restored successfully', 'restore', { permissionId: id });
+            dbLogger.info({ permissionId: id }, 'permission restored successfully');
         } catch (error) {
-            log.error('failed to restore permission', 'restore', error, {
-                permissionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore permission');
             throw error;
         }
     }
@@ -232,7 +239,13 @@ export class PermissionService {
      * @throws Error if permission is not found, actor is not authorized, or hard-delete fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting permission', 'hardDelete', { permissionId: id, actor: actor.id });
+        dbLogger.info(
+            {
+                permissionId: id,
+                actor: actor.id
+            },
+            'hard deleting permission'
+        );
 
         PermissionService.assertAdmin(actor);
 
@@ -243,12 +256,9 @@ export class PermissionService {
 
         try {
             await PermissionModel.hardDeletePermission(id);
-            log.info('permission hard deleted successfully', 'hardDelete', { permissionId: id });
+            dbLogger.info({ permissionId: id }, 'permission hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete permission', 'hardDelete', error, {
-                permissionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete permission');
             throw error;
         }
     }
@@ -264,7 +274,13 @@ export class PermissionService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PermissionRecord[]> {
-        log.info('listing deprecated permissions', 'getDeprecated', { actor: actor.id, filter });
+        dbLogger.info(
+            {
+                actor: actor.id,
+                filter
+            },
+            'listing deprecated permissions'
+        );
 
         PermissionService.assertAdmin(actor);
 
@@ -276,14 +292,15 @@ export class PermissionService {
 
         try {
             const permissions = await PermissionModel.listPermissions(permissionFilter);
-            log.info('deprecated permissions listed successfully', 'getDeprecated', {
-                count: permissions.length
-            });
+            dbLogger.info(
+                {
+                    count: permissions.length
+                },
+                'deprecated permissions listed successfully'
+            );
             return permissions;
         } catch (error) {
-            log.error('failed to list deprecated permissions', 'getDeprecated', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list deprecated permissions');
             throw error;
         }
     }
@@ -301,11 +318,14 @@ export class PermissionService {
         permissionId: string,
         actor: UserType
     ): Promise<RolePermissionRecord> {
-        log.info('adding permission to role', 'addToRole', {
-            roleId,
-            permissionId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                roleId,
+                permissionId,
+                actor: actor.id
+            },
+            'adding permission to role'
+        );
 
         PermissionService.assertAdmin(actor);
 
@@ -322,17 +342,16 @@ export class PermissionService {
 
         try {
             const relation = await RolePermissionModel.createRelation(data);
-            log.info('permission added to role successfully', 'addToRole', {
-                roleId,
-                permissionId
-            });
+            dbLogger.info(
+                {
+                    roleId,
+                    permissionId
+                },
+                'permission added to role successfully'
+            );
             return relation;
         } catch (error) {
-            log.error('failed to add permission to role', 'addToRole', error, {
-                roleId,
-                permissionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add permission to role');
             throw error;
         }
     }
@@ -345,26 +364,28 @@ export class PermissionService {
      * @throws Error if actor is not authorized or deletion fails.
      */
     async removeFromRole(roleId: string, permissionId: string, actor: UserType): Promise<void> {
-        log.info('removing permission from role', 'removeFromRole', {
-            roleId,
-            permissionId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                roleId,
+                permissionId,
+                actor: actor.id
+            },
+            'removing permission from role'
+        );
 
         PermissionService.assertAdmin(actor);
 
         try {
             await RolePermissionModel.deleteRelation(roleId, permissionId);
-            log.info('permission removed from role successfully', 'removeFromRole', {
-                roleId,
-                permissionId
-            });
+            dbLogger.info(
+                {
+                    roleId,
+                    permissionId
+                },
+                'permission removed from role successfully'
+            );
         } catch (error) {
-            log.error('failed to remove permission from role', 'removeFromRole', error, {
-                roleId,
-                permissionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove permission from role');
             throw error;
         }
     }
@@ -382,11 +403,14 @@ export class PermissionService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<RolePermissionRecord[]> {
-        log.info('listing permissions for role', 'listForRole', {
-            roleId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                roleId,
+                actor: actor.id,
+                filter
+            },
+            'listing permissions for role'
+        );
 
         PermissionService.assertAdmin(actor);
 
@@ -397,16 +421,16 @@ export class PermissionService {
 
         try {
             const permissions = await RolePermissionModel.listByRole(existingRole.id, filter);
-            log.info('permissions listed for role successfully', 'listForRole', {
-                roleId: existingRole.id,
-                count: permissions.length
-            });
+            dbLogger.info(
+                {
+                    roleId: existingRole.id,
+                    count: permissions.length
+                },
+                'permissions listed for role successfully'
+            );
             return permissions;
         } catch (error) {
-            log.error('failed to list permissions for role', 'listForRole', error, {
-                roleId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list permissions for role');
             throw error;
         }
     }
@@ -424,11 +448,14 @@ export class PermissionService {
         permissionId: string,
         actor: UserType
     ): Promise<UserPermissionRecord> {
-        log.info('adding permission to user', 'addToUser', {
-            userId,
-            permissionId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                userId,
+                permissionId,
+                actor: actor.id
+            },
+            'adding permission to user'
+        );
 
         PermissionService.assertAdmin(actor);
 
@@ -445,17 +472,16 @@ export class PermissionService {
 
         try {
             const relation = await UserPermissionModel.createRelation(data);
-            log.info('permission added to user successfully', 'addToUser', {
-                userId,
-                permissionId
-            });
+            dbLogger.info(
+                {
+                    userId,
+                    permissionId
+                },
+                'permission added to user successfully'
+            );
             return relation;
         } catch (error) {
-            log.error('failed to add permission to user', 'addToUser', error, {
-                userId,
-                permissionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to add permission to user');
             throw error;
         }
     }
@@ -468,26 +494,28 @@ export class PermissionService {
      * @throws Error if actor is not authorized or deletion fails.
      */
     async removeFromUser(userId: string, permissionId: string, actor: UserType): Promise<void> {
-        log.info('removing permission from user', 'removeFromUser', {
-            userId,
-            permissionId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                userId,
+                permissionId,
+                actor: actor.id
+            },
+            'removing permission from user'
+        );
 
         PermissionService.assertAdmin(actor);
 
         try {
             await UserPermissionModel.deleteRelation(userId, permissionId);
-            log.info('permission removed from user successfully', 'removeFromUser', {
-                userId,
-                permissionId
-            });
+            dbLogger.info(
+                {
+                    userId,
+                    permissionId
+                },
+                'permission removed from user successfully'
+            );
         } catch (error) {
-            log.error('failed to remove permission from user', 'removeFromUser', error, {
-                userId,
-                permissionId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove permission from user');
             throw error;
         }
     }
@@ -505,11 +533,14 @@ export class PermissionService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<UserPermissionRecord[]> {
-        log.info('listing permissions for user', 'listForUser', {
-            userId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                userId,
+                actor: actor.id,
+                filter
+            },
+            'listing permissions for user'
+        );
 
         PermissionService.assertAdmin(actor);
 
@@ -520,16 +551,16 @@ export class PermissionService {
 
         try {
             const permissions = await UserPermissionModel.listByUser(existingUser.id, filter);
-            log.info('permissions listed for user successfully', 'listForUser', {
-                userId: existingUser.id,
-                count: permissions.length
-            });
+            dbLogger.info(
+                {
+                    userId: existingUser.id,
+                    count: permissions.length
+                },
+                'permissions listed for user successfully'
+            );
             return permissions;
         } catch (error) {
-            log.error('failed to list permissions for user', 'listForUser', error, {
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list permissions for user');
             throw error;
         }
     }
@@ -547,11 +578,14 @@ export class PermissionService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<RoleRecord[]> {
-        log.info('listing roles for permission', 'getRoles', {
-            permissionId: id,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                permissionId: id,
+                actor: actor.id,
+                filter
+            },
+            'listing roles for permission'
+        );
 
         PermissionService.assertAdmin(actor);
 
@@ -574,16 +608,16 @@ export class PermissionService {
                 }
             }
 
-            log.info('roles listed for permission successfully', 'getRoles', {
-                permissionId: existingPermission.id,
-                count: roles.length
-            });
+            dbLogger.info(
+                {
+                    permissionId: existingPermission.id,
+                    count: roles.length
+                },
+                'roles listed for permission successfully'
+            );
             return roles;
         } catch (error) {
-            log.error('failed to list roles for permission', 'getRoles', error, {
-                permissionId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list roles for permission');
             throw error;
         }
     }
@@ -673,10 +707,7 @@ export class PermissionService {
      * @throws Error if role is not found, actor is not authorized, or deletion fails.
      */
     async clearAllFromRole(roleId: string, actor: UserType): Promise<void> {
-        log.info('clearing all permissions from role', 'clearAllFromRole', {
-            roleId,
-            actor: actor.id
-        });
+        dbLogger.info({ roleId, actor: actor.id }, 'clearing all permissions from role');
 
         PermissionService.assertAdmin(actor);
 
@@ -684,14 +715,9 @@ export class PermissionService {
 
         try {
             await RolePermissionModel.deleteAllByRoleId(roleId);
-            log.info('all permissions cleared from role successfully', 'clearAllFromRole', {
-                roleId
-            });
+            dbLogger.info({ roleId }, 'all permissions cleared from role successfully');
         } catch (error) {
-            log.error('failed to clear all permissions from role', 'clearAllFromRole', error, {
-                roleId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to clear all permissions from role');
             throw error;
         }
     }
@@ -703,10 +729,7 @@ export class PermissionService {
      * @throws Error if user is not found, actor is not authorized, or deletion fails.
      */
     async clearAllFromUser(userId: string, actor: UserType): Promise<void> {
-        log.info('clearing all direct permissions from user', 'clearAllFromUser', {
-            userId,
-            actor: actor.id
-        });
+        dbLogger.info({ userId, actor: actor.id }, 'clearing all direct permissions from user');
 
         PermissionService.assertAdmin(actor);
 
@@ -714,16 +737,14 @@ export class PermissionService {
 
         try {
             await UserPermissionModel.deleteAllByUserId(userId);
-            log.info('all direct permissions cleared from user successfully', 'clearAllFromUser', {
-                userId
-            });
-        } catch (error) {
-            log.error(
-                'failed to clear all direct permissions from user',
-                'clearAllFromUser',
-                error,
-                { userId, actor: actor.id }
+            dbLogger.info(
+                {
+                    userId
+                },
+                'all direct permissions cleared from user successfully'
             );
+        } catch (error) {
+            dbLogger.error(error, 'failed to clear all direct permissions from user');
             throw error;
         }
     }

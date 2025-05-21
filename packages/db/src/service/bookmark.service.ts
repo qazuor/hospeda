@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type EntityTypeEnum, type UserType } from '@repo/types';
 import { BookmarkModel, type BookmarkRecord } from '../model/index.js';
 import type {
@@ -8,8 +8,6 @@ import type {
     UpdateUserBookmarkData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('BookmarkService');
 
 /**
  * Service layer for managing user bookmark operations.
@@ -28,17 +26,20 @@ export class BookmarkService {
      */
     private static assertOwnerOrAdmin(ownerId: string, actor: UserType): void {
         if (actor.id !== ownerId && !BookmarkService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertOwnerOrAdmin', {
-                actorId: actor.id,
-                requiredOwnerId: ownerId
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredOwnerId: ownerId
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
 
     private static assertAdmin(actor: UserType): void {
         if (!BookmarkService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -66,12 +67,15 @@ export class BookmarkService {
         ownerId: string,
         actor: UserType
     ): Promise<BookmarkRecord> {
-        log.info('creating bookmark', 'create', {
-            ownerId,
-            entityType: data.entityType,
-            entityId: data.entityId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                ownerId,
+                entityType: data.entityType,
+                entityId: data.entityId,
+                actor: actor.id
+            },
+            'creating bookmark'
+        );
 
         BookmarkService.assertOwnerOrAdmin(ownerId, actor);
 
@@ -83,18 +87,16 @@ export class BookmarkService {
                 updatedById: actor.id
             };
             const createdBookmark = await BookmarkModel.insertBookmark(dataToInsert);
-            log.info('bookmark created successfully', 'create', {
-                bookmarkId: createdBookmark.id,
-                ownerId
-            });
+            dbLogger.info(
+                {
+                    bookmarkId: createdBookmark.id,
+                    ownerId
+                },
+                'bookmark created successfully'
+            );
             return createdBookmark;
         } catch (error) {
-            log.error('failed to create bookmark', 'create', error, {
-                ownerId,
-                entityType: data.entityType,
-                entityId: data.entityId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to create bookmark');
             throw error;
         }
     }
@@ -107,7 +109,7 @@ export class BookmarkService {
      * @throws Error if bookmark is not found or actor is not authorized.
      */
     async getById(id: string, actor: UserType): Promise<BookmarkRecord> {
-        log.info('fetching bookmark by id', 'getById', { bookmarkId: id, actor: actor.id });
+        dbLogger.info({ bookmarkId: id, actor: actor.id }, 'fetching bookmark by id');
 
         const bookmark = assertExists(
             await BookmarkModel.selectBookmarkById(id),
@@ -116,7 +118,7 @@ export class BookmarkService {
 
         BookmarkService.assertOwnerOrAdmin(bookmark.ownerId, actor);
 
-        log.info('bookmark fetched successfully', 'getById', { bookmarkId: bookmark.id });
+        dbLogger.info({ bookmarkId: bookmark.id }, 'bookmark fetched successfully');
         return bookmark;
     }
 
@@ -129,16 +131,16 @@ export class BookmarkService {
      * @throws Error if actor is not authorized or listing fails.
      */
     async list(filter: SelectBookmarkFilter, actor: UserType): Promise<BookmarkRecord[]> {
-        log.info('listing bookmarks', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing bookmarks');
 
         BookmarkService.assertAdmin(actor);
 
         try {
             const bookmarks = await BookmarkModel.selectBookmarks(filter);
-            log.info('bookmarks listed successfully', 'list', { count: bookmarks.length, filter });
+            dbLogger.info({ count: bookmarks.length, filter }, 'bookmarks listed successfully');
             return bookmarks;
         } catch (error) {
-            log.error('failed to list bookmarks', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list bookmarks');
             throw error;
         }
     }
@@ -156,11 +158,14 @@ export class BookmarkService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<BookmarkRecord[]> {
-        log.info('listing bookmarks by owner', 'getByOwnerId', {
-            ownerId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                ownerId,
+                actor: actor.id,
+                filter
+            },
+            'listing bookmarks by owner'
+        );
 
         BookmarkService.assertOwnerOrAdmin(ownerId, actor);
 
@@ -171,16 +176,16 @@ export class BookmarkService {
 
         try {
             const bookmarks = await BookmarkModel.selectBookmarks(ownerFilter);
-            log.info('bookmarks listed by owner successfully', 'getByOwnerId', {
-                ownerId,
-                count: bookmarks.length
-            });
+            dbLogger.info(
+                {
+                    ownerId,
+                    count: bookmarks.length
+                },
+                'bookmarks listed by owner successfully'
+            );
             return bookmarks;
         } catch (error) {
-            log.error('failed to list bookmarks by owner', 'getByOwnerId', error, {
-                ownerId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list bookmarks by owner');
             throw error;
         }
     }
@@ -198,11 +203,14 @@ export class BookmarkService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<BookmarkRecord[]> {
-        log.info('listing bookmarks by entity type', 'getByEntityType', {
-            entityType: type,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                entityType: type,
+                actor: actor.id,
+                filter
+            },
+            'listing bookmarks by entity type'
+        );
 
         BookmarkService.assertAdmin(actor);
 
@@ -213,16 +221,16 @@ export class BookmarkService {
 
         try {
             const bookmarks = await BookmarkModel.selectBookmarks(entityTypeFilter);
-            log.info('bookmarks listed by entity type successfully', 'getByEntityType', {
-                entityType: type,
-                count: bookmarks.length
-            });
+            dbLogger.info(
+                {
+                    entityType: type,
+                    count: bookmarks.length
+                },
+                'bookmarks listed by entity type successfully'
+            );
             return bookmarks;
         } catch (error) {
-            log.error('failed to list bookmarks by entity type', 'getByEntityType', error, {
-                entityType: type,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list bookmarks by entity type');
             throw error;
         }
     }
@@ -240,11 +248,14 @@ export class BookmarkService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<BookmarkRecord[]> {
-        log.info('listing bookmarks by entity id', 'getByEntityId', {
-            entityId: id,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                entityId: id,
+                actor: actor.id,
+                filter
+            },
+            'listing bookmarks by entity id'
+        );
 
         BookmarkService.assertAdmin(actor);
 
@@ -255,16 +266,16 @@ export class BookmarkService {
 
         try {
             const bookmarks = await BookmarkModel.selectBookmarks(entityIdFilter);
-            log.info('bookmarks listed by entity id successfully', 'getByEntityId', {
-                entityId: id,
-                count: bookmarks.length
-            });
+            dbLogger.info(
+                {
+                    entityId: id,
+                    count: bookmarks.length
+                },
+                'bookmarks listed by entity id successfully'
+            );
             return bookmarks;
         } catch (error) {
-            log.error('failed to list bookmarks by entity id', 'getByEntityId', error, {
-                entityId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list bookmarks by entity id');
             throw error;
         }
     }
@@ -282,7 +293,7 @@ export class BookmarkService {
         changes: UpdateUserBookmarkData,
         actor: UserType
     ): Promise<BookmarkRecord> {
-        log.info('updating bookmark', 'update', { bookmarkId: id, actor: actor.id });
+        dbLogger.info({ bookmarkId: id, actor: actor.id }, 'updating bookmark');
 
         const existingBookmark = await this.getById(id, actor);
 
@@ -300,13 +311,10 @@ export class BookmarkService {
                 await BookmarkModel.selectBookmarkByIdIncludingDeleted(existingBookmark.id),
                 `Failed to retrieve updated bookmark ${existingBookmark.id}`
             );
-            log.info('bookmark updated successfully', 'update', { bookmarkId: updatedBookmark.id });
+            dbLogger.info({ bookmarkId: updatedBookmark.id }, 'bookmark updated successfully');
             return updatedBookmark;
         } catch (error) {
-            log.error('failed to update bookmark', 'update', error, {
-                bookmarkId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update bookmark');
             throw error;
         }
     }
@@ -318,7 +326,7 @@ export class BookmarkService {
      * @throws Error if bookmark is not found, actor is not authorized, or soft-delete fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting bookmark', 'delete', { bookmarkId: id, actor: actor.id });
+        dbLogger.info({ bookmarkId: id, actor: actor.id }, 'soft deleting bookmark');
 
         const existingBookmark = await this.getById(id, actor);
 
@@ -328,14 +336,14 @@ export class BookmarkService {
                 deletedById: actor.id
             };
             await BookmarkModel.updateBookmark(existingBookmark.id, changes);
-            log.info('bookmark soft deleted successfully', 'delete', {
-                bookmarkId: existingBookmark.id
-            });
+            dbLogger.info(
+                {
+                    bookmarkId: existingBookmark.id
+                },
+                'bookmark soft deleted successfully'
+            );
         } catch (error) {
-            log.error('failed to soft delete bookmark', 'delete', error, {
-                bookmarkId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete bookmark');
             throw error;
         }
     }
@@ -347,7 +355,7 @@ export class BookmarkService {
      * @throws Error if bookmark is not found, actor is not authorized, or restore fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring bookmark', 'restore', { bookmarkId: id, actor: actor.id });
+        dbLogger.info({ bookmarkId: id, actor: actor.id }, 'restoring bookmark');
 
         const existingBookmark = assertExists(
             await BookmarkModel.selectBookmarkByIdIncludingDeleted(id),
@@ -362,14 +370,14 @@ export class BookmarkService {
                 deletedById: null
             };
             await BookmarkModel.updateBookmark(existingBookmark.id, changes);
-            log.info('bookmark restored successfully', 'restore', {
-                bookmarkId: existingBookmark.id
-            });
+            dbLogger.info(
+                {
+                    bookmarkId: existingBookmark.id
+                },
+                'bookmark restored successfully'
+            );
         } catch (error) {
-            log.error('failed to restore bookmark', 'restore', error, {
-                bookmarkId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore bookmark');
             throw error;
         }
     }
@@ -381,7 +389,7 @@ export class BookmarkService {
      * @throws Error if bookmark is not found, actor is not authorized, or hard-delete fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting bookmark', 'hardDelete', { bookmarkId: id, actor: actor.id });
+        dbLogger.info({ bookmarkId: id, actor: actor.id }, 'hard deleting bookmark');
 
         const existingBookmark = assertExists(
             await BookmarkModel.selectBookmarkByIdIncludingDeleted(id),
@@ -392,14 +400,14 @@ export class BookmarkService {
 
         try {
             await BookmarkModel.hardDeleteBookmark(existingBookmark.id);
-            log.info('bookmark hard deleted successfully', 'hardDelete', {
-                bookmarkId: existingBookmark.id
-            });
+            dbLogger.info(
+                {
+                    bookmarkId: existingBookmark.id
+                },
+                'bookmark hard deleted successfully'
+            );
         } catch (error) {
-            log.error('failed to hard delete bookmark', 'hardDelete', error, {
-                bookmarkId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete bookmark');
             throw error;
         }
     }
@@ -412,23 +420,23 @@ export class BookmarkService {
      * @throws Error if actor is not authorized or count fails.
      */
     async countByOwner(ownerId: string, actor: UserType): Promise<number> {
-        log.info('counting bookmarks by owner', 'countByOwner', { ownerId, actor: actor.id });
+        dbLogger.info({ ownerId, actor: actor.id }, 'counting bookmarks by owner');
 
         BookmarkService.assertOwnerOrAdmin(ownerId, actor);
 
         try {
             const bookmarkCount = await BookmarkModel.countByOwnerId(ownerId);
 
-            log.info('bookmark count by owner successful', 'countByOwner', {
-                ownerId,
-                count: bookmarkCount
-            });
+            dbLogger.info(
+                {
+                    ownerId,
+                    count: bookmarkCount
+                },
+                'bookmark count by owner successful'
+            );
             return bookmarkCount;
         } catch (error) {
-            log.error('failed to count bookmarks by owner', 'countByOwner', error, {
-                ownerId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to count bookmarks by owner');
             throw error;
         }
     }
@@ -442,7 +450,7 @@ export class BookmarkService {
      * @returns True if the bookmark exists, false otherwise.
      */
     async exists(ownerId: string, entityType: EntityTypeEnum, entityId: string): Promise<boolean> {
-        // log.info('checking if bookmark exists', 'exists', { ownerId, entityType, entityId }); // Avoid logging frequent checks
+        // dbLogger.info('checking if bookmark exists', 'exists', { ownerId, entityType, entityId }); // Avoid logging frequent checks
         // Note: No authorization check based on 'actor' here, as this IS an existence check.
 
         const bookmarkExists = await BookmarkModel.exists(ownerId, entityType, entityId);
@@ -457,21 +465,15 @@ export class BookmarkService {
      * @throws Error if actor is not authorized or deletion fails.
      */
     async bulkDeleteByOwner(ownerId: string, actor: UserType): Promise<void> {
-        log.info('bulk deleting bookmarks by owner', 'bulkDeleteByOwner', {
-            ownerId,
-            actor: actor.id
-        });
+        dbLogger.info({ ownerId, actor: actor.id }, 'bulk deleting bookmarks by owner');
 
         BookmarkService.assertAdmin(actor);
 
         try {
             await BookmarkModel.hardDeleteAllByOwnerId(ownerId);
-            log.info('bulk delete by owner successful', 'bulkDeleteByOwner', { ownerId });
+            dbLogger.info({ ownerId }, 'bulk delete by owner successful');
         } catch (error) {
-            log.error('failed to bulk delete by owner', 'bulkDeleteByOwner', error, {
-                ownerId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to bulk delete by owner');
             throw error;
         }
     }
@@ -483,18 +485,15 @@ export class BookmarkService {
      * @throws Error if actor is not authorized or purge fails.
      */
     async purgeOld(cutoffDate: Date, actor: UserType): Promise<void> {
-        log.info('purging old bookmarks', 'purgeOld', { cutoffDate, actor: actor.id });
+        dbLogger.info({ cutoffDate, actor: actor.id }, 'purging old bookmarks');
 
         BookmarkService.assertAdmin(actor);
 
         try {
             await BookmarkModel.hardDeleteOlderThan(cutoffDate);
-            log.info('purge old bookmarks successful', 'purgeOld', { cutoffDate });
+            dbLogger.info({ cutoffDate }, 'purge old bookmarks successful');
         } catch (error) {
-            log.error('failed to purge old bookmarks', 'purgeOld', error, {
-                cutoffDate,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to purge old bookmarks');
             throw error;
         }
     }
@@ -511,29 +510,26 @@ export class BookmarkService {
         limit: number,
         actor: UserType
     ): Promise<Array<{ entityType: EntityTypeEnum; entityId: string; bookmarkCount: number }>> {
-        log.info('getting most bookmarked entities', 'getMostBookmarkedEntities', {
-            limit,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                limit,
+                actor: actor.id
+            },
+            'getting most bookmarked entities'
+        );
 
         BookmarkService.assertAdmin(actor);
 
         try {
             const results = await BookmarkModel.getMostBookmarkedEntities(limit);
 
-            log.info(
-                'most bookmarked entities retrieved successfully',
-                'getMostBookmarkedEntities',
-                { count: results.length, limit }
+            dbLogger.info(
+                { count: results.length, limit },
+                'most bookmarked entities retrieved successfully'
             );
             return results;
         } catch (error) {
-            log.error(
-                'failed to get most bookmarked entities',
-                'getMostBookmarkedEntities',
-                error,
-                { limit, actor: actor.id }
-            );
+            dbLogger.error(error, 'failed to get most bookmarked entities');
             throw error;
         }
     }

@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type UserType } from '@repo/types';
 import {
     PostModel,
@@ -17,8 +17,6 @@ import type {
     UpdatePostSponsorData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('PostSponsorService');
 
 /**
  * Service layer for managing post sponsor operations.
@@ -41,7 +39,7 @@ export class PostSponsorService {
      */
     private static assertAdmin(actor: UserType): void {
         if (!PostSponsorService.isAdmin(actor)) {
-            log.warn('Admin access required', 'assertAdmin', { actorId: actor.id });
+            dbLogger.warn({ actorId: actor.id }, 'Admin access required');
             throw new Error('Forbidden');
         }
     }
@@ -54,7 +52,7 @@ export class PostSponsorService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertPostSponsor, actor: UserType): Promise<PostSponsorRecord> {
-        log.info('creating post sponsor', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating post sponsor');
 
         // Only admins can create sponsors
         PostSponsorService.assertAdmin(actor);
@@ -66,12 +64,15 @@ export class PostSponsorService {
                 updatedById: actor.id
             };
             const createdSponsor = await PostSponsorModel.createSponsor(dataWithAudit);
-            log.info('post sponsor created successfully', 'create', {
-                sponsorId: createdSponsor.id
-            });
+            dbLogger.info(
+                {
+                    sponsorId: createdSponsor.id
+                },
+                'post sponsor created successfully'
+            );
             return createdSponsor;
         } catch (error) {
-            log.error('failed to create post sponsor', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create post sponsor');
             throw error;
         }
     }
@@ -84,19 +85,21 @@ export class PostSponsorService {
      * @throws Error if sponsor is not found.
      */
     async getById(id: string, actor: UserType): Promise<PostSponsorRecord> {
-        log.info('fetching sponsor by id', 'getById', { sponsorId: id, actor: actor.id });
+        dbLogger.info({ sponsorId: id, actor: actor.id }, 'fetching sponsor by id');
 
         try {
             const sponsor = await PostSponsorModel.getSponsorById(id);
             const existingSponsor = assertExists(sponsor, `Sponsor ${id} not found`);
 
-            log.info('sponsor fetched successfully', 'getById', { sponsorId: existingSponsor.id });
+            dbLogger.info(
+                {
+                    sponsorId: existingSponsor.id
+                },
+                'sponsor fetched successfully'
+            );
             return existingSponsor;
         } catch (error) {
-            log.error('failed to fetch sponsor by id', 'getById', error, {
-                sponsorId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch sponsor by id');
             throw error;
         }
     }
@@ -109,17 +112,20 @@ export class PostSponsorService {
      * @throws Error if listing fails.
      */
     async list(filter: SelectPostSponsorFilter, actor: UserType): Promise<PostSponsorRecord[]> {
-        log.info('listing sponsors', 'list', { filter, actor: actor.id });
+        dbLogger.info({ filter, actor: actor.id }, 'listing sponsors');
 
         try {
             const sponsors = await PostSponsorModel.listSponsors(filter);
-            log.info('sponsors listed successfully', 'list', {
-                count: sponsors.length,
-                filter
-            });
+            dbLogger.info(
+                {
+                    count: sponsors.length,
+                    filter
+                },
+                'sponsors listed successfully'
+            );
             return sponsors;
         } catch (error) {
-            log.error('failed to list sponsors', 'list', error, { filter, actor: actor.id });
+            dbLogger.error(error, 'failed to list sponsors');
             throw error;
         }
     }
@@ -137,7 +143,7 @@ export class PostSponsorService {
         changes: UpdatePostSponsorData,
         actor: UserType
     ): Promise<PostSponsorRecord> {
-        log.info('updating sponsor', 'update', { sponsorId: id, actor: actor.id });
+        dbLogger.info({ sponsorId: id, actor: actor.id }, 'updating sponsor');
 
         // Only admins can update sponsors
         PostSponsorService.assertAdmin(actor);
@@ -155,13 +161,15 @@ export class PostSponsorService {
                 existingSponsor.id,
                 dataWithAudit
             );
-            log.info('sponsor updated successfully', 'update', { sponsorId: updatedSponsor.id });
+            dbLogger.info(
+                {
+                    sponsorId: updatedSponsor.id
+                },
+                'sponsor updated successfully'
+            );
             return updatedSponsor;
         } catch (error) {
-            log.error('failed to update sponsor', 'update', error, {
-                sponsorId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update sponsor');
             throw error;
         }
     }
@@ -173,7 +181,7 @@ export class PostSponsorService {
      * @throws Error if sponsor is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting sponsor', 'delete', { sponsorId: id, actor: actor.id });
+        dbLogger.info({ sponsorId: id, actor: actor.id }, 'soft deleting sponsor');
 
         // Only admins can delete sponsors
         PostSponsorService.assertAdmin(actor);
@@ -182,12 +190,9 @@ export class PostSponsorService {
 
         try {
             await PostSponsorModel.softDeleteSponsor(id);
-            log.info('sponsor soft deleted successfully', 'delete', { sponsorId: id });
+            dbLogger.info({ sponsorId: id }, 'sponsor soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete sponsor', 'delete', error, {
-                sponsorId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete sponsor');
             throw error;
         }
     }
@@ -199,7 +204,7 @@ export class PostSponsorService {
      * @throws Error if sponsor is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring sponsor', 'restore', { sponsorId: id, actor: actor.id });
+        dbLogger.info({ sponsorId: id, actor: actor.id }, 'restoring sponsor');
 
         // Only admins can restore sponsors
         PostSponsorService.assertAdmin(actor);
@@ -208,12 +213,9 @@ export class PostSponsorService {
 
         try {
             await PostSponsorModel.restoreSponsor(id);
-            log.info('sponsor restored successfully', 'restore', { sponsorId: id });
+            dbLogger.info({ sponsorId: id }, 'sponsor restored successfully');
         } catch (error) {
-            log.error('failed to restore sponsor', 'restore', error, {
-                sponsorId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore sponsor');
             throw error;
         }
     }
@@ -225,7 +227,7 @@ export class PostSponsorService {
      * @throws Error if sponsor is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting sponsor', 'hardDelete', { sponsorId: id, actor: actor.id });
+        dbLogger.info({ sponsorId: id, actor: actor.id }, 'hard deleting sponsor');
 
         // Only admins can hard delete
         PostSponsorService.assertAdmin(actor);
@@ -234,12 +236,9 @@ export class PostSponsorService {
 
         try {
             await PostSponsorModel.hardDeleteSponsor(id);
-            log.info('sponsor hard deleted successfully', 'hardDelete', { sponsorId: id });
+            dbLogger.info({ sponsorId: id }, 'sponsor hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete sponsor', 'hardDelete', error, {
-                sponsorId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete sponsor');
             throw error;
         }
     }
@@ -257,11 +256,7 @@ export class PostSponsorService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostSponsorshipRecord[]> {
-        log.info('getting sponsors by post id', 'getByPostId', {
-            postId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ postId, actor: actor.id, filter }, 'getting sponsors by post id');
 
         try {
             // Check if post exists
@@ -277,16 +272,13 @@ export class PostSponsorService {
             };
 
             const sponsorships = await PostSponsorshipModel.listSponsorships(sponsorshipFilter);
-            log.info('sponsors by post id retrieved successfully', 'getByPostId', {
-                postId,
-                count: sponsorships.length
-            });
+            dbLogger.info(
+                { postId, count: sponsorships.length },
+                'sponsors by post id retrieved successfully'
+            );
             return sponsorships;
         } catch (error) {
-            log.error('failed to get sponsors by post id', 'getByPostId', error, {
-                postId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get sponsors by post id');
             throw error;
         }
     }
@@ -309,11 +301,7 @@ export class PostSponsorService {
         >,
         actor: UserType
     ): Promise<PostSponsorshipRecord> {
-        log.info('assigning sponsor to post', 'assignToPost', {
-            postId,
-            sponsorId,
-            actor: actor.id
-        });
+        dbLogger.info({ postId, sponsorId, actor: actor.id }, 'assigning sponsor to post');
 
         // Only admins can assign sponsors
         PostSponsorService.assertAdmin(actor);
@@ -341,18 +329,13 @@ export class PostSponsorService {
 
             const sponsorship =
                 await PostSponsorshipModel.createSponsorship(sponsorshipDataWithIds);
-            log.info('sponsor assigned to post successfully', 'assignToPost', {
-                postId,
-                sponsorId,
-                sponsorshipId: sponsorship.id
-            });
+            dbLogger.info(
+                { postId, sponsorId, sponsorshipId: sponsorship.id },
+                'sponsor assigned to post successfully'
+            );
             return sponsorship;
         } catch (error) {
-            log.error('failed to assign sponsor to post', 'assignToPost', error, {
-                postId,
-                sponsorId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to assign sponsor to post');
             throw error;
         }
     }
@@ -365,11 +348,7 @@ export class PostSponsorService {
      * @throws Error if post or sponsor is not found, actor is not authorized, or deletion fails.
      */
     async removeFromPost(postId: string, sponsorId: string, actor: UserType): Promise<void> {
-        log.info('removing sponsor from post', 'removeFromPost', {
-            postId,
-            sponsorId,
-            actor: actor.id
-        });
+        dbLogger.info({ postId, sponsorId, actor: actor.id }, 'removing sponsor from post');
 
         // Only admins can remove sponsors
         PostSponsorService.assertAdmin(actor);
@@ -391,16 +370,9 @@ export class PostSponsorService {
                 await PostSponsorshipModel.softDeleteSponsorship(sponsorship.id);
             }
 
-            log.info('sponsor removed from post successfully', 'removeFromPost', {
-                postId,
-                sponsorId
-            });
+            dbLogger.info({ postId, sponsorId }, 'sponsor removed from post successfully');
         } catch (error) {
-            log.error('failed to remove sponsor from post', 'removeFromPost', error, {
-                postId,
-                sponsorId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to remove sponsor from post');
             throw error;
         }
     }
@@ -418,11 +390,7 @@ export class PostSponsorService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<PostRecord[]> {
-        log.info('listing posts by sponsor id', 'listPosts', {
-            sponsorId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info({ sponsorId, actor: actor.id, filter }, 'listing posts by sponsor id');
 
         try {
             // Check if sponsor exists
@@ -459,16 +427,13 @@ export class PostSponsorService {
             const limit = filter.limit || 20;
             const paginatedPosts = posts.slice(offset, offset + limit);
 
-            log.info('posts by sponsor id listed successfully', 'listPosts', {
-                sponsorId,
-                count: paginatedPosts.length
-            });
+            dbLogger.info(
+                { sponsorId, count: paginatedPosts.length },
+                'posts by sponsor id listed successfully'
+            );
             return paginatedPosts;
         } catch (error) {
-            log.error('failed to list posts by sponsor id', 'listPosts', error, {
-                sponsorId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list posts by sponsor id');
             throw error;
         }
     }
@@ -481,7 +446,7 @@ export class PostSponsorService {
      * @throws Error if listing fails.
      */
     async getActive(actor: UserType, filter: PaginationParams = {}): Promise<PostSponsorRecord[]> {
-        log.info('getting active sponsors', 'getActive', { actor: actor.id, filter });
+        dbLogger.info({ actor: actor.id, filter }, 'getting active sponsors');
 
         try {
             // Get all active sponsorships
@@ -534,14 +499,13 @@ export class PostSponsorService {
             const limit = filter.limit || 20;
             const paginatedSponsors = sponsors.slice(offset, offset + limit);
 
-            log.info('active sponsors retrieved successfully', 'getActive', {
-                count: paginatedSponsors.length
-            });
+            dbLogger.info(
+                { count: paginatedSponsors.length },
+                'active sponsors retrieved successfully'
+            );
             return paginatedSponsors;
         } catch (error) {
-            log.error('failed to get active sponsors', 'getActive', error, {
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to get active sponsors');
             throw error;
         }
     }

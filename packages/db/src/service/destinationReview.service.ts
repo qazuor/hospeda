@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { dbLogger } from '@repo/db/utils/logger.js';
 import { BuiltinRoleTypeEnum, type DestinationRatingType, type UserType } from '@repo/types';
 import {
     DestinationModel,
@@ -11,8 +11,6 @@ import type {
     UpdateDestinationReviewData
 } from '../types/db-types.js';
 import { assertExists, sanitizePartialUpdate } from '../utils/db-utils.js';
-
-const log = logger.createLogger('DestinationReviewService');
 
 /**
  * Service layer for managing destination review operations.
@@ -36,10 +34,13 @@ export class DestinationReviewService {
      */
     private static assertCreatorOrAdmin(createdById: string, actor: UserType): void {
         if (actor.id !== createdById && !DestinationReviewService.isAdmin(actor)) {
-            log.warn('Forbidden access attempt', 'assertCreatorOrAdmin', {
-                actorId: actor.id,
-                requiredCreatorId: createdById
-            });
+            dbLogger.warn(
+                {
+                    actorId: actor.id,
+                    requiredCreatorId: createdById
+                },
+                'Forbidden access attempt'
+            );
             throw new Error('Forbidden');
         }
     }
@@ -52,7 +53,7 @@ export class DestinationReviewService {
      * @throws Error if actor is not authorized or creation fails.
      */
     async create(data: InsertDestinationReview, actor: UserType): Promise<DestinationReviewRecord> {
-        log.info('creating destination review', 'create', { actor: actor.id });
+        dbLogger.info({ actor: actor.id }, 'creating destination review');
 
         try {
             // Verify destination exists
@@ -67,12 +68,15 @@ export class DestinationReviewService {
                 updatedById: actor.id
             };
             const createdReview = await DestinationReviewModel.createReview(dataWithAudit);
-            log.info('destination review created successfully', 'create', {
-                reviewId: createdReview.id
-            });
+            dbLogger.info(
+                {
+                    reviewId: createdReview.id
+                },
+                'destination review created successfully'
+            );
             return createdReview;
         } catch (error) {
-            log.error('failed to create destination review', 'create', error, { actor: actor.id });
+            dbLogger.error(error, 'failed to create destination review');
             throw error;
         }
     }
@@ -85,21 +89,16 @@ export class DestinationReviewService {
      * @throws Error if review is not found.
      */
     async getById(id: string, actor: UserType): Promise<DestinationReviewRecord> {
-        log.info('fetching review by id', 'getById', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'fetching review by id');
 
         try {
             const review = await DestinationReviewModel.getReviewById(id);
             const existingReview = assertExists(review, `Review ${id} not found`);
 
-            log.info('review fetched successfully', 'getById', {
-                reviewId: existingReview.id
-            });
+            dbLogger.info({ reviewId: existingReview.id }, 'review fetched successfully');
             return existingReview;
         } catch (error) {
-            log.error('failed to fetch review by id', 'getById', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to fetch review by id');
             throw error;
         }
     }
@@ -117,11 +116,14 @@ export class DestinationReviewService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationReviewRecord[]> {
-        log.info('listing reviews for destination', 'list', {
-            destinationId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id,
+                filter
+            },
+            'listing reviews for destination'
+        );
 
         try {
             // Verify destination exists
@@ -135,16 +137,16 @@ export class DestinationReviewService {
                 ...filter,
                 includeDeleted: false
             });
-            log.info('reviews listed successfully', 'list', {
-                destinationId,
-                count: reviews.length
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    count: reviews.length
+                },
+                'reviews listed successfully'
+            );
             return reviews;
         } catch (error) {
-            log.error('failed to list reviews', 'list', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list reviews');
             throw error;
         }
     }
@@ -162,7 +164,7 @@ export class DestinationReviewService {
         changes: UpdateDestinationReviewData,
         actor: UserType
     ): Promise<DestinationReviewRecord> {
-        log.info('updating review', 'update', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'updating review');
 
         const existingReview = await this.getById(id, actor);
 
@@ -180,15 +182,10 @@ export class DestinationReviewService {
                 existingReview.id,
                 dataWithAudit
             );
-            log.info('review updated successfully', 'update', {
-                reviewId: updatedReview.id
-            });
+            dbLogger.info({ reviewId: updatedReview.id }, 'review updated successfully');
             return updatedReview;
         } catch (error) {
-            log.error('failed to update review', 'update', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to update review');
             throw error;
         }
     }
@@ -200,7 +197,7 @@ export class DestinationReviewService {
      * @throws Error if review is not found, actor is not authorized, or deletion fails.
      */
     async delete(id: string, actor: UserType): Promise<void> {
-        log.info('soft deleting review', 'delete', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'soft deleting review');
 
         const existingReview = await this.getById(id, actor);
 
@@ -209,12 +206,9 @@ export class DestinationReviewService {
 
         try {
             await DestinationReviewModel.softDeleteReview(id);
-            log.info('review soft deleted successfully', 'delete', { reviewId: id });
+            dbLogger.info({ reviewId: id }, 'review soft deleted successfully');
         } catch (error) {
-            log.error('failed to soft delete review', 'delete', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to soft delete review');
             throw error;
         }
     }
@@ -226,7 +220,7 @@ export class DestinationReviewService {
      * @throws Error if review is not found, actor is not authorized, or restoration fails.
      */
     async restore(id: string, actor: UserType): Promise<void> {
-        log.info('restoring review', 'restore', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'restoring review');
 
         const existingReview = await this.getById(id, actor);
 
@@ -235,12 +229,9 @@ export class DestinationReviewService {
 
         try {
             await DestinationReviewModel.restoreReview(id);
-            log.info('review restored successfully', 'restore', { reviewId: id });
+            dbLogger.info({ reviewId: id }, 'review restored successfully');
         } catch (error) {
-            log.error('failed to restore review', 'restore', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to restore review');
             throw error;
         }
     }
@@ -252,7 +243,7 @@ export class DestinationReviewService {
      * @throws Error if review is not found, actor is not authorized, or deletion fails.
      */
     async hardDelete(id: string, actor: UserType): Promise<void> {
-        log.info('hard deleting review', 'hardDelete', { reviewId: id, actor: actor.id });
+        dbLogger.info({ reviewId: id, actor: actor.id }, 'hard deleting review');
 
         // Only admins can hard delete
         if (!DestinationReviewService.isAdmin(actor)) {
@@ -263,12 +254,9 @@ export class DestinationReviewService {
 
         try {
             await DestinationReviewModel.hardDeleteReview(id);
-            log.info('review hard deleted successfully', 'hardDelete', { reviewId: id });
+            dbLogger.info({ reviewId: id }, 'review hard deleted successfully');
         } catch (error) {
-            log.error('failed to hard delete review', 'hardDelete', error, {
-                reviewId: id,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to hard delete review');
             throw error;
         }
     }
@@ -281,10 +269,13 @@ export class DestinationReviewService {
      * @throws Error if destination is not found or calculation fails.
      */
     async getAverageRating(destinationId: string, actor: UserType): Promise<DestinationRatingType> {
-        log.info('calculating average rating for destination', 'getAverageRating', {
-            destinationId,
-            actor: actor.id
-        });
+        dbLogger.info(
+            {
+                destinationId,
+                actor: actor.id
+            },
+            'calculating average rating for destination'
+        );
 
         try {
             // Verify destination exists
@@ -300,9 +291,12 @@ export class DestinationReviewService {
             });
 
             if (reviews.length === 0) {
-                log.info('no reviews found for rating calculation', 'getAverageRating', {
-                    destinationId
-                });
+                dbLogger.info(
+                    {
+                        destinationId
+                    },
+                    'no reviews found for rating calculation'
+                );
 
                 // Return default rating with zeros
                 return {
@@ -369,16 +363,16 @@ export class DestinationReviewService {
                 averageRating[key] = Number((averageRating[key] / count).toFixed(1));
             }
 
-            log.info('average rating calculated successfully', 'getAverageRating', {
-                destinationId,
-                reviewCount: count
-            });
+            dbLogger.info(
+                {
+                    destinationId,
+                    reviewCount: count
+                },
+                'average rating calculated successfully'
+            );
             return averageRating;
         } catch (error) {
-            log.error('failed to calculate average rating', 'getAverageRating', error, {
-                destinationId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to calculate average rating');
             throw error;
         }
     }
@@ -396,11 +390,14 @@ export class DestinationReviewService {
         actor: UserType,
         filter: PaginationParams = {}
     ): Promise<DestinationReviewRecord[]> {
-        log.info('listing reviews by user', 'listByUser', {
-            userId,
-            actor: actor.id,
-            filter
-        });
+        dbLogger.info(
+            {
+                userId,
+                actor: actor.id,
+                filter
+            },
+            'listing reviews by user'
+        );
 
         // If not admin and not the user themselves, forbid access
         if (!DestinationReviewService.isAdmin(actor) && actor.id !== userId) {
@@ -436,16 +433,16 @@ export class DestinationReviewService {
             const limit = filter.limit || 20;
             const paginatedReviews = userReviews.slice(offset, offset + limit);
 
-            log.info('reviews by user listed successfully', 'listByUser', {
-                userId,
-                count: paginatedReviews.length
-            });
+            dbLogger.info(
+                {
+                    userId,
+                    count: paginatedReviews.length
+                },
+                'reviews by user listed successfully'
+            );
             return paginatedReviews;
         } catch (error) {
-            log.error('failed to list reviews by user', 'listByUser', error, {
-                userId,
-                actor: actor.id
-            });
+            dbLogger.error(error, 'failed to list reviews by user');
             throw error;
         }
     }
