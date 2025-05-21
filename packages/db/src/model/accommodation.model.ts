@@ -1,4 +1,3 @@
-import { logger } from '@repo/logger';
 import type { InferSelectModel } from 'drizzle-orm';
 import { asc, desc, eq, ilike, isNull, or } from 'drizzle-orm';
 import { getDb } from '../client.js';
@@ -15,11 +14,7 @@ import {
     prepareLikeQuery,
     sanitizePartialUpdate
 } from '../utils/db-utils.js';
-
-/**
- * Scoped logger for accommodation model operations.
- */
-const log = logger.createLogger('AccommodationModel');
+import { dbLogger } from '../utils/logger.js';
 
 /**
  * Full accommodation record as returned by the database.
@@ -34,20 +29,25 @@ export const AccommodationModel = {
      * Create a new accommodation record.
      *
      * @param data - Fields required to create the accommodation (InsertAccommodation type from db-types)
-     * @returns The created accommodation record
+            typedDbLogger.query('insert', 'accommodations', data, acc);
      */
     async createAccommodation(data: InsertAccommodation): Promise<AccommodationRecord> {
         try {
-            log.info('creating a new accommodation', 'createAccommodation', data);
+            dbLogger.info(data, 'creating a new accommodation');
             const db = getDb();
             const rows = castReturning<AccommodationRecord>(
                 await db.insert(accommodations).values(data).returning()
             );
             const acc = assertExists(rows[0], 'createAccommodation: no accommodation returned');
-            log.query('insert', 'accommodations', data, acc);
+            dbLogger.query({
+                table: 'accommodation',
+                action: 'insert',
+                params: data,
+                result: acc
+            });
             return acc;
         } catch (error) {
-            log.error('createAccommodation failed', 'createAccommodation', error);
+            dbLogger.error(error, 'createAccommodation failed');
             throw error;
         }
     },
@@ -60,17 +60,22 @@ export const AccommodationModel = {
      */
     async getAccommodationById(id: string): Promise<AccommodationRecord | undefined> {
         try {
-            log.info('fetching accommodation by id', 'getAccommodationById', { id });
+            dbLogger.info({ id }, 'fetching accommodation by id');
             const db = getDb();
             const [acc] = await db
                 .select()
                 .from(accommodations)
                 .where(eq(accommodations.id, id))
                 .limit(1);
-            log.query('select', 'accommodations', { id }, acc);
+            dbLogger.query({
+                table: 'accommodation',
+                action: 'select',
+                params: { id },
+                result: acc
+            });
             return acc ? (acc as AccommodationRecord) : undefined;
         } catch (error) {
-            log.error('getAccommodationById failed', 'getAccommodationById', error);
+            dbLogger.error(error, 'getAccommodationById failed');
             throw error;
         }
     },
@@ -83,7 +88,7 @@ export const AccommodationModel = {
      */
     async listAccommodations(filter: SelectAccommodationFilter): Promise<AccommodationRecord[]> {
         try {
-            log.info('listing accommodations', 'listAccommodations', filter);
+            dbLogger.info(filter, 'listing accommodations');
             const db = getDb();
             let query = db.select().from(accommodations).$dynamic();
 
@@ -151,10 +156,15 @@ export const AccommodationModel = {
                 .limit(filter.limit ?? 20)
                 .offset(filter.offset ?? 0)) as AccommodationRecord[];
 
-            log.query('select', 'accommodations', filter, rows);
+            dbLogger.query({
+                table: 'accommodation',
+                action: 'select',
+                params: filter,
+                result: rows
+            });
             return rows;
         } catch (error) {
-            log.error('listAccommodations failed', 'listAccommodations', error);
+            dbLogger.error(error, 'listAccommodations failed');
             throw error;
         }
     },
@@ -172,10 +182,13 @@ export const AccommodationModel = {
     ): Promise<AccommodationRecord> {
         try {
             const dataToUpdate = sanitizePartialUpdate(changes);
-            log.info('updating accommodation', 'updateAccommodation', {
-                id,
-                changes: dataToUpdate
-            });
+            dbLogger.info(
+                {
+                    id,
+                    changes: dataToUpdate
+                },
+                'updating accommodation'
+            );
             const db = getDb();
             const rows = castReturning<AccommodationRecord>(
                 await db
@@ -188,10 +201,15 @@ export const AccommodationModel = {
                 rows[0],
                 `updateAccommodation: no accommodation found for id ${id}`
             );
-            log.query('update', 'accommodations', { id, changes: dataToUpdate }, updated);
+            dbLogger.query({
+                table: 'accommodation',
+                action: 'update',
+                params: { id, changes: dataToUpdate },
+                result: updated
+            });
             return updated;
         } catch (error) {
-            log.error('updateAccommodation failed', 'updateAccommodation', error);
+            dbLogger.error(error, 'updateAccommodation failed');
             throw error;
         }
     },
@@ -203,15 +221,20 @@ export const AccommodationModel = {
      */
     async softDeleteAccommodation(id: string): Promise<void> {
         try {
-            log.info('soft deleting accommodation', 'softDeleteAccommodation', { id });
+            dbLogger.info({ id }, 'soft deleting accommodation');
             const db = getDb();
             await db
                 .update(accommodations)
                 .set({ deletedAt: new Date() })
                 .where(eq(accommodations.id, id));
-            log.query('update', 'accommodations', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'accommodation',
+                action: 'update',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('softDeleteAccommodation failed', 'softDeleteAccommodation', error);
+            dbLogger.error(error, 'softDeleteAccommodation failed');
             throw error;
         }
     },
@@ -223,15 +246,20 @@ export const AccommodationModel = {
      */
     async restoreAccommodation(id: string): Promise<void> {
         try {
-            log.info('restoring accommodation', 'restoreAccommodation', { id });
+            dbLogger.info({ id }, 'restoring accommodation');
             const db = getDb();
             await db
                 .update(accommodations)
                 .set({ deletedAt: null })
                 .where(eq(accommodations.id, id));
-            log.query('update', 'accommodations', { id }, { restored: true });
+            dbLogger.query({
+                table: 'accommodation',
+                action: 'update',
+                params: { id },
+                result: { restored: true }
+            });
         } catch (error) {
-            log.error('restoreAccommodation failed', 'restoreAccommodation', error);
+            dbLogger.error(error, 'restoreAccommodation failed');
             throw error;
         }
     },
@@ -243,12 +271,17 @@ export const AccommodationModel = {
      */
     async hardDeleteAccommodation(id: string): Promise<void> {
         try {
-            log.info('hard deleting accommodation', 'hardDeleteAccommodation', { id });
+            dbLogger.info({ id }, 'hard deleting accommodation');
             const db = getDb();
             await db.delete(accommodations).where(eq(accommodations.id, id));
-            log.query('delete', 'accommodations', { id }, { deleted: true });
+            dbLogger.query({
+                table: 'accommodation',
+                action: 'delete',
+                params: { id },
+                result: { deleted: true }
+            });
         } catch (error) {
-            log.error('hardDeleteAccommodation failed', 'hardDeleteAccommodation', error);
+            dbLogger.error(error, 'hardDeleteAccommodation failed');
             throw error;
         }
     }
