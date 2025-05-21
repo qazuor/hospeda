@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { AmenitiesTypeEnum, StateEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { amenities } from '../../schema';
 
 /**
@@ -11,6 +11,8 @@ export async function seedRequiredAmenities() {
     logger.info('Starting to seed required amenities', 'seedRequiredAmenities');
 
     try {
+        const db = getDb();
+
         // Define common amenities by category
         const requiredAmenities = [
             // Climate control amenities

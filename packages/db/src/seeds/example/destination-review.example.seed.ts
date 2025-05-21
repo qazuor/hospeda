@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { StateEnum } from '@repo/types';
 import { eq, ilike } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { destinationReviews, destinations, users } from '../../schema';
 
 /**
@@ -11,6 +11,8 @@ export async function seedDestinationReviews() {
     logger.info('Starting to seed example destination reviews', 'seedDestinationReviews');
 
     try {
+        const db = getDb();
+
         // Check if reviews already exist
         const existingReviews = await db
             .select()

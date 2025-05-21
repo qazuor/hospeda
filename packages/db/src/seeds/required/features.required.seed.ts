@@ -1,7 +1,7 @@
 import { logger } from '@repo/logger';
 import { StateEnum } from '@repo/types';
 import { eq } from 'drizzle-orm';
-import { db } from '../../client';
+import { getDb } from '../../client.js';
 import { features } from '../../schema';
 
 /**
@@ -11,6 +11,8 @@ export async function seedRequiredFeatures() {
     logger.info('Starting to seed required features', 'seedRequiredFeatures');
 
     try {
+        const db = getDb();
+
         // Define common features by category
         const requiredFeatures = [
             // Location features
