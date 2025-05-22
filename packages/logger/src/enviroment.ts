@@ -11,10 +11,10 @@ import { type BaseLoggerConfig, LogLevel, type LogLevelType } from './types.js';
  * @param defaultValue - Default value if not set
  * @returns Boolean value
  */
-export function getBooleanEnv(key: string, defaultValue: boolean): boolean {
+export function getBooleanEnv(key: string): boolean | null {
     const value = process.env[key];
     if (value === undefined) {
-        return defaultValue;
+        return null;
     }
 
     return value.toLowerCase() === 'true';
@@ -26,14 +26,14 @@ export function getBooleanEnv(key: string, defaultValue: boolean): boolean {
  * @param defaultValue - Default value if not set
  * @returns Number value
  */
-export function getNumberEnv(key: string, defaultValue: number): number {
+export function getNumberEnv(key: string): number | null {
     const value = process.env[key];
     if (value === undefined) {
-        return defaultValue;
+        return null;
     }
 
     const parsed = Number.parseInt(value, 10);
-    return Number.isNaN(parsed) ? defaultValue : parsed;
+    return Number.isNaN(parsed) ? null : parsed;
 }
 
 /**
@@ -42,13 +42,12 @@ export function getNumberEnv(key: string, defaultValue: number): number {
  * @param defaultValue - Default value if not set
  * @returns Log level
  */
-export function getLogLevelEnv(key: string, defaultValue: LogLevelType): LogLevelType {
+export function getLogLevelEnv(key: string): LogLevelType | null {
     const value = process.env[key]?.toUpperCase();
     if (!value) {
-        return defaultValue;
+        return null;
     }
-
-    return Object.keys(LogLevel).includes(value) ? (value as LogLevelType) : defaultValue;
+    return Object.keys(LogLevel).includes(value) ? (value as LogLevelType) : null;
 }
 
 /**
@@ -57,13 +56,58 @@ export function getLogLevelEnv(key: string, defaultValue: LogLevelType): LogLeve
  * @returns Partial configuration from environment
  */
 export function getConfigFromEnv(categoryKey?: string): Partial<BaseLoggerConfig> {
-    const prefix = categoryKey ? `LOG_${categoryKey}_` : 'LOG_';
+    const prefix = categoryKey && categoryKey !== 'DEFAULT' ? `LOG_${categoryKey}_` : 'LOG_';
+
+    let level = getLogLevelEnv(`${prefix}LEVEL`);
+    if (!level) {
+        level = getLogLevelEnv('LOG_LEVEL');
+        if (!level) {
+            level = 'WARN' as LogLevelType;
+        }
+    }
+    let shouldSave = getBooleanEnv(`${prefix}SAVE`);
+    if (shouldSave === null) {
+        shouldSave = getBooleanEnv('LOG_SAVE');
+        if (shouldSave === null) {
+            shouldSave = false;
+        }
+    }
+    let expandObjectLevels = getNumberEnv(`${prefix}EXPAND_OBJECT_LEVELS`);
+    if (expandObjectLevels === null) {
+        expandObjectLevels = getNumberEnv(`${prefix}EXPAND_OBJECT_LEVELS`);
+        if (expandObjectLevels === null) {
+            expandObjectLevels = 2;
+        }
+    }
+    let truncateLongText = getBooleanEnv(`${prefix}TRUNCATE_LONG_TEXT`);
+    if (truncateLongText === null) {
+        truncateLongText = getBooleanEnv(`${prefix}TRUNCATE_LONG_TEXT`);
+        if (truncateLongText === null) {
+            truncateLongText = true;
+        }
+    }
+    let truncateLongTextAt = getNumberEnv(`${prefix}TRUNCATE_LONG_TEXT_AT`);
+    if (truncateLongTextAt === null) {
+        truncateLongTextAt = getNumberEnv(`${prefix}TRUNCATE_LONG_TEXT_AT`);
+        if (truncateLongTextAt === null) {
+            truncateLongTextAt = 100;
+        }
+    }
+
+    let stringifyObjects = getBooleanEnv(`${prefix}STRINGIFY_OBJECTS`);
+    if (stringifyObjects === null) {
+        stringifyObjects = getBooleanEnv(`${prefix}STRINGIFY_OBJECT`);
+        if (stringifyObjects === null) {
+            stringifyObjects = true;
+        }
+    }
 
     return {
-        LEVEL: getLogLevelEnv(`${prefix}LEVEL`, 'WARN' as LogLevelType),
-        SAVE: getBooleanEnv(`${prefix}SAVE`, false),
-        EXPAND_OBJECT_LEVELS: getNumberEnv(`${prefix}EXPAND_OBJECT_LEVELS`, 2),
-        TRUNCATE_LONG_TEXT: getBooleanEnv(`${prefix}TRUNCATE_LONG_TEXT`, true),
-        TRUNCATE_LONG_TEXT_AT: getNumberEnv(`${prefix}TRUNCATE_LONG_TEXT_AT`, 100)
+        LEVEL: level,
+        SAVE: shouldSave,
+        EXPAND_OBJECT_LEVELS: expandObjectLevels,
+        TRUNCATE_LONG_TEXT: truncateLongText,
+        TRUNCATE_LONG_TEXT_AT: truncateLongTextAt,
+        STRINGIFY_OBJECTS: stringifyObjects
     };
 }

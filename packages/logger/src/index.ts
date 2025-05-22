@@ -3,6 +3,8 @@
  * @module logger
  */
 
+import 'dotenv/config';
+
 export { registerCategoryInternal } from './categories.js';
 export { configureLogger, resetLoggerConfig } from './config.js';
 export {

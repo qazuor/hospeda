@@ -16,7 +16,7 @@ type ChalkFunction = (text: string) => string;
  */
 export const levelIcons = {
     [LogLevel.INFO]: '💡',
-    [LogLevel.WARN]: '⚠️',
+    [LogLevel.WARN]: '⚠️ ',
     [LogLevel.ERROR]: '❌',
     [LogLevel.DEBUG]: '🐛',
     [LogLevel.LOG]: '📝'
@@ -77,7 +77,8 @@ export function formatValue(
     value: unknown,
     expandLevels = 2,
     truncateText = true,
-    truncateAt = 100
+    truncateAt = 100,
+    stringifyObj = false
 ): string {
     // For null or undefined, just return as string
     if (value === null || value === undefined) {
@@ -88,7 +89,7 @@ export function formatValue(
     if (typeof value !== 'object') {
         const strValue = String(value);
         if (truncateText && strValue.length > truncateAt) {
-            return `${strValue.substring(0, truncateAt)}...`;
+            return `${strValue.substring(0, truncateAt)}...[TRUNCATED]`;
         }
         return strValue;
     }
@@ -108,6 +109,12 @@ export function formatValue(
         const seen = new WeakSet();
         const expandObject = (obj: unknown, level: number): unknown => {
             if (obj === null || obj === undefined || typeof obj !== 'object') {
+                if (typeof obj === 'string') {
+                    const strValue = String(obj);
+                    if (truncateText && strValue.length > truncateAt) {
+                        return `${strValue.substring(0, truncateAt)}... [TRUNCATED]`;
+                    }
+                }
                 return obj;
             }
 
@@ -131,8 +138,7 @@ export function formatValue(
             }
             return result;
         };
-
-        return JSON.stringify(expandObject(value, expandLevels), null, 2);
+        return JSON.stringify(expandObject(value, expandLevels), null, stringifyObj ? 0 : 2);
     } catch (error) {
         return `[Object: ${error instanceof Error ? error.message : 'Error stringifying'}]`;
     }
@@ -228,8 +234,15 @@ export function formatLogMessage(
               ? category.options.truncateLongTextAt
               : config.TRUNCATE_LONG_TEXT_AT;
 
+    const stringifyObj =
+        options?.stringifyObj !== undefined
+            ? options.stringifyObj
+            : category.options.stringifyObj !== undefined
+              ? category.options.stringifyObj
+              : config.STRINGIFY_OBJECTS;
+
     // Format the value
-    const formattedValue = formatValue(value, expandLevels, truncateText, truncateAt);
+    const formattedValue = formatValue(value, expandLevels, truncateText, truncateAt, stringifyObj);
 
     // Add arrow and value
     parts.push('=>');

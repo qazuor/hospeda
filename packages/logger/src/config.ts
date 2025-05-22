@@ -17,7 +17,8 @@ export const defaultConfig: BaseLoggerConfig = {
     SAVE: false,
     EXPAND_OBJECT_LEVELS: 2,
     TRUNCATE_LONG_TEXT: true,
-    TRUNCATE_LONG_TEXT_AT: 100
+    TRUNCATE_LONG_TEXT_AT: 100,
+    STRINGIFY_OBJECTS: true
 };
 
 /**
