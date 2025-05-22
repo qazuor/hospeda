@@ -23,7 +23,7 @@ export default defineConfig({
                 '@repo/types': new URL('../../packages/types/src', import.meta.url).pathname,
                 '@repo/config': new URL('../../packages/config/src', import.meta.url).pathname,
                 '@repo/db': new URL('../../packages/db/src', import.meta.url).pathname,
-                '@repo/logger': new URL('../../packages/loger/src', import.meta.url).pathname
+                '@repo/logger': new URL('../../packages/logger/src', import.meta.url).pathname
             }
         }
     }
