@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -6,7 +7,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { PermissionService, RoleService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { RoleCreateSchema, RoleUpdateSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -37,7 +37,7 @@ rolesRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing roles', 'RolesAPI', { query });
+        apiLogger.info({ location: 'RolesAPI', query }, 'Listing roles');
 
         // Convert pagination params
         const filter = {
@@ -76,7 +76,7 @@ rolesRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing roles', 'RolesAPI', error);
+        apiLogger.error(error as Error, 'RolesAPI - Error listing roles');
         return errorResponse(c, {
             message: 'Error listing roles',
             status: 500
@@ -90,7 +90,7 @@ rolesRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching role by ID', 'RolesAPI', { id });
+        apiLogger.info({ location: 'RolesAPI', id }, 'Fetching role by ID');
 
         const roleService = new RoleService();
         const role = await roleService.getById(id, user);
@@ -101,7 +101,7 @@ rolesRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, role);
     } catch (error) {
-        logger.error('Error fetching role', 'RolesAPI', error);
+        apiLogger.error(error as Error, 'RolesAPI - Error fetching role');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Role not found');
@@ -120,14 +120,14 @@ rolesRoutes.post('/', zValidator('json', RoleCreateSchema), async (c) => {
         const data = c.req.valid('json');
         const user = c.get('user');
 
-        logger.info('Creating new role', 'RolesAPI');
+        apiLogger.info({ location: 'RolesAPI' }, 'Creating new role');
 
         const roleService = new RoleService();
         const newRole = await roleService.create(data, user);
 
         return successResponse(c, newRole, 201);
     } catch (error) {
-        logger.error('Error creating role', 'RolesAPI', error);
+        apiLogger.error(error as Error, 'RolesAPI - Error creating role');
         return errorResponse(c, {
             message: 'Error creating role',
             status: 500
@@ -146,14 +146,14 @@ rolesRoutes.put(
             const data = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating role', 'RolesAPI', { id });
+            apiLogger.info({ location: 'RolesAPI', id }, 'Updating role');
 
             const roleService = new RoleService();
             const updatedRole = await roleService.update(id, data, user);
 
             return successResponse(c, updatedRole);
         } catch (error) {
-            logger.error('Error updating role', 'RolesAPI', error);
+            apiLogger.error(error as Error, 'RolesAPI - Error updating role');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Role not found');
@@ -173,14 +173,14 @@ rolesRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Soft-deleting role', 'RolesAPI', { id });
+        apiLogger.info({ location: 'RolesAPI', id }, 'Soft-deleting role');
 
         const roleService = new RoleService();
         await roleService.delete(id, user);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting role', 'RolesAPI', error);
+        apiLogger.error(error as Error, 'RolesAPI - Error deleting role');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Role not found');
@@ -205,14 +205,14 @@ rolesRoutes.post('/:id/restore', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Restoring role', 'RolesAPI', { id });
+        apiLogger.info({ location: 'RolesAPI', id }, 'Restoring role');
 
         const roleService = new RoleService();
         await roleService.restore(id, user);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring role', 'RolesAPI', error);
+        apiLogger.error(error as Error, 'RolesAPI - Error restoring role');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Role not found');
@@ -236,7 +236,7 @@ rolesRoutes.get(
             const query = c.req.valid('query');
             const user = c.get('user');
 
-            logger.info('Listing users with role', 'RolesAPI', { roleId: id, query });
+            apiLogger.info({ location: 'RolesAPI', roleId: id, query }, 'Listing users with role');
 
             const roleService = new RoleService();
 
@@ -260,7 +260,7 @@ rolesRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error listing users with role', 'RolesAPI', error);
+            apiLogger.error(error as Error, 'RolesAPI - Error listing users with role');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Role not found');
@@ -291,7 +291,7 @@ rolesRoutes.get(
             const query = c.req.valid('query');
             const user = c.get('user');
 
-            logger.info('Listing permissions for role', 'RolesAPI', { roleId: id });
+            apiLogger.info({ location: 'RolesAPI', roleId: id }, 'Listing permissions for role');
 
             const roleService = new RoleService();
 
@@ -305,7 +305,7 @@ rolesRoutes.get(
 
             return successResponse(c, permissions);
         } catch (error) {
-            logger.error('Error listing permissions for role', 'RolesAPI', error);
+            apiLogger.error(error as Error, 'RolesAPI - Error listing permissions for role');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Role not found');
@@ -335,10 +335,10 @@ rolesRoutes.post(
             const { permissionId } = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Adding permission to role', 'RolesAPI', {
-                roleId: id,
-                permissionId
-            });
+            apiLogger.info(
+                { location: 'RolesAPI', roleId: id, permissionId },
+                'Adding permission to role'
+            );
 
             // Verify permission exists
             const permissionService = new PermissionService();
@@ -350,7 +350,7 @@ rolesRoutes.post(
 
             return successResponse(c, relation, 201);
         } catch (error) {
-            logger.error('Error adding permission to role', 'RolesAPI', error);
+            apiLogger.error(error as Error, 'RolesAPI - Error adding permission to role');
 
             if (
                 (error as Error).message.includes('role not found') ||
@@ -388,10 +388,10 @@ rolesRoutes.delete(
             const { id, permissionId } = c.req.valid('param');
             const user = c.get('user');
 
-            logger.info('Removing permission from role', 'RolesAPI', {
-                roleId: id,
-                permissionId
-            });
+            apiLogger.info(
+                { location: 'RolesAPI', roleId: id, permissionId },
+                'Removing permission from role'
+            );
 
             const roleService = new RoleService();
             await roleService.removePermission(id, permissionId, user);
@@ -402,7 +402,7 @@ rolesRoutes.delete(
                 removed: true
             });
         } catch (error) {
-            logger.error('Error removing permission from role', 'RolesAPI', error);
+            apiLogger.error(error as Error, 'RolesAPI - Error removing permission from role');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, (error as Error).message);

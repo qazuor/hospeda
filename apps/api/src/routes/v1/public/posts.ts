@@ -1,4 +1,5 @@
 import { publicUser } from '@/types';
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -7,7 +8,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { PostService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -36,7 +36,7 @@ postsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
     try {
         const query = c.req.valid('query');
 
-        logger.info('Listing public posts', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Listing public posts');
 
         // Convert pagination params
         const filter = {
@@ -76,7 +76,7 @@ postsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing public posts', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error listing public posts');
         return errorResponse(c, {
             message: 'Error listing posts',
             status: 500
@@ -89,7 +89,7 @@ postsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
     try {
         const { id } = c.req.valid('param');
 
-        logger.info('Fetching public post by ID', 'PublicAPI', { id });
+        apiLogger.info({ location: 'PublicAPI', id }, 'Fetching public post by ID');
 
         const postService = new PostService();
         const post = await postService.getById(id, publicUser);
@@ -100,7 +100,7 @@ postsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, post);
     } catch (error) {
-        logger.error('Error fetching public post', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching public post');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Post not found');
@@ -126,7 +126,7 @@ postsRoutes.get(
         try {
             const { slug } = c.req.valid('param');
 
-            logger.info('Fetching public post by slug', 'PublicAPI', { slug });
+            apiLogger.info({ location: 'PublicAPI', slug }, 'Fetching public post by slug');
 
             const postService = new PostService();
             const post = await postService.getBySlug(slug, publicUser);
@@ -137,7 +137,7 @@ postsRoutes.get(
 
             return successResponse(c, post);
         } catch (error) {
-            logger.error('Error fetching public post by slug', 'PublicAPI', error);
+            apiLogger.error(error as Error, 'PublicAPI - Error fetching public post by slug');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Post not found');
@@ -156,7 +156,7 @@ postsRoutes.get('/featured', zValidator('query', listQuerySchema), async (c) => 
     try {
         const query = c.req.valid('query');
 
-        logger.info('Fetching featured posts', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Fetching featured posts');
 
         const limit = query.limit;
 
@@ -166,7 +166,7 @@ postsRoutes.get('/featured', zValidator('query', listQuerySchema), async (c) => 
 
         return successResponse(c, featuredPosts);
     } catch (error) {
-        logger.error('Error fetching featured posts', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching featured posts');
         return errorResponse(c, {
             message: 'Error fetching featured posts',
             status: 500
@@ -179,7 +179,7 @@ postsRoutes.get('/news', zValidator('query', listQuerySchema), async (c) => {
     try {
         const query = c.req.valid('query');
 
-        logger.info('Fetching news posts', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Fetching news posts');
 
         const limit = query.limit;
 
@@ -189,7 +189,7 @@ postsRoutes.get('/news', zValidator('query', listQuerySchema), async (c) => {
 
         return successResponse(c, newsPosts);
     } catch (error) {
-        logger.error('Error fetching news posts', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching news posts');
         return errorResponse(c, {
             message: 'Error fetching news posts',
             status: 500
@@ -212,10 +212,10 @@ postsRoutes.get(
             const { category } = c.req.valid('param');
             const query = c.req.valid('query');
 
-            logger.info('Fetching posts by category', 'PublicAPI', {
-                category,
-                query
-            });
+            apiLogger.info(
+                { location: 'PublicAPI', category, query },
+                'Fetching posts by category'
+            );
 
             // Create the service
             const postService = new PostService();
@@ -246,7 +246,7 @@ postsRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error fetching posts by category', 'PublicAPI', error);
+            apiLogger.error(error as Error, 'PublicAPI - Error fetching posts by category');
             return errorResponse(c, {
                 message: 'Error fetching posts by category',
                 status: 500
@@ -265,9 +265,10 @@ postsRoutes.get(
             const { id } = c.req.valid('param');
             const query = c.req.valid('query');
 
-            logger.info('Fetching posts related to destination', 'PublicAPI', {
-                destinationId: id
-            });
+            apiLogger.info(
+                { location: 'PublicAPI', destinationId: id },
+                'Fetching posts related to destination'
+            );
 
             // Create the service
             const postService = new PostService();
@@ -298,7 +299,10 @@ postsRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error fetching posts related to destination', 'PublicAPI', error);
+            apiLogger.error(
+                error as Error,
+                'PublicAPI - Error fetching posts related to destination'
+            );
             return errorResponse(c, {
                 message: 'Error fetching posts related to destination',
                 status: 500

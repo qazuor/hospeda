@@ -1,6 +1,6 @@
 import { healthRoutes } from '@/routes/health';
 import { initDb } from '@/utils/db';
-import { logger } from '@repo/logger';
+import { apiLogger } from '@/utils/logger';
 import { Hono } from 'hono';
 import { errorMiddleware } from './middleware/error';
 import { loggerMiddleware } from './middleware/logger';
@@ -30,7 +30,7 @@ app.route('/health', healthRoutes);
 
 // 404 handler
 app.notFound((c) => {
-    logger.warn(`Route not found: ${c.req.method} ${c.req.url}`, 'API:NotFound');
+    apiLogger.warn({ location: 'API:NotFound' }, `Route not found: ${c.req.method} ${c.req.url}`);
     return c.json(
         {
             success: false,

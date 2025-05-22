@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -7,7 +8,6 @@ import {
 import { zValidator } from '@hono/zod-validator';
 import type { InsertAccommodation } from '@repo/db';
 import { AccommodationService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { AccommodationCreateSchema, AccommodationUpdateSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ accommodationsRoutes.get('/', zValidator('query', listQuerySchema), async (c) =>
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing accommodations', 'AccommodationsAPI', { query });
+        apiLogger.info({ location: 'AccommodationsAPI', query }, 'Listing accommodations');
 
         // Convert pagination params
         const filter = {
@@ -81,7 +81,7 @@ accommodationsRoutes.get('/', zValidator('query', listQuerySchema), async (c) =>
             total: total
         });
     } catch (error) {
-        logger.error('Error listing accommodations', 'AccommodationsAPI', error);
+        apiLogger.error(error as Error, 'AccommodationsAPI - Error listing accommodations');
         return errorResponse(c, {
             message: 'Error listing accommodations',
             status: 500
@@ -95,7 +95,7 @@ accommodationsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching accommodation by ID', 'AccommodationsAPI', { id });
+        apiLogger.info({ location: 'AccommodationsAPI', id }, 'Fetching accommodation by ID');
 
         const accommodationService = new AccommodationService();
         const accommodation = await accommodationService.getById(id, user);
@@ -106,7 +106,7 @@ accommodationsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, accommodation);
     } catch (error) {
-        logger.error('Error fetching accommodation', 'AccommodationsAPI', error);
+        apiLogger.error(error as Error, 'AccommodationsAPI - Error fetching accommodation');
 
         // Handle specific error types
         if ((error as Error).message === 'Accommodation not found') {
@@ -126,14 +126,14 @@ accommodationsRoutes.post('/', zValidator('json', AccommodationCreateSchema), as
         const data = c.req.valid('json') as InsertAccommodation;
         const user = c.get('user');
 
-        logger.info('Creating new accommodation', 'AccommodationsAPI');
+        apiLogger.info({ location: 'AccommodationsAPI' }, 'Creating new accommodation');
 
         const accommodationService = new AccommodationService();
         const newAccommodation = await accommodationService.create(data, user);
 
         return successResponse(c, newAccommodation, 201);
     } catch (error) {
-        logger.error('Error creating accommodation', 'AccommodationsAPI', error);
+        apiLogger.error(error as Error, 'AccommodationsAPI - Error creating accommodation');
         return errorResponse(c, {
             message: 'Error creating accommodation',
             status: 500
@@ -152,14 +152,14 @@ accommodationsRoutes.put(
             const data = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating accommodation', 'AccommodationsAPI', { id });
+            apiLogger.info({ location: 'AccommodationsAPI', id }, 'Updating accommodation');
 
             const accommodationService = new AccommodationService();
             const updatedAccommodation = await accommodationService.update(id, data, user);
 
             return successResponse(c, updatedAccommodation);
         } catch (error) {
-            logger.error('Error updating accommodation', 'AccommodationsAPI', error);
+            apiLogger.error(error as Error, 'AccommodationsAPI - Error updating accommodation');
 
             if ((error as Error).message === 'Accommodation not found') {
                 return notFoundResponse(c, 'Accommodation not found');
@@ -186,14 +186,14 @@ accommodationsRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Soft-deleting accommodation', 'AccommodationsAPI', { id });
+        apiLogger.info({ location: 'AccommodationsAPI', id }, 'Soft-deleting accommodation');
 
         const accommodationService = new AccommodationService();
         await accommodationService.delete(id, user);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting accommodation', 'AccommodationsAPI', error);
+        apiLogger.error(error as Error, 'AccommodationsAPI - Error deleting accommodation');
 
         if ((error as Error).message === 'Accommodation not found') {
             return notFoundResponse(c, 'Accommodation not found');
@@ -219,14 +219,14 @@ accommodationsRoutes.post('/:id/restore', zValidator('param', idParam), async (c
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Restoring accommodation', 'AccommodationsAPI', { id });
+        apiLogger.info({ location: 'AccommodationsAPI', id }, 'Restoring accommodation');
 
         const accommodationService = new AccommodationService();
         await accommodationService.restore(id, user);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring accommodation', 'AccommodationsAPI', error);
+        apiLogger.error(error as Error, 'AccommodationsAPI - Error restoring accommodation');
 
         if ((error as Error).message === 'Accommodation not found') {
             return notFoundResponse(c, 'Accommodation not found');
@@ -257,10 +257,10 @@ accommodationsRoutes.get(
             const query = c.req.valid('query');
             const user = c.get('user');
 
-            logger.info('Listing accommodations by destination', 'AccommodationsAPI', {
-                destinationId: id,
-                query
-            });
+            apiLogger.info(
+                { location: 'AccommodationsAPI', destinationId: id, query },
+                'Listing accommodations by destination'
+            );
 
             const accommodationService = new AccommodationService();
 
@@ -282,7 +282,10 @@ accommodationsRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error listing accommodations by destination', 'AccommodationsAPI', error);
+            apiLogger.error(
+                error as Error,
+                'AccommodationsAPI - Error listing accommodations by destination'
+            );
             return errorResponse(c, {
                 message: 'Error listing accommodations by destination',
                 status: 500

@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { apiLogger } from '@/utils/logger';
 import type { Context, Next } from 'hono';
 
 export async function loggerMiddleware(c: Context, next: Next) {
@@ -8,7 +8,7 @@ export async function loggerMiddleware(c: Context, next: Next) {
 
     try {
         // Log the incoming request
-        logger.info(`${method} ${path}`, 'API:Request');
+        apiLogger.info({ location: 'API:Request' }, `${method} ${path}`);
 
         // Process the request
         await next();
@@ -18,13 +18,16 @@ export async function loggerMiddleware(c: Context, next: Next) {
 
         // Log the completed request
         const status = c.res?.status || 200;
-        logger.info(`${method} ${path} ${status} ${responseTime}ms`, 'API:Response');
+        apiLogger.info(
+            { location: 'API:Response' },
+            `${method} ${path} ${status} ${responseTime}ms`
+        );
     } catch (error) {
         // Calculate response time for errors too
         const responseTime = Date.now() - startTime;
 
         // Let the error propagate to the error middleware
-        logger.error(`${method} ${path} ERROR ${responseTime}ms`, 'API:Error', error);
+        apiLogger.error(error as Error, `API:Error - ${method} ${path} ERROR ${responseTime}ms`);
         throw error;
     }
 }

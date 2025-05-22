@@ -1,6 +1,6 @@
+import { apiLogger } from '@/utils/logger';
 import { createClerkClient } from '@clerk/backend';
 import { accommodations, getDb, sql } from '@repo/db';
-import { error, logger } from '@repo/logger';
 import { Hono } from 'hono';
 
 export const healthRoutes = new Hono();
@@ -18,10 +18,10 @@ healthRoutes.get('/db', async (c) => {
         const db = getDb();
         // test simple a la conexión
         await db.execute(sql`SELECT 1`);
-        logger.info('✅ DB Healthcheck passed', 'Health');
+        apiLogger.info({ location: 'Health' }, '✅ DB Healthcheck passed');
         return c.json({ success: true, message: 'Database OK' }, 200);
     } catch (error) {
-        logger.error('❌ DB Healthcheck failed', 'Health', error);
+        apiLogger.error(error as Error, 'Health - ❌ DB Healthcheck failed');
         return c.json({ success: false, message: 'Database error', error }, 500);
     }
 });
@@ -32,7 +32,10 @@ healthRoutes.get('/auth', async (c) => {
         const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
 
         if (!CLERK_SECRET_KEY) {
-            logger.error('❌ Clerk Healthcheck failed: CLERK_SECRET_KEY not set', 'Health');
+            apiLogger.error(
+                new Error('CLERK_SECRET_KEY not set'),
+                'Health - ❌ Clerk Healthcheck failed: CLERK_SECRET_KEY not set'
+            );
             return c.json({ success: false, message: 'Clerk secret key not set' }, 500);
         }
 
@@ -42,13 +45,17 @@ healthRoutes.get('/auth', async (c) => {
 
         const user = await clerkClient.users.getUserList({ limit: 1 });
         if (user) {
-            logger.info('✅ Clerk Healthcheck passed', 'Health');
+            apiLogger.info({ location: 'Health' }, '✅ Clerk Healthcheck passed');
             return c.json({ success: true, message: 'Auth OK' }, 200);
         }
-        logger.error('❌ Clerk Healthcheck failed', 'Health', error);
-        return c.json({ success: false, message: 'Auth error', error }, 500);
+        // It's better to create a new Error object if 'error' is not defined in this scope
+        apiLogger.error(
+            new Error('Clerk user list empty or failed'),
+            'Health - ❌ Clerk Healthcheck failed'
+        );
+        return c.json({ success: false, message: 'Auth error' }, 500);
     } catch (error) {
-        logger.error('❌ Clerk Healthcheck failed', 'Health', error);
+        apiLogger.error(error as Error, 'Health - ❌ Clerk Healthcheck failed');
         return c.json({ success: false, message: 'Auth error', error }, 500);
     }
 });
@@ -65,7 +72,7 @@ healthRoutes.get('/full', async (c) => {
         await db.select().from(accommodations).limit(1);
         status.db = true;
     } catch (err) {
-        logger.error('❌ DB failed in health/full', 'Health', err);
+        apiLogger.error(err as Error, 'Health - ❌ DB failed in health/full');
     }
 
     // Check Clerk
@@ -73,21 +80,28 @@ healthRoutes.get('/full', async (c) => {
         // test simple a clerk
         const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
 
-        if (!CLERK_SECRET_KEY) {
-            logger.error('❌ Clerk Healthcheck failed: CLERK_SECRET_KEY not set', 'Health');
-        }
+        if (CLERK_SECRET_KEY) {
+            const clerkClient = createClerkClient({
+                secretKey: CLERK_SECRET_KEY
+            });
 
-        const clerkClient = createClerkClient({
-            secretKey: CLERK_SECRET_KEY
-        });
-
-        const user = await clerkClient.users.getUserList({ limit: 1 });
-        if (user) {
-            status.clerk = !!user;
+            const userList = await clerkClient.users.getUserList({ limit: 1 });
+            if (userList && Array.isArray(userList.data) && userList.data.length > 0) {
+                status.clerk = true;
+            } else {
+                apiLogger.error(
+                    new Error('Clerk user list empty or failed'),
+                    'Health - ❌ Clerk Healthcheck failed in /full'
+                );
+            }
+        } else {
+            apiLogger.error(
+                new Error('CLERK_SECRET_KEY not set'),
+                'Health - ❌ Clerk Healthcheck failed: CLERK_SECRET_KEY not set'
+            );
         }
-        logger.error('❌ Clerk Healthcheck failed', 'Health', error);
     } catch (error) {
-        logger.error('❌ Clerk Healthcheck failed', 'Health', error);
+        apiLogger.error(error as Error, 'Health - ❌ Clerk Healthcheck failed in /full');
     }
 
     const ok = status.db && status.clerk;

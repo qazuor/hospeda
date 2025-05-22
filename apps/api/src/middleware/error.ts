@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { apiLogger } from '@/utils/logger';
 import type { Context, Next } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { ZodError } from 'zod';
@@ -7,7 +7,7 @@ export async function errorMiddleware(c: Context, next: Next) {
     try {
         await next();
     } catch (error) {
-        logger.error('Unhandled error in request', 'API:Error', error);
+        apiLogger.error(error as Error, 'API:Error - Unhandled error in request');
 
         // Handle ZodError (validation errors)
         if (error instanceof ZodError) {

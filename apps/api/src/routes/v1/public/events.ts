@@ -1,4 +1,5 @@
 import { publicUser } from '@/types';
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -7,7 +8,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { EventService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -37,7 +37,7 @@ eventsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
     try {
         const query = c.req.valid('query');
 
-        logger.info('Listing public events', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Listing public events');
 
         // Convert pagination params
         const filter = {
@@ -78,7 +78,7 @@ eventsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing public events', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error listing public events');
         return errorResponse(c, {
             message: 'Error listing events',
             status: 500
@@ -91,7 +91,7 @@ eventsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
     try {
         const { id } = c.req.valid('param');
 
-        logger.info('Fetching public event by ID', 'PublicAPI', { id });
+        apiLogger.info({ location: 'PublicAPI', id }, 'Fetching public event by ID');
 
         const eventService = new EventService();
         const event = await eventService.getById(id, publicUser);
@@ -102,7 +102,7 @@ eventsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, event);
     } catch (error) {
-        logger.error('Error fetching public event', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching public event');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Event not found');
@@ -120,7 +120,7 @@ eventsRoutes.get('/upcoming', zValidator('query', listQuerySchema), async (c) =>
     try {
         const query = c.req.valid('query');
 
-        logger.info('Fetching upcoming events', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Fetching upcoming events');
 
         // Create the service
         const eventService = new EventService();
@@ -146,7 +146,7 @@ eventsRoutes.get('/upcoming', zValidator('query', listQuerySchema), async (c) =>
             total: total
         });
     } catch (error) {
-        logger.error('Error fetching upcoming events', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching upcoming events');
         return errorResponse(c, {
             message: 'Error fetching upcoming events',
             status: 500
@@ -159,7 +159,7 @@ eventsRoutes.get('/this-week', zValidator('query', listQuerySchema), async (c) =
     try {
         const query = c.req.valid('query');
 
-        logger.info('Fetching events this week', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Fetching events this week');
 
         // Create the service
         const eventService = new EventService();
@@ -185,7 +185,7 @@ eventsRoutes.get('/this-week', zValidator('query', listQuerySchema), async (c) =
             total: total
         });
     } catch (error) {
-        logger.error('Error fetching events this week', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching events this week');
         return errorResponse(c, {
             message: 'Error fetching events this week',
             status: 500
@@ -209,7 +209,10 @@ eventsRoutes.get(
         try {
             const { startDate, endDate, page, limit } = c.req.valid('query');
 
-            logger.info('Fetching events by date range', 'PublicAPI', { startDate, endDate });
+            apiLogger.info(
+                { location: 'PublicAPI', startDate, endDate },
+                'Fetching events by date range'
+            );
 
             // Parse dates
             const start = new Date(startDate);
@@ -251,7 +254,7 @@ eventsRoutes.get(
                 total
             });
         } catch (error) {
-            logger.error('Error fetching events by date range', 'PublicAPI', error);
+            apiLogger.error(error as Error, 'PublicAPI - Error fetching events by date range');
             return errorResponse(c, {
                 message: 'Error fetching events by date range',
                 status: 500
