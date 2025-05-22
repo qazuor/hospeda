@@ -4,12 +4,12 @@
     "description": "Database layer using Drizzle ORM and PostgreSQL",
     "private": true,
     "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "import": "./src/index.ts",
+            "require": "./src/index.ts"
         }
     },
     "files": ["dist"],

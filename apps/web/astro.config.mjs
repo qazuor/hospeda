@@ -16,5 +16,14 @@ export default defineConfig({
         routing: {
             prefixDefaultLocale: false
         }
+    },
+    vite: {
+        resolve: {
+            alias: {
+                '@repo/types': new URL('../../packages/types/src', import.meta.url).pathname,
+                '@repo/config': new URL('../../packages/config/src', import.meta.url).pathname,
+                '@repo/db': new URL('../../packages/db/src', import.meta.url).pathname
+            }
+        }
     }
 });
