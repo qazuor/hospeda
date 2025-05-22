@@ -56,7 +56,7 @@ async function main() {
     }
 
     const outPath = path.join(API_DIR, 'package.prod.json');
-    await fs.writeFile(outPath, JSON.stringify(newPkg, null, 2));
+    await fs.writeFile(outPath, JSON.stringify(newPkg, null, 4));
 
     // biome-ignore lint/suspicious/noConsoleLog: logging script result
     console.log(
