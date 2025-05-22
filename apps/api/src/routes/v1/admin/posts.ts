@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -6,7 +7,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { PostService, PostSponsorService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { PostCreateSchema, PostUpdateSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ postsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing posts', 'PostsAPI', { query });
+        apiLogger.info({ location: 'PostsAPI', query }, 'Listing posts');
 
         // Convert pagination params
         const filter = {
@@ -87,7 +87,7 @@ postsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing posts', 'PostsAPI', error);
+        apiLogger.error(error as Error, 'PostsAPI - Error listing posts');
         return errorResponse(c, {
             message: 'Error listing posts',
             status: 500
@@ -101,7 +101,7 @@ postsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching post by ID', 'PostsAPI', { id });
+        apiLogger.info({ location: 'PostsAPI', id }, 'Fetching post by ID');
 
         const postService = new PostService();
         const post = await postService.getById(id, user);
@@ -112,7 +112,7 @@ postsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, post);
     } catch (error) {
-        logger.error('Error fetching post', 'PostsAPI', error);
+        apiLogger.error(error as Error, 'PostsAPI - Error fetching post');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Post not found');
@@ -131,14 +131,14 @@ postsRoutes.post('/', zValidator('json', PostCreateSchema), async (c) => {
         const data = c.req.valid('json');
         const user = c.get('user');
 
-        logger.info('Creating new post', 'PostsAPI');
+        apiLogger.info({ location: 'PostsAPI' }, 'Creating new post');
 
         const postService = new PostService();
         const newPost = await postService.create(data, user);
 
         return successResponse(c, newPost, 201);
     } catch (error) {
-        logger.error('Error creating post', 'PostsAPI', error);
+        apiLogger.error(error as Error, 'PostsAPI - Error creating post');
         return errorResponse(c, {
             message: 'Error creating post',
             status: 500
@@ -157,14 +157,14 @@ postsRoutes.put(
             const data = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating post', 'PostsAPI', { id });
+            apiLogger.info({ location: 'PostsAPI', id }, 'Updating post');
 
             const postService = new PostService();
             const updatedPost = await postService.update(id, data, user);
 
             return successResponse(c, updatedPost);
         } catch (error) {
-            logger.error('Error updating post', 'PostsAPI', error);
+            apiLogger.error(error as Error, 'PostsAPI - Error updating post');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Post not found');
@@ -191,14 +191,14 @@ postsRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Soft-deleting post', 'PostsAPI', { id });
+        apiLogger.info({ location: 'PostsAPI', id }, 'Soft-deleting post');
 
         const postService = new PostService();
         await postService.delete(id, user);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting post', 'PostsAPI', error);
+        apiLogger.error(error as Error, 'PostsAPI - Error deleting post');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Post not found');
@@ -224,14 +224,14 @@ postsRoutes.post('/:id/restore', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Restoring post', 'PostsAPI', { id });
+        apiLogger.info({ location: 'PostsAPI', id }, 'Restoring post');
 
         const postService = new PostService();
         await postService.restore(id, user);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring post', 'PostsAPI', error);
+        apiLogger.error(error as Error, 'PostsAPI - Error restoring post');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Post not found');
@@ -276,10 +276,10 @@ postsRoutes.post(
             const sponsorData = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Adding sponsor to post', 'PostsAPI', {
-                postId: id,
-                sponsorId: sponsorData.sponsorId
-            });
+            apiLogger.info(
+                { location: 'PostsAPI', postId: id, sponsorId: sponsorData.sponsorId },
+                'Adding sponsor to post'
+            );
 
             const postSponsorService = new PostSponsorService();
             const sponsorship = await postSponsorService.assignToPost(
@@ -298,7 +298,7 @@ postsRoutes.post(
 
             return successResponse(c, sponsorship, 201);
         } catch (error) {
-            logger.error('Error adding sponsor to post', 'PostsAPI', error);
+            apiLogger.error(error as Error, 'PostsAPI - Error adding sponsor to post');
 
             if (
                 (error as Error).message.includes('post not found') ||
@@ -336,14 +336,17 @@ postsRoutes.delete(
             const { id, sponsorId } = c.req.valid('param');
             const user = c.get('user');
 
-            logger.info('Removing sponsor from post', 'PostsAPI', { postId: id, sponsorId });
+            apiLogger.info(
+                { location: 'PostsAPI', postId: id, sponsorId },
+                'Removing sponsor from post'
+            );
 
             const postSponsorService = new PostSponsorService();
             await postSponsorService.removeFromPost(id, sponsorId, user);
 
             return successResponse(c, { postId: id, sponsorId, removed: true });
         } catch (error) {
-            logger.error('Error removing sponsor from post', 'PostsAPI', error);
+            apiLogger.error(error as Error, 'PostsAPI - Error removing sponsor from post');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, (error as Error).message);

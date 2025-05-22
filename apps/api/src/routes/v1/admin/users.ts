@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -6,7 +7,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { RoleService, UserService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { UserCreateSchema, UserUpdateSchema } from '@repo/schemas';
 import { EntityTypeEnum } from '@repo/types';
 import { Hono } from 'hono';
@@ -38,7 +38,7 @@ usersRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing users', 'UsersAPI', { query });
+        apiLogger.info({ location: 'UsersAPI', query }, 'Listing users');
 
         // Convert pagination params
         const filter = {
@@ -70,7 +70,7 @@ usersRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing users', 'UsersAPI', error);
+        apiLogger.error(error as Error, 'UsersAPI - Error listing users');
         return errorResponse(c, {
             message: 'Error listing users',
             status: 500
@@ -84,7 +84,7 @@ usersRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const currentUser = c.get('user');
 
-        logger.info('Fetching user by ID', 'UsersAPI', { id });
+        apiLogger.info({ location: 'UsersAPI', id }, 'Fetching user by ID');
 
         const userService = new UserService();
         const user = await userService.getById(id, currentUser);
@@ -95,7 +95,7 @@ usersRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, user);
     } catch (error) {
-        logger.error('Error fetching user', 'UsersAPI', error);
+        apiLogger.error(error as Error, 'UsersAPI - Error fetching user');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'User not found');
@@ -114,14 +114,14 @@ usersRoutes.post('/', zValidator('json', UserCreateSchema), async (c) => {
         const data = c.req.valid('json');
         const currentUser = c.get('user');
 
-        logger.info('Creating new user', 'UsersAPI');
+        apiLogger.info({ location: 'UsersAPI' }, 'Creating new user');
 
         const userService = new UserService();
         const newUser = await userService.create(data, currentUser);
 
         return successResponse(c, newUser, 201);
     } catch (error) {
-        logger.error('Error creating user', 'UsersAPI', error);
+        apiLogger.error(error as Error, 'UsersAPI - Error creating user');
         return errorResponse(c, {
             message: 'Error creating user',
             status: 500
@@ -140,14 +140,14 @@ usersRoutes.put(
             const data = c.req.valid('json');
             const currentUser = c.get('user');
 
-            logger.info('Updating user', 'UsersAPI', { id });
+            apiLogger.info({ location: 'UsersAPI', id }, 'Updating user');
 
             const userService = new UserService();
             const updatedUser = await userService.update(id, data, currentUser);
 
             return successResponse(c, updatedUser);
         } catch (error) {
-            logger.error('Error updating user', 'UsersAPI', error);
+            apiLogger.error(error as Error, 'UsersAPI - Error updating user');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'User not found');
@@ -174,14 +174,14 @@ usersRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const currentUser = c.get('user');
 
-        logger.info('Soft-deleting user', 'UsersAPI', { id });
+        apiLogger.info({ location: 'UsersAPI', id }, 'Soft-deleting user');
 
         const userService = new UserService();
         await userService.delete(id, currentUser);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting user', 'UsersAPI', error);
+        apiLogger.error(error as Error, 'UsersAPI - Error deleting user');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'User not found');
@@ -200,14 +200,14 @@ usersRoutes.post('/:id/restore', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const currentUser = c.get('user');
 
-        logger.info('Restoring user', 'UsersAPI', { id });
+        apiLogger.info({ location: 'UsersAPI', id }, 'Restoring user');
 
         const userService = new UserService();
         await userService.restore(id, currentUser);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring user', 'UsersAPI', error);
+        apiLogger.error(error as Error, 'UsersAPI - Error restoring user');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'User not found');
@@ -236,7 +236,7 @@ usersRoutes.post(
             const { roleId } = c.req.valid('json');
             const currentUser = c.get('user');
 
-            logger.info('Changing user role', 'UsersAPI', { userId: id, roleId });
+            apiLogger.info({ location: 'UsersAPI', userId: id, roleId }, 'Changing user role');
 
             // Verify role exists
             const roleService = new RoleService();
@@ -247,7 +247,7 @@ usersRoutes.post(
 
             return successResponse(c, updatedUser);
         } catch (error) {
-            logger.error('Error changing user role', 'UsersAPI', error);
+            apiLogger.error(error as Error, 'UsersAPI - Error changing user role');
 
             if (
                 (error as Error).message.includes('user not found') ||
@@ -276,7 +276,7 @@ usersRoutes.post('/:id/reset-password', zValidator('param', idParam), async (c) 
         const { id } = c.req.valid('param');
         const currentUser = c.get('user');
 
-        logger.info('Resetting user password', 'UsersAPI', { userId: id });
+        apiLogger.info({ location: 'UsersAPI', userId: id }, 'Resetting user password');
 
         const userService = new UserService();
         await userService.resetPassword(id, currentUser);
@@ -286,7 +286,7 @@ usersRoutes.post('/:id/reset-password', zValidator('param', idParam), async (c) 
             message: 'Password reset successfully. A temporary password has been generated.'
         });
     } catch (error) {
-        logger.error('Error resetting user password', 'UsersAPI', error);
+        apiLogger.error(error as Error, 'UsersAPI - Error resetting user password');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'User not found');
@@ -317,7 +317,7 @@ usersRoutes.get(
             const query = c.req.valid('query');
             const currentUser = c.get('user');
 
-            logger.info('Listing user bookmarks', 'UsersAPI', { userId: id, query });
+            apiLogger.info({ location: 'UsersAPI', userId: id, query }, 'Listing user bookmarks');
 
             const userService = new UserService();
 
@@ -357,7 +357,7 @@ usersRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error listing user bookmarks', 'UsersAPI', error);
+            apiLogger.error(error as Error, 'UsersAPI - Error listing user bookmarks');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'User not found');

@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -6,7 +7,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { PermissionService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { PermissionCreateSchema, PermissionUpdateSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ permissionsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing permissions', 'PermissionsAPI', { query });
+        apiLogger.info({ location: 'PermissionsAPI', query }, 'Listing permissions');
 
         // Convert pagination params
         const filter = {
@@ -70,7 +70,7 @@ permissionsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing permissions', 'PermissionsAPI', error);
+        apiLogger.error(error as Error, 'PermissionsAPI - Error listing permissions');
         return errorResponse(c, {
             message: 'Error listing permissions',
             status: 500
@@ -84,7 +84,7 @@ permissionsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching permission by ID', 'PermissionsAPI', { id });
+        apiLogger.info({ location: 'PermissionsAPI', id }, 'Fetching permission by ID');
 
         const permissionService = new PermissionService();
         const permission = await permissionService.getById(id, user);
@@ -95,7 +95,7 @@ permissionsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, permission);
     } catch (error) {
-        logger.error('Error fetching permission', 'PermissionsAPI', error);
+        apiLogger.error(error as Error, 'PermissionsAPI - Error fetching permission');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Permission not found');
@@ -114,14 +114,14 @@ permissionsRoutes.post('/', zValidator('json', PermissionCreateSchema), async (c
         const data = c.req.valid('json');
         const user = c.get('user');
 
-        logger.info('Creating new permission', 'PermissionsAPI');
+        apiLogger.info({ location: 'PermissionsAPI' }, 'Creating new permission');
 
         const permissionService = new PermissionService();
         const newPermission = await permissionService.create(data, user);
 
         return successResponse(c, newPermission, 201);
     } catch (error) {
-        logger.error('Error creating permission', 'PermissionsAPI', error);
+        apiLogger.error(error as Error, 'PermissionsAPI - Error creating permission');
         return errorResponse(c, {
             message: 'Error creating permission',
             status: 500
@@ -140,14 +140,14 @@ permissionsRoutes.put(
             const data = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating permission', 'PermissionsAPI', { id });
+            apiLogger.info({ location: 'PermissionsAPI', id }, 'Updating permission');
 
             const permissionService = new PermissionService();
             const updatedPermission = await permissionService.update(id, data, user);
 
             return successResponse(c, updatedPermission);
         } catch (error) {
-            logger.error('Error updating permission', 'PermissionsAPI', error);
+            apiLogger.error(error as Error, 'PermissionsAPI - Error updating permission');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Permission not found');
@@ -167,14 +167,14 @@ permissionsRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Soft-deleting permission', 'PermissionsAPI', { id });
+        apiLogger.info({ location: 'PermissionsAPI', id }, 'Soft-deleting permission');
 
         const permissionService = new PermissionService();
         await permissionService.delete(id, user);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting permission', 'PermissionsAPI', error);
+        apiLogger.error(error as Error, 'PermissionsAPI - Error deleting permission');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Permission not found');
@@ -193,14 +193,14 @@ permissionsRoutes.post('/:id/restore', zValidator('param', idParam), async (c) =
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Restoring permission', 'PermissionsAPI', { id });
+        apiLogger.info({ location: 'PermissionsAPI', id }, 'Restoring permission');
 
         const permissionService = new PermissionService();
         await permissionService.restore(id, user);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring permission', 'PermissionsAPI', error);
+        apiLogger.error(error as Error, 'PermissionsAPI - Error restoring permission');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Permission not found');
@@ -230,7 +230,10 @@ permissionsRoutes.get(
             const query = c.req.valid('query');
             const user = c.get('user');
 
-            logger.info('Listing roles with permission', 'PermissionsAPI', { permissionId: id });
+            apiLogger.info(
+                { location: 'PermissionsAPI', permissionId: id },
+                'Listing roles with permission'
+            );
 
             const permissionService = new PermissionService();
 
@@ -244,7 +247,7 @@ permissionsRoutes.get(
 
             return successResponse(c, roles);
         } catch (error) {
-            logger.error('Error listing roles with permission', 'PermissionsAPI', error);
+            apiLogger.error(error as Error, 'PermissionsAPI - Error listing roles with permission');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Permission not found');
@@ -273,17 +276,17 @@ permissionsRoutes.post(
             const { userId, permissionId } = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Adding permission to user', 'PermissionsAPI', {
-                userId,
-                permissionId
-            });
+            apiLogger.info(
+                { location: 'PermissionsAPI', userId, permissionId },
+                'Adding permission to user'
+            );
 
             const permissionService = new PermissionService();
             const relation = await permissionService.addToUser(userId, permissionId, user);
 
             return successResponse(c, relation, 201);
         } catch (error) {
-            logger.error('Error adding permission to user', 'PermissionsAPI', error);
+            apiLogger.error(error as Error, 'PermissionsAPI - Error adding permission to user');
 
             if (
                 (error as Error).message.includes('user not found') ||
@@ -321,10 +324,10 @@ permissionsRoutes.delete(
             const { userId, permissionId } = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Removing permission from user', 'PermissionsAPI', {
-                userId,
-                permissionId
-            });
+            apiLogger.info(
+                { location: 'PermissionsAPI', userId, permissionId },
+                'Removing permission from user'
+            );
 
             const permissionService = new PermissionService();
             await permissionService.removeFromUser(userId, permissionId, user);
@@ -335,7 +338,7 @@ permissionsRoutes.delete(
                 removed: true
             });
         } catch (error) {
-            logger.error('Error removing permission from user', 'PermissionsAPI', error);
+            apiLogger.error(error as Error, 'PermissionsAPI - Error removing permission from user');
 
             if (
                 (error as Error).message.includes('user not found') ||
@@ -364,7 +367,7 @@ permissionsRoutes.get('/deprecated', zValidator('query', listQuerySchema), async
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing deprecated permissions', 'PermissionsAPI');
+        apiLogger.info({ location: 'PermissionsAPI' }, 'Listing deprecated permissions');
 
         const permissionService = new PermissionService();
 
@@ -388,7 +391,7 @@ permissionsRoutes.get('/deprecated', zValidator('query', listQuerySchema), async
             total: total
         });
     } catch (error) {
-        logger.error('Error listing deprecated permissions', 'PermissionsAPI', error);
+        apiLogger.error(error as Error, 'PermissionsAPI - Error listing deprecated permissions');
         return errorResponse(c, {
             message: 'Error listing deprecated permissions',
             status: 500

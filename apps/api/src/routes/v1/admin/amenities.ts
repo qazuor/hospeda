@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -6,7 +7,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { AmenityService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { AmenitySchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ amenitiesRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing amenities', 'AmenitiesAPI', { query });
+        apiLogger.info({ location: 'AmenitiesAPI', query }, 'Listing amenities');
 
         // Convert pagination params
         const filter = {
@@ -68,7 +68,7 @@ amenitiesRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing amenities', 'AmenitiesAPI', error);
+        apiLogger.error(error as Error, 'AmenitiesAPI - Error listing amenities');
         return errorResponse(c, {
             message: 'Error listing amenities',
             status: 500
@@ -82,7 +82,7 @@ amenitiesRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching amenity by ID', 'AmenitiesAPI', { id });
+        apiLogger.info({ location: 'AmenitiesAPI', id }, 'Fetching amenity by ID');
 
         const amenityService = new AmenityService();
         const amenity = await amenityService.getById(id, user);
@@ -93,7 +93,7 @@ amenitiesRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, amenity);
     } catch (error) {
-        logger.error('Error fetching amenity', 'AmenitiesAPI', error);
+        apiLogger.error(error as Error, 'AmenitiesAPI - Error fetching amenity');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Amenity not found');
@@ -112,14 +112,14 @@ amenitiesRoutes.post('/', zValidator('json', AmenitySchema), async (c) => {
         const data = c.req.valid('json');
         const user = c.get('user');
 
-        logger.info('Creating new amenity', 'AmenitiesAPI');
+        apiLogger.info({ location: 'AmenitiesAPI' }, 'Creating new amenity');
 
         const amenityService = new AmenityService();
         const newAmenity = await amenityService.create(data, user);
 
         return successResponse(c, newAmenity, 201);
     } catch (error) {
-        logger.error('Error creating amenity', 'AmenitiesAPI', error);
+        apiLogger.error(error as Error, 'AmenitiesAPI - Error creating amenity');
         return errorResponse(c, {
             message: 'Error creating amenity',
             status: 500
@@ -138,14 +138,14 @@ amenitiesRoutes.put(
             const data = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating amenity', 'AmenitiesAPI', { id });
+            apiLogger.info({ location: 'AmenitiesAPI', id }, 'Updating amenity');
 
             const amenityService = new AmenityService();
             const updatedAmenity = await amenityService.update(id, data, user);
 
             return successResponse(c, updatedAmenity);
         } catch (error) {
-            logger.error('Error updating amenity', 'AmenitiesAPI', error);
+            apiLogger.error(error as Error, 'AmenitiesAPI - Error updating amenity');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Amenity not found');
@@ -165,14 +165,14 @@ amenitiesRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Soft-deleting amenity', 'AmenitiesAPI', { id });
+        apiLogger.info({ location: 'AmenitiesAPI', id }, 'Soft-deleting amenity');
 
         const amenityService = new AmenityService();
         await amenityService.delete(id, user);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting amenity', 'AmenitiesAPI', error);
+        apiLogger.error(error as Error, 'AmenitiesAPI - Error deleting amenity');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Amenity not found');
@@ -191,14 +191,14 @@ amenitiesRoutes.post('/:id/restore', zValidator('param', idParam), async (c) => 
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Restoring amenity', 'AmenitiesAPI', { id });
+        apiLogger.info({ location: 'AmenitiesAPI', id }, 'Restoring amenity');
 
         const amenityService = new AmenityService();
         await amenityService.restore(id, user);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring amenity', 'AmenitiesAPI', error);
+        apiLogger.error(error as Error, 'AmenitiesAPI - Error restoring amenity');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Amenity not found');
@@ -227,7 +227,7 @@ amenitiesRoutes.get(
             const query = c.req.valid('query');
             const user = c.get('user');
 
-            logger.info('Listing amenities by type', 'AmenitiesAPI', { type });
+            apiLogger.info({ location: 'AmenitiesAPI', type }, 'Listing amenities by type');
 
             const amenityService = new AmenityService();
 
@@ -252,7 +252,7 @@ amenitiesRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error listing amenities by type', 'AmenitiesAPI', error);
+            apiLogger.error(error as Error, 'AmenitiesAPI - Error listing amenities by type');
             return errorResponse(c, {
                 message: 'Error listing amenities by type',
                 status: 500
@@ -267,7 +267,7 @@ amenitiesRoutes.get('/builtin', zValidator('query', listQuerySchema), async (c) 
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing built-in amenities', 'AmenitiesAPI');
+        apiLogger.info({ location: 'AmenitiesAPI' }, 'Listing built-in amenities');
 
         const amenityService = new AmenityService();
 
@@ -293,7 +293,7 @@ amenitiesRoutes.get('/builtin', zValidator('query', listQuerySchema), async (c) 
             total: total
         });
     } catch (error) {
-        logger.error('Error listing built-in amenities', 'AmenitiesAPI', error);
+        apiLogger.error(error as Error, 'AmenitiesAPI - Error listing built-in amenities');
         return errorResponse(c, {
             message: 'Error listing built-in amenities',
             status: 500

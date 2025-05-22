@@ -1,4 +1,5 @@
 import { publicUser } from '@/types';
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -7,7 +8,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { DestinationService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -34,7 +34,7 @@ destinationsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
     try {
         const query = c.req.valid('query');
 
-        logger.info('Listing public destinations', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Listing public destinations');
 
         // Convert pagination params
         const filter = {
@@ -72,7 +72,7 @@ destinationsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing public destinations', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error listing public destinations');
         return errorResponse(c, {
             message: 'Error listing destinations',
             status: 500
@@ -85,7 +85,7 @@ destinationsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
     try {
         const { id } = c.req.valid('param');
 
-        logger.info('Fetching public destination by ID', 'PublicAPI', { id });
+        apiLogger.info({ location: 'PublicAPI', id }, 'Fetching public destination by ID');
 
         const destinationService = new DestinationService();
         const destination = await destinationService.getById(id, publicUser);
@@ -96,7 +96,7 @@ destinationsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, destination);
     } catch (error) {
-        logger.error('Error fetching public destination', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching public destination');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Destination not found');
@@ -114,7 +114,7 @@ destinationsRoutes.get('/featured', zValidator('query', listQuerySchema), async 
     try {
         const query = c.req.valid('query');
 
-        logger.info('Fetching featured destinations', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Fetching featured destinations');
 
         // Create the service
         const destinationService = new DestinationService();
@@ -143,7 +143,7 @@ destinationsRoutes.get('/featured', zValidator('query', listQuerySchema), async 
             total: total
         });
     } catch (error) {
-        logger.error('Error fetching featured destinations', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching featured destinations');
         return errorResponse(c, {
             message: 'Error fetching featured destinations',
             status: 500
@@ -164,14 +164,14 @@ destinationsRoutes.get(
         try {
             const { limit } = c.req.valid('query');
 
-            logger.info('Fetching top destinations', 'PublicAPI', { limit });
+            apiLogger.info({ location: 'PublicAPI', limit }, 'Fetching top destinations');
 
             const destinationService = new DestinationService();
             const topDestinations = await destinationService.listTop(limit, publicUser);
 
             return successResponse(c, topDestinations);
         } catch (error) {
-            logger.error('Error fetching top destinations', 'PublicAPI', error);
+            apiLogger.error(error as Error, 'PublicAPI - Error fetching top destinations');
             return errorResponse(c, {
                 message: 'Error fetching top destinations',
                 status: 500
@@ -196,7 +196,10 @@ destinationsRoutes.get(
         try {
             const { lat, lng, radius, limit } = c.req.valid('query');
 
-            logger.info('Finding nearby destinations', 'PublicAPI', { lat, lng, radius });
+            apiLogger.info(
+                { location: 'PublicAPI', lat, lng, radius },
+                'Finding nearby destinations'
+            );
 
             const destinationService = new DestinationService();
             const nearbyDestinations = await destinationService.findNearby(
@@ -209,7 +212,7 @@ destinationsRoutes.get(
 
             return successResponse(c, nearbyDestinations);
         } catch (error) {
-            logger.error('Error finding nearby destinations', 'PublicAPI', error);
+            apiLogger.error(error as Error, 'PublicAPI - Error finding nearby destinations');
             return errorResponse(c, {
                 message: 'Error finding nearby destinations',
                 status: 500

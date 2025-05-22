@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -6,7 +7,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { FeatureService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { FeatureSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ featuresRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing features', 'FeaturesAPI', { query });
+        apiLogger.info({ location: 'FeaturesAPI', query }, 'Listing features');
 
         // Convert pagination params
         const filter = {
@@ -66,7 +66,7 @@ featuresRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing features', 'FeaturesAPI', error);
+        apiLogger.error(error as Error, 'FeaturesAPI - Error listing features');
         return errorResponse(c, {
             message: 'Error listing features',
             status: 500
@@ -80,7 +80,7 @@ featuresRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching feature by ID', 'FeaturesAPI', { id });
+        apiLogger.info({ location: 'FeaturesAPI', id }, 'Fetching feature by ID');
 
         const featureService = new FeatureService();
         const feature = await featureService.getById(id, user);
@@ -91,7 +91,7 @@ featuresRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, feature);
     } catch (error) {
-        logger.error('Error fetching feature', 'FeaturesAPI', error);
+        apiLogger.error(error as Error, 'FeaturesAPI - Error fetching feature');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Feature not found');
@@ -110,14 +110,14 @@ featuresRoutes.post('/', zValidator('json', FeatureSchema), async (c) => {
         const data = c.req.valid('json');
         const user = c.get('user');
 
-        logger.info('Creating new feature', 'FeaturesAPI');
+        apiLogger.info({ location: 'FeaturesAPI' }, 'Creating new feature');
 
         const featureService = new FeatureService();
         const newFeature = await featureService.create(data, user);
 
         return successResponse(c, newFeature, 201);
     } catch (error) {
-        logger.error('Error creating feature', 'FeaturesAPI', error);
+        apiLogger.error(error as Error, 'FeaturesAPI - Error creating feature');
         return errorResponse(c, {
             message: 'Error creating feature',
             status: 500
@@ -136,14 +136,14 @@ featuresRoutes.put(
             const data = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating feature', 'FeaturesAPI', { id });
+            apiLogger.info({ location: 'FeaturesAPI', id }, 'Updating feature');
 
             const featureService = new FeatureService();
             const updatedFeature = await featureService.update(id, data, user);
 
             return successResponse(c, updatedFeature);
         } catch (error) {
-            logger.error('Error updating feature', 'FeaturesAPI', error);
+            apiLogger.error(error as Error, 'FeaturesAPI - Error updating feature');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Feature not found');
@@ -163,14 +163,14 @@ featuresRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Soft-deleting feature', 'FeaturesAPI', { id });
+        apiLogger.info({ location: 'FeaturesAPI', id }, 'Soft-deleting feature');
 
         const featureService = new FeatureService();
         await featureService.delete(id, user);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting feature', 'FeaturesAPI', error);
+        apiLogger.error(error as Error, 'FeaturesAPI - Error deleting feature');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Feature not found');
@@ -189,14 +189,14 @@ featuresRoutes.post('/:id/restore', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Restoring feature', 'FeaturesAPI', { id });
+        apiLogger.info({ location: 'FeaturesAPI', id }, 'Restoring feature');
 
         const featureService = new FeatureService();
         await featureService.restore(id, user);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring feature', 'FeaturesAPI', error);
+        apiLogger.error(error as Error, 'FeaturesAPI - Error restoring feature');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Feature not found');
@@ -215,7 +215,7 @@ featuresRoutes.get('/builtin', zValidator('query', listQuerySchema), async (c) =
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing built-in features', 'FeaturesAPI');
+        apiLogger.info({ location: 'FeaturesAPI' }, 'Listing built-in features');
 
         const featureService = new FeatureService();
 
@@ -242,7 +242,7 @@ featuresRoutes.get('/builtin', zValidator('query', listQuerySchema), async (c) =
             total: total
         });
     } catch (error) {
-        logger.error('Error listing built-in features', 'FeaturesAPI', error);
+        apiLogger.error(error as Error, 'FeaturesAPI - Error listing built-in features');
         return errorResponse(c, {
             message: 'Error listing built-in features',
             status: 500

@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -6,7 +7,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { DestinationService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { DestinationCreateSchema, DestinationUpdateSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -38,7 +38,7 @@ destinationsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing destinations', 'DestinationsAPI', { query });
+        apiLogger.info({ location: 'DestinationsAPI', query }, 'Listing destinations');
 
         // Convert pagination params
         const filter = {
@@ -76,7 +76,7 @@ destinationsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing destinations', 'DestinationsAPI', error);
+        apiLogger.error(error as Error, 'DestinationsAPI - Error listing destinations');
         return errorResponse(c, {
             message: 'Error listing destinations',
             status: 500
@@ -90,7 +90,7 @@ destinationsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching destination by ID', 'DestinationsAPI', { id });
+        apiLogger.info({ location: 'DestinationsAPI', id }, 'Fetching destination by ID');
 
         const destinationService = new DestinationService();
         const destination = await destinationService.getById(id, user);
@@ -101,7 +101,7 @@ destinationsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, destination);
     } catch (error) {
-        logger.error('Error fetching destination', 'DestinationsAPI', error);
+        apiLogger.error(error as Error, 'DestinationsAPI - Error fetching destination');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Destination not found');
@@ -120,14 +120,14 @@ destinationsRoutes.post('/', zValidator('json', DestinationCreateSchema), async 
         const data = c.req.valid('json');
         const user = c.get('user');
 
-        logger.info('Creating new destination', 'DestinationsAPI');
+        apiLogger.info({ location: 'DestinationsAPI' }, 'Creating new destination');
 
         const destinationService = new DestinationService();
         const newDestination = await destinationService.create(data, user);
 
         return successResponse(c, newDestination, 201);
     } catch (error) {
-        logger.error('Error creating destination', 'DestinationsAPI', error);
+        apiLogger.error(error as Error, 'DestinationsAPI - Error creating destination');
         return errorResponse(c, {
             message: 'Error creating destination',
             status: 500
@@ -146,14 +146,14 @@ destinationsRoutes.put(
             const data = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating destination', 'DestinationsAPI', { id });
+            apiLogger.info({ location: 'DestinationsAPI', id }, 'Updating destination');
 
             const destinationService = new DestinationService();
             const updatedDestination = await destinationService.update(id, data, user);
 
             return successResponse(c, updatedDestination);
         } catch (error) {
-            logger.error('Error updating destination', 'DestinationsAPI', error);
+            apiLogger.error(error as Error, 'DestinationsAPI - Error updating destination');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Destination not found');
@@ -180,14 +180,14 @@ destinationsRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Soft-deleting destination', 'DestinationsAPI', { id });
+        apiLogger.info({ location: 'DestinationsAPI', id }, 'Soft-deleting destination');
 
         const destinationService = new DestinationService();
         await destinationService.delete(id, user);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting destination', 'DestinationsAPI', error);
+        apiLogger.error(error as Error, 'DestinationsAPI - Error deleting destination');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Destination not found');
@@ -213,14 +213,14 @@ destinationsRoutes.post('/:id/restore', zValidator('param', idParam), async (c) 
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Restoring destination', 'DestinationsAPI', { id });
+        apiLogger.info({ location: 'DestinationsAPI', id }, 'Restoring destination');
 
         const destinationService = new DestinationService();
         await destinationService.restore(id, user);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring destination', 'DestinationsAPI', error);
+        apiLogger.error(error as Error, 'DestinationsAPI - Error restoring destination');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Destination not found');
@@ -246,14 +246,14 @@ destinationsRoutes.get('/:id/stats', zValidator('param', idParam), async (c) => 
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching destination stats', 'DestinationsAPI', { id });
+        apiLogger.info({ location: 'DestinationsAPI', id }, 'Fetching destination stats');
 
         const destinationService = new DestinationService();
         const stats = await destinationService.getStats(id, user);
 
         return successResponse(c, stats);
     } catch (error) {
-        logger.error('Error fetching destination stats', 'DestinationsAPI', error);
+        apiLogger.error(error as Error, 'DestinationsAPI - Error fetching destination stats');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Destination not found');
@@ -282,10 +282,10 @@ destinationsRoutes.patch(
             const { visibility } = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating destination visibility', 'DestinationsAPI', {
-                id,
-                visibility
-            });
+            apiLogger.info(
+                { location: 'DestinationsAPI', id, visibility },
+                'Updating destination visibility'
+            );
 
             const destinationService = new DestinationService();
             const updatedDestination = await destinationService.updateVisibility(
@@ -296,7 +296,10 @@ destinationsRoutes.patch(
 
             return successResponse(c, updatedDestination);
         } catch (error) {
-            logger.error('Error updating destination visibility', 'DestinationsAPI', error);
+            apiLogger.error(
+                error as Error,
+                'DestinationsAPI - Error updating destination visibility'
+            );
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Destination not found');

@@ -1,8 +1,8 @@
 import { publicUser } from '@/types';
+import { apiLogger } from '@/utils/logger';
 import { errorResponse, successResponse } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { AccommodationService, DestinationService, EventService, PostService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -24,7 +24,10 @@ searchRoutes.get('/', zValidator('query', searchQuerySchema), async (c) => {
     try {
         const { q, types, limit } = c.req.valid('query');
 
-        logger.info('Performing global search', 'SearchAPI', { query: q, types, limit });
+        apiLogger.info(
+            { location: 'SearchAPI', query: q, types, limit },
+            'Performing global search'
+        );
 
         // Search across different entity types in parallel
         const results: Record<string, unknown[]> = {};
@@ -99,7 +102,7 @@ searchRoutes.get('/', zValidator('query', searchQuerySchema), async (c) => {
             }
         });
     } catch (error) {
-        logger.error('Error performing global search', 'SearchAPI', error);
+        apiLogger.error(error as Error, 'SearchAPI - Error performing global search');
         return errorResponse(c, {
             message: 'Error performing search',
             status: 500

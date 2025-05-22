@@ -1,4 +1,4 @@
-import { logger } from '@repo/logger';
+import { apiLogger } from '@/utils/logger';
 import { Hono } from 'hono';
 import { requireAdmin, requireAuth } from '../../../middleware/auth';
 import { accommodationsRoutes } from './accommodations';
@@ -31,7 +31,7 @@ adminRoutes.route('/users', usersRoutes);
 
 // Admin dashboard stats
 adminRoutes.get('/', async (c) => {
-    logger.info('Fetching admin dashboard stats', 'AdminAPI');
+    apiLogger.info({ location: 'AdminAPI' }, 'Fetching admin dashboard stats');
 
     try {
         // This would fetch counts and stats from various services
@@ -54,7 +54,7 @@ adminRoutes.get('/', async (c) => {
             }
         });
     } catch (error) {
-        logger.error('Error fetching admin stats', 'AdminAPI', error);
+        apiLogger.error(error as Error, 'AdminAPI - Error fetching admin stats');
         return c.json(
             {
                 success: false,

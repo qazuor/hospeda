@@ -1,4 +1,5 @@
 import { publicUser } from '@/types';
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -7,7 +8,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { AccommodationService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -36,7 +36,7 @@ accommodationsRoutes.get('/', zValidator('query', listQuerySchema), async (c) =>
     try {
         const query = c.req.valid('query');
 
-        logger.info('Listing public accommodations', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Listing public accommodations');
 
         // Convert pagination params
         const filter = {
@@ -75,7 +75,7 @@ accommodationsRoutes.get('/', zValidator('query', listQuerySchema), async (c) =>
             total: total
         });
     } catch (error) {
-        logger.error('Error listing public accommodations', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error listing public accommodations');
         return errorResponse(c, {
             message: 'Error listing accommodations',
             status: 500
@@ -88,7 +88,7 @@ accommodationsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
     try {
         const { id } = c.req.valid('param');
 
-        logger.info('Fetching public accommodation by ID', 'PublicAPI', { id });
+        apiLogger.info({ location: 'PublicAPI', id }, 'Fetching public accommodation by ID');
 
         const accommodationService = new AccommodationService();
         const accommodation = await accommodationService.getById(id, publicUser);
@@ -99,7 +99,7 @@ accommodationsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, accommodation);
     } catch (error) {
-        logger.error('Error fetching public accommodation', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching public accommodation');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Accommodation not found');
@@ -117,7 +117,7 @@ accommodationsRoutes.get('/featured', zValidator('query', listQuerySchema), asyn
     try {
         const query = c.req.valid('query');
 
-        logger.info('Fetching featured accommodations', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Fetching featured accommodations');
 
         // Create the service
         const accommodationService = new AccommodationService();
@@ -145,7 +145,7 @@ accommodationsRoutes.get('/featured', zValidator('query', listQuerySchema), asyn
             total: total
         });
     } catch (error) {
-        logger.error('Error fetching featured accommodations', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error fetching featured accommodations');
         return errorResponse(c, {
             message: 'Error fetching featured accommodations',
             status: 500
@@ -158,7 +158,7 @@ accommodationsRoutes.get('/search', zValidator('query', listQuerySchema), async 
     try {
         const query = c.req.valid('query');
 
-        logger.info('Searching public accommodations', 'PublicAPI', { query });
+        apiLogger.info({ location: 'PublicAPI', query }, 'Searching public accommodations');
 
         if (!query.query) {
             return errorResponse(c, {
@@ -194,7 +194,7 @@ accommodationsRoutes.get('/search', zValidator('query', listQuerySchema), async 
             total: total
         });
     } catch (error) {
-        logger.error('Error searching accommodations', 'PublicAPI', error);
+        apiLogger.error(error as Error, 'PublicAPI - Error searching accommodations');
         return errorResponse(c, {
             message: 'Error searching accommodations',
             status: 500
@@ -212,10 +212,10 @@ accommodationsRoutes.get(
             const { id } = c.req.valid('param');
             const query = c.req.valid('query');
 
-            logger.info('Listing public accommodations by destination', 'PublicAPI', {
-                destinationId: id,
-                query
-            });
+            apiLogger.info(
+                { location: 'PublicAPI', destinationId: id, query },
+                'Listing public accommodations by destination'
+            );
 
             const accommodationService = new AccommodationService();
 
@@ -245,7 +245,10 @@ accommodationsRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error listing public accommodations by destination', 'PublicAPI', error);
+            apiLogger.error(
+                error as Error,
+                'PublicAPI - Error listing public accommodations by destination'
+            );
             return errorResponse(c, {
                 message: 'Error listing accommodations by destination',
                 status: 500

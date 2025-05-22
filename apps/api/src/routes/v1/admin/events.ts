@@ -1,3 +1,4 @@
+import { apiLogger } from '@/utils/logger';
 import {
     errorResponse,
     notFoundResponse,
@@ -6,7 +7,6 @@ import {
 } from '@/utils/response';
 import { zValidator } from '@hono/zod-validator';
 import { EventLocationService, EventOrganizerService, EventService } from '@repo/db';
-import { logger } from '@repo/logger';
 import { EventCreateSchema, EventUpdateSchema } from '@repo/schemas';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -42,7 +42,7 @@ eventsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
         const query = c.req.valid('query');
         const user = c.get('user');
 
-        logger.info('Listing events', 'EventsAPI', { query });
+        apiLogger.info({ location: 'EventsAPI', query }, 'Listing events');
 
         // Convert pagination params
         const filter = {
@@ -84,7 +84,7 @@ eventsRoutes.get('/', zValidator('query', listQuerySchema), async (c) => {
             total: total
         });
     } catch (error) {
-        logger.error('Error listing events', 'EventsAPI', error);
+        apiLogger.error(error as Error, 'EventsAPI - Error listing events');
         return errorResponse(c, {
             message: 'Error listing events',
             status: 500
@@ -98,7 +98,7 @@ eventsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Fetching event by ID', 'EventsAPI', { id });
+        apiLogger.info({ location: 'EventsAPI', id }, 'Fetching event by ID');
 
         const eventService = new EventService();
         const event = await eventService.getById(id, user);
@@ -109,7 +109,7 @@ eventsRoutes.get('/:id', zValidator('param', idParam), async (c) => {
 
         return successResponse(c, event);
     } catch (error) {
-        logger.error('Error fetching event', 'EventsAPI', error);
+        apiLogger.error(error as Error, 'EventsAPI - Error fetching event');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Event not found');
@@ -128,14 +128,14 @@ eventsRoutes.post('/', zValidator('json', EventCreateSchema), async (c) => {
         const data = c.req.valid('json');
         const user = c.get('user');
 
-        logger.info('Creating new event', 'EventsAPI');
+        apiLogger.info({ location: 'EventsAPI' }, 'Creating new event');
 
         const eventService = new EventService();
         const newEvent = await eventService.create(data, user);
 
         return successResponse(c, newEvent, 201);
     } catch (error) {
-        logger.error('Error creating event', 'EventsAPI', error);
+        apiLogger.error(error as Error, 'EventsAPI - Error creating event');
         return errorResponse(c, {
             message: 'Error creating event',
             status: 500
@@ -154,14 +154,14 @@ eventsRoutes.put(
             const data = c.req.valid('json');
             const user = c.get('user');
 
-            logger.info('Updating event', 'EventsAPI', { id });
+            apiLogger.info({ location: 'EventsAPI', id }, 'Updating event');
 
             const eventService = new EventService();
             const updatedEvent = await eventService.update(id, data, user);
 
             return successResponse(c, updatedEvent);
         } catch (error) {
-            logger.error('Error updating event', 'EventsAPI', error);
+            apiLogger.error(error as Error, 'EventsAPI - Error updating event');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Event not found');
@@ -188,14 +188,14 @@ eventsRoutes.delete('/:id', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Soft-deleting event', 'EventsAPI', { id });
+        apiLogger.info({ location: 'EventsAPI', id }, 'Soft-deleting event');
 
         const eventService = new EventService();
         await eventService.delete(id, user);
 
         return successResponse(c, { id, deleted: true });
     } catch (error) {
-        logger.error('Error deleting event', 'EventsAPI', error);
+        apiLogger.error(error as Error, 'EventsAPI - Error deleting event');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Event not found');
@@ -221,14 +221,14 @@ eventsRoutes.post('/:id/restore', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Restoring event', 'EventsAPI', { id });
+        apiLogger.info({ location: 'EventsAPI', id }, 'Restoring event');
 
         const eventService = new EventService();
         await eventService.restore(id, user);
 
         return successResponse(c, { id, restored: true });
     } catch (error) {
-        logger.error('Error restoring event', 'EventsAPI', error);
+        apiLogger.error(error as Error, 'EventsAPI - Error restoring event');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Event not found');
@@ -259,7 +259,7 @@ eventsRoutes.get(
             const query = c.req.valid('query');
             const user = c.get('user');
 
-            logger.info('Listing events by location', 'EventsAPI', { locationId: id });
+            apiLogger.info({ location: 'EventsAPI', locationId: id }, 'Listing events by location');
 
             const eventLocationService = new EventLocationService();
 
@@ -286,7 +286,7 @@ eventsRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error listing events by location', 'EventsAPI', error);
+            apiLogger.error(error as Error, 'EventsAPI - Error listing events by location');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Location not found');
@@ -311,7 +311,10 @@ eventsRoutes.get(
             const query = c.req.valid('query');
             const user = c.get('user');
 
-            logger.info('Listing events by organizer', 'EventsAPI', { organizerId: id });
+            apiLogger.info(
+                { location: 'EventsAPI', organizerId: id },
+                'Listing events by organizer'
+            );
 
             const eventOrganizerService = new EventOrganizerService();
 
@@ -338,7 +341,7 @@ eventsRoutes.get(
                 total: total
             });
         } catch (error) {
-            logger.error('Error listing events by organizer', 'EventsAPI', error);
+            apiLogger.error(error as Error, 'EventsAPI - Error listing events by organizer');
 
             if ((error as Error).message.includes('not found')) {
                 return notFoundResponse(c, 'Organizer not found');
@@ -358,14 +361,14 @@ eventsRoutes.post('/:id/publish', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Publishing event', 'EventsAPI', { id });
+        apiLogger.info({ location: 'EventsAPI', id }, 'Publishing event');
 
         const eventService = new EventService();
         const updatedEvent = await eventService.publish(id, user);
 
         return successResponse(c, updatedEvent);
     } catch (error) {
-        logger.error('Error publishing event', 'EventsAPI', error);
+        apiLogger.error(error as Error, 'EventsAPI - Error publishing event');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Event not found');
@@ -391,14 +394,14 @@ eventsRoutes.post('/:id/unpublish', zValidator('param', idParam), async (c) => {
         const { id } = c.req.valid('param');
         const user = c.get('user');
 
-        logger.info('Unpublishing event', 'EventsAPI', { id });
+        apiLogger.info({ location: 'EventsAPI', id }, 'Unpublishing event');
 
         const eventService = new EventService();
         const updatedEvent = await eventService.unpublish(id, user);
 
         return successResponse(c, updatedEvent);
     } catch (error) {
-        logger.error('Error unpublishing event', 'EventsAPI', error);
+        apiLogger.error(error as Error, 'EventsAPI - Error unpublishing event');
 
         if ((error as Error).message.includes('not found')) {
             return notFoundResponse(c, 'Event not found');
