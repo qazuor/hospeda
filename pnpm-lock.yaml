@@ -298,6 +298,9 @@ importers:
       chalk:
         specifier: ^5.4.1
         version: 5.4.1
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*

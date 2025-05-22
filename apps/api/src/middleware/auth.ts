@@ -1,4 +1,3 @@
-import { logger } from '@repo/logger';
 import { BuiltinRoleTypeEnum, StateEnum, type UserType } from '@repo/types';
 import type { Context, Next } from 'hono';
 
@@ -31,9 +30,9 @@ export async function authMiddleware(c: Context, next: Next) {
 
         // Attach the user to the context
         c.set('user', mockUser);
-        logger.debug('User authenticated', 'Auth', { userId: mockUser.id });
+        apiLogger.debug({ location: 'Auth', userId: mockUser.id }, 'User authenticated');
     } else {
-        logger.debug('No auth token provided', 'Auth');
+        apiLogger.debug({ location: 'Auth' }, 'No auth token provided');
     }
 
     // Always proceed to next middleware
@@ -45,7 +44,7 @@ export async function requireAuth(c: Context, next: Next) {
     const user = c.get('user');
 
     if (!user) {
-        logger.warn('Authentication required', 'Auth');
+        apiLogger.warn({ location: 'Auth' }, 'Authentication required');
         return c.json(
             {
                 success: false,
@@ -66,7 +65,7 @@ export async function requireAdmin(c: Context, next: Next) {
     const user = c.get('user');
 
     if (!user) {
-        logger.warn('Authentication required for admin access', 'Auth');
+        apiLogger.warn({ location: 'Auth' }, 'Authentication required for admin access');
         return c.json(
             {
                 success: false,
@@ -80,10 +79,10 @@ export async function requireAdmin(c: Context, next: Next) {
     }
 
     if (user.roleId !== BuiltinRoleTypeEnum.ADMIN) {
-        logger.warn('Admin access denied', 'Auth', {
-            userId: user.id,
-            roleId: user.roleId
-        });
+        apiLogger.warn(
+            { location: 'Auth', userId: user.id, roleId: user.roleId },
+            'Admin access denied'
+        );
         return c.json(
             {
                 success: false,
@@ -99,6 +98,7 @@ export async function requireAdmin(c: Context, next: Next) {
     await next();
 }
 
+import { apiLogger } from '@/utils/logger';
 // Helper middleware to check specific permissions
 import type { PermissionType } from '@repo/types';
 export function requirePermission(permission: PermissionType) {
@@ -106,7 +106,7 @@ export function requirePermission(permission: PermissionType) {
         const user = c.get('user');
 
         if (!user) {
-            logger.warn('Authentication required for permission check', 'Auth');
+            apiLogger.warn({ location: 'Auth' }, 'Authentication required for permission check');
             return c.json(
                 {
                     success: false,
@@ -127,11 +127,15 @@ export function requirePermission(permission: PermissionType) {
 
         // Check if the user has the required permission
         if (!(user.permissions ?? []).includes(permission)) {
-            logger.warn('Permission denied', 'Auth', {
-                userId: user.id,
-                permission,
-                userPermissions: user.permissions
-            });
+            apiLogger.warn(
+                {
+                    location: 'Auth',
+                    userId: user.id,
+                    permission,
+                    userPermissions: user.permissions
+                },
+                'Permission denied'
+            );
             return c.json(
                 {
                     success: false,

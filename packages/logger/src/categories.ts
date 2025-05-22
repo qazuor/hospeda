@@ -34,7 +34,6 @@ export function registerCategoryInternal(
 ): LoggerCategory {
     // Get environment configuration for this category
     const envConfig = getConfigFromEnv(key);
-
     // Create the category with merged options
     const category: LoggerCategory = {
         name,
@@ -54,7 +53,8 @@ export function registerCategoryInternal(
                 options.truncateLongTextAt !== undefined
                     ? options.truncateLongTextAt
                     : envConfig.TRUNCATE_LONG_TEXT_AT,
-            level: options.level !== undefined ? options.level : envConfig.LEVEL
+            level: options.level !== undefined ? options.level : envConfig.LEVEL,
+            stringifyObj: options.stringifyObj
         }
     };
 
