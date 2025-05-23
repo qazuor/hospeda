@@ -81,6 +81,34 @@ export const AccommodationModel = {
     },
 
     /**
+     * Fetch a single accommodation by slug.
+     *
+     * @param slug - slug string of the accommodation
+     * @returns The accommodation record or undefined if not found
+     */
+    async getAccommodationBySlug(slug: string): Promise<AccommodationRecord | undefined> {
+        try {
+            dbLogger.info({ slug }, 'fetching accommodation by slug');
+            const db = getDb();
+            const [acc] = await db
+                .select()
+                .from(accommodations)
+                .where(eq(accommodations.slug, slug))
+                .limit(1);
+            dbLogger.query({
+                table: 'accommodations',
+                action: 'select',
+                params: { slug },
+                result: acc
+            });
+            return acc ? (acc as AccommodationRecord) : undefined;
+        } catch (error) {
+            dbLogger.error(error, 'getAccommodationById failed');
+            throw error;
+        }
+    },
+
+    /**
      * List accommodations with optional filters, pagination, and search.
      *
      * @param filter - Filtering and pagination options (SelectAccommodationFilter type from db-types)
