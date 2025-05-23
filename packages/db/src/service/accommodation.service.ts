@@ -154,6 +154,44 @@ export class AccommodationService {
     }
 
     /**
+     * Get a single accommodation by slug.
+     * @param slug - The slug of the accommodation to fetch.
+     * @param actor - The user performing the action.
+     * @returns The accommodation record.
+     * @throws Error if accommodation is not found.
+     */
+    async getBySlug(slug: string, actor: UserType): Promise<AccommodationRecord> {
+        dbLogger.info(
+            {
+                slug,
+                actor: actor.id
+            },
+            'fetching destination by slug'
+        );
+
+        try {
+            // Use the listAccommodation method with a filter for the slug
+            const accommodation = await AccommodationModel.getAccommodationBySlug(slug);
+            const existingAccommodation = assertExists(
+                accommodation,
+                `Accommodation with slug '${slug}' not found`
+            );
+
+            dbLogger.info(
+                {
+                    accommodationId: existingAccommodation.id,
+                    slug
+                },
+                'destination fetched by slug successfully'
+            );
+            return existingAccommodation;
+        } catch (error) {
+            dbLogger.error(error, 'failed to fetch accommodation by slug');
+            throw error;
+        }
+    }
+
+    /**
      * List accommodations with optional filters, pagination, and search.
      * @param filter - Filtering and pagination options.
      * @param actor - The user performing the action.
