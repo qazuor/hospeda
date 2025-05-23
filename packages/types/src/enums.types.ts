@@ -36,7 +36,9 @@ export enum AccommodationTypeEnum {
     HOTEL = 'HOTEL',
     HOSTEL = 'HOSTEL',
     CAMPING = 'CAMPING',
-    ROOM = 'ROOM'
+    ROOM = 'ROOM',
+    MOTEL = 'MOTEL',
+    RESORT = 'RESORT'
 }
 
 /**
