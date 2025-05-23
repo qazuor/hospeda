@@ -71,4 +71,7 @@ export interface DestinationType extends BaseEntityType {
     location: BaseLocationType;
     attractions: DestinationAttractionsType[];
     tags?: TagType[];
+    reviewsCount?: number;
+    averageRating?: number;
+    accommodationsCount?: number;
 }

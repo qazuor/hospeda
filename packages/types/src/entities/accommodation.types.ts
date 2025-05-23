@@ -200,4 +200,6 @@ export interface AccommodationType extends BaseEntityType {
     faqs?: AccommodationFaqType[];
     iaData?: AccommodationIaDataType[];
     tags?: TagType[];
+    reviewsCount?: number;
+    averageRating?: number;
 }
