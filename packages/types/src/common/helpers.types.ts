@@ -1,7 +1,7 @@
 // common/helpers.types.ts
 
-import type { ModerationStatusEnum } from '@repo/types/enums/state.enum.js';
 import type { LifecycleStatusEnum } from '../enums/lifecycle-state.enum.js';
+import type { ModerationStatusEnum } from '../enums/state.enum.js';
 import type { VisibilityEnum } from '../enums/visibility.enum.js';
 import type { AdminInfoType } from './admin.types.js';
 import type { UserId } from './id.types.js';
