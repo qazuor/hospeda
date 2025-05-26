@@ -5,7 +5,7 @@ import type {
     WithId,
     WithLifecycleState,
     WithSoftDelete
-} from '@repo/types/common/helpers.types.js';
+} from '../../common/helpers.types.js';
 import type { AccommodationId, FeatureId } from '../../common/id.types.js';
 
 /**

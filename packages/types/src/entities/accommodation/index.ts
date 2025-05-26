@@ -8,3 +8,6 @@ export * from './accommodation.rating.types.js';
 export * from './accommodation.review.types.js';
 export * from './accommodation.schedule.types.js';
 export * from './accommodation.types.js';
+
+export * from './extras/accommodation.extras.types.js';
+export * from './extras/accommodation.input.types.js';

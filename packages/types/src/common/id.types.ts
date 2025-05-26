@@ -4,6 +4,7 @@ export type Brand<K, T> = K & { __brand: T };
 export type UserId = Brand<string, 'UserId'>;
 export type RoleId = Brand<string, 'RoleId'>;
 export type PermissionId = Brand<string, 'PermissionId'>;
+export type UserBookmarkId = Brand<string, 'UserBookmarkId'>;
 
 export type TagId = Brand<string, 'TagId'>;
 

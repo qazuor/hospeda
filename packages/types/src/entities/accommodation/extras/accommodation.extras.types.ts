@@ -1,11 +1,11 @@
-import type { TagType } from '@repo/types/common/tag.types.js';
-import type { AmenityType } from '@repo/types/entities/accommodation/accommodation.amenity.types.js';
-import type { AccommodationFaqType } from '@repo/types/entities/accommodation/accommodation.faq.types.js';
-import type { FeatureType } from '@repo/types/entities/accommodation/accommodation.feature.types.js';
-import type { AccommodationIaDataType } from '@repo/types/entities/accommodation/accommodation.ia.types.js';
-import type { AccommodationReviewType } from '@repo/types/entities/accommodation/accommodation.review.types.js';
-import type { AccommodationType } from '@repo/types/entities/accommodation/accommodation.types.js';
-import type { DestinationType } from '@repo/types/entities/destination/destination.types.js';
+import type { TagType } from '../../../common/tag.types.js';
+import type { DestinationType } from '../../destination/destination.types.js';
+import type { AmenityType } from '../accommodation.amenity.types.js';
+import type { AccommodationFaqType } from '../accommodation.faq.types.js';
+import type { FeatureType } from '../accommodation.feature.types.js';
+import type { AccommodationIaDataType } from '../accommodation.ia.types.js';
+import type { AccommodationReviewType } from '../accommodation.review.types.js';
+import type { AccommodationType } from '../accommodation.types.js';
 
 export type AccommodationSummary = Pick<
     AccommodationType,

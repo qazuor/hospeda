@@ -1,4 +1,4 @@
-import type { ContactInfoType } from '@repo/types/common/contact.types.js';
+import type { ContactInfoType } from '../../common/contact.types.js';
 import type {
     WithAdminInfo,
     WithAudit,
@@ -8,23 +8,23 @@ import type {
     WithSeo,
     WithTags,
     WithVisibility
-} from '@repo/types/common/helpers.types.js';
-import type { DestinationId, UserId } from '@repo/types/common/id.types.js';
-import type { FullLocationType } from '@repo/types/common/location.types.js';
-import type { MediaType } from '@repo/types/common/media.types.js';
-import type { SocialNetworkType } from '@repo/types/common/social.types.js';
-import type { AccommodationAmenityType } from '@repo/types/entities/accommodation/accommodation.amenity.types.js';
-import type { ExtraInfoType } from '@repo/types/entities/accommodation/accommodation.extrainfo.types.js';
-import type { AccommodationFaqType } from '@repo/types/entities/accommodation/accommodation.faq.types.js';
-import type { AccommodationFeatureType } from '@repo/types/entities/accommodation/accommodation.feature.types.js';
-import type { AccommodationIaDataType } from '@repo/types/entities/accommodation/accommodation.ia.types.js';
-import type { AccommodationPriceType } from '@repo/types/entities/accommodation/accommodation.price.types.js';
-import type { AccommodationRatingType } from '@repo/types/entities/accommodation/accommodation.rating.types.js';
-import type { AccommodationReviewType } from '@repo/types/entities/accommodation/accommodation.review.types.js';
-import type { ScheduleType } from '@repo/types/entities/accommodation/accommodation.schedule.types.js';
-import type { DestinationType } from '@repo/types/entities/destination/destination.types.js';
-import type { UserType } from '@repo/types/entities/user/user.types.js';
-import type { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum.js';
+} from '../../common/helpers.types.js';
+import type { DestinationId, UserId } from '../../common/id.types.js';
+import type { FullLocationType } from '../../common/location.types.js';
+import type { MediaType } from '../../common/media.types.js';
+import type { SocialNetworkType } from '../../common/social.types.js';
+import type { AccommodationTypeEnum } from '../../enums/accommodation-type.enum.js';
+import type { DestinationType } from '../destination/destination.types.js';
+import type { UserType } from '../user/user.types.js';
+import type { AccommodationAmenityType } from './accommodation.amenity.types.js';
+import type { ExtraInfoType } from './accommodation.extrainfo.types.js';
+import type { AccommodationFaqType } from './accommodation.faq.types.js';
+import type { AccommodationFeatureType } from './accommodation.feature.types.js';
+import type { AccommodationIaDataType } from './accommodation.ia.types.js';
+import type { AccommodationPriceType } from './accommodation.price.types.js';
+import type { AccommodationRatingType } from './accommodation.rating.types.js';
+import type { AccommodationReviewType } from './accommodation.review.types.js';
+import type { ScheduleType } from './accommodation.schedule.types.js';
 
 export interface AccommodationType
     extends WithId,

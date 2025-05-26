@@ -5,10 +5,10 @@ import type {
     WithId,
     WithLifecycleState,
     WithSoftDelete
-} from '@repo/types/common/helpers.types.js';
-import type { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum.js';
+} from '../../common/helpers.types.js';
 import type { AccommodationId, AmenityId } from '../../common/id.types.js';
 import type { BasePriceType } from '../../common/price.types.js';
+import type { AmenitiesTypeEnum } from '../../enums/amenity-type.enum.js';
 
 /**
  * Generic amenity used to define a capability or service.
