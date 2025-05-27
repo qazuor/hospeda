@@ -40,10 +40,10 @@ export interface AccommodationType
     summary: string;
     type: AccommodationTypeEnum;
     description: string;
-    contactInfo: ContactInfoType;
-    socialNetworks: SocialNetworkType;
-    price: AccommodationPriceType;
-    location: FullLocationType;
+    contactInfo?: ContactInfoType;
+    socialNetworks?: SocialNetworkType;
+    price?: AccommodationPriceType;
+    location?: FullLocationType;
     media?: MediaType;
     isFeatured?: boolean;
 
