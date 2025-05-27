@@ -1,554 +1,1097 @@
-# @repo/schemas
-
-Validation schemas for the Hospeda monorepo.
-
-## Overview
-
-The `@repo/schemas` package provides Zod validation schemas for all entities and data structures in the Hospeda platform. These schemas ensure data integrity, consistent validation, and proper error handling across the entire application stack.
-
-## Features
-
-- Runtime validation of all entity types
-- Comprehensive error messages with i18n support
-- Input validation for creation and update operations
-- Type inference from schemas for strong typing
-- Seamless integration with React Hook Form
-- Validation rules consistent with database constraints
-
-## Structure
-
-```
-src/
-├── common.schema.ts        # Shared schemas (BaseEntity, AdminInfo, etc.)
-├── enums.schema.ts         # Enum schemas using Zod.nativeEnum
-├── utils/                  # Utility functions and constants
-│   └── utils.ts            # Shared utilities for schemas
-├── entities/               # Entity-specific schemas
-│   ├── accommodation.schema.ts
-│   ├── accommodation/      # Nested schemas for complex entities
-│   │   ├── price.schema.ts
-│   │   ├── rating.schema.ts
-│   │   └── ...
-│   ├── amenity.schema.ts
-│   ├── destination.schema.ts
-│   ├── event.schema.ts
-│   ├── feature.schema.ts
-│   ├── post.schema.ts
-│   └── user.schema.ts
-└── index.ts                # Main exports
-```
-
-## Comprehensive Schema Catalog
-
-### Common Schemas
-
-#### `AdminInfoSchema`
-- `notes`: string (min 3 chars, optional)
-- `favorite`: boolean (required)
-
-#### `BaseEntitySchema`
-- `id`: UUID string
-- `name`: string (required)
-- `displayName`: string (required)
-- `state`: StateEnum
-- `adminInfo`: AdminInfoSchema (optional)
-- `createdAt`: Date
-- `createdById`: UUID string
-- `updatedAt`: Date
-- `updatedById`: UUID string
-- `deletedAt`: Date (optional)
-- `deletedById`: UUID string (optional)
-
-#### `TagSchema`
-- All properties from `BaseEntitySchema`
-- `ownerId`: UUID string
-- `notes`: string (min 1 char, optional)
-- `color`: TagColorEnum
-- `icon`: string (min 1 char, optional)
-
-#### `ContactInfoSchema`
-- `personalEmail`: email string (optional)
-- `workEmail`: email string (optional)
-- `homePhone`: phone string (regex validated, optional)
-- `workPhone`: phone string (regex validated, optional)
-- `mobilePhone`: phone string (regex validated, required)
-- `website`: URL string (optional)
-- `preferredEmail`: PreferedContactEnum
-- `preferredPhone`: PreferedContactEnum
-
-#### `CoordinatesSchema`
-- `lat`: number (-90 to 90)
-- `long`: number (-180 to 180)
-
-#### `BaseLocationSchema`
-- `state`: string (required)
-- `zipCode`: string (required)
-- `country`: string (required)
-- `coordinates`: CoordinatesSchema (optional)
-
-#### `FullLocationSchema`
-- All properties from `BaseLocationSchema`
-- `street`: string (required)
-- `number`: string (required)
-- `floor`: string (optional)
-- `apartment`: string (optional)
-- `neighborhood`: string (optional)
-- `city`: string (required)
-- `deparment`: string (optional)
-
-#### `SocialNetworkSchema`
-- `facebook`: URL string (regex validated, optional)
-- `twitter`: URL string (regex validated, optional)
-- `instagram`: URL string (regex validated, optional)
-- `linkedIn`: URL string (regex validated, optional)
-- `tiktok`: URL string (regex validated, optional)
-
-#### `BasePriceSchema`
-- `price`: number (min 1, optional)
-- `currency`: PriceCurrencyEnum (optional)
-
-#### `ImageSchema`
-- `url`: URL string (required)
-- `caption`: string (min 3, max 20 chars, optional)
-- `description`: string (min 3, max 100 chars, optional)
-- `tags`: array of TagSchema (optional)
-- `state`: StateEnum
-
-#### `VideoSchema`
-- `url`: URL string (required)
-- `caption`: string (min 3, max 20 chars, optional)
-- `description`: string (min 3, max 100 chars, optional)
-- `tags`: array of TagSchema (optional)
-- `state`: StateEnum
-
-#### `MediaSchema`
-- `featuredImage`: ImageSchema
-- `gallery`: array of ImageSchema (optional)
-- `videos`: array of VideoSchema (optional)
-
-#### `SeoSchema`
-- `seoTitle`: string (min 10, max 60 chars, optional)
-- `seoDescription`: string (min 50, max 150 chars, optional)
-- `seoKeywords`: array of strings (min 1, max 10, no duplicates, optional)
-
-### Accommodation Schemas
-
-#### `AccommodationSchema`
-- All properties from `BaseEntitySchema`
-- `slug`: string (min 3, max 30, regex validated)
-- `type`: AccommodationTypeEnum
-- `description`: string (min 50, max 1000)
-- `contactInfo`: ContactInfoSchema (optional)
-- `socialNetworks`: SocialNetworkSchema (optional)
-- `price`: AccommodationPriceSchema (optional)
-- `location`: FullLocationSchema (optional)
-- `features`: array of AccommodationFeaturesSchema
-- `amenities`: array of AccommodationAmenitiesSchema
-- `media`: MediaSchema (optional)
-- `rating`: AccommodationRatingSchema
-- `reviews`: array of AccommodationReviewSchema (optional)
-- `schedule`: AccommodationScheduleSchema (optional)
-- `extraInfo`: AccommodationExtraInfoSchema (optional)
-- `isFeatured`: boolean
-- `seo`: SeoSchema (optional)
-- `faqs`: array of AccommodationFaqSchema (optional)
-- `iaData`: array of AccommodationIaDataSchema (optional)
-- `tags`: array of TagSchema (optional)
-
-#### `AccommodationAdditionalFeesSchema`
-- Various fee types as AccommodationAdditionalFeesInfoSchema (optional)
-- `others`: array of AccommodationOtherAdditionalFeesSchema
-
-#### `AccommodationAdditionalFeesInfoSchema`
-- `price`: BasePriceSchema (optional)
-- `percent`: number (min 1, max 100, optional)
-- `isIncluded`: boolean (optional)
-- `isOptional`: boolean (optional)
-- `isPercent`: boolean (optional)
-- `isPerStay`: boolean (optional)
-- `isPerNight`: boolean (optional)
-- `isPerGuest`: boolean (optional)
-
-#### `AccommodationDiscountInfoSchema`
-- `price`: BasePriceSchema (optional)
-- `percent`: number (min 0, max 5)
-- Various boolean flags for discount behavior (all optional)
-
-#### `AccommodationDiscountsSchema`
-- `weekly`: AccommodationDiscountInfoSchema (optional)
-- `monthly`: AccommodationDiscountInfoSchema (optional)
-- `lastMinute`: AccommodationDiscountInfoSchema (optional)
-- `others`: array of AccommodationOtherDiscountSchema (optional)
-
-#### `AccommodationExtraInfoSchema`
-- `capacity`: number (min 1)
-- `minNights`: number (min 1)
-- `maxNights`: number (min 1, optional)
-- `bedrooms`: number
-- `beds`: number (min 1, optional)
-- `bathrooms`: number (min 1)
-- `smokingAllowed`: boolean (optional)
-- `extraInfo`: array of strings (optional)
-
-#### `AccommodationFaqSchema`
-- All properties from `BaseEntitySchema`
-- `question`: string (min 5, max 50)
-- `answer`: string (min 1, max 200)
-- `category`: string (min 3, max 25, optional)
-
-#### `AccommodationIaDataSchema`
-- All properties from `BaseEntitySchema`
-- `title`: string (min 5, max 50)
-- `content`: string (min 1, max 200)
-- `category`: string (min 3, max 25, optional)
-
-#### `AccommodationRatingSchema`
-- `cleanliness`: number (0-5, optional)
-- `hospitality`: number (0-5, optional)
-- `services`: number (0-5, optional)
-- `accuracy`: number (0-5, optional)
-- `communication`: number (0-5, optional)
-- `location`: number (0-5, optional)
-
-#### `AccommodationReviewSchema`
-- All properties from `BaseEntitySchema`
-- `title`: string (min 1, max 20, optional)
-- `content`: string (min 10, max 150, optional)
-- `rating`: AccommodationRatingSchema
-
-#### `AccommodationScheduleSchema`
-- `checkinTime`: string (HH:mm format, optional)
-- `checkoutTime`: string (HH:mm format)
-- `earlyCheckinAccepted`: boolean
-- `earlyCheckinTime`: string (HH:mm format, optional)
-- `lateCheckinAccepted`: boolean
-- `lateCheckinTime`: string (HH:mm format, optional)
-- `lateCheckoutAccepted`: boolean
-- `lateCheckoutTime`: string (HH:mm format, optional)
-- `selfCheckin`: boolean
-- `selfCheckout`: boolean
-
-### Amenity & Feature Schemas
-
-#### `AmenitySchema`
-- All properties from `BaseEntitySchema`
-- `description`: string (min 10, max 150, optional)
-- `icon`: string (min 1, optional)
-- `isBuiltin`: boolean
-- `type`: AmenitiesTypeEnum
-
-#### `AccommodationAmenitySchema`
-- `accommodationId`: UUID string
-- `amenityId`: UUID string
-- `isOptional`: boolean
-- `additionalCost`: BasePriceSchema (optional, nullable)
-- `additionalCostPercent`: number (0-100, optional, nullable)
-- `state`: string (optional)
-- `adminInfo`: object (optional)
-
-#### `FeatureSchema`
-- All properties from `BaseEntitySchema`
-- `description`: string (min 10, max 150, optional)
-- `icon`: string (min 1, optional)
-- `isBuiltin`: boolean
-
-#### `AccommodationFeatureSchema`
-- `accommodationId`: UUID string
-- `featureId`: UUID string
-- `hostReWriteName`: string (optional, nullable)
-- `comments`: string (optional, nullable)
-- `state`: string (optional)
-- `adminInfo`: object (optional)
-
-### Destination Schemas
-
-#### `DestinationSchema`
-- All properties from `BaseEntitySchema`
-- `slug`: string (min 3, max 30, regex validated)
-- `summary`: string (min 50, max 200)
-- `description`: string (min 50, max 1000)
-- `media`: MediaSchema
-- `isFeatured`: boolean (optional)
-- `visibility`: VisibilityEnum
-- `seo`: SeoSchema
-- `rating`: DestinationRatingSchema
-- `reviews`: array of DestinationReviewSchema (optional)
-- `location`: BaseLocationSchema
-- `attractions`: array of DestinationAttractionsSchema
-
-#### `DestinationAttractionsSchema`
-- All properties from `BaseEntitySchema`
-- `name`: string (min 3, max 30)
-- `slug`: string (min 3, max 30, regex validated)
-- `description`: string (min 10, max 100, optional)
-- `icon`: string (min 1, optional)
-
-#### `DestinationRatingSchema`
-- 18 different rating categories (landscape, attractions, safety, etc.), each number (0-5)
-
-#### `DestinationReviewSchema`
-- All properties from `BaseEntitySchema`
-- `title`: string (min 1, max 20, optional)
-- `content`: string (min 10, max 150, optional)
-- `rating`: DestinationRatingSchema
-
-### Event Schemas
-
-#### `EventSchema`
-- All properties from `BaseEntitySchema`
-- `slug`: string (min 3, max 30, regex validated)
-- `summary`: string (min 50, max 200)
-- `description`: string (min 50, max 1000)
-- `media`: MediaSchema (optional)
-- `category`: EventCategoryEnum
-- `date`: EventDateSchema
-- `locationId`: UUID string
-- `organizerId`: UUID string
-- `pricing`: EventPriceSchema (optional)
-- `contact`: ContactInfoSchema (optional)
-- `visibility`: VisibilityEnum
-- `seo`: SeoSchema (optional)
-- `isFeatured`: boolean (optional)
-- `tags`: array of TagSchema (optional)
-
-#### `EventDateSchema`
-- `start`: Date (with validation range)
-- `end`: Date (with validation range, optional)
-- `isAllDay`: boolean (optional)
-- `recurrence`: RecurrenceTypeEnum (optional)
-
-#### `EventLocationSchema`
-- All properties from BaseEntitySchema and BaseLocationSchema
-- Various address fields (street, number, neighborhood, etc.)
-- `placeName`: string (min 10, max 150, optional)
-
-#### `EventOrganizerSchema`
-- All properties from `BaseEntitySchema`
-- `logo`: string (min 1, optional)
-- `contactInfo`: ContactInfoSchema (optional)
-- `social`: SocialNetworkSchema (optional)
-
-#### `EventPriceSchema`
-- All properties from `BasePriceSchema`
-- `isFree`: boolean
-- `priceFrom`: number (min 1, optional)
-- `priceTo`: number (min 1, optional)
-- `pricePerGroup`: number (min 1, optional)
-
-### Post Schemas
-
-#### `PostSchema`
-- All properties from `BaseEntitySchema`
-- `slug`: string (min 3, max 30, regex validated)
-- `category`: PostCategoryEnum
-- `title`: string (min 50, max 200)
-- `summary`: string (min 50, max 200)
-- `content`: string (min 50, max 1000)
-- `media`: MediaSchema (optional)
-- `sponsorship`: PostSponsorshipSchema (optional)
-- `relatedDestinationId`: UUID string (optional)
-- `relatedAccommodationId`: UUID string (optional)
-- `relatedEventId`: UUID string (optional)
-- `visibility`: VisibilityEnum
-- `seo`: SeoSchema (optional)
-- Various boolean flags (isFeatured, isNews, isFeaturedInWebsite)
-- `expiresAt`: Date (optional)
-- `tags`: array of TagSchema (optional)
-
-#### `PostSponsorSchema`
-- All properties from `BaseEntitySchema`
-- `type`: ClientTypeEnum
-- `description`: string (min 3, max 100)
-- `logo`: string (min 1, optional)
-- `social`: SocialNetworkSchema (optional)
-- `contact`: ContactInfoSchema (optional)
-- `sponsorships`: array of PostSponsorshipSchema (optional)
-
-#### `PostSponsorshipSchema`
-- `message`: string (min 3, max 100)
-- `description`: string (min 3, max 100)
-- `paid`: BasePriceSchema
-- `paidAt`: Date (optional, with validation)
-- `fromDate`: Date (optional, with validation)
-- `toDate`: Date (optional, with validation)
-- `isHighlighted`: boolean
-
-### User and Auth Schemas
-
-#### `UserSchema`
-- All properties from `BaseEntitySchema`
-- `userName`: string (min 3, max 100, optional)
-- `passwordHash`: string (min 3, max 100, optional)
-- `firstName`: string (min 3, max 100, optional)
-- `lastName`: string (min 3, max 100, optional)
-- `brithDate`: Date (age validation, optional)
-- `location`: FullLocationSchema (optional)
-- `contactInfo`: ContactInfoSchema (optional)
-- `socialNetworks`: SocialNetworkSchema (optional)
-- `emailVerified`: boolean (optional)
-- `phoneVerified`: boolean (optional)
-- `profile`: UserProfileSchema (optional)
-- `settings`: UserSettingsSchema
-- `bookmarks`: array of BookmarkSchema (optional)
-- `roleId`: UUID string
-- `permissionsIds`: array of UUID strings (optional)
-
-#### `UserProfileSchema`
-- `avatar`: string (min 1, optional)
-- `bio`: string (min 10, max 400, optional)
-- `website`: URL string (min 10, max 100, optional)
-- `occupation`: string (min 3, max 100, optional)
-
-#### `UserSettingsSchema`
-- `darkMode`: boolean (optional)
-- `language`: string (2 chars, optional)
-- `notifications`: UserNotificationsSchema
-
-#### `UserNotificationsSchema`
-- `enabled`: boolean
-- `allowEmails`: boolean
-- `allowSms`: boolean
-- `allowPush`: boolean
-
-#### `BookmarkSchema`
-- All properties from `BaseEntitySchema`
-- `ownerId`: UUID string
-- `entityId`: UUID string
-- `entityType`: EntityTypeEnum
-- `name`: string (min 3, max 15, optional)
-- `description`: string (min 10, max 100, optional)
-
-#### `RoleSchema`
-- All properties from `BaseEntitySchema`
-- `description`: string (min 3, max 100)
-- `isBuiltIn`: boolean
-- `isDeprecated`: boolean (optional)
-- `isDefault`: boolean (optional)
-- `permissionsIds`: array of UUID strings (optional)
-
-#### `PermissionSchema`
-- All properties from `BaseEntitySchema`
-- `description`: string (min 3, max 100)
-- `isBuiltIn`: boolean
-- `isDeprecated`: boolean (optional)
-
-### Relationship Schemas
-
-#### `EntityTagRelationSchema`
-- `entityId`: UUID string
-- `entityType`: EntityTypeEnum
-- `tagId`: UUID string
-
-#### `AccommodationFaqRelationSchema`
-- `accommodationId`: UUID string
-- `faqId`: UUID string
-
-#### `AccommodationIaDataRelationSchema`
-- `accommodationId`: UUID string
-- `iaDataId`: UUID string
-
-#### `AccommodationReviewRelationSchema`
-- `accommodationId`: UUID string
-- `reviewId`: UUID string
-
-#### `DestinationAttractionRelationSchema`
-- `destionationId`: UUID string
-- `attractionId`: UUID string
-
-#### `DestinationReviewRelationSchema`
-- `destionationId`: UUID string
-- `reviewId`: UUID string
-
-#### `RolePermissionRelationSchema`
-- `permissionId`: UUID string
-- `roleId`: UUID string
-
-#### `UserPermissionRelationSchema`
-- `permissionId`: UUID string
-- `userId`: UUID string
-
-#### `UserBookmarkRelationSchema`
-- `permissionId`: UUID string
-- `userId`: UUID string
-
-## Usage Examples
-
-### Basic Validation
-
-```typescript
-import { AccommodationSchema } from '@repo/schemas';
-
-// Validate accommodation data
-try {
-  const validatedData = AccommodationSchema.parse(inputData);
-  // Data is valid and has the correct type
-} catch (error) {
-  // Handle validation errors
-  const formattedErrors = error.format();
+# Hospeda Schemas
+
+Zod validation schemas for all entities and data structures in the Hospeda platform.  
+These schemas ensure data integrity, strong typing, and consistent validation across the entire stack.
+
+---
+
+## 📦 What's Inside?
+
+- **Entity Schemas:** Accommodation, Destination, Event, Post, User, and all their sub-entities.  
+- **Relationship Schemas:** For all major entity relations.  
+- **Common Schemas:** Media, Location, Tag, Contact, Social, Price, SEO, etc.  
+- **Enums:** All business enums (roles, permissions, categories, etc.).  
+- **Utilities:** Regex, helpers, and validation utilities.  
+
+---
+
+## 🗂️ Schema Catalog
+
+- [Hospeda Schemas](#hospeda-schemas)
+  - [📦 What's Inside?](#-whats-inside)
+  - [🗂️ Schema Catalog](#️-schema-catalog)
+  - [Accommodation Schemas](#accommodation-schemas)
+    - [AccommodationSchema](#accommodationschema)
+      - [AccommodationSchemaExample JSON](#accommodationschemaexample-json)
+    - [AccommodationFeatureSchema](#accommodationfeatureschema)
+    - [AccommodationAmenitySchema](#accommodationamenityschema)
+    - [AccommodationReviewSchema](#accommodationreviewschema)
+    - [AccommodationRatingSchema](#accommodationratingschema)
+    - [AccommodationFaqSchema](#accommodationfaqschema)
+    - [AccommodationIaDataSchema](#accommodationiadataschema)
+    - [ExtraInfoSchema](#extrainfoschema)
+    - [ScheduleSchema](#scheduleschema)
+    - [AmenitySchema](#amenityschema)
+    - [FeatureSchema](#featureschema)
+  - [Destination Schemas](#destination-schemas)
+    - [DestinationSchema](#destinationschema)
+      - [DestinationSchemaExample JSON](#destinationschemaexample-json)
+    - [DestinationAttractionSchema](#destinationattractionschema)
+    - [DestinationReviewSchema](#destinationreviewschema)
+    - [DestinationRatingSchema](#destinationratingschema)
+  - [Event Schemas](#event-schemas)
+    - [EventSchema](#eventschema)
+      - [EventSchema Example JSON](#eventschema-example-json)
+    - [EventDateSchema](#eventdateschema)
+    - [EventLocationSchema](#eventlocationschema)
+    - [EventOrganizerSchema](#eventorganizerschema)
+    - [EventPriceSchema](#eventpriceschema)
+    - [EventExtrasSchema](#eventextrasschema)
+  - [Post Schemas](#post-schemas)
+    - [PostSchema](#postschema)
+      - [PostSchema Example JSON](#postschema-example-json)
+    - [PostSponsorSchema](#postsponsorschema)
+    - [PostSponsorshipSchema](#postsponsorshipschema)
+    - [PostExtrasSchema](#postextrasschema)
+  - [User Schemas](#user-schemas)
+    - [UserSchema](#userschema)
+      - [UserSchema Example JSON](#userschema-example-json)
+    - [UserProfileSchema](#userprofileschema)
+    - [UserSettingsSchema](#usersettingsschema)
+    - [UserBookmarkSchema](#userbookmarkschema)
+    - [UserExtrasSchema](#userextrasschema)
+    - [RoleSchema](#roleschema)
+    - [PermissionSchema](#permissionschema)
+  - [Common Schemas](#common-schemas)
+    - [MediaSchema](#mediaschema)
+    - [ImageSchema](#imageschema)
+    - [VideoSchema](#videoschema)
+    - [LocationSchema](#locationschema)
+    - [CoordinatesSchema](#coordinatesschema)
+    - [TagSchema](#tagschema)
+    - [ContactInfoSchema](#contactinfoschema)
+    - [SocialNetworkSchema](#socialnetworkschema)
+    - [PriceSchema](#priceschema)
+    - [SeoSchema](#seoschema)
+  - [Enums](#enums)
+    - [AccommodationTypeEnum](#accommodationtypeenum)
+    - [AmenityTypeEnum](#amenitytypeenum)
+    - [ClientTypeEnum](#clienttypeenum)
+    - [ContactPreferenceEnum](#contactpreferenceenum)
+    - [CurrencyEnum](#currencyenum)
+    - [EntityTypeEnum](#entitytypeenum)
+    - [EventCategoryEnum](#eventcategoryenum)
+    - [LifecycleStateEnum](#lifecyclestateenum)
+    - [PermissionEnum](#permissionenum)
+    - [PostCategoryEnum](#postcategoryenum)
+    - [RecurrenceEnum](#recurrenceenum)
+    - [RoleEnum](#roleenum)
+    - [StateEnum](#stateenum)
+    - [TagColorEnum](#tagcolorenum)
+    - [VisibilityEnum](#visibilityenum)
+  - [Usage, Best Practices, Utilities, and License](#usage-best-practices-utilities-and-license)
+
+---
+
+## Accommodation Schemas
+
+### AccommodationSchema
+
+| Property         | Type                              | Description                                 |
+|------------------|-----------------------------------|---------------------------------------------|
+| id               | string (UUID)                     | Unique identifier                           |
+| slug             | string                            | URL-friendly identifier                     |
+| name             | string                            | Name of the accommodation                   |
+| type             | AccommodationTypeEnum             | Type of accommodation                       |
+| description      | string                            | Full description                            |
+| contactInfo      | ContactInfoSchema?                | Contact information (optional)              |
+| socialNetworks   | SocialNetworkSchema?              | Social links (optional)                     |
+| price            | PriceSchema?                      | Price info (optional)                       |
+| location         | LocationSchema?                   | Location info (optional)                    |
+| media            | MediaSchema?                      | Media (images, videos) (optional)           |
+| isFeatured       | boolean?                          | Is featured (optional)                      |
+| ownerId          | string                            | Owner user ID                               |
+| owner            | UserSchema?                       | Owner user object (optional)                |
+| destinationId    | string                            | Destination ID                              |
+| destination      | DestinationSchema?                | Destination object (optional)               |
+| features         | AccommodationFeatureSchema[]?     | Features (optional, min 2)                  |
+| amenities        | AccommodationAmenitySchema[]?     | Amenities (optional, min 2)                 |
+| reviews          | AccommodationReviewSchema[]?      | Reviews (optional)                          |
+| rating           | AccommodationRatingSchema?        | Rating (optional)                           |
+| schedule         | ScheduleSchema?                   | Schedule (optional)                         |
+| extraInfo        | ExtraInfoSchema?                  | Extra info (optional)                       |
+| faqs             | AccommodationFaqSchema[]?         | FAQs (optional)                             |
+| iaData           | AccommodationIaDataSchema[]?      | AI data (optional)                          |
+
+#### AccommodationSchemaExample JSON
+
+```json
+{
+  "id": "acc-1234-uuid",
+  "slug": "casa-del-sol",
+  "name": "Casa del Sol",
+  "type": "house",
+  "description": "A beautiful house with a pool and garden.",
+  "contactInfo": {
+    "personalEmail": "host@casadelsol.com",
+    "mobilePhone": "+5493411234567"
+  },
+  "socialNetworks": {
+    "facebook": "https://facebook.com/casadelsol",
+    "instagram": "https://instagram.com/casadelsol"
+  },
+  "price": {
+    "price": 120,
+    "currency": "USD"
+  },
+  "location": {
+    "state": "Entre Ríos",
+    "zipCode": "3200",
+    "country": "Argentina",
+    "coordinates": { "lat": "-31.392", "long": "-58.017" },
+    "street": "Av. Costanera",
+    "number": "1234",
+    "city": "Concordia"
+  },
+  "media": {
+    "featuredImage": { "url": "https://cdn.hospeda.com/img1.jpg", "caption": "Front view" },
+    "gallery": [
+      { "url": "https://cdn.hospeda.com/img2.jpg", "caption": "Pool" },
+      { "url": "https://cdn.hospeda.com/img3.jpg" }
+    ],
+    "videos": [
+      { "url": "https://cdn.hospeda.com/vid1.mp4", "caption": "Walkthrough" }
+    ]
+  },
+  "isFeatured": true,
+  "ownerId": "user-uuid-1",
+  "owner": {
+    "id": "user-uuid-1",
+    "email": "owner@hospeda.com",
+    "userName": "hoster1",
+    "role": {
+      "id": "role-1",
+      "name": "host",
+      "permissions": [
+        { "id": "perm-1", "name": "manage_accommodation" }
+      ]
+    },
+    "profile": { "avatar": "https://cdn.hospeda.com/avatar1.png" }
+  },
+  "destinationId": "dest-uuid-1",
+  "destination": {
+    "id": "dest-uuid-1",
+    "slug": "concordia",
+    "name": "Concordia",
+    "summary": "A riverside city.",
+    "description": "Concordia is known for its beaches and hot springs.",
+    "location": {
+      "state": "Entre Ríos",
+      "zipCode": "3200",
+      "country": "Argentina",
+      "street": "",
+      "number": "",
+      "city": "Concordia"
+    },
+    "media": {
+      "featuredImage": { "url": "https://cdn.hospeda.com/concordia.jpg" }
+    },
+    "isFeatured": true,
+    "visibility": "public"
+  },
+  "features": [
+    {
+      "accommodationId": "acc-1234-uuid",
+      "featureId": "feat-1",
+      "feature": { "id": "feat-1", "name": "Pool" }
+    }
+  ],
+  "amenities": [
+    {
+      "accommodationId": "acc-1234-uuid",
+      "amenityId": "amen-1",
+      "isOptional": false,
+      "amenity": { "id": "amen-1", "name": "WiFi", "type": "wifi" }
+    }
+  ],
+  "reviews": [
+    {
+      "accommodationId": "acc-1234-uuid",
+      "userId": "user-uuid-2",
+      "title": "Great stay!",
+      "content": "Loved the pool and the garden.",
+      "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 4,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 5
+      }
+    }
+  ],
+  "rating": {
+    "cleanliness": 5,
+    "hospitality": 5,
+    "services": 4,
+    "accuracy": 5,
+    "communication": 5,
+    "location": 5
+  },
+  "schedule": {
+    "checkinTime": "14:00",
+    "checkoutTime": "11:00",
+    "earlyCheckinAccepted": false,
+    "lateCheckinAccepted": true,
+    "lateCheckinTime": "20:00",
+    "lateCheckoutAccepted": false,
+    "selfCheckin": true,
+    "selfCheckout": true
+  },
+  "extraInfo": {
+    "capacity": 6,
+    "minNights": 2,
+    "bedrooms": 3,
+    "bathrooms": 2
+  },
+  "faqs": [
+    {
+      "accommodationId": "acc-1234-uuid",
+      "question": "Is breakfast included?",
+      "answer": "No, but there is a kitchen."
+    }
+  ],
+  "iaData": [
+    {
+      "accommodationId": "acc-1234-uuid",
+      "title": "AI summary",
+      "content": "Great for families and groups."
+    }
+  ]
 }
 ```
 
-### Create and Update Operations
+### AccommodationFeatureSchema
 
-```typescript
-import { AccommodationCreateSchema, AccommodationUpdateSchema } from '@repo/schemas';
+| Property         | Type            | Description                                 |
+|------------------|-----------------|---------------------------------------------|
+| accommodationId  | string          | Accommodation ID                            |
+| featureId        | string          | Feature ID                                  |
+| hostReWriteName  | string?         | Custom name by host (optional)              |
+| comments         | string?         | Comments (optional)                         |
+| feature          | FeatureSchema?  | Feature object (optional)                   |
 
-// For creating a new accommodation
-const newAccommodationData = AccommodationCreateSchema.parse(formData);
+---
 
-// For updating an existing accommodation
-const updateData = AccommodationUpdateSchema.parse(patchData);
-```
+### AccommodationAmenitySchema
 
-### With React Hook Form
+| Property               | Type          | Description                                 |
+|------------------------|---------------|---------------------------------------------|
+| accommodationId        | string        | Accommodation ID                            |
+| amenityId              | string        | Amenity ID                                  |
+| isOptional             | boolean       | Is optional for guest                       |
+| additionalCost         | PriceSchema?  | Additional cost (optional)                  |
+| additionalCostPercent  | number?       | Additional cost percent (optional)          |
+| amenity                | AmenitySchema?| Amenity object (optional)                   |
 
-```typescript
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { UserCreateSchema } from '@repo/schemas';
+---
 
-function UserForm() {
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(UserCreateSchema)
-  });
-  
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      {/* Form fields */}
-    </form>
-  );
+### AccommodationReviewSchema
+
+| Property         | Type                        | Description                                 |
+|------------------|-----------------------------|---------------------------------------------|
+| accommodationId  | string                      | Accommodation ID                            |
+| userId           | string                      | User ID                                     |
+| title            | string?                     | Review title (optional)                     |
+| content          | string?                     | Review content (optional)                   |
+| rating           | AccommodationRatingSchema   | Rating object                               |
+
+---
+
+### AccommodationRatingSchema
+
+| Property       | Type    | Description                          |
+|----------------|---------|--------------------------------------|
+| cleanliness    | number  | Cleanliness rating (1–5)             |
+| hospitality    | number  | Hospitality rating (1–5)             |
+| services       | number  | Services rating (1–5)                |
+| accuracy       | number  | Accuracy rating (1–5)                |
+| communication  | number  | Communication rating (1–5)           |
+| location       | number  | Location rating (1–5)                |
+
+---
+
+### AccommodationFaqSchema
+
+| Property         | Type    | Description                                 |
+|------------------|---------|---------------------------------------------|
+| accommodationId  | string  | Accommodation ID                            |
+| question         | string  | FAQ question                                |
+| answer           | string  | FAQ answer                                  |
+| category         | string? | FAQ category (optional)                     |
+
+---
+
+### AccommodationIaDataSchema
+
+| Property         | Type    | Description                                 |
+|------------------|---------|---------------------------------------------|
+| accommodationId  | string  | Accommodation ID                            |
+| title            | string  | AI data title                               |
+| content          | string  | AI data content                             |
+| category         | string? | AI data category (optional)                 |
+
+---
+
+### ExtraInfoSchema
+
+| Property        | Type      | Description                               |
+|-----------------|-----------|-------------------------------------------|
+| capacity        | number    | Max capacity                              |
+| minNights       | number    | Minimum nights                            |
+| maxNights       | number?   | Maximum nights (optional)                 |
+| bedrooms        | number    | Number of bedrooms                        |
+| beds            | number?   | Number of beds (optional)                 |
+| bathrooms       | number    | Number of bathrooms                       |
+| smokingAllowed  | boolean?  | Smoking allowed (optional)                |
+| extraInfo       | string[]? | Extra info (optional)                     |
+
+---
+
+### ScheduleSchema
+
+| Property              | Type     | Description                                 |
+|-----------------------|----------|---------------------------------------------|
+| checkinTime           | string?  | Check-in time (optional)                    |
+| checkoutTime          | string?  | Check-out time (optional)                   |
+| earlyCheckinAccepted  | boolean  | Early check-in accepted                     |
+| earlyCheckinTime      | string?  | Early check-in time (optional)              |
+| lateCheckinAccepted   | boolean  | Late check-in accepted                      |
+| lateCheckinTime       | string?  | Late check-in time (optional)               |
+| lateCheckoutAccepted  | boolean  | Late check-out accepted                     |
+| lateCheckoutTime      | string?  | Late check-out time (optional)              |
+| selfCheckin           | boolean  | Self check-in                               |
+| selfCheckout          | boolean  | Self check-out                              |
+
+---
+
+### AmenitySchema
+
+| Property     | Type             | Description                      |
+|--------------|------------------|----------------------------------|
+| id           | string           | Amenity ID                       |
+| name         | string           | Amenity name                     |
+| description  | string?          | Description (optional)           |
+| icon         | string?          | Icon (optional)                  |
+| type         | AmenityTypeEnum  | Amenity type                     |
+
+---
+
+### FeatureSchema
+
+| Property     | Type     | Description                      |
+|--------------|----------|----------------------------------|
+| id           | string   | Feature ID                       |
+| name         | string   | Feature name                     |
+| description  | string?  | Description (optional)           |
+| icon         | string?  | Icon (optional)                  |
+
+---
+
+## Destination Schemas
+
+### DestinationSchema
+
+| Property             | Type                                | Description                                   |
+|----------------------|-------------------------------------|-----------------------------------------------|
+| id                   | string (UUID)                       | Unique identifier                             |
+| slug                 | string                              | URL-friendly identifier                       |
+| name                 | string                              | Name of the destination                       |
+| summary              | string                              | Short summary                                 |
+| description          | string                              | Full description                              |
+| location             | LocationSchema                      | Location info                                 |
+| media                | MediaSchema                         | Media (images, videos)                        |
+| isFeatured           | boolean?                            | Is featured (optional)                        |
+| visibility           | VisibilityEnum                      | Visibility                                    |
+| reviewsCount         | number?                             | Number of reviews (optional)                  |
+| averageRating        | number?                             | Average rating (optional)                     |
+| accommodationsCount  | number?                             | Number of accommodations (optional)           |
+| attractions          | DestinationAttractionSchema[]?      | Attractions (optional, min 3)                 |
+| reviews              | DestinationReviewSchema[]?          | Reviews (optional)                            |
+
+#### DestinationSchemaExample JSON
+
+```json
+{
+  "id": "dest-uuid-1",
+  "slug": "concordia",
+  "name": "Concordia",
+  "summary": "A riverside city.",
+  "description": "Concordia is known for its beaches and hot springs.",
+  "location": {
+    "state": "Entre Ríos",
+    "zipCode": "3200",
+    "country": "Argentina",
+    "street": "",
+    "number": "",
+    "city": "Concordia"
+  },
+  "media": {
+    "featuredImage": { "url": "https://cdn.hospeda.com/concordia.jpg" }
+  },
+  "isFeatured": true,
+  "visibility": "public",
+  "reviewsCount": 12,
+  "averageRating": 4.7,
+  "accommodationsCount": 25,
+  "attractions": [
+    {
+      "id": "attr-1",
+      "name": "Hot Springs",
+      "slug": "hot-springs",
+      "description": "Natural hot springs.",
+      "icon": "spa",
+      "destinationId": "dest-uuid-1"
+    }
+  ],
+  "reviews": [
+    {
+      "userId": "user-uuid-2",
+      "destinationId": "dest-uuid-1",
+      "title": "Amazing!",
+      "content": "Loved the city.",
+      "rating": {
+        "landscape": 5,
+        "attractions": 5,
+        "accessibility": 4,
+        "safety": 5,
+        "cleanliness": 5,
+        "hospitality": 5,
+        "culturalOffer": 4,
+        "gastronomy": 5,
+        "affordability": 4,
+        "nightlife": 4,
+        "infrastructure": 4,
+        "environmentalCare": 5,
+        "wifiAvailability": 4,
+        "shopping": 4,
+        "beaches": 5,
+        "greenSpaces": 5,
+        "localEvents": 4,
+        "weatherSatisfaction": 5
+      }
+    }
+  ]
 }
 ```
 
-## Type Inference
+---
 
-```typescript
-import { z } from 'zod';
-import { AccommodationSchema } from '@repo/schemas';
+### DestinationAttractionSchema
 
-// Get the inferred type
-type AccommodationInput = z.infer<typeof AccommodationSchema>;
-```
+| Property       | Type     | Description                      |
+|----------------|----------|----------------------------------|
+| id             | string   | Attraction ID                    |
+| name           | string   | Attraction name                  |
+| slug           | string   | URL-friendly identifier          |
+| description    | string   | Description                      |
+| icon           | string   | Icon                             |
+| destinationId  | string   | Destination ID                   |
 
-## Error Handling
+---
 
-```typescript
-try {
-  const validatedData = UserSchema.parse(inputData);
-} catch (error) {
-  const messages = error.errors.map(err => t(err.message));
-  // Display translated error messages
+### DestinationReviewSchema
+
+| Property        | Type                      | Description                                 |
+|-----------------|---------------------------|---------------------------------------------|
+| userId          | string                    | User ID                                     |
+| destinationId   | string                    | Destination ID                              |
+| title           | string?                   | Review title (optional)                     |
+| content         | string?                   | Review content (optional)                   |
+| rating          | DestinationRatingSchema   | Rating object                               |
+
+---
+
+### DestinationRatingSchema
+
+| Property              | Type    | Description                                   |
+|-----------------------|---------|-----------------------------------------------|
+| landscape             | number  | Landscape rating (0–5)                        |
+| attractions           | number  | Attractions rating (0–5)                      |
+| accessibility         | number  | Accessibility rating (0–5)                    |
+| safety                | number  | Safety rating (0–5)                           |
+| cleanliness           | number  | Cleanliness rating (0–5)                      |
+| hospitality           | number  | Hospitality rating (0–5)                      |
+| culturalOffer         | number  | Cultural offer rating (0–5)                   |
+| gastronomy            | number  | Gastronomy rating (0–5)                       |
+| affordability         | number  | Affordability rating (0–5)                    |
+| nightlife             | number  | Nightlife rating (0–5)                        |
+| infrastructure        | number  | Infrastructure rating (0–5)                   |
+| environmentalCare     | number  | Environmental care rating (0–5)               |
+| wifiAvailability      | number  | WiFi availability rating (0–5)                |
+| shopping              | number  | Shopping rating (0–5)                         |
+| beaches               | number  | Beaches rating (0–5)                          |
+| greenSpaces           | number  | Green spaces rating (0–5)                     |
+| localEvents           | number  | Local events rating (0–5)                     |
+| weatherSatisfaction   | number  | Weather satisfaction rating (0–5)             |
+
+---
+
+## Event Schemas
+
+### EventSchema
+
+| Property     | Type                  | Description                                 |
+|--------------|-----------------------|---------------------------------------------|
+| id           | string (UUID)         | Unique identifier                           |
+| title        | string                | Event title                                 |
+| description  | string                | Event description                           |
+| date         | EventDateSchema       | Event date                                  |
+| location     | EventLocationSchema   | Event location                              |
+| organizer    | EventOrganizerSchema  | Event organizer                             |
+| price        | EventPriceSchema?     | Event price (optional)                      |
+| extras       | EventExtrasSchema?    | Additional event extras (optional)          |
+
+#### EventSchema Example JSON
+
+```json
+{
+  "id": "event-uuid-1",
+  "title": "Jazz Festival",
+  "description": "Annual jazz festival in the city square.",
+  "date": {
+    "start": "2024-11-10T18:00:00Z",
+    "end": "2024-11-10T23:00:00Z",
+    "isAllDay": false
+  },
+  "location": {
+    "id": "loc-1",
+    "city": "Concordia",
+    "placeName": "City Square"
+  },
+  "organizer": {
+    "id": "org-1",
+    "name": "Concordia Events",
+    "logo": "https://cdn.hospeda.com/org1.png",
+    "contactInfo": {
+      "personalEmail": "info@concordiaevents.com",
+      "mobilePhone": "+5493417654321"
+    },
+    "social": {
+      "facebook": "https://facebook.com/concordiaevents"
+    }
+  },
+  "price": {
+    "isFree": false,
+    "priceFrom": 10,
+    "priceTo": 50
+  },
+  "extras": {
+    "notes": "Bring your own chair."
+  }
 }
 ```
 
-## Best Practices
+---
 
-1. **Use specific schemas for operations**: Use `CreateSchema` variants for creation and `UpdateSchema` variants for updates
-2. **Pre-validate on the client**: Validate data before sending to the API to improve user experience
-3. **Validate again on the server**: Always validate on the server regardless of client validation
-4. **Keep schemas in sync with types**: When updating types, ensure the corresponding schemas are updated
-5. **Leverage Zod's utility methods**: Use `safeParse()`, `refine()`, and other Zod utilities
+### EventDateSchema
 
-## License
+| Property   | Type     | Description                          |
+|------------|----------|--------------------------------------|
+| start      | string   | Start date/time                      |
+| end        | string?  | End date/time (optional)             |
+| isAllDay   | boolean? | Is all day event (optional)          |
+| recurrence | string?  | Recurrence type (optional)           |
 
-This package is part of the Hospeda monorepo and is subject to the same licensing terms.
+---
+
+### EventLocationSchema
+
+| Property     | Type     | Description                          |
+|--------------|----------|--------------------------------------|
+| id           | string   | Location ID                          |
+| street       | string?  | Street (optional)                    |
+| number       | string?  | Number (optional)                    |
+| floor        | string?  | Floor (optional)                     |
+| apartment    | string?  | Apartment (optional)                 |
+| neighborhood | string?  | Neighborhood (optional)             |
+| city         | string   | City                                 |
+| department   | string?  | Department (optional)                |
+| placeName    | string?  | Place name (optional)                |
+
+---
+
+### EventOrganizerSchema
+
+| Property     | Type                  | Description                                 |
+|--------------|-----------------------|---------------------------------------------|
+| id           | string                | Organizer ID                                |
+| name         | string                | Organizer name                              |
+| logo         | string?               | Logo URL (optional)                         |
+| contactInfo  | ContactInfoSchema?    | Contact info (optional)                     |
+| social       | SocialNetworkSchema?  | Social links (optional)                     |
+
+---
+
+### EventPriceSchema
+
+| Property       | Type    | Description                              |
+|----------------|---------|------------------------------------------|
+| isFree         | boolean | Is the event free                        |
+| priceFrom      | number? | Price from (optional)                    |
+| priceTo        | number? | Price to (optional)                      |
+| pricePerGroup  | number? | Price per group (optional)               |
+
+---
+
+### EventExtrasSchema
+
+| Property | Type     | Description              |
+|----------|----------|--------------------------|
+| notes    | string?  | Additional notes (optional) |
+
+---
+
+## Post Schemas
+
+### PostSchema
+
+| Property      | Type                    | Description                                 |
+|---------------|-------------------------|---------------------------------------------|
+| id            | string (UUID)           | Unique identifier                           |
+| title         | string                  | Post title                                  |
+| content       | string                  | Post content                                |
+| authorId      | string                  | Author user ID                              |
+| category      | string                  | Post category                               |
+| sponsorship   | PostSponsorshipSchema?  | Sponsorship details (optional)              |
+| sponsor       | PostSponsorSchema?      | Sponsor details (optional)                  |
+| extras        | PostExtrasSchema?       | Additional post extras (optional)           |
+
+#### PostSchema Example JSON
+
+```json
+{
+  "id": "post-uuid-1",
+  "title": "Top 5 Things to Do in Concordia",
+  "content": "Explore the best attractions in Concordia...",
+  "authorId": "user-uuid-3",
+  "category": "blog",
+  "sponsorship": {
+    "sponsorId": "sponsor-1",
+    "postId": "post-uuid-1",
+    "description": "Sponsored by Turismo Concordia",
+    "paid": { "price": 100, "currency": "USD" }
+  },
+  "sponsor": {
+    "id": "sponsor-1",
+    "name": "Turismo Concordia",
+    "type": "company",
+    "description": "Tourism board",
+    "logo": "https://cdn.hospeda.com/turismo.png",
+    "contact": {
+      "workEmail": "contact@turismoconcordia.com",
+      "mobilePhone": "+5493419876543"
+    },
+    "social": {
+      "facebook": "https://facebook.com/turismoconcordia"
+    }
+  },
+  "extras": {
+    "tags": ["travel", "concordia"]
+  }
+}
+```
+
+---
+
+### PostSponsorSchema
+
+| Property     | Type                  | Description                              |
+|--------------|-----------------------|------------------------------------------|
+| id           | string                | Sponsor ID                               |
+| name         | string                | Sponsor name                             |
+| type         | ClientTypeEnum        | Sponsor type                             |
+| description  | string                | Description                              |
+| logo         | string?               | Logo URL (optional)                      |
+| contact      | ContactInfoSchema?    | Contact info (optional)                  |
+| social       | SocialNetworkSchema?  | Social links (optional)                  |
+
+---
+
+### PostSponsorshipSchema
+
+| Property       | Type          | Description                              |
+|----------------|---------------|------------------------------------------|
+| sponsorId      | string        | Sponsor ID                               |
+| postId         | string        | Post ID                                  |
+| message        | string?       | Sponsorship message (optional)           |
+| description    | string        | Sponsorship description                  |
+| paid           | PriceSchema   | Paid amount                              |
+| paidAt         | string?       | Paid at (optional)                       |
+| fromDate       | string?       | From date (optional)                     |
+| toDate         | string?       | To date (optional)                       |
+| isHighlighted  | boolean?      | Is highlighted (optional)                |
+
+---
+
+### PostExtrasSchema
+
+| Property | Type      | Description                          |
+|----------|-----------|--------------------------------------|
+| tags     | string[]? | Tags for the post (optional)         |
+
+---
+
+## User Schemas
+
+### UserSchema
+
+| Property        | Type                  | Description                                 |
+|-----------------|-----------------------|---------------------------------------------|
+| id              | string (UUID)         | Unique identifier                           |
+| email           | string                | User email                                  |
+| userName        | string                | Username                                    |
+| password        | string                | User password (input only)                  |
+| firstName       | string?               | First name (optional)                       |
+| lastName        | string?               | Last name (optional)                        |
+| birthDate       | string?               | Birth date (optional)                       |
+| emailVerified   | boolean?              | Email verified (optional)                   |
+| phoneVerified   | boolean?              | Phone verified (optional)                   |
+| contactInfo     | ContactInfoSchema?    | Contact info (optional)                     |
+| location        | LocationSchema?       | Location info (optional)                    |
+| socialNetworks  | SocialNetworkSchema?  | Social networks (optional)                  |
+| role            | RoleSchema            | User role                                   |
+| permissions     | PermissionSchema[]?   | User permissions (optional)                 |
+| profile         | UserProfileSchema     | User profile                                |
+| settings        | UserSettingsSchema?   | User settings (optional)                    |
+| bookmarks       | UserBookmarkSchema[]? | User bookmarks (optional)                   |
+| extras          | UserExtrasSchema?     | User extras (optional)                      |
+
+#### UserSchema Example JSON
+
+```json
+{
+  "id": "user-uuid-1",
+  "email": "owner@hospeda.com",
+  "userName": "hoster1",
+  "password": "********",
+  "firstName": "Ana",
+  "lastName": "García",
+  "birthDate": "1990-05-10",
+  "emailVerified": true,
+  "phoneVerified": true,
+  "contactInfo": {
+    "personalEmail": "ana@personal.com",
+    "mobilePhone": "+5493411234567"
+  },
+  "location": {
+    "state": "Entre Ríos",
+    "zipCode": "3200",
+    "country": "Argentina",
+    "street": "Av. Costanera",
+    "number": "1234",
+    "city": "Concordia"
+  },
+  "socialNetworks": {
+    "facebook": "https://facebook.com/ana.garcia"
+  },
+  "role": {
+    "id": "role-1",
+    "name": "host",
+    "permissions": [
+      { "id": "perm-1", "name": "manage_accommodation" }
+    ]
+  },
+  "permissions": [
+    { "id": "perm-2", "name": "edit_profile" }
+  ],
+  "profile": {
+    "avatar": "https://cdn.hospeda.com/avatar1.png",
+    "bio": "Host and traveler."
+  },
+  "settings": {
+    "darkMode": true,
+    "language": "es",
+    "notifications": {
+      "email": true,
+      "sms": false
+    }
+  },
+  "bookmarks": [
+    {
+      "id": "bm-1",
+      "entityId": "dest-uuid-1",
+      "entityType": "destination",
+      "name": "Concordia"
+    }
+  ],
+  "extras": {
+    "id": "extras-1",
+    "userName": "hoster1",
+    "firstName": "Ana",
+    "profile": {
+      "avatar": "https://cdn.hospeda.com/avatar1.png"
+    }
+  }
+}
+```
+
+---
+
+### UserProfileSchema
+
+| Property    | Type     | Description                      |
+|-------------|----------|----------------------------------|
+| avatar      | string?  | Avatar URL (optional)            |
+| bio         | string?  | User bio (optional)              |
+| website     | string?  | Website URL (optional)           |
+| occupation  | string?  | Occupation (optional)            |
+
+---
+
+### UserSettingsSchema
+
+| Property       | Type                      | Description                                 |
+|----------------|---------------------------|---------------------------------------------|
+| darkMode       | boolean?                  | Dark mode enabled (optional)                |
+| language       | string?                   | Language (optional)                         |
+| notifications  | UserNotificationsSchema   | Notification settings                       |
+
+---
+
+### UserBookmarkSchema
+
+| Property     | Type           | Description                              |
+|--------------|----------------|------------------------------------------|
+| id           | string         | Bookmark ID                              |
+| entityId     | string         | Entity ID                                |
+| entityType   | EntityTypeEnum | Entity type                              |
+| name         | string?        | Name (optional)                          |
+| description  | string?        | Description (optional)                   |
+
+---
+
+### UserExtrasSchema
+
+| Property        | Type                  | Description                              |
+|-----------------|-----------------------|------------------------------------------|
+| id              | string                | Extras ID                                |
+| userName        | string                | Username                                 |
+| firstName       | string?               | First name (optional)                    |
+| lastName        | string?               | Last name (optional)                     |
+| profile         | UserProfileSchema?    | User profile (optional)                  |
+| socialNetworks  | SocialNetworkSchema?  | Social networks (optional)               |
+
+---
+
+### RoleSchema
+
+| Property     | Type                | Description                      |
+|--------------|---------------------|----------------------------------|
+| id           | string              | Role ID                          |
+| name         | string              | Role name                        |
+| description  | string?             | Description (optional)           |
+| permissions  | PermissionSchema[]  | Permissions                      |
+
+---
+
+### PermissionSchema
+
+| Property     | Type     | Description                    |
+|--------------|----------|--------------------------------|
+| id           | string   | Permission ID                  |
+| name         | string   | Permission name                |
+| description  | string?  | Description (optional)         |
+
+---
+
+## Common Schemas
+
+### MediaSchema
+
+| Property       | Type           | Description                              |
+|----------------|----------------|------------------------------------------|
+| featuredImage  | ImageSchema    | Main image                               |
+| gallery        | ImageSchema[]? | Gallery images (optional)                |
+| videos         | VideoSchema[]? | Videos (optional)                        |
+
+---
+
+### ImageSchema
+
+| Property     | Type     | Description                     |
+|--------------|----------|---------------------------------|
+| url          | string   | Image URL                       |
+| caption      | string?  | Caption (optional)              |
+| description  | string?  | Description (optional)          |
+
+---
+
+### VideoSchema
+
+| Property     | Type     | Description                     |
+|--------------|----------|---------------------------------|
+| url          | string   | Video URL                       |
+| caption      | string?  | Caption (optional)              |
+| description  | string?  | Description (optional)          |
+
+---
+
+### LocationSchema
+
+| Property      | Type              | Description                     |
+|---------------|-------------------|---------------------------------|
+| state         | string            | State                           |
+| zipCode       | string            | Zip code                        |
+| country       | string            | Country                         |
+| coordinates   | CoordinatesSchema?| Coordinates (optional)          |
+| street        | string            | Street                          |
+| number        | string            | Number                          |
+| floor         | string?           | Floor (optional)                |
+| apartment     | string?           | Apartment (optional)            |
+| neighborhood  | string?           | Neighborhood (optional)         |
+| city          | string            | City                            |
+| department    | string?           | Department (optional)           |
+
+---
+
+### CoordinatesSchema
+
+| Property  | Type   | Description     |
+|-----------|--------|-----------------|
+| lat       | string | Latitude        |
+| long      | string | Longitude       |
+
+---
+
+### TagSchema
+
+| Property  | Type     | Description                     |
+|-----------|----------|---------------------------------|
+| id        | string   | Tag ID                          |
+| name      | string   | Tag name                        |
+| color     | string   | Tag color                       |
+| icon      | string?  | Icon (optional)                 |
+| notes     | string?  | Notes (optional)                |
+
+---
+
+### ContactInfoSchema
+
+| Property        | Type     | Description                           |
+|-----------------|----------|---------------------------------------|
+| personalEmail   | string?  | Personal email (optional)             |
+| workEmail       | string?  | Work email (optional)                 |
+| homePhone       | string?  | Home phone (optional)                 |
+| workPhone       | string?  | Work phone (optional)                 |
+| mobilePhone     | string   | Mobile phone                          |
+| website         | string?  | Website (optional)                    |
+| preferredEmail  | string?  | Preferred email (optional)            |
+| preferredPhone  | string?  | Preferred phone (optional)            |
+
+---
+
+### SocialNetworkSchema
+
+| Property   | Type     | Description                      |
+|------------|----------|----------------------------------|
+| facebook   | string?  | Facebook URL (optional)          |
+| instagram  | string?  | Instagram URL (optional)         |
+| twitter    | string?  | Twitter URL (optional)           |
+| linkedIn   | string?  | LinkedIn URL (optional)          |
+| tiktok     | string?  | TikTok URL (optional)            |
+| youtube    | string?  | YouTube URL (optional)           |
+
+---
+
+### PriceSchema
+
+| Property  | Type     | Description         |
+|-----------|----------|---------------------|
+| price     | number   | Price amount        |
+| currency  | string   | Currency            |
+
+---
+
+### SeoSchema
+
+| Property         | Type      | Description                     |
+|------------------|-----------|---------------------------------|
+| seoTitle         | string?   | SEO title (optional)            |
+| seoDescription   | string?   | SEO description (optional)      |
+| seoKeywords      | string[]? | SEO keywords (optional)         |
+
+---
+
+## Enums
+
+### AccommodationTypeEnum
+
+Examples: `"hotel"`, `"apartment"`, `"hostel"`, ...
+
+### AmenityTypeEnum
+
+Examples: `"wifi"`, `"pool"`, `"parking"`, ...
+
+### ClientTypeEnum
+
+Examples: `"individual"`, `"company"`
+
+### ContactPreferenceEnum
+
+Examples: `"personal"`, `"work"`
+
+### CurrencyEnum
+
+Examples: `"USD"`, `"EUR"`
+
+### EntityTypeEnum
+
+Examples: `"accommodation"`, `"destination"`
+
+### EventCategoryEnum
+
+Examples: `"music"`, `"sports"`
+
+### LifecycleStateEnum
+
+Examples: `"active"`, `"inactive"`
+
+### PermissionEnum
+
+Examples: `"read"`, `"write"`
+
+### PostCategoryEnum
+
+Examples: `"news"`, `"blog"`
+
+### RecurrenceEnum
+
+Examples: `"daily"`, `"weekly"`
+
+### RoleEnum
+
+Examples: `"admin"`, `"user"`
+
+### StateEnum
+
+Examples: `"published"`, `"draft"`
+
+### TagColorEnum
+
+Examples: `"red"`, `"blue"`
+
+### VisibilityEnum
+
+Examples: `"public"`, `"private"`
+
+---
+
+## Usage, Best Practices, Utilities, and License
+
+- All schemas are defined using `zod` for strict validation.
+- Use schemas directly in API routes, form validation, and factories.
+- Reuse common schemas for media, contact, location, and social profiles.
+- Extend and compose schemas using `.extend()` or `.merge()` as needed.
+- Prefer using the enums defined here over hardcoded strings.
+- Utilities like regex and helpers are available in the `utils` folder.
