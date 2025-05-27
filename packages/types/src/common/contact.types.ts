@@ -1,4 +1,4 @@
-import type { PreferedContactEnum } from '../enums/contact-preference.enum.js';
+import type { PreferredContactEnum } from '../enums/contact-preference.enum.js';
 
 export interface ContactInfoType {
     personalEmail?: string;
@@ -7,6 +7,6 @@ export interface ContactInfoType {
     workPhone?: string;
     mobilePhone: string;
     website?: string;
-    preferredEmail?: PreferedContactEnum;
-    preferredPhone?: PreferedContactEnum;
+    preferredEmail?: PreferredContactEnum;
+    preferredPhone?: PreferredContactEnum;
 }
