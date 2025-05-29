@@ -98,6 +98,16 @@ export type AccommodationSummaryType = Pick<
     | 'isFeatured'
 >;
 
+/**
+ * AccommodationWithRelationsType extends AccommodationType with all possible related entities.
+ * - destination: The related DestinationType (if loaded)
+ * - features: Array of related FeatureType (if loaded)
+ * - amenities: Array of related AmenityType (if loaded)
+ * - reviews: Array of related AccommodationReviewType (if loaded)
+ * - faqs: Array of related AccommodationFaqType (if loaded)
+ * - iaData: Array of related AccommodationIaDataType (if loaded)
+ * - tags: Array of related TagType (if loaded)
+ */
 export type AccommodationWithRelationsType = AccommodationType & {
     destination?: DestinationType;
     features?: FeatureType[];

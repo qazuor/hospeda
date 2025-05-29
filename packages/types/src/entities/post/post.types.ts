@@ -82,6 +82,15 @@ export type PostSummaryType = Pick<
     'id' | 'slug' | 'title' | 'summary' | 'category' | 'media' | 'createdAt'
 >;
 
+/**
+ * PostWithRelationsType extends PostType with all possible related entities.
+ * - author: The related UserType (if loaded)
+ * - sponsorship: The related PostSponsorshipType (if loaded)
+ * - relatedDestination: The related DestinationType (if loaded)
+ * - relatedAccommodation: The related AccommodationType (if loaded)
+ * - relatedEvent: The related EventType (if loaded)
+ * - tags: Array of related TagType (if loaded)
+ */
 export type PostWithRelationsType = PostType & {
     author?: UserType;
     sponsorship?: PostSponsorshipType;

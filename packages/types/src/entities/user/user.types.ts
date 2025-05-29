@@ -62,6 +62,12 @@ export type UserProfileSummaryType = Pick<
     'id' | 'userName' | 'firstName' | 'lastName' | 'profile' | 'socialNetworks'
 >;
 
+/**
+ * UserWithRelationsType extends UserType with all possible related entities.
+ * - permissions: Array of related PermissionType (if loaded)
+ * - role: The related RoleType (if loaded)
+ * - bookmarks: Array of related UserBookmarkType (if loaded)
+ */
 export type UserWithRelationsType = UserType & {
     permissions?: PermissionType[];
     role?: RoleType;
