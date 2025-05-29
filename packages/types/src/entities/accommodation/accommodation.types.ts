@@ -1,11 +1,11 @@
 import type { TagType } from '@repo/types/entities/tag/tag.types.js';
 import type { ContactInfoType } from '../../common/contact.types.js';
 import type {
-    NewEntityInput,
     WithAdminInfo,
     WithAudit,
     WithLifecycleState,
     WithModerationState,
+    WithOptional,
     WithReviewState,
     WithSeo,
     WithTags,
@@ -75,15 +75,18 @@ export type PartialAccommodationType = Partial<Writable<AccommodationType>>;
 
 /**
  * Input structure used to create a new accommodation.
- * Omits fields that are auto-generated or related to internal state.
+ * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
  */
-export type NewAccommodationInputType = NewEntityInput<AccommodationType>;
+export type NewAccommodationInputType = WithOptional<
+    AccommodationType,
+    'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdById' | 'updatedById' | 'deletedById'
+>;
 
 /**
  * Input structure used to update an existing accommodation.
  * All fields are optional for partial patching.
  */
-export type UpdateAccommodationInputType = PartialAccommodationType;
+export type UpdateAccommodationInputType = Partial<Writable<AccommodationType>>;
 
 export type AccommodationSummaryType = Pick<
     AccommodationType,

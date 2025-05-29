@@ -5,11 +5,11 @@ import type { PostSponsorshipType } from '@repo/types/entities/post/post.sponsor
 import type { TagType } from '@repo/types/entities/tag/tag.types.js';
 import type { UserType } from '@repo/types/entities/user/user.types.js';
 import type {
-    NewEntityInput,
     WithAdminInfo,
     WithAudit,
     WithLifecycleState,
     WithModerationState,
+    WithOptional,
     WithSeo,
     WithTags,
     Writable
@@ -67,15 +67,18 @@ export type PartialPostType = Partial<Writable<PostType>>;
 
 /**
  * Input structure used to create a new post.
- * Omits fields that are auto-generated or managed by the system.
+ * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
  */
-export type NewPostInputType = NewEntityInput<PostType>;
+export type NewPostInputType = WithOptional<
+    PostType,
+    'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdById' | 'updatedById' | 'deletedById'
+>;
 
 /**
  * Input structure used to update an existing post.
  * All fields are optional for partial patching.
  */
-export type UpdatePostInputType = PartialPostType;
+export type UpdatePostInputType = Partial<Writable<PostType>>;
 
 export type PostSummaryType = Pick<
     PostType,

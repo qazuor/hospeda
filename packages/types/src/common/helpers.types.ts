@@ -58,8 +58,26 @@ export type WithRelations<T extends object> = {
 /*         Generic Utility Types            */
 /* ---------------------------------------- */
 
+/**
+ * Makes only the specified keys K of T required, leaving the rest unchanged.
+ * @example
+ * type UserWithId = WithRequired<User, 'id'>;
+ */
+export type WithRequired<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+
+/**
+ * Makes only the specified keys K of T optional, leaving the rest unchanged.
+ * @example
+ * type UserUpdate = WithOptional<User, 'email'>;
+ */
+export type WithOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+/**
+ * Makes only the specified keys K of T required, but keeps all other keys as is (required or optional).
+ * @example
+ * type UserWith = With<User, 'id' | 'email'>;
+ */
 export type With<T, K extends keyof T> = T & Required<Pick<T, K>>;
-export type WithOptional<T, K extends keyof T> = T & Partial<Pick<T, K>>;
 
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 

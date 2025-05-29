@@ -1,11 +1,11 @@
 import type { AccommodationType } from '@repo/types/entities/accommodation/accommodation.types.js';
 import type { TagType } from '@repo/types/entities/tag/tag.types.js';
 import type {
-    NewEntityInput,
     WithAdminInfo,
     WithAudit,
     WithLifecycleState,
     WithModerationState,
+    WithOptional,
     WithReviewState,
     WithSeo,
     WithTags,
@@ -55,15 +55,18 @@ export type PartialDestinationType = Partial<Writable<DestinationType>>;
 
 /**
  * Input structure used to create a new destination.
- * Omits fields that are auto-generated or related to internal state.
+ * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
  */
-export type NewDestinationInputType = NewEntityInput<DestinationType>;
+export type NewDestinationInputType = WithOptional<
+    DestinationType,
+    'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdById' | 'updatedById' | 'deletedById'
+>;
 
 /**
  * Input structure used to update an existing destination.
  * All fields are optional for partial patching.
  */
-export type UpdateDestinationInputType = PartialDestinationType;
+export type UpdateDestinationInputType = Partial<Writable<DestinationType>>;
 
 export type DestinationSummaryType = Pick<
     DestinationType,

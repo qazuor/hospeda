@@ -8,9 +8,9 @@ import type {
 } from '@repo/types/common/id.types.js';
 import type { EntityTypeEnum } from '@repo/types/enums/entity-type.enum.js';
 import type {
-    NewEntityInput,
     WithAudit,
     WithLifecycleState,
+    WithOptional,
     Writable
 } from '../../common/helpers.types.js';
 
@@ -32,16 +32,19 @@ export interface TagType extends WithAudit, WithLifecycleState {
 export type PartialTagType = Partial<Writable<TagType>>;
 
 /**
- * Input structure used to create a new post.
- * Omits fields that are auto-generated or managed by the system.
+ * Input structure used to create a new tag.
+ * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
  */
-export type NewTagInputType = NewEntityInput<TagType>;
+export type NewTagInputType = WithOptional<
+    TagType,
+    'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdById' | 'updatedById' | 'deletedById'
+>;
 
 /**
- * Input structure used to update an existing post.
+ * Input structure used to update an existing tag.
  * All fields are optional for partial patching.
  */
-export type UpdateTagInputType = PartialTagType;
+export type UpdateTagInputType = Partial<Writable<TagType>>;
 
 /**
  * EntityTagType represents a polymorphic relation between a tag and any supported entity type.
