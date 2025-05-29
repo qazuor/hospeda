@@ -3,6 +3,3 @@ export * from './event.location.types.js';
 export * from './event.organizer.types.js';
 export * from './event.price.types.js';
 export * from './event.types.js';
-
-export * from './extras/event.extras.types.js';
-export * from './extras/event.input.types.js';

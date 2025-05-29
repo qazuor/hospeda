@@ -1,12 +1,12 @@
-import type { WithActivityState, WithTags } from './helpers.types.js';
+import type { WithModerationState, WithTags } from './helpers.types.js';
 
-export interface ImageType extends WithActivityState, WithTags {
+export interface ImageType extends WithModerationState, WithTags {
     url: string;
     caption?: string;
     description?: string;
 }
 
-export interface VideoType extends WithActivityState, WithTags {
+export interface VideoType extends WithModerationState, WithTags {
     url: string;
     caption?: string;
     description?: string;

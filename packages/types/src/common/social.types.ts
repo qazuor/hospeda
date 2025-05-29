@@ -4,4 +4,5 @@ export interface SocialNetworkType {
     instagram?: string;
     linkedIn?: string;
     tiktok?: string;
+    youtube?: string;
 }
