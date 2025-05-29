@@ -2,6 +2,8 @@ import type {
     EntityTagType,
     LifecycleStatusEnum,
     NewTagInputType,
+    PaginationParams,
+    SearchParams,
     TagColorEnum,
     TagType,
     UpdateTagInputType
@@ -9,7 +11,6 @@ import type {
 import { and, asc, count, desc, eq } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { tags } from '../../dbschemas/tag/tag.dbschema.ts';
-import type { PaginationParams, SearchParams } from '../../types/pagination-params.ts';
 import {
     createOrderableColumnsAndMapping,
     getOrderableColumn,
@@ -41,10 +42,14 @@ export type TagOrderByColumn = typeof tagOrderable.type;
 const tagOrderableColumns = tagOrderable.mapping;
 
 /**
- * Type for additional search parameters specific to tags.
- * Extends the generic SearchParams with tag-specific fields.
+ * Pagination params for TagModel, with strong typing for orderBy.
  */
-export type TagSearchParams = SearchParams & {
+export type TagPaginationParams = PaginationParams<TagOrderByColumn>;
+
+/**
+ * Search params for TagModel, with strong typing for orderBy and tag-specific filters.
+ */
+export type TagSearchParams = SearchParams<TagOrderByColumn> & {
     color?: TagColorEnum;
     lifecycleState?: LifecycleStatusEnum;
 };
@@ -218,11 +223,11 @@ export const TagModel = {
 
     /**
      * List tags with pagination and optional ordering.
-     * @param params PaginationParams (limit, offset, order, orderBy)
+     * @param params TagPaginationParams (limit, offset, order, orderBy)
      * @returns Array<TagType>
      * @throws Error if the query fails
      */
-    async list(params: PaginationParams): Promise<TagType[]> {
+    async list(params: TagPaginationParams): Promise<TagType[]> {
         const db = getDb();
         const { limit, offset, order, orderBy } = params;
         try {
