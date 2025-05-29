@@ -21,7 +21,7 @@ vi.mock('../../../utils/db-utils', async (importOriginal) => {
     };
 });
 
-const mockTag: TagType = {
+const createMockTag = (overrides: Partial<TagType> = {}): TagType => ({
     id: 'tag-1' as TagId,
     name: 'Test Tag',
     color: 'blue',
@@ -29,8 +29,11 @@ const mockTag: TagType = {
     updatedAt: new Date(),
     createdById: 'user-1' as UserId,
     updatedById: 'user-1' as UserId,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
-};
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    ...overrides
+});
+
+const mockTag = createMockTag();
 
 describe('TagModel.getById', () => {
     beforeEach(() => {
@@ -355,8 +358,8 @@ describe('TagModel.getWithRelations', () => {
 
 describe('TagModel.list', () => {
     const mockResult: TagType[] = [
-        { ...mockTag, id: 'tag-1' as TagId, name: 'A', color: 'blue' },
-        { ...mockTag, id: 'tag-2' as TagId, name: 'B', color: 'red' }
+        createMockTag({ id: 'tag-1' as TagId, name: 'A', color: 'blue' }),
+        createMockTag({ id: 'tag-2' as TagId, name: 'B', color: 'red' })
     ];
     let chain: {
         select: ReturnType<typeof vi.fn>;
