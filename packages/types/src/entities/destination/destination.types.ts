@@ -70,6 +70,13 @@ export type DestinationSummaryType = Pick<
     'id' | 'slug' | 'name' | 'summary' | 'media' | 'averageRating' | 'reviewsCount'
 >;
 
+/**
+ * DestinationWithRelationsType extends DestinationType with all possible related entities.
+ * - accommodations: Array of related AccommodationType (if loaded)
+ * - reviews: Array of related DestinationReviewType (if loaded)
+ * - tags: Array of related TagType (if loaded)
+ * - attractions: Array of related DestinationAttractionType (if loaded)
+ */
 export type DestinationWithRelationsType = DestinationType & {
     accommodations?: AccommodationType[];
     reviews?: DestinationReviewType[];

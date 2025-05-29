@@ -74,6 +74,13 @@ export type EventSummaryType = Pick<
     'id' | 'slug' | 'summary' | 'category' | 'date' | 'media' | 'isFeatured'
 >;
 
+/**
+ * EventWithRelationsType extends EventType with all possible related entities.
+ * - author: The related UserType (if loaded)
+ * - location: The related EventLocationType (if loaded)
+ * - organizer: The related EventOrganizerType (if loaded)
+ * - tags: Array of related TagType (if loaded)
+ */
 export type EventWithRelationsType = EventType & {
     author?: UserType;
     location?: EventLocationType;
