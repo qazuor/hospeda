@@ -34,6 +34,13 @@ export type PartialTagType = Partial<Writable<TagType>>;
 /**
  * Input structure used to create a new tag.
  * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
+ *
+ * @example
+ * // Creating a new tag (id and audit fields are optional)
+ * const input: NewTagInputType = {
+ *   name: 'Nature',
+ *   color: 'green',
+ * };
  */
 export type NewTagInputType = WithOptional<
     TagType,
@@ -43,6 +50,12 @@ export type NewTagInputType = WithOptional<
 /**
  * Input structure used to update an existing tag.
  * All fields are optional for partial patching.
+ *
+ * @example
+ * // Updating a tag (only the fields to update are provided)
+ * const input: UpdateTagInputType = {
+ *   color: 'blue',
+ * };
  */
 export type UpdateTagInputType = Partial<Writable<TagType>>;
 

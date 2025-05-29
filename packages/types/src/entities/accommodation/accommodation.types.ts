@@ -76,6 +76,16 @@ export type PartialAccommodationType = Partial<Writable<AccommodationType>>;
 /**
  * Input structure used to create a new accommodation.
  * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
+ *
+ * @example
+ * // Creating a new accommodation (id and audit fields are optional)
+ * const input: NewAccommodationInputType = {
+ *   name: 'Hotel Example',
+ *   slug: 'hotel-example',
+ *   type: AccommodationTypeEnum.HOTEL,
+ *   summary: 'A nice hotel',
+ *   description: 'Full description here',
+ * };
  */
 export type NewAccommodationInputType = WithOptional<
     AccommodationType,
@@ -85,6 +95,12 @@ export type NewAccommodationInputType = WithOptional<
 /**
  * Input structure used to update an existing accommodation.
  * All fields are optional for partial patching.
+ *
+ * @example
+ * // Updating an accommodation (only the fields to update are provided)
+ * const input: UpdateAccommodationInputType = {
+ *   summary: 'Updated summary',
+ * };
  */
 export type UpdateAccommodationInputType = Partial<Writable<AccommodationType>>;
 
