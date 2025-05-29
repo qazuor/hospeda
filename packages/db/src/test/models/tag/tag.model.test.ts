@@ -198,21 +198,21 @@ describe('TagModel.delete', () => {
         }));
     });
 
-    it('soft deletes and returns the tag', async () => {
+    it('soft deletes and returns the tag id', async () => {
         const now = new Date();
-        const deletedTag = { ...mockTag, deletedAt: now, deletedById };
-        const returning = vi.fn().mockResolvedValueOnce([deletedTag]);
+        const deletedResult = { id: mockTag.id };
+        const returning = vi.fn().mockResolvedValueOnce([deletedResult]);
         const set = vi.fn(() => ({ where: vi.fn(() => ({ returning })) }));
         globalThis.mockDb.update = vi.fn(() => ({ set }));
         // Mock Date
         vi.spyOn(global, 'Date').mockImplementation(() => now as Date);
         const result = await TagModel.delete('tag-1', deletedById);
-        expect(result).toEqual(deletedTag);
+        expect(result).toEqual({ id: mockTag.id });
         expect(globalThis.mockLogger.query).toHaveBeenCalledWith({
             table: 'tags',
             action: 'delete',
             params: { id: 'tag-1', deletedById },
-            result: deletedTag
+            result: { id: mockTag.id }
         });
         expect(globalThis.mockLogger.error).not.toHaveBeenCalled();
         vi.restoreAllMocks();
