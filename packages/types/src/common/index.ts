@@ -4,6 +4,7 @@ export * from './helpers.types.js';
 export * from './id.types.js';
 export * from './location.types.js';
 export * from './media.types.js';
+export * from './pagination.types.js';
 export * from './price.types.js';
 export * from './seo.types.js';
 export * from './social.types.js';
