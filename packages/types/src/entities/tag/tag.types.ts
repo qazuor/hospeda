@@ -1,4 +1,12 @@
-import type { TagId } from '@repo/types/common/id.types.js';
+import type {
+    AccommodationId,
+    DestinationId,
+    EventId,
+    PostId,
+    TagId,
+    UserId
+} from '@repo/types/common/id.types.js';
+import type { EntityTypeEnum } from '@repo/types/enums/entity-type.enum.js';
 import type {
     NewEntityInput,
     WithAudit,
@@ -34,3 +42,17 @@ export type NewTagInputType = NewEntityInput<TagType>;
  * All fields are optional for partial patching.
  */
 export type UpdateTagInputType = PartialTagType;
+
+/**
+ * EntityTagType represents a polymorphic relation between a tag and any supported entity type.
+ * - tagId: The ID of the tag.
+ * - entityId: The ID of the related entity (can be Accommodation, Destination, User, Post, or Event).
+ * - entityType: The type of the related entity (see EntityTypeEnum).
+ *
+ * This type is used to model the many-to-many relationship between tags and various entities in the system.
+ */
+export interface EntityTagType {
+    tagId: TagId;
+    entityId: AccommodationId | DestinationId | UserId | PostId | EventId;
+    entityType: EntityTypeEnum;
+}
