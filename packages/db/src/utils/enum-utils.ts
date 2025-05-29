@@ -1,4 +1,18 @@
 /**
+ * Type guard to check if a value is a valid value of a given string enum.
+ * @template T - Enum object
+ * @param value - Value to check
+ * @param enumObj - Enum definition
+ * @returns True if value is a valid enum value
+ */
+const isEnumValueGuard = <T extends Record<string, string>>(
+    value: unknown,
+    enumObj: T
+): value is T[keyof T] => {
+    return typeof value === 'string' && Object.values(enumObj).includes(value as T[keyof T]);
+};
+
+/**
  * Converts a TypeScript string enum to a readonly string tuple for Drizzle ORM column definitions.
  * @template T - Enum type
  * @param e - Enum object
@@ -11,7 +25,7 @@ export function enumToTuple<T extends Record<string, string>>(e: T): [string, ..
 }
 
 /**
- * Casts enum fields for a batch of DB rows.
+ * Casts enum fields for a batch of DB rows, using a type guard for safety.
  * @template T - Row type
  * @param rows - Array of DB rows
  * @param enumMap - Object mapping field keys to enum objects
@@ -26,9 +40,15 @@ export function castRowsEnums<T extends object>(
     return rows.map((row) => {
         const newRow = { ...row };
         for (const [key, enumObj] of Object.entries(enumMap)) {
-            const value = newRow[key as keyof T];
-            if (typeof value === 'string' && enumObj && Object.values(enumObj).includes(value)) {
-                newRow[key as keyof T] = value;
+            const k = key as keyof T;
+            const value = newRow[k];
+            if (
+                enumObj &&
+                typeof enumObj === 'object' &&
+                Object.values(enumObj).every((v) => typeof v === 'string') &&
+                isEnumValueGuard(value, enumObj as Record<string, string>)
+            ) {
+                newRow[k] = value;
             }
         }
         return newRow as T;
