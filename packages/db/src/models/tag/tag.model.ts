@@ -136,10 +136,10 @@ export const TagModel = {
      * Soft delete a tag by ID (sets deletedAt and deletedById).
      * @param id Tag ID
      * @param deletedById User ID performing the deletion
-     * @returns The updated TagType (with deletedAt/deletedById) or undefined if not found
+     * @returns { id: string } if deleted, undefined if not found
      * @throws Error if the operation fails
      */
-    async delete(id: string, deletedById: string): Promise<TagType | undefined> {
+    async delete(id: string, deletedById: string): Promise<{ id: string } | undefined> {
         const db = getDb();
         try {
             const now = new Date();
@@ -147,7 +147,7 @@ export const TagModel = {
                 .update(tags)
                 .set({ deletedAt: now, deletedById })
                 .where(eq(tags.id, id))
-                .returning();
+                .returning({ id: tags.id });
             const deleted = Array.isArray(result) ? result[0] : undefined;
             dbLogger.query({
                 table: 'tags',
@@ -155,7 +155,7 @@ export const TagModel = {
                 params: { id, deletedById },
                 result: deleted
             });
-            return deleted as TagType | undefined;
+            return deleted as { id: string } | undefined;
         } catch (error) {
             dbLogger.error(error, 'TagModel.delete');
             throw new Error(`Failed to delete tag: ${(error as Error).message}`);
