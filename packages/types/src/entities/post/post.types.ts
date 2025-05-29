@@ -68,6 +68,19 @@ export type PartialPostType = Partial<Writable<PostType>>;
 /**
  * Input structure used to create a new post.
  * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
+ *
+ * @example
+ * // Creating a new post (id and audit fields are optional)
+ * const input: NewPostInputType = {
+ *   slug: 'post-2024',
+ *   category: PostCategoryEnum.BLOG,
+ *   title: 'My Post',
+ *   summary: 'Short summary',
+ *   content: 'Full content',
+ *   media: { url: 'image.jpg' },
+ *   authorId: 'user-uuid',
+ *   visibility: VisibilityEnum.PUBLIC,
+ * };
  */
 export type NewPostInputType = WithOptional<
     PostType,
@@ -77,6 +90,12 @@ export type NewPostInputType = WithOptional<
 /**
  * Input structure used to update an existing post.
  * All fields are optional for partial patching.
+ *
+ * @example
+ * // Updating a post (only the fields to update are provided)
+ * const input: UpdatePostInputType = {
+ *   summary: 'Updated summary',
+ * };
  */
 export type UpdatePostInputType = Partial<Writable<PostType>>;
 

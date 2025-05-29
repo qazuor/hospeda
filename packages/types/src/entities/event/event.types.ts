@@ -60,6 +60,17 @@ export type PartialEventType = Partial<Writable<EventType>>;
 /**
  * Input structure used to create a new event.
  * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
+ *
+ * @example
+ * // Creating a new event (id and audit fields are optional)
+ * const input: NewEventInputType = {
+ *   slug: 'event-2024',
+ *   summary: 'Annual Event',
+ *   category: EventCategoryEnum.CONFERENCE,
+ *   date: { start: new Date(), end: new Date() },
+ *   authorId: 'user-uuid',
+ *   visibility: VisibilityEnum.PUBLIC,
+ * };
  */
 export type NewEventInputType = WithOptional<
     EventType,
@@ -69,6 +80,12 @@ export type NewEventInputType = WithOptional<
 /**
  * Input structure used to update an existing event.
  * All fields are optional for partial patching.
+ *
+ * @example
+ * // Updating an event (only the fields to update are provided)
+ * const input: UpdateEventInputType = {
+ *   summary: 'Updated summary',
+ * };
  */
 export type UpdateEventInputType = Partial<Writable<EventType>>;
 

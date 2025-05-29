@@ -48,6 +48,14 @@ export type PartialUserType = Partial<Writable<UserType>>;
 /**
  * Input structure used to create a new user.
  * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
+ *
+ * @example
+ * // Creating a new user (id and audit fields are optional)
+ * const input: NewUserInputType = {
+ *   userName: 'john_doe',
+ *   password: 'securePassword',
+ *   roleId: 'role-uuid',
+ * };
  */
 export type NewUserInputType = WithOptional<
     UserType,
@@ -57,6 +65,12 @@ export type NewUserInputType = WithOptional<
 /**
  * Input structure used to update an existing user.
  * All fields are optional for partial patching.
+ *
+ * @example
+ * // Updating a user (only the fields to update are provided)
+ * const input: UpdateUserInputType = {
+ *   firstName: 'John',
+ * };
  */
 export type UpdateUserInputType = Partial<Writable<UserType>>;
 

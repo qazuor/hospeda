@@ -56,6 +56,18 @@ export type PartialDestinationType = Partial<Writable<DestinationType>>;
 /**
  * Input structure used to create a new destination.
  * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
+ *
+ * @example
+ * // Creating a new destination (id and audit fields are optional)
+ * const input: NewDestinationInputType = {
+ *   name: 'Beach',
+ *   slug: 'beach',
+ *   summary: 'A beautiful beach',
+ *   description: 'Full description',
+ *   location: { lat: 0, lng: 0 },
+ *   media: { url: 'beach.jpg' },
+ *   visibility: VisibilityEnum.PUBLIC,
+ * };
  */
 export type NewDestinationInputType = WithOptional<
     DestinationType,
@@ -65,6 +77,12 @@ export type NewDestinationInputType = WithOptional<
 /**
  * Input structure used to update an existing destination.
  * All fields are optional for partial patching.
+ *
+ * @example
+ * // Updating a destination (only the fields to update are provided)
+ * const input: UpdateDestinationInputType = {
+ *   summary: 'Updated summary',
+ * };
  */
 export type UpdateDestinationInputType = Partial<Writable<DestinationType>>;
 
