@@ -410,10 +410,12 @@ describe('TagModel.list', () => {
     });
 
     it('throws error for invalid orderBy column', async () => {
+        process.env.DB_ORDERBY_THROW_ON_INVALID = 'true';
         await expect(
             TagModel.list({ limit: 10, offset: 0, orderBy: 'invalid' as unknown as never })
         ).rejects.toThrow('Invalid orderBy column: invalid');
         expect(globalThis.mockLogger.error).toHaveBeenCalled();
+        process.env.DB_ORDERBY_THROW_ON_INVALID = undefined;
     });
 
     it('returns paginated tags', async () => {
