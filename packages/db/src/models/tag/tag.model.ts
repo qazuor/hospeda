@@ -10,7 +10,7 @@ import { and, asc, count, desc, eq } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { tags } from '../../dbschemas/tag/tag.dbschema.ts';
 import type { PaginationParams, SearchParams } from '../../types/pagination-params.ts';
-import { createOrderableColumnsAndMapping } from '../../utils/db-utils';
+import { createOrderableColumnsAndMapping, getOrderableColumn } from '../../utils/db-utils';
 import { dbLogger } from '../../utils/logger.ts';
 
 const tagOrderable = createOrderableColumnsAndMapping(
@@ -223,14 +223,7 @@ export const TagModel = {
         const { limit, offset, order, orderBy } = params;
         try {
             // Determine the column to order by, defaulting to createdAt
-            let col: (typeof tags)[keyof typeof tags];
-            if (!orderBy) {
-                col = tags.createdAt;
-            } else if (orderBy in tagOrderableColumns) {
-                col = tagOrderableColumns[orderBy as keyof typeof tagOrderableColumns];
-            } else {
-                throw new Error(`Invalid orderBy column: ${orderBy}`);
-            }
+            const col = getOrderableColumn(tagOrderableColumns, orderBy, tags.createdAt);
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
             const result = await db
                 .select()
@@ -321,14 +314,7 @@ export const TagModel = {
                 whereClauses.push(eq(tags.lifecycle, lifecycle));
             }
             // Determine the column to order by, defaulting to createdAt
-            let col: (typeof tags)[keyof typeof tags];
-            if (!orderBy) {
-                col = tags.createdAt;
-            } else if (orderBy in tagOrderableColumns) {
-                col = tagOrderableColumns[orderBy as keyof typeof tagOrderableColumns];
-            } else {
-                throw new Error(`Invalid orderBy column: ${orderBy}`);
-            }
+            const col = getOrderableColumn(tagOrderableColumns, orderBy, tags.createdAt);
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
             // Only add .where if there are filters
             const queryBuilder = db.select().from(tags);

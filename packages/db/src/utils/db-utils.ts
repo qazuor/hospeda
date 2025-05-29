@@ -349,3 +349,33 @@ export function createOrderableColumnsAndMapping<
         >
     };
 }
+
+/**
+ * Returns the Drizzle column object for a given orderBy string, using a mapping.
+ * Falls back to a default column if the string is invalid or not provided,
+ * unless throwOnInvalid is true (then throws an error).
+ *
+ * @param mapping - The mapping from allowed column names to Drizzle columns (from createOrderableColumnsAndMapping)
+ * @param orderBy - The column name string from the filter (e.g., 'createdAt')
+ * @param defaultColumn - The default column object to use if orderBy is invalid or not provided
+ * @param throwOnInvalid - If true, throws an error on invalid orderBy. Defaults to process.env.DB_ORDERBY_THROW_ON_INVALID or false.
+ * @returns The Drizzle column object to use in orderBy
+ */
+export function getOrderableColumn<Mapping extends Record<string, unknown>, ColType>(
+    mapping: Mapping,
+    orderBy: string | undefined,
+    defaultColumn: ColType,
+    throwOnInvalid?: boolean
+): ColType {
+    const shouldThrow =
+        throwOnInvalid ??
+        (typeof process !== 'undefined' && process.env?.DB_ORDERBY_THROW_ON_INVALID === 'true');
+    if (!orderBy) return defaultColumn;
+    if (orderBy in mapping) {
+        return mapping[orderBy as keyof Mapping] as ColType;
+    }
+    if (shouldThrow) {
+        throw new Error(`Invalid orderBy column: ${orderBy}`);
+    }
+    return defaultColumn;
+}
