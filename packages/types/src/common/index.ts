@@ -7,4 +7,3 @@ export * from './media.types.js';
 export * from './price.types.js';
 export * from './seo.types.js';
 export * from './social.types.js';
-export * from './tag.types.js';

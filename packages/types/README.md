@@ -70,6 +70,7 @@ type AccommodationId = Brand<string, 'AccommodationId'>;
 type AmenityId = Brand<string, 'AmenityId'>;
 type FeatureId = Brand<string, 'FeatureId'>;
 type DestinationId = Brand<string, 'DestinationId'>;
+type AttractionId = Brand<string, 'AttractionId'>;
 type EventId = Brand<string, 'EventId'>;
 type EventLocationId = Brand<string, 'EventLocationId'>;
 type EventOrganizerId = Brand<string, 'EventOrganizerId'>;
@@ -94,7 +95,7 @@ interface AdminInfoType extends WithTags {
 #### `TagType`
 
 ```typescript
-interface TagType extends WithId, WithAudit, WithLifecycleState, WithSoftDelete, WithAdminInfo {
+interface TagType extends WithId, WithAudit, WithLifecycleState, WithAdminInfo {
     name: string;
     color: string;
     icon?: string;
@@ -134,11 +135,11 @@ type WithReviewState = {
 };
 ```
 
-#### `WithActivityState`
+#### `WithModerationState`
 
 ```typescript
-type WithActivityState = {
-    state: ModerationStatusEnum;
+type WithModerationState = {
+    moderationState: ModerationStatusEnum;
 };
 ```
 
@@ -147,15 +148,6 @@ type WithActivityState = {
 ```typescript
 type WithLifecycleState = {
     lifecycle: LifecycleStatusEnum;
-};
-```
-
-#### `WithSoftDelete`
-
-```typescript
-type WithSoftDelete = {
-    deletedAt?: Date;
-    deletedById?: UserId;
 };
 ```
 
@@ -356,8 +348,9 @@ interface SocialNetworkType {
 ### User Entity (`user.types.ts`)
 
 #### `UserType`
+
 ```typescript
-interface UserType extends WithId, WithAudit, WithLifecycleState, WithSoftDelete, WithAdminInfo {
+interface UserType extends WithId, WithAudit, WithLifecycleState, WithAdminInfo {
     id: UserId;
     userName: string;
     passwordHash: string;
@@ -378,6 +371,7 @@ interface UserType extends WithId, WithAudit, WithLifecycleState, WithSoftDelete
 ```
 
 #### `UserProfile`
+
 ```typescript
 interface UserProfile {
     avatar?: string;
@@ -388,6 +382,7 @@ interface UserProfile {
 ```
 
 #### `UserSettingsType`
+
 ```typescript
 interface UserSettingsType {
     darkMode?: boolean;
@@ -397,6 +392,7 @@ interface UserSettingsType {
 ```
 
 #### `UserNotificationsType`
+
 ```typescript
 interface UserNotificationsType {
     enabled: boolean;
@@ -407,6 +403,7 @@ interface UserNotificationsType {
 ```
 
 #### `UserBookmarkType`
+
 ```typescript
 interface UserBookmarkType {
     ownerId: string;
@@ -422,6 +419,7 @@ interface UserBookmarkType {
 ### Accommodation Entity (`accommodation.types.ts`)
 
 #### `AccommodationType`
+
 ```typescript
 interface AccommodationType extends WithId, WithAudit, WithLifecycleState, WithVisibility, WithReviewState, WithTags, WithSeo, WithAdminInfo {
     slug: string;
@@ -451,6 +449,7 @@ interface AccommodationType extends WithId, WithAudit, WithLifecycleState, WithV
 ```
 
 #### `AccommodationPriceType`
+
 ```typescript
 interface AccommodationPriceType extends BasePriceType {
     additionalFees?: AdditionalFeesType;
@@ -459,6 +458,7 @@ interface AccommodationPriceType extends BasePriceType {
 ```
 
 #### `AdditionalFeesType`
+
 ```typescript
 interface AdditionalFeesType {
     cleaning?: AdditionalFeesInfoType;
@@ -481,6 +481,7 @@ interface AdditionalFeesType {
 ```
 
 #### `AdditionalFeesInfoType`
+
 ```typescript
 interface AdditionalFeesInfoType extends BasePriceType {
     isIncluded?: boolean;
@@ -493,6 +494,7 @@ interface AdditionalFeesInfoType extends BasePriceType {
 ```
 
 #### `DiscountsType`
+
 ```typescript
 interface DiscountsType {
     weekly?: DiscountInfoType;
@@ -503,6 +505,7 @@ interface DiscountsType {
 ```
 
 #### `DiscountInfoType`
+
 ```typescript
 interface DiscountInfoType extends BasePriceType {
     isIncluded?: boolean;
@@ -515,6 +518,7 @@ interface DiscountInfoType extends BasePriceType {
 ```
 
 #### `AccommodationFeatureType`
+
 ```typescript
 interface AccommodationFeatureType {
     accommodationId: string;
@@ -529,6 +533,7 @@ interface AccommodationFeatureType {
 ```
 
 #### `AccommodationAmenityType`
+
 ```typescript
 interface AccommodationAmenityType {
     accommodationId: string;
@@ -544,6 +549,7 @@ interface AccommodationAmenityType {
 ```
 
 #### `AccommodationReviewType`
+
 ```typescript
 interface AccommodationReviewType {
     accommodationId: string;
@@ -557,6 +563,7 @@ interface AccommodationReviewType {
 ```
 
 #### `AccommodationRatingType`
+
 ```typescript
 interface AccommodationRatingType {
     cleanliness: number;
@@ -569,6 +576,7 @@ interface AccommodationRatingType {
 ```
 
 #### `ScheduleType`
+
 ```typescript
 interface ScheduleType {
     checkinTime?: string; // HH:mm
@@ -585,6 +593,7 @@ interface ScheduleType {
 ```
 
 #### `ExtraInfoType`
+
 ```typescript
 interface ExtraInfoType {
     capacity: number;
@@ -599,6 +608,7 @@ interface ExtraInfoType {
 ```
 
 #### `AccommodationFaqType`
+
 ```typescript
 interface AccommodationFaqType {
     accommodationId: string;
@@ -610,6 +620,7 @@ interface AccommodationFaqType {
 ```
 
 #### `AccommodationIaDataType`
+
 ```typescript
 interface AccommodationIaDataType {
     accommodationId: string;
@@ -620,9 +631,60 @@ interface AccommodationIaDataType {
 }
 ```
 
+### Accommodation Feature Types (`accommodation.feature.types.ts`)
+
+#### `FeatureType` Partial, New, Update
+
+```typescript
+export type PartialFeature = Partial<Writable<FeatureType>>;
+export type NewFeatureInput = NewEntityInput<FeatureType>;
+export type UpdateFeatureInput = PartialFeature;
+```
+
+### Accommodation Amenity Types (`accommodation.amenity.types.ts`)
+
+#### `AmenityType` Partial, New, Update
+
+```typescript
+export type PartialAmenity = Partial<Writable<AmenityType>>;
+export type NewAmenityInput = NewEntityInput<AmenityType>;
+export type UpdateAmenityInput = PartialAmenity;
+```
+
+### Accommodation FAQ Types (`accommodation.faq.types.ts`)
+
+#### `AccommodationFaqType` Partial, New, Update
+
+```typescript
+export type PartialAccommodationFaq = Partial<Writable<AccommodationFaqType>>;
+export type NewAccommodationFaqInput = NewEntityInput<AccommodationFaqType>;
+export type UpdateAccommodationFaqInput = PartialAccommodationFaq;
+```
+
+### Accommodation IA Data Types (`accommodation.ia.types.ts`)
+
+#### `AccommodationIaDataType` Partial, New, Update
+
+```typescript
+export type PartialAccommodationIaData = Partial<Writable<AccommodationIaDataType>>;
+export type NewAccommodationIaDataInput = NewEntityInput<AccommodationIaDataType>;
+export type UpdateAccommodationIaDataInput = PartialAccommodationIaData;
+```
+
+### Accommodation Review Types (`accommodation.review.types.ts`)
+
+#### `AccommodationReviewType` Partial, New, Update
+
+```typescript
+export type PartialAccommodationReview = Partial<Writable<AccommodationReviewType>>;
+export type NewAccommodationReviewInput = NewEntityInput<AccommodationReviewType>;
+export type UpdateAccommodationReviewInput = PartialAccommodationReview;
+```
+
 ### Destination Entity (`destination.types.ts`)
 
 #### `DestinationType`
+
 ```typescript
 interface DestinationType extends WithId, WithAudit, WithLifecycleState, WithVisibility, WithReviewState, WithTags, WithSeo, WithAdminInfo {
     slug: string;
@@ -638,6 +700,7 @@ interface DestinationType extends WithId, WithAudit, WithLifecycleState, WithVis
 ```
 
 #### `DestinationAttractionsType`
+
 ```typescript
 interface DestinationAttractionsType {
     name: string;
@@ -648,6 +711,7 @@ interface DestinationAttractionsType {
 ```
 
 #### `DestinationRatingType`
+
 ```typescript
 interface DestinationRatingType {
     landscape: number;
@@ -674,6 +738,7 @@ interface DestinationRatingType {
 ### Event Entity (`event.types.ts`)
 
 #### `EventType`
+
 ```typescript
 interface EventType extends WithId, WithAudit, WithLifecycleState, WithVisibility, WithTags, WithSeo, WithAdminInfo {
     slug: string;
@@ -696,6 +761,7 @@ interface EventType extends WithId, WithAudit, WithLifecycleState, WithVisibilit
 ```
 
 #### `EventDateType`
+
 ```typescript
 interface EventDateType {
     start: Date;
@@ -706,6 +772,7 @@ interface EventDateType {
 ```
 
 #### `EventPriceType`
+
 ```typescript
 interface EventPriceType extends BasePriceType {
     isFree: boolean;
@@ -716,6 +783,7 @@ interface EventPriceType extends BasePriceType {
 ```
 
 #### `EventOrganizerType`
+
 ```typescript
 interface EventOrganizerType extends WithId, WithAudit {
     name: string;
@@ -727,6 +795,7 @@ interface EventOrganizerType extends WithId, WithAudit {
 ```
 
 #### `EventLocationType`
+
 ```typescript
 interface EventLocationType extends BaseLocationType {
     id: string;
@@ -745,6 +814,7 @@ interface EventLocationType extends BaseLocationType {
 ### Post Entity (`post.types.ts`)
 
 #### `PostType`
+
 ```typescript
 interface PostType extends WithId, WithAudit, WithLifecycleState, WithVisibility, WithTags, WithSeo, WithAdminInfo {
     slug: string;
@@ -774,6 +844,7 @@ interface PostType extends WithId, WithAudit, WithLifecycleState, WithVisibility
 ```
 
 #### `PostSponsorType`
+
 ```typescript
 interface PostSponsorType extends WithId, WithAudit {
     type: ClientTypeEnum;
@@ -786,6 +857,7 @@ interface PostSponsorType extends WithId, WithAudit {
 ```
 
 #### `PostSponsorshipType`
+
 ```typescript
 interface PostSponsorshipType extends WithId, WithAudit {
     sponsorId: string;
@@ -873,15 +945,6 @@ enum ModerationStatusEnum {
     APPROVED = 'APPROVED',
     REJECTED = 'REJECTED',
     FLAGGED = 'FLAGGED'
-}
-```
-
-#### `DeletionStatusEnum`
-
-```typescript
-enum DeletionStatusEnum {
-    NOT_DELETED = 'NOT_DELETED',
-    SOFT_DELETED = 'SOFT_DELETED'
 }
 ```
 
@@ -1088,7 +1151,7 @@ enum EntityTypeEnum {
 #### `RoleType`
 
 ```typescript
-interface RoleType extends WithId, WithAudit, WithLifecycleState, WithSoftDelete, WithAdminInfo {
+interface RoleType extends WithId, WithAudit, WithLifecycleState, WithAdminInfo {
     id: RoleId;
     name: string;
     description: string;
@@ -1105,7 +1168,7 @@ interface RoleType extends WithId, WithAudit, WithLifecycleState, WithSoftDelete
 #### `PermissionType`
 
 ```typescript
-interface PermissionType extends WithId, WithAudit, WithLifecycleState, WithSoftDelete, WithAdminInfo {
+interface PermissionType extends WithId, WithAudit, WithLifecycleState, WithAdminInfo {
     id: PermissionId;
     name: string;
     description: string;
@@ -1121,7 +1184,7 @@ interface PermissionType extends WithId, WithAudit, WithLifecycleState, WithSoft
 #### `AmenityType`
 
 ```typescript
-interface AmenityType extends WithId, WithAudit, WithLifecycleState, WithSoftDelete, WithAdminInfo {
+interface AmenityType extends WithId, WithAudit, WithLifecycleState, WithAdminInfo {
     id: AmenityId;
     name: string;
     description?: string;

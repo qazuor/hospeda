@@ -1,12 +1,15 @@
+import type { AccommodationType } from '@repo/types/entities/accommodation/accommodation.types.js';
+import type { TagType } from '@repo/types/entities/tag/tag.types.js';
 import type {
-    WithActivityState,
+    NewEntityInput,
     WithAdminInfo,
     WithAudit,
-    WithId,
     WithLifecycleState,
+    WithModerationState,
+    WithReviewState,
     WithSeo,
-    WithSoftDelete,
-    WithTags
+    WithTags,
+    Writable
 } from '../../common/helpers.types.js';
 import type { DestinationId } from '../../common/id.types.js';
 import type { BaseLocationType } from '../../common/location.types.js';
@@ -19,12 +22,11 @@ import type { DestinationReviewType } from './destination.review.types.js';
  * Main destination entity
  */
 export interface DestinationType
-    extends WithId,
-        WithAudit,
+    extends WithAudit,
         WithAdminInfo,
         WithLifecycleState,
-        WithActivityState,
-        WithSoftDelete,
+        WithModerationState,
+        WithReviewState,
         WithTags,
         WithSeo {
     id: DestinationId;
@@ -38,11 +40,39 @@ export interface DestinationType
     visibility: VisibilityEnum;
 
     // Stats
-    reviewsCount?: number;
-    averageRating?: number;
     accommodationsCount?: number;
 
     // Related data
     attractions?: DestinationAttractionType[];
     reviews?: DestinationReviewType[];
 }
+
+/**
+ * Partial editable structure of a DestinationType.
+ * Useful for form values, mock data, overrides, etc.
+ */
+export type PartialDestinationType = Partial<Writable<DestinationType>>;
+
+/**
+ * Input structure used to create a new destination.
+ * Omits fields that are auto-generated or related to internal state.
+ */
+export type NewDestinationInputType = NewEntityInput<DestinationType>;
+
+/**
+ * Input structure used to update an existing destination.
+ * All fields are optional for partial patching.
+ */
+export type UpdateDestinationInputType = PartialDestinationType;
+
+export type DestinationSummaryType = Pick<
+    DestinationType,
+    'id' | 'slug' | 'name' | 'summary' | 'media' | 'averageRating' | 'reviewsCount'
+>;
+
+export type DestinationWithRelationsType = DestinationType & {
+    accommodations?: AccommodationType[];
+    reviews?: DestinationReviewType[];
+    tags?: TagType[];
+    attractions?: DestinationAttractionType[];
+};

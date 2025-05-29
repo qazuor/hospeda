@@ -1,20 +1,16 @@
 // common/helpers.types.ts
 
+import type { TagType } from '../entities/tag/tag.types.ts';
 import type { LifecycleStatusEnum } from '../enums/lifecycle-state.enum.js';
 import type { ModerationStatusEnum } from '../enums/state.enum.js';
 import type { VisibilityEnum } from '../enums/visibility.enum.js';
 import type { AdminInfoType } from './admin.types.js';
 import type { UserId } from './id.types.js';
 import type { SeoType } from './seo.types.js';
-import type { TagType } from './tag.types.js';
 
 /* ---------------------------------------- */
 /*           Helper Composition Types       */
 /* ---------------------------------------- */
-
-export type WithId = {
-    id: string;
-};
 
 export type WithAudit = {
     createdAt: Date;
@@ -30,17 +26,12 @@ export type WithReviewState = {
     averageRating?: number;
 };
 
-export type WithActivityState = {
-    state: ModerationStatusEnum;
+export type WithModerationState = {
+    moderationState: ModerationStatusEnum;
 };
 
 export type WithLifecycleState = {
-    lifecycle: LifecycleStatusEnum;
-};
-
-export type WithSoftDelete = {
-    deletedAt?: Date;
-    deletedById?: UserId;
+    lifecycleState: LifecycleStatusEnum;
 };
 
 export type WithVisibility = {
@@ -56,7 +47,7 @@ export interface WithTags {
 }
 
 export interface WithSeo {
-    seo?: SeoType[];
+    seo?: SeoType;
 }
 
 export type WithRelations<T extends object> = {
