@@ -46,7 +46,7 @@ const tagOrderableColumns = tagOrderable.mapping;
  */
 export type TagSearchParams = SearchParams & {
     color?: TagColorEnum;
-    lifecycle?: LifecycleStatusEnum;
+    lifecycleState?: LifecycleStatusEnum;
 };
 
 /**
@@ -270,18 +270,18 @@ export const TagModel = {
     async count(params?: TagSearchParams): Promise<number> {
         const db = getDb();
         try {
-            const { name, color, lifecycle } = params || {};
+            const { name, color, lifecycleState } = params || {};
             const whereClauses = [];
             if (name) {
                 // Partial match on name (case-insensitive)
                 // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm typing
-                whereClauses.push((tags as any).name.ilike(`%${name}%`));
+                whereClauses.push((tags as any).name.ilike(prepareLikeQuery(name)));
             }
             if (color) {
                 whereClauses.push(eq(tags.color, color));
             }
-            if (lifecycle) {
-                whereClauses.push(eq(tags.lifecycle, lifecycle));
+            if (lifecycleState) {
+                whereClauses.push(eq(tags.lifecycle, lifecycleState));
             }
             // Only add .where if there are filters
             const query = db.select({ count: count().as('count') }).from(tags);
@@ -303,7 +303,7 @@ export const TagModel = {
      */
     async search(params: TagSearchParams): Promise<TagType[]> {
         const db = getDb();
-        const { name, color, lifecycle, limit, offset, order, orderBy } = params;
+        const { name, color, lifecycleState, limit, offset, order, orderBy } = params;
         try {
             const whereClauses = [];
             if (name) {
@@ -314,8 +314,8 @@ export const TagModel = {
             if (color) {
                 whereClauses.push(eq(tags.color, color));
             }
-            if (lifecycle) {
-                whereClauses.push(eq(tags.lifecycle, lifecycle));
+            if (lifecycleState) {
+                whereClauses.push(eq(tags.lifecycle, lifecycleState));
             }
             // Determine the column to order by, defaulting to createdAt
             const col = getOrderableColumn(tagOrderableColumns, orderBy, tags.createdAt);

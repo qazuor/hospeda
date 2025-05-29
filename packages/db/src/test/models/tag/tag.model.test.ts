@@ -503,7 +503,7 @@ describe('TagModel.count', () => {
         globalThis.mockDb.where.mockResolvedValueOnce(mockResult);
         const result = await TagModel.count({
             color: TagColorEnum.BLUE,
-            lifecycle: LifecycleStatusEnum.ACTIVE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             limit: 10,
             offset: 0
         });
@@ -568,7 +568,7 @@ describe('TagModel.search', () => {
             limit: 10,
             offset: 0,
             color: TagColorEnum.BLUE,
-            lifecycle: LifecycleStatusEnum.ACTIVE
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         expect(result).toEqual([mockTag]);
         expect(globalThis.mockLogger.query).toHaveBeenCalled();
