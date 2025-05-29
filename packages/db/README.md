@@ -2,6 +2,55 @@
 
 Este paquete contiene la definición y organización de los esquemas de base de datos para el monorepo Hospeda, utilizando Drizzle ORM y tipado fuerte alineado con el package `types`.
 
+## Orderable Columns Pattern (Reusable for All Models)
+
+This pattern provides a robust, type-safe way to define which columns of a model can be used for ordering (sorting) in list queries, and ensures that both the allowed values and the Drizzle column references are always in sync.
+
+**Steps to replicate for any model:**
+
+1. **Define** the list of orderable column names as a readonly tuple (e.g., `['name', 'createdAt', ...] as const`).
+2. **Use** the `createOrderableColumnsAndMapping` utility to generate:
+   - A readonly array of allowed column names for UI/validation.
+   - A type union of allowed column names for strong typing.
+   - A mapping from column name to Drizzle column reference for queries.
+3. **Export:**
+   - The array (for dropdowns, validation, etc.).
+   - The type (for params, DTOs, etc.).
+   - The mapping (for use in `getOrderableColumn` and query building).
+4. **Use the type** in your pagination/search params:
+
+   ```ts
+   type MyOrderByColumn = typeof myOrderable.type;
+   type MyPaginationParams = PaginationParams<MyOrderByColumn>;
+   ```
+
+5. **Use the mapping and `getOrderableColumn`** in your list/search methods to resolve the correct Drizzle column reference, with fallback and error handling.
+
+**Example:**
+
+```ts
+const myOrderable = createOrderableColumnsAndMapping(
+  ['name', 'createdAt'] as const,
+  myTable
+);
+export const MY_ORDERABLE_COLUMNS = myOrderable.columns;
+export type MyOrderByColumn = typeof myOrderable.type;
+const myOrderableColumns = myOrderable.mapping;
+
+// In your model method:
+const col = getOrderableColumn(myOrderableColumns, orderBy, myTable.createdAt);
+const orderExpr = order === 'desc' ? desc(col) : asc(col);
+```
+
+**Best practices:**
+
+- Always use the type for params, not just `string`.
+- Export the array for UI and validation.
+- Keep the mapping internal to the model.
+- Add/rename columns in the tuple and mapping only, never in multiple places.
+
+See `TagModel` for a full implementation.
+
 ## Estructura de carpetas
 
 - **accommodation/**: Esquemas relacionados con alojamientos, amenities y features.
