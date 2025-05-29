@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CurrencyEnumSchema } from '../enums';
+import { CurrencyEnumSchema } from '../enums/index.js';
 
 export const PriceSchema = z.object({
     price: z

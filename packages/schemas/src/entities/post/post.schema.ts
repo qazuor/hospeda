@@ -4,11 +4,13 @@ import {
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { PostExtrasSchema } from './post.extras.schema';
-import { PostSponsorSchema } from './post.sponsor.schema';
-import { PostSponsorshipSchema } from './post.sponsorship.schema';
+    WithModerationStatusSchema,
+    WithSeoSchema,
+    WithTagsSchema
+} from '../../common/index.js';
+import { PostCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.js';
+import { PostSponsorSchema } from './post.sponsor.schema.js';
+import { PostSponsorshipSchema } from './post.sponsorship.schema.js';
 
 /**
  * Post schema definition using Zod for validation.
@@ -16,8 +18,10 @@ import { PostSponsorshipSchema } from './post.sponsorship.schema';
  */
 export const PostSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
+    .merge(WithModerationStatusSchema)
+    .merge(WithTagsSchema)
+    .merge(WithSeoSchema)
     .extend({
         /** Post title, 3-150 characters */
         title: z
@@ -30,7 +34,7 @@ export const PostSchema = WithIdSchema.merge(WithAuditSchema)
             .min(10, { message: 'zodError.post.content.min' })
             .max(5000, { message: 'zodError.post.content.max' }),
         /** Author user ID */
-        authorId: z.string(),
+        authorId: z.string().uuid({ message: 'zodError.post.authorId.invalidUuid' }),
         /** Post category, 3-50 characters */
         category: z
             .string()
@@ -39,7 +43,22 @@ export const PostSchema = WithIdSchema.merge(WithAuditSchema)
         /** Sponsorship details, optional */
         sponsorship: PostSponsorshipSchema.optional(),
         /** Sponsor details, optional */
-        sponsor: PostSponsorSchema.optional(),
-        /** Additional post extras, optional */
-        extras: PostExtrasSchema.optional()
+        sponsor: PostSponsorSchema.optional()
     });
+
+// Input para filtros de búsqueda de posts
+export const PostFilterInputSchema = z.object({
+    category: PostCategoryEnumSchema.optional(),
+    visibility: VisibilityEnumSchema.optional(),
+    isFeatured: z.boolean().optional(),
+    isNews: z.boolean().optional(),
+    isFeaturedInWebsite: z.boolean().optional(),
+    authorId: z.string().optional(),
+    q: z.string().optional() // búsqueda libre
+});
+
+// Input para ordenamiento de resultados
+export const PostSortInputSchema = z.object({
+    sortBy: z.enum(['title', 'createdAt', 'category', 'likes', 'comments', 'shares']).optional(),
+    order: z.enum(['asc', 'desc']).optional()
+});

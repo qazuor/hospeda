@@ -4,13 +4,13 @@ import {
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { EventDateSchema } from './event.date.schema';
-import { EventExtrasSchema } from './event.extras.schema';
-import { EventLocationSchema } from './event.location.schema';
-import { EventOrganizerSchema } from './event.organizer.schema';
-import { EventPriceSchema } from './event.price.schema';
+    WithModerationStatusSchema,
+    WithSeoSchema,
+    WithTagsSchema
+} from '../../common/index.js';
+import { EventCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.js';
+import { EventDateSchema } from './event.date.schema.js';
+import { EventPriceSchema } from './event.price.schema.js';
 
 /**
  * Event schema definition using Zod for validation.
@@ -18,27 +18,60 @@ import { EventPriceSchema } from './event.price.schema';
  */
 export const EventSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
+    .merge(WithModerationStatusSchema)
+    .merge(WithTagsSchema)
+    .merge(WithSeoSchema)
     .extend({
         /** Event title, 3-100 characters */
         title: z
             .string()
             .min(3, { message: 'zodError.event.title.min' })
             .max(100, { message: 'zodError.event.title.max' }),
-        /** Event description, 10-1000 characters */
+        /** Event description, optional, 10-1000 characters */
         description: z
-            .string()
+            .string({
+                required_error: 'zodError.event.description.required',
+                invalid_type_error: 'zodError.event.description.invalidType'
+            })
             .min(10, { message: 'zodError.event.description.min' })
-            .max(1000, { message: 'zodError.event.description.max' }),
+            .max(1000, { message: 'zodError.event.description.max' })
+            .optional(),
         /** Event date object */
         date: EventDateSchema,
-        /** Event location object */
-        location: EventLocationSchema,
-        /** Event organizer object */
-        organizer: EventOrganizerSchema,
+        /** Event location (ID only) */
+        locationId: z
+            .string({
+                required_error: 'zodError.event.locationId.required',
+                invalid_type_error: 'zodError.event.locationId.invalidType'
+            })
+            .uuid({ message: 'zodError.event.locationId.invalidUuid' }),
+        /** Event organizer (ID only) */
+        organizerId: z
+            .string({
+                required_error: 'zodError.event.organizerId.required',
+                invalid_type_error: 'zodError.event.organizerId.invalidType'
+            })
+            .uuid({ message: 'zodError.event.organizerId.invalidUuid' }),
         /** Event price, optional */
-        price: EventPriceSchema.optional(),
-        /** Additional event extras, optional */
-        extras: EventExtrasSchema.optional()
+        price: EventPriceSchema.optional()
     });
+
+// Input para filtros de búsqueda de eventos
+export const EventFilterInputSchema = z.object({
+    state: z.string().optional(),
+    city: z.string().optional(),
+    country: z.string().optional(),
+    category: EventCategoryEnumSchema.optional(),
+    visibility: VisibilityEnumSchema.optional(),
+    isFeatured: z.boolean().optional(),
+    minDate: z.string().optional(),
+    maxDate: z.string().optional(),
+    q: z.string().optional() // búsqueda libre
+});
+
+// Input para ordenamiento de resultados
+export const EventSortInputSchema = z.object({
+    sortBy: z.enum(['name', 'createdAt', 'date', 'category']).optional(),
+    order: z.enum(['asc', 'desc']).optional()
+});

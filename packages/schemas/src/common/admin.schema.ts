@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { WithTagsSchema } from './helpers.schema';
+import { WithTagsSchema } from './helpers.schema.js';
 
 export const AdminInfoSchema = WithTagsSchema.extend({
     notes: z

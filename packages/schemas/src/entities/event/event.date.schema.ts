@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RecurrenceEnumSchema } from '../../enums/recurrence.enum.schema';
+import { RecurrenceEnumSchema } from '../../enums/index.js';
 
 export const EventDateSchema = z.object({
     start: z

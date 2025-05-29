@@ -1,13 +1,5 @@
 import { z } from 'zod';
-
-const isValidLatitude = (val: string) => {
-    const n = Number(val);
-    return !Number.isNaN(n) && n >= -90 && n <= 90;
-};
-const isValidLongitude = (val: string) => {
-    const n = Number(val);
-    return !Number.isNaN(n) && n >= -180 && n <= 180;
-};
+import { isValidLatitude, isValidLongitude } from '../utils/utils.js';
 
 const CoordinatesSchema = z.object({
     lat: z

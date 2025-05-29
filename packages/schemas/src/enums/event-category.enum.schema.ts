@@ -1,4 +1,4 @@
-import { EventCategoryEnum } from '@repo/types/src/enums/event-category.enum';
+import { EventCategoryEnum } from '@repo/types';
 import { z } from 'zod';
 
 export const EventCategoryEnumSchema = z.enum(

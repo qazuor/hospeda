@@ -4,8 +4,8 @@ import {
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema
-} from '../../common';
-import { AccommodationRatingSchema } from './accommodation.rating.schema';
+} from '../../common/index.js';
+import { AccommodationRatingSchema } from './accommodation.rating.schema.js';
 
 /**
  * Accommodation Review schema definition using Zod for validation.
@@ -15,14 +15,18 @@ export const AccommodationReviewSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithAdminInfoSchema)
     .extend({
-        accommodationId: z.string({
-            required_error: 'zodError.accommodation.review.accommodationId.required',
-            invalid_type_error: 'zodError.accommodation.review.accommodationId.invalidType'
-        }),
-        userId: z.string({
-            required_error: 'zodError.accommodation.review.userId.required',
-            invalid_type_error: 'zodError.accommodation.review.userId.invalidType'
-        }),
+        accommodationId: z
+            .string({
+                required_error: 'zodError.accommodation.review.accommodationId.required',
+                invalid_type_error: 'zodError.accommodation.review.accommodationId.invalidType'
+            })
+            .uuid({ message: 'zodError.accommodation.review.accommodationId.invalidUuid' }),
+        userId: z
+            .string({
+                required_error: 'zodError.accommodation.review.userId.required',
+                invalid_type_error: 'zodError.accommodation.review.userId.invalidType'
+            })
+            .uuid({ message: 'zodError.accommodation.review.userId.invalidUuid' }),
         title: z
             .string({
                 required_error: 'zodError.accommodation.review.title.required',

@@ -1,4 +1,4 @@
-import { PreferredContactEnum } from '@repo/types/src/enums/contact-preference.enum';
+import { PreferredContactEnum } from '@repo/types';
 import { z } from 'zod';
 
 export const PreferredContactEnumSchema = z.enum(

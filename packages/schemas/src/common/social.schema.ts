@@ -6,7 +6,7 @@ import {
     TikTokUrlRegex,
     TwitterUrlRegex,
     YouTubeUrlRegex
-} from '../utils/utils';
+} from '../utils/utils.js';
 
 export const SocialNetworkSchema = z.object({
     facebook: z

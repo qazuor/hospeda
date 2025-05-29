@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { WithActivityStateSchema, WithTagsSchema } from './helpers.schema';
+import { WithModerationStatusSchema, WithTagsSchema } from './helpers.schema.js';
 
-const ImageSchema = WithActivityStateSchema.merge(WithTagsSchema).extend({
+export const ImageSchema = WithModerationStatusSchema.merge(WithTagsSchema).extend({
     url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
     caption: z
         .string({
@@ -21,7 +21,7 @@ const ImageSchema = WithActivityStateSchema.merge(WithTagsSchema).extend({
         .optional()
 });
 
-const VideoSchema = WithActivityStateSchema.merge(WithTagsSchema).extend({
+export const VideoSchema = WithModerationStatusSchema.merge(WithTagsSchema).extend({
     url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
     caption: z
         .string({

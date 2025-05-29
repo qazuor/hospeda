@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PriceSchema } from '../../common';
+import { PriceSchema } from '../../common/index.js';
 
 const AdditionalFeesInfoSchema = PriceSchema.extend({
     isIncluded: z.boolean().optional(),

@@ -1,4 +1,4 @@
-import { PostCategoryEnum } from '@repo/types/src/enums/post-category.enum';
+import { PostCategoryEnum } from '@repo/types';
 import { z } from 'zod';
 
 export const PostCategoryEnumSchema = z.enum(

@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { BaseEntitySchema } from '../../common/common.schema';
+import { WithAdminInfoSchema } from '../../common/index.js';
 
 /**
  * Destination Attraction schema definition using Zod for validation.
  * Represents an attraction associated with a destination.
  */
-export const DestinationAttractionSchema = BaseEntitySchema.extend({
+export const DestinationAttractionSchema = WithAdminInfoSchema.extend({
     name: z
         .string()
         .min(3, { message: 'error:destination.attraction.name.min_length' })
@@ -24,5 +24,3 @@ export const DestinationAttractionSchema = BaseEntitySchema.extend({
     icon: z.string().min(1, { message: 'error:destination.attraction.icon.min_length' }),
     destinationId: z.string({ message: 'error:destination.attraction.destinationId.required' })
 });
-
-export type DestinationAttractionInput = z.infer<typeof DestinationAttractionSchema>;

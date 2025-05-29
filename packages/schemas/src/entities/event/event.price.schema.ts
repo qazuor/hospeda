@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PriceSchema } from '../../common/price.schema';
+import { PriceSchema } from '../../common/index.js';
 
 /**
  * Event Price schema definition using Zod for validation.

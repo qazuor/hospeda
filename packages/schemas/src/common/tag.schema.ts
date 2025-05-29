@@ -1,16 +1,8 @@
 import { z } from 'zod';
-import {
-    WithAdminInfoSchema,
-    WithAuditSchema,
-    WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from './helpers.schema';
+import { WithAuditSchema, WithIdSchema, WithLifecycleStateSchema } from './helpers.schema.js';
 
 export const TagSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
-    .merge(WithAdminInfoSchema)
     .extend({
         name: z
             .string({

@@ -3,13 +3,11 @@ import {
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
+    WithLifecycleStateSchema
+} from '../../common/index.js';
 
 export const FeatureSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
     .extend({
         name: z

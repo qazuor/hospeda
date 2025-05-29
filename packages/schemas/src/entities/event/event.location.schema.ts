@@ -1,12 +1,11 @@
 import { z } from 'zod';
 import {
+    LocationSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { LocationSchema } from '../../common/location.schema';
+    WithLifecycleStateSchema
+} from '../../common/index.js';
 
 /**
  * Event Location schema definition using Zod for validation.
@@ -15,7 +14,6 @@ import { LocationSchema } from '../../common/location.schema';
 export const EventLocationSchema = LocationSchema.merge(WithIdSchema)
     .merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
     .extend({
         street: z

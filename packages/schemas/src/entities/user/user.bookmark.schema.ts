@@ -3,10 +3,9 @@ import {
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { EntityTypeEnumSchema } from '../../enums/entity-type.enum.schema';
+    WithLifecycleStateSchema
+} from '../../common/index.js';
+import { EntityTypeEnumSchema } from '../../enums/index.js';
 
 /**
  * User Bookmark schema definition using Zod for validation.
@@ -14,10 +13,11 @@ import { EntityTypeEnumSchema } from '../../enums/entity-type.enum.schema';
  */
 export const UserBookmarkSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
     .extend({
-        entityId: z.string({ required_error: 'zodError.user.bookmark.entityId.required' }),
+        entityId: z
+            .string({ required_error: 'zodError.user.bookmark.entityId.required' })
+            .uuid({ message: 'zodError.user.bookmark.entityId.invalidUuid' }),
         entityType: EntityTypeEnumSchema,
         name: z
             .string()

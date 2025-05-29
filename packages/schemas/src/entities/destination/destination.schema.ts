@@ -1,19 +1,20 @@
 import { z } from 'zod';
 import {
-    WithActivityStateSchema,
+    LocationSchema,
+    MediaSchema,
+    TagsArraySchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema,
+    WithModerationStatusSchema,
+    WithReviewStateSchema,
     WithSeoSchema,
-    WithSoftDeleteSchema,
     WithTagsSchema
-} from '../../common/helpers.schema';
-import { LocationSchema } from '../../common/location.schema';
-import { MediaSchema } from '../../common/media.schema';
-import { VisibilityEnumSchema } from '../../enums/visibility.enum.schema';
-import { DestinationAttractionSchema } from './destination.attraction.schema';
-import { DestinationReviewSchema } from './destination.review.schema';
+} from '../../common/index.js';
+import { VisibilityEnumSchema } from '../../enums/index.js';
+import { DestinationAttractionSchema } from './destination.attraction.schema.js';
+import { DestinationReviewSchema } from './destination.review.schema.js';
 
 /**
  * Destination schema definition using Zod for validation.
@@ -23,8 +24,8 @@ import { DestinationReviewSchema } from './destination.review.schema';
 export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithAdminInfoSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithActivityStateSchema)
-    .merge(WithSoftDeleteSchema)
+    .merge(WithModerationStatusSchema)
+    .merge(WithReviewStateSchema)
     .merge(WithTagsSchema)
     .merge(WithSeoSchema)
     .extend({
@@ -71,4 +72,23 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
         reviews: z.array(DestinationReviewSchema).optional()
     });
 
-export type DestinationInput = z.infer<typeof DestinationSchema>;
+// Input para filtros de búsqueda de destinos
+export const DestinationFilterInputSchema = z.object({
+    state: z.string().optional(),
+    city: z.string().optional(),
+    country: z.string().optional(),
+    tags: TagsArraySchema.optional(),
+    visibility: VisibilityEnumSchema.optional(),
+    isFeatured: z.boolean().optional(),
+    minRating: z.number().min(0).max(5).optional(),
+    maxRating: z.number().min(0).max(5).optional(),
+    q: z.string().optional() // búsqueda libre
+});
+
+// Input para ordenamiento de resultados
+export const DestinationSortInputSchema = z.object({
+    sortBy: z
+        .enum(['name', 'createdAt', 'averageRating', 'reviewsCount', 'accommodationsCount'])
+        .optional(),
+    order: z.enum(['asc', 'desc']).optional()
+});
