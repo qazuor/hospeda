@@ -2,11 +2,11 @@ import type { TagType } from '@repo/types/entities/tag/tag.types.js';
 import type { UserType } from '@repo/types/entities/user/user.types.js';
 import type { ContactInfoType } from '../../common/contact.types.js';
 import type {
-    NewEntityInput,
     WithAdminInfo,
     WithAudit,
     WithLifecycleState,
     WithModerationState,
+    WithOptional,
     WithSeo,
     WithTags,
     Writable
@@ -59,15 +59,18 @@ export type PartialEventType = Partial<Writable<EventType>>;
 
 /**
  * Input structure used to create a new event.
- * Omits fields that are auto-generated or related to internal state.
+ * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
  */
-export type NewEventInputType = NewEntityInput<EventType>;
+export type NewEventInputType = WithOptional<
+    EventType,
+    'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdById' | 'updatedById' | 'deletedById'
+>;
 
 /**
  * Input structure used to update an existing event.
  * All fields are optional for partial patching.
  */
-export type UpdateEventInputType = PartialEventType;
+export type UpdateEventInputType = Partial<Writable<EventType>>;
 
 export type EventSummaryType = Pick<
     EventType,

@@ -2,10 +2,10 @@ import type { PermissionType } from '@repo/types/entities/user/user.permission.t
 import type { RoleType } from '@repo/types/entities/user/user.role.types.js';
 import type { ContactInfoType } from '../../common/contact.types.js';
 import type {
-    NewEntityInput,
     WithAdminInfo,
     WithAudit,
     WithLifecycleState,
+    WithOptional,
     Writable
 } from '../../common/helpers.types.js';
 import type { PermissionId, RoleId, UserId } from '../../common/id.types.js';
@@ -47,15 +47,18 @@ export type PartialUserType = Partial<Writable<UserType>>;
 
 /**
  * Input structure used to create a new user.
- * Omits fields that are auto-generated or managed by the system.
+ * Makes id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById optional for creation.
  */
-export type NewUserInputType = NewEntityInput<UserType>;
+export type NewUserInputType = WithOptional<
+    UserType,
+    'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdById' | 'updatedById' | 'deletedById'
+>;
 
 /**
  * Input structure used to update an existing user.
  * All fields are optional for partial patching.
  */
-export type UpdateUserInputType = PartialUserType;
+export type UpdateUserInputType = Partial<Writable<UserType>>;
 
 export type UserProfileSummaryType = Pick<
     UserType,
