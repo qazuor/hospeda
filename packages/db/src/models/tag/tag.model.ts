@@ -10,7 +10,11 @@ import { and, asc, count, desc, eq } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { tags } from '../../dbschemas/tag/tag.dbschema.ts';
 import type { PaginationParams, SearchParams } from '../../types/pagination-params.ts';
-import { createOrderableColumnsAndMapping, getOrderableColumn } from '../../utils/db-utils';
+import {
+    createOrderableColumnsAndMapping,
+    getOrderableColumn,
+    prepareLikeQuery
+} from '../../utils/db-utils';
 import { dbLogger } from '../../utils/logger.ts';
 
 const tagOrderable = createOrderableColumnsAndMapping(
@@ -305,7 +309,7 @@ export const TagModel = {
             if (name) {
                 // Partial match on name (case-insensitive)
                 // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm typing
-                whereClauses.push((tags as any).name.ilike(`%${name}%`));
+                whereClauses.push((tags as any).name.ilike(prepareLikeQuery(name)));
             }
             if (color) {
                 whereClauses.push(eq(tags.color, color));
