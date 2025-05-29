@@ -208,7 +208,7 @@ describe('TagModel.delete', () => {
         const set = vi.fn(() => ({ where: vi.fn(() => ({ returning })) }));
         globalThis.mockDb.update = vi.fn(() => ({ set }));
         // Mock Date
-        vi.spyOn(global, 'Date').mockImplementation(() => now as Date);
+        vi.spyOn(global, 'Date').mockImplementation(() => now);
         const result = await TagModel.delete('tag-1', deletedById);
         expect(result).toEqual({ id: mockTag.id });
         expect(globalThis.mockLogger.query).toHaveBeenCalledWith({
@@ -600,6 +600,92 @@ describe('TagModel.search', () => {
             expect.objectContaining({ message: expect.any(String) }),
             'TagModel.search'
         );
+    });
+});
+
+describe('TagModel.update (concurrency)', () => {
+    it('handles concurrent updates gracefully', async () => {
+        const fixedDate = new Date('2025-05-29T13:57:15.491Z');
+        vi.spyOn(global, 'Date').mockImplementation(() => fixedDate);
+
+        // Simulate first update is successful
+        const returning1 = vi
+            .fn()
+            .mockResolvedValueOnce([
+                createMockTag({ name: 'Tag v2', createdAt: fixedDate, updatedAt: fixedDate })
+            ]);
+        // Simulate second update fails due to race condition
+        const returning2 = vi
+            .fn()
+            .mockRejectedValueOnce(new Error('Row was updated by another transaction'));
+
+        const set1 = vi.fn(() => ({ where: vi.fn(() => ({ returning: returning1 })) }));
+        const set2 = vi.fn(() => ({ where: vi.fn(() => ({ returning: returning2 })) }));
+
+        let callCount = 0;
+        globalThis.mockDb.update = vi.fn(() => {
+            callCount += 1;
+            return callCount === 1 ? { set: set1 } : { set: set2 };
+        });
+
+        // First update should succeed
+        const result1 = await TagModel.update('tag-1', { name: 'Tag v2' });
+        expect(result1).toEqual(
+            createMockTag({ name: 'Tag v2', createdAt: fixedDate, updatedAt: fixedDate })
+        );
+
+        // Second update should throw concurrency error
+        await expect(TagModel.update('tag-1', { name: 'Tag v3' })).rejects.toThrow(
+            'Row was updated by another transaction'
+        );
+    });
+});
+
+describe('TagModel.delete (concurrency)', () => {
+    it('handles concurrent delete and update gracefully', async () => {
+        // Simulate delete is successful
+        const returningDelete = vi.fn().mockResolvedValueOnce([{ id: 'tag-1' }]);
+        // Simulate update after delete returns empty (not found)
+        const returningUpdate = vi.fn().mockResolvedValueOnce([]);
+
+        const setUpdate = vi.fn(() => ({ where: vi.fn(() => ({ returning: returningUpdate })) }));
+        globalThis.mockDb.update = vi.fn(() => ({ set: setUpdate }));
+
+        // First, delete the tag
+        globalThis.mockDb.update = vi.fn(() => ({
+            set: vi.fn(() => ({ where: vi.fn(() => ({ returning: returningDelete })) }))
+        }));
+        const deleteResult = await TagModel.delete('tag-1', 'user-2');
+        expect(deleteResult).toEqual({ id: 'tag-1' });
+
+        // Now, simulate update after delete (should return undefined)
+        globalThis.mockDb.update = vi.fn(() => ({ set: setUpdate }));
+        const updateResult = await TagModel.update('tag-1', { name: 'Should not update' });
+        expect(updateResult).toBeUndefined();
+    });
+
+    it('handles concurrent delete and delete gracefully', async () => {
+        // Simulate first delete is successful
+        const returningDelete1 = vi.fn().mockResolvedValueOnce([{ id: 'tag-1' }]);
+        // Simulate second delete returns empty (already deleted)
+        const returningDelete2 = vi.fn().mockResolvedValueOnce([]);
+
+        let callCount = 0;
+        globalThis.mockDb.update = vi.fn(() => ({
+            set: vi.fn(() => ({
+                where: vi.fn(() => ({
+                    returning: callCount++ === 0 ? returningDelete1 : returningDelete2
+                }))
+            }))
+        }));
+
+        // First delete should succeed
+        const result1 = await TagModel.delete('tag-1', 'user-2');
+        expect(result1).toEqual({ id: 'tag-1' });
+
+        // Second delete should return undefined (already deleted)
+        const result2 = await TagModel.delete('tag-1', 'user-2');
+        expect(result2).toBeUndefined();
     });
 });
 
