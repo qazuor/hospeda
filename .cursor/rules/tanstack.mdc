@@ -1,0 +1,12 @@
+---
+description: 
+globs: *.tsx,*.ts
+alwaysApply: false
+---
+# TanStack Rules
+
+- Use TanStack Query for remote data fetching and caching.
+- Prefer custom hooks to encapsulate query logic.
+- Keep cache keys descriptive and consistent.
+- Use optimistic updates for better UX when appropriate.
+- Handle loading and error states explicitly in the UI.

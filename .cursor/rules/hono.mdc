@@ -1,0 +1,127 @@
+---
+description: 
+globs: apps/api/**/*.*
+alwaysApply: false
+---
+## 🔌 Cursor Rules — Hono API + Zod
+
+These rules apply to all `.ts` files inside `apps/api` or shared logic that powers the API routes using Hono + Zod.
+
+---
+
+### 📦 File Structure
+
+- API routes must live inside `routes/` and be grouped by domain (`routes/public/accommodations.ts`, etc.).
+- Each route file should:
+  - Define handlers (`GET`, `POST`, etc.)
+  - Import validators from `@repo/schemas`
+  - Use services from `@repo/db`
+  - Use `zod` for input validation
+- Common middlewares go in `middleware/`
+- Handlers can be extracted to `/handlers/` or `/controllers/` if too large.
+
+---
+
+### 🧪 Input Validation with Zod
+
+- All incoming data (query, params, body) **must** be validated with Zod.
+- Define schemas in `@repo/schemas`, **never inline**.
+- Use `c.req.valid()` after validation middleware:
+
+```ts
+import { zValidator } from '@hono/zod-validator';
+import { createAccommodationSchema } from '@repo/schemas';
+
+route.post(
+  '/',
+  zValidator('json', createAccommodationSchema),
+  async (c) => {
+    const input = c.req.valid('json');
+    const result = await accommodationService.create({ input, user: c.get('auth') });
+    return c.json({ success: true, data: result });
+  }
+);
+```
+
+---
+
+### 🧠 Typing
+
+- Always type:
+  - Route context (`Context<{ Bindings, Variables }>` if needed)
+  - `req.valid()` returns
+  - Handler return (`c.json<{ success: boolean, data: T }>`)
+
+- Use Zod inference (`z.infer<typeof schema>`) to match types from `@repo/types`.
+
+---
+
+### 🛡️ Auth & Security
+
+- Auth middleware (`Clerk`, etc.) must be present on all protected routes.
+- Always extract the user from `c.get('auth')` and pass explicitly.
+- Do not trust raw headers, body or query params — validate and sanitize everything.
+
+```ts
+const user = c.get('auth');
+if (!user) return c.json({ success: false, error: 'UNAUTHORIZED' }, 401);
+```
+
+---
+
+### 🔄 Route Conventions
+
+- Use RESTful verbs and clear paths:
+  - `GET /public/posts`
+  - `POST /admin/events`
+  - `PUT /admin/accommodations/:id`
+- Route files must contain handlers with the same name as HTTP verbs.
+- Use named route handlers:
+
+```ts
+export const createAccommodation = async (c: Context): Promise<Response> => { ... }
+```
+
+---
+
+### 🔁 Error Handling
+
+- Always catch known service errors and respond with appropriate status codes.
+- Use unified API responses:
+
+```ts
+return c.json({ success: false, error: { code: 'VALIDATION_ERROR', message: err.message } }, 400);
+```
+
+- Use try/catch only around service calls — never around the whole handler.
+- Include context in logs (`req.url`, `user.id`, etc.).
+
+---
+
+### 🔗 Responses
+
+- Response format must be:
+
+```ts
+type ApiResponse<T> = {
+  success: true;
+  data: T;
+} | {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+  };
+};
+```
+
+- Avoid leaking internal error messages to clients.
+- Include pagination metadata if returning arrays (`total`, `limit`, `offset`, etc.).
+
+---
+
+### ❌ Forbidden in API
+
+- ❌ Inline Zod schemas
+- ❌ `any` in routes or handler params
+- ❌ `console.log` without a `// biome-ignore

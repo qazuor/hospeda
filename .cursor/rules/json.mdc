@@ -1,0 +1,13 @@
+---
+description: 
+globs: *.json
+alwaysApply: false
+---
+# JSON Rules
+
+- Always use double quotes for keys and string values.
+- Do not use comments in JSON files.
+- Keep structure consistent and well-formatted.
+- Sort keys alphabetically when possible for readability.
+- Validate JSON before committing.
+- use 4 spaces for indentation

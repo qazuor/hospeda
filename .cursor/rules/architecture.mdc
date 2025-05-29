@@ -1,0 +1,13 @@
+---
+description: States architectural principles, patterns, and recommended approaches for software structure.
+globs: 
+alwaysApply: false
+---
+# Architecture
+
+- Use named exports only.
+- Favor **immutable** data (`readonly`, `as const`).
+- Use **RO-RO** pattern (Receive Object / Return Object).
+- Declare **input/output types** for every function.
+- Follow **SOLID** principles.
+- Prefer **composition** over inheritance. 

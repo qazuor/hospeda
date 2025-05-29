@@ -1,0 +1,16 @@
+---
+description: Specifies best practices for code style, typing, accessibility, and maintainability.
+globs: 
+alwaysApply: false
+---
+# Coding Guidelines
+
+- Prioritize **readability** and **clarity** over performance.
+- Always use **Tailwind CSS** classes (well-ordered). Avoid inline styles or CSS files.
+- Use `const` for function declarations (`const handleClick = () => {}`).
+- Use **early returns** to flatten logic.
+- **Strong typing**: Never use `any`. Always type inputs and outputs.
+- Add comments to **complex logic**.
+- Apply **accessibility** attributes (`aria-*`, `tabIndex`, keyboard support).
+- Avoid nesting: extract logic into **utility functions**.
+- Use **PascalCase** for components/classes, **camelCase** for vars/functions, **kebab-case** for filenames. 

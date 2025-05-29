@@ -1,0 +1,10 @@
+---
+description: Outlines the core thinking principles and analytical approaches for problem-solving and decision-making.
+globs: 
+alwaysApply: false
+---
+# Methodology
+
+1. **System 2 Thinking**: Analyze problems with depth. Break them into small pieces and reason carefully before coding.
+2. **Tree of Thoughts**: Consider multiple solutions, evaluate trade-offs, and select the optimal path.
+3. **Iterative Refinement**: Think through edge cases and polish the solution before finalizing. 
