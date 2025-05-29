@@ -18,6 +18,56 @@ import {
 } from '../../utils';
 import { dbLogger } from '../../utils/logger.ts';
 
+/**
+ * ──────────────────────────────────────────────────────────────────────────────
+ *  Orderable Columns Pattern for Drizzle ORM Models
+ * ──────────────────────────────────────────────────────────────────────────────
+ *
+ * This pattern provides a robust, type-safe way to define which columns of a model
+ * can be used for ordering (sorting) in list queries, and ensures that both the
+ * allowed values and the Drizzle column references are always in sync.
+ *
+ * Steps to replicate for any model:
+ *
+ * 1. Define the list of orderable column names as a readonly tuple (e.g.,
+ *    ['name', 'createdAt', ...] as const).
+ * 2. Use the `createOrderableColumnsAndMapping` utility to generate:
+ *    - A readonly array of allowed column names for UI/validation.
+ *    - A type union of allowed column names for strong typing.
+ *    - A mapping from column name to Drizzle column reference for queries.
+ * 3. Export:
+ *    - The array (for dropdowns, validation, etc.).
+ *    - The type (for params, DTOs, etc.).
+ *    - The mapping (for use in getOrderableColumn and query building).
+ * 4. Use the type in your pagination/search params:
+ *    type MyOrderByColumn = typeof myOrderable.type;
+ *    type MyPaginationParams = PaginationParams<MyOrderByColumn>;
+ * 5. Use the mapping and getOrderableColumn in your list/search methods to resolve
+ *    the correct Drizzle column reference, with fallback and error handling.
+ *
+ * Example:
+ *
+ *   const myOrderable = createOrderableColumnsAndMapping(
+ *     ['name', 'createdAt'] as const,
+ *     myTable
+ *   );
+ *   export const MY_ORDERABLE_COLUMNS = myOrderable.columns;
+ *   export type MyOrderByColumn = typeof myOrderable.type;
+ *   const myOrderableColumns = myOrderable.mapping;
+ *
+ *   // In your model method:
+ *   const col = getOrderableColumn(myOrderableColumns, orderBy, myTable.createdAt);
+ *   const orderExpr = order === 'desc' ? desc(col) : asc(col);
+ *
+ * Best practices:
+ * - Always use the type for params, not just string.
+ * - Export the array for UI and validation.
+ * - Keep the mapping internal to the model.
+ * - Add/rename columns in the tuple and mapping only, never in multiple places.
+ *
+ * See TagModel below for a full implementation.
+ */
+
 const tagOrderable = createOrderableColumnsAndMapping(
     ['name', 'color', 'lifecycle', 'createdAt', 'updatedAt'] as const,
     tags
@@ -79,6 +129,13 @@ export const TagModel = {
      * @param id Tag ID
      * @returns TagType or undefined if not found
      * @throws Error if the query fails
+     *
+     * @example
+     * // Get a tag by ID
+     * const tag = await TagModel.getById('tag-uuid');
+     * if (tag) {
+     *   console.log(tag.name);
+     * }
      */
     async getById(id: string): Promise<TagType | undefined> {
         const db = getDb();
@@ -97,6 +154,15 @@ export const TagModel = {
      * @param input NewTagInputType
      * @returns The created TagType
      * @throws Error if the insert fails
+     *
+     * @example
+     * // Create a new tag
+     * const newTag = await TagModel.create({
+     *   name: 'Nature',
+     *   color: TagColorEnum.GREEN,
+     *   lifecycleState: LifecycleStatusEnum.ACTIVE
+     * });
+     * console.log(newTag.id);
      */
     async create(input: NewTagInputType): Promise<TagType> {
         const db = getDb();
@@ -118,6 +184,13 @@ export const TagModel = {
      * @param input UpdateTagInputType
      * @returns The updated TagType or undefined if not found
      * @throws Error if the update fails
+     *
+     * @example
+     * // Update a tag's color
+     * const updated = await TagModel.update('tag-uuid', { color: TagColorEnum.BLUE });
+     * if (updated) {
+     *   console.log(updated.color);
+     * }
      */
     async update(id: string, input: UpdateTagInputType): Promise<TagType | undefined> {
         const db = getDb();
@@ -143,6 +216,13 @@ export const TagModel = {
      * @param deletedById User ID performing the deletion
      * @returns { id: string } if deleted, undefined if not found
      * @throws Error if the operation fails
+     *
+     * @example
+     * // Soft delete a tag
+     * const deleted = await TagModel.delete('tag-uuid', 'user-uuid');
+     * if (deleted) {
+     *   console.log('Deleted tag:', deleted.id);
+     * }
      */
     async delete(id: string, deletedById: string): Promise<{ id: string } | undefined> {
         const db = getDb();
@@ -172,6 +252,13 @@ export const TagModel = {
      * @param id Tag ID
      * @returns true if deleted, false if not found
      * @throws Error if the operation fails
+     *
+     * @example
+     * // Hard delete a tag
+     * const wasDeleted = await TagModel.hardDelete('tag-uuid');
+     * if (wasDeleted) {
+     *   console.log('Tag permanently deleted');
+     * }
      */
     async hardDelete(id: string): Promise<boolean> {
         const db = getDb();
@@ -197,6 +284,13 @@ export const TagModel = {
      * @param withRelations Relations to populate (e.g., { entityTags: true })
      * @returns TagType with requested relations or undefined if not found
      * @throws Error if the query fails
+     *
+     * @example
+     * // Get a tag with entityTags relation
+     * const tagWithRelations = await TagModel.getWithRelations('tag-uuid', { entityTags: true });
+     * if (tagWithRelations?.entityTags) {
+     *   console.log(tagWithRelations.entityTags.length);
+     * }
      */
     async getWithRelations<T extends TagRelations>(
         id: string,
@@ -226,6 +320,11 @@ export const TagModel = {
      * @param params TagPaginationParams (limit, offset, order, orderBy)
      * @returns Array<TagType>
      * @throws Error if the query fails
+     *
+     * @example
+     * // List tags ordered by name
+     * const tags = await TagModel.list({ limit: 20, offset: 0, orderBy: 'name', order: 'asc' });
+     * tags.forEach(tag => console.log(tag.name));
      */
     async list(params: TagPaginationParams): Promise<TagType[]> {
         const db = getDb();
@@ -253,6 +352,13 @@ export const TagModel = {
      * @param name Tag name
      * @returns TagType or undefined if not found
      * @throws Error if the query fails
+     *
+     * @example
+     * // Find a tag by name
+     * const tag = await TagModel.findByName('Nature');
+     * if (tag) {
+     *   console.log(tag.id);
+     * }
      */
     async findByName(name: string): Promise<TagType | undefined> {
         const db = getDb();
@@ -271,6 +377,11 @@ export const TagModel = {
      * @param params TagSearchParams (name, color, lifecycle)
      * @returns number of tags matching the filters
      * @throws Error if the query fails
+     *
+     * @example
+     * // Count active blue tags
+     * const count = await TagModel.count({ color: TagColorEnum.BLUE, lifecycleState: LifecycleStatusEnum.ACTIVE });
+     * console.log('Active blue tags:', count);
      */
     async count(params?: TagSearchParams): Promise<number> {
         const db = getDb();
@@ -305,6 +416,11 @@ export const TagModel = {
      * @param params TagSearchParams (name, color, lifecycle, limit, offset, order, orderBy)
      * @returns Array<TagType>
      * @throws Error if the query fails
+     *
+     * @example
+     * // Search tags by name substring
+     * const tags = await TagModel.search({ name: 'Nat', limit: 10, offset: 0 });
+     * tags.forEach(tag => console.log(tag.name));
      */
     async search(params: TagSearchParams): Promise<TagType[]> {
         const db = getDb();
