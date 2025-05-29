@@ -16,7 +16,7 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { pgEnum } from 'drizzle-orm/pg-core';
-import { enumToTuple } from '../utils/db-utils.ts';
+import { enumToTuple } from '../utils/enum-utils';
 
 export const AccommodationTypePgEnum = pgEnum(
     'accommodation_type_enum',
