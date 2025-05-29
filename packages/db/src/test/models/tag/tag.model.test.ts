@@ -2,7 +2,7 @@ import type { NewTagInputType, TagType, UpdateTagInputType } from '@repo/types';
 import type { TagId, UserId } from '@repo/types/common/id.types.js';
 import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum.js';
 import { TagColorEnum } from '@repo/types/enums/tag-color.enum.js';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tags } from '../../../dbschemas/tag/tag.dbschema';
 import { TagModel } from '../../../models/tag/tag.model.js';
 
@@ -536,13 +536,11 @@ describe('TagModel.count', () => {
 });
 
 describe('TagModel.search', () => {
-    beforeAll(() => {
+    beforeEach(() => {
         // biome-ignore lint/suspicious/noExplicitAny: test hack
         (tags as any).name = {
             ilike: vi.fn(() => true)
         };
-    });
-    beforeEach(() => {
         globalThis.mockLogger.query.mockClear();
         globalThis.mockLogger.error.mockClear();
         globalThis.mockDb.select = vi.fn().mockReturnThis();
@@ -600,4 +598,13 @@ describe('TagModel.search', () => {
             'TagModel.search'
         );
     });
+});
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    const tagName = (tags as Record<string, unknown>).name;
+    if (tagName && typeof (tagName as { ilike?: unknown }).ilike === 'function') {
+        (tagName as { ilike?: unknown }).ilike = undefined;
+    }
+    process.env.DB_ORDERBY_THROW_ON_INVALID = undefined;
 });
