@@ -1,6 +1,6 @@
 import type { AccommodationType, UserType } from '@repo/types';
 import type { PgColumn } from 'drizzle-orm/pg-core'; // Import PgColumn type
-import { dbLogger } from './logger.js';
+import { dbLogger } from './logger.ts';
 
 /**
  * Converts a TypeScript string enum to a readonly string tuple
@@ -159,7 +159,7 @@ export function getOrderByColumn<TSchema extends Record<string, PgColumn<any, an
  * @param fields Keys to omit
  * @returns New object without omitted keys
  * @example
- * omitFields(user, ['passwordHash'])
+ * omitFields(user, ['password'])
  */
 export function omitFields<T extends object, K extends keyof T>(obj: T, fields: K[]): Omit<T, K> {
     const clone = { ...obj } as Omit<T, K>;
@@ -260,11 +260,10 @@ export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
 }
 
 /**
- * Casts all JSONB fields in an accommodation row to their proper types.
- * Ensures compatibility with AccommodationType.
- *
- * @param row - Accommodation record with unknown jsonb fields
- * @returns AccommodationType with casted jsonb fields
+ * Casts all JSONB and relation fields in an accommodation row to their proper types.
+ * Asegura compatibilidad con AccommodationType.
+ * @param row - Accommodation record with unknown jsonb/relation fields
+ * @returns AccommodationType with casted fields
  */
 export function castAccommodationJsonFields<T extends { [key: string]: unknown }>(
     row: T
@@ -277,16 +276,24 @@ export function castAccommodationJsonFields<T extends { [key: string]: unknown }
         location: row.location as AccommodationType['location'],
         media: row.media as AccommodationType['media'],
         rating: row.rating as AccommodationType['rating'],
-        type: row.type as AccommodationType['type'],
-        state: row.state as AccommodationType['state']
+        schedule: row.schedule as AccommodationType['schedule'],
+        extraInfo: row.extraInfo as AccommodationType['extraInfo'],
+        seo: row.seo as AccommodationType['seo'],
+        owner: row.owner as AccommodationType['owner'],
+        destination: row.destination as AccommodationType['destination'],
+        features: row.features as AccommodationType['features'],
+        amenities: row.amenities as AccommodationType['amenities'],
+        reviews: row.reviews as AccommodationType['reviews'],
+        faqs: row.faqs as AccommodationType['faqs'],
+        iaData: row.iaData as AccommodationType['iaData'],
+        tags: row.tags as AccommodationType['tags']
     };
 }
 
 /**
- * Casts all JSONB fields in a user row.
- *
- * @param row - User record with unknown jsonb fields
- * @returns UserType with casted jsonb fields
+ * Casts all JSONB and relation fields in a user row.
+ * @param row - User record with unknown jsonb/relation fields
+ * @returns UserType with casted fields
  */
 export function castUserJsonFields<T extends { [key: string]: unknown }>(
     row: T
@@ -294,10 +301,11 @@ export function castUserJsonFields<T extends { [key: string]: unknown }>(
     return {
         ...row,
         contactInfo: row.contactInfo as UserType['contactInfo'],
+        location: row.location as UserType['location'],
         socialNetworks: row.socialNetworks as UserType['socialNetworks'],
         profile: row.profile as UserType['profile'],
         settings: row.settings as UserType['settings'],
-        state: row.state as UserType['state']
+        bookmarks: row.bookmarks as UserType['bookmarks']
     };
 }
 
@@ -322,4 +330,22 @@ export function castReturning<T>(rows: unknown): T[] {
 // biome-ignore lint/suspicious/noExplicitAny: This is a necessary escape hatch for complex dynamic queries
 export function rawSelect(builder: any): any {
     return builder;
+}
+
+/**
+ * Creates a readonly array of orderable columns, the associated type, and a Drizzle mapping in one statement.
+ * Keeps everything in sync and DRY for models.
+ */
+export function createOrderableColumnsAndMapping<
+    const T extends readonly string[],
+    Table extends Record<string, unknown>
+>(columns: T, table: Table) {
+    return {
+        columns,
+        type: null as unknown as T[number],
+        mapping: Object.fromEntries(columns.map((col) => [col, table[col]])) as Record<
+            T[number],
+            Table[keyof Table]
+        >
+    };
 }
