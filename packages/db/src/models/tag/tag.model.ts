@@ -1,4 +1,5 @@
 import type {
+    EntityTagType,
     LifecycleStatusEnum,
     NewTagInputType,
     TagColorEnum,
@@ -60,7 +61,7 @@ export type TagRelations = {
  * Mapea el objeto 'with' a los resultados reales de relaciones
  */
 export type RelationResult<T extends TagRelations> = {
-    entityTags: T['entityTags'] extends true ? Array<unknown> : never;
+    entityTags: T['entityTags'] extends true ? EntityTagType[] : never;
 };
 
 export const TagModel = {
