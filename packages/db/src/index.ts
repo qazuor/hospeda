@@ -1,7 +1,5 @@
-export * from './client.js';
-export * from './schema/index.js';
-export * from './service/index.js';
-export * from './types/db-types.js';
-export * from './utils/db-utils.js';
+export * from './client.ts';
+export * from './dbschemas/index.ts';
+export * from './utils/index.ts';
 
 export { sql } from 'drizzle-orm';

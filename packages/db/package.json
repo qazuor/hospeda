@@ -14,22 +14,25 @@
     },
     "files": ["dist"],
     "scripts": {
-        "build": "tsup src/index.ts --format esm,cjs --dts",
+        "drizzle-kit": "tsx node_modules/drizzle-kit/bin.cjs",
+        "build": "tsup src/index.ts",
         "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
         "lint": "biome check .",
         "format": "biome format --write .",
         "check": "biome check --write .",
         "check-types": "tsc --noEmit",
         "clean": "rm -rf node_modules dist",
-        "db:migrate": "drizzle-kit push:pg --config drizzle.config.ts",
-        "db:generate": "drizzle-kit generate:pg --config drizzle.config.ts",
-        "db:studio": "drizzle-kit studio --config drizzle.config.ts",
+        "db:migrate": "pnpm db:generate:enum-migrations && pnpm run drizzle-kit push:pg --config drizzle.config.ts",
+        "db:generate": "pnpm run drizzle-kit generate:pg --config drizzle.config.ts",
+        "db:studio": "pnpm run drizzle-kit studio --config drizzle.config.ts",
         "db:regenerate": "pnpm run db:migrate -- --force && pnpm run db:seed:required && pnpm run db:seed:example",
         "db:regenerate:required": "pnpm run db:migrate -- --force && pnpm run db:seed:required",
         "db:regenerate:example": "pnpm run db:migrate -- --force && pnpm run db:seed:example",
         "db:seed": "pnpm run db:seed:required && pnpm run db:seed:example",
         "db:seed:required": "tsx ./src/seeds/required.seed.ts",
-        "db:seed:example": "tsx ./src/seeds/example.seed.ts"
+        "db:seed:example": "tsx ./src/seeds/example.seed.ts",
+        "db:generate:enum-migrations": "tsx ./scripts/generate-enum-migrations.ts",
+        "test": "vitest run"
     },
     "dependencies": {
         "@repo/config": "workspace:*",
@@ -45,12 +48,16 @@
         "@types/bcrypt": "^5.0.2",
         "@types/node": "^22.15.3",
         "@types/pg": "^8.15.1",
+        "@vitest/ui": "^3.1.4",
+        "c8": "^10.1.3",
         "dotenv": "^16.4.5",
         "drizzle-kit": "^0.20.18",
         "pg": "^8.11.1",
-        "tsx": "^4.7.0",
         "tsup": "^8.4.0",
-        "typescript": "^5.8.3"
+        "tsx": "^4.19.4",
+        "typescript": "^5.8.3",
+        "vite-tsconfig-paths": "^5.1.4",
+        "vitest": "^3.1.3"
     },
     "peerDependencies": {
         "pg": "^8.11.1"
