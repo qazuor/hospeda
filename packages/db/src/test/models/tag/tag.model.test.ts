@@ -13,14 +13,6 @@ declare global {
     var mockLogger: any;
 }
 
-vi.mock('../../../utils/db-utils', async (importOriginal) => {
-    const actual = (await importOriginal()) as Record<string, unknown>;
-    return {
-        ...actual,
-        createOrderableColumnsAndMapping: actual.createOrderableColumnsAndMapping
-    };
-});
-
 const createMockTag = (overrides: Partial<TagType> = {}): TagType => ({
     id: 'tag-1' as TagId,
     name: 'Test Tag',

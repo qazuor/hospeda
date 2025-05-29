@@ -42,8 +42,3 @@ vi.mock('../client.ts', () => ({
 vi.mock('../utils/logger.ts', () => ({
     dbLogger: globalThis.mockLogger
 }));
-vi.mock('../utils/db-utils', () => ({
-    castReturning: (v: unknown) => v,
-    castUserJsonFields: (v: unknown) => v,
-    enumToTuple: (e: unknown) => Object.values(e as Record<string, unknown>)
-}));

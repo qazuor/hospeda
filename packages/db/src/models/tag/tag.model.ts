@@ -14,7 +14,7 @@ import {
     createOrderableColumnsAndMapping,
     getOrderableColumn,
     prepareLikeQuery
-} from '../../utils/db-utils';
+} from '../../utils';
 import { dbLogger } from '../../utils/logger.ts';
 
 const tagOrderable = createOrderableColumnsAndMapping(
