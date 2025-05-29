@@ -1,0 +1,26 @@
+---
+description: Summarizes rules and approaches for writing and organizing software tests.
+globs: 
+alwaysApply: false
+---
+# Testing Rules
+
+- Use **AAA** (Arrange, Act, Assert) in unit tests.
+- Name test vars clearly: `inputX`, `mockX`, `expectedX`, `actualX`.
+- Write unit tests for all public functions.
+- Write **Given-When-Then** style for acceptance tests. 
+
+
+### 🧪 Testing
+- Use **Vitest** for unit tests.
+
+
+
+```ts
+test('should calculate total with tax', () => {
+  const input = { price: 100, taxRate: 0.21 };
+  const expected = { total: 121 };
+  const actual = calculateTotal(input);
+  expect(actual).toEqual(expected);
+});
+```

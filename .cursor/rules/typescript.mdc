@@ -1,0 +1,116 @@
+---
+description: 
+globs: *.ts,*.tsx
+alwaysApply: false
+---
+# TypeScript Rules
+
+- Always enable strict mode (`strict: true`).
+- Never use `any` type; prefer explicit and safe types.
+- Use literal and union types for clear intent.
+- Declare input and output types for all public functions.
+- Prefer type aliases and interfaces for complex structures.
+- Use utility types to avoid repetition.
+- Use `import type` for type imports.
+
+
+### ✅ Type Safety & Typing
+
+- Always declare **types for all variables, function parameters, and return values**.
+- Never use `any`. Use `unknown` if type is truly unknown, and refine with type guards.
+- Prefer **`type`** over `interface` for most use cases unless extending objects.
+- Use **readonly** and `as const` to enforce immutability where applicable.
+- Prefer union types and literal types over magic strings:
+
+```ts
+type Status = 'active' | 'archived' | 'deleted';
+```
+
+---
+
+### 🧠 Function Design
+
+- All functions must be:
+  - Strongly typed
+  - Short (preferably < 20 LOC)
+  - Named with a **verb + purpose**
+- Use the **RO-RO pattern**:
+  - Receive an object with named parameters
+  - Return an object with named results
+
+```ts
+type Input = { price: number; taxRate: number };
+type Output = { total: number };
+
+const calculateTotal = ({ price, taxRate }: Input): Output => {
+  return { total: price * (1 + taxRate) };
+};
+```
+
+- Use **arrow functions** for simple logic and **named functions** for longer/recursive logic.
+
+---
+
+### 📦 Modularization & Exports
+
+- Use **named exports** only — no default exports.
+- Keep one logical responsibility per file.
+- Use `index.ts` to re-export when grouping types, utils, etc.
+- Organize types in `@repo/types`, schemas in `@repo/schemas`, and database models in `@repo/db`.
+
+---
+
+### 🧩 Types & Enums
+
+- Place reusable enums in `enums/` folder.
+- Enums must be well-named, exported, and typed.
+- Add a display map if needed, e.g.:
+
+```ts
+export enum AccommodationTypeEnum {
+  HOTEL = 'HOTEL',
+  CABIN = 'CABIN',
+  HOSTEL = 'HOSTEL',
+}
+```
+
+- Use helper types like `WithId`, `WithAudit`, `WithRelations`, etc., from `common/helpers.types.ts`.
+
+---
+
+### 🛡️ Zod Integration
+
+- Every input/output should have a Zod schema when used for validation, forms, or API.
+- The schema must match the TypeScript type exactly — no fields should be missing or renamed.
+- Add error messages explicitly in Zod schemas.
+
+---
+
+### 📐 Naming Conventions
+
+- ✅ `camelCase` for variables, functions, consts
+- ✅ `PascalCase` for types, components, enums, classes
+- ✅ `UPPER_CASE` for environment variables and constants
+- ✅ `i`, `j` for loops, `err` for errors, `ctx`, `req`, `res` in middleware
+- ✅ Use verbs for booleans: `isActive`, `hasError`, `canCreate`
+
+---
+
+### 🚫 Forbidden Practices
+
+- ❌ `any`, `Function`, `Object`, or `{}`
+- ❌ `console.log` in committed code (unless behind `// biome-ignore`)
+- ❌ Implicit `any` return or parameters
+- ❌ Multiple responsibilities in one file
+- ❌ Nesting 3+ levels deep without extracting to helpers
+
+---
+
+### ✅ TL;DR
+
+- Strong typing everywhere.
+- Follow RO-RO and clean function design.
+- Use named exports only.
+- Organize code and types by domain.
+- Prefer immutability and Zod validation.
+- Make your code readable, predictable, and testable.

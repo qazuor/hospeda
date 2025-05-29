@@ -1,0 +1,58 @@
+---
+description: 
+globs: *.css,*.pcss,*.scss,*.sass,*.html,*.astro,*.tsx
+alwaysApply: false
+---
+# CSS Rules
+
+- Always use Tailwind CSS utility classes for styling.
+- Avoid inline styles and traditional CSS files.
+- Prefer utility composition over complex CSS selectors.
+- Keep class lists well-ordered and readable.
+- Use semantic HTML elements for accessibility.
+- Generate responsive designs.
+- Implement accessibility best practices.
+
+### 🎯 Scope of Use
+
+- Only write CSS in files that are clearly intended for it, such as:
+  - `tailwind.base.css`
+  - `tailwind.typography.css`
+  - `animations.css`
+  - `scrollbars.css`
+  - `tailwind.components.css`
+- Always assume Tailwind is the default styling system.
+- Any CSS added must complement or extend Tailwind — never replace it.
+
+### 💡 Syntax Rules
+
+- Use `@apply` instead of re-writing Tailwind utility styles in plain CSS.
+- Do not define color, spacing, font-size, etc., manually unless Tailwind lacks that value.
+- Use `var(--tw-*)` tokens if you need to access Tailwind theme values manually.
+- Avoid `!important` unless absolutely necessary (e.g. overriding third-party styles).
+- Always include fallback values if using newer CSS features (e.g. `backdrop-filter`).
+
+---
+
+### 🏷️ Selectors & Naming
+
+- Only use class selectors (`.my-class`) — never use IDs or tags (except in `@layer base`).
+- Use `kebab-case` for all custom class names.
+- Use semantic, descriptive names (e.g., `.section-divider`, not `.line2` or `.blue-block`).
+- Prefix styles if scoped to a component (e.g., `.hero-title`, `.modal-overlay`).
+---
+
+### 📁 File Convention
+
+- Each CSS file should have a **clear purpose** (e.g., animations, typography, theme tokens).
+- Avoid writing all styles in a single `global.css`.
+- Group related classes together and add comments if necessary.
+
+---
+
+### ⚠️ Prohibited in CSS Files
+
+- ❌ Do not define Tailwind class styles manually (`.p-4 { padding: 1rem }`).
+- ❌ Do not use tag or ID selectors (`div`, `#main`, etc.), except in `@layer base`.
+- ❌ Do not duplicate Tailwind utilities — always prefer `@apply`.
+- ❌ Do not override Tailwind core styles (unless absolutely necessary and scoped).

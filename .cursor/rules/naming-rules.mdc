@@ -1,0 +1,12 @@
+---
+description: Details naming conventions for variables, functions, and other code elements.
+globs: 
+alwaysApply: false
+---
+# Naming Rules
+
+- Booleans: `isLoading`, `hasError`, `canDelete`, etc.
+- Functions: start with a verb (`getX`, `saveX`, `handleX`, etc.)
+- Avoid abbreviations unless well-known (`API`, `URL`, `req`, `res`, `ctx`).
+- No magic numbers — use constants.
+- Prefer `for of` over `forEach`. 

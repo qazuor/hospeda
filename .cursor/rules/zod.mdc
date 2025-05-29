@@ -1,0 +1,157 @@
+---
+description: 
+globs: *.schema.ts
+alwaysApply: false
+---
+## 🧩 Cursor Rules — Zod Schemas (`*.schema.ts` files)
+
+These rules apply to all files that define Zod schemas, including:
+
+- Validation for forms
+- API inputs/outputs
+- DB seeds
+- DTOs and data transformers
+- Content collections (Astro)
+
+---
+
+### 📦 File Location & Structure
+
+- All schemas must live in the `@repo/schemas` package.
+- One schema file per domain entity (`user.schema.ts`, `accommodation.schema.ts`, etc.).
+- Use an `index.ts` to re-export them for cleaner imports.
+
+---
+
+### 🧠 Typing & Structure
+
+- Always define and export:
+  - `const schema = z.object(...)`
+  - `export type X = z.infer<typeof schema>`
+- Schema must match **exactly** the corresponding type in `@repo/types`.
+- Never omit or rename fields arbitrarily.
+
+```ts
+export const userSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email({ message: 'Invalid email address' }),
+  isActive: z.boolean().default(true),
+});
+
+export type UserSchema = z.infer<typeof userSchema>;
+```
+
+---
+
+### 🎯 Naming Conventions
+
+- Schema variable: `entitySchema`, `entityInputSchema`, `entityPartialSchema`, etc.
+- Inferred type: `EntitySchema`, `EntityInput`, `EntityPartial`, etc.
+- Use PascalCase for types and camelCase for schema variables.
+---
+
+### 🧪 Validation & Messages
+
+- All fields must include a **custom error message** when user-facing.
+- Use `.refine()` or `.superRefine()` for conditional logic.
+- Use `.transform()` only when needed — avoid side effects.
+- Use `.default()` for optional fields that need fallbacks.
+
+```ts
+/**
+ * Accommodation Amenity schema definition using Zod for validation.
+ * Represents an amenity associated with an accommodation, including cost and optionality.
+ */
+export const AccommodationAmenitySchema = WithModerationStatusSchema.merge(WithAdminInfoSchema).extend(
+    {
+        /** Accommodation ID this amenity belongs to */
+        accommodationId: z.string({
+            required_error: 'zodError.accommodation.amenity.accommodationId.required',
+            invalid_type_error: 'zodError.accommodation.amenity.accommodationId.invalidType'
+        }),
+        /** Amenity ID */
+        amenityId: z.string({
+            required_error: 'zodError.accommodation.amenity.amenityId.required',
+            invalid_type_error: 'zodError.accommodation.amenity.amenityId.invalidType'
+        }),
+        /** Whether the amenity is optional for the guest */
+        isOptional: z.boolean({
+            required_error: 'zodError.accommodation.amenity.isOptional.required',
+            invalid_type_error: 'zodError.accommodation.amenity.isOptional.invalidType'
+        }),
+        /** Additional cost for this amenity, optional */
+        additionalCost: PriceSchema.optional(),
+        /** Additional cost as a percent, optional (0-100) */
+        additionalCostPercent: z
+            .number({
+                required_error: 'zodError.accommodation.amenity.additionalCostPercent.required',
+                invalid_type_error:
+                    'zodError.accommodation.amenity.additionalCostPercent.invalidType'
+            })
+            .min(0, { message: 'zodError.accommodation.amenity.additionalCostPercent.min' })
+            .max(100, { message: 'zodError.accommodation.amenity.additionalCostPercent.max' })
+            .optional(),
+        /** Amenity object, optional */
+        amenity: AmenitySchema.optional()
+    }
+);
+```
+
+---
+
+### ♻️ Reusability
+
+- Extract common patterns to shared schemas:
+  - `z.string().uuid()` → `uuidSchema`
+  - `z.string().min(1)` → `nonEmptyString`
+- Place shared fragments in `common/` (e.g., `zod.helpers.ts` or `common.schemas.ts`).
+- Reuse base schemas with `.extend()` when needed.
+
+```ts
+export const baseSeoSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(10),
+});
+```
+
+---
+
+### 🔄 Matching With Types
+
+- Use **zod schemas to validate**, not to replace your types.
+- Types must always be defined in `@repo/types`, and schemas must reflect those exactly.
+- Do not change enum names or keys in schemas.
+
+---
+
+### 🧩 Partial, Optional, Input, Output
+
+- Use `z.partial()` or `.optional()` for update schemas.
+- Export multiple versions when needed:
+
+```ts
+export const userInputSchema = userSchema.omit({ id: true });
+export const userUpdateSchema = userInputSchema.partial();
+```
+
+- If there’s a DTO used in forms, export `FormInputSchema`, `FormFieldSchema`, etc.
+
+---
+
+### ⚠️ Forbidden in Zod
+
+- ❌ Using `z.any()` unless strictly necessary.
+- ❌ Using string regexes without `.email()`, `.uuid()`, etc. when available.
+- ❌ Duplicating schemas — prefer `.extend()`, `.pick()`, `.omit()`, etc.
+- ❌ Defining types directly from Zod objects that don’t match `@repo/types`.
+
+---
+
+### ✅ TL;DR
+
+- Match `@repo/types` exactly.
+- Always export schema + inferred type.
+- Include custom error messages.
+- Reuse shared schema fragments.
+- Use `.extend()` and `.omit()` to avoid duplication.
+- Use `z.infer<typeof schema>` for type safety everywhere.
