@@ -1,6 +1,9 @@
-import { CurrencyEnum } from '@repo/types/src/enums/currency.enum';
+import { PriceCurrencyEnum } from '@repo/types';
 import { z } from 'zod';
 
-export const CurrencyEnumSchema = z.enum(Object.values(CurrencyEnum) as [string, ...string[]], {
-    errorMap: () => ({ message: 'zodError.enums.currency.invalid' })
-});
+export const PriceCurrencyEnumSchema = z.enum(
+    Object.values(PriceCurrencyEnum) as [string, ...string[]],
+    {
+        errorMap: () => ({ message: 'zodError.enums.priceCurrency.invalid' })
+    }
+);

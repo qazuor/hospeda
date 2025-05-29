@@ -1,21 +1,16 @@
 import { z } from 'zod';
-import { ContactInfoSchema } from '../../common/contact.schema';
 import {
+    ContactInfoSchema,
+    LocationSchema,
+    SocialNetworkSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { LocationSchema } from '../../common/location.schema';
-import { SocialNetworkSchema } from '../../common/social.schema';
-import { StrongPasswordRegex } from '../../utils/utils';
-import { PermissionSchema } from './permission.schema';
-import { RoleSchema } from './role.schema';
-import { UserBookmarkSchema } from './user.bookmark.schema';
-import { UserExtrasSchema } from './user.extras.schema';
-import { UserProfileSchema } from './user.profile.schema';
-import { UserSettingsSchema } from './user.settings.schema';
+    WithLifecycleStateSchema
+} from '../../common/index.js';
+import { StrongPasswordRegex } from '../../utils/utils.js';
+import { UserProfileSchema } from './user.profile.schema.js';
+import { UserSettingsSchema } from './user.settings.schema.js';
 
 /**
  * User schema definition using Zod for validation.
@@ -24,19 +19,8 @@ import { UserSettingsSchema } from './user.settings.schema';
  */
 export const UserSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
     .extend({
-        /** User email, must be valid format */
-        email: z.string().email({ message: 'zodError.user.email.invalid' }),
-        /** User profile information */
-        profile: UserProfileSchema,
-        /** User settings, optional */
-        settings: UserSettingsSchema.optional(),
-        /** List of user bookmarks, optional */
-        bookmarks: z.array(UserBookmarkSchema).optional(),
-        /** Additional user data, optional */
-        extras: UserExtrasSchema.optional(),
         /** Username, 3-50 characters */
         userName: z
             .string()
@@ -75,8 +59,55 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
         location: LocationSchema.optional(),
         /** Social networks, optional */
         socialNetworks: SocialNetworkSchema.optional(),
-        /** User role (required) */
-        role: RoleSchema,
-        /** List of permissions, optional */
-        permissions: z.array(PermissionSchema).optional()
+        /** User role ID (required) */
+        roleId: z
+            .string({
+                required_error: 'zodError.user.roleId.required',
+                invalid_type_error: 'zodError.user.roleId.invalidType'
+            })
+            .uuid({ message: 'zodError.user.roleId.invalidUuid' }),
+        /** List of permission IDs, optional */
+        permissionIds: z
+            .array(
+                z
+                    .string({
+                        required_error: 'zodError.user.permissionIds.required',
+                        invalid_type_error: 'zodError.user.permissionIds.invalidType'
+                    })
+                    .uuid({ message: 'zodError.user.permissionIds.invalidUuid' })
+            )
+            .optional(),
+        /** User profile information */
+        profile: UserProfileSchema.optional(),
+        /** User settings, optional */
+        settings: UserSettingsSchema.optional()
     });
+
+// Input para filtros de búsqueda de usuarios
+export const UserFilterInputSchema = z.object({
+    userName: z
+        .string()
+        .min(3, { message: 'zodError.user.userName.min' })
+        .max(50, { message: 'zodError.user.userName.max' })
+        .optional(),
+    firstName: z
+        .string()
+        .min(2, { message: 'zodError.user.firstName.min' })
+        .max(50, { message: 'zodError.user.firstName.max' })
+        .optional(),
+    lastName: z
+        .string()
+        .min(2, { message: 'zodError.user.lastName.min' })
+        .max(50, { message: 'zodError.user.lastName.max' })
+        .optional(),
+    emailVerified: z.boolean().optional(),
+    phoneVerified: z.boolean().optional(),
+    roleId: z.string().optional(),
+    q: z.string().optional() // búsqueda libre
+});
+
+// Input para ordenamiento de resultados
+export const UserSortInputSchema = z.object({
+    sortBy: z.enum(['userName', 'createdAt', 'firstName', 'lastName']).optional(),
+    order: z.enum(['asc', 'desc']).optional()
+});

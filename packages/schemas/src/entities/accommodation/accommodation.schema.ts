@@ -1,30 +1,32 @@
+import { VisibilityEnumSchema } from '@repo/schemas/enums/visibility.enum.schema.js';
 import { z } from 'zod';
 import {
     ContactInfoSchema,
     LocationSchema,
     MediaSchema,
-    PriceSchema,
     SocialNetworkSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema,
+    WithModerationStatusSchema,
     WithReviewStateSchema,
     WithSeoSchema,
     WithTagsSchema,
     WithVisibilitySchema
-} from '../../common';
-import { AccommodationTypeEnumSchema } from '../../enums';
-import { DestinationSchema } from '../destination/destination.schema';
-import { UserSchema } from '../user/user.schema';
-import { AccommodationAmenitySchema } from './accommodation.amenity.schema';
-import { ExtraInfoSchema } from './accommodation.extrainfo.schema';
-import { AccommodationFaqSchema } from './accommodation.faq.schema';
-import { AccommodationFeatureSchema } from './accommodation.feature.schema';
-import { AccommodationIaDataSchema } from './accommodation.ia.schema';
-import { AccommodationRatingSchema } from './accommodation.rating.schema';
-import { AccommodationReviewSchema } from './accommodation.review.schema';
-import { ScheduleSchema } from './accommodation.schedule.schema';
+} from '../../common/index.js';
+import { AccommodationTypeEnumSchema } from '../../enums/index.js';
+import { DestinationSchema } from '../destination/destination.schema.js';
+import { UserSchema } from '../user/user.schema.js';
+import { AccommodationAmenitySchema } from './accommodation.amenity.schema.js';
+import { ExtraInfoSchema } from './accommodation.extrainfo.schema.js';
+import { AccommodationFaqSchema } from './accommodation.faq.schema.js';
+import { AccommodationFeatureSchema } from './accommodation.feature.schema.js';
+import { AccommodationIaDataSchema } from './accommodation.ia.schema.js';
+import { AccommodationPriceSchema } from './accommodation.price.schema.js';
+import { AccommodationRatingSchema } from './accommodation.rating.schema.js';
+import { AccommodationReviewSchema } from './accommodation.review.schema.js';
+import { ScheduleSchema } from './accommodation.schedule.schema.js';
 
 /**
  * Accommodation schema definition using Zod for validation.
@@ -35,6 +37,7 @@ export const AccommodationSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithVisibilitySchema)
     .merge(WithReviewStateSchema)
+    .merge(WithModerationStatusSchema)
     .merge(WithTagsSchema)
     .merge(WithSeoSchema)
     .merge(WithAdminInfoSchema)
@@ -78,7 +81,7 @@ export const AccommodationSchema = WithIdSchema.merge(WithAuditSchema)
         /** Social networks, optional */
         socialNetworks: SocialNetworkSchema.optional(),
         /** Price information, optional */
-        price: PriceSchema.optional(),
+        price: AccommodationPriceSchema.optional(),
         /** Location information, optional */
         location: LocationSchema.optional(),
         /** Media assets, optional */
@@ -91,17 +94,21 @@ export const AccommodationSchema = WithIdSchema.merge(WithAuditSchema)
             })
             .optional(),
         /** Owner user ID */
-        ownerId: z.string({
-            required_error: 'zodError.accommodation.ownerId.required',
-            invalid_type_error: 'zodError.accommodation.ownerId.invalidType'
-        }),
+        ownerId: z
+            .string({
+                required_error: 'zodError.accommodation.ownerId.required',
+                invalid_type_error: 'zodError.accommodation.ownerId.invalidType'
+            })
+            .uuid({ message: 'zodError.accommodation.ownerId.invalidUuid' }),
         /** Owner user object, optional */
         owner: UserSchema.optional(),
         /** Destination ID */
-        destinationId: z.string({
-            required_error: 'zodError.accommodation.destinationId.required',
-            invalid_type_error: 'zodError.accommodation.destinationId.invalidType'
-        }),
+        destinationId: z
+            .string({
+                required_error: 'zodError.accommodation.destinationId.required',
+                invalid_type_error: 'zodError.accommodation.destinationId.invalidType'
+            })
+            .uuid({ message: 'zodError.accommodation.destinationId.invalidUuid' }),
         /** Destination object, optional */
         destination: DestinationSchema.optional(),
         /** List of features, at least 2 required */
@@ -127,3 +134,20 @@ export const AccommodationSchema = WithIdSchema.merge(WithAuditSchema)
         /** List of AI data objects, optional */
         iaData: z.array(AccommodationIaDataSchema).optional()
     });
+
+export const AccommodationFilterInputSchema = z.object({
+    city: z.string().optional(),
+    country: z.string().optional(),
+    tags: WithTagsSchema.shape.tags.optional(),
+    visibility: VisibilityEnumSchema.optional(),
+    isFeatured: z.boolean().optional(),
+    minRating: z.number().min(0).max(5).optional(),
+    maxRating: z.number().min(0).max(5).optional(),
+    q: z.string().optional() // búsqueda libre
+});
+
+// Input para ordenamiento de resultados
+export const AccommodationSortInputSchema = z.object({
+    sortBy: z.enum(['name', 'createdAt', 'averageRating', 'reviewsCount', 'price']).optional(),
+    order: z.enum(['asc', 'desc']).optional()
+});

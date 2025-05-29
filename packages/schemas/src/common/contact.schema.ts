@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { PreferredContactEnumSchema } from '../enums';
-import { InternationalPhoneRegex } from '../utils/utils';
+import { PreferredContactEnumSchema } from '../enums/index.js';
+import { InternationalPhoneRegex } from '../utils/utils.js';
 
 export const ContactInfoSchema = z.object({
     personalEmail: z

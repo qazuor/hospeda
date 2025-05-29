@@ -3,14 +3,12 @@ import {
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { AmenityTypeEnumSchema } from '../../enums/amenity-type.enum.schema';
+    WithLifecycleStateSchema
+} from '../../common/index.js';
+import { AmenityTypeEnumSchema } from '../../enums/index.js';
 
 export const AmenitySchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
     .extend({
         name: z

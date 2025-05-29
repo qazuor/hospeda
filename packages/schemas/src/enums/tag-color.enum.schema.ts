@@ -1,4 +1,4 @@
-import { TagColorEnum } from '@repo/types/src/enums/tag-color.enum';
+import { TagColorEnum } from '@repo/types';
 import { z } from 'zod';
 
 export const TagColorEnumSchema = z.enum(Object.values(TagColorEnum) as [string, ...string[]], {

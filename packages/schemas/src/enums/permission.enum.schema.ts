@@ -1,6 +1,9 @@
-import { PermissionEnum } from '@repo/types/src/enums/permission.enum';
+import { BuiltinPermissionTypeEnum } from '@repo/types';
 import { z } from 'zod';
 
-export const PermissionEnumSchema = z.enum(Object.values(PermissionEnum) as [string, ...string[]], {
-    errorMap: () => ({ message: 'zodError.enums.permission.invalid' })
-});
+export const BuiltinPermissionTypeEnumSchema = z.enum(
+    Object.values(BuiltinPermissionTypeEnum) as [string, ...string[]],
+    {
+        errorMap: () => ({ message: 'zodError.enums.builtinPermission.invalid' })
+    }
+);

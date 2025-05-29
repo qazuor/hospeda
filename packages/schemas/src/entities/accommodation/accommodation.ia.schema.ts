@@ -4,7 +4,7 @@ import {
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema
-} from '../../common';
+} from '../../common/index.js';
 
 /**
  * Accommodation AI Data schema definition using Zod for validation.

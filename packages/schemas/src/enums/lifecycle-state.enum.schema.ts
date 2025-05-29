@@ -1,9 +1,9 @@
-import { LifecycleStateEnum } from '@repo/types/src/enums/lifecycle-state.enum';
+import { LifecycleStatusEnum } from '@repo/types';
 import { z } from 'zod';
 
-export const LifecycleStateEnumSchema = z.enum(
-    Object.values(LifecycleStateEnum) as [string, ...string[]],
+export const LifecycleStatusEnumSchema = z.enum(
+    Object.values(LifecycleStatusEnum) as [string, ...string[]],
     {
-        errorMap: () => ({ message: 'zodError.enums.lifecycleState.invalid' })
+        errorMap: () => ({ message: 'zodError.enums.lifecycleStatus.invalid' })
     }
 );

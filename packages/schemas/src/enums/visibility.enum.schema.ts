@@ -1,4 +1,4 @@
-import { VisibilityEnum } from '@repo/types/src/enums/visibility.enum';
+import { VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 
 export const VisibilityEnumSchema = z.enum(Object.values(VisibilityEnum) as [string, ...string[]], {

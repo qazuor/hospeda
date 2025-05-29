@@ -1,4 +1,4 @@
-import { EntityTypeEnum } from '@repo/types/src/enums/entity-type.enum';
+import { EntityTypeEnum } from '@repo/types';
 import { z } from 'zod';
 
 export const EntityTypeEnumSchema = z.enum(Object.values(EntityTypeEnum) as [string, ...string[]], {

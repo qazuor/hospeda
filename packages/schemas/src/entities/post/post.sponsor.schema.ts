@@ -1,15 +1,14 @@
 import { z } from 'zod';
-import { ContactInfoSchema } from '../../common/contact.schema';
 import {
+    ContactInfoSchema,
+    MediaSchema,
+    SocialNetworkSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { MediaSchema } from '../../common/media.schema';
-import { SocialNetworkSchema } from '../../common/social.schema';
-import { ClientTypeEnumSchema } from '../../enums/client-type.enum.schema';
+    WithLifecycleStateSchema
+} from '../../common/index.js';
+import { ClientTypeEnumSchema } from '../../enums/index.js';
 
 /**
  * Post Sponsor schema definition using Zod for validation.
@@ -17,7 +16,6 @@ import { ClientTypeEnumSchema } from '../../enums/client-type.enum.schema';
  */
 export const PostSponsorSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
     .extend({
         name: z

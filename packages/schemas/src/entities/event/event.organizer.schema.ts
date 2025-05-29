@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { ContactInfoSchema } from '../../common/contact.schema';
 import {
+    ContactInfoSchema,
+    SocialNetworkSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { SocialNetworkSchema } from '../../common/social.schema';
+    WithLifecycleStateSchema
+} from '../../common/index.js';
 
 /**
  * Event Organizer schema definition using Zod for validation.
@@ -15,7 +14,6 @@ import { SocialNetworkSchema } from '../../common/social.schema';
  */
 export const EventOrganizerSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
     .extend({
         name: z

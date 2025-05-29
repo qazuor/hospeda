@@ -1,4 +1,4 @@
-import { AccommodationTypeEnum } from '@repo/types/src/enums/accommodation-type.enum';
+import { AccommodationTypeEnum } from '@repo/types';
 import { z } from 'zod';
 
 export const AccommodationTypeEnumSchema = z.enum(

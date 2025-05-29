@@ -15,6 +15,15 @@ export const LinkedInUrlRegex = /^https?:\/\/(www\.)?linkedin\.com\//;
 export const TikTokUrlRegex = /^https?:\/\/(www\.)?tiktok\.com\//;
 export const YouTubeUrlRegex = /^https?:\/\/(www\.)?youtube\.com\//;
 
+export const isValidLatitude = (val: string) => {
+    const n = Number(val);
+    return !Number.isNaN(n) && n >= -90 && n <= 90;
+};
+export const isValidLongitude = (val: string) => {
+    const n = Number(val);
+    return !Number.isNaN(n) && n >= -180 && n <= 180;
+};
+
 // Regex para password fuerte: 8-20 caracteres, al menos una mayúscula, una minúscula, un número y un caracter especial
 export const StrongPasswordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,20}$/;

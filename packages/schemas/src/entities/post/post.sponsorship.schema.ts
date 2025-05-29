@@ -1,12 +1,11 @@
 import { z } from 'zod';
 import {
+    PriceSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema,
-    WithSoftDeleteSchema
-} from '../../common/helpers.schema';
-import { PriceSchema } from '../../common/price.schema';
+    WithLifecycleStateSchema
+} from '../../common/index.js';
 
 /**
  * Post Sponsorship schema definition using Zod for validation.
@@ -14,11 +13,10 @@ import { PriceSchema } from '../../common/price.schema';
  */
 export const PostSponsorshipSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
-    .merge(WithSoftDeleteSchema)
     .merge(WithAdminInfoSchema)
     .extend({
-        sponsorId: z.string(),
-        postId: z.string(),
+        sponsorId: z.string().uuid({ message: 'zodError.post.sponsorship.sponsorId.invalidUuid' }),
+        postId: z.string().uuid({ message: 'zodError.post.sponsorship.postId.invalidUuid' }),
         message: z
             .string()
             .min(5, { message: 'zodError.post.sponsorship.message.min' })

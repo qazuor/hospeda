@@ -4,7 +4,7 @@ import {
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema
-} from '../../common';
+} from '../../common/index.js';
 
 /**
  * Accommodation FAQ schema definition using Zod for validation.
