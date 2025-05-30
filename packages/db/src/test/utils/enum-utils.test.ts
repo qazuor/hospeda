@@ -7,6 +7,8 @@ enum TestEnum {
     C = 'C'
 }
 
+// Test suite for enum-utils utility functions used in DB models.
+
 describe('enumToTuple', () => {
     it('returns a tuple of enum values', () => {
         expect(enumToTuple(TestEnum)).toEqual(['A', 'B', 'C']);

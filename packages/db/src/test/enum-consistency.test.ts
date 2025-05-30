@@ -12,6 +12,9 @@ const getDbEnumValues = async (pool: Pool, enumName: string): Promise<string[]> 
 
 const arrayDiff = (a: string[], b: string[]) => a.filter((v) => !b.includes(v));
 
+// This test suite ensures that all TypeScript enums are synchronized with their corresponding enums in the database.
+// It checks for missing values, extra values, and order differences between TypeScript and database enums.
+
 describe('Enum consistency between TypeScript and database', () => {
     let pool: Pool;
 
