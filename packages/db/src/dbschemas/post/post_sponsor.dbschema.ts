@@ -5,7 +5,7 @@ import { ClientTypePgEnum, LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { postSponsorships } from './post_sponsorship.dbschema.ts';
 
-export const postSponsors = pgTable('post_sponsors', {
+export const postSponsors: ReturnType<typeof pgTable> = pgTable('post_sponsors', {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
     type: ClientTypePgEnum('type').notNull(),
