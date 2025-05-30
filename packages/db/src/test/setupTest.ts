@@ -27,14 +27,14 @@ export const createMockLogger = () => ({
     warn: vi.fn()
 });
 
-// Global mockDb y mockLogger para compatibilidad con tests existentes
+// Global mockDb and mockLogger for compatibility with existing tests
 const mockDb = createMockDb();
 const mockLogger = createMockLogger();
 
 globalThis.mockDb = mockDb;
 globalThis.mockLogger = mockLogger;
 
-// Mocks de módulos base
+// Base module mocks for all tests
 vi.mock('../client.ts', () => ({
     getDb: () => globalThis.mockDb,
     initializeDb: vi.fn(() => globalThis.mockDb)

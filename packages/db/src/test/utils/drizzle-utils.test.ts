@@ -9,6 +9,8 @@ import {
     rawSelect
 } from '../../utils/drizzle-utils';
 
+// Test suite for drizzle-utils utility functions used in DB models.
+
 describe('prepareLikeQuery', () => {
     it('escapes % and _ and wraps with %', () => {
         expect(prepareLikeQuery('foo%_bar')).toBe('%foo\\%\\_bar%');

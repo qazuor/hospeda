@@ -9,6 +9,8 @@ import {
     sanitizePartialUpdate
 } from '../../utils/object-utils';
 
+// Test suite for object-utils utility functions used in DB models.
+
 describe('sanitizePartialUpdate', () => {
     it('removes undefined properties', () => {
         expect(sanitizePartialUpdate({ a: 1, b: undefined, c: 2 })).toEqual({ a: 1, c: 2 });
