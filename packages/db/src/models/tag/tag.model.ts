@@ -110,14 +110,23 @@ export type TagSearchParams = SearchParams<TagOrderByColumn> & {
  */
 
 /**
- * Relaciones posibles para TagModel.withRelations
+ * Possible relations for TagModel.withRelations.
+ *
+ * @example
+ * // To fetch a tag with its entityTags:
+ * const tag = await TagModel.getWithRelations('tag-uuid', { entityTags: true });
  */
 export type TagRelations = {
     entityTags?: true;
 };
 
 /**
- * Mapea el objeto 'with' a los resultados reales de relaciones
+ * Maps the 'with' object to the actual relation results.
+ *
+ * @template T - TagRelations
+ * @example
+ * // Usage in getWithRelations:
+ * type Result = TagType & RelationResult<{ entityTags: true }>;
  */
 export type RelationResult<T extends TagRelations> = {
     entityTags: T['entityTags'] extends true ? EntityTagType[] : never;
@@ -125,13 +134,13 @@ export type RelationResult<T extends TagRelations> = {
 
 export const TagModel = {
     /**
-     * Get a tag by its unique ID.
-     * @param id Tag ID
-     * @returns TagType or undefined if not found
-     * @throws Error if the query fails
+     * Retrieve a tag by its unique ID.
+     *
+     * @param {string} id - Tag ID
+     * @returns {Promise<TagType | undefined>} TagType if found, otherwise undefined
+     * @throws {Error} If the query fails
      *
      * @example
-     * // Get a tag by ID
      * const tag = await TagModel.getById('tag-uuid');
      * if (tag) {
      *   console.log(tag.name);
@@ -151,12 +160,12 @@ export const TagModel = {
 
     /**
      * Create a new tag.
-     * @param input NewTagInputType
-     * @returns The created TagType
-     * @throws Error if the insert fails
+     *
+     * @param {NewTagInputType} input - The tag creation input
+     * @returns {Promise<TagType>} The created tag
+     * @throws {Error} If the insert fails
      *
      * @example
-     * // Create a new tag
      * const newTag = await TagModel.create({
      *   name: 'Nature',
      *   color: TagColorEnum.GREEN,
@@ -179,14 +188,14 @@ export const TagModel = {
     },
 
     /**
-     * Update a tag by ID.
-     * @param id Tag ID
-     * @param input UpdateTagInputType
-     * @returns The updated TagType or undefined if not found
-     * @throws Error if the update fails
+     * Update a tag by its ID.
+     *
+     * @param {string} id - Tag ID
+     * @param {UpdateTagInputType} input - Fields to update
+     * @returns {Promise<TagType | undefined>} The updated tag or undefined if not found
+     * @throws {Error} If the update fails
      *
      * @example
-     * // Update a tag's color
      * const updated = await TagModel.update('tag-uuid', { color: TagColorEnum.BLUE });
      * if (updated) {
      *   console.log(updated.color);
@@ -212,13 +221,13 @@ export const TagModel = {
 
     /**
      * Soft delete a tag by ID (sets deletedAt and deletedById).
-     * @param id Tag ID
-     * @param deletedById User ID performing the deletion
-     * @returns { id: string } if deleted, undefined if not found
-     * @throws Error if the operation fails
+     *
+     * @param {string} id - Tag ID
+     * @param {string} deletedById - User ID performing the deletion
+     * @returns {Promise<{ id: string } | undefined>} The deleted tag's ID or undefined if not found
+     * @throws {Error} If the operation fails
      *
      * @example
-     * // Soft delete a tag
      * const deleted = await TagModel.delete('tag-uuid', 'user-uuid');
      * if (deleted) {
      *   console.log('Deleted tag:', deleted.id);
@@ -249,12 +258,12 @@ export const TagModel = {
 
     /**
      * Hard delete a tag by ID (permanently removes from DB).
-     * @param id Tag ID
-     * @returns true if deleted, false if not found
-     * @throws Error if the operation fails
+     *
+     * @param {string} id - Tag ID
+     * @returns {Promise<boolean>} True if deleted, false if not found
+     * @throws {Error} If the operation fails
      *
      * @example
-     * // Hard delete a tag
      * const wasDeleted = await TagModel.hardDelete('tag-uuid');
      * if (wasDeleted) {
      *   console.log('Tag permanently deleted');
@@ -279,14 +288,15 @@ export const TagModel = {
     },
 
     /**
-     * Get a tag by ID, including specified relations.
-     * @param id Tag ID
-     * @param withRelations Relations to populate (e.g., { entityTags: true })
-     * @returns TagType with requested relations or undefined if not found
-     * @throws Error if the query fails
+     * Retrieve a tag by ID, including specified relations.
+     *
+     * @template T
+     * @param {string} id - Tag ID
+     * @param {T} withRelations - Relations to populate (e.g., { entityTags: true })
+     * @returns {Promise<(TagType & RelationResult<T>) | undefined>} Tag with requested relations or undefined
+     * @throws {Error} If the query fails
      *
      * @example
-     * // Get a tag with entityTags relation
      * const tagWithRelations = await TagModel.getWithRelations('tag-uuid', { entityTags: true });
      * if (tagWithRelations?.entityTags) {
      *   console.log(tagWithRelations.entityTags.length);
@@ -317,12 +327,12 @@ export const TagModel = {
 
     /**
      * List tags with pagination and optional ordering.
-     * @param params TagPaginationParams (limit, offset, order, orderBy)
-     * @returns Array<TagType>
-     * @throws Error if the query fails
+     *
+     * @param {TagPaginationParams} params - Pagination and ordering params
+     * @returns {Promise<TagType[]>} Array of tags
+     * @throws {Error} If the query fails
      *
      * @example
-     * // List tags ordered by name
      * const tags = await TagModel.list({ limit: 20, offset: 0, orderBy: 'name', order: 'asc' });
      * tags.forEach(tag => console.log(tag.name));
      */
@@ -349,12 +359,12 @@ export const TagModel = {
 
     /**
      * Find a tag by its exact name.
-     * @param name Tag name
-     * @returns TagType or undefined if not found
-     * @throws Error if the query fails
+     *
+     * @param {string} name - Tag name
+     * @returns {Promise<TagType | undefined>} Tag if found, otherwise undefined
+     * @throws {Error} If the query fails
      *
      * @example
-     * // Find a tag by name
      * const tag = await TagModel.findByName('Nature');
      * if (tag) {
      *   console.log(tag.id);
@@ -374,12 +384,12 @@ export const TagModel = {
 
     /**
      * Count tags with optional filters (name, color, lifecycle).
-     * @param params TagSearchParams (name, color, lifecycle)
-     * @returns number of tags matching the filters
-     * @throws Error if the query fails
+     *
+     * @param {TagSearchParams} [params] - Search filters
+     * @returns {Promise<number>} Number of tags matching the filters
+     * @throws {Error} If the query fails
      *
      * @example
-     * // Count active blue tags
      * const count = await TagModel.count({ color: TagColorEnum.BLUE, lifecycleState: LifecycleStatusEnum.ACTIVE });
      * console.log('Active blue tags:', count);
      */
@@ -413,12 +423,12 @@ export const TagModel = {
 
     /**
      * Search tags by partial name, color, or lifecycle, with pagination and ordering.
-     * @param params TagSearchParams (name, color, lifecycle, limit, offset, order, orderBy)
-     * @returns Array<TagType>
-     * @throws Error if the query fails
+     *
+     * @param {TagSearchParams} params - Search and pagination params
+     * @returns {Promise<TagType[]>} Array of tags matching the search
+     * @throws {Error} If the query fails
      *
      * @example
-     * // Search tags by name substring
      * const tags = await TagModel.search({ name: 'Nat', limit: 10, offset: 0 });
      * tags.forEach(tag => console.log(tag.name));
      */
