@@ -2,7 +2,7 @@ import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { roles } from './role.dbschema.ts';
 import { users } from './user.dbschema.ts';
 
-export const rUserRole = pgTable(
+export const rUserRole: ReturnType<typeof pgTable> = pgTable(
     'r_user_role',
     {
         userId: uuid('user_id')

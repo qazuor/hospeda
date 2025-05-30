@@ -3,7 +3,7 @@ import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { EntityTypePgEnum } from '../enums.dbschema.ts';
 import { tags } from './tag.dbschema.ts';
 
-export const rEntityTag = pgTable(
+export const rEntityTag: ReturnType<typeof pgTable> = pgTable(
     'r_entity_tag',
     {
         tagId: uuid('tag_id')

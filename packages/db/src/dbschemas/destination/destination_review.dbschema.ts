@@ -4,7 +4,7 @@ import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-cor
 import { users } from '../user/user.dbschema.ts';
 import { destinations } from './destination.dbschema.ts';
 
-export const destinationReviews = pgTable(
+export const destinationReviews: ReturnType<typeof pgTable> = pgTable(
     'destination_reviews',
     {
         id: uuid('id').primaryKey().defaultRandom(),

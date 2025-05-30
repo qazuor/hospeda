@@ -2,7 +2,7 @@ import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { permissions } from './permission.dbschema.ts';
 import { users } from './user.dbschema.ts';
 
-export const rUserPermission = pgTable(
+export const rUserPermission: ReturnType<typeof pgTable> = pgTable(
     'r_user_permission',
     {
         userId: uuid('user_id')

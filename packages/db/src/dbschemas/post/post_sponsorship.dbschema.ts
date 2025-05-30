@@ -6,7 +6,7 @@ import { users } from '../user/user.dbschema.ts';
 import { posts } from './post.dbschema.ts';
 import { postSponsors } from './post_sponsor.dbschema.ts';
 
-export const postSponsorships = pgTable('post_sponsorships', {
+export const postSponsorships: ReturnType<typeof pgTable> = pgTable('post_sponsorships', {
     id: uuid('id').primaryKey().defaultRandom(),
     sponsorId: uuid('sponsor_id')
         .notNull()
