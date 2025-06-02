@@ -24,7 +24,8 @@ export const createMockLogger = () => ({
     query: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
-    warn: vi.fn()
+    warn: vi.fn(),
+    permission: vi.fn()
 });
 
 // Global mockDb and mockLogger for compatibility with existing tests
