@@ -1,7 +1,5 @@
-import { LifecycleStatusEnum } from '@repo/types';
-import type { AttractionId, DestinationId, UserId } from '@repo/types/common/id.types';
+import type { AttractionId, DestinationId } from '@repo/types/common/id.types';
 import type {
-    AttractionType,
     NewAttractionInputType,
     UpdateAttractionInputType
 } from '@repo/types/entities/destination/destination.attraction.types';
@@ -10,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { AttractionModel } from '../../../../src/models/destination/attraction.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockAttraction } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -37,22 +36,6 @@ const mockDb = {
 
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const baseAttraction: AttractionType = {
-    id: 'attr-uuid' as AttractionId,
-    slug: 'parque-urquiza',
-    name: 'Parque Urquiza',
-    description: 'Un parque emblemático',
-    icon: '🌳',
-    isBuiltin: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
-    adminInfo: undefined
-    // otros campos opcionales omitidos
-};
-
 describe('AttractionModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -63,9 +46,9 @@ describe('AttractionModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseAttraction }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockAttraction }]);
             const attr = await AttractionModel.getById('attr-uuid');
-            expect(attr).toEqual(baseAttraction);
+            expect(attr).toEqual(mockAttraction);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -91,9 +74,9 @@ describe('AttractionModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseAttraction }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockAttraction }]);
             const attr = await AttractionModel.getByName('Parque Urquiza');
-            expect(attr).toEqual(baseAttraction);
+            expect(attr).toEqual(mockAttraction);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -119,9 +102,9 @@ describe('AttractionModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseAttraction }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockAttraction }]);
             const attr = await AttractionModel.getBySlug('parque-urquiza');
-            expect(attr).toEqual(baseAttraction);
+            expect(attr).toEqual(mockAttraction);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -146,9 +129,9 @@ describe('AttractionModel', () => {
         it('returns attractions by isBuiltin', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseAttraction }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockAttraction }]);
             const attrs = await AttractionModel.getByType(false);
-            expect(attrs).toEqual([baseAttraction]);
+            expect(attrs).toEqual([mockAttraction]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -172,18 +155,18 @@ describe('AttractionModel', () => {
         it('returns created attraction', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseAttraction }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockAttraction }]);
             const input: NewAttractionInputType = {
-                slug: baseAttraction.slug,
-                name: baseAttraction.name,
-                description: baseAttraction.description,
-                icon: baseAttraction.icon,
-                isBuiltin: baseAttraction.isBuiltin,
-                lifecycleState: baseAttraction.lifecycleState,
-                adminInfo: baseAttraction.adminInfo
+                slug: mockAttraction.slug,
+                name: mockAttraction.name,
+                description: mockAttraction.description,
+                icon: mockAttraction.icon,
+                isBuiltin: mockAttraction.isBuiltin,
+                lifecycleState: mockAttraction.lifecycleState,
+                adminInfo: mockAttraction.adminInfo
             };
             const attr = await AttractionModel.create(input);
-            expect(attr).toEqual(baseAttraction);
+            expect(attr).toEqual(mockAttraction);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
@@ -191,13 +174,13 @@ describe('AttractionModel', () => {
             mockDb.returning.mockReturnValueOnce(undefined);
             await expect(
                 AttractionModel.create({
-                    slug: baseAttraction.slug,
-                    name: baseAttraction.name,
-                    description: baseAttraction.description,
-                    icon: baseAttraction.icon,
-                    isBuiltin: baseAttraction.isBuiltin,
-                    lifecycleState: baseAttraction.lifecycleState,
-                    adminInfo: baseAttraction.adminInfo
+                    slug: mockAttraction.slug,
+                    name: mockAttraction.name,
+                    description: mockAttraction.description,
+                    icon: mockAttraction.icon,
+                    isBuiltin: mockAttraction.isBuiltin,
+                    lifecycleState: mockAttraction.lifecycleState,
+                    adminInfo: mockAttraction.adminInfo
                 })
             ).rejects.toThrow('Insert failed');
         });
@@ -207,13 +190,13 @@ describe('AttractionModel', () => {
             });
             await expect(
                 AttractionModel.create({
-                    slug: baseAttraction.slug,
-                    name: baseAttraction.name,
-                    description: baseAttraction.description,
-                    icon: baseAttraction.icon,
-                    isBuiltin: baseAttraction.isBuiltin,
-                    lifecycleState: baseAttraction.lifecycleState,
-                    adminInfo: baseAttraction.adminInfo
+                    slug: mockAttraction.slug,
+                    name: mockAttraction.name,
+                    description: mockAttraction.description,
+                    icon: mockAttraction.icon,
+                    isBuiltin: mockAttraction.isBuiltin,
+                    lifecycleState: mockAttraction.lifecycleState,
+                    adminInfo: mockAttraction.adminInfo
                 })
             ).rejects.toThrow('Failed to create attraction: fail');
             expect(dbLogger.error).toHaveBeenCalled();
@@ -225,10 +208,10 @@ describe('AttractionModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseAttraction }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockAttraction }]);
             const input: UpdateAttractionInputType = { description: 'Updated' };
             const attr = await AttractionModel.update('attr-uuid', input);
-            expect(attr).toEqual(baseAttraction);
+            expect(attr).toEqual(mockAttraction);
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -309,9 +292,9 @@ describe('AttractionModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseAttraction }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockAttraction }]);
             const attrs = await AttractionModel.list({ limit: 10, offset: 0 });
-            expect(attrs).toEqual([baseAttraction]);
+            expect(attrs).toEqual([mockAttraction]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -339,9 +322,9 @@ describe('AttractionModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseAttraction }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockAttraction }]);
             const attrs = await AttractionModel.search({ limit: 10, offset: 0 });
-            expect(attrs).toEqual([baseAttraction]);
+            expect(attrs).toEqual([mockAttraction]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -394,7 +377,7 @@ describe('AttractionModel', () => {
     describe('getWithRelations', () => {
         it('returns attraction with relations', async () => {
             mockDb.query.attractions.findFirst.mockResolvedValueOnce({
-                ...baseAttraction,
+                ...mockAttraction,
                 destinations: [
                     {
                         destinationId: 'dest-uuid' as DestinationId,
@@ -433,10 +416,10 @@ describe('AttractionModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.innerJoin.mockReturnValueOnce([
-                { attractions: { ...baseAttraction }, rDestinationAttraction: {} }
+                { attractions: { ...mockAttraction }, rDestinationAttraction: {} }
             ]);
             const attrs = await AttractionModel.getByDestination('dest-uuid');
-            expect(attrs).toEqual([baseAttraction]);
+            expect(attrs).toEqual([mockAttraction]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();

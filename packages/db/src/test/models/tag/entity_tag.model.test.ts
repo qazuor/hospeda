@@ -1,10 +1,10 @@
 import { EntityTypeEnum } from '@repo/types';
-import type { AccommodationId, TagId } from '@repo/types/common/id.types';
-import type { EntityTagType } from '@repo/types/entities/tag/tag.types';
+import type { AccommodationId } from '@repo/types/common/id.types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { EntityTagModel } from '../../../../src/models/tag/entity_tag.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockEntityTag } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -25,14 +25,6 @@ const mockDb = {
     count: vi.fn().mockReturnThis()
 };
 (getDb as unknown as Mock).mockReturnValue(mockDb);
-
-const createMockEntityTag = (overrides: Partial<EntityTagType> = {}): EntityTagType => ({
-    tagId: 'tag-1' as TagId,
-    entityId: 'acc-1' as AccommodationId,
-    entityType: EntityTypeEnum.ACCOMMODATION,
-    ...overrides
-});
-const mockEntityTag = createMockEntityTag();
 
 describe('EntityTagModel', () => {
     beforeEach(() => {

@@ -1,20 +1,10 @@
-import {
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    PostCategoryEnum,
-    VisibilityEnum
-} from '@repo/types';
-import type { PostId, UserId } from '@repo/types/common/id.types';
-import type {
-    NewPostInputType,
-    PostType,
-    UpdatePostInputType
-} from '@repo/types/entities/post/post.types';
+import type { NewPostInputType, UpdatePostInputType } from '@repo/types/entities/post/post.types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { PostModel } from '../../../../src/models/post/post.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockPost } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -36,47 +26,6 @@ const mockDb = {
 };
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const baseMedia = {
-    featuredImage: {
-        url: 'https://example.com/image.jpg',
-        moderationState: ModerationStatusEnum.PENDING_REVIEW
-    }
-};
-
-const basePost: PostType = {
-    id: 'post-uuid' as PostId,
-    slug: 'post-slug',
-    category: PostCategoryEnum.GENERAL,
-    title: 'Título del post',
-    summary: 'Resumen',
-    content: 'Contenido',
-    media: baseMedia,
-    authorId: 'user-uuid' as UserId,
-    sponsorshipId: undefined,
-    relatedDestinationId: undefined,
-    relatedAccommodationId: undefined,
-    relatedEventId: undefined,
-    visibility: VisibilityEnum.PUBLIC,
-    isFeatured: false,
-    isNews: false,
-    isFeaturedInWebsite: false,
-    expiresAt: undefined,
-    likes: 0,
-    comments: 0,
-    shares: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: undefined,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
-    deletedById: undefined,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    adminInfo: undefined,
-    moderationState: ModerationStatusEnum.PENDING_REVIEW,
-    seo: undefined,
-    tags: []
-};
-
 describe('PostModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -87,9 +36,9 @@ describe('PostModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...basePost }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockPost }]);
             const res = await PostModel.getById('post-uuid');
-            expect(res).toEqual(basePost);
+            expect(res).toEqual(mockPost);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -115,9 +64,9 @@ describe('PostModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...basePost }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockPost }]);
             const res = await PostModel.getBySlug('post-slug');
-            expect(res).toEqual(basePost);
+            expect(res).toEqual(mockPost);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -142,9 +91,9 @@ describe('PostModel', () => {
         it('returns posts by category', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...basePost }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockPost }]);
             const res = await PostModel.getByCategory('GENERAL');
-            expect(res).toEqual([basePost]);
+            expect(res).toEqual([mockPost]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -168,9 +117,9 @@ describe('PostModel', () => {
         it('returns posts by author', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...basePost }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockPost }]);
             const res = await PostModel.getByAuthor('user-uuid');
-            expect(res).toEqual([basePost]);
+            expect(res).toEqual([mockPost]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -194,37 +143,37 @@ describe('PostModel', () => {
         it('returns created post', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...basePost }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockPost }]);
             const input: NewPostInputType = {
-                slug: basePost.slug,
-                category: basePost.category,
-                title: basePost.title,
-                summary: basePost.summary,
-                content: basePost.content,
-                media: basePost.media,
-                authorId: basePost.authorId,
-                visibility: basePost.visibility,
-                lifecycleState: basePost.lifecycleState,
-                moderationState: basePost.moderationState
+                slug: mockPost.slug,
+                category: mockPost.category,
+                title: mockPost.title,
+                summary: mockPost.summary,
+                content: mockPost.content,
+                media: mockPost.media,
+                authorId: mockPost.authorId,
+                visibility: mockPost.visibility,
+                lifecycleState: mockPost.lifecycleState,
+                moderationState: mockPost.moderationState
             };
             const res = await PostModel.create(input);
-            expect(res).toEqual(basePost);
+            expect(res).toEqual(mockPost);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
             mockDb.returning.mockReturnValueOnce(undefined);
             const input: NewPostInputType = {
-                slug: basePost.slug,
-                category: basePost.category,
-                title: basePost.title,
-                summary: basePost.summary,
-                content: basePost.content,
-                media: basePost.media,
-                authorId: basePost.authorId,
-                visibility: basePost.visibility,
-                lifecycleState: basePost.lifecycleState,
-                moderationState: basePost.moderationState
+                slug: mockPost.slug,
+                category: mockPost.category,
+                title: mockPost.title,
+                summary: mockPost.summary,
+                content: mockPost.content,
+                media: mockPost.media,
+                authorId: mockPost.authorId,
+                visibility: mockPost.visibility,
+                lifecycleState: mockPost.lifecycleState,
+                moderationState: mockPost.moderationState
             };
             await expect(PostModel.create(input)).rejects.toThrow('Insert failed');
         });
@@ -233,16 +182,16 @@ describe('PostModel', () => {
                 throw new Error('fail');
             });
             const input: NewPostInputType = {
-                slug: basePost.slug,
-                category: basePost.category,
-                title: basePost.title,
-                summary: basePost.summary,
-                content: basePost.content,
-                media: basePost.media,
-                authorId: basePost.authorId,
-                visibility: basePost.visibility,
-                lifecycleState: basePost.lifecycleState,
-                moderationState: basePost.moderationState
+                slug: mockPost.slug,
+                category: mockPost.category,
+                title: mockPost.title,
+                summary: mockPost.summary,
+                content: mockPost.content,
+                media: mockPost.media,
+                authorId: mockPost.authorId,
+                visibility: mockPost.visibility,
+                lifecycleState: mockPost.lifecycleState,
+                moderationState: mockPost.moderationState
             };
             await expect(PostModel.create(input)).rejects.toThrow('Failed to create post: fail');
             expect(dbLogger.error).toHaveBeenCalled();
@@ -254,10 +203,10 @@ describe('PostModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...basePost, title: 'Nuevo' }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockPost, title: 'Nuevo' }]);
             const input: UpdatePostInputType = { title: 'Nuevo' };
             const res = await PostModel.update('post-uuid', input);
-            expect(res).toEqual({ ...basePost, title: 'Nuevo' });
+            expect(res).toEqual({ ...mockPost, title: 'Nuevo' });
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -340,9 +289,9 @@ describe('PostModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...basePost }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockPost }]);
             const res = await PostModel.list({ limit: 10, offset: 0 });
-            expect(res).toEqual([basePost]);
+            expect(res).toEqual([mockPost]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -371,9 +320,9 @@ describe('PostModel', () => {
             mockDb.where.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...basePost }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockPost }]);
             const res = await PostModel.search({ limit: 10, offset: 0 });
-            expect(res).toEqual([basePost]);
+            expect(res).toEqual([mockPost]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();

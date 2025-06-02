@@ -1,12 +1,5 @@
-import {
-    EventCategoryEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    VisibilityEnum
-} from '@repo/types';
-import type { EventId, UserId } from '@repo/types/common/id.types';
+import { EventCategoryEnum, LifecycleStatusEnum } from '@repo/types';
 import type {
-    EventType,
     NewEventInputType,
     UpdateEventInputType
 } from '@repo/types/entities/event/event.types';
@@ -14,6 +7,7 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { EventModel } from '../../../../src/models/event/event.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockEvent } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -41,34 +35,6 @@ const mockDb = {
 
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const baseEvent: EventType = {
-    id: 'event-uuid' as EventId,
-    slug: 'fiesta-nacional',
-    summary: 'Fiesta Nacional',
-    description: 'Una fiesta popular',
-    media: undefined,
-    category: EventCategoryEnum.FESTIVAL,
-    date: { start: new Date(), end: new Date() },
-    authorId: 'user-uuid' as UserId,
-    locationId: undefined,
-    organizerId: undefined,
-    pricing: undefined,
-    contact: undefined,
-    visibility: VisibilityEnum.PUBLIC,
-    isFeatured: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    moderationState: ModerationStatusEnum.PENDING_REVIEW,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
-    deletedAt: undefined,
-    deletedById: undefined,
-    adminInfo: undefined,
-    tags: [],
-    seo: undefined
-};
-
 describe('EventModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -79,9 +45,9 @@ describe('EventModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseEvent }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockEvent }]);
             const event = await EventModel.getById('event-uuid');
-            expect(event).toEqual(baseEvent);
+            expect(event).toEqual(mockEvent);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -107,9 +73,9 @@ describe('EventModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseEvent }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockEvent }]);
             const event = await EventModel.getBySlug('fiesta-nacional');
-            expect(event).toEqual(baseEvent);
+            expect(event).toEqual(mockEvent);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -134,9 +100,9 @@ describe('EventModel', () => {
         it('returns events by category', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseEvent }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockEvent }]);
             const events = await EventModel.getByCategory(EventCategoryEnum.FESTIVAL);
-            expect(events).toEqual([baseEvent]);
+            expect(events).toEqual([mockEvent]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -160,9 +126,9 @@ describe('EventModel', () => {
         it('returns created event', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseEvent }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockEvent }]);
             const input: NewEventInputType = {
-                ...baseEvent,
+                ...mockEvent,
                 id: undefined,
                 createdAt: undefined,
                 updatedAt: undefined,
@@ -170,7 +136,7 @@ describe('EventModel', () => {
                 updatedById: undefined
             };
             const event = await EventModel.create(input);
-            expect(event).toEqual(baseEvent);
+            expect(event).toEqual(mockEvent);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
@@ -178,7 +144,7 @@ describe('EventModel', () => {
             mockDb.returning.mockReturnValueOnce(undefined);
             await expect(
                 EventModel.create({
-                    ...baseEvent,
+                    ...mockEvent,
                     id: undefined,
                     createdAt: undefined,
                     updatedAt: undefined,
@@ -193,7 +159,7 @@ describe('EventModel', () => {
             });
             await expect(
                 EventModel.create({
-                    ...baseEvent,
+                    ...mockEvent,
                     id: undefined,
                     createdAt: undefined,
                     updatedAt: undefined,
@@ -210,10 +176,10 @@ describe('EventModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseEvent }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockEvent }]);
             const input: UpdateEventInputType = { summary: 'Updated' };
             const event = await EventModel.update('event-uuid', input);
-            expect(event).toEqual(baseEvent);
+            expect(event).toEqual(mockEvent);
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -294,9 +260,9 @@ describe('EventModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseEvent }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockEvent }]);
             const events = await EventModel.list({ limit: 10, offset: 0 });
-            expect(events).toEqual([baseEvent]);
+            expect(events).toEqual([mockEvent]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -324,9 +290,9 @@ describe('EventModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseEvent }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockEvent }]);
             const events = await EventModel.search({ limit: 10, offset: 0 });
-            expect(events).toEqual([baseEvent]);
+            expect(events).toEqual([mockEvent]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -379,7 +345,7 @@ describe('EventModel', () => {
     describe('getWithRelations', () => {
         it('returns event with relations', async () => {
             mockDb.query.events.findFirst.mockResolvedValueOnce({
-                ...baseEvent,
+                ...mockEvent,
                 tags: [
                     {
                         id: 'tag-uuid',
@@ -441,9 +407,9 @@ describe('EventModel', () => {
         it('returns events for given tag', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.innerJoin.mockReturnValueOnce([{ events: { ...baseEvent }, rEntityTag: {} }]);
+            mockDb.innerJoin.mockReturnValueOnce([{ events: { ...mockEvent }, rEntityTag: {} }]);
             const events = await EventModel.getByTag('tag-uuid');
-            expect(events).toEqual([baseEvent]);
+            expect(events).toEqual([mockEvent]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -470,9 +436,9 @@ describe('EventModel', () => {
         it('returns events for given organizer', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([baseEvent]);
+            mockDb.where.mockReturnValueOnce([mockEvent]);
             const events = await EventModel.getByOrganizer('org-uuid');
-            expect(events).toEqual([baseEvent]);
+            expect(events).toEqual([mockEvent]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -500,10 +466,10 @@ describe('EventModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.innerJoin.mockReturnValueOnce([
-                { events: { ...baseEvent }, eventLocations: {} }
+                { events: { ...mockEvent }, eventLocations: {} }
             ]);
             const events = await EventModel.getByDestination('Ciudad');
-            expect(events).toEqual([baseEvent]);
+            expect(events).toEqual([mockEvent]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();

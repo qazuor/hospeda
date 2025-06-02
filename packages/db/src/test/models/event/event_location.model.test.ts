@@ -1,7 +1,4 @@
-import { LifecycleStatusEnum } from '@repo/types';
-import type { EventLocationId, UserId } from '@repo/types/common/id.types';
 import type {
-    EventLocationType,
     NewEventLocationInputType,
     UpdateEventLocationInputType
 } from '@repo/types/entities/event/event.location.types';
@@ -10,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { EventLocationModel } from '../../../../src/models/event/event_location.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockEventLocation } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -36,29 +34,6 @@ const mockDb = {
 };
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const baseLocation: EventLocationType = {
-    id: 'location-uuid' as EventLocationId,
-    street: 'Calle Falsa',
-    number: '123',
-    floor: '1',
-    apartment: 'A',
-    neighborhood: 'Centro',
-    city: 'Ciudad',
-    department: 'Depto',
-    placeName: 'Salón',
-    state: 'Entre Ríos',
-    zipCode: '3200',
-    country: 'AR',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: undefined,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
-    deletedById: undefined,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    adminInfo: undefined
-};
-
 describe('EventLocationModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -69,9 +44,9 @@ describe('EventLocationModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseLocation }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockEventLocation }]);
             const loc = await EventLocationModel.getById('location-uuid');
-            expect(loc).toEqual(baseLocation);
+            expect(loc).toEqual(mockEventLocation);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -96,9 +71,9 @@ describe('EventLocationModel', () => {
         it('returns locations by city', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseLocation }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockEventLocation }]);
             const locs = await EventLocationModel.getByCity('Ciudad');
-            expect(locs).toEqual([baseLocation]);
+            expect(locs).toEqual([mockEventLocation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -122,9 +97,9 @@ describe('EventLocationModel', () => {
         it('returns locations by place name', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseLocation }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockEventLocation }]);
             const locs = await EventLocationModel.getByPlaceName('Salón');
-            expect(locs).toEqual([baseLocation]);
+            expect(locs).toEqual([mockEventLocation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -148,43 +123,43 @@ describe('EventLocationModel', () => {
         it('returns created location', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseLocation }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockEventLocation }]);
             const input: NewEventLocationInputType = {
-                street: baseLocation.street,
-                number: baseLocation.number,
-                floor: baseLocation.floor,
-                apartment: baseLocation.apartment,
-                neighborhood: baseLocation.neighborhood,
-                city: baseLocation.city,
-                department: baseLocation.department,
-                placeName: baseLocation.placeName,
-                state: baseLocation.state,
-                zipCode: baseLocation.zipCode,
-                country: baseLocation.country,
-                adminInfo: baseLocation.adminInfo,
-                lifecycleState: baseLocation.lifecycleState
+                street: mockEventLocation.street,
+                number: mockEventLocation.number,
+                floor: mockEventLocation.floor,
+                apartment: mockEventLocation.apartment,
+                neighborhood: mockEventLocation.neighborhood,
+                city: mockEventLocation.city,
+                department: mockEventLocation.department,
+                placeName: mockEventLocation.placeName,
+                state: mockEventLocation.state,
+                zipCode: mockEventLocation.zipCode,
+                country: mockEventLocation.country,
+                adminInfo: mockEventLocation.adminInfo,
+                lifecycleState: mockEventLocation.lifecycleState
             };
             const loc = await EventLocationModel.create(input);
-            expect(loc).toEqual(baseLocation);
+            expect(loc).toEqual(mockEventLocation);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
             mockDb.returning.mockReturnValueOnce(undefined);
             const input: NewEventLocationInputType = {
-                street: baseLocation.street,
-                number: baseLocation.number,
-                floor: baseLocation.floor,
-                apartment: baseLocation.apartment,
-                neighborhood: baseLocation.neighborhood,
-                city: baseLocation.city,
-                department: baseLocation.department,
-                placeName: baseLocation.placeName,
-                state: baseLocation.state,
-                zipCode: baseLocation.zipCode,
-                country: baseLocation.country,
-                adminInfo: baseLocation.adminInfo,
-                lifecycleState: baseLocation.lifecycleState
+                street: mockEventLocation.street,
+                number: mockEventLocation.number,
+                floor: mockEventLocation.floor,
+                apartment: mockEventLocation.apartment,
+                neighborhood: mockEventLocation.neighborhood,
+                city: mockEventLocation.city,
+                department: mockEventLocation.department,
+                placeName: mockEventLocation.placeName,
+                state: mockEventLocation.state,
+                zipCode: mockEventLocation.zipCode,
+                country: mockEventLocation.country,
+                adminInfo: mockEventLocation.adminInfo,
+                lifecycleState: mockEventLocation.lifecycleState
             };
             await expect(EventLocationModel.create(input)).rejects.toThrow('Insert failed');
         });
@@ -193,19 +168,19 @@ describe('EventLocationModel', () => {
                 throw new Error('fail');
             });
             const input: NewEventLocationInputType = {
-                street: baseLocation.street,
-                number: baseLocation.number,
-                floor: baseLocation.floor,
-                apartment: baseLocation.apartment,
-                neighborhood: baseLocation.neighborhood,
-                city: baseLocation.city,
-                department: baseLocation.department,
-                placeName: baseLocation.placeName,
-                state: baseLocation.state,
-                zipCode: baseLocation.zipCode,
-                country: baseLocation.country,
-                adminInfo: baseLocation.adminInfo,
-                lifecycleState: baseLocation.lifecycleState
+                street: mockEventLocation.street,
+                number: mockEventLocation.number,
+                floor: mockEventLocation.floor,
+                apartment: mockEventLocation.apartment,
+                neighborhood: mockEventLocation.neighborhood,
+                city: mockEventLocation.city,
+                department: mockEventLocation.department,
+                placeName: mockEventLocation.placeName,
+                state: mockEventLocation.state,
+                zipCode: mockEventLocation.zipCode,
+                country: mockEventLocation.country,
+                adminInfo: mockEventLocation.adminInfo,
+                lifecycleState: mockEventLocation.lifecycleState
             };
             await expect(EventLocationModel.create(input)).rejects.toThrow(
                 'Failed to create event location: fail'
@@ -219,10 +194,10 @@ describe('EventLocationModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseLocation, street: 'Nueva' }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockEventLocation, street: 'Nueva' }]);
             const input: UpdateEventLocationInputType = { street: 'Nueva' };
             const loc = await EventLocationModel.update('location-uuid', input);
-            expect(loc).toEqual({ ...baseLocation, street: 'Nueva' });
+            expect(loc).toEqual({ ...mockEventLocation, street: 'Nueva' });
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -305,9 +280,9 @@ describe('EventLocationModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseLocation }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockEventLocation }]);
             const res = await EventLocationModel.list({ limit: 10, offset: 0 });
-            expect(res).toEqual([baseLocation]);
+            expect(res).toEqual([mockEventLocation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -336,9 +311,9 @@ describe('EventLocationModel', () => {
             mockDb.where.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseLocation }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockEventLocation }]);
             const res = await EventLocationModel.search({ limit: 10, offset: 0 });
-            expect(res).toEqual([baseLocation]);
+            expect(res).toEqual([mockEventLocation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -390,13 +365,13 @@ describe('EventLocationModel', () => {
     describe('getWithRelations', () => {
         it('returns location with events relation', async () => {
             mockDb.query.eventLocations.findFirst.mockResolvedValueOnce({
-                ...baseLocation,
+                ...mockEventLocation,
                 events: []
             });
             const res = await EventLocationModel.getWithRelations('location-uuid', {
                 events: true
             });
-            expect(res).toEqual({ ...baseLocation, events: [] });
+            expect(res).toEqual({ ...mockEventLocation, events: [] });
         });
         it('returns undefined if not found', async () => {
             mockDb.query.eventLocations.findFirst.mockResolvedValueOnce(undefined);
@@ -418,9 +393,9 @@ describe('EventLocationModel', () => {
         it('returns locations by event', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.innerJoin.mockReturnValueOnce([{ eventLocations: { ...baseLocation } }]);
+            mockDb.innerJoin.mockReturnValueOnce([{ eventLocations: { ...mockEventLocation } }]);
             const res = await EventLocationModel.getByEvent('event-uuid');
-            expect(res).toEqual([{ ...baseLocation }]);
+            expect(res).toEqual([{ ...mockEventLocation }]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();

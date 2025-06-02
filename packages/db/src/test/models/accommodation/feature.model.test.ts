@@ -1,10 +1,11 @@
-import type { FeatureId, FeatureType, NewFeatureInputType, UserId } from '@repo/types';
+import type { NewFeatureInputType } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { FeatureModel } from '../../../../src/models/accommodation/feature.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockFeature } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -32,24 +33,6 @@ const mockDb = {
 
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const featureId = 'feature-uuid' as FeatureId;
-const userId = 'user-uuid' as UserId;
-const baseFeature: FeatureType = {
-    id: featureId,
-    name: 'General Feature',
-    description: 'A general feature',
-    icon: 'star',
-    isBuiltin: true,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    adminInfo: { favorite: false },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdById: userId,
-    updatedById: userId,
-    deletedAt: undefined,
-    deletedById: undefined
-};
-
 describe('FeatureModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -60,9 +43,9 @@ describe('FeatureModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseFeature }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockFeature }]);
             const feature = await FeatureModel.getById('feature-uuid');
-            expect(feature).toEqual(baseFeature);
+            expect(feature).toEqual(mockFeature);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -88,9 +71,9 @@ describe('FeatureModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseFeature }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockFeature }]);
             const feature = await FeatureModel.getByName('General Feature');
-            expect(feature).toEqual(baseFeature);
+            expect(feature).toEqual(mockFeature);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -113,12 +96,12 @@ describe('FeatureModel', () => {
 
     describe('getByAccommodation', () => {
         it('returns features for accommodation', async () => {
-            const joinResult = [{ features: { ...baseFeature }, rAccommodationFeature: {} }];
+            const joinResult = [{ features: { ...mockFeature }, rAccommodationFeature: {} }];
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.innerJoin.mockReturnValueOnce(joinResult);
             const features = await FeatureModel.getByAccommodation('accommodation-uuid');
-            expect(features).toEqual([baseFeature]);
+            expect(features).toEqual([mockFeature]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -142,14 +125,14 @@ describe('FeatureModel', () => {
         it('returns created feature', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning = vi.fn().mockReturnValueOnce([{ ...baseFeature }]);
+            mockDb.returning = vi.fn().mockReturnValueOnce([{ ...mockFeature }]);
             const input: NewFeatureInputType = {
                 name: 'General Feature',
                 isBuiltin: true,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             } as NewFeatureInputType;
             const feature = await FeatureModel.create(input);
-            expect(feature).toEqual(baseFeature);
+            expect(feature).toEqual(mockFeature);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
@@ -183,11 +166,11 @@ describe('FeatureModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnValueOnce({
-                returning: vi.fn().mockReturnValueOnce([{ ...baseFeature }])
+                returning: vi.fn().mockReturnValueOnce([{ ...mockFeature }])
             });
             const input = { name: 'Updated' };
             const feature = await FeatureModel.update('feature-uuid', input);
-            expect(feature).toEqual(baseFeature);
+            expect(feature).toEqual(mockFeature);
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -214,10 +197,10 @@ describe('FeatureModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnValueOnce({
-                returning: vi.fn().mockReturnValueOnce([{ id: featureId }])
+                returning: vi.fn().mockReturnValueOnce([{ id: 'feature-uuid' }])
             });
             const result = await FeatureModel.delete('feature-uuid', 'user-uuid');
-            expect(result).toEqual({ id: featureId });
+            expect(result).toEqual({ id: 'feature-uuid' });
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -271,9 +254,9 @@ describe('FeatureModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseFeature }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockFeature }]);
             const features = await FeatureModel.list({ limit: 10, offset: 0 });
-            expect(features).toEqual([baseFeature]);
+            expect(features).toEqual([mockFeature]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -301,9 +284,9 @@ describe('FeatureModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseFeature }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockFeature }]);
             const features = await FeatureModel.search({ limit: 10, offset: 0 });
-            expect(features).toEqual([baseFeature]);
+            expect(features).toEqual([mockFeature]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -352,7 +335,7 @@ describe('FeatureModel', () => {
     describe('getWithRelations', () => {
         it('returns feature with relations', async () => {
             mockDb.query.features.findFirst.mockResolvedValueOnce({
-                ...baseFeature,
+                ...mockFeature,
                 accommodations: [{ id: 'accommodation-uuid' }]
             });
             const feature = await FeatureModel.getWithRelations('feature-uuid', {

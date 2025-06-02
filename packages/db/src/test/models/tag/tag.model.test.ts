@@ -1,9 +1,10 @@
 import type { NewTagInputType, TagType, UpdateTagInputType } from '@repo/types';
 import { LifecycleStatusEnum, TagColorEnum } from '@repo/types';
-import type { TagId, UserId } from '@repo/types/common/id.types.js';
+import type { TagId } from '@repo/types/common/id.types.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tags } from '../../../dbschemas/tag/tag.dbschema';
 import { TagModel } from '../../../models/tag/tag.model.js';
+import { getMockTag, mockTag } from '../../mockData';
 
 declare global {
     // biome-ignore lint/suspicious/noExplicitAny: test mock typing
@@ -11,20 +12,6 @@ declare global {
     // biome-ignore lint/suspicious/noExplicitAny: test mock typing
     var mockLogger: any;
 }
-
-const createMockTag = (overrides: Partial<TagType> = {}): TagType => ({
-    id: 'tag-1' as TagId,
-    name: 'Test Tag',
-    color: 'blue',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdById: 'user-1' as UserId,
-    updatedById: 'user-1' as UserId,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    ...overrides
-});
-
-const mockTag = createMockTag();
 
 describe('TagModel.getById', () => {
     beforeEach(() => {
@@ -349,8 +336,8 @@ describe('TagModel.getWithRelations', () => {
 
 describe('TagModel.list', () => {
     const mockResult: TagType[] = [
-        createMockTag({ id: 'tag-1' as TagId, name: 'A', color: 'blue' }),
-        createMockTag({ id: 'tag-2' as TagId, name: 'B', color: 'red' })
+        getMockTag({ id: 'tag-1' as TagId, name: 'A', color: 'blue' }),
+        getMockTag({ id: 'tag-2' as TagId, name: 'B', color: 'red' })
     ];
     let chain: {
         select: ReturnType<typeof vi.fn>;
@@ -603,7 +590,7 @@ describe('TagModel.update (concurrency)', () => {
         const returning1 = vi
             .fn()
             .mockResolvedValueOnce([
-                createMockTag({ name: 'Tag v2', createdAt: fixedDate, updatedAt: fixedDate })
+                getMockTag({ name: 'Tag v2', createdAt: fixedDate, updatedAt: fixedDate })
             ]);
         // Simulate second update fails due to race condition
         const returning2 = vi
@@ -622,7 +609,7 @@ describe('TagModel.update (concurrency)', () => {
         // First update should succeed
         const result1 = await TagModel.update('tag-1', { name: 'Tag v2' });
         expect(result1).toEqual(
-            createMockTag({ name: 'Tag v2', createdAt: fixedDate, updatedAt: fixedDate })
+            getMockTag({ name: 'Tag v2', createdAt: fixedDate, updatedAt: fixedDate })
         );
 
         // Second update should throw concurrency error

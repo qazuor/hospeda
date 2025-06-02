@@ -1,16 +1,15 @@
 import { EntityTypeEnum } from '@repo/types';
-import type { AccommodationId, UserBookmarkId, UserId } from '@repo/types/common/id.types';
+import type { AccommodationId } from '@repo/types/common/id.types';
 import type {
     NewUserBookmarkInputType,
-    UpdateUserBookmarkInputType,
-    UserBookmarkType
+    UpdateUserBookmarkInputType
 } from '@repo/types/entities/user/user.bookmark.types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { UserBookmarkModel } from '../../../../src/models/user/user_bookmark.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockUserBookmark } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -32,22 +31,6 @@ const mockDb = {
 };
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const baseBookmark: UserBookmarkType = {
-    id: 'bookmark-uuid' as UserBookmarkId,
-    entityId: 'accommodation-uuid' as AccommodationId,
-    entityType: EntityTypeEnum.DESTINATION,
-    name: 'Mi destino favorito',
-    description: 'Un destino que quiero visitar',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: undefined,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
-    deletedById: undefined,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    adminInfo: undefined
-};
-
 describe('UserBookmarkModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -58,9 +41,9 @@ describe('UserBookmarkModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseBookmark }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockUserBookmark }]);
             const res = await UserBookmarkModel.getById('bookmark-uuid');
-            expect(res).toEqual(baseBookmark);
+            expect(res).toEqual(mockUserBookmark);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -85,9 +68,9 @@ describe('UserBookmarkModel', () => {
         it('returns bookmarks array', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseBookmark }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockUserBookmark }]);
             const res = await UserBookmarkModel.getByUserId('user-uuid');
-            expect(res).toEqual([baseBookmark]);
+            expect(res).toEqual([mockUserBookmark]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -111,12 +94,12 @@ describe('UserBookmarkModel', () => {
         it('returns bookmarks array', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseBookmark }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockUserBookmark }]);
             const res = await UserBookmarkModel.getByEntity(
                 'accommodation-uuid' as AccommodationId,
                 EntityTypeEnum.DESTINATION
             );
-            expect(res).toEqual([baseBookmark]);
+            expect(res).toEqual([mockUserBookmark]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -143,29 +126,29 @@ describe('UserBookmarkModel', () => {
         it('returns created bookmark', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseBookmark }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockUserBookmark }]);
             const input: NewUserBookmarkInputType = {
-                entityId: baseBookmark.entityId,
-                entityType: baseBookmark.entityType,
-                name: baseBookmark.name,
-                description: baseBookmark.description,
-                adminInfo: baseBookmark.adminInfo,
-                lifecycleState: baseBookmark.lifecycleState
+                entityId: mockUserBookmark.entityId,
+                entityType: mockUserBookmark.entityType,
+                name: mockUserBookmark.name,
+                description: mockUserBookmark.description,
+                adminInfo: mockUserBookmark.adminInfo,
+                lifecycleState: mockUserBookmark.lifecycleState
             };
             const res = await UserBookmarkModel.create(input);
-            expect(res).toEqual(baseBookmark);
+            expect(res).toEqual(mockUserBookmark);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
             mockDb.returning.mockReturnValueOnce(undefined);
             const input: NewUserBookmarkInputType = {
-                entityId: baseBookmark.entityId,
-                entityType: baseBookmark.entityType,
-                name: baseBookmark.name,
-                description: baseBookmark.description,
-                adminInfo: baseBookmark.adminInfo,
-                lifecycleState: baseBookmark.lifecycleState
+                entityId: mockUserBookmark.entityId,
+                entityType: mockUserBookmark.entityType,
+                name: mockUserBookmark.name,
+                description: mockUserBookmark.description,
+                adminInfo: mockUserBookmark.adminInfo,
+                lifecycleState: mockUserBookmark.lifecycleState
             };
             await expect(UserBookmarkModel.create(input)).rejects.toThrow('Insert failed');
         });
@@ -174,12 +157,12 @@ describe('UserBookmarkModel', () => {
                 throw new Error('fail');
             });
             const input: NewUserBookmarkInputType = {
-                entityId: baseBookmark.entityId,
-                entityType: baseBookmark.entityType,
-                name: baseBookmark.name,
-                description: baseBookmark.description,
-                adminInfo: baseBookmark.adminInfo,
-                lifecycleState: baseBookmark.lifecycleState
+                entityId: mockUserBookmark.entityId,
+                entityType: mockUserBookmark.entityType,
+                name: mockUserBookmark.name,
+                description: mockUserBookmark.description,
+                adminInfo: mockUserBookmark.adminInfo,
+                lifecycleState: mockUserBookmark.lifecycleState
             };
             await expect(UserBookmarkModel.create(input)).rejects.toThrow(
                 'Failed to create user bookmark: fail'
@@ -193,10 +176,10 @@ describe('UserBookmarkModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseBookmark, name: 'Nuevo nombre' }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockUserBookmark, name: 'Nuevo nombre' }]);
             const input: UpdateUserBookmarkInputType = { name: 'Nuevo nombre' };
             const res = await UserBookmarkModel.update('bookmark-uuid', input);
-            expect(res).toEqual({ ...baseBookmark, name: 'Nuevo nombre' });
+            expect(res).toEqual({ ...mockUserBookmark, name: 'Nuevo nombre' });
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -279,9 +262,9 @@ describe('UserBookmarkModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseBookmark }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockUserBookmark }]);
             const res = await UserBookmarkModel.list({ limit: 10, offset: 0 });
-            expect(res).toEqual([baseBookmark]);
+            expect(res).toEqual([mockUserBookmark]);
         });
         it('logs and throws on db error', async () => {
             mockDb.select.mockImplementationOnce(() => {
@@ -301,13 +284,13 @@ describe('UserBookmarkModel', () => {
             mockDb.where.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseBookmark }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockUserBookmark }]);
             const res = await UserBookmarkModel.search({
                 limit: 10,
                 offset: 0,
                 query: 'favorito'
             });
-            expect(res).toEqual([baseBookmark]);
+            expect(res).toEqual([mockUserBookmark]);
         });
         it('logs and throws on db error', async () => {
             mockDb.select.mockImplementationOnce(() => {
