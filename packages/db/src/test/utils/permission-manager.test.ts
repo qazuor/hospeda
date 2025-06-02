@@ -6,15 +6,16 @@ import { hasPermission } from '../../utils/permission-manager';
 // Mock user with permissions
 const userWithAll: { permissions: PermissionEnum[] } = {
     permissions: [
-        PermissionEnum.ACCOMMODATION_VIEW_PUBLIC,
         PermissionEnum.ACCOMMODATION_CREATE,
         PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-        PermissionEnum.ACCOMMODATION_DELETE_OWN
+        PermissionEnum.ACCOMMODATION_DELETE_OWN,
+        PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+        PermissionEnum.ACCOMMODATION_VIEW_DRAFT
     ]
 };
 
 const userWithSome: { permissions: PermissionEnum[] } = {
-    permissions: [PermissionEnum.ACCOMMODATION_VIEW_PUBLIC, PermissionEnum.ACCOMMODATION_CREATE]
+    permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.ACCOMMODATION_VIEW_PRIVATE]
 };
 
 const userWithNone: { permissions: PermissionEnum[] } = {
@@ -39,18 +40,18 @@ const makeLog = () => {
 
 describe('hasPermission', () => {
     it('returns true if user has the single required permission', () => {
-        expect(hasPermission(userWithAll, PermissionEnum.ACCOMMODATION_VIEW_PUBLIC)).toBe(true);
+        expect(hasPermission(userWithAll, PermissionEnum.ACCOMMODATION_VIEW_PRIVATE)).toBe(true);
     });
 
     it('returns false if user does not have the single required permission', () => {
-        expect(hasPermission(userWithSome, PermissionEnum.ACCOMMODATION_UPDATE_OWN)).toBe(false);
+        expect(hasPermission(userWithSome, PermissionEnum.ACCOMMODATION_VIEW_DRAFT)).toBe(false);
     });
 
     it('returns true if user has all required permissions (array)', () => {
         expect(
             hasPermission(userWithAll, [
-                PermissionEnum.ACCOMMODATION_VIEW_PUBLIC,
-                PermissionEnum.ACCOMMODATION_CREATE
+                PermissionEnum.ACCOMMODATION_CREATE,
+                PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
             ])
         ).toBe(true);
     });
@@ -58,8 +59,8 @@ describe('hasPermission', () => {
     it('returns false if user is missing one of the required permissions (array)', () => {
         expect(
             hasPermission(userWithSome, [
-                PermissionEnum.ACCOMMODATION_VIEW_PUBLIC,
-                PermissionEnum.ACCOMMODATION_UPDATE_OWN
+                PermissionEnum.ACCOMMODATION_CREATE,
+                PermissionEnum.ACCOMMODATION_VIEW_DRAFT
             ])
         ).toBe(false);
     });

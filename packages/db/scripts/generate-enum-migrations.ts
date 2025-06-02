@@ -64,26 +64,61 @@ const main = async () => {
             logger.info(`Will drop enum: ${dbEnumName}`);
         }
     }
-    // c) Value diffs (add/remove)
+    // c) Value diffs (add/remove/reorder)
     for (const [dbEnumName, tsValues] of Object.entries(tsEnums)) {
         if (!dbEnums[dbEnumName]) continue; // Already handled as new enum
         const dbValues = dbEnums[dbEnumName];
         // New values in TS
         const onlyInTS = arrayDiff(tsValues, dbValues);
+        // Removed values in TS (exist in DB)
+        const onlyInDB = arrayDiff(dbValues, tsValues);
+        // Orden diferente
+        const orderDiffers = tsValues.join(',') !== dbValues.join(',');
+
+        if (onlyInDB.length > 0 || orderDiffers) {
+            // Migración compleja: crear nuevo tipo, migrar columnas, borrar viejo, renombrar
+            // 1. Crear el nuevo tipo
+            const createNewEnumSQL = `CREATE TYPE ${dbEnumName}_new AS ENUM (${tsValues.map((v) => `'${v}'`).join(', ')});`;
+            // 2. Encontrar columnas que usan el enum
+            const { rows: columns } = await pool.query(`
+                SELECT table_name, column_name
+                FROM information_schema.columns
+                WHERE udt_name = '${dbEnumName}'
+            `);
+            // 3. Generar ALTER TABLE para cada columna
+            const alterColumnsSQL = columns
+                .map(
+                    ({ table_name, column_name }) =>
+                        `ALTER TABLE "${table_name}" ALTER COLUMN "${column_name}" TYPE ${dbEnumName}_new USING "${column_name}"::text::${dbEnumName}_new;`
+                )
+                .join('\n');
+            // 4. Eliminar el tipo viejo
+            const dropOldEnumSQL = `DROP TYPE ${dbEnumName};`;
+            // 5. Renombrar el nuevo tipo
+            const renameEnumSQL = `ALTER TYPE ${dbEnumName}_new RENAME TO ${dbEnumName};`;
+            // 6. Advertencia si hay datos con valores que no existen en el nuevo enum
+            const warning =
+                onlyInDB.length > 0
+                    ? `-- WARNING: The following values exist in DB but not in TypeScript: ${onlyInDB.join(', ')}\n-- You must ensure no data uses these values before running this migration.\n`
+                    : '';
+            const fullMigrationSQL = [
+                warning,
+                createNewEnumSQL,
+                alterColumnsSQL,
+                dropOldEnumSQL,
+                renameEnumSQL
+            ].join('\n');
+            actions.push({ type: 'replace_enum', enumName: dbEnumName, sql: fullMigrationSQL });
+            logger.warn(
+                `Enum ${dbEnumName} will be fully replaced (removed values or order change). Manual data cleanup may be required if values are in use.`
+            );
+            continue; // No need to add/remove individual values
+        }
+        // Si solo hay valores nuevos, usar ADD VALUE
         for (const v of onlyInTS) {
             const sql = `ALTER TYPE ${dbEnumName} ADD VALUE IF NOT EXISTS '${v}';\n`;
             actions.push({ type: 'add_value', enumName: dbEnumName, sql });
             logger.info(`Will add value '${v}' to enum: ${dbEnumName}`);
-        }
-        // Removed values in TS (exist in DB)
-        const onlyInDB = arrayDiff(dbValues, tsValues);
-        if (onlyInDB.length > 0) {
-            // Workaround: create new type, migrate data, drop old type (not implemented here, just log)
-            const sql = `-- WARNING: Removing values from enums in PostgreSQL requires manual migration.\n-- The following values exist in DB but not in TypeScript: ${onlyInDB.join(', ')}\n-- You must create a new type, update all columns, and drop the old type.\n`;
-            actions.push({ type: 'remove_value', enumName: dbEnumName, sql });
-            logger.warn(
-                `Enum ${dbEnumName} has values in DB but not in TypeScript: ${onlyInDB.join(', ')}`
-            );
         }
     }
 
@@ -91,11 +126,19 @@ const main = async () => {
     if (!fs.existsSync(MIGRATIONS_DIR)) {
         fs.mkdirSync(MIGRATIONS_DIR, { recursive: true });
     }
-    for (const action of actions) {
-        const filename = `${DATE_PREFIX}_${action.type}_enum_${action.enumName}.sql`;
+    if (actions.length > 0) {
+        const filename = `${DATE_PREFIX}_all_enum_diffs.sql`;
         const filepath = path.join(MIGRATIONS_DIR, filename);
-        fs.writeFileSync(filepath, action.sql);
-        logger.info(`Generated migration file: ${filepath}`);
+        const allSql = actions
+            .map(
+                (action) =>
+                    `-- ${action.type.toUpperCase()} for ${action.enumName}\n${action.sql}\n`
+            )
+            .join('\n');
+        fs.writeFileSync(filepath, allSql);
+        logger.info(`Generated single migration file: ${filepath}`);
+    } else {
+        logger.info('No enum differences found. No migration file generated.');
     }
     await pool.end();
     logger.info('Enum migration generation finished.');
