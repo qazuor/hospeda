@@ -4,9 +4,7 @@ import {
     ModerationStatusEnum,
     VisibilityEnum
 } from '@repo/types';
-import type { AccommodationId, DestinationId, UserId } from '@repo/types/common/id.types';
 import type {
-    AccommodationType,
     NewAccommodationInputType,
     UpdateAccommodationInputType
 } from '@repo/types/entities/accommodation/accommodation.types';
@@ -15,6 +13,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { AccommodationModel } from '../../../../src/models/accommodation/accommodation.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockAccommodation } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -42,29 +41,6 @@ const mockDb = {
 
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const baseAccommodation: AccommodationType = {
-    id: 'acc-uuid' as AccommodationId,
-    slug: 'hotel-uruguay',
-    name: 'Hotel Uruguay',
-    summary: 'Un hotel en Uruguay',
-    type: AccommodationTypeEnum.HOTEL,
-    description: 'Descripción completa',
-    ownerId: 'user-uuid' as UserId,
-    destinationId: 'dest-uuid' as DestinationId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    visibility: VisibilityEnum.PUBLIC,
-    moderationState: ModerationStatusEnum.PENDING_REVIEW,
-    isFeatured: false,
-    reviewsCount: 0,
-    averageRating: 0,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
-    adminInfo: undefined
-    // otros campos opcionales omitidos
-};
-
 describe('AccommodationModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -75,9 +51,9 @@ describe('AccommodationModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseAccommodation }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockAccommodation }]);
             const acc = await AccommodationModel.getById('acc-uuid');
-            expect(acc).toEqual(baseAccommodation);
+            expect(acc).toEqual(mockAccommodation);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -103,9 +79,9 @@ describe('AccommodationModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseAccommodation }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockAccommodation }]);
             const acc = await AccommodationModel.getByName('Hotel Uruguay');
-            expect(acc).toEqual(baseAccommodation);
+            expect(acc).toEqual(mockAccommodation);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -131,9 +107,9 @@ describe('AccommodationModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseAccommodation }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockAccommodation }]);
             const acc = await AccommodationModel.getBySlug('hotel-uruguay');
-            expect(acc).toEqual(baseAccommodation);
+            expect(acc).toEqual(mockAccommodation);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -158,9 +134,9 @@ describe('AccommodationModel', () => {
         it('returns accommodations by type', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseAccommodation }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockAccommodation }]);
             const accs = await AccommodationModel.getByType(AccommodationTypeEnum.HOTEL);
-            expect(accs).toEqual([baseAccommodation]);
+            expect(accs).toEqual([mockAccommodation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -184,9 +160,9 @@ describe('AccommodationModel', () => {
         it('returns created accommodation', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseAccommodation }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockAccommodation }]);
             const input: NewAccommodationInputType = {
-                ...baseAccommodation,
+                ...mockAccommodation,
                 id: undefined,
                 createdAt: undefined,
                 updatedAt: undefined,
@@ -194,7 +170,7 @@ describe('AccommodationModel', () => {
                 updatedById: undefined
             };
             const acc = await AccommodationModel.create(input);
-            expect(acc).toEqual(baseAccommodation);
+            expect(acc).toEqual(mockAccommodation);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
@@ -202,7 +178,7 @@ describe('AccommodationModel', () => {
             mockDb.returning.mockReturnValueOnce(undefined);
             await expect(
                 AccommodationModel.create({
-                    ...baseAccommodation,
+                    ...mockAccommodation,
                     id: undefined,
                     createdAt: undefined,
                     updatedAt: undefined,
@@ -217,7 +193,7 @@ describe('AccommodationModel', () => {
             });
             await expect(
                 AccommodationModel.create({
-                    ...baseAccommodation,
+                    ...mockAccommodation,
                     id: undefined,
                     createdAt: undefined,
                     updatedAt: undefined,
@@ -234,10 +210,10 @@ describe('AccommodationModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseAccommodation }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockAccommodation }]);
             const input: UpdateAccommodationInputType = { summary: 'Updated' };
             const acc = await AccommodationModel.update('acc-uuid', input);
-            expect(acc).toEqual(baseAccommodation);
+            expect(acc).toEqual(mockAccommodation);
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -318,9 +294,9 @@ describe('AccommodationModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseAccommodation }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockAccommodation }]);
             const accs = await AccommodationModel.list({ limit: 10, offset: 0 });
-            expect(accs).toEqual([baseAccommodation]);
+            expect(accs).toEqual([mockAccommodation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -348,9 +324,9 @@ describe('AccommodationModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseAccommodation }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockAccommodation }]);
             const accs = await AccommodationModel.search({ limit: 10, offset: 0 });
-            expect(accs).toEqual([baseAccommodation]);
+            expect(accs).toEqual([mockAccommodation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -403,7 +379,7 @@ describe('AccommodationModel', () => {
     describe('getWithRelations', () => {
         it('returns accommodation with relations', async () => {
             mockDb.query.accommodations.findFirst.mockResolvedValueOnce({
-                ...baseAccommodation,
+                ...mockAccommodation,
                 tags: [
                     {
                         id: 'tag-uuid',
@@ -473,10 +449,10 @@ describe('AccommodationModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.innerJoin.mockReturnValueOnce([
-                { accommodations: { ...baseAccommodation }, rEntityTag: {} }
+                { accommodations: { ...mockAccommodation }, rEntityTag: {} }
             ]);
             const accs = await AccommodationModel.getByTag('tag-uuid');
-            expect(accs).toEqual([baseAccommodation]);
+            expect(accs).toEqual([mockAccommodation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -503,9 +479,9 @@ describe('AccommodationModel', () => {
         it('returns accommodations for given owner', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([baseAccommodation]);
+            mockDb.where.mockReturnValueOnce([mockAccommodation]);
             const accs = await AccommodationModel.getByOwner('user-uuid');
-            expect(accs).toEqual([baseAccommodation]);
+            expect(accs).toEqual([mockAccommodation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -532,9 +508,9 @@ describe('AccommodationModel', () => {
         it('returns accommodations for given destination', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([baseAccommodation]);
+            mockDb.where.mockReturnValueOnce([mockAccommodation]);
             const accs = await AccommodationModel.getByDestination('dest-uuid');
-            expect(accs).toEqual([baseAccommodation]);
+            expect(accs).toEqual([mockAccommodation]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();

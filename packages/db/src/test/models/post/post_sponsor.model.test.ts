@@ -1,8 +1,5 @@
-import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/types';
-import type { PostSponsorId, UserId } from '@repo/types/common/id.types';
 import type {
     NewPostSponsorInputType,
-    PostSponsorType,
     UpdatePostSponsorInputType
 } from '@repo/types/entities/post/post.sponsor.types';
 import type { Mock } from 'vitest';
@@ -10,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { PostSponsorModel } from '../../../../src/models/post/post_sponsor.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockPostSponsor } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -31,24 +29,6 @@ const mockDb = {
 };
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const baseSponsor: PostSponsorType = {
-    id: 'sponsor-uuid' as PostSponsorId,
-    name: 'Sponsor Name',
-    type: ClientTypeEnum.POST_SPONSOR,
-    description: 'Sponsor description',
-    logo: undefined,
-    contact: undefined,
-    social: undefined,
-    adminInfo: undefined,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: undefined,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
-    deletedById: undefined,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
-};
-
 describe('PostSponsorModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -59,9 +39,9 @@ describe('PostSponsorModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([baseSponsor]);
+            mockDb.limit.mockReturnValueOnce([mockPostSponsor]);
             const res = await PostSponsorModel.getById('sponsor-uuid');
-            expect(res).toEqual(baseSponsor);
+            expect(res).toEqual(mockPostSponsor);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -86,9 +66,9 @@ describe('PostSponsorModel', () => {
         it('returns sponsors by name', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([baseSponsor]);
+            mockDb.where.mockReturnValueOnce([mockPostSponsor]);
             const res = await PostSponsorModel.getByName('Sponsor');
-            expect(res).toEqual([baseSponsor]);
+            expect(res).toEqual([mockPostSponsor]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -112,23 +92,23 @@ describe('PostSponsorModel', () => {
         it('returns created sponsor', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([baseSponsor]);
+            mockDb.returning.mockReturnValueOnce([mockPostSponsor]);
             const input: NewPostSponsorInputType = {
-                name: baseSponsor.name,
-                type: baseSponsor.type,
-                description: baseSponsor.description
+                name: mockPostSponsor.name,
+                type: mockPostSponsor.type,
+                description: mockPostSponsor.description
             } as NewPostSponsorInputType;
             const res = await PostSponsorModel.create(input);
-            expect(res).toEqual(baseSponsor);
+            expect(res).toEqual(mockPostSponsor);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
             mockDb.returning.mockReturnValueOnce(undefined);
             const input: NewPostSponsorInputType = {
-                name: baseSponsor.name,
-                type: baseSponsor.type,
-                description: baseSponsor.description
+                name: mockPostSponsor.name,
+                type: mockPostSponsor.type,
+                description: mockPostSponsor.description
             } as NewPostSponsorInputType;
             await expect(PostSponsorModel.create(input)).rejects.toThrow('Insert failed');
         });
@@ -137,9 +117,9 @@ describe('PostSponsorModel', () => {
                 throw new Error('fail');
             });
             const input: NewPostSponsorInputType = {
-                name: baseSponsor.name,
-                type: baseSponsor.type,
-                description: baseSponsor.description
+                name: mockPostSponsor.name,
+                type: mockPostSponsor.type,
+                description: mockPostSponsor.description
             } as NewPostSponsorInputType;
             await expect(PostSponsorModel.create(input)).rejects.toThrow(
                 'Failed to create post sponsor: fail'
@@ -153,10 +133,10 @@ describe('PostSponsorModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseSponsor, name: 'Nuevo' }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockPostSponsor, name: 'Nuevo' }]);
             const input: UpdatePostSponsorInputType = { name: 'Nuevo' };
             const res = await PostSponsorModel.update('sponsor-uuid', input);
-            expect(res).toEqual({ ...baseSponsor, name: 'Nuevo' });
+            expect(res).toEqual({ ...mockPostSponsor, name: 'Nuevo' });
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -239,9 +219,9 @@ describe('PostSponsorModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([baseSponsor]);
+            mockDb.offset.mockReturnValueOnce([mockPostSponsor]);
             const res = await PostSponsorModel.list({ limit: 10, offset: 0 });
-            expect(res).toEqual([baseSponsor]);
+            expect(res).toEqual([mockPostSponsor]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -270,9 +250,9 @@ describe('PostSponsorModel', () => {
             mockDb.where.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([baseSponsor]);
+            mockDb.offset.mockReturnValueOnce([mockPostSponsor]);
             const res = await PostSponsorModel.search({ limit: 10, offset: 0 });
-            expect(res).toEqual([baseSponsor]);
+            expect(res).toEqual([mockPostSponsor]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();

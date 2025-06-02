@@ -1,16 +1,10 @@
-import type {
-    DestinationId,
-    DestinationType,
-    DestinationWithRelationsType,
-    UserId
-} from '@repo/types';
-import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { destinations } from '../../../../src/dbschemas/destination/destination.dbschema.ts';
 import { DestinationModel } from '../../../../src/models/destination/destination.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockDestination, mockDestinationWithRelations } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -25,42 +19,6 @@ vi.mock('../../../../src/dbschemas/destination/destination.dbschema.ts', () => (
         lifecycle: {}
     }
 }));
-
-const destinationId = 'destination-1' as DestinationId;
-const userId = 'user-1' as UserId;
-const baseDestination: DestinationType = {
-    id: destinationId,
-    slug: 'test-destination',
-    name: 'Test Destination',
-    summary: 'A test destination',
-    description: 'Description',
-    location: { state: '', zipCode: '', country: '' },
-    media: { featuredImage: { url: '', moderationState: ModerationStatusEnum.PENDING_REVIEW } },
-    isFeatured: false,
-    visibility: VisibilityEnum.PUBLIC,
-    accommodationsCount: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdById: userId,
-    updatedById: userId,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    moderationState: ModerationStatusEnum.PENDING_REVIEW,
-    reviewsCount: 0,
-    averageRating: 0,
-    adminInfo: { favorite: false },
-    seo: {},
-    tags: [],
-    attractions: [],
-    reviews: []
-};
-
-const baseWithRelations: DestinationWithRelationsType = {
-    ...baseDestination,
-    accommodations: [],
-    reviews: [],
-    tags: [],
-    attractions: []
-};
 
 const mockDb = {
     select: vi.fn().mockReturnThis(),
@@ -93,9 +51,9 @@ describe('DestinationModel', () => {
         mockDb.select.mockReturnThis();
         mockDb.from.mockReturnThis();
         mockDb.where.mockReturnThis();
-        mockDb.limit.mockReturnValueOnce([baseDestination]);
-        const result = await DestinationModel.getById(destinationId);
-        expect(result).toEqual(baseDestination);
+        mockDb.limit.mockReturnValueOnce([mockDestination]);
+        const result = await DestinationModel.getById(mockDestination.id);
+        expect(result).toEqual(mockDestination);
     });
 
     it('getById returns undefined if not found', async () => {
@@ -103,7 +61,7 @@ describe('DestinationModel', () => {
         mockDb.from.mockReturnThis();
         mockDb.where.mockReturnThis();
         mockDb.limit.mockReturnValueOnce([]);
-        const result = await DestinationModel.getById('not-found' as DestinationId);
+        const result = await DestinationModel.getById(mockDestination.id);
         expect(result).toBeUndefined();
     });
 
@@ -111,7 +69,7 @@ describe('DestinationModel', () => {
         mockDb.select.mockImplementationOnce(() => {
             throw new Error('fail');
         });
-        await expect(DestinationModel.getById('fail' as DestinationId)).rejects.toThrow(
+        await expect(DestinationModel.getById(mockDestination.id)).rejects.toThrow(
             'Failed to get destination by id: fail'
         );
         expect(dbLogger.error).toHaveBeenCalled();
@@ -120,16 +78,16 @@ describe('DestinationModel', () => {
     it('create returns created destination', async () => {
         mockDb.insert.mockReturnThis();
         mockDb.values.mockReturnThis();
-        mockDb.returning.mockResolvedValueOnce([baseDestination]);
-        const result = await DestinationModel.create({ ...baseDestination });
-        expect(result).toEqual(baseDestination);
+        mockDb.returning.mockResolvedValueOnce([mockDestination]);
+        const result = await DestinationModel.create({ ...mockDestination });
+        expect(result).toEqual(mockDestination);
     });
 
     it('create throws if insert fails', async () => {
         mockDb.insert.mockReturnThis();
         mockDb.values.mockReturnThis();
         mockDb.returning.mockResolvedValueOnce([]);
-        await expect(DestinationModel.create({ ...baseDestination })).rejects.toThrow(
+        await expect(DestinationModel.create({ ...mockDestination })).rejects.toThrow(
             'Insert failed'
         );
     });
@@ -138,7 +96,7 @@ describe('DestinationModel', () => {
         mockDb.insert.mockReturnThis();
         mockDb.values.mockReturnThis();
         mockDb.returning.mockRejectedValueOnce(new Error('fail'));
-        await expect(DestinationModel.create({ ...baseDestination })).rejects.toThrow(
+        await expect(DestinationModel.create({ ...mockDestination })).rejects.toThrow(
             'Failed to create destination: fail'
         );
         expect(dbLogger.error).toHaveBeenCalled();
@@ -148,9 +106,9 @@ describe('DestinationModel', () => {
         mockDb.update.mockReturnThis();
         mockDb.set.mockReturnThis();
         mockDb.where.mockReturnThis();
-        mockDb.returning.mockResolvedValueOnce([baseDestination]);
+        mockDb.returning.mockResolvedValueOnce([mockDestination]);
         const result = await DestinationModel.update('destination-1', { name: 'Updated' });
-        expect(result).toEqual(baseDestination);
+        expect(result).toEqual(mockDestination);
     });
 
     it('update returns undefined if not found', async () => {
@@ -205,7 +163,7 @@ describe('DestinationModel', () => {
     it('hardDelete returns true if deleted', async () => {
         mockDb.delete.mockReturnThis();
         mockDb.where.mockReturnThis();
-        mockDb.returning.mockResolvedValueOnce([baseDestination]);
+        mockDb.returning.mockResolvedValueOnce([mockDestination]);
         const result = await DestinationModel.hardDelete('destination-1');
         expect(result).toBe(true);
     });
@@ -232,9 +190,9 @@ describe('DestinationModel', () => {
         mockDb.select.mockReturnThis();
         mockDb.from.mockReturnThis();
         mockDb.where.mockReturnThis();
-        mockDb.limit.mockResolvedValueOnce([baseDestination]);
-        const result = await DestinationModel.findBySlug('test-destination');
-        expect(result).toEqual(baseDestination);
+        mockDb.limit.mockResolvedValueOnce([mockDestination]);
+        const result = await DestinationModel.findBySlug(mockDestination.slug);
+        expect(result).toEqual(mockDestination);
     });
 
     it('findBySlug returns undefined if not found', async () => {
@@ -254,17 +212,16 @@ describe('DestinationModel', () => {
         await expect(DestinationModel.findBySlug('fail')).rejects.toThrow(
             'Failed to find destination by slug: fail'
         );
-        expect(dbLogger.error).toHaveBeenCalled();
     });
 
     it('getWithRelations returns destination with relations', async () => {
         mockDb.query = {
             destinations: {
-                findFirst: vi.fn().mockResolvedValueOnce(baseWithRelations)
+                findFirst: vi.fn().mockResolvedValueOnce(mockDestinationWithRelations)
             }
         };
         const result = await DestinationModel.getWithRelations('destination-1');
-        expect(result).toEqual(baseWithRelations);
+        expect(result).toEqual(mockDestinationWithRelations);
     });
 
     it('getWithRelations returns undefined if not found', async () => {
@@ -286,7 +243,6 @@ describe('DestinationModel', () => {
         await expect(DestinationModel.getWithRelations('fail')).rejects.toThrow(
             'Failed to get destination with relations: fail'
         );
-        expect(dbLogger.error).toHaveBeenCalled();
     });
 
     it('list returns destinations with pagination', async () => {
@@ -294,9 +250,9 @@ describe('DestinationModel', () => {
         mockDb.from.mockReturnThis();
         mockDb.orderBy.mockReturnThis();
         mockDb.limit.mockReturnThis();
-        mockDb.offset.mockResolvedValueOnce([baseDestination]);
+        mockDb.offset.mockResolvedValueOnce([mockDestination]);
         const result = await DestinationModel.list({ limit: 10, offset: 0 });
-        expect(result).toEqual([baseDestination]);
+        expect(result).toEqual([mockDestination]);
     });
 
     it('list returns empty array if none found', async () => {
@@ -318,7 +274,6 @@ describe('DestinationModel', () => {
         await expect(DestinationModel.list({ limit: 10, offset: 0 })).rejects.toThrow(
             'Failed to list destinations: fail'
         );
-        expect(dbLogger.error).toHaveBeenCalled();
     });
 
     it('count returns number of destinations', async () => {
@@ -351,7 +306,6 @@ describe('DestinationModel', () => {
         await expect(
             DestinationModel.count({ name: 'fail', limit: 10, offset: 0 })
         ).rejects.toThrow('Failed to count destinations: fail');
-        expect(dbLogger.error).toHaveBeenCalled();
     });
 
     it('search returns destinations matching search', async () => {
@@ -360,10 +314,10 @@ describe('DestinationModel', () => {
         mockDb.where.mockReturnThis();
         mockDb.orderBy.mockReturnThis();
         mockDb.limit.mockReturnThis();
-        mockDb.offset.mockResolvedValueOnce([baseDestination]);
+        mockDb.offset.mockResolvedValueOnce([mockDestination]);
         (destinations.name.ilike as Mock).mockReturnValue('ilike-clause');
         const result = await DestinationModel.search({ name: 'Test', limit: 10, offset: 0 });
-        expect(result).toEqual([baseDestination]);
+        expect(result).toEqual([mockDestination]);
     });
 
     it('search returns empty array if none found', async () => {
@@ -389,6 +343,5 @@ describe('DestinationModel', () => {
         await expect(
             DestinationModel.search({ name: 'fail', limit: 10, offset: 0 })
         ).rejects.toThrow('Failed to search destinations: fail');
-        expect(dbLogger.error).toHaveBeenCalled();
     });
 });

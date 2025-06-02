@@ -1,6 +1,4 @@
-import type { DestinationId, DestinationReviewId, UserId } from '@repo/types/common/id.types';
 import type {
-    DestinationReviewType,
     NewDestinationReviewInputType,
     UpdateDestinationReviewInputType
 } from '@repo/types/entities/destination/destination.review.types';
@@ -9,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { DestinationReviewModel } from '../../../../src/models/destination/destination_review.model';
 import { dbLogger } from '../../../../src/utils/logger';
+import { mockDestinationReview } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -30,40 +29,6 @@ const mockDb = {
 };
 (getDb as unknown as Mock).mockReturnValue(mockDb);
 
-const baseReview: DestinationReviewType = {
-    id: 'review-uuid' as DestinationReviewId,
-    destinationId: 'dest-uuid' as DestinationId,
-    userId: 'user-uuid' as UserId,
-    title: 'Hermoso lugar',
-    content: 'La experiencia fue increíble.',
-    rating: {
-        landscape: 5,
-        attractions: 5,
-        accessibility: 4,
-        safety: 5,
-        cleanliness: 5,
-        hospitality: 5,
-        culturalOffer: 4,
-        gastronomy: 5,
-        affordability: 4,
-        nightlife: 3,
-        infrastructure: 4,
-        environmentalCare: 5,
-        wifiAvailability: 4,
-        shopping: 3,
-        beaches: 4,
-        greenSpaces: 5,
-        localEvents: 4,
-        weatherSatisfaction: 5
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: undefined,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
-    deletedById: undefined
-};
-
 describe('DestinationReviewModel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -74,9 +39,9 @@ describe('DestinationReviewModel', () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.limit.mockReturnValueOnce([{ ...baseReview }]);
+            mockDb.limit.mockReturnValueOnce([{ ...mockDestinationReview }]);
             const res = await DestinationReviewModel.getById('review-uuid');
-            expect(res).toEqual(baseReview);
+            expect(res).toEqual(mockDestinationReview);
         });
         it('returns undefined if not found', async () => {
             mockDb.select.mockReturnThis();
@@ -101,9 +66,9 @@ describe('DestinationReviewModel', () => {
         it('returns reviews array', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseReview }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockDestinationReview }]);
             const res = await DestinationReviewModel.getByDestinationId('dest-uuid');
-            expect(res).toEqual([baseReview]);
+            expect(res).toEqual([mockDestinationReview]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -127,9 +92,9 @@ describe('DestinationReviewModel', () => {
         it('returns reviews array', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseReview }]);
+            mockDb.where.mockReturnValueOnce([{ ...mockDestinationReview }]);
             const res = await DestinationReviewModel.getByUserId('user-uuid');
-            expect(res).toEqual([baseReview]);
+            expect(res).toEqual([mockDestinationReview]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
@@ -153,27 +118,27 @@ describe('DestinationReviewModel', () => {
         it('returns created review', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseReview }]);
+            mockDb.returning.mockReturnValueOnce([{ ...mockDestinationReview }]);
             const input: NewDestinationReviewInputType = {
-                destinationId: baseReview.destinationId,
-                userId: baseReview.userId,
-                title: baseReview.title,
-                content: baseReview.content,
-                rating: baseReview.rating
+                destinationId: mockDestinationReview.destinationId,
+                userId: mockDestinationReview.userId,
+                title: mockDestinationReview.title,
+                content: mockDestinationReview.content,
+                rating: mockDestinationReview.rating
             };
             const res = await DestinationReviewModel.create(input);
-            expect(res).toEqual(baseReview);
+            expect(res).toEqual(mockDestinationReview);
         });
         it('throws if insert fails', async () => {
             mockDb.insert.mockReturnThis();
             mockDb.values.mockReturnThis();
             mockDb.returning.mockReturnValueOnce(undefined);
             const input: NewDestinationReviewInputType = {
-                destinationId: baseReview.destinationId,
-                userId: baseReview.userId,
-                title: baseReview.title,
-                content: baseReview.content,
-                rating: baseReview.rating
+                destinationId: mockDestinationReview.destinationId,
+                userId: mockDestinationReview.userId,
+                title: mockDestinationReview.title,
+                content: mockDestinationReview.content,
+                rating: mockDestinationReview.rating
             };
             await expect(DestinationReviewModel.create(input)).rejects.toThrow('Insert failed');
         });
@@ -182,11 +147,11 @@ describe('DestinationReviewModel', () => {
                 throw new Error('fail');
             });
             const input: NewDestinationReviewInputType = {
-                destinationId: baseReview.destinationId,
-                userId: baseReview.userId,
-                title: baseReview.title,
-                content: baseReview.content,
-                rating: baseReview.rating
+                destinationId: mockDestinationReview.destinationId,
+                userId: mockDestinationReview.userId,
+                title: mockDestinationReview.title,
+                content: mockDestinationReview.content,
+                rating: mockDestinationReview.rating
             };
             await expect(DestinationReviewModel.create(input)).rejects.toThrow(
                 'Failed to create destination review: fail'
@@ -200,10 +165,12 @@ describe('DestinationReviewModel', () => {
             mockDb.update.mockReturnThis();
             mockDb.set.mockReturnThis();
             mockDb.where.mockReturnThis();
-            mockDb.returning.mockReturnValueOnce([{ ...baseReview, title: 'Nueva reseña' }]);
+            mockDb.returning.mockReturnValueOnce([
+                { ...mockDestinationReview, title: 'Nueva reseña' }
+            ]);
             const input: UpdateDestinationReviewInputType = { title: 'Nueva reseña' };
             const res = await DestinationReviewModel.update('review-uuid', input);
-            expect(res).toEqual({ ...baseReview, title: 'Nueva reseña' });
+            expect(res).toEqual({ ...mockDestinationReview, title: 'Nueva reseña' });
         });
         it('returns undefined if not found', async () => {
             mockDb.update.mockReturnThis();
@@ -286,9 +253,9 @@ describe('DestinationReviewModel', () => {
             mockDb.from.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseReview }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockDestinationReview }]);
             const res = await DestinationReviewModel.list({ limit: 10, offset: 0 });
-            expect(res).toEqual([baseReview]);
+            expect(res).toEqual([mockDestinationReview]);
         });
         it('logs and throws on db error', async () => {
             mockDb.select.mockImplementationOnce(() => {
@@ -308,13 +275,13 @@ describe('DestinationReviewModel', () => {
             mockDb.where.mockReturnThis();
             mockDb.orderBy.mockReturnThis();
             mockDb.limit.mockReturnThis();
-            mockDb.offset.mockReturnValueOnce([{ ...baseReview }]);
+            mockDb.offset.mockReturnValueOnce([{ ...mockDestinationReview }]);
             const res = await DestinationReviewModel.search({
                 limit: 10,
                 offset: 0,
                 query: 'increíble'
             });
-            expect(res).toEqual([baseReview]);
+            expect(res).toEqual([mockDestinationReview]);
         });
         it('logs and throws on db error', async () => {
             mockDb.select.mockImplementationOnce(() => {
