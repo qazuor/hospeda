@@ -1,17 +1,17 @@
 import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
-    BuiltinPermissionTypeEnum,
-    BuiltinRoleTypeEnum,
     ClientTypeEnum,
     EntityTypeEnum,
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
+    PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
     RecurrenceTypeEnum,
+    RoleEnum,
     TagColorEnum,
     VisibilityEnum
 } from '@repo/types';
@@ -43,19 +43,13 @@ export const LifecycleStatusPgEnum = pgEnum(
     enumToTuple(LifecycleStatusEnum)
 );
 
-export const BuiltinPermissionTypePgEnum = pgEnum(
-    'builtin_permission_type_enum',
-    enumToTuple(BuiltinPermissionTypeEnum)
-);
+export const PermissionPgEnum = pgEnum('permission_enum', enumToTuple(PermissionEnum));
 
 export const PostCategoryPgEnum = pgEnum('post_category_enum', enumToTuple(PostCategoryEnum));
 
 export const RecurrenceTypePgEnum = pgEnum('recurrence_type_enum', enumToTuple(RecurrenceTypeEnum));
 
-export const BuiltinRoleTypePgEnum = pgEnum(
-    'builtin_role_type_enum',
-    enumToTuple(BuiltinRoleTypeEnum)
-);
+export const RolePgEnum = pgEnum('role_enum', enumToTuple(RoleEnum));
 
 export const ModerationStatusPgEnum = pgEnum(
     'moderation_status_enum',

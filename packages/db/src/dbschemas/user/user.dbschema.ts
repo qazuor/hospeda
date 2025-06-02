@@ -10,7 +10,7 @@ import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
-import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
+import { LifecycleStatusPgEnum, RolePgEnum } from '../enums.dbschema.ts';
 import { events } from '../event/event.dbschema.ts';
 import { eventLocations } from '../event/event_location.dbschema.ts';
 import { eventOrganizers } from '../event/event_organizer.dbschema.ts';
@@ -18,9 +18,7 @@ import { posts } from '../post/post.dbschema.ts';
 import { postSponsors } from '../post/post_sponsor.dbschema.ts';
 import { postSponsorships } from '../post/post_sponsorship.dbschema.ts';
 import { tags } from '../tag/tag.dbschema.ts';
-import { rUserPermission } from './r_user_permission.dbschema.ts';
-import { rUserRole } from './r_user_role.dbschema.ts';
-import { roles } from './role.dbschema.ts';
+import { userPermission } from './r_user_permission.dbschema.ts';
 import { userBookmarks } from './user_bookmark.dbschema.ts';
 
 export const users: ReturnType<typeof pgTable> = pgTable(
@@ -37,9 +35,7 @@ export const users: ReturnType<typeof pgTable> = pgTable(
         contactInfo: jsonb('contact_info').$type<ContactInfoType>(),
         location: jsonb('location').$type<FullLocationType>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetworkType>(),
-        roleId: uuid('role_id')
-            .notNull()
-            .references(() => roles.id, { onDelete: 'cascade' }),
+        role: RolePgEnum('role').notNull(),
         profile: jsonb('profile').$type<UserProfile>(),
         settings: jsonb('settings').$type<UserSettingsType>().notNull(),
         lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
@@ -57,8 +53,7 @@ export const users: ReturnType<typeof pgTable> = pgTable(
 );
 
 export const usersRelations = relations(users, ({ many }) => ({
-    roles: many(rUserRole),
-    permissions: many(rUserPermission),
+    permissions: many(userPermission),
     bookmarks: many(userBookmarks),
     updatedAccommodations: many(accommodations),
     deletedAccommodations: many(accommodations),
