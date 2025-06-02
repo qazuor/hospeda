@@ -11,7 +11,7 @@ export default defineConfig({
             reporter: ['text', 'html'],
             exclude: ['**/test/**/mocks/**', '**/*.d.ts']
         },
-        ui: true,
+        ui: false,
         include: ['src/test/**/*.test.ts'],
         exclude: ['node_modules', 'dist', 'build'],
         setupFiles: ['src/test/setupTest.ts']

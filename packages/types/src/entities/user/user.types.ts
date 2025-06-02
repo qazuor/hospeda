@@ -1,5 +1,3 @@
-import type { PermissionType } from '@repo/types/entities/user/user.permission.types.js';
-import type { RoleType } from '@repo/types/entities/user/user.role.types.js';
 import type { ContactInfoType } from '../../common/contact.types.js';
 import type {
     WithAdminInfo,
@@ -8,13 +6,20 @@ import type {
     WithOptional,
     Writable
 } from '../../common/helpers.types.js';
-import type { PermissionId, RoleId, UserId } from '../../common/id.types.js';
+import type { UserId } from '../../common/id.types.js';
 import type { FullLocationType } from '../../common/location.types.js';
 import type { SocialNetworkType } from '../../common/social.types.js';
+import type { PermissionEnum } from '../../enums/permission.enum.js';
+import { RoleEnum } from '../../enums/role.enum.js';
 import type { UserBookmarkType } from './user.bookmark.types.js';
 import type { UserProfile } from './user.profile.types.js';
 import type { UserSettingsType } from './user.settings.types.js';
 
+/**
+ * Represents a user in the system.
+ * - `role` is a fixed enum.
+ * - `permissions` are direct permissions assigned to the user (by enum).
+ */
 export interface UserType extends WithAudit, WithLifecycleState, WithAdminInfo {
     id: UserId;
     userName: string;
@@ -31,8 +36,8 @@ export interface UserType extends WithAudit, WithLifecycleState, WithAdminInfo {
     location?: FullLocationType;
     socialNetworks?: SocialNetworkType;
 
-    roleId: RoleId;
-    permissionIds?: PermissionId[];
+    role: RoleEnum;
+    permissions?: PermissionEnum[];
 
     profile?: UserProfile;
     settings?: UserSettingsType;
@@ -81,12 +86,44 @@ export type UserProfileSummaryType = Pick<
 
 /**
  * UserWithRelationsType extends UserType with all possible related entities.
- * - permissions: Array of related PermissionType (if loaded)
- * - role: The related RoleType (if loaded)
+ * - permissions: Direct permissions assigned to the user (by enum)
+ * - role: The user's role (enum)
  * - bookmarks: Array of related UserBookmarkType (if loaded)
  */
 export type UserWithRelationsType = UserType & {
-    permissions?: PermissionType[];
-    role?: RoleType;
+    permissions?: PermissionEnum[];
+    role: RoleEnum;
     bookmarks?: UserBookmarkType[];
 };
+
+/**
+ * Represents a public (anonymous) user with minimal information.
+ * Used when there is no authenticated user in the session.
+ *
+ * @example
+ * const publicUser = createPublicUser();
+ * // publicUser.id === 'public' as UserId
+ * // publicUser.userName === 'public'
+ * // publicUser.roleId === 'public' as RoleId
+ */
+export interface PublicUserType {
+    id: UserId;
+    userName: string;
+    role: RoleEnum;
+}
+
+/**
+ * Factory function to create a PublicUserType instance.
+ *
+ * @returns {PublicUserType} The public user object.
+ * @example
+ * const publicUser = createPublicUser();
+ * // publicUser.id === 'public' as UserId
+ * // publicUser.userName === 'public'
+ * // publicUser.roleId === 'public' as RoleId
+ */
+export const createPublicUser = (): PublicUserType => ({
+    id: 'public' as UserId,
+    userName: 'public',
+    role: RoleEnum.GUEST
+});

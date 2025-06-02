@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CurrencyEnumSchema } from '../enums/index.js';
+import { PriceCurrencyEnumSchema } from '../enums/index.js';
 
 export const PriceSchema = z.object({
     price: z
@@ -8,7 +8,10 @@ export const PriceSchema = z.object({
             invalid_type_error: 'zodError.common.price.price.invalidType'
         })
         .optional(),
-    currency: CurrencyEnumSchema.refine((val: string) => CurrencyEnumSchema.options.includes(val), {
-        message: 'zodError.common.price.currency.invalidEnum'
-    }).optional()
+    currency: PriceCurrencyEnumSchema.refine(
+        (val: string) => PriceCurrencyEnumSchema.options.includes(val),
+        {
+            message: 'zodError.common.price.currency.invalidEnum'
+        }
+    ).optional()
 });

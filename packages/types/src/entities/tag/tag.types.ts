@@ -1,18 +1,18 @@
 import type {
+    WithAudit,
+    WithLifecycleState,
+    WithOptional,
+    Writable
+} from '../../common/helpers.types.js';
+import type {
     AccommodationId,
     DestinationId,
     EventId,
     PostId,
     TagId,
     UserId
-} from '@repo/types/common/id.types.js';
-import type { EntityTypeEnum } from '@repo/types/enums/entity-type.enum.js';
-import type {
-    WithAudit,
-    WithLifecycleState,
-    WithOptional,
-    Writable
-} from '../../common/helpers.types.js';
+} from '../../common/id.types.js';
+import type { EntityTypeEnum } from '../../enums/entity-type.enum.js';
 
 /**
  * Tag used for categorizing and filtering entities.

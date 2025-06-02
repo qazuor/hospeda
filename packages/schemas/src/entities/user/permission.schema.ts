@@ -1,20 +1,14 @@
+import type { UserId } from '@repo/types';
+import { PermissionEnum } from '@repo/types';
 import { z } from 'zod';
-import { WithAuditSchema, WithIdSchema } from '../../common/index.js';
 
 /**
- * Permission schema definition using Zod for validation.
- * Represents a single permission that can be assigned to a role.
+ * Zod schema for the assignment of a permission to a user.
+ * The permission is referenced by its enum.
  */
-export const PermissionSchema = WithIdSchema.merge(WithAuditSchema).extend({
-    /** Permission name, 3-50 characters */
-    name: z
-        .string()
-        .min(3, { message: 'zodError.permission.name.min' })
-        .max(50, { message: 'zodError.permission.name.max' }),
-    /** Permission description, optional, 5-200 characters */
-    description: z
-        .string()
-        .min(5, { message: 'zodError.permission.description.min' })
-        .max(200, { message: 'zodError.permission.description.max' })
-        .optional()
+export const UserPermissionAssignmentSchema = z.object({
+    userId: z.custom<UserId>(),
+    permission: z.nativeEnum(PermissionEnum, {
+        required_error: 'zodError.userPermission.permission.required'
+    })
 });
