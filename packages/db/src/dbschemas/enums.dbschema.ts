@@ -6,6 +6,7 @@ import {
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
+    PermissionCategoryEnum,
     PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
@@ -44,6 +45,11 @@ export const LifecycleStatusPgEnum = pgEnum(
 );
 
 export const PermissionPgEnum = pgEnum('permission_enum', enumToTuple(PermissionEnum));
+
+export const PermissionCategoryPgEnum = pgEnum(
+    'permission_category_enum',
+    enumToTuple(PermissionCategoryEnum)
+);
 
 export const PostCategoryPgEnum = pgEnum('post_category_enum', enumToTuple(PostCategoryEnum));
 

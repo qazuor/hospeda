@@ -1,7 +1,7 @@
 import type {
     NewUserInputType,
-    PermissionType,
-    RoleType,
+    PermissionEnum,
+    RoleEnum,
     UpdateUserInputType,
     UserBookmarkType,
     UserType,
@@ -9,7 +9,7 @@ import type {
 } from '@repo/types';
 import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
-import { rUserPermission } from '../../dbschemas/user/r_user_permission.dbschema.ts';
+import { userPermission } from '../../dbschemas/user/r_user_permission.dbschema.ts';
 import { users } from '../../dbschemas/user/user.dbschema.ts';
 import {
     createOrderableColumnsAndMapping,
@@ -82,8 +82,8 @@ export type UserRelations = {
  * type Result = UserType & UserRelationResult<{ role: true, permissions: true }>;
  */
 export type UserRelationResult<T extends UserRelations> = {
-    role: T['role'] extends true ? RoleType : never;
-    permissions: T['permissions'] extends true ? PermissionType[] : never;
+    role: T['role'] extends true ? RoleEnum : never;
+    permissions: T['permissions'] extends true ? PermissionEnum[] : never;
     bookmarks: T['bookmarks'] extends true ? UserBookmarkType[] : never;
 };
 
@@ -474,7 +474,7 @@ export const UserModel = {
     /**
      * Get all users with a given role.
      *
-     * @param {string} roleId - Role ID
+     * @param {RoleEnum} role - Role
      * @returns {Promise<UserType[]>} Array of users with the given role
      * @throws {Error} If the query fails
      *
@@ -482,11 +482,11 @@ export const UserModel = {
      * const users = await UserModel.getByRole('role-uuid');
      * users.forEach(user => console.log(user.userName));
      */
-    async getByRole(roleId: string): Promise<UserType[]> {
+    async getByRole(role: RoleEnum): Promise<UserType[]> {
         const db = getDb();
         try {
-            const result = await db.select().from(users).where(eq(users.roleId, roleId));
-            dbLogger.query({ table: 'users', action: 'getByRole', params: { roleId }, result });
+            const result = await db.select().from(users).where(eq(users.role, role));
+            dbLogger.query({ table: 'users', action: 'getByRole', params: { role }, result });
             return result as UserType[];
         } catch (error) {
             dbLogger.error(error, 'UserModel.getByRole');
@@ -497,7 +497,7 @@ export const UserModel = {
     /**
      * Get all users with a given permission.
      *
-     * @param {string} permissionId - Permission ID
+     * @param {PermissionEnum} permission - Permission
      * @returns {Promise<UserType[]>} Array of users with the given permission
      * @throws {Error} If the query fails
      *
@@ -505,23 +505,21 @@ export const UserModel = {
      * const users = await UserModel.getByPermission('permission-uuid');
      * users.forEach(user => console.log(user.userName));
      */
-    async getByPermission(permissionId: string): Promise<UserType[]> {
+    async getByPermission(permission: PermissionEnum): Promise<UserType[]> {
         const db = getDb();
         try {
-            // Join rUserPermission to get users with the given permission
             const result = await db
                 .select()
                 .from(users)
-                .innerJoin(rUserPermission, eq(users.id, rUserPermission.userId))
-                .where(eq(rUserPermission.permissionId, permissionId));
+                .innerJoin(userPermission, eq(users.id, userPermission.userId))
+                .where(eq(userPermission.permission, permission));
             dbLogger.query({
                 table: 'users',
                 action: 'getByPermission',
-                params: { permissionId },
+                params: { permission },
                 result
             });
-            // result is array of { users: UserType, rUserPermission: ... }
-            const typedResult = result as Array<{ users: UserType; rUserPermission: unknown }>;
+            const typedResult = result as Array<{ users: UserType; userPermission: unknown }>;
             return typedResult.map((row) => row.users);
         } catch (error) {
             dbLogger.error(error, 'UserModel.getByPermission');
