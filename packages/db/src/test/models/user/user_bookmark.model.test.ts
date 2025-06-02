@@ -1,10 +1,10 @@
+import { EntityTypeEnum } from '@repo/types';
 import type { AccommodationId, UserBookmarkId, UserId } from '@repo/types/common/id.types';
 import type {
     NewUserBookmarkInputType,
     UpdateUserBookmarkInputType,
     UserBookmarkType
 } from '@repo/types/entities/user/user.bookmark.types';
-import { EntityTypeEnum } from '@repo/types/enums/entity-type.enum';
 import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

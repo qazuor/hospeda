@@ -1,6 +1,6 @@
+import { EntityTypeEnum } from '@repo/types';
 import type { AccommodationId, TagId } from '@repo/types/common/id.types';
 import type { EntityTagType } from '@repo/types/entities/tag/tag.types';
-import { EntityTypeEnum } from '@repo/types/enums/entity-type.enum';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { EntityTagModel } from '../../../../src/models/tag/entity_tag.model';
