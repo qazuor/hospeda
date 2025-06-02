@@ -1,5 +1,5 @@
-import type { NewUserInputType, RoleId, UpdateUserInputType, UserId, UserType } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types';
+import type { NewUserInputType, UpdateUserInputType, UserId, UserType } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
@@ -36,7 +36,7 @@ const baseUser: UserType = {
     id: 'user-uuid' as UserId,
     userName: 'john_doe',
     password: 'hashed',
-    roleId: 'role-uuid' as RoleId,
+    role: RoleEnum.ADMIN,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: 'admin-uuid' as UserId,
@@ -148,7 +148,7 @@ describe('UserModel', () => {
             const input: NewUserInputType = {
                 userName: 'john_doe',
                 password: 'hashed',
-                roleId: 'role-uuid' as RoleId,
+                role: RoleEnum.ADMIN,
                 settings: {
                     notifications: {
                         enabled: true,
@@ -174,7 +174,7 @@ describe('UserModel', () => {
                 UserModel.create({
                     userName: 'fail',
                     password: 'fail',
-                    roleId: 'role-uuid' as RoleId,
+                    role: RoleEnum.ADMIN,
                     settings: {
                         notifications: {
                             enabled: true,
@@ -199,7 +199,7 @@ describe('UserModel', () => {
                 UserModel.create({
                     userName: 'fail',
                     password: 'fail',
-                    roleId: 'role-uuid' as RoleId,
+                    role: RoleEnum.ADMIN,
                     settings: {
                         notifications: {
                             enabled: true,
@@ -415,22 +415,22 @@ describe('UserModel', () => {
         it('returns users with given role', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([{ ...baseUser }]);
-            const users = await UserModel.getByRole('role-uuid');
-            expect(users).toEqual([baseUser]);
+            mockDb.where.mockReturnValueOnce([{ ...baseUser, role: RoleEnum.ADMIN }]);
+            const users = await UserModel.getByRole(RoleEnum.ADMIN);
+            expect(users).toEqual([{ ...baseUser, role: RoleEnum.ADMIN }]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.where.mockReturnValueOnce([]);
-            const users = await UserModel.getByRole('not-exist');
+            const users = await UserModel.getByRole(RoleEnum.EDITOR);
             expect(users).toEqual([]);
         });
         it('logs and throws on db error', async () => {
             mockDb.select.mockImplementationOnce(() => {
                 throw new Error('fail');
             });
-            await expect(UserModel.getByRole('err')).rejects.toThrow(
+            await expect(UserModel.getByRole(RoleEnum.USER)).rejects.toThrow(
                 'Failed to get users by role: fail'
             );
             expect(dbLogger.error).toHaveBeenCalled();
@@ -439,29 +439,34 @@ describe('UserModel', () => {
 
     describe('getByPermission', () => {
         it('returns users with given permission', async () => {
-            const joinResult = [{ users: { ...baseUser }, rUserPermission: {} }];
+            const joinResult = [
+                {
+                    users: { ...baseUser, permissions: [PermissionEnum.USER_CREATE] },
+                    userPermission: {}
+                }
+            ];
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.innerJoin.mockReturnThis();
             mockDb.where.mockReturnValueOnce(joinResult);
-            const users = await UserModel.getByPermission('perm-uuid');
-            expect(users).toEqual([baseUser]);
+            const users = await UserModel.getByPermission(PermissionEnum.USER_CREATE);
+            expect(users).toEqual([{ ...baseUser, permissions: [PermissionEnum.USER_CREATE] }]);
         });
         it('returns empty array if none found', async () => {
             mockDb.select.mockReturnThis();
             mockDb.from.mockReturnThis();
             mockDb.innerJoin.mockReturnThis();
             mockDb.where.mockReturnValueOnce([]);
-            const users = await UserModel.getByPermission('not-exist');
+            const users = await UserModel.getByPermission(PermissionEnum.USER_DELETE);
             expect(users).toEqual([]);
         });
         it('logs and throws on db error', async () => {
             mockDb.select.mockImplementationOnce(() => {
                 throw new Error('fail');
             });
-            await expect(UserModel.getByPermission('err')).rejects.toThrow(
-                'Failed to get users by permission: fail'
-            );
+            await expect(
+                UserModel.getByPermission(PermissionEnum.USER_UPDATE_PROFILE)
+            ).rejects.toThrow('Failed to get users by permission: fail');
             expect(dbLogger.error).toHaveBeenCalled();
         });
     });
