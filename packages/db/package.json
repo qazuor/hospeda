@@ -31,7 +31,7 @@
         "db:seed": "pnpm run db:seed:required && pnpm run db:seed:example",
         "db:seed:required": "tsx ./src/seeds/required.seed.ts",
         "db:seed:example": "tsx ./src/seeds/example.seed.ts",
-        "db:generate:enum-migrations": "tsx ./scripts/generate-enum-migrations.ts",
+        "db:enum-migration": "tsx ./scripts/generate-enum-migrations.ts && tsx ./scripts/apply-latest-enum-migration.ts",
         "test": "vitest run"
     },
     "dependencies": {

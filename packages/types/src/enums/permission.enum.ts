@@ -32,6 +32,8 @@ export enum PermissionEnum {
     ACCOMMODATION_PUBLISH = 'accommodation.publish', // Allows publishing or unpublishing an accommodation.
     ACCOMMODATION_REVIEW_MODERATE = 'accommodation.review.moderate', // Allows moderating accommodation reviews.
     ACCOMMODATION_VIEW_ALL = 'accommodation.viewAll', // Allows viewing all accommodations (including private).
+    ACCOMMODATION_VIEW_PRIVATE = 'accommodation.view.private', // Allows viewing private accommodations.
+    ACCOMMODATION_VIEW_DRAFT = 'accommodation.view.draft', // Allows viewing draft accommodations.
     ACCOMMODATION_TAGS_MANAGE = 'accommodation.tags.manage', // Allows managing tags for accommodations.
     ACCOMMODATION_FEATURES_EDIT = 'accommodation.features.edit', // Allows editing accommodation features.
     ACCOMMODATION_AMENITIES_EDIT = 'accommodation.amenities.edit', // Allows editing accommodation amenities.
@@ -40,7 +42,6 @@ export enum PermissionEnum {
     ACCOMMODATION_IA_SUGGESTIONS_VIEW = 'accommodation.iaSuggestions.view', // Allows viewing AI suggestions for accommodations.
     ACCOMMODATION_IA_CONTENT_APPROVE = 'accommodation.iaContent.approve', // Allows approving AI-generated content for accommodations.
     ACCOMMODATION_SLUG_MANAGE = 'accommodation.slug.manage', // Allows managing accommodation slugs.
-    ACCOMMODATION_VIEW_PUBLIC = 'accommodation.view.public', // Allows viewing public accommodations.
 
     // DESTINATION: Permissions related to destinations (cities, regions, etc.)
     DESTINATION_CREATE = 'destination.create', // Allows creating a new destination.
@@ -57,7 +58,8 @@ export enum PermissionEnum {
     DESTINATION_IA_SUGGESTIONS_VIEW = 'destination.iaSuggestions.view', // Allows viewing AI suggestions for destinations.
     DESTINATION_IA_CONTENT_APPROVE = 'destination.iaContent.approve', // Allows approving AI-generated content for destinations.
     DESTINATION_SLUG_MANAGE = 'destination.slug.manage', // Allows managing destination slugs.
-    DESTINATION_VIEW_PUBLIC = 'destination.view.public', // Allows viewing public destinations.
+    DESTINATION_VIEW_PRIVATE = 'destination.view.private', // Allows viewing private destinations.
+    DESTINATION_VIEW_DRAFT = 'destination.view.draft', // Allows viewing draft destinations.
 
     // EVENT: Permissions related to events (festivals, shows, etc.)
     EVENT_CREATE = 'event.create', // Allows creating a new event.
@@ -72,7 +74,8 @@ export enum PermissionEnum {
     EVENT_ORGANIZER_MANAGE = 'event.organizer.manage', // Allows managing event organizers.
     EVENT_SLUG_MANAGE = 'event.slug.manage', // Allows managing event slugs.
     EVENT_COMMENT_CREATE = 'event.comment.create', // Allows creating comments on events.
-    EVENT_VIEW_PUBLIC = 'event.view.public', // Allows viewing public events.
+    EVENT_VIEW_PRIVATE = 'event.view.private', // Allows viewing private events.
+    EVENT_VIEW_DRAFT = 'event.view.draft', // Allows viewing draft events.
 
     // POST: Permissions related to blog posts and articles
     POST_CREATE = 'post.create', // Allows creating a new post.
@@ -87,7 +90,8 @@ export enum PermissionEnum {
     POST_FEATURED_TOGGLE = 'post.featured.toggle', // Allows toggling featured status of a post.
     POST_SLUG_MANAGE = 'post.slug.manage', // Allows managing post slugs.
     POST_COMMENT_CREATE = 'post.comment.create', // Allows creating comments on posts.
-    POST_VIEW_PUBLIC = 'post.view.public', // Allows viewing public posts.
+    POST_VIEW_PRIVATE = 'post.view.private', // Allows viewing private posts.
+    POST_VIEW_DRAFT = 'post.view.draft', // Allows viewing draft posts.
 
     // USER: Permissions related to user management and actions
     USER_READ_ALL = 'user.read.all', // Allows reading all user profiles.
