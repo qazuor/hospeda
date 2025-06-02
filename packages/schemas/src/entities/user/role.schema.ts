@@ -1,27 +1,13 @@
+import { PermissionEnum, RoleEnum } from '@repo/types';
 import { z } from 'zod';
-import { WithAuditSchema, WithIdSchema } from '../../common/index.js';
-import { PermissionSchema } from './permission.schema.js';
 
 /**
- * Role schema definition using Zod for validation.
- * Each role must have at least one permission.
+ * Zod schema for the assignment of a permission to a role.
+ * Both role and permission are referenced by their enums.
  */
-export const RoleSchema = WithIdSchema.merge(WithAuditSchema).extend({
-    /** Role name, 3-50 characters */
-    name: z
-        .string()
-        .min(3, { message: 'zodError.role.name.min' })
-        .max(50, { message: 'zodError.role.name.max' }),
-    /** Role description, optional, 5-200 characters */
-    description: z
-        .string()
-        .min(5, { message: 'zodError.role.description.min' })
-        .max(200, { message: 'zodError.role.description.max' })
-        .optional(),
-    /** List of permissions, must have at least one */
-    permissions: z
-        .array(PermissionSchema, {
-            required_error: 'zodError.role.permissions.required'
-        })
-        .min(1, { message: 'zodError.role.permissions.min' })
+export const RolePermissionAssignmentSchema = z.object({
+    role: z.nativeEnum(RoleEnum, { required_error: 'zodError.rolePermission.role.required' }),
+    permission: z.nativeEnum(PermissionEnum, {
+        required_error: 'zodError.rolePermission.permission.required'
+    })
 });

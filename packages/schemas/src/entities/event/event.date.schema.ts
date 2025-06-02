@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RecurrenceEnumSchema } from '../../enums/index.js';
+import { RecurrenceTypeEnumSchema } from '../../enums/index.js';
 
 export const EventDateSchema = z.object({
     start: z
@@ -12,5 +12,5 @@ export const EventDateSchema = z.object({
         .max(30, { message: 'zodError.event.date.end.max' })
         .optional(),
     isAllDay: z.boolean().optional(),
-    recurrence: RecurrenceEnumSchema.optional()
+    recurrence: RecurrenceTypeEnumSchema.optional()
 });

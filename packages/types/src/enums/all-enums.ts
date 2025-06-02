@@ -6,10 +6,10 @@ import { PriceCurrencyEnum } from './currency.enum.js';
 import { EntityTypeEnum } from './entity-type.enum.js';
 import { EventCategoryEnum } from './event-category.enum.js';
 import { LifecycleStatusEnum } from './lifecycle-state.enum.js';
-import { BuiltinPermissionTypeEnum } from './permission.enum.js';
+import { PermissionCategoryEnum, PermissionEnum } from './permission.enum.js';
 import { PostCategoryEnum } from './post-category.enum.js';
 import { RecurrenceTypeEnum } from './recurrence.enum.js';
-import { BuiltinRoleTypeEnum } from './role.enum.js';
+import { RoleEnum } from './role.enum.js';
 import { ModerationStatusEnum } from './state.enum.js';
 import { TagColorEnum } from './tag-color.enum.js';
 import { VisibilityEnum } from './visibility.enum.js';
@@ -23,10 +23,11 @@ export const AllEnums = {
     EntityTypeEnum,
     EventCategoryEnum,
     LifecycleStatusEnum,
-    BuiltinPermissionTypeEnum,
+    PermissionEnum,
+    PermissionCategoryEnum,
     PostCategoryEnum,
     RecurrenceTypeEnum,
-    BuiltinRoleTypeEnum,
+    RoleEnum,
     ModerationStatusEnum,
     TagColorEnum,
     VisibilityEnum

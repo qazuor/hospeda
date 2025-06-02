@@ -1,3 +1,4 @@
+import { PermissionEnum, RoleEnum } from '@repo/types';
 import { z } from 'zod';
 import {
     ContactInfoSchema,
@@ -14,7 +15,7 @@ import { UserSettingsSchema } from './user.settings.schema.js';
 
 /**
  * User schema definition using Zod for validation.
- * Includes profile, settings, permissions, and role references.
+ * Includes profile, settings, direct permissions (by enum), and role (by enum).
  * Password validation is for user input, not for storage.
  */
 export const UserSchema = WithIdSchema.merge(WithAuditSchema)
@@ -59,22 +60,18 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
         location: LocationSchema.optional(),
         /** Social networks, optional */
         socialNetworks: SocialNetworkSchema.optional(),
-        /** User role ID (required) */
-        roleId: z
-            .string({
-                required_error: 'zodError.user.roleId.required',
-                invalid_type_error: 'zodError.user.roleId.invalidType'
-            })
-            .uuid({ message: 'zodError.user.roleId.invalidUuid' }),
-        /** List of permission IDs, optional */
-        permissionIds: z
+        /** User role (required) */
+        role: z.nativeEnum(RoleEnum, {
+            required_error: 'zodError.user.role.required',
+            invalid_type_error: 'zodError.user.role.invalidType'
+        }),
+        /** List of permissions, optional */
+        permissions: z
             .array(
-                z
-                    .string({
-                        required_error: 'zodError.user.permissionIds.required',
-                        invalid_type_error: 'zodError.user.permissionIds.invalidType'
-                    })
-                    .uuid({ message: 'zodError.user.permissionIds.invalidUuid' })
+                z.nativeEnum(PermissionEnum, {
+                    required_error: 'zodError.user.permissions.required',
+                    invalid_type_error: 'zodError.user.permissions.invalidType'
+                })
             )
             .optional(),
         /** User profile information */
@@ -102,7 +99,7 @@ export const UserFilterInputSchema = z.object({
         .optional(),
     emailVerified: z.boolean().optional(),
     phoneVerified: z.boolean().optional(),
-    roleId: z.string().optional(),
+    role: z.nativeEnum(RoleEnum).optional(),
     q: z.string().optional() // búsqueda libre
 });
 

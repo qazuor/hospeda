@@ -5,7 +5,7 @@ import {
     WithIdSchema,
     WithLifecycleStateSchema
 } from '../../common/index.js';
-import { AmenityTypeEnumSchema } from '../../enums/index.js';
+import { AmenitiesTypeEnumSchema } from '../../enums/index.js';
 
 export const AmenitySchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
@@ -26,5 +26,5 @@ export const AmenitySchema = WithIdSchema.merge(WithAuditSchema)
             .max(100, { message: 'zodError.amenity.icon.max' })
             .optional(),
         isBuiltin: z.boolean({ required_error: 'zodError.amenity.isBuiltin.required' }),
-        type: AmenityTypeEnumSchema
+        type: AmenitiesTypeEnumSchema
     });
