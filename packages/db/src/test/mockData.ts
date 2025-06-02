@@ -39,11 +39,10 @@ import { PostCategoryEnum } from '@repo/types/enums/post-category.enum';
 import { RoleEnum } from '@repo/types/enums/role.enum';
 import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
 import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import { expect } from 'vitest';
 
 /**
- * Returns a mock AccommodationType object.
- * You can override any field by passing an object with the desired values.
- *
+ * Returns a mock AccommodationType object with default values. You can override any field.
  * @param overrides - Partial fields to override in the mock.
  * @returns AccommodationType
  * @example
@@ -77,9 +76,7 @@ export const getMockAccommodation = (
 export const mockAccommodation = getMockAccommodation();
 
 /**
- * Returns a mock UserType object.
- * You can override any field by passing an object with the desired values.
- *
+ * Returns a mock UserType object with default values. You can override any field.
  * @param overrides - Partial fields to override in the mock.
  * @returns UserType
  * @example
@@ -100,21 +97,59 @@ export const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
 
 /**
  * Returns a mock PublicUserType object.
- *
  * @returns PublicUserType
  * @example
  * const publicUser = getMockPublicUser();
  */
 export const getMockPublicUser = (): PublicUserType => createPublicUser();
 
-// UUIDs y datos base reutilizables para tests de service
+/**
+ * Returns a mock UserId for testing purposes.
+ * @returns UserId
+ * @example
+ * const id = getMockUserId();
+ */
 export const getMockUserId = (): UserId => '11111111-1111-1111-1111-111111111111' as UserId;
+
+/**
+ * Returns a mock DestinationId for testing purposes.
+ * @returns DestinationId
+ * @example
+ * const id = getMockDestinationId();
+ */
 export const getMockDestinationId = (): DestinationId =>
     '22222222-2222-2222-2222-222222222222' as DestinationId;
+
+/**
+ * Returns a mock RoleId for admin role.
+ * @returns RoleId
+ * @example
+ * const id = getMockAdminRoleId();
+ */
 export const getMockAdminRoleId = (): RoleId => 'ADMIN' as RoleId;
+
+/**
+ * Returns a mock RoleId for a role with no permissions.
+ * @returns RoleId
+ * @example
+ * const id = getMockNoPermRoleId();
+ */
 export const getMockNoPermRoleId = (): RoleId => 'role-1' as RoleId;
+
+/**
+ * Returns a mock AccommodationId for testing purposes.
+ * @returns AccommodationId
+ * @example
+ * const id = getMockAccommodationId();
+ */
 export const getMockAccommodationId = (): AccommodationId => 'acc-99' as AccommodationId;
 
+/**
+ * Returns a mock input object for creating an accommodation.
+ * @returns Object with accommodation input fields.
+ * @example
+ * const input = getMockAccommodationInput();
+ */
 export const getMockAccommodationInput = () => ({
     name: 'Nuevo Hotel',
     slug: 'nuevo-hotel',
@@ -140,12 +175,25 @@ export const getMockAccommodationInput = () => ({
     updatedAt: new Date()
 });
 
+/**
+ * Returns a mock AccommodationType object representing a created accommodation.
+ * @returns AccommodationType
+ * @example
+ * const acc = getMockAccommodationCreated();
+ */
 export const getMockAccommodationCreated = () =>
     getMockAccommodation({
         ...getMockAccommodationInput(),
         id: getMockAccommodationId()
     });
 
+/**
+ * Returns a mock TagType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns TagType
+ * @example
+ * const tag = getMockTag({ id: 'tag-2' as TagId });
+ */
 export const getMockTag = (overrides: Partial<TagType> = {}): TagType => ({
     id: 'tag-1' as TagId,
     name: 'Test Tag',
@@ -160,6 +208,13 @@ export const getMockTag = (overrides: Partial<TagType> = {}): TagType => ({
 
 export const mockTag = getMockTag();
 
+/**
+ * Returns a mock EntityTagType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns EntityTagType
+ * @example
+ * const entityTag = getMockEntityTag({ tagId: 'tag-2' as TagId });
+ */
 export const getMockEntityTag = (overrides: Partial<EntityTagType> = {}): EntityTagType => ({
     tagId: 'tag-1' as TagId,
     entityId: 'acc-1' as AccommodationId,
@@ -169,6 +224,13 @@ export const getMockEntityTag = (overrides: Partial<EntityTagType> = {}): Entity
 
 export const mockEntityTag = getMockEntityTag();
 
+/**
+ * Returns a mock UserBookmarkType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns UserBookmarkType
+ * @example
+ * const bookmark = getMockUserBookmark({ id: 'bookmark-2' as UserBookmarkId });
+ */
 export const getMockUserBookmark = (
     overrides: Partial<UserBookmarkType> = {}
 ): UserBookmarkType => ({
@@ -190,6 +252,13 @@ export const getMockUserBookmark = (
 
 export const mockUserBookmark = getMockUserBookmark();
 
+/**
+ * Returns a mock DestinationType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns DestinationType
+ * @example
+ * const dest = getMockDestination({ id: 'destination-2' as DestinationId });
+ */
 export const getMockDestination = (overrides: Partial<DestinationType> = {}): DestinationType => ({
     id: 'destination-1' as DestinationId,
     slug: 'test-destination',
@@ -219,6 +288,13 @@ export const getMockDestination = (overrides: Partial<DestinationType> = {}): De
 
 export const mockDestination = getMockDestination();
 
+/**
+ * Returns a mock DestinationWithRelationsType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns DestinationWithRelationsType
+ * @example
+ * const dest = getMockDestinationWithRelations({ id: 'destination-2' as DestinationId });
+ */
 export const getMockDestinationWithRelations = (
     overrides: Partial<DestinationWithRelationsType> = {}
 ): DestinationWithRelationsType => ({
@@ -232,6 +308,13 @@ export const getMockDestinationWithRelations = (
 
 export const mockDestinationWithRelations = getMockDestinationWithRelations();
 
+/**
+ * Returns a mock EventType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns EventType
+ * @example
+ * const event = getMockEvent({ id: 'event-2' as EventId });
+ */
 export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => ({
     id: 'event-uuid' as EventId,
     slug: 'fiesta-nacional',
@@ -263,6 +346,13 @@ export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => (
 
 export const mockEvent = getMockEvent();
 
+/**
+ * Returns a mock PostType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns PostType
+ * @example
+ * const post = getMockPost({ id: 'post-2' as PostId });
+ */
 export const getMockPost = (overrides: Partial<PostType> = {}): PostType => ({
     id: 'post-uuid' as PostId,
     slug: 'post-slug',
@@ -305,6 +395,13 @@ export const getMockPost = (overrides: Partial<PostType> = {}): PostType => ({
 
 export const mockPost = getMockPost();
 
+/**
+ * Returns a mock PostSponsorType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns PostSponsorType
+ * @example
+ * const sponsor = getMockPostSponsor({ id: 'sponsor-2' as PostSponsorId });
+ */
 export const getMockPostSponsor = (overrides: Partial<PostSponsorType> = {}): PostSponsorType => ({
     id: 'sponsor-uuid' as PostSponsorId,
     name: 'Sponsor Name',
@@ -326,6 +423,13 @@ export const getMockPostSponsor = (overrides: Partial<PostSponsorType> = {}): Po
 
 export const mockPostSponsor = getMockPostSponsor();
 
+/**
+ * Returns a mock FeatureType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns FeatureType
+ * @example
+ * const feature = getMockFeature({ id: 'feature-2' as FeatureId });
+ */
 export const getMockFeature = (overrides: Partial<FeatureType> = {}): FeatureType => ({
     id: 'feature-uuid' as FeatureId,
     name: 'General Feature',
@@ -345,6 +449,13 @@ export const getMockFeature = (overrides: Partial<FeatureType> = {}): FeatureTyp
 
 export const mockFeature = getMockFeature();
 
+/**
+ * Returns a mock AttractionType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns AttractionType
+ * @example
+ * const attraction = getMockAttraction({ id: 'attr-2' as AttractionId });
+ */
 export const getMockAttraction = (overrides: Partial<AttractionType> = {}): AttractionType => ({
     id: 'attr-uuid' as AttractionId,
     slug: 'parque-urquiza',
@@ -363,6 +474,13 @@ export const getMockAttraction = (overrides: Partial<AttractionType> = {}): Attr
 
 export const mockAttraction = getMockAttraction();
 
+/**
+ * Returns a mock DestinationReviewType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns DestinationReviewType
+ * @example
+ * const review = getMockDestinationReview({ id: 'review-2' as DestinationReviewId });
+ */
 export const getMockDestinationReview = (
     overrides: Partial<DestinationReviewType> = {}
 ): DestinationReviewType => ({
@@ -402,6 +520,13 @@ export const getMockDestinationReview = (
 
 export const mockDestinationReview = getMockDestinationReview();
 
+/**
+ * Returns a mock EventLocationType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns EventLocationType
+ * @example
+ * const location = getMockEventLocation({ id: 'location-2' as EventLocationId });
+ */
 export const getMockEventLocation = (
     overrides: Partial<EventLocationType> = {}
 ): EventLocationType => ({
@@ -429,3 +554,54 @@ export const getMockEventLocation = (
 });
 
 export const mockEventLocation = getMockEventLocation();
+
+/**
+ * Returns a mock AccommodationType object with PUBLIC visibility.
+ * @returns AccommodationType
+ * @example
+ * const acc = getMockAccommodationPublic();
+ */
+export const getMockAccommodationPublic = (): AccommodationType =>
+    getMockAccommodation({
+        id: 'acc-1' as AccommodationId,
+        visibility: VisibilityEnum.PUBLIC
+    });
+
+/**
+ * Returns a mock AccommodationType object with PRIVATE visibility.
+ * @returns AccommodationType
+ * @example
+ * const acc = getMockAccommodationPrivate();
+ */
+export const getMockAccommodationPrivate = (): AccommodationType =>
+    getMockAccommodation({
+        id: 'acc-2' as AccommodationId,
+        name: 'Private Hotel',
+        visibility: VisibilityEnum.PRIVATE
+    });
+
+/**
+ * Returns the expected object shape for a created accommodation (for use in tests).
+ * @returns Object with expected fields for a created accommodation.
+ * @example
+ * expect(result.accommodation).toMatchObject(getExpectedCreatedAccommodationMatchObject());
+ */
+export const getExpectedCreatedAccommodationMatchObject = () => ({
+    id: getMockAccommodationId(),
+    name: 'Nuevo Hotel',
+    slug: 'nuevo-hotel',
+    summary: 'Un hotel nuevo y moderno',
+    type: AccommodationTypeEnum.HOTEL,
+    description: 'Descripción larga y detallada del hotel, con más de 30 caracteres.',
+    ownerId: getMockUserId(),
+    destinationId: getMockDestinationId(),
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    visibility: VisibilityEnum.PUBLIC,
+    moderationState: ModerationStatusEnum.APPROVED,
+    seo: expect.any(Object),
+    tags: [],
+    adminInfo: { notes: 'Notas válidas', favorite: false },
+    isFeatured: false,
+    reviewsCount: 0,
+    averageRating: 0
+});
