@@ -1,5 +1,3 @@
-import type { TagType } from '@repo/types/entities/tag/tag.types.js';
-import type { UserType } from '@repo/types/entities/user/user.types.js';
 import type { ContactInfoType } from '../../common/contact.types.js';
 import type {
     WithAdminInfo,
@@ -15,6 +13,8 @@ import type { EventId, EventLocationId, EventOrganizerId, UserId } from '../../c
 import type { MediaType } from '../../common/media.types.js';
 import type { EventCategoryEnum } from '../../enums/event-category.enum.js';
 import type { VisibilityEnum } from '../../enums/visibility.enum.js';
+import type { TagType } from '../tag/tag.types.js';
+import type { UserType } from '../user/user.types.js';
 import type { EventDateType } from './event.date.types.js';
 import type { EventLocationType } from './event.location.types.js';
 import type { EventOrganizerType } from './event.organizer.types.js';
