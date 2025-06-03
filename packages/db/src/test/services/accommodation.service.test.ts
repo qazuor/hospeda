@@ -72,6 +72,10 @@ import {
     getMockUser,
     getMockUserId
 } from '../mockData';
+import type {
+    TestAccommodationCreateInput,
+    TestAccommodationUpdateInput
+} from '../types/testAccommodation.types';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/logAssertions';
 import { getNormalizedUpdateInput } from '../utils/normalizeAccommodationInput';
 import { restoreMock } from '../utils/restoreMock';
@@ -199,6 +203,7 @@ describe('accommodation.service.getById', () => {
 });
 
 describe('accommodation.service.getByName', () => {
+    // This test verifies that a public user can access a PUBLIC accommodation by name.
     const publicUser = getMockPublicUser();
     const user = getMockUser({
         id: getMockUserId(),
@@ -225,11 +230,14 @@ describe('accommodation.service.getByName', () => {
     });
 
     it('should return accommodation for public user if visibility is PUBLIC', async () => {
+        // Arrange: Set up a public accommodation and a public user.
         (AccommodationModel.getByName as Mock).mockResolvedValue(accommodationPublic);
+        // Act: Attempt to get the accommodation by name as a public user.
         const resultByName = await AccommodationService.getByName(
             { name: accommodationPublic.name },
             publicUser
         );
+        // Assert: The accommodation is returned and logs are correct.
         expect(resultByName.accommodation).toEqual(accommodationPublic);
         expectInfoLog(
             { input: { name: accommodationPublic.name }, actor: publicUser },
@@ -238,12 +246,16 @@ describe('accommodation.service.getByName', () => {
         expectInfoLog({ result: { accommodation: accommodationPublic } }, 'getByName:end');
     });
 
+    // This test verifies that a public user cannot access a PRIVATE accommodation by name and logs the permission denial.
     it('should return null and log permission for public user if visibility is PRIVATE', async () => {
+        // Arrange: Set up a private accommodation and a public user.
         (AccommodationModel.getByName as Mock).mockResolvedValue(accommodationPrivate);
+        // Act: Attempt to get the accommodation by name as a public user.
         const resultByName = await AccommodationService.getByName(
             { name: accommodationPrivate.name },
             publicUser
         );
+        // Assert: The result is null and a permission log is created.
         expect(resultByName.accommodation).toBeNull();
         expectPermissionLog({
             permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
@@ -253,12 +265,16 @@ describe('accommodation.service.getByName', () => {
         });
     });
 
+    // This test verifies that a logged-in user can access a PRIVATE accommodation by name.
     it('should return accommodation for logged in user regardless of visibility', async () => {
+        // Arrange: Set up a private accommodation and an admin user.
         (AccommodationModel.getByName as Mock).mockResolvedValue(accommodationPrivate);
+        // Act: Attempt to get the accommodation by name as an admin user.
         const resultByName = await AccommodationService.getByName(
             { name: accommodationPrivate.name },
             user
         );
+        // Assert: The accommodation is returned and logs are correct.
         expect(resultByName.accommodation).toEqual(accommodationPrivate);
         expectInfoLog(
             { input: { name: accommodationPrivate.name }, actor: user },
@@ -267,22 +283,30 @@ describe('accommodation.service.getByName', () => {
         expectInfoLog({ result: { accommodation: accommodationPrivate } }, 'getByName:end');
     });
 
+    // This test verifies that if the accommodation does not exist, null is returned and no permission log is created.
     it('should return null if accommodation does not exist', async () => {
+        // Arrange: Set up a non-existent accommodation name and a public user.
         (AccommodationModel.getByName as Mock).mockResolvedValue(undefined);
+        // Act: Attempt to get the accommodation by name as a public user.
         const resultByName = await AccommodationService.getByName(
             { name: 'not-exist' },
             publicUser
         );
+        // Assert: The result is null and no permission log is created.
         expect(resultByName.accommodation).toBeNull();
         expectNoPermissionLog();
     });
 
+    // This test verifies that a disabled user cannot access a PRIVATE accommodation by name and logs the permission denial with a specific reason.
     it('should return null and log permission if user is disabled', async () => {
+        // Arrange: Set up a private accommodation and a disabled user.
         (AccommodationModel.getByName as Mock).mockResolvedValue(accommodationPrivate);
+        // Act: Attempt to get the accommodation by name as a disabled user.
         const result = await AccommodationService.getByName(
             { name: accommodationPrivate.name },
             disabledUser
         );
+        // Assert: The result is null and a permission log is created with the reason 'user disabled'.
         expect(result.accommodation).toBeNull();
         expectPermissionLog({
             permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
@@ -292,13 +316,16 @@ describe('accommodation.service.getByName', () => {
         });
     });
 
+    // Edge-case: Ensures that if the accommodation has an unknown visibility, an error is thrown and the permission log contains the correct details.
     it('should throw and log if accommodation has unknown visibility', async () => {
+        // Arrange: Set up an accommodation with unknown visibility and an admin user.
         const accommodationUnknown = getMockAccommodation({
             id: 'acc-3' as AccommodationId,
             name: 'Unknown Hotel',
             visibility: 'UNKNOWN' as unknown as VisibilityEnum
         });
         (AccommodationModel.getByName as Mock).mockResolvedValue(accommodationUnknown);
+        // Act & Assert: Attempt to get the accommodation by name and expect an error. The permission log should contain the error details.
         await expect(
             AccommodationService.getByName({ name: 'Unknown Hotel' }, user)
         ).rejects.toThrow(/Unknown accommodation visibility/);
@@ -413,7 +440,8 @@ describe('accommodation.service.create', () => {
 
     it('should create accommodation and log start/end', async () => {
         (AccommodationModel.create as Mock).mockResolvedValue(getMockAccommodationCreated());
-        const result = await AccommodationService.create(getMockAccommodationInput(), user);
+        const input: TestAccommodationCreateInput = getMockAccommodationInput();
+        const result = await AccommodationService.create(input, user);
         expect(result.accommodation).toMatchObject(getExpectedCreatedAccommodationMatchObject());
         expectInfoLog(
             {
@@ -445,9 +473,8 @@ describe('accommodation.service.create', () => {
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to create accommodation');
         });
-        await expect(
-            AccommodationService.create(getMockAccommodationInput(), noPermUser)
-        ).rejects.toThrow(/Forbidden/);
+        const input: TestAccommodationCreateInput = getMockAccommodationInput();
+        await expect(AccommodationService.create(input, noPermUser)).rejects.toThrow(/Forbidden/);
         expectPermissionLog({
             permission: PermissionEnum.ACCOMMODATION_CREATE,
             userId: noPermUser.id,
@@ -458,7 +485,7 @@ describe('accommodation.service.create', () => {
 
     it('should throw on invalid input', async () => {
         const base = getMockAccommodationInput();
-        const input = {
+        const input: TestAccommodationCreateInput = {
             ...base,
             name: '',
             seo: { ...base.seo, keywords: base.seo.keywords ?? ['hotel', 'nuevo', 'moderno'] }
@@ -467,7 +494,7 @@ describe('accommodation.service.create', () => {
     });
 
     it('should throw and log permission if actor is public user', async () => {
-        const input = getMockAccommodationInput();
+        const input: TestAccommodationCreateInput = getMockAccommodationInput();
         await expect(AccommodationService.create(input, getMockPublicUser())).rejects.toThrow(
             /Public user cannot create/
         );
@@ -493,7 +520,10 @@ describe('accommodation.service.update', () => {
             description: 'Updated description long enough for Zod.',
             seo: getMockSeo({ title: 'Updated SEO Title long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -518,7 +548,10 @@ describe('accommodation.service.update', () => {
             description: 'Admin updated description long enough for Zod.',
             seo: getMockSeo({ title: 'Admin SEO Title long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -534,12 +567,12 @@ describe('accommodation.service.update', () => {
     });
 
     it('should update and normalize nested fields (media, tags, features, etc.)', async () => {
-        // Arrange
+        // Edge-case: Ensures that nested fields (media, tags, features) are normalized and not sent to the update operation.
+        // Arrange: Create an accommodation with nested fields and a user who is the owner.
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
-        // Mock with nested fields (media, tags, features)
         const accommodation = {
             ...makeAccommodationWithMedia({ ownerId }),
             tags: [
@@ -596,20 +629,22 @@ describe('accommodation.service.update', () => {
             }
         });
         // The input for update should be normalized (no nested fields)
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.update as Mock).mockResolvedValue(updatedAccommodation);
 
-        // Act
+        // Act: Attempt to update the accommodation with nested fields.
         const result = await AccommodationService.update(updateInput, user);
 
-        // Assert
+        // Assert: The update succeeds, but nested fields are not present in the input. Only allowed fields are updated.
         expect(result.accommodation).toEqual(updatedAccommodation);
         expectInfoLog({ input: updateInput, actor: user }, 'update:start');
         expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
-        // Ensure tags, features, media are not present in the update input
         expect(updateInput).not.toHaveProperty('tags');
         expect(updateInput).not.toHaveProperty('features');
         expect(updateInput).not.toHaveProperty('media');
@@ -627,7 +662,10 @@ describe('accommodation.service.update', () => {
             description: 'Expected updated description long enough for Zod.',
             seo: getMockSeo({ title: 'Expected SEO Title long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -647,7 +685,7 @@ describe('accommodation.service.update', () => {
 
     // 2. Permissions and Roles
     it('should deny update if user is not the owner and lacks global permissions', async () => {
-        // Arrange
+        // Arrange: usuario no owner y sin permisos globales
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -659,7 +697,10 @@ describe('accommodation.service.update', () => {
             description: 'This update should be denied by permissions.',
             seo: getMockSeo({ title: 'Denied SEO Title long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to update accommodation');
         });
@@ -676,7 +717,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should deny update if user is disabled', async () => {
-        // Arrange
+        // Arrange: usuario deshabilitado
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -687,7 +728,10 @@ describe('accommodation.service.update', () => {
             description: 'This update should be denied because user is disabled.',
             seo: getMockSeo({ title: 'Disabled SEO Title long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
         // Act & Assert
@@ -703,7 +747,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should deny update if user is public (unauthenticated)', async () => {
-        // Arrange
+        // Arrange: usuario público (no autenticado)
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -714,7 +758,10 @@ describe('accommodation.service.update', () => {
             description: 'This update should be denied because user is public.',
             seo: getMockSeo({ title: 'Public SEO Title long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
         // Act & Assert
@@ -732,7 +779,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should deny update if user has insufficient permissions', async () => {
-        // Arrange
+        // Arrange: usuario sin permisos suficientes
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -744,7 +791,10 @@ describe('accommodation.service.update', () => {
             description: 'This update should be denied due to insufficient permissions.',
             seo: getMockSeo({ title: 'No Permission SEO Title long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to update accommodation');
         });
@@ -764,12 +814,12 @@ describe('accommodation.service.update', () => {
 
     // 3. Validation and Errors
     it('should throw if accommodation does not exist', async () => {
-        // Arrange
+        // Arrange: input válido pero el alojamiento no existe
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const user = makeOwner();
         const nonExistentId = 'acc-not-exist' as AccommodationId;
-        const updateInput = getNormalizedUpdateInput({
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput({
             id: nonExistentId,
             slug: 'non-existent-accommodation',
             name: 'Non-existent Accommodation',
@@ -793,6 +843,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should throw if input is invalid (e.g., missing required field)', async () => {
+        // Edge-case: input inválido (falta campo requerido)
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
@@ -822,13 +873,14 @@ describe('accommodation.service.update', () => {
     });
 
     it('should throw if user cannot view the accommodation (visibility or permissions)', async () => {
+        // Edge-case: usuario no puede ver el alojamiento (por visibilidad o permisos)
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const accommodation = makePrivateAccommodation({ ownerId });
-        const updateInput = getNormalizedUpdateInput({
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput({
             ...accommodation,
             name: 'Should Not Update (No View Permission)',
             description: 'Trying to update without view permission.',
@@ -860,13 +912,14 @@ describe('accommodation.service.update', () => {
     });
 
     it('should throw if accommodation is in a state that does not allow update (e.g., ARCHIVED)', async () => {
+        // Edge-case: alojamiento en estado ARCHIVED no puede ser actualizado
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const accommodation = makeArchivedAccommodation({ ownerId });
-        const updateInput = getNormalizedUpdateInput({
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput({
             ...accommodation,
             name: 'Should Not Update (Archived)',
             description: 'Trying to update an archived accommodation.',
@@ -889,6 +942,7 @@ describe('accommodation.service.update', () => {
 
     // 4. Edge Cases and Side Effects
     it('should correctly update date fields (updatedAt, etc.) and IDs (updatedById)', async () => {
+        // Edge-case: se prueba que los campos de fecha y updatedById se actualizan correctamente
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
@@ -906,7 +960,10 @@ describe('accommodation.service.update', () => {
             description: 'Updated description for date fields long enough for Zod.',
             seo: getMockSeo({ title: 'Updated SEO Title for Dates long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         const updatedAccommodation = {
             ...accommodation,
             ...updatedFields,
@@ -930,6 +987,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should normalize nested fields with dates and references', async () => {
+        // Edge-case: se prueba que los campos anidados y de fechas/IDs se normalizan correctamente
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
@@ -992,7 +1050,10 @@ describe('accommodation.service.update', () => {
             }
         });
         // El input para update debe estar normalizado (sin campos anidados)
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -1014,7 +1075,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should call dbLogger.info and dbLogger.permission at the correct points', async () => {
-        // Arrange
+        // Arrange: testea que los logs se llamen correctamente en éxito y error de permisos
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -1025,7 +1086,10 @@ describe('accommodation.service.update', () => {
             description: 'Logger test description long enough for Zod.',
             seo: getMockSeo({ title: 'Logger SEO Title long enough for Zod validation' })
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -1058,6 +1122,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should not update forbidden fields (e.g., ownerId if not allowed)', async () => {
+        // Edge-case: se prueba que el ownerId no puede ser cambiado por el usuario aunque lo intente en el input
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
@@ -1072,7 +1137,10 @@ describe('accommodation.service.update', () => {
             seo: getMockSeo({ title: 'Forbidden Field SEO Title long enough for Zod validation' }),
             ownerId: forbiddenOwnerId
         });
-        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
+        const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput(
+            accommodation,
+            updatedFields
+        );
         // El modelo debe devolver el ownerId original, no el nuevo
         const updatedAccommodation = { ...accommodation, ...updatedFields, ownerId };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
