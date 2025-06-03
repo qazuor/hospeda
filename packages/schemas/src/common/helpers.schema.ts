@@ -84,12 +84,14 @@ export const WithSeoSchema = z.object({
                 .min(70, { message: 'zodError.common.seo.description.min' })
                 .max(160, { message: 'zodError.common.seo.description.max' })
                 .optional(),
-            keywords: z.array(
-                z.string({
-                    required_error: 'zodError.common.seo.keywords.required',
-                    invalid_type_error: 'zodError.common.seo.keywords.invalidType'
-                })
-            )
+            keywords: z
+                .array(
+                    z.string({
+                        required_error: 'zodError.common.seo.keywords.required',
+                        invalid_type_error: 'zodError.common.seo.keywords.invalidType'
+                    })
+                )
+                .optional()
         })
         .optional()
 });
