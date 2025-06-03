@@ -480,3 +480,90 @@ export const softDelete = async (
     dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'delete:end');
     return { accommodation: updatedAccommodation };
 };
+
+/**
+ * Restores (un-archives) a soft-deleted accommodation by ID.
+ * Only the owner, admin, or a user with the required permission can restore.
+ * Handles edge-cases: public user, disabled owner, not archived, etc.
+ *
+ * @param input - The input object with the accommodation ID.
+ * @param actor - The user or public actor attempting the restore.
+ * @returns An object with the restored accommodation, or null if not found or not allowed.
+ * @throws Error if the actor is not allowed to restore or input is invalid.
+ * @example
+ * const result = await restore({ id: 'acc-1' }, user);
+ */
+export const restore = async (
+    input: GetByIdInput,
+    actor: UserType | PublicUserType
+): Promise<{ accommodation: AccommodationType | null }> => {
+    dbLogger.info({ input, actor }, 'restore:start');
+    const parsedInput = getByIdInputSchema.parse(input);
+    const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
+    if (!accommodation) {
+        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
+        throw new Error('Accommodation not found');
+    }
+    const safeActor = getSafeActor(actor);
+    // Only allow restore if archived (soft-deleted)
+    if (accommodation.lifecycleState !== 'ARCHIVED' || !accommodation.deletedAt) {
+        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
+        throw new Error('Accommodation is not archived');
+    }
+    // If the user is disabled, deny and log
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            PermissionEnum.ACCOMMODATION_RESTORE_OWN
+        );
+        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
+        throw new Error('Forbidden: user disabled');
+    }
+    // Permissions: owner, admin, or global
+    const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
+    const isAdmin =
+        'role' in safeActor &&
+        (safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN);
+    try {
+        if (isOwner) {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_RESTORE_OWN);
+        } else if (isAdmin) {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_RESTORE_ANY);
+        } else {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_RESTORE_ANY);
+        }
+    } catch (err) {
+        dbLogger.permission({
+            permission: isOwner
+                ? PermissionEnum.ACCOMMODATION_RESTORE_OWN
+                : PermissionEnum.ACCOMMODATION_RESTORE_ANY,
+            userId: 'id' in safeActor ? safeActor.id : 'public',
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            extraData: { input, error: (err as Error).message }
+        });
+        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
+        throw new Error('Forbidden: user does not have permission to restore accommodation');
+    }
+    // Restore: set lifecycleState to ACTIVE, clear deletedAt/deletedById, update audit fields
+    const now = new Date();
+    const updatedById = 'id' in safeActor ? safeActor.id : undefined;
+    const updateInput = {
+        lifecycleState: 'ACTIVE',
+        deletedAt: undefined,
+        deletedById: undefined,
+        updatedAt: now,
+        updatedById
+    };
+    const updatedAccommodation = await AccommodationModel.update(parsedInput.id, {
+        ...updateInput
+    } as Partial<UpdateAccommodationInputType>);
+    if (!updatedAccommodation) {
+        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
+        throw new Error('Accommodation restore failed');
+    }
+    dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'restore:end');
+    return { accommodation: updatedAccommodation };
+};
