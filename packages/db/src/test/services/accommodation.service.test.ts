@@ -39,7 +39,7 @@ import { RoleEnum } from '@repo/types/enums/role.enum';
 import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
 import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
 import type { Mock } from 'vitest';
-import { type MockInstance, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../models/accommodation/accommodation.model';
 import * as accommodationHelper from '../../services/accommodation/accommodation.helper';
 import type { UpdateInput } from '../../services/accommodation/accommodation.schemas';
@@ -48,6 +48,19 @@ import type * as LoggerModule from '../../utils/logger';
 import { dbLogger } from '../../utils/logger';
 import * as permissionManager from '../../utils/permission-manager';
 import {
+    makeAccommodation,
+    makeAccommodationWithMedia,
+    makeArchivedAccommodation,
+    makePrivateAccommodation
+} from '../factories/accommodationFactory';
+import {
+    makeAdmin,
+    makeDisabledUser,
+    makeOwner,
+    makePublicUser,
+    makeUserWithoutPermissions
+} from '../factories/userFactory';
+import {
     getExpectedCreatedAccommodationMatchObject,
     getMockAccommodation,
     getMockAccommodationCreated,
@@ -55,13 +68,13 @@ import {
     getMockAccommodationPrivate,
     getMockAccommodationPublic,
     getMockAccommodationUpdateInput,
-    getMockAccommodationWithMedia,
     getMockPublicUser,
     getMockSeo,
     getMockUser,
     getMockUserId
 } from '../mockData';
 import { normalizeAccommodationInput } from '../utils/normalizeAccommodationInput';
+import { restoreMock } from '../utils/restoreMock';
 
 vi.mock('../../utils/logger', async (importOriginal) => {
     const actual: typeof LoggerModule = await importOriginal();
@@ -488,11 +501,8 @@ describe('accommodation.service.update', () => {
     it('should update accommodation when user is the owner and has permission', async () => {
         // Arrange
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
-        const accommodation = getMockAccommodation({ ownerId });
+        const user = makeOwner({ id: ownerId });
+        const accommodation = makeAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Updated Name',
             description: 'Updated description long enough for Zod.',
@@ -529,12 +539,8 @@ describe('accommodation.service.update', () => {
     it('should update accommodation when user is ADMIN and has global permission', async () => {
         // Arrange
         const adminId = getMockUserId();
-        const adminUser = getMockUser({
-            id: adminId,
-            role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
-        });
-        const accommodation = getMockAccommodation({ ownerId: getMockUserId() });
+        const adminUser = makeAdmin({ id: adminId });
+        const accommodation = makeAccommodation({ ownerId: getMockUserId() });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Admin Updated Name',
             description: 'Admin updated description long enough for Zod.',
@@ -571,16 +577,12 @@ describe('accommodation.service.update', () => {
     it('should update and normalize nested fields (media, tags, features, etc.)', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy1 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy1.mockRestore) spy1.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
+        const user = makeOwner({ id: ownerId });
         // Mock with nested fields (media, tags, features)
         const accommodation = {
-            ...getMockAccommodationWithMedia({ ownerId }),
+            ...makeAccommodationWithMedia({ ownerId }),
             tags: [
                 {
                     id: 'tag-1' as TagId,
@@ -667,14 +669,10 @@ describe('accommodation.service.update', () => {
     it('should return the updated accommodation with expected data', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy2 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy2.mockRestore) spy2.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
-        const accommodation = getMockAccommodation({ ownerId });
+        const user = makeOwner({ id: ownerId });
+        const accommodation = makeAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Expected Updated Name',
             description: 'Expected updated description long enough for Zod.',
@@ -703,15 +701,11 @@ describe('accommodation.service.update', () => {
     it('should deny update if user is not the owner and lacks global permissions', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy3 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy3.mockRestore) spy3.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = getMockUser({
-            id: notOwnerId,
-            permissions: [] // No global update permissions
-        });
-        const accommodation = getMockAccommodation({ ownerId });
+        const user = makeUserWithoutPermissions({ id: notOwnerId });
+        const accommodation = makeAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Update',
             description: 'This update should be denied by permissions.',
@@ -741,22 +735,10 @@ describe('accommodation.service.update', () => {
     it('should deny update if user is disabled', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy4 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy4.mockRestore) spy4.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const disabledUser = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN],
-            settings: {
-                notifications: {
-                    enabled: false,
-                    allowEmails: true,
-                    allowSms: true,
-                    allowPush: true
-                }
-            }
-        });
-        const accommodation = getMockAccommodation({ ownerId });
+        const disabledUser = makeDisabledUser({ id: ownerId });
+        const accommodation = makeAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Update (Disabled User)',
             description: 'This update should be denied because user is disabled.',
@@ -785,11 +767,10 @@ describe('accommodation.service.update', () => {
     it('should deny update if user is public (unauthenticated)', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy5 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy5.mockRestore) spy5.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const publicUser = getMockPublicUser();
-        const accommodation = getMockAccommodation({ ownerId });
+        const publicUser = makePublicUser();
+        const accommodation = makeAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Update (Public User)',
             description: 'This update should be denied because user is public.',
@@ -820,15 +801,11 @@ describe('accommodation.service.update', () => {
     it('should deny update if user has insufficient permissions', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy6 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy6.mockRestore) spy6.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = getMockUser({
-            id: notOwnerId,
-            permissions: [] // No update permissions
-        });
-        const accommodation = getMockAccommodation({ ownerId });
+        const user = makeUserWithoutPermissions({ id: notOwnerId });
+        const accommodation = makeAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Update (No Permission)',
             description: 'This update should be denied due to insufficient permissions.',
@@ -861,12 +838,8 @@ describe('accommodation.service.update', () => {
     it('should throw if accommodation does not exist', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy7 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy7.mockRestore) spy7.mockRestore();
-        const user = getMockUser({
-            id: getMockUserId(),
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
+        restoreMock(accommodationHelper.canViewAccommodation);
+        const user = makeOwner();
         const nonExistentId = 'acc-not-exist' as AccommodationId;
         const updateInput = normalizeAccommodationInput({
             id: nonExistentId,
@@ -897,12 +870,8 @@ describe('accommodation.service.update', () => {
     it('should throw if input is invalid (e.g., missing required field)', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy8 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy8.mockRestore) spy8.mockRestore();
-        const user = getMockUser({
-            id: getMockUserId(),
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
+        restoreMock(accommodationHelper.canViewAccommodation);
+        const user = makeOwner();
         // Input inválido: falta 'name'
         const invalidInput = {
             id: 'acc-1' as AccommodationId,
@@ -936,17 +905,10 @@ describe('accommodation.service.update', () => {
     it('should throw if user cannot view the accommodation (visibility or permissions)', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy9 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy9.mockRestore) spy9.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
-        const accommodation = getMockAccommodation({
-            ownerId,
-            visibility: VisibilityEnum.PRIVATE
-        });
+        const user = makeOwner({ id: ownerId });
+        const accommodation = makePrivateAccommodation({ ownerId });
         const updateInput = normalizeAccommodationInput({
             ...accommodation,
             name: 'Should Not Update (No View Permission)',
@@ -974,17 +936,10 @@ describe('accommodation.service.update', () => {
     it('should throw if accommodation is in a state that does not allow update (e.g., ARCHIVED)', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy10 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy10.mockRestore) spy10.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
-        const accommodation = getMockAccommodation({
-            ownerId,
-            lifecycleState: LifecycleStatusEnum.ARCHIVED
-        });
+        const user = makeOwner({ id: ownerId });
+        const accommodation = makeArchivedAccommodation({ ownerId });
         const updateInput = normalizeAccommodationInput({
             ...accommodation,
             name: 'Should Not Update (Archived)',
@@ -1005,17 +960,13 @@ describe('accommodation.service.update', () => {
     it('should correctly update date fields (updatedAt, etc.) and IDs (updatedById)', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy11 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy11.mockRestore) spy11.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
+        const user = makeOwner({ id: ownerId });
         const oldDate = new Date('2023-01-01T00:00:00.000Z');
         const newDate = new Date('2024-01-01T00:00:00.000Z');
         const accommodation = {
-            ...getMockAccommodation({ ownerId }),
+            ...makeAccommodation({ ownerId }),
             updatedAt: oldDate,
             updatedById: 'old-updater-id' as UserId
         };
@@ -1051,16 +1002,12 @@ describe('accommodation.service.update', () => {
     it('should normalize nested fields with dates and references', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy12 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy12.mockRestore) spy12.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
+        const user = makeOwner({ id: ownerId });
         // Mock con campos anidados
         const accommodation = {
-            ...getMockAccommodationWithMedia({ ownerId }),
+            ...makeAccommodationWithMedia({ ownerId }),
             tags: [
                 {
                     id: 'tag-1' as TagId,
@@ -1140,14 +1087,10 @@ describe('accommodation.service.update', () => {
     it('should call dbLogger.info and dbLogger.permission at the correct points', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy13 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy13.mockRestore) spy13.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
-        const accommodation = getMockAccommodation({ ownerId });
+        const user = makeOwner({ id: ownerId });
+        const accommodation = makeAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Logger Test Name',
             description: 'Logger test description long enough for Zod.',
@@ -1199,14 +1142,10 @@ describe('accommodation.service.update', () => {
     it('should not update forbidden fields (e.g., ownerId if not allowed)', async () => {
         // Arrange
         vi.clearAllMocks();
-        const spy14 = accommodationHelper.canViewAccommodation as unknown as MockInstance;
-        if (spy14.mockRestore) spy14.mockRestore();
+        restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = getMockUser({
-            id: ownerId,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
-        const accommodation = getMockAccommodation({ ownerId });
+        const user = makeOwner({ id: ownerId });
+        const accommodation = makeAccommodation({ ownerId });
         // El input intenta cambiar el ownerId a otro valor
         const forbiddenOwnerId = '22222222-2222-2222-2222-222222222222' as UserId;
         const updatedFields = getMockAccommodationUpdateInput({
