@@ -167,10 +167,10 @@ Durante todo el año, Gualeguaychú mantiene una activa agenda cultural con fest
                 ]
             },
             seo: {
-                seoTitle: 'Gualeguaychú, Entre Ríos - Carnaval, Playas y Cultura | Hosped.ar',
-                seoDescription:
+                title: 'Gualeguaychú, Entre Ríos - Carnaval, Playas y Cultura | Hosped.ar',
+                description:
                     'Descubre Gualeguaychú, la Capital del Carnaval argentino. Disfruta de sus playas, su vibrante cultura y su famoso carnaval en la costa del río.',
-                seoKeywords: [
+                keywords: [
                     'Gualeguaychú',
                     'Entre Ríos',
                     'carnaval',

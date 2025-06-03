@@ -168,10 +168,10 @@ Los amantes de la naturaleza pueden disfrutar de las playas sobre el río Urugua
                 ]
             },
             seo: {
-                seoTitle: 'Concordia, Entre Ríos - Termas, Cítricos y Naturaleza | Hosped.ar',
-                seoDescription:
+                title: 'Concordia, Entre Ríos - Termas, Cítricos y Naturaleza | Hosped.ar',
+                description:
                     'Visita Concordia, Entre Ríos: disfruta de sus termas curativas, plantaciones de cítricos y hermosas playas sobre el río Uruguay. Tu destino ideal.',
-                seoKeywords: [
+                keywords: [
                     'Concordia',
                     'Entre Ríos',
                     'termas',

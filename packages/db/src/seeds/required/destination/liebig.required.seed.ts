@@ -168,10 +168,10 @@ La tranquilidad del lugar, combinada con su rica historia y su entorno natural p
                 ]
             },
             seo: {
-                seoTitle: 'Pueblo Liebig, Entre Ríos - Patrimonio Industrial Inglés | Hosped.ar',
-                seoDescription:
+                title: 'Pueblo Liebig, Entre Ríos - Patrimonio Industrial Inglés | Hosped.ar',
+                description:
                     'Descubre Pueblo Liebig, joya arquitectónica de Entre Ríos con su patrimonio industrial inglés. Explora su historia, arquitectura única y hermoso entorno natural.',
-                seoKeywords: [
+                keywords: [
                     'Pueblo Liebig',
                     'Entre Ríos',
                     'patrimonio UNESCO',

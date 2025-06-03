@@ -170,10 +170,10 @@ A lo largo del año, Concepción del Uruguay mantiene una activa agenda cultural
                 ]
             },
             seo: {
-                seoTitle: 'Concepción del Uruguay, Entre Ríos - La Histórica | Hosped.ar',
-                seoDescription:
+                title: 'Concepción del Uruguay, Entre Ríos - La Histórica | Hosped.ar',
+                description:
                     'Visita Concepción del Uruguay, ciudad histórica de Entre Ríos. Disfruta de sus playas, su rico patrimonio arquitectónico y su tradición universitaria.',
-                seoKeywords: [
+                keywords: [
                     'Concepción del Uruguay',
                     'Entre Ríos',
                     'La Histórica',

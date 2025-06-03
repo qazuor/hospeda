@@ -166,10 +166,10 @@ Chajarí ofrece una infraestructura turística completa, con hoteles, apart-hote
                 ]
             },
             seo: {
-                seoTitle: 'Chajarí, Entre Ríos - Capital Nacional del Citrus | Hosped.ar',
-                seoDescription:
+                title: 'Chajarí, Entre Ríos - Capital Nacional del Citrus | Hosped.ar',
+                description:
                     'Visita Chajarí, la Capital Nacional de la Citricultura. Disfruta de sus termas, descubre sus plantaciones de cítricos y su rica herencia de inmigración italiana.',
-                seoKeywords: [
+                keywords: [
                     'Chajarí',
                     'Entre Ríos',
                     'citrus',

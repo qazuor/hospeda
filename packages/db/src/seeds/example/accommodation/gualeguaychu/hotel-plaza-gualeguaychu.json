@@ -133,9 +133,9 @@
         ]
     },
     "seo": {
-        "seoTitle": "Hotel Plaza - Alojamiento 3 estrellas en centro de Gualeguaychú | Entre Ríos",
-        "seoDescription": "Hotel boutique de 3 estrellas en pleno centro de Gualeguaychú. Habitaciones confortables, restaurante, desayuno incluido y excelente ubicación cerca del Carnaval.",
-        "seoKeywords": [
+        "title": "Hotel Plaza - Alojamiento 3 estrellas en centro de Gualeguaychú | Entre Ríos",
+        "description": "Hotel boutique de 3 estrellas en pleno centro de Gualeguaychú. Habitaciones confortables, restaurante, desayuno incluido y excelente ubicación cerca del Carnaval.",
+        "keywords": [
             "hotel",
             "gualeguaychu",
             "entre ríos",

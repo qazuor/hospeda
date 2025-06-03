@@ -169,10 +169,10 @@ La infraestructura de la ciudad incluye hoteles, apart-hoteles, cabañas y campi
                 ]
             },
             seo: {
-                seoTitle: 'Villa Elisa, Entre Ríos - Termas y Tradición Europea | Hosped.ar',
-                seoDescription:
+                title: 'Villa Elisa, Entre Ríos - Termas y Tradición Europea | Hosped.ar',
+                description:
                     'Visita Villa Elisa en Entre Ríos: disfruta de sus modernas termas, descubre su herencia europea y explora el histórico Palacio San José.',
-                seoKeywords: [
+                keywords: [
                     'Villa Elisa',
                     'Entre Ríos',
                     'termas',

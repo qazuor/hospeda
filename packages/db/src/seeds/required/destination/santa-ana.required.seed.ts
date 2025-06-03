@@ -172,10 +172,10 @@ Santa Ana representa un destino ideal para quienes buscan descubrir la autentici
                 ]
             },
             seo: {
-                seoTitle: 'Santa Ana, Entre Ríos - Castillo Medieval y Tradición Rural | Hosped.ar',
-                seoDescription:
+                title: 'Santa Ana, Entre Ríos - Castillo Medieval y Tradición Rural | Hosped.ar',
+                description:
                     'Descubre Santa Ana en Entre Ríos, hogar de un sorprendente castillo medieval. Disfruta de la tranquilidad rural, naturaleza y tradiciones auténticas.',
-                seoKeywords: [
+                keywords: [
                     'Santa Ana',
                     'Entre Ríos',
                     'castillo medieval',

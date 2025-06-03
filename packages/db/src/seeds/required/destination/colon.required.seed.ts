@@ -163,10 +163,10 @@ La gastronomía local destaca por sus pescados de río frescos, y durante todo e
                 ]
             },
             seo: {
-                seoTitle: 'Colón, Entre Ríos - Playas, Termas y Naturaleza | Hosped.ar',
-                seoDescription:
+                title: 'Colón, Entre Ríos - Playas, Termas y Naturaleza | Hosped.ar',
+                description:
                     'Descubre Colón, Entre Ríos: playas de arena fina, termas relajantes y naturaleza exuberante. Planifica tu estadía ideal en la costa del río Uruguay.',
-                seoKeywords: [
+                keywords: [
                     'Colón',
                     'Entre Ríos',
                     'playas',

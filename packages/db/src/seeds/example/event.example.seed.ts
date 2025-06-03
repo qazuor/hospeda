@@ -250,10 +250,10 @@ Una oportunidad perfecta para disfrutar del verano entrerriano con buena música
                     currency: PriceCurrencyEnum.ARS
                 },
                 seo: {
-                    seoTitle: 'Festival de la Playa Colón 2024 - Música en vivo y gastronomía',
-                    seoDescription:
+                    title: 'Festival de la Playa Colón 2024 - Música en vivo y gastronomía',
+                    description:
                         'El festival de música más esperado del verano en las playas de Colón, Entre Ríos. Tres días de música en vivo, gastronomía y actividades para toda la familia.',
-                    seoKeywords: [
+                    keywords: [
                         'festival playa',
                         'música Colón',
                         'eventos Entre Ríos',
@@ -329,11 +329,10 @@ La feria busca no solo comercializar artesanías, sino también preservar y difu
                     isFree: true
                 },
                 seo: {
-                    seoTitle:
-                        'Feria de Artesanías del Litoral 2024 - Encuentro de artesanos en Entre Ríos',
-                    seoDescription:
+                    title: 'Feria de Artesanías del Litoral 2024 - Encuentro de artesanos en Entre Ríos',
+                    description:
                         'La mejor feria artesanal de Entre Ríos con más de 100 expositores. Artesanías en madera, cerámica, textiles y más en un evento cultural imperdible.',
-                    seoKeywords: [
+                    keywords: [
                         'feria artesanías',
                         'artesanos Entre Ríos',
                         'cultura entrerriana',
@@ -406,10 +405,10 @@ El festival no solo es una celebración de la producción citrícola, sino tambi
                     isFree: true
                 },
                 seo: {
-                    seoTitle: 'Festival Nacional de la Citricultura - Concordia, Entre Ríos',
-                    seoDescription:
+                    title: 'Festival Nacional de la Citricultura - Concordia, Entre Ríos',
+                    description:
                         'El festival más importante de la producción citrícola argentina en Concordia. Exposiciones, gastronomía, cultura y entretenimiento para toda la familia.',
-                    seoKeywords: [
+                    keywords: [
                         'festival citricultura',
                         'cítricos Concordia',
                         'naranjas',
@@ -503,10 +502,10 @@ Más que una competencia deportiva, la Maratón Termal es una celebración de la
                     currency: PriceCurrencyEnum.ARS
                 },
                 seo: {
-                    seoTitle: 'Maratón Termal "Corre por la Salud" - Federación, Entre Ríos',
-                    seoDescription:
+                    title: 'Maratón Termal "Corre por la Salud" - Federación, Entre Ríos',
+                    description:
                         'Participa en la única maratón de Argentina que termina en aguas termales. Circuitos de 2K, 5K, 10K y 21K en Federación, Entre Ríos.',
-                    seoKeywords: [
+                    keywords: [
                         'maratón',
                         'carrera',
                         'termas',
@@ -584,11 +583,10 @@ La exposición no solo busca maravillar con la belleza de nuestra fauna, sino ta
                     currency: PriceCurrencyEnum.ARS
                 },
                 seo: {
-                    seoTitle:
-                        'Exposición Fauna del Litoral - Fotografía de naturaleza en Entre Ríos',
-                    seoDescription:
+                    title: 'Exposición Fauna del Litoral - Fotografía de naturaleza en Entre Ríos',
+                    description:
                         'Muestra fotográfica sobre la biodiversidad de Entre Ríos y el litoral argentino. Especies nativas, ecosistemas y fotografía de naturaleza.',
-                    seoKeywords: [
+                    keywords: [
                         'fauna',
                         'Entre Ríos',
                         'litoral argentino',

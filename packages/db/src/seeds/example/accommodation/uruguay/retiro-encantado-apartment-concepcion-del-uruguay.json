@@ -95,9 +95,9 @@
         "extraInfo": ["Ubicación céntrica", "Ideal para parejas", "Check-in autónomo disponible"]
     },
     "seo": {
-        "seoTitle": "Retiro Encantado - Apartamento Céntrico en Concepción del Uruguay",
-        "seoDescription": "Apartamento moderno a metros del centro histórico de Concepción del Uruguay. Ideal para parejas, equipado. Cerca de atracciones.",
-        "seoKeywords": [
+        "title": "Retiro Encantado - Apartamento Céntrico en Concepción del Uruguay",
+        "description": "Apartamento moderno a metros del centro histórico de Concepción del Uruguay. Ideal para parejas, equipado. Cerca de atracciones.",
+        "keywords": [
             "apartamento",
             "concepción del uruguay",
             "entre ríos",
