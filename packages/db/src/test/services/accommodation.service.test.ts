@@ -45,7 +45,6 @@ import * as accommodationHelper from '../../services/accommodation/accommodation
 import type { UpdateInput } from '../../services/accommodation/accommodation.schemas';
 import * as AccommodationService from '../../services/accommodation/accommodation.service';
 import type * as LoggerModule from '../../utils/logger';
-import { dbLogger } from '../../utils/logger';
 import * as permissionManager from '../../utils/permission-manager';
 import {
     makeAccommodation,
@@ -73,6 +72,7 @@ import {
     getMockUser,
     getMockUserId
 } from '../mockData';
+import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/logAssertions';
 import { getNormalizedUpdateInput } from '../utils/normalizeAccommodationInput';
 import { restoreMock } from '../utils/restoreMock';
 
@@ -121,14 +121,11 @@ describe('accommodation.service.getById', () => {
             publicUser
         );
         expect(result.accommodation).toEqual(accommodationPublic);
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expectInfoLog(
             { input: { id: 'acc-1' as AccommodationId }, actor: publicUser },
             'getById:start'
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            { result: { accommodation: accommodationPublic } },
-            'getById:end'
-        );
+        expectInfoLog({ result: { accommodation: accommodationPublic } }, 'getById:end');
     });
 
     it('should return null and log permission for public user if visibility is PRIVATE', async () => {
@@ -138,28 +135,20 @@ describe('accommodation.service.getById', () => {
             publicUser
         );
         expect(result.accommodation).toBeNull();
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-                userId: 'public',
-                role: RoleEnum.GUEST,
-                extraData: expect.anything()
-            })
-        );
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            userId: 'public',
+            role: RoleEnum.GUEST,
+            extraData: expect.anything()
+        });
     });
 
     it('should return accommodation for logged in user regardless of visibility', async () => {
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodationPrivate);
         const result = await AccommodationService.getById({ id: 'acc-2' as AccommodationId }, user);
         expect(result.accommodation).toEqual(accommodationPrivate);
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            { input: { id: 'acc-2' as AccommodationId }, actor: user },
-            'getById:start'
-        );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            { result: { accommodation: accommodationPrivate } },
-            'getById:end'
-        );
+        expectInfoLog({ input: { id: 'acc-2' as AccommodationId }, actor: user }, 'getById:start');
+        expectInfoLog({ result: { accommodation: accommodationPrivate } }, 'getById:end');
     });
 
     it('should return null if accommodation does not exist', async () => {
@@ -169,7 +158,7 @@ describe('accommodation.service.getById', () => {
             publicUser
         );
         expect(result.accommodation).toBeNull();
-        expect(dbLogger.permission).not.toHaveBeenCalled();
+        expectNoPermissionLog();
     });
 
     it('should return null and log permission if user is disabled', async () => {
@@ -179,14 +168,12 @@ describe('accommodation.service.getById', () => {
             disabledUser
         );
         expect(result.accommodation).toBeNull();
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-                userId: disabledUser.id,
-                role: disabledUser.role,
-                extraData: expect.objectContaining({ reason: 'user disabled' })
-            })
-        );
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            userId: disabledUser.id,
+            role: disabledUser.role,
+            extraData: expect.objectContaining({ reason: 'user disabled' })
+        });
     });
 
     it('should throw and log if accommodation has unknown visibility', async () => {
@@ -198,7 +185,16 @@ describe('accommodation.service.getById', () => {
         await expect(
             AccommodationService.getById({ id: 'acc-3' as AccommodationId }, user)
         ).rejects.toThrow(/Unknown accommodation visibility/);
-        expect(dbLogger.permission).toHaveBeenCalled();
+        expectPermissionLog({
+            permission: 'UNKNOWN_PERMISSION',
+            userId: user.id,
+            role: user.role,
+            extraData: expect.objectContaining({
+                error: 'unknown visibility',
+                visibility: 'UNKNOWN',
+                input: expect.any(Object)
+            })
+        });
     });
 });
 
@@ -235,14 +231,11 @@ describe('accommodation.service.getByName', () => {
             publicUser
         );
         expect(resultByName.accommodation).toEqual(accommodationPublic);
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expectInfoLog(
             { input: { name: accommodationPublic.name }, actor: publicUser },
             'getByName:start'
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            { result: { accommodation: accommodationPublic } },
-            'getByName:end'
-        );
+        expectInfoLog({ result: { accommodation: accommodationPublic } }, 'getByName:end');
     });
 
     it('should return null and log permission for public user if visibility is PRIVATE', async () => {
@@ -252,14 +245,12 @@ describe('accommodation.service.getByName', () => {
             publicUser
         );
         expect(resultByName.accommodation).toBeNull();
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-                userId: 'public',
-                role: RoleEnum.GUEST,
-                extraData: expect.anything()
-            })
-        );
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            userId: 'public',
+            role: RoleEnum.GUEST,
+            extraData: expect.anything()
+        });
     });
 
     it('should return accommodation for logged in user regardless of visibility', async () => {
@@ -269,14 +260,11 @@ describe('accommodation.service.getByName', () => {
             user
         );
         expect(resultByName.accommodation).toEqual(accommodationPrivate);
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expectInfoLog(
             { input: { name: accommodationPrivate.name }, actor: user },
             'getByName:start'
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            { result: { accommodation: accommodationPrivate } },
-            'getByName:end'
-        );
+        expectInfoLog({ result: { accommodation: accommodationPrivate } }, 'getByName:end');
     });
 
     it('should return null if accommodation does not exist', async () => {
@@ -286,7 +274,7 @@ describe('accommodation.service.getByName', () => {
             publicUser
         );
         expect(resultByName.accommodation).toBeNull();
-        expect(dbLogger.permission).not.toHaveBeenCalled();
+        expectNoPermissionLog();
     });
 
     it('should return null and log permission if user is disabled', async () => {
@@ -296,14 +284,12 @@ describe('accommodation.service.getByName', () => {
             disabledUser
         );
         expect(result.accommodation).toBeNull();
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-                userId: disabledUser.id,
-                role: disabledUser.role,
-                extraData: expect.objectContaining({ reason: 'user disabled' })
-            })
-        );
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            userId: disabledUser.id,
+            role: disabledUser.role,
+            extraData: expect.objectContaining({ reason: 'user disabled' })
+        });
     });
 
     it('should throw and log if accommodation has unknown visibility', async () => {
@@ -316,7 +302,16 @@ describe('accommodation.service.getByName', () => {
         await expect(
             AccommodationService.getByName({ name: 'Unknown Hotel' }, user)
         ).rejects.toThrow(/Unknown accommodation visibility/);
-        expect(dbLogger.permission).toHaveBeenCalled();
+        expectPermissionLog({
+            permission: 'UNKNOWN_PERMISSION',
+            userId: user.id,
+            role: user.role,
+            extraData: expect.objectContaining({
+                error: 'unknown visibility',
+                visibility: 'UNKNOWN',
+                input: expect.any(Object)
+            })
+        });
     });
 });
 
@@ -339,17 +334,8 @@ describe('accommodation.service.list', () => {
         (AccommodationModel.search as Mock).mockResolvedValue([accommodationPublic]);
         const result = await AccommodationService.list({ limit: 10, offset: 0 }, publicUser);
         expect(result.accommodations).toEqual([accommodationPublic]);
-        expect(AccommodationModel.search).toHaveBeenCalledWith(
-            expect.objectContaining({ visibility: 'PUBLIC' })
-        );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            { input: { limit: 10, offset: 0 }, actor: publicUser },
-            'list:start'
-        );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            { result: { accommodations: [accommodationPublic] } },
-            'list:end'
-        );
+        expectInfoLog({ input: { limit: 10, offset: 0 }, actor: publicUser }, 'list:start');
+        expectInfoLog({ result: { accommodations: [accommodationPublic] } }, 'list:end');
     });
 
     it('should log permission if public user requests PRIVATE visibility', async () => {
@@ -358,23 +344,20 @@ describe('accommodation.service.list', () => {
             { limit: 10, offset: 0, visibility: 'PRIVATE' },
             publicUser
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: PermissionEnum.ACCOMMODATION_VIEW_ALL,
-                userId: 'public',
-                role: RoleEnum.GUEST,
-                extraData: expect.objectContaining({ override: expect.any(String) })
-            })
-        );
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_ALL,
+            userId: 'public',
+            role: RoleEnum.GUEST,
+            extraData: expect.objectContaining({ override: expect.any(String) })
+        });
     });
 
     it('should return all accommodations for logged in user', async () => {
         (AccommodationModel.search as Mock).mockResolvedValue(accommodations);
         const result = await AccommodationService.list({ limit: 10, offset: 0 }, user);
         expect(result.accommodations).toEqual(accommodations);
-        expect(AccommodationModel.search).toHaveBeenCalledWith(
-            expect.objectContaining({ limit: 10, offset: 0 })
-        );
+        expectInfoLog({ input: { limit: 10, offset: 0 }, actor: user }, 'list:start');
+        expectInfoLog({ result: { accommodations: accommodations } }, 'list:end');
     });
 
     it('should apply filters (type, q, order)', async () => {
@@ -390,23 +373,29 @@ describe('accommodation.service.list', () => {
             },
             user
         );
-        expect(AccommodationModel.search).toHaveBeenCalledWith(
-            expect.objectContaining({
-                type: 'HOTEL',
-                q: 'Hotel',
-                order: 'asc',
-                orderBy: 'name',
-                limit: 5,
-                offset: 0
-            })
+        expectInfoLog(
+            {
+                input: {
+                    type: 'HOTEL',
+                    q: 'Hotel',
+                    order: 'asc',
+                    orderBy: 'name',
+                    limit: 5,
+                    offset: 0
+                },
+                actor: user
+            },
+            'list:start'
         );
         expect(result.accommodations).toEqual([accommodationPublic]);
+        expectInfoLog({ result: { accommodations: [accommodationPublic] } }, 'list:end');
     });
 
     it('should return empty array if no accommodations found', async () => {
         (AccommodationModel.search as Mock).mockResolvedValue([]);
         const result = await AccommodationService.list({ limit: 10, offset: 0 }, user);
         expect(result.accommodations).toEqual([]);
+        expectInfoLog({ result: { accommodations: [] } }, 'list:end');
     });
 });
 
@@ -426,19 +415,19 @@ describe('accommodation.service.create', () => {
         (AccommodationModel.create as Mock).mockResolvedValue(getMockAccommodationCreated());
         const result = await AccommodationService.create(getMockAccommodationInput(), user);
         expect(result.accommodation).toMatchObject(getExpectedCreatedAccommodationMatchObject());
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({
+        expectInfoLog(
+            {
                 input: expect.objectContaining({
                     name: 'Nuevo Hotel',
                     createdAt: expect.any(Date),
                     updatedAt: expect.any(Date)
                 }),
                 actor: expect.any(Object)
-            }),
+            },
             'create:start'
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({
+        expectInfoLog(
+            {
                 result: expect.objectContaining({
                     accommodation: expect.objectContaining({
                         name: 'Nuevo Hotel',
@@ -446,7 +435,7 @@ describe('accommodation.service.create', () => {
                         updatedAt: expect.any(Date)
                     })
                 })
-            }),
+            },
             'create:end'
         );
     });
@@ -459,14 +448,12 @@ describe('accommodation.service.create', () => {
         await expect(
             AccommodationService.create(getMockAccommodationInput(), noPermUser)
         ).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: PermissionEnum.ACCOMMODATION_CREATE,
-                userId: noPermUser.id,
-                role: noPermUser.role,
-                extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
-            })
-        );
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_CREATE,
+            userId: noPermUser.id,
+            role: noPermUser.role,
+            extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
+        });
     });
 
     it('should throw on invalid input', async () => {
@@ -484,16 +471,14 @@ describe('accommodation.service.create', () => {
         await expect(AccommodationService.create(input, getMockPublicUser())).rejects.toThrow(
             /Public user cannot create/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: PermissionEnum.ACCOMMODATION_CREATE,
-                userId: 'public',
-                role: RoleEnum.GUEST,
-                extraData: expect.objectContaining({
-                    override: expect.stringContaining('Public user cannot create')
-                })
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_CREATE,
+            userId: 'public',
+            role: RoleEnum.GUEST,
+            extraData: expect.objectContaining({
+                override: expect.stringContaining('Public user cannot create')
             })
-        );
+        });
     });
 });
 
@@ -519,18 +504,8 @@ describe('accommodation.service.update', () => {
 
         // Assert
         expect(result.accommodation).toEqual(updatedAccommodation);
-        expect(AccommodationModel.update).toHaveBeenCalledWith(
-            accommodation.id,
-            expect.objectContaining(updatedFields)
-        );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({ input: updateInput, actor: user }),
-            'update:start'
-        );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({ result: { accommodation: updatedAccommodation } }),
-            'update:end'
-        );
+        expectInfoLog({ input: updateInput, actor: user }, 'update:start');
+        expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
     });
 
     it('should update accommodation when user is ADMIN and has global permission', async () => {
@@ -554,18 +529,8 @@ describe('accommodation.service.update', () => {
 
         // Assert
         expect(result.accommodation).toEqual(updatedAccommodation);
-        expect(AccommodationModel.update).toHaveBeenCalledWith(
-            accommodation.id,
-            expect.objectContaining(updatedFields)
-        );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({ input: updateInput, actor: adminUser }),
-            'update:start'
-        );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({ result: { accommodation: updatedAccommodation } }),
-            'update:end'
-        );
+        expectInfoLog({ input: updateInput, actor: adminUser }, 'update:start');
+        expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
     });
 
     it('should update and normalize nested fields (media, tags, features, etc.)', async () => {
@@ -642,15 +607,8 @@ describe('accommodation.service.update', () => {
 
         // Assert
         expect(result.accommodation).toEqual(updatedAccommodation);
-        expect(AccommodationModel.update).toHaveBeenCalledWith(
-            accommodation.id,
-            expect.objectContaining({
-                name: updatedFields.name,
-                description: updatedFields.description,
-                seo: updatedFields.seo
-                // tags, features, media should NOT be present in updateInput
-            })
-        );
+        expectInfoLog({ input: updateInput, actor: user }, 'update:start');
+        expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
         // Ensure tags, features, media are not present in the update input
         expect(updateInput).not.toHaveProperty('tags');
         expect(updateInput).not.toHaveProperty('features');
@@ -683,6 +641,8 @@ describe('accommodation.service.update', () => {
         expect(result.accommodation.name).toBe(updatedFields.name);
         expect(result.accommodation.description).toBe(updatedFields.description);
         expect(result.accommodation.seo).toEqual(updatedFields.seo);
+        expectInfoLog({ input: updateInput, actor: user }, 'update:start');
+        expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
     });
 
     // 2. Permissions and Roles
@@ -707,14 +667,12 @@ describe('accommodation.service.update', () => {
 
         // Act & Assert
         await expect(AccommodationService.update(updateInput, user)).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: expect.any(String),
-                userId: notOwnerId,
-                role: user.role,
-                extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
-            })
-        );
+        expectPermissionLog({
+            permission: expect.any(String),
+            userId: notOwnerId,
+            role: user.role,
+            extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
+        });
     });
 
     it('should deny update if user is disabled', async () => {
@@ -736,14 +694,12 @@ describe('accommodation.service.update', () => {
         await expect(AccommodationService.update(updateInput, disabledUser)).rejects.toThrow(
             /Forbidden: user disabled/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-                userId: disabledUser.id,
-                role: disabledUser.role,
-                extraData: expect.objectContaining({ reason: 'user disabled' })
-            })
-        );
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_UPDATE_OWN,
+            userId: disabledUser.id,
+            role: disabledUser.role,
+            extraData: expect.objectContaining({ reason: 'user disabled' })
+        });
     });
 
     it('should deny update if user is public (unauthenticated)', async () => {
@@ -765,16 +721,14 @@ describe('accommodation.service.update', () => {
         await expect(AccommodationService.update(updateInput, publicUser)).rejects.toThrow(
             /Forbidden/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: expect.any(String),
-                userId: 'public',
-                role: publicUser.role,
-                extraData: expect.objectContaining({
-                    error: expect.stringContaining('Forbidden')
-                })
+        expectPermissionLog({
+            permission: expect.any(String),
+            userId: 'public',
+            role: publicUser.role,
+            extraData: expect.objectContaining({
+                error: expect.stringContaining('Forbidden')
             })
-        );
+        });
     });
 
     it('should deny update if user has insufficient permissions', async () => {
@@ -798,16 +752,14 @@ describe('accommodation.service.update', () => {
 
         // Act & Assert
         await expect(AccommodationService.update(updateInput, user)).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: expect.any(String),
-                userId: notOwnerId,
-                role: user.role,
-                extraData: expect.objectContaining({
-                    error: expect.stringContaining('Forbidden')
-                })
+        expectPermissionLog({
+            permission: expect.any(String),
+            userId: notOwnerId,
+            role: user.role,
+            extraData: expect.objectContaining({
+                error: expect.stringContaining('Forbidden')
             })
-        );
+        });
     });
 
     // 3. Validation and Errors
@@ -837,10 +789,7 @@ describe('accommodation.service.update', () => {
         await expect(AccommodationService.update(updateInput, user)).rejects.toThrow(
             'Accommodation not found'
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({ result: { accommodation: null } }),
-            'update:end'
-        );
+        expectInfoLog({ result: { accommodation: null } }, 'update:end');
     });
 
     it('should throw if input is invalid (e.g., missing required field)', async () => {
@@ -870,12 +819,6 @@ describe('accommodation.service.update', () => {
         ).rejects.toThrow();
         // No update ni log de éxito
         expect(AccommodationModel.update).not.toHaveBeenCalled();
-        expect(dbLogger.info).not.toHaveBeenCalledWith(
-            expect.objectContaining({
-                result: expect.objectContaining({ accommodation: expect.anything() })
-            }),
-            'update:end'
-        );
     });
 
     it('should throw if user cannot view the accommodation (visibility or permissions)', async () => {
@@ -906,7 +849,14 @@ describe('accommodation.service.update', () => {
             'Forbidden: user does not have permission to update accommodation'
         );
         // Logger debe registrar el intento denegado
-        expect(dbLogger.permission).toHaveBeenCalled();
+        expectPermissionLog({
+            permission: expect.any(String),
+            userId: user.id,
+            role: user.role,
+            extraData: expect.objectContaining({
+                error: expect.stringContaining('Forbidden')
+            })
+        });
     });
 
     it('should throw if accommodation is in a state that does not allow update (e.g., ARCHIVED)', async () => {
@@ -929,7 +879,12 @@ describe('accommodation.service.update', () => {
             'Forbidden: user does not have permission to update accommodation'
         );
         // Logger debe registrar el intento denegado
-        expect(dbLogger.permission).toHaveBeenCalled();
+        expectPermissionLog({
+            permission: expect.any(String),
+            userId: user.id,
+            role: user.role,
+            extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
+        });
     });
 
     // 4. Edge Cases and Side Effects
@@ -970,6 +925,8 @@ describe('accommodation.service.update', () => {
         expect(result.accommodation.updatedById).toEqual(user.id);
         expect(result.accommodation.name).toBe(updatedFields.name);
         expect(result.accommodation.description).toBe(updatedFields.description);
+        expectInfoLog({ input: updateInput, actor: user }, 'update:start');
+        expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
     });
 
     it('should normalize nested fields with dates and references', async () => {
@@ -1052,6 +1009,8 @@ describe('accommodation.service.update', () => {
         // Los campos de fechas e IDs deben estar correctamente formateados
         expect(!('updatedAt' in updateInput) || updateInput.updatedAt instanceof Date).toBe(true);
         expect(typeof updateInput.ownerId).toBe('string');
+        expectInfoLog({ input: updateInput, actor: user }, 'update:start');
+        expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
     });
 
     it('should call dbLogger.info and dbLogger.permission at the correct points', async () => {
@@ -1076,14 +1035,8 @@ describe('accommodation.service.update', () => {
         await AccommodationService.update(updateInput, user);
 
         // Assert (caso exitoso)
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({ input: updateInput, actor: user }),
-            'update:start'
-        );
-        expect(dbLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({ result: { accommodation: updatedAccommodation } }),
-            'update:end'
-        );
+        expectInfoLog({ input: updateInput, actor: user }, 'update:start');
+        expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
 
         // Arrange (caso error de permisos)
         vi.clearAllMocks();
@@ -1094,16 +1047,14 @@ describe('accommodation.service.update', () => {
 
         // Act & Assert (caso error de permisos)
         await expect(AccommodationService.update(updateInput, user)).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                permission: expect.any(String),
-                userId: user.id,
-                role: user.role,
-                extraData: expect.objectContaining({
-                    error: expect.stringContaining('Forbidden')
-                })
+        expectPermissionLog({
+            permission: expect.any(String),
+            userId: user.id,
+            role: user.role,
+            extraData: expect.objectContaining({
+                error: expect.stringContaining('Forbidden')
             })
-        );
+        });
     });
 
     it('should not update forbidden fields (e.g., ownerId if not allowed)', async () => {
@@ -1140,5 +1091,7 @@ describe('accommodation.service.update', () => {
             })
         );
         expect(result.accommodation.ownerId).toBe(ownerId);
+        expectInfoLog({ input: updateInput, actor: user }, 'update:start');
+        expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
     });
 });
