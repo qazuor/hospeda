@@ -24,11 +24,8 @@ export enum CanViewReasonEnum {
 }
 
 /**
- * Type guard to check if an actor is a UserType (not a PublicUserType).
- * @param actor - The actor to check.
- * @returns True if the actor is a UserType.
- * @example
- * isUserType({ id: 'user-1', role: RoleEnum.ADMIN }) // true
+ * Returns true if the given actor is a UserType (not a PublicUserType).
+ * Use to distinguish between authenticated and public users.
  */
 export const isUserType = (actor: unknown): actor is UserType => {
     return (
@@ -43,21 +40,15 @@ export const isUserType = (actor: unknown): actor is UserType => {
 
 /**
  * Returns a safe actor (UserType or PublicUserType). If the input is not a UserType, returns a PublicUserType.
- * @param actor - The actor to check.
- * @returns UserType or PublicUserType.
- * @example
- * getSafeActor(undefined) // PublicUserType
+ * Use to ensure all logic operates on a valid actor object.
  */
 export const getSafeActor = (actor: unknown): UserType | PublicUserType => {
     return isUserType(actor) ? actor : createPublicUser();
 };
 
 /**
- * Checks if the actor is a public (anonymous) user.
- * @param actor - The actor to check.
- * @returns True if the actor is a public user.
- * @example
- * isPublicUser(getSafeActor(undefined)) // true
+ * Returns true if the actor is a public (anonymous) user.
+ * Use to check for guest access.
  */
 export const isPublicUser = (actor: UserType | PublicUserType): boolean => {
     return 'role' in actor && actor.role === RoleEnum.GUEST;
@@ -70,11 +61,8 @@ export const isPublicUser = (actor: UserType | PublicUserType): boolean => {
 export type LoggerWithPermission = { permission: (args: unknown) => void };
 
 /**
- * Checks if a user is disabled (either via 'enabled' property or settings.notifications.enabled === false).
- * @param actor - The actor to check.
- * @returns True if the user is disabled.
- * @example
- * isUserDisabled(getMockUser({ enabled: false })) // true
+ * Returns true if the user is disabled (either via 'enabled' property or settings.notifications.enabled === false).
+ * Use to block access for disabled users.
  */
 export const isUserDisabled = (actor: UserType | PublicUserType): boolean => {
     if ('enabled' in actor) return actor.enabled === false;
@@ -85,11 +73,7 @@ export const isUserDisabled = (actor: UserType | PublicUserType): boolean => {
 /**
  * Determines if the actor can view the accommodation based on visibility, ownership, and permissions.
  * Returns an object with the result and the reason (for logging).
- * @param actor - The user or public actor.
- * @param accommodation - The accommodation object (must have visibility and optionally ownerId).
- * @returns Object with canView, reason, and checkedPermission (if permission check is required).
- * @example
- * canViewAccommodation(user, { visibility: 'PRIVATE', ownerId: user.id })
+ * Use in access control logic for accommodations.
  */
 export const canViewAccommodation = (
     actor: UserType | PublicUserType,
@@ -131,31 +115,4 @@ export const canViewAccommodation = (
         reason: CanViewReasonEnum.UNKNOWN_VISIBILITY,
         checkedPermission: undefined
     };
-};
-
-/**
- * Centralized logging for denied access to accommodations.
- * @param dbLogger - Logger with a permission method.
- * @param actor - The user or public actor.
- * @param input - The input to the service method.
- * @param accommodation - The accommodation object (must have visibility).
- * @param reason - The reason for denial.
- * @param checkedPermission - The permission checked (if any).
- * @example
- * logDenied(dbLogger, user, { id: 'acc-1' }, { visibility: 'PRIVATE' }, CanViewReasonEnum.MISSING_PERMISSION, PermissionEnum.ACCOMMODATION_VIEW_PRIVATE)
- */
-export const logDenied = (
-    dbLogger: LoggerWithPermission,
-    actor: UserType | PublicUserType,
-    input: unknown,
-    accommodation: { visibility: string },
-    reason: CanViewReasonEnum,
-    checkedPermission?: PermissionEnum
-) => {
-    dbLogger.permission({
-        permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-        userId: 'id' in actor ? actor.id : 'public',
-        role: 'role' in actor ? actor.role : RoleEnum.GUEST,
-        extraData: { input, visibility: accommodation.visibility, error: reason }
-    });
 };
