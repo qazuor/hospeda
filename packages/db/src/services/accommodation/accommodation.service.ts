@@ -345,14 +345,9 @@ export const update = async (
     }
     // Only owner, admin, or user with permission can update
     const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
-    const isAdmin =
-        'role' in safeActor &&
-        (safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN);
     try {
         if (isOwner) {
             hasPermission(safeActor, PermissionEnum.ACCOMMODATION_UPDATE_OWN);
-        } else if (isAdmin) {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_UPDATE_ANY);
         } else {
             hasPermission(safeActor, PermissionEnum.ACCOMMODATION_UPDATE_ANY);
         }
@@ -437,14 +432,9 @@ export const softDelete = async (
     }
     // Permissions: owner, admin, or global
     const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
-    const isAdmin =
-        'role' in safeActor &&
-        (safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN);
     try {
         if (isOwner) {
             hasPermission(safeActor, PermissionEnum.ACCOMMODATION_DELETE_OWN);
-        } else if (isAdmin) {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_DELETE_ANY);
         } else {
             hasPermission(safeActor, PermissionEnum.ACCOMMODATION_DELETE_ANY);
         }
@@ -524,14 +514,9 @@ export const restore = async (
     }
     // Permissions: owner, admin, or global
     const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
-    const isAdmin =
-        'role' in safeActor &&
-        (safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN);
     try {
         if (isOwner) {
             hasPermission(safeActor, PermissionEnum.ACCOMMODATION_RESTORE_OWN);
-        } else if (isAdmin) {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_RESTORE_ANY);
         } else {
             hasPermission(safeActor, PermissionEnum.ACCOMMODATION_RESTORE_ANY);
         }
@@ -566,4 +551,65 @@ export const restore = async (
     }
     dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'restore:end');
     return { accommodation: updatedAccommodation };
+};
+
+/**
+ * Hard-deletes (permanently deletes) an accommodation by ID.
+ * Only the owner, admin, or a user with the required permission can hard-delete.
+ * Handles edge-cases: public user, disabled owner, already deleted, etc.
+ *
+ * @param input - The input object with the accommodation ID.
+ * @param actor - The user or public actor attempting the hard-delete.
+ * @returns An object with success true if deleted, false otherwise.
+ * @throws Error if the actor is not allowed to hard-delete or input is invalid.
+ * @example
+ * const result = await hardDelete({ id: 'acc-1' }, user);
+ */
+export const hardDelete = async (
+    input: GetByIdInput,
+    actor: UserType | PublicUserType
+): Promise<{ success: boolean }> => {
+    dbLogger.info({ input, actor }, 'hardDelete:start');
+    const parsedInput = getByIdInputSchema.parse(input);
+    const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
+    if (!accommodation) {
+        dbLogger.info({ result: { success: false } }, 'hardDelete:end');
+        throw new Error('Accommodation not found');
+    }
+    const safeActor = getSafeActor(actor);
+    // If the user is disabled, deny and log
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            PermissionEnum.ACCOMMODATION_HARD_DELETE
+        );
+        dbLogger.info({ result: { success: false } }, 'hardDelete:end');
+        throw new Error('Forbidden: user disabled');
+    }
+    // Permissions: owner, admin, or global
+    try {
+        hasPermission(safeActor, PermissionEnum.ACCOMMODATION_HARD_DELETE);
+    } catch (err) {
+        dbLogger.permission({
+            permission: PermissionEnum.ACCOMMODATION_HARD_DELETE,
+            userId: 'id' in safeActor ? safeActor.id : 'public',
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            extraData: { input, error: (err as Error).message }
+        });
+        dbLogger.info({ result: { success: false } }, 'hardDelete:end');
+        throw new Error('Forbidden: user does not have permission to hard-delete accommodation');
+    }
+    // Hard-delete: remove from DB
+    let deleted = false;
+    try {
+        deleted = await AccommodationModel.hardDelete(parsedInput.id);
+    } catch (_err) {
+        dbLogger.info({ result: { success: false } }, 'hardDelete:end');
+        throw new Error('Accommodation hard delete failed');
+    }
+    dbLogger.info({ result: { success: deleted } }, 'hardDelete:end');
+    return { success: deleted };
 };
