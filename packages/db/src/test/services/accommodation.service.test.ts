@@ -442,7 +442,12 @@ describe('accommodation.service.create', () => {
     });
 
     it('should throw on invalid input', async () => {
-        const input = { ...getMockAccommodationInput(), name: '' };
+        const base = getMockAccommodationInput();
+        const input = {
+            ...base,
+            name: '',
+            seo: { ...base.seo, keywords: base.seo.keywords ?? ['hotel', 'nuevo', 'moderno'] }
+        };
         await expect(AccommodationService.create(input, user)).rejects.toThrow();
     });
 
@@ -457,7 +462,7 @@ describe('accommodation.service.create', () => {
                 userId: 'public',
                 role: RoleEnum.GUEST,
                 extraData: expect.objectContaining({
-                    error: expect.stringContaining('Public user cannot create')
+                    override: expect.stringContaining('Public user cannot create')
                 })
             })
         );

@@ -266,6 +266,18 @@ export const create = async (
         );
         throw new Error('Forbidden: Public user cannot create accommodations');
     }
+    // Permission check (now with try/catch)
+    try {
+        hasPermission(safeActor, PermissionEnum.ACCOMMODATION_CREATE);
+    } catch (err) {
+        dbLogger.permission({
+            permission: PermissionEnum.ACCOMMODATION_CREATE,
+            userId: safeActor.id,
+            role: safeActor.role,
+            extraData: { input, error: (err as Error).message }
+        });
+        throw new Error('Forbidden: User does not have permission to create accommodation');
+    }
     const parsedInput = createInputSchema.parse(input);
     const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as CommonAccommodationId);
     const inputWithDates = castDateFields(inputWithBrandedIds);
