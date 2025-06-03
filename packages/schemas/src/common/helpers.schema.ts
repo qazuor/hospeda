@@ -66,16 +66,32 @@ export const WithReviewStateSchema = z.object({
 });
 
 export const WithSeoSchema = z.object({
-    seo: z.object({
-        title: z.string({
-            required_error: 'zodError.common.seo.title.required',
-            invalid_type_error: 'zodError.common.seo.title.invalidType'
-        }),
-        description: z.string({
-            required_error: 'zodError.common.seo.description.required',
-            invalid_type_error: 'zodError.common.seo.description.invalidType'
+    seo: z
+        .object({
+            title: z
+                .string({
+                    required_error: 'zodError.common.seo.title.required',
+                    invalid_type_error: 'zodError.common.seo.title.invalidType'
+                })
+                .min(30, { message: 'zodError.common.seo.title.min' })
+                .max(60, { message: 'zodError.common.seo.title.max' })
+                .optional(),
+            description: z
+                .string({
+                    required_error: 'zodError.common.seo.description.required',
+                    invalid_type_error: 'zodError.common.seo.description.invalidType'
+                })
+                .min(70, { message: 'zodError.common.seo.description.min' })
+                .max(160, { message: 'zodError.common.seo.description.max' })
+                .optional(),
+            keywords: z.array(
+                z.string({
+                    required_error: 'zodError.common.seo.keywords.required',
+                    invalid_type_error: 'zodError.common.seo.keywords.invalidType'
+                })
+            )
         })
-    })
+        .optional()
 });
 
 export const WithTagsSchema = z.object({

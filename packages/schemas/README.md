@@ -1017,9 +1017,9 @@ These schemas ensure data integrity, strong typing, and consistent validation ac
 
 | Property         | Type      | Description                     |
 |------------------|-----------|---------------------------------|
-| seoTitle         | string?   | SEO title (optional)            |
-| seoDescription   | string?   | SEO description (optional)      |
-| seoKeywords      | string[]? | SEO keywords (optional)         |
+| title         | string?   | SEO title (optional)            |
+| description   | string?   | SEO description (optional)      |
+| keywords      | string[]? | SEO keywords (optional)         |
 
 ---
 
