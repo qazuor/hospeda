@@ -394,7 +394,7 @@ describe('AccommodationModel', () => {
                     id: 'user-uuid',
                     userName: 'owner',
                     password: 'pw',
-                    roleId: 'role-uuid',
+                    role: 'role',
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     lifecycleState: LifecycleStatusEnum.ACTIVE,

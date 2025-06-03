@@ -362,7 +362,7 @@ interface UserType extends WithId, WithAudit, WithLifecycleState, WithAdminInfo 
     contactInfo?: ContactInfoType;
     location?: FullLocationType;
     socialNetworks?: SocialNetworkType;
-    roleId: RoleId;
+    role: RoleEnum;
     permissionIds?: PermissionId[];
     profile?: UserProfile;
     settings?: UserSettingsType;
@@ -1175,7 +1175,7 @@ interface PermissionType extends WithId, WithAudit, WithLifecycleState, WithAdmi
     isBuiltIn: boolean;
     isDeprecated: boolean;
     userIds?: UserId[];
-    roleIds?: RoleId[];
+    roles?: RoleEnum[];
 }
 ```
 
@@ -1206,7 +1206,7 @@ import type { WithId, WithAudit } from '@hospeda/types/common';
 const newUser: NewEntityInput<UserType> = {
     userName: 'john_doe',
     passwordHash: 'hashed_password',
-    roleId: 'user_role_id'
+    role: 'user_role'
 };
 
 // Update an existing user

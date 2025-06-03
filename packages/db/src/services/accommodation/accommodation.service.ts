@@ -2,14 +2,14 @@ import { AccommodationSchema } from '@repo/schemas';
 import {
     type AccommodationId,
     type AccommodationType,
-    type DestinationId,
     type NewAccommodationInputType,
     PermissionEnum,
     type PublicUserType,
     RoleEnum,
-    type UserId,
+    type UpdateAccommodationInputType,
     type UserType
 } from '@repo/types';
+import type { AccommodationId as CommonAccommodationId } from '@repo/types/common/id.types';
 import { z } from 'zod';
 import {
     ACCOMMODATION_ORDERABLE_COLUMNS,
@@ -17,6 +17,7 @@ import {
     type AccommodationOrderByColumn
 } from '../../models/accommodation/accommodation.model';
 import { dbLogger, hasPermission } from '../../utils';
+import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
 import {
     CanViewReasonEnum,
     canViewAccommodation,
@@ -88,7 +89,7 @@ export const getById = async (
         dbLogger.permission({
             permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
             userId: safeActor.id,
-            roleId: safeActor.role,
+            role: safeActor.role,
             extraData: {
                 input,
                 visibility: accommodation.visibility,
@@ -116,7 +117,7 @@ export const getById = async (
         dbLogger.permission({
             permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
             userId: 'id' in safeActor ? safeActor.id : 'public',
-            roleId: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
             extraData: {
                 input,
                 visibility: accommodation.visibility,
@@ -192,7 +193,7 @@ export const getByName = async (
         dbLogger.permission({
             permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
             userId: safeActor.id,
-            roleId: safeActor.role,
+            role: safeActor.role,
             extraData: {
                 input,
                 visibility: accommodation.visibility,
@@ -220,7 +221,7 @@ export const getByName = async (
         dbLogger.permission({
             permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
             userId: 'id' in safeActor ? safeActor.id : 'public',
-            roleId: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
             extraData: {
                 input,
                 visibility: accommodation.visibility,
@@ -295,7 +296,7 @@ export const list = async (
         dbLogger.permission({
             permission: PermissionEnum.ACCOMMODATION_VIEW_ALL,
             userId: 'public',
-            roleId: RoleEnum.GUEST,
+            role: RoleEnum.GUEST,
             extraData: { input, override: 'Forced visibility=PUBLIC for public user' }
         });
     }
@@ -375,48 +376,23 @@ export const create = async (
         dbLogger.permission({
             permission: PermissionEnum.ACCOMMODATION_CREATE,
             userId: 'public',
-            roleId: RoleEnum.GUEST,
+            role: RoleEnum.GUEST,
             extraData: { input, error: 'Public user cannot create accommodations' }
         });
         throw new Error('Forbidden: Public user cannot create accommodations');
     }
     const parsedInput = createInputSchema.parse(input);
-    let deniedReason = '';
-    try {
-        hasPermission(safeActor, PermissionEnum.ACCOMMODATION_CREATE, {
-            logReason: (r) => {
-                deniedReason = r;
-            }
-        });
-        if (deniedReason !== '') {
-            throw new Error(`Forbidden: ${deniedReason}`);
-        }
-    } catch (err) {
-        dbLogger.permission({
-            permission: PermissionEnum.ACCOMMODATION_CREATE,
-            userId: safeActor.id,
-            roleId: safeActor.role,
-            extraData: { input, error: (err as Error).message }
-        });
-        throw err;
-    }
-    // Cast ownerId and destinationId to their branded types
-    const inputWithBrandedIds = {
-        ...parsedInput,
-        ownerId: parsedInput.ownerId ? (parsedInput.ownerId as UserId) : undefined,
-        destinationId: parsedInput.destinationId
-            ? (parsedInput.destinationId as DestinationId)
-            : undefined
-    };
+    const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as CommonAccommodationId);
+    const inputWithDates = castDateFields(inputWithBrandedIds);
     const accommodation = await AccommodationModel.create(
-        inputWithBrandedIds as NewAccommodationInputType
+        inputWithDates as NewAccommodationInputType
     );
     // Log success for private/draft creations
     if (accommodation.visibility !== 'PUBLIC') {
         dbLogger.permission({
             permission: PermissionEnum.ACCOMMODATION_CREATE,
             userId: safeActor.id,
-            roleId: safeActor.role,
+            role: safeActor.role,
             extraData: {
                 input,
                 visibility: accommodation.visibility,
@@ -428,4 +404,131 @@ export const create = async (
     }
     dbLogger.info({ result: { accommodation } }, 'create:end');
     return { accommodation };
+};
+
+/**
+ * Input schema for update.
+ * Allows updating all writable fields (all except id, createdAt, createdById, deletedAt, deletedById).
+ *
+ * @example
+ * const input = { id: 'acc-1', name: 'Updated Name', summary: 'Updated summary' };
+ */
+const updateInputSchema = AccommodationSchema.omit({
+    id: true,
+    createdAt: true,
+    createdById: true,
+    updatedAt: true,
+    updatedById: true,
+    deletedAt: true,
+    deletedById: true
+}).extend({
+    id: z.string().min(1, 'Accommodation ID is required') as unknown as z.ZodType<AccommodationId>
+});
+
+/**
+ * Input type for update.
+ * @example
+ * const input: UpdateInput = { id: 'acc-1', name: 'Updated Name' };
+ */
+export type UpdateInput = z.infer<typeof updateInputSchema>;
+
+/**
+ * Output type for update.
+ * @example
+ * const output: UpdateOutput = { accommodation: mockAccommodation };
+ */
+export type UpdateOutput = { accommodation: AccommodationType };
+
+/**
+ * Updates an existing accommodation.
+ * Only the owner, admin, or a user with the required permission can update.
+ * Handles edge-cases: public user, disabled owner, unknown visibility, etc.
+ *
+ * @param input - The input object with fields to update (must include id).
+ * @param actor - The user or public actor attempting the update.
+ * @returns An object with the updated accommodation.
+ * @throws Error if the actor is not allowed to update or input is invalid.
+ * @example
+ * const result = await update({ id: 'acc-1', name: 'New Name' }, user);
+ */
+export const update = async (
+    input: UpdateInput,
+    actor: UserType | PublicUserType
+): Promise<UpdateOutput> => {
+    dbLogger.info({ input, actor }, 'update:start');
+    const parsedInput = updateInputSchema.parse(input);
+    const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
+    if (!accommodation) {
+        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        throw new Error('Accommodation not found');
+    }
+    const safeActor = getSafeActor(actor);
+    let checkedPermission: PermissionEnum | undefined;
+    const {
+        canView,
+        reason,
+        checkedPermission: checkedPerm
+    } = canViewAccommodation(safeActor, accommodation);
+    checkedPermission = checkedPerm;
+    // If the user is disabled, explicitly deny access and log.
+    if (isUserDisabled(safeActor)) {
+        dbLogger.permission({
+            permission: PermissionEnum.ACCOMMODATION_UPDATE_OWN,
+            userId: safeActor.id,
+            role: safeActor.role,
+            extraData: {
+                input,
+                visibility: accommodation.visibility,
+                access: 'denied',
+                reason: 'user disabled',
+                actor: { id: safeActor.id, role: safeActor.role }
+            }
+        });
+        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        throw new Error('Forbidden: user disabled');
+    }
+    // Only owner, admin, or user with permission can update
+    const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
+    const isAdmin =
+        'role' in safeActor &&
+        (safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN);
+    try {
+        if (isOwner) {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_UPDATE_OWN);
+        } else if (isAdmin) {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_UPDATE_ANY);
+        } else {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_UPDATE_ANY);
+        }
+    } catch (err) {
+        dbLogger.permission({
+            permission: isOwner
+                ? PermissionEnum.ACCOMMODATION_UPDATE_OWN
+                : PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+            userId: 'id' in safeActor ? safeActor.id : 'public',
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            extraData: { input, error: (err as Error).message }
+        });
+        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        throw new Error('Forbidden: user does not have permission to update accommodation');
+    }
+    // If cannot view, log and deny update
+    if (!canView) {
+        logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        throw new Error('Forbidden: cannot view accommodation');
+    }
+    // Cast ownerId and destinationId to their branded types if present
+    const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as CommonAccommodationId);
+    const inputWithDates = castDateFields(inputWithBrandedIds);
+    const updatedAccommodation = await AccommodationModel.update(
+        parsedInput.id,
+        inputWithDates as UpdateAccommodationInputType
+    );
+    if (!updatedAccommodation) {
+        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        throw new Error('Accommodation update failed');
+    }
+    dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'update:end');
+    return { accommodation: updatedAccommodation };
 };

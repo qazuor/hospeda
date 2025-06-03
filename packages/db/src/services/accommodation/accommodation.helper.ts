@@ -155,7 +155,7 @@ export const logDenied = (
     dbLogger.permission({
         permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
         userId: 'id' in actor ? actor.id : 'public',
-        roleId: 'role' in actor ? actor.role : RoleEnum.GUEST,
+        role: 'role' in actor ? actor.role : RoleEnum.GUEST,
         extraData: { input, visibility: accommodation.visibility, error: reason }
     });
 };
