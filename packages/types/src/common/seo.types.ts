@@ -1,5 +1,5 @@
 export interface SeoType {
-    seoTitle?: string;
-    seoDescription?: string;
-    seoKeywords?: string[];
+    title?: string;
+    description?: string;
+    keywords?: string[];
 }

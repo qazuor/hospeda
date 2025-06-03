@@ -5,6 +5,5 @@ export * from './id.schema.js';
 export * from './location.schema.js';
 export * from './media.schema.js';
 export * from './price.schema.js';
-export * from './seo.schema.js';
 export * from './social.schema.js';
 export * from './tag.schema.js';
