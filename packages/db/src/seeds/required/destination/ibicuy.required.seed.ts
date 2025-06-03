@@ -168,10 +168,10 @@ Aunque la infraestructura turística es básica, esto forma parte del encanto de
                 ]
             },
             seo: {
-                seoTitle: 'Ibicuy, Entre Ríos - Paraíso Natural del Delta | Hosped.ar',
-                seoDescription:
+                title: 'Ibicuy, Entre Ríos - Paraíso Natural del Delta | Hosped.ar',
+                description:
                     'Descubre Ibicuy en el Delta del Paraná: disfruta de sus playas de arena fina, pesca deportiva y la auténtica vida isleña en un entorno natural único.',
-                seoKeywords: [
+                keywords: [
                     'Ibicuy',
                     'Entre Ríos',
                     'delta',

@@ -167,10 +167,10 @@ La infraestructura turística de Federación es moderna y completa, con hoteles,
                 ]
             },
             seo: {
-                seoTitle: 'Federación, Entre Ríos - Ciudad Termal por Excelencia | Hosped.ar',
-                seoDescription:
+                title: 'Federación, Entre Ríos - Ciudad Termal por Excelencia | Hosped.ar',
+                description:
                     'Visita Federación, la Ciudad Termal de Entre Ríos. Disfruta de sus aguas termales curativas, playas sobre el lago y moderna infraestructura turística.',
-                seoKeywords: [
+                keywords: [
                     'Federación',
                     'Entre Ríos',
                     'termas',

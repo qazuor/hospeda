@@ -96,9 +96,9 @@
         "extraInfo": ["Cabaña muy luminosa", "Parrilla exterior", "Ideal para familias pequeñas"]
     },
     "seo": {
-        "seoTitle": "Sueño Soleado - Cabaña luminosa cerca de Concepción del Uruguay",
-        "seoDescription": "Cabaña confortable y luminosa para 4 personas cerca de Concepción del Uruguay. Parrilla, jardín. Ideal para escapada familiar.",
-        "seoKeywords": [
+        "title": "Sueño Soleado - Cabaña luminosa cerca de Concepción del Uruguay",
+        "description": "Cabaña confortable y luminosa para 4 personas cerca de Concepción del Uruguay. Parrilla, jardín. Ideal para escapada familiar.",
+        "keywords": [
             "cabaña",
             "concepción del uruguay",
             "entre ríos",

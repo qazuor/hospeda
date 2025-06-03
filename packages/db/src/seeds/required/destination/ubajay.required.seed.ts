@@ -166,10 +166,10 @@ Para los turistas que visitan la región, Ubajay representa una base estratégic
                 ]
             },
             seo: {
-                seoTitle: 'Ubajay, Entre Ríos - Puerta al Parque Nacional El Palmar | Hosped.ar',
-                seoDescription:
+                title: 'Ubajay, Entre Ríos - Puerta al Parque Nacional El Palmar | Hosped.ar',
+                description:
                     'Visita Ubajay, entrada al Parque Nacional El Palmar. Descubre el mayor palmeral de yatay del mundo, su biodiversidad y la tranquilidad de este pueblo entrerriano.',
-                seoKeywords: [
+                keywords: [
                     'Ubajay',
                     'Entre Ríos',
                     'El Palmar',

@@ -171,10 +171,10 @@ Puerto Yeruá representa un destino ideal para quienes buscan desconectar, disfr
                 ]
             },
             seo: {
-                seoTitle: 'Puerto Yeruá, Entre Ríos - Barrancas y Playas Naturales | Hosped.ar',
-                seoDescription:
+                title: 'Puerto Yeruá, Entre Ríos - Barrancas y Playas Naturales | Hosped.ar',
+                description:
                     'Visita Puerto Yeruá en Entre Ríos: descubre sus impresionantes barrancas rojizas, tranquilas playas sobre el río Uruguay y un ambiente rural auténtico.',
-                seoKeywords: [
+                keywords: [
                     'Puerto Yeruá',
                     'Entre Ríos',
                     'barrancas',

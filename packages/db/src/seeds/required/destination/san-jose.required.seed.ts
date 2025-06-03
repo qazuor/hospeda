@@ -165,10 +165,10 @@ La localidad mantiene vivas las tradiciones de sus ancestros a través de sus fi
                 ]
             },
             seo: {
-                seoTitle: 'San José, Entre Ríos - Colonia Suiza Histórica | Hosped.ar',
-                seoDescription:
+                title: 'San José, Entre Ríos - Colonia Suiza Histórica | Hosped.ar',
+                description:
                     'Visita San José, primera colonia agrícola de Entre Ríos. Descubre su rica historia de inmigración suiza, arquitectura europea y tradiciones centenarias.',
-                seoKeywords: [
+                keywords: [
                     'San José',
                     'Entre Ríos',
                     'colonia suiza',

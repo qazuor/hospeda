@@ -97,10 +97,10 @@ Cada una de estas playas tiene su encanto particular, pero todas comparten la ca
                 isFeaturedInWebsite: true,
                 expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
                 seo: {
-                    seoTitle: 'Las 5 mejores playas de Entre Ríos para visitar este verano',
-                    seoDescription:
+                    title: 'Las 5 mejores playas de Entre Ríos para visitar este verano',
+                    description:
                         'Guía completa de las playas fluviales más hermosas de Entre Ríos: ubicación, características y servicios para disfrutar al máximo.',
-                    seoKeywords: [
+                    keywords: [
                         'playas Entre Ríos',
                         'río Uruguay',
                         'turismo fluvial',
@@ -174,11 +174,10 @@ Cada complejo termal ofrece una experiencia única, pero todos tienen un denomin
                 isFeaturedInWebsite: true,
                 expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000), // 180 days from now
                 seo: {
-                    seoTitle:
-                        'Guía completa de termas en Entre Ríos: beneficios, complejos y servicios',
-                    seoDescription:
+                    title: 'Guía completa de termas en Entre Ríos: beneficios, complejos y servicios',
+                    description:
                         'Todo sobre las aguas termales de Entre Ríos: propiedades curativas, mejores complejos termales, servicios y consejos para tu visita.',
-                    seoKeywords: [
+                    keywords: [
                         'termas Entre Ríos',
                         'turismo termal',
                         'aguas termales',
@@ -254,10 +253,10 @@ El Parque Nacional El Palmar es mucho más que un simple espacio verde: es un ec
                 isNews: false,
                 isFeaturedInWebsite: false,
                 seo: {
-                    seoTitle: 'Guía completa del Parque Nacional El Palmar: actividades y consejos',
-                    seoDescription:
+                    title: 'Guía completa del Parque Nacional El Palmar: actividades y consejos',
+                    description:
                         'Todo lo que necesitas saber para visitar el Parque Nacional El Palmar en Entre Ríos: senderos, fauna, historia y consejos prácticos.',
-                    seoKeywords: [
+                    keywords: [
                         'El Palmar',
                         'Parque Nacional',
                         'palmera Yatay',
@@ -346,11 +345,10 @@ El Carnaval de Gualeguaychú no solo es un espectáculo para la vista y el oído
                 isNews: true,
                 isFeaturedInWebsite: true,
                 seo: {
-                    seoTitle:
-                        'Carnaval de Gualeguaychú: La mayor fiesta de Argentina | Guía Completa',
-                    seoDescription:
+                    title: 'Carnaval de Gualeguaychú: La mayor fiesta de Argentina | Guía Completa',
+                    description:
                         'Todo sobre el Carnaval de Gualeguaychú: fechas, comparsas, entradas, alojamiento y consejos para disfrutar del carnaval más grande de Argentina.',
-                    seoKeywords: [
+                    keywords: [
                         'Carnaval Gualeguaychú',
                         'Carnaval del País',
                         'comparsas',
@@ -454,10 +452,10 @@ La gastronomía entrerriana es una expresión viva de la cultura e identidad de 
                 isNews: false,
                 isFeaturedInWebsite: false,
                 seo: {
-                    seoTitle: 'Gastronomía de Entre Ríos: tradición, río y sabores locales',
-                    seoDescription:
+                    title: 'Gastronomía de Entre Ríos: tradición, río y sabores locales',
+                    description:
                         'Descubre la variada gastronomía de Entre Ríos, desde los pescados de río hasta los cítricos y platos de influencia inmigrante.',
-                    seoKeywords: [
+                    keywords: [
                         'gastronomía Entre Ríos',
                         'comida entrerriana',
                         'pescados de río',

@@ -167,10 +167,10 @@ La infraestructura turística incluye cabañas, bungalows y campings, muchos de 
                 ]
             },
             seo: {
-                seoTitle: 'Villa Paranacito, Entre Ríos - Paraíso del Delta | Hosped.ar',
-                seoDescription:
+                title: 'Villa Paranacito, Entre Ríos - Paraíso del Delta | Hosped.ar',
+                description:
                     'Descubre Villa Paranacito, un tesoro escondido en el delta entrerriano. Disfruta de la naturaleza, pesca y navegación en un entorno de islas y arroyos.',
-                seoKeywords: [
+                keywords: [
                     'Villa Paranacito',
                     'Entre Ríos',
                     'delta',
