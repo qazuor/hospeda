@@ -4,6 +4,7 @@ import type {
     DestinationWithRelationsType,
     FeatureType,
     PublicUserType,
+    SeoType,
     TagType,
     UserType
 } from '@repo/types';
@@ -51,14 +52,15 @@ import { expect } from 'vitest';
 export const getMockAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType => ({
-    id: 'acc-uuid' as AccommodationId,
+    id: '11111111-1111-1111-1111-111111111111' as AccommodationId,
     slug: 'hotel-uruguay',
     name: 'Hotel Uruguay',
     summary: 'Un hotel en Uruguay',
     type: AccommodationTypeEnum.HOTEL,
-    description: 'Descripción completa',
-    ownerId: 'user-uuid' as UserId,
-    destinationId: 'dest-uuid' as DestinationId,
+    description:
+        'Descripción completa y suficientemente larga para pasar la validación de Zod. Debe tener más de 30 caracteres.',
+    ownerId: '11111111-1111-1111-1111-111111111111' as UserId,
+    destinationId: '22222222-2222-2222-2222-222222222222' as DestinationId,
     createdAt: new Date(),
     updatedAt: new Date(),
     lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -67,8 +69,8 @@ export const getMockAccommodation = (
     isFeatured: false,
     reviewsCount: 0,
     averageRating: 0,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
+    createdById: '11111111-1111-1111-1111-111111111111' as UserId,
+    updatedById: '11111111-1111-1111-1111-111111111111' as UserId,
     adminInfo: undefined,
     ...overrides
 });
@@ -83,14 +85,14 @@ export const mockAccommodation = getMockAccommodation();
  * const user = getMockUser({ id: 'user-2' as UserId });
  */
 export const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
-    id: 'user-1' as UserId,
+    id: '11111111-1111-1111-1111-111111111111' as UserId,
     userName: 'testuser',
     password: 'pw',
     role: RoleEnum.ADMIN,
     createdAt: new Date(),
     updatedAt: new Date(),
-    createdById: 'user-1' as UserId,
-    updatedById: 'user-1' as UserId,
+    createdById: '11111111-1111-1111-1111-111111111111' as UserId,
+    updatedById: '11111111-1111-1111-1111-111111111111' as UserId,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     ...overrides
 });
@@ -162,11 +164,11 @@ export const getMockAccommodationInput = () => ({
     visibility: VisibilityEnum.PUBLIC,
     moderationState: ModerationStatusEnum.APPROVED,
     seo: {
-        seoTitle: 'SEO title',
-        seoDescription: 'SEO desc',
-        title: 'SEO title',
-        description: 'SEO desc'
-    },
+        title: 'Título SEO válido para test de alojamiento (máx 60)',
+        description:
+            'Descripción SEO suficientemente larga para pasar la validación de Zod. Debe tener más de 70 caracteres para que pase.',
+        keywords: ['hotel', 'nuevo', 'moderno'] as string[]
+    } as SeoType,
     tags: [],
     adminInfo: { notes: 'Notas válidas', favorite: false },
     createdById: getMockUserId(),
@@ -195,13 +197,13 @@ export const getMockAccommodationCreated = () =>
  * const tag = getMockTag({ id: 'tag-2' as TagId });
  */
 export const getMockTag = (overrides: Partial<TagType> = {}): TagType => ({
-    id: 'tag-1' as TagId,
+    id: '33333333-3333-3333-3333-333333333333' as TagId,
     name: 'Test Tag',
     color: TagColorEnum.BLUE,
     createdAt: new Date(),
     updatedAt: new Date(),
-    createdById: 'user-1' as UserId,
-    updatedById: 'user-1' as UserId,
+    createdById: '11111111-1111-1111-1111-111111111111' as UserId,
+    updatedById: '11111111-1111-1111-1111-111111111111' as UserId,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     ...overrides
 });
@@ -605,3 +607,182 @@ export const getExpectedCreatedAccommodationMatchObject = () => ({
     reviewsCount: 0,
     averageRating: 0
 });
+
+// Mock de featuredImage para media
+export const mockFeaturedImage = {
+    url: 'https://example.com/featured.jpg',
+    moderationState: ModerationStatusEnum.APPROVED,
+    description: 'Imagen destacada',
+    tags: []
+};
+
+// Mock de gallery (array de imágenes)
+export const mockGallery = [
+    {
+        url: 'https://example.com/gallery1.jpg',
+        moderationState: ModerationStatusEnum.APPROVED,
+        description: 'Imagen galería 1',
+        tags: []
+    },
+    {
+        url: 'https://example.com/gallery2.jpg',
+        moderationState: ModerationStatusEnum.PENDING_REVIEW,
+        description: 'Imagen galería 2',
+        tags: []
+    }
+];
+
+// Mock de videos (array de videos)
+export const mockVideos = [
+    {
+        url: 'https://example.com/video1.mp4',
+        moderationState: ModerationStatusEnum.APPROVED,
+        description: 'Video 1',
+        tags: []
+    }
+];
+
+// Mock de media completo
+export const mockMedia = {
+    featuredImage: mockFeaturedImage,
+    gallery: mockGallery,
+    videos: mockVideos
+};
+
+// Mock de accommodation con media anidada
+export const getMockAccommodationWithMedia = (
+    overrides: Partial<AccommodationType> = {}
+): AccommodationType =>
+    getMockAccommodation({
+        media: mockMedia,
+        ...overrides
+    });
+
+/**
+ * Helper to generate a mock adminInfo fragment for entities that support admin notes and favorites.
+ * @param overrides - Partial object to override default adminInfo fields.
+ * @returns An object with adminInfo fields.
+ * @example
+ * const adminInfo = getMockAdminInfo({ notes: 'Custom note', favorite: true });
+ */
+export const getMockAdminInfo = (
+    overrides: Partial<{ notes: string; favorite: boolean }> = {}
+) => ({
+    notes: 'Valid notes',
+    favorite: false,
+    ...overrides
+});
+
+/**
+ * Helper to generate a mock SEO fragment for entities that support SEO fields.
+ * @param overrides - Partial SeoType to override default SEO fields.
+ * @returns A SeoType object with valid values for Zod validation.
+ * @example
+ * const seo = getMockSeo({ title: 'Custom SEO Title' });
+ */
+export const getMockSeo = (overrides: Partial<SeoType> = {}) => ({
+    title: 'Valid SEO title for accommodation test (max 60)',
+    description:
+        'SEO description long enough to pass Zod validation. Must be more than 70 characters to be valid.',
+    keywords: ['hotel', 'new', 'modern'],
+    ...overrides
+});
+
+/**
+ * Returns a mock AccommodationType object with UNKNOWN visibility (edge-case for testing unknown enum values).
+ * @param overrides - Partial fields to override in the mock.
+ * @returns AccommodationType with visibility set to 'UNKNOWN'.
+ * @example
+ * const acc = getMockAccommodationUnknownVisibility();
+ */
+export const getMockAccommodationUnknownVisibility = (
+    overrides: Partial<AccommodationType> = {}
+): AccommodationType =>
+    getMockAccommodation({
+        id: 'acc-unknown' as AccommodationId,
+        visibility: 'UNKNOWN' as VisibilityEnum,
+        ...overrides
+    });
+
+/**
+ * Returns a mock AccommodationType object with ARCHIVED lifecycleState (edge-case for testing deleted/archived entities).
+ * @param overrides - Partial fields to override in the mock.
+ * @returns AccommodationType with lifecycleState set to ARCHIVED.
+ * @example
+ * const acc = getMockAccommodationDeleted();
+ */
+export const getMockAccommodationDeleted = (
+    overrides: Partial<AccommodationType> = {}
+): AccommodationType =>
+    getMockAccommodation({
+        id: 'acc-deleted' as AccommodationId,
+        lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        ...overrides
+    });
+
+/**
+ * Returns a partial input object for updating an accommodation (only updatable fields).
+ * Useful for update tests and partial update scenarios.
+ * @param overrides - Partial fields to override in the mock input.
+ * @returns Partial input object for accommodation update.
+ * @example
+ * const input = getMockAccommodationUpdateInput({ name: 'Updated Name' });
+ */
+export const getMockAccommodationUpdateInput = (overrides: Partial<AccommodationType> = {}) => ({
+    name: 'Updated name',
+    description: 'Updated description long enough for Zod.',
+    seo: getMockSeo({ title: 'Updated SEO' }),
+    ...overrides
+});
+
+/**
+ * Returns a minimal AccommodationType mock with all optional fields (seo, tags, adminInfo) set to undefined.
+ * Useful for testing required-only scenarios and Zod defaults.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns AccommodationType with minimal required fields.
+ * @example
+ * const acc = getMockAccommodationMinimal();
+ */
+export const getMockAccommodationMinimal = (
+    overrides: Partial<AccommodationType> = {}
+): AccommodationType =>
+    getMockAccommodation({
+        seo: undefined,
+        tags: undefined,
+        adminInfo: undefined,
+        ...overrides
+    });
+
+/**
+ * Returns a mock AccommodationType with owner and destination as full objects (not just IDs).
+ * Useful for testing relation population and nested data scenarios.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns AccommodationType with owner and destination objects.
+ * @example
+ * const acc = getMockAccommodationWithRelations();
+ */
+export const getMockAccommodationWithRelations = (
+    overrides: Partial<AccommodationType> = {}
+): AccommodationType =>
+    getMockAccommodation({
+        owner: getMockUser(),
+        destination: getMockDestination(),
+        ...overrides
+    });
+
+/**
+ * (DEV ONLY) Validates all main accommodation mocks against the AccommodationSchema to ensure they are always valid.
+ * Uncomment and run in development to catch schema drift early.
+ * @example
+ * import { AccommodationSchema } from '@repo/schemas/entities/accommodation/accommodation.schema';
+ * [
+ *   getMockAccommodation(),
+ *   getMockAccommodationMinimal(),
+ *   getMockAccommodationWithMedia(),
+ *   getMockAccommodationWithRelations(),
+ *   getMockAccommodationUnknownVisibility(),
+ *   getMockAccommodationDeleted()
+ * ].forEach((mock) => {
+ *   AccommodationSchema.parse(mock);
+ * });
+ */
