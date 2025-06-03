@@ -26,7 +26,8 @@ export enum PermissionEnum {
     ACCOMMODATION_UPDATE_ANY = 'accommodation.update.any', // Allows updating any accommodation.
     ACCOMMODATION_DELETE_OWN = 'accommodation.delete.own', // Allows deleting own accommodation.
     ACCOMMODATION_DELETE_ANY = 'accommodation.delete.any', // Allows deleting any accommodation.
-    ACCOMMODATION_RESTORE = 'accommodation.restore', // Allows restoring a deleted accommodation.
+    ACCOMMODATION_RESTORE_OWN = 'accommodation.restore.own', // Allows restoring own deleted accommodation.
+    ACCOMMODATION_RESTORE_ANY = 'accommodation.restore.any', // Allows restoring any deleted accommodation.
     ACCOMMODATION_HARD_DELETE = 'accommodation.hardDelete', // Allows permanently deleting an accommodation.
     ACCOMMODATION_SOFT_DELETE_VIEW = 'accommodation.softDelete.view', // Allows viewing soft-deleted accommodations.
     ACCOMMODATION_PUBLISH = 'accommodation.publish', // Allows publishing or unpublishing an accommodation.
