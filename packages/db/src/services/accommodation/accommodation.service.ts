@@ -376,9 +376,14 @@ export const update = async (
     // Cast ownerId and destinationId to their branded types if present
     const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as CommonAccommodationId);
     const inputWithDates = castDateFields(inputWithBrandedIds);
+    // Proteger campos prohibidos (ownerId)
+    const protectedUpdateInput = {
+        ...inputWithDates,
+        ownerId: accommodation.ownerId // Siempre mantener el ownerId original
+    };
     const updatedAccommodation = await AccommodationModel.update(
         parsedInput.id,
-        inputWithDates as UpdateAccommodationInputType
+        protectedUpdateInput as UpdateAccommodationInputType
     );
     if (!updatedAccommodation) {
         dbLogger.info({ result: { accommodation: null } }, 'update:end');
