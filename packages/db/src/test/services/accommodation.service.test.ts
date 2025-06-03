@@ -43,10 +43,13 @@ import {
     getMockAccommodationInput,
     getMockAccommodationPrivate,
     getMockAccommodationPublic,
+    getMockAccommodationUpdateInput,
     getMockPublicUser,
+    getMockSeo,
     getMockUser,
     getMockUserId
 } from '../mockData';
+import { normalizeAccommodationInput } from '../utils/normalizeAccommodationInput';
 
 vi.mock('../../utils/logger', async (importOriginal) => {
     const actual: typeof LoggerModule = await importOriginal();
@@ -469,37 +472,108 @@ describe('accommodation.service.create', () => {
     });
 });
 
-// describe('accommodation.service.update', () => {
-//     const ownerId = getMockUserId();
-//     const user = getMockUser({
-//         id: ownerId,
-//         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-//     });
-//     const accommodation = getMockAccommodation({ ownerId });
-//     const updatedAccommodation = { ...accommodation, name: 'Nuevo Nombre' };
+describe('accommodation.service.update', () => {
+    it('should update accommodation when user is the owner and has permission', async () => {
+        // Arrange
+        const ownerId = getMockUserId();
+        const user = getMockUser({
+            id: ownerId,
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
+        });
+        const accommodation = getMockAccommodation({ ownerId });
+        const updatedFields = getMockAccommodationUpdateInput({
+            name: 'Updated Name',
+            description: 'Updated description long enough for Zod.',
+            seo: getMockSeo({ title: 'Updated SEO Title long enough for Zod validation' })
+        });
+        const updateInput = normalizeAccommodationInput({
+            ...accommodation,
+            ...updatedFields
+        });
+        const updatedAccommodation = { ...accommodation, ...updatedFields };
+        vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
+        (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
+        (AccommodationModel.update as Mock).mockResolvedValue(updatedAccommodation);
 
-//     beforeEach(() => {
-//         vi.clearAllMocks();
-//     });
+        // Act
+        const result = await AccommodationService.update(updateInput, user);
 
-//     it('should update accommodation for owner with permission', async () => {
-//         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
-//         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
-//         (AccommodationModel.update as Mock).mockResolvedValue(updatedAccommodation);
-//         const input = buildUpdateAccommodationInput(accommodation, {
-//             name: 'Nuevo Nombre',
-//             updatedAt: new Date().toISOString(),
-//             updatedById: getMockUserId(),
-//             seo: {
-//                 title: 'SEO title',
-//                 description: 'SEO desc'
-//             }
-//         });
-//         const result = await AccommodationService.update(input, user);
-//         expect(result.accommodation).toEqual(updatedAccommodation);
-//         expect(AccommodationModel.update).toHaveBeenCalledWith(
-//             accommodation.id,
-//             expect.objectContaining({ name: 'Nuevo Nombre' })
-//         );
-//     });
-// });
+        // Assert
+        expect(result.accommodation).toEqual(updatedAccommodation);
+        expect(AccommodationModel.update).toHaveBeenCalledWith(
+            accommodation.id,
+            expect.objectContaining(updatedFields)
+        );
+        expect(dbLogger.info).toHaveBeenCalledWith(
+            expect.objectContaining({ input: updateInput, actor: user }),
+            'update:start'
+        );
+        expect(dbLogger.info).toHaveBeenCalledWith(
+            expect.objectContaining({ result: { accommodation: updatedAccommodation } }),
+            'update:end'
+        );
+    });
+
+    it('should update accommodation when user is ADMIN and has global permission', async () => {
+        // TODO: Implement test
+    });
+
+    it('should update and normalize nested fields (media, tags, features, etc.)', async () => {
+        // TODO: Implement test
+    });
+
+    it('should return the updated accommodation with expected data', async () => {
+        // TODO: Implement test
+    });
+
+    // 2. Permissions and Roles
+    it('should deny update if user is not the owner and lacks global permissions', async () => {
+        // TODO: Implement test
+    });
+
+    it('should deny update if user is disabled', async () => {
+        // TODO: Implement test
+    });
+
+    it('should deny update if user is public (unauthenticated)', async () => {
+        // TODO: Implement test
+    });
+
+    it('should deny update if user has insufficient permissions', async () => {
+        // TODO: Implement test
+    });
+
+    // 3. Validation and Errors
+    it('should throw if accommodation does not exist', async () => {
+        // TODO: Implement test
+    });
+
+    it('should throw if input is invalid (e.g., missing required field)', async () => {
+        // TODO: Implement test
+    });
+
+    it('should throw if user cannot view the accommodation (visibility or permissions)', async () => {
+        // TODO: Implement test
+    });
+
+    it('should throw if accommodation is in a state that does not allow update (e.g., ARCHIVED)', async () => {
+        // TODO: Implement test
+    });
+
+    // 4. Edge Cases and Side Effects
+    it('should correctly update date fields (updatedAt, etc.) and IDs (updatedById)', async () => {
+        // TODO: Implement test
+    });
+
+    it('should normalize nested fields with dates and references', async () => {
+        // TODO: Implement test
+    });
+
+    it('should call dbLogger.info and dbLogger.permission at the correct points', async () => {
+        // TODO: Implement test
+    });
+
+    it('should not update forbidden fields (e.g., ownerId if not allowed)', async () => {
+        // TODO: Implement test
+    });
+});
