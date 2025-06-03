@@ -12,7 +12,8 @@ vi.mock('../../models/accommodation/accommodation.model', async (importOriginal)
             getByName: vi.fn(),
             search: vi.fn(),
             update: vi.fn(),
-            hardDelete: vi.fn()
+            hardDelete: vi.fn(),
+            getByDestination: vi.fn()
         },
         ACCOMMODATION_ORDERABLE_COLUMNS: [
             'ownerId',
@@ -686,7 +687,7 @@ describe('accommodation.service.update', () => {
 
     // 2. Permissions and Roles
     it('should deny update if user is not the owner and lacks global permissions', async () => {
-        // Arrange: usuario no owner y sin permisos globales
+        // Arrange: user is not the owner and has no global permissions
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -718,7 +719,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should deny update if user is disabled', async () => {
-        // Arrange: usuario deshabilitado
+        // Arrange: disabled user
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -748,7 +749,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should deny update if user is public (unauthenticated)', async () => {
-        // Arrange: usuario público (no autenticado)
+        // Arrange: public user (unauthenticated)
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -780,7 +781,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should deny update if user has insufficient permissions', async () => {
-        // Arrange: usuario sin permisos suficientes
+        // Arrange: user with insufficient permissions
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -815,7 +816,7 @@ describe('accommodation.service.update', () => {
 
     // 3. Validation and Errors
     it('should throw if accommodation does not exist', async () => {
-        // Arrange: input válido pero el alojamiento no existe
+        // Arrange: valid input but the accommodation does not exist
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const user = makeOwner();
@@ -844,12 +845,12 @@ describe('accommodation.service.update', () => {
     });
 
     it('should throw if input is invalid (e.g., missing required field)', async () => {
-        // Edge-case: input inválido (falta campo requerido)
+        // Edge-case: invalid input (missing required field)
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const user = makeOwner();
-        // Input inválido: falta 'name'
+        // Invalid input: missing 'name'
         const invalidInput = {
             id: 'acc-1' as AccommodationId,
             // name: missing
@@ -874,7 +875,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should throw if user cannot view the accommodation (visibility or permissions)', async () => {
-        // Edge-case: usuario no puede ver el alojamiento (por visibilidad o permisos)
+        // Edge-case: user cannot view the accommodation (due to visibility or permissions)
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
@@ -913,7 +914,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('should throw if accommodation is in a state that does not allow update (e.g., ARCHIVED)', async () => {
-        // Edge-case: alojamiento en estado ARCHIVED no puede ser actualizado
+        // Edge-case: accommodation in ARCHIVED state cannot be updated
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
@@ -943,7 +944,7 @@ describe('accommodation.service.update', () => {
 
     // 4. Edge Cases and Side Effects
     it('should correctly update date fields (updatedAt, etc.) and IDs (updatedById)', async () => {
-        // Edge-case: se prueba que los campos de fecha y updatedById se actualizan correctamente
+        // Edge-case: test that date fields and updatedById are updated correctly
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
@@ -988,13 +989,13 @@ describe('accommodation.service.update', () => {
     });
 
     it('should normalize nested fields with dates and references', async () => {
-        // Edge-case: se prueba que los campos anidados y de fechas/IDs se normalizan correctamente
+        // Edge-case: test that nested fields and date/ID fields are normalized correctly
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
-        // Mock con campos anidados
+        // Mock with nested fields
         const accommodation = {
             ...makeAccommodationWithMedia({ ownerId }),
             tags: [
@@ -1064,11 +1065,11 @@ describe('accommodation.service.update', () => {
         await AccommodationService.update(updateInput, user);
 
         // Assert
-        // Los campos anidados no deben estar presentes en el input normalizado
+        // Nested fields should not be present in the normalized input
         expect(updateInput).not.toHaveProperty('tags');
         expect(updateInput).not.toHaveProperty('features');
         expect(updateInput).not.toHaveProperty('media');
-        // Los campos de fechas e IDs deben estar correctamente formateados
+        // Date and ID fields should be correctly formatted
         expect(!('updatedAt' in updateInput) || updateInput.updatedAt instanceof Date).toBe(true);
         expect(typeof updateInput.ownerId).toBe('string');
         expectInfoLog({ input: updateInput, actor: user }, 'update:start');
@@ -1076,7 +1077,7 @@ describe('accommodation.service.update', () => {
     });
 
     it('update should call dbLogger.info and dbLogger.permission at the correct points', async () => {
-        // Arrange: testea que los logs se llamen correctamente en éxito y error de permisos
+        // Arrange: test that logs are called correctly on success and permission error
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
@@ -1096,21 +1097,21 @@ describe('accommodation.service.update', () => {
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.update as Mock).mockResolvedValue(updatedAccommodation);
 
-        // Act (caso exitoso)
+        // Act (successful case)
         await AccommodationService.update(updateInput, user);
 
-        // Assert (caso exitoso)
+        // Assert (successful case)
         expectInfoLog({ input: updateInput, actor: user }, 'update:start');
         expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
 
-        // Arrange (caso error de permisos)
+        // Arrange (permission error case)
         vi.clearAllMocks();
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to update accommodation');
         });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
-        // Act & Assert (caso error de permisos)
+        // Act & Assert (permission error case)
         await expect(AccommodationService.update(updateInput, user)).rejects.toThrow(/Forbidden/);
         expectPermissionLog({
             permission: expect.any(String),
@@ -1123,14 +1124,14 @@ describe('accommodation.service.update', () => {
     });
 
     it('should not update forbidden fields (e.g., ownerId if not allowed)', async () => {
-        // Edge-case: se prueba que el ownerId no puede ser cambiado por el usuario aunque lo intente en el input
+        // Edge-case: test that ownerId cannot be changed by the user even if attempted in the input
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const accommodation = makeAccommodation({ ownerId });
-        // El input intenta cambiar el ownerId a otro valor
+        // The input attempts to change the ownerId to another value
         const forbiddenOwnerId = '22222222-2222-2222-2222-222222222222' as UserId;
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Change Owner',
@@ -1142,7 +1143,7 @@ describe('accommodation.service.update', () => {
             accommodation,
             updatedFields
         );
-        // El modelo debe devolver el ownerId original, no el nuevo
+        // The model should return the original ownerId, not the new one
         const updatedAccommodation = { ...accommodation, ...updatedFields, ownerId };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -1152,7 +1153,7 @@ describe('accommodation.service.update', () => {
         const result = await AccommodationService.update(updateInput, user);
 
         // Assert
-        // El ownerId no debe cambiar
+        // The ownerId should not change
         expect(AccommodationModel.update).toHaveBeenCalledWith(
             accommodation.id,
             expect.objectContaining({
@@ -1666,7 +1667,7 @@ describe('accommodation.service.restore', () => {
     });
 
     it('restore should call dbLogger.info and dbLogger.permission at the correct points', async () => {
-        // Arrange: testea que los logs se llamen correctamente en éxito y error de permisos
+        // Arrange: test that logs are called correctly on success and permission error
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const now = new Date();
@@ -1687,21 +1688,21 @@ describe('accommodation.service.restore', () => {
         (AccommodationModel.getById as Mock).mockResolvedValue(archivedAccommodation);
         (AccommodationModel.update as Mock).mockResolvedValue(restoredAccommodation);
 
-        // Act (caso exitoso)
+        // Act (successful case)
         await AccommodationService.restore({ id: archivedAccommodation.id }, user);
 
-        // Assert (caso exitoso)
+        // Assert (successful case)
         expectInfoLog({ input: { id: archivedAccommodation.id }, actor: user }, 'restore:start');
         expectInfoLog({ result: { accommodation: restoredAccommodation } }, 'restore:end');
 
-        // Arrange (caso error de permisos)
+        // Arrange (permission error case)
         vi.clearAllMocks();
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to restore accommodation');
         });
         (AccommodationModel.getById as Mock).mockResolvedValue(archivedAccommodation);
 
-        // Act & Assert (caso error de permisos)
+        // Act & Assert (permission error case)
         await expect(
             AccommodationService.restore({ id: archivedAccommodation.id }, user)
         ).rejects.toThrow(/Forbidden/);
@@ -1785,7 +1786,7 @@ describe('accommodation.service.hardDelete', () => {
     });
 
     it('should hard-delete accommodation when user is ADMIN and has global permission', async () => {
-        // Arrange: Create an admin user y un accommodation
+        // Arrange: Create an admin user and an accommodation
         const adminId = getMockUserId();
         const adminUser = makeAdmin({ id: adminId });
         const accommodation = makeAccommodation({ ownerId: getMockUserId() });
@@ -1911,7 +1912,7 @@ describe('accommodation.service.hardDelete', () => {
     });
 
     it('hardDelete should call dbLogger.info and dbLogger.permission at the correct points', async () => {
-        // Arrange: testea que los logs se llamen correctamente en éxito y error de permisos
+        // Arrange: test that logs are called correctly on success and permission error
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const accommodation = makeAccommodation({ ownerId });
@@ -1919,14 +1920,14 @@ describe('accommodation.service.hardDelete', () => {
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.hardDelete as Mock).mockResolvedValue(true);
 
-        // Act (caso exitoso)
+        // Act (successful case)
         await AccommodationService.hardDelete({ id: accommodation.id }, user);
 
-        // Assert (caso exitoso)
+        // Assert (successful case)
         expectInfoLog({ input: { id: accommodation.id }, actor: user }, 'hardDelete:start');
         expectInfoLog({ result: { success: true } }, 'hardDelete:end');
 
-        // Arrange (caso error de permisos)
+        // Arrange (permission error case)
         vi.clearAllMocks();
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error(
@@ -1935,7 +1936,7 @@ describe('accommodation.service.hardDelete', () => {
         });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
-        // Act & Assert (caso error de permisos)
+        // Act & Assert (permission error case)
         await expect(
             AccommodationService.hardDelete({ id: accommodation.id }, user)
         ).rejects.toThrow(/Forbidden/);
@@ -1950,7 +1951,7 @@ describe('accommodation.service.hardDelete', () => {
     });
 
     it('should not allow double hard-delete (idempotency)', async () => {
-        // Arrange: Create an owner user y un accommodation ya eliminado
+        // Arrange: Create an owner user and an already deleted accommodation
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const accommodation = makeAccommodation({ ownerId });
@@ -1958,13 +1959,13 @@ describe('accommodation.service.hardDelete', () => {
         (AccommodationModel.hardDelete as Mock).mockResolvedValue(true);
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
 
-        // Act: Hard-delete exitoso
+        // Act: Successful hard-delete
         await AccommodationService.hardDelete({ id: accommodation.id }, user);
 
-        // Arrange: Simular que ya no existe (getById devuelve undefined)
+        // Arrange: Simulate that it no longer exists (getById returns undefined)
         (AccommodationModel.getById as Mock).mockResolvedValue(undefined);
 
-        // Act & Assert: Segundo intento debe lanzar error y loggear success: false
+        // Act & Assert: Second attempt should throw error and log success: false
         await expect(
             AccommodationService.hardDelete({ id: accommodation.id }, user)
         ).rejects.toThrow('Accommodation not found');
@@ -1972,7 +1973,7 @@ describe('accommodation.service.hardDelete', () => {
     });
 
     it('should allow hard-delete if already soft-deleted (archived)', async () => {
-        // Arrange: Create an owner user y un accommodation archivado
+        // Arrange: Create an owner user and an archived accommodation
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const now = new Date();
@@ -1996,5 +1997,327 @@ describe('accommodation.service.hardDelete', () => {
         expect(result.success).toBe(true);
         expectInfoLog({ input: { id: archivedAccommodation.id }, actor: user }, 'hardDelete:start');
         expectInfoLog({ result: { success: true } }, 'hardDelete:end');
+    });
+});
+
+describe('accommodation.service.getByDestination', () => {
+    it('should return all PUBLIC accommodations for a destination to a public user', async () => {
+        // Arrange
+        const publicUser = getMockPublicUser();
+        const destinationId = 'dest-1' as DestinationId;
+        const accommodationPublic1 = getMockAccommodation({
+            id: 'acc-1' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PUBLIC
+        });
+        const accommodationPublic2 = getMockAccommodation({
+            id: 'acc-2' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PUBLIC
+        });
+        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+            accommodationPublic1,
+            accommodationPublic2
+        ]);
+        // Act
+        const result = await AccommodationService.getByDestination({ destinationId }, publicUser);
+        // Assert
+        expect(result.accommodations).toEqual([accommodationPublic1, accommodationPublic2]);
+        expectInfoLog({ input: { destinationId }, actor: publicUser }, 'getByDestination:start');
+        expectInfoLog(
+            { result: { accommodations: [accommodationPublic1, accommodationPublic2] } },
+            'getByDestination:end'
+        );
+    });
+
+    it('should return all accommodations (PUBLIC and PRIVATE) for a destination to an admin', async () => {
+        // Arrange
+        const adminUser = getMockUser({ role: RoleEnum.ADMIN });
+        const destinationId = 'dest-2' as DestinationId;
+        const accommodationPublic = getMockAccommodation({
+            id: 'acc-3' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PUBLIC
+        });
+        const accommodationPrivate = getMockAccommodation({
+            id: 'acc-4' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PRIVATE
+        });
+        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+            accommodationPublic,
+            accommodationPrivate
+        ]);
+        // Act
+        const result = await AccommodationService.getByDestination({ destinationId }, adminUser);
+        // Assert
+        expect(result.accommodations).toEqual([accommodationPublic, accommodationPrivate]);
+        expectInfoLog({ input: { destinationId }, actor: adminUser }, 'getByDestination:start');
+        expectInfoLog(
+            { result: { accommodations: [accommodationPublic, accommodationPrivate] } },
+            'getByDestination:end'
+        );
+    });
+
+    it('should return only accessible accommodations for a destination to a regular user', async () => {
+        // Arrange
+        const userId = 'user-1' as UserId;
+        const user = getMockUser({ id: userId, role: RoleEnum.USER });
+        const destinationId = 'dest-3' as DestinationId;
+        const accommodationPublic = getMockAccommodation({
+            id: 'acc-5' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PUBLIC
+        });
+        const accommodationPrivateOwned = getMockAccommodation({
+            id: 'acc-6' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PRIVATE,
+            ownerId: userId
+        });
+        const accommodationPrivateOther = getMockAccommodation({
+            id: 'acc-7' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PRIVATE,
+            ownerId: 'other-user' as UserId
+        });
+        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+            accommodationPublic,
+            accommodationPrivateOwned,
+            accommodationPrivateOther
+        ]);
+        // Act
+        const result = await AccommodationService.getByDestination({ destinationId }, user);
+        // Assert
+        expect(result.accommodations).toEqual([accommodationPublic, accommodationPrivateOwned]);
+        expectInfoLog({ input: { destinationId }, actor: user }, 'getByDestination:start');
+        expectInfoLog(
+            { result: { accommodations: [accommodationPublic, accommodationPrivateOwned] } },
+            'getByDestination:end'
+        );
+    });
+
+    it('should return an empty array if there are no accommodations for the destination', async () => {
+        // Arrange
+        const user = getMockUser();
+        const destinationId = 'dest-4' as DestinationId;
+        (AccommodationModel.getByDestination as Mock).mockResolvedValue([]);
+        // Act
+        const result = await AccommodationService.getByDestination({ destinationId }, user);
+        // Assert
+        expect(result.accommodations).toEqual([]);
+        expectInfoLog({ input: { destinationId }, actor: user }, 'getByDestination:start');
+        expectInfoLog({ result: { accommodations: [] } }, 'getByDestination:end');
+    });
+
+    it('should return an empty array if the user is disabled and log permission for each accommodation', async () => {
+        // Arrange
+        vi.clearAllMocks();
+        const disabledUser = makeDisabledUser({
+            id: 'user-disabled' as UserId,
+            role: RoleEnum.USER
+        });
+        const destinationId = 'dest-5' as DestinationId;
+        const accommodation1 = getMockAccommodation({
+            id: 'acc-8' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PUBLIC
+        });
+        const accommodation2 = getMockAccommodation({
+            id: 'acc-9' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PRIVATE
+        });
+        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+            accommodation1,
+            accommodation2
+        ]);
+        // Act
+        const result = await AccommodationService.getByDestination({ destinationId }, disabledUser);
+        // Assert
+        expect(result.accommodations).toEqual([]);
+        expectInfoLog({ input: { destinationId }, actor: disabledUser }, 'getByDestination:start');
+        expectInfoLog({ result: { accommodations: [] } }, 'getByDestination:end');
+        // Should log denied permission for each accommodation
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            userId: disabledUser.id,
+            role: disabledUser.role,
+            extraData: expect.objectContaining({ reason: 'user disabled' })
+        });
+        expect(LoggerModule.dbLogger.permission).toHaveBeenCalledTimes(2);
+    });
+
+    it('should filter out accommodations with unknown visibility and log denied', async () => {
+        // Arrange
+        vi.clearAllMocks();
+        const user = getMockUser();
+        const destinationId = 'dest-6' as DestinationId;
+        const accommodationPublic = getMockAccommodation({
+            id: 'acc-10' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PUBLIC
+        });
+        const accommodationUnknown = getMockAccommodation({
+            id: 'acc-11' as AccommodationId,
+            destinationId,
+            visibility: 'UNKNOWN' as VisibilityEnum
+        });
+        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+            accommodationPublic,
+            accommodationUnknown
+        ]);
+        // Act
+        const result = await AccommodationService.getByDestination({ destinationId }, user);
+        // Assert
+        expect(result.accommodations).toEqual([accommodationPublic]);
+        expectInfoLog({ input: { destinationId }, actor: user }, 'getByDestination:start');
+        expectInfoLog(
+            { result: { accommodations: [accommodationPublic] } },
+            'getByDestination:end'
+        );
+        // Should log denied for unknown visibility
+        expectPermissionLog({
+            permission: 'UNKNOWN_PERMISSION',
+            userId: user.id,
+            role: user.role,
+            extraData: expect.objectContaining({
+                error: 'unknown visibility',
+                visibility: 'UNKNOWN',
+                input: expect.objectContaining({ destinationId })
+            })
+        });
+        expect(LoggerModule.dbLogger.permission).toHaveBeenCalledTimes(1);
+    });
+
+    it('should log access to private/draft accommodations for users with permission', async () => {
+        // Arrange
+        vi.clearAllMocks();
+        const adminUser = getMockUser({ role: RoleEnum.ADMIN });
+        const destinationId = 'dest-7' as DestinationId;
+        const accommodationPrivate = getMockAccommodation({
+            id: 'acc-12' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PRIVATE
+        });
+        const accommodationDraft = getMockAccommodation({
+            id: 'acc-13' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.DRAFT
+        });
+        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+            accommodationPrivate,
+            accommodationDraft
+        ]);
+        // Act
+        const result = await AccommodationService.getByDestination({ destinationId }, adminUser);
+        // Assert
+        expect(result.accommodations).toEqual([accommodationPrivate, accommodationDraft]);
+        expectInfoLog({ input: { destinationId }, actor: adminUser }, 'getByDestination:start');
+        expectInfoLog(
+            { result: { accommodations: [accommodationPrivate, accommodationDraft] } },
+            'getByDestination:end'
+        );
+        // Should log access to private/draft (logGrant -> dbLogger.permission)
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            userId: adminUser.id,
+            role: adminUser.role,
+            extraData: expect.objectContaining({
+                access: 'granted',
+                reason: expect.any(String),
+                visibility: VisibilityEnum.PRIVATE
+            })
+        });
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            userId: adminUser.id,
+            role: adminUser.role,
+            extraData: expect.objectContaining({
+                access: 'granted',
+                reason: expect.any(String),
+                visibility: VisibilityEnum.DRAFT
+            })
+        });
+        expect(LoggerModule.dbLogger.permission).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle a mix of visibilities and permissions correctly', async () => {
+        // Arrange
+        vi.clearAllMocks();
+        const userId = 'user-mix' as UserId;
+        const user = getMockUser({ id: userId, role: RoleEnum.USER });
+        const destinationId = 'dest-8' as DestinationId;
+        const accommodationPublic = getMockAccommodation({
+            id: 'acc-14' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PUBLIC
+        });
+        const accommodationPrivateOwner = getMockAccommodation({
+            id: 'acc-15' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PRIVATE,
+            ownerId: userId
+        });
+        const accommodationPrivateOther = getMockAccommodation({
+            id: 'acc-16' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.PRIVATE,
+            ownerId: 'other-user' as UserId
+        });
+        const accommodationDraft = getMockAccommodation({
+            id: 'acc-17' as AccommodationId,
+            destinationId,
+            visibility: VisibilityEnum.DRAFT
+        });
+        const accommodationUnknown = getMockAccommodation({
+            id: 'acc-18' as AccommodationId,
+            destinationId,
+            visibility: 'UNKNOWN' as VisibilityEnum
+        });
+        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+            accommodationPublic,
+            accommodationPrivateOwner,
+            accommodationPrivateOther,
+            accommodationDraft,
+            accommodationUnknown
+        ]);
+        // Act
+        const result = await AccommodationService.getByDestination({ destinationId }, user);
+        // Assert
+        expect(result.accommodations).toEqual([accommodationPublic, accommodationPrivateOwner]);
+        expectInfoLog({ input: { destinationId }, actor: user }, 'getByDestination:start');
+        expectInfoLog(
+            { result: { accommodations: [accommodationPublic, accommodationPrivateOwner] } },
+            'getByDestination:end'
+        );
+        // Log denied for PRIVATE from another owner
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            userId: user.id,
+            role: user.role,
+            extraData: expect.objectContaining({
+                input: expect.objectContaining({ destinationId }),
+                visibility: VisibilityEnum.PRIVATE
+            })
+        });
+        // Log denied for UNKNOWN
+        expectPermissionLog({
+            permission: 'UNKNOWN_PERMISSION',
+            userId: user.id,
+            role: user.role,
+            extraData: expect.objectContaining({
+                error: 'unknown visibility',
+                visibility: 'UNKNOWN',
+                input: expect.objectContaining({ destinationId })
+            })
+        });
+        // There should be no logGrant for DRAFT (regular user without permission)
+        // (already covered by not being in the result)
+        // There should be two denied permission logs
+        const deniedLogs = (LoggerModule.dbLogger.permission as Mock).mock.calls.filter(
+            ([arg]) => !arg.extraData || arg.extraData.access !== 'granted'
+        );
+        expect(deniedLogs).toHaveLength(3);
     });
 });
