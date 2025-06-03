@@ -1,7 +1,4 @@
-import { AccommodationSchema } from '@repo/schemas';
 import {
-    type AccommodationId,
-    type AccommodationType,
     type NewAccommodationInputType,
     PermissionEnum,
     type PublicUserType,
@@ -10,46 +7,37 @@ import {
     type UserType
 } from '@repo/types';
 import type { AccommodationId as CommonAccommodationId } from '@repo/types/common/id.types';
-import { z } from 'zod';
 import {
-    ACCOMMODATION_ORDERABLE_COLUMNS,
     AccommodationModel,
     type AccommodationOrderByColumn
 } from '../../models/accommodation/accommodation.model';
 import { dbLogger, hasPermission } from '../../utils';
 import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
+import { logDenied, logGrant, logOverride, logUserDisabled } from '../../utils/permission-logger';
 import {
     CanViewReasonEnum,
     canViewAccommodation,
     getSafeActor,
     isPublicUser,
-    isUserDisabled,
-    logDenied
+    isUserDisabled
 } from './accommodation.helper';
-
-/**
- * Input schema for getById.
- *
- * @example
- * const input = { id: 'acc-1' as AccommodationId };
- */
-const getByIdInputSchema = z.object({
-    id: z.string().min(1, 'Accommodation ID is required') as unknown as z.ZodType<AccommodationId>
-});
-
-/**
- * Input type for getById.
- * @example
- * const input: GetByIdInput = { id: 'acc-1' as AccommodationId };
- */
-export type GetByIdInput = z.infer<typeof getByIdInputSchema>;
-
-/**
- * Output type for getById.
- * @example
- * const output: GetByIdOutput = { accommodation: mockAccommodation };
- */
-export type GetByIdOutput = { accommodation: AccommodationType | null };
+import {
+    type CreateInput,
+    type CreateOutput,
+    type GetByIdInput,
+    type GetByIdOutput,
+    type GetByNameInput,
+    type GetByNameOutput,
+    type ListInput,
+    type ListOutput,
+    type UpdateInput,
+    type UpdateOutput,
+    createInputSchema,
+    getByIdInputSchema,
+    getByNameInputSchema,
+    listInputSchema,
+    updateInputSchema
+} from './accommodation.schemas';
 
 /**
  * Gets an accommodation by its ID.
@@ -69,14 +57,17 @@ export const getById = async (
     input: GetByIdInput,
     actor: UserType | PublicUserType
 ): Promise<GetByIdOutput> => {
+    // Log the start of the operation
     dbLogger.info({ input, actor }, 'getById:start');
+    // Validate and parse input
     const parsedInput = getByIdInputSchema.parse(input);
     const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
     if (!accommodation) {
         dbLogger.info({ result: { accommodation: null } }, 'getById:end');
         return { accommodation: null };
     }
-    const safeActor = getSafeActor(actor); // Always operate on a safe actor to avoid subtle bugs.
+    // Always operate on a safe actor to avoid subtle bugs
+    const safeActor = getSafeActor(actor);
     let checkedPermission: PermissionEnum | undefined;
     const {
         canView,
@@ -84,76 +75,44 @@ export const getById = async (
         checkedPermission: checkedPerm
     } = canViewAccommodation(safeActor, accommodation);
     checkedPermission = checkedPerm;
-    // If the user is disabled, explicitly deny access and log.
+    // If the user is disabled, explicitly deny access and log
     if (isUserDisabled(safeActor)) {
-        dbLogger.permission({
-            permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-            userId: safeActor.id,
-            role: safeActor.role,
-            extraData: {
-                input,
-                visibility: accommodation.visibility,
-                access: 'denied',
-                reason: 'user disabled',
-                actor: { id: safeActor.id, role: safeActor.role }
-            }
-        });
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
+        );
         dbLogger.info({ result: { accommodation: null } }, 'getById:end');
         return { accommodation: null };
     }
+    // Handle unknown visibility
     if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
         logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
         dbLogger.info({ result: { accommodation: null } }, 'getById:end');
         throw new Error(`Unknown accommodation visibility: ${accommodation.visibility}`);
     }
-    // If cannot view, log and return null (prevents information leaks).
+    // If cannot view, log and return null (prevents information leaks)
     if (!canView) {
         logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
         dbLogger.info({ result: { accommodation: null } }, 'getById:end');
         return { accommodation: null };
     }
-    // Log successful access to private/draft for traceability and audit.
+    // Log successful access to private/draft for traceability and audit
     if (accommodation.visibility !== 'PUBLIC') {
-        dbLogger.permission({
-            permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-            userId: 'id' in safeActor ? safeActor.id : 'public',
-            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
-            extraData: {
-                input,
-                visibility: accommodation.visibility,
-                access: 'granted',
-                reason,
-                actor: { id: safeActor.id, role: safeActor.role }
-            }
-        });
+        logGrant(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            reason
+        );
     }
     dbLogger.info({ result: { accommodation } }, 'getById:end');
     return { accommodation };
 };
-
-/**
- * Input schema for getByName.
- *
- * @example
- * const input = { name: 'Hotel Uruguay' };
- */
-const getByNameInputSchema = z.object({
-    name: z.string().min(1, 'Accommodation name is required')
-});
-
-/**
- * Input type for getByName.
- * @example
- * const input: GetByNameInput = { name: 'Hotel Uruguay' };
- */
-export type GetByNameInput = z.infer<typeof getByNameInputSchema>;
-
-/**
- * Output type for getByName.
- * @example
- * const output: GetByNameOutput = { accommodation: mockAccommodation };
- */
-export type GetByNameOutput = { accommodation: AccommodationType | null };
 
 /**
  * Gets an accommodation by its name.
@@ -190,18 +149,13 @@ export const getByName = async (
     checkedPermission = checkedPerm;
     // If the user is disabled, explicitly deny access and log.
     if (isUserDisabled(safeActor)) {
-        dbLogger.permission({
-            permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-            userId: safeActor.id,
-            role: safeActor.role,
-            extraData: {
-                input,
-                visibility: accommodation.visibility,
-                access: 'denied',
-                reason: 'user disabled',
-                actor: { id: safeActor.id, role: safeActor.role }
-            }
-        });
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
+        );
         dbLogger.info({ result: { accommodation: null } }, 'getByName:end');
         return { accommodation: null };
     }
@@ -218,57 +172,18 @@ export const getByName = async (
     }
     // Log successful access to private/draft for traceability and audit.
     if (accommodation.visibility !== 'PUBLIC') {
-        dbLogger.permission({
-            permission: checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
-            userId: 'id' in safeActor ? safeActor.id : 'public',
-            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
-            extraData: {
-                input,
-                visibility: accommodation.visibility,
-                access: 'granted',
-                reason,
-                actor: { id: safeActor.id, role: safeActor.role }
-            }
-        });
+        logGrant(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+            reason
+        );
     }
     dbLogger.info({ result: { accommodation } }, 'getByName:end');
     return { accommodation };
 };
-
-/**
- * Input schema for list.
- *
- * @example
- * const input = { limit: 10, offset: 0 };
- */
-const listInputSchema = z.object({
-    q: z.string().optional(),
-    type: z.string().optional(),
-    visibility: z.enum(['PUBLIC', 'DRAFT', 'PRIVATE']).optional(),
-    limit: z.number().int().min(1).max(100).default(20),
-    offset: z.number().int().min(0).default(0),
-    order: z.enum(['asc', 'desc']).optional(),
-    orderBy: z
-        .enum([...ACCOMMODATION_ORDERABLE_COLUMNS] as [
-            AccommodationOrderByColumn,
-            ...AccommodationOrderByColumn[]
-        ])
-        .optional()
-});
-
-/**
- * Input type for list.
- * @example
- * const input: ListInput = { limit: 10, offset: 0 };
- */
-export type ListInput = z.infer<typeof listInputSchema>;
-
-/**
- * Output type for list.
- * @example
- * const output: ListOutput = { accommodations: [mockAccommodation] };
- */
-export type ListOutput = { accommodations: AccommodationType[] };
 
 /**
  * Lists accommodations with optional filters and pagination.
@@ -293,12 +208,12 @@ export const list = async (
     // Edge-case: public user can only see PUBLIC accommodations
     const isPublic = isPublicUser(safeActor); // Centralizes public user logic.
     if (isPublic && parsedInput.visibility && parsedInput.visibility !== 'PUBLIC') {
-        dbLogger.permission({
-            permission: PermissionEnum.ACCOMMODATION_VIEW_ALL,
-            userId: 'public',
-            role: RoleEnum.GUEST,
-            extraData: { input, override: 'Forced visibility=PUBLIC for public user' }
-        });
+        logOverride(
+            dbLogger,
+            input,
+            PermissionEnum.ACCOMMODATION_VIEW_ALL,
+            'Forced visibility=PUBLIC for public user'
+        );
     }
     // Only allow public visibility for public users
     const searchParams: Record<string, unknown> = isPublic
@@ -322,36 +237,6 @@ export const list = async (
 };
 
 /**
- * Input schema for create.
- *
- * @example
- * const input = { ... };
- */
-const createInputSchema = AccommodationSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    deletedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedById: true
-});
-
-/**
- * Input type for create.
- * @example
- * const input: CreateInput = { ... };
- */
-export type CreateInput = z.infer<typeof createInputSchema>;
-
-/**
- * Output type for create.
- * @example
- * const output: CreateOutput = { accommodation: mockAccommodation };
- */
-export type CreateOutput = { accommodation: AccommodationType };
-
-/**
  * Creates a new accommodation.
  * Handles edge-cases: public user, RO-RO pattern, robust logging.
  *
@@ -373,12 +258,12 @@ export const create = async (
     const safeActor = getSafeActor(actor); // Prevents bugs and ensures consistency in access logic.
     // Edge-case: public user cannot create accommodations
     if (isPublicUser(safeActor)) {
-        dbLogger.permission({
-            permission: PermissionEnum.ACCOMMODATION_CREATE,
-            userId: 'public',
-            role: RoleEnum.GUEST,
-            extraData: { input, error: 'Public user cannot create accommodations' }
-        });
+        logOverride(
+            dbLogger,
+            input,
+            PermissionEnum.ACCOMMODATION_CREATE,
+            'Public user cannot create accommodations'
+        );
         throw new Error('Forbidden: Public user cannot create accommodations');
     }
     const parsedInput = createInputSchema.parse(input);
@@ -389,55 +274,18 @@ export const create = async (
     );
     // Log success for private/draft creations
     if (accommodation.visibility !== 'PUBLIC') {
-        dbLogger.permission({
-            permission: PermissionEnum.ACCOMMODATION_CREATE,
-            userId: safeActor.id,
-            role: safeActor.role,
-            extraData: {
-                input,
-                visibility: accommodation.visibility,
-                access: 'granted',
-                reason: 'created',
-                actor: { id: safeActor.id, role: safeActor.role }
-            }
-        });
+        logGrant(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            PermissionEnum.ACCOMMODATION_CREATE,
+            'created'
+        );
     }
     dbLogger.info({ result: { accommodation } }, 'create:end');
     return { accommodation };
 };
-
-/**
- * Input schema for update.
- * Allows updating all writable fields (all except id, createdAt, createdById, deletedAt, deletedById).
- *
- * @example
- * const input = { id: 'acc-1', name: 'Updated Name', summary: 'Updated summary' };
- */
-const updateInputSchema = AccommodationSchema.omit({
-    id: true,
-    createdAt: true,
-    createdById: true,
-    updatedAt: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).extend({
-    id: z.string().min(1, 'Accommodation ID is required') as unknown as z.ZodType<AccommodationId>
-});
-
-/**
- * Input type for update.
- * @example
- * const input: UpdateInput = { id: 'acc-1', name: 'Updated Name' };
- */
-export type UpdateInput = z.infer<typeof updateInputSchema>;
-
-/**
- * Output type for update.
- * @example
- * const output: UpdateOutput = { accommodation: mockAccommodation };
- */
-export type UpdateOutput = { accommodation: AccommodationType };
 
 /**
  * Updates an existing accommodation.
@@ -472,18 +320,13 @@ export const update = async (
     checkedPermission = checkedPerm;
     // If the user is disabled, explicitly deny access and log.
     if (isUserDisabled(safeActor)) {
-        dbLogger.permission({
-            permission: PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-            userId: safeActor.id,
-            role: safeActor.role,
-            extraData: {
-                input,
-                visibility: accommodation.visibility,
-                access: 'denied',
-                reason: 'user disabled',
-                actor: { id: safeActor.id, role: safeActor.role }
-            }
-        });
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            PermissionEnum.ACCOMMODATION_UPDATE_OWN
+        );
         dbLogger.info({ result: { accommodation: null } }, 'update:end');
         throw new Error('Forbidden: user disabled');
     }
