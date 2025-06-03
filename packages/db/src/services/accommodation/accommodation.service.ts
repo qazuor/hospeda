@@ -25,6 +25,8 @@ import {
 import {
     type CreateInput,
     type CreateOutput,
+    type GetByDestinationInput,
+    type GetByDestinationOutput,
     type GetByIdInput,
     type GetByIdOutput,
     type GetByNameInput,
@@ -34,6 +36,7 @@ import {
     type UpdateInput,
     type UpdateOutput,
     createInputSchema,
+    getByDestinationInputSchema,
     getByIdInputSchema,
     getByNameInputSchema,
     listInputSchema,
@@ -612,4 +615,69 @@ export const hardDelete = async (
     }
     dbLogger.info({ result: { success: deleted } }, 'hardDelete:end');
     return { success: deleted };
+};
+
+/**
+ * Gets all accommodations for a given destination.
+ * Handles edge-cases: public user, disabled user, visibility, permissions.
+ * Always uses RO-RO pattern for input/output.
+ *
+ * @param input - The input object containing the destination ID.
+ * @param actor - The user or public actor requesting the accommodations.
+ * @returns An object with the accommodations array (filtered by access).
+ * @example
+ * const result = await getByDestination({ destinationId: 'dest-1' }, user);
+ */
+export const getByDestination = async (
+    input: GetByDestinationInput,
+    actor: UserType | PublicUserType
+): Promise<GetByDestinationOutput> => {
+    dbLogger.info({ input, actor }, 'getByDestination:start');
+    const parsedInput = getByDestinationInputSchema.parse(input);
+    const allAccommodations = await AccommodationModel.getByDestination(parsedInput.destinationId);
+    const safeActor = getSafeActor(actor);
+    // If the user is disabled, deny access to all
+    if (isUserDisabled(safeActor)) {
+        for (const accommodation of allAccommodations) {
+            logUserDisabled(
+                dbLogger,
+                safeActor,
+                input,
+                accommodation,
+                PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
+            );
+        }
+        dbLogger.info({ result: { accommodations: [] } }, 'getByDestination:end');
+        return { accommodations: [] };
+    }
+    // Filter by permissions and visibility
+    const result: AccommodationType[] = [];
+    for (const accommodation of allAccommodations) {
+        const { canView, reason, checkedPermission } = canViewAccommodation(
+            safeActor,
+            accommodation
+        );
+        if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
+            logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+            continue;
+        }
+        if (!canView) {
+            logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+            continue;
+        }
+        // Log access to private/draft
+        if (accommodation.visibility !== 'PUBLIC') {
+            logGrant(
+                dbLogger,
+                safeActor,
+                input,
+                accommodation,
+                checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+                reason
+            );
+        }
+        result.push(accommodation);
+    }
+    dbLogger.info({ result: { accommodations: result } }, 'getByDestination:end');
+    return { accommodations: result };
 };

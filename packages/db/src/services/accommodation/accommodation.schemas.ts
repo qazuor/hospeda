@@ -1,6 +1,6 @@
 import { AccommodationSchema } from '@repo/schemas';
 import type { AccommodationType } from '@repo/types';
-import type { AccommodationId } from '@repo/types/common/id.types';
+import type { AccommodationId, DestinationId } from '@repo/types/common/id.types';
 import { z } from 'zod';
 import {
     ACCOMMODATION_ORDERABLE_COLUMNS,
@@ -152,3 +152,29 @@ export type UpdateInput = z.infer<typeof updateInputSchema>;
  * const output: UpdateOutput = { accommodation: mockAccommodation };
  */
 export type UpdateOutput = { accommodation: AccommodationType };
+
+/**
+ * Input schema for getByDestination.
+ *
+ * @example
+ * const input = { destinationId: 'dest-1' as DestinationId };
+ */
+export const getByDestinationInputSchema = z.object({
+    destinationId: z
+        .string()
+        .min(1, 'Destination ID is required') as unknown as z.ZodType<DestinationId>
+});
+
+/**
+ * Input type for getByDestination.
+ * @example
+ * const input: GetByDestinationInput = { destinationId: 'dest-1' as DestinationId };
+ */
+export type GetByDestinationInput = z.infer<typeof getByDestinationInputSchema>;
+
+/**
+ * Output type for getByDestination.
+ * @example
+ * const output: GetByDestinationOutput = { accommodations: [mockAccommodation] };
+ */
+export type GetByDestinationOutput = { accommodations: AccommodationType[] };
