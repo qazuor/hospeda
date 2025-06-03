@@ -69,3 +69,6 @@ export const normalizeAccommodationInput = (input: Partial<AccommodationType>): 
         seo
     };
 };
+
+export const getNormalizedUpdateInput = (base: object, overrides: object = {}) =>
+    normalizeAccommodationInput({ ...base, ...overrides });

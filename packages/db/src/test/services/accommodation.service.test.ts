@@ -73,7 +73,7 @@ import {
     getMockUser,
     getMockUserId
 } from '../mockData';
-import { normalizeAccommodationInput } from '../utils/normalizeAccommodationInput';
+import { getNormalizedUpdateInput } from '../utils/normalizeAccommodationInput';
 import { restoreMock } from '../utils/restoreMock';
 
 vi.mock('../../utils/logger', async (importOriginal) => {
@@ -508,10 +508,7 @@ describe('accommodation.service.update', () => {
             description: 'Updated description long enough for Zod.',
             seo: getMockSeo({ title: 'Updated SEO Title long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -546,10 +543,7 @@ describe('accommodation.service.update', () => {
             description: 'Admin updated description long enough for Zod.',
             seo: getMockSeo({ title: 'Admin SEO Title long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -637,10 +631,7 @@ describe('accommodation.service.update', () => {
             }
         });
         // The input for update should be normalized (no nested fields)
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -678,10 +669,7 @@ describe('accommodation.service.update', () => {
             description: 'Expected updated description long enough for Zod.',
             seo: getMockSeo({ title: 'Expected SEO Title long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -711,10 +699,7 @@ describe('accommodation.service.update', () => {
             description: 'This update should be denied by permissions.',
             seo: getMockSeo({ title: 'Denied SEO Title long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to update accommodation');
         });
@@ -744,10 +729,7 @@ describe('accommodation.service.update', () => {
             description: 'This update should be denied because user is disabled.',
             seo: getMockSeo({ title: 'Disabled SEO Title long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
         // Act & Assert
@@ -776,10 +758,7 @@ describe('accommodation.service.update', () => {
             description: 'This update should be denied because user is public.',
             seo: getMockSeo({ title: 'Public SEO Title long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
         // Act & Assert
@@ -811,10 +790,7 @@ describe('accommodation.service.update', () => {
             description: 'This update should be denied due to insufficient permissions.',
             seo: getMockSeo({ title: 'No Permission SEO Title long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to update accommodation');
         });
@@ -841,10 +817,10 @@ describe('accommodation.service.update', () => {
         restoreMock(accommodationHelper.canViewAccommodation);
         const user = makeOwner();
         const nonExistentId = 'acc-not-exist' as AccommodationId;
-        const updateInput = normalizeAccommodationInput({
+        const updateInput = getNormalizedUpdateInput({
             id: nonExistentId,
-            name: 'Non-existent Accommodation',
             slug: 'non-existent-accommodation',
+            name: 'Non-existent Accommodation',
             summary: 'Summary for non-existent accommodation.',
             description: 'Trying to update a non-existent accommodation.',
             type: AccommodationTypeEnum.HOTEL,
@@ -909,7 +885,7 @@ describe('accommodation.service.update', () => {
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const accommodation = makePrivateAccommodation({ ownerId });
-        const updateInput = normalizeAccommodationInput({
+        const updateInput = getNormalizedUpdateInput({
             ...accommodation,
             name: 'Should Not Update (No View Permission)',
             description: 'Trying to update without view permission.',
@@ -940,7 +916,7 @@ describe('accommodation.service.update', () => {
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });
         const accommodation = makeArchivedAccommodation({ ownerId });
-        const updateInput = normalizeAccommodationInput({
+        const updateInput = getNormalizedUpdateInput({
             ...accommodation,
             name: 'Should Not Update (Archived)',
             description: 'Trying to update an archived accommodation.',
@@ -975,10 +951,7 @@ describe('accommodation.service.update', () => {
             description: 'Updated description for date fields long enough for Zod.',
             seo: getMockSeo({ title: 'Updated SEO Title for Dates long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         const updatedAccommodation = {
             ...accommodation,
             ...updatedFields,
@@ -1062,10 +1035,7 @@ describe('accommodation.service.update', () => {
             }
         });
         // El input para update debe estar normalizado (sin campos anidados)
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -1096,10 +1066,7 @@ describe('accommodation.service.update', () => {
             description: 'Logger test description long enough for Zod.',
             seo: getMockSeo({ title: 'Logger SEO Title long enough for Zod validation' })
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         const updatedAccommodation = { ...accommodation, ...updatedFields };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
@@ -1154,10 +1121,7 @@ describe('accommodation.service.update', () => {
             seo: getMockSeo({ title: 'Forbidden Field SEO Title long enough for Zod validation' }),
             ownerId: forbiddenOwnerId
         });
-        const updateInput = normalizeAccommodationInput({
-            ...accommodation,
-            ...updatedFields
-        });
+        const updateInput = getNormalizedUpdateInput(accommodation, updatedFields);
         // El modelo debe devolver el ownerId original, no el nuevo
         const updatedAccommodation = { ...accommodation, ...updatedFields, ownerId };
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
