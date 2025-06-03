@@ -1,4 +1,6 @@
+import type { AccommodationId } from '@repo/types';
 import {
+    type AccommodationType,
     type NewAccommodationInputType,
     PermissionEnum,
     type PublicUserType,
@@ -6,7 +8,6 @@ import {
     type UpdateAccommodationInputType,
     type UserType
 } from '@repo/types';
-import type { AccommodationId as CommonAccommodationId } from '@repo/types/common/id.types';
 import {
     AccommodationModel,
     type AccommodationOrderByColumn
@@ -279,7 +280,7 @@ export const create = async (
         throw new Error('Forbidden: User does not have permission to create accommodation');
     }
     const parsedInput = createInputSchema.parse(input);
-    const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as CommonAccommodationId);
+    const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as AccommodationId);
     const inputWithDates = castDateFields(inputWithBrandedIds);
     const accommodation = await AccommodationModel.create(
         inputWithDates as NewAccommodationInputType
@@ -374,7 +375,7 @@ export const update = async (
         throw new Error('Forbidden: cannot view accommodation');
     }
     // Cast ownerId and destinationId to their branded types if present
-    const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as CommonAccommodationId);
+    const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as AccommodationId);
     const inputWithDates = castDateFields(inputWithBrandedIds);
     // Proteger campos prohibidos (ownerId)
     const protectedUpdateInput = {
@@ -390,5 +391,92 @@ export const update = async (
         throw new Error('Accommodation update failed');
     }
     dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'update:end');
+    return { accommodation: updatedAccommodation };
+};
+
+/**
+ * Soft-deletes (archives) an accommodation by ID.
+ * Only the owner, admin, or a user with the required permission can delete.
+ * Handles edge-cases: public user, disabled owner, already archived/deleted, etc.
+ *
+ * @param input - The input object with the accommodation ID.
+ * @param actor - The user or public actor attempting the soft-delete.
+ * @returns An object with the deleted (archived) accommodation, or null if not found or not allowed.
+ * @throws Error if the actor is not allowed to delete or input is invalid.
+ * @example
+ * const result = await softDelete({ id: 'acc-1' }, user);
+ */
+export const softDelete = async (
+    input: GetByIdInput,
+    actor: UserType | PublicUserType
+): Promise<{ accommodation: AccommodationType | null }> => {
+    dbLogger.info({ input, actor }, 'delete:start');
+    const parsedInput = getByIdInputSchema.parse(input);
+    const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
+    if (!accommodation) {
+        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
+        throw new Error('Accommodation not found');
+    }
+    const safeActor = getSafeActor(actor);
+    // If already archived or deleted, do not allow double deletion
+    if (accommodation.lifecycleState === 'ARCHIVED' || accommodation.deletedAt) {
+        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
+        throw new Error('Accommodation is already archived or deleted');
+    }
+    // If the user is disabled, deny and log
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            accommodation,
+            PermissionEnum.ACCOMMODATION_DELETE_OWN
+        );
+        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
+        throw new Error('Forbidden: user disabled');
+    }
+    // Permissions: owner, admin, or global
+    const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
+    const isAdmin =
+        'role' in safeActor &&
+        (safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN);
+    try {
+        if (isOwner) {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_DELETE_OWN);
+        } else if (isAdmin) {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_DELETE_ANY);
+        } else {
+            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_DELETE_ANY);
+        }
+    } catch (err) {
+        dbLogger.permission({
+            permission: isOwner
+                ? PermissionEnum.ACCOMMODATION_DELETE_OWN
+                : PermissionEnum.ACCOMMODATION_DELETE_ANY,
+            userId: 'id' in safeActor ? safeActor.id : 'public',
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            extraData: { input, error: (err as Error).message }
+        });
+        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
+        throw new Error('Forbidden: user does not have permission to delete accommodation');
+    }
+    // Soft-delete: set deletedAt, deletedById, lifecycleState
+    const now = new Date();
+    const deletedById = 'id' in safeActor ? safeActor.id : undefined;
+    const updateInput = {
+        lifecycleState: 'ARCHIVED',
+        deletedAt: now,
+        deletedById,
+        updatedAt: now,
+        updatedById: deletedById
+    };
+    const updatedAccommodation = await AccommodationModel.update(parsedInput.id, {
+        ...updateInput
+    } as Partial<UpdateAccommodationInputType>);
+    if (!updatedAccommodation) {
+        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
+        throw new Error('Accommodation delete failed');
+    }
+    dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'delete:end');
     return { accommodation: updatedAccommodation };
 };
