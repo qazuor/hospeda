@@ -10,7 +10,8 @@ vi.mock('../../models/accommodation/accommodation.model', async (importOriginal)
             create: vi.fn(),
             getById: vi.fn(),
             getByName: vi.fn(),
-            search: vi.fn()
+            search: vi.fn(),
+            update: vi.fn()
         },
         ACCOMMODATION_ORDERABLE_COLUMNS: [
             'ownerId',
@@ -113,7 +114,7 @@ describe('accommodation.service.getById', () => {
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                 userId: 'public',
-                roleId: RoleEnum.GUEST,
+                role: RoleEnum.GUEST,
                 extraData: expect.anything()
             })
         );
@@ -154,7 +155,7 @@ describe('accommodation.service.getById', () => {
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                 userId: disabledUser.id,
-                roleId: disabledUser.role,
+                role: disabledUser.role,
                 extraData: expect.objectContaining({ reason: 'user disabled' })
             })
         );
@@ -227,7 +228,7 @@ describe('accommodation.service.getByName', () => {
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                 userId: 'public',
-                roleId: RoleEnum.GUEST,
+                role: RoleEnum.GUEST,
                 extraData: expect.anything()
             })
         );
@@ -271,7 +272,7 @@ describe('accommodation.service.getByName', () => {
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                 userId: disabledUser.id,
-                roleId: disabledUser.role,
+                role: disabledUser.role,
                 extraData: expect.objectContaining({ reason: 'user disabled' })
             })
         );
@@ -333,7 +334,7 @@ describe('accommodation.service.list', () => {
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_VIEW_ALL,
                 userId: 'public',
-                roleId: RoleEnum.GUEST,
+                role: RoleEnum.GUEST,
                 extraData: expect.objectContaining({ override: expect.any(String) })
             })
         );
@@ -434,7 +435,7 @@ describe('accommodation.service.create', () => {
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_CREATE,
                 userId: noPermUser.id,
-                roleId: noPermUser.role,
+                role: noPermUser.role,
                 extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
             })
         );
@@ -454,7 +455,7 @@ describe('accommodation.service.create', () => {
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_CREATE,
                 userId: 'public',
-                roleId: RoleEnum.GUEST,
+                role: RoleEnum.GUEST,
                 extraData: expect.objectContaining({
                     error: expect.stringContaining('Public user cannot create')
                 })
@@ -462,3 +463,38 @@ describe('accommodation.service.create', () => {
         );
     });
 });
+
+// describe('accommodation.service.update', () => {
+//     const ownerId = getMockUserId();
+//     const user = getMockUser({
+//         id: ownerId,
+//         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
+//     });
+//     const accommodation = getMockAccommodation({ ownerId });
+//     const updatedAccommodation = { ...accommodation, name: 'Nuevo Nombre' };
+
+//     beforeEach(() => {
+//         vi.clearAllMocks();
+//     });
+
+//     it('should update accommodation for owner with permission', async () => {
+//         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
+//         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
+//         (AccommodationModel.update as Mock).mockResolvedValue(updatedAccommodation);
+//         const input = buildUpdateAccommodationInput(accommodation, {
+//             name: 'Nuevo Nombre',
+//             updatedAt: new Date().toISOString(),
+//             updatedById: getMockUserId(),
+//             seo: {
+//                 title: 'SEO title',
+//                 description: 'SEO desc'
+//             }
+//         });
+//         const result = await AccommodationService.update(input, user);
+//         expect(result.accommodation).toEqual(updatedAccommodation);
+//         expect(AccommodationModel.update).toHaveBeenCalledWith(
+//             accommodation.id,
+//             expect.objectContaining({ name: 'Nuevo Nombre' })
+//         );
+//     });
+// });

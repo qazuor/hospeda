@@ -88,7 +88,7 @@ export function chunkArray<T>(array: T[], size: number): T[][] {
  * @param key - Key to group by
  * @returns Grouped object
  * @example
- * groupBy(users, 'roleId') // { ADMIN: [...], USER: ...] }
+ * groupBy(users, 'role') // { ADMIN: [...], USER: ...] }
  */
 export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
     return array.reduce(

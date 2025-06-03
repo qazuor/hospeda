@@ -16,7 +16,7 @@ interface QueryParams {
 interface PermissionValidationParams {
     permission: string;
     userId: string;
-    roleId: string;
+    role: string;
     extraData: unknown;
 }
 

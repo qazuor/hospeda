@@ -86,7 +86,7 @@ describe('logDenied', () => {
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                 userId: actor.id,
-                roleId: actor.role,
+                role: actor.role,
                 extraData: expect.objectContaining({ error: 'missing permission' })
             })
         );

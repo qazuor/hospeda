@@ -27,7 +27,7 @@ import { dbLogger } from '../../utils/logger.ts';
  *
  * Example:
  *   const userOrderable = createOrderableColumnsAndMapping([
- *     'birthDate', 'firstName', 'lastName', 'roleId'
+ *     'birthDate', 'firstName', 'lastName', 'role'
  *   ] as const, users);
  *   export const USER_ORDERABLE_COLUMNS = userOrderable.columns;
  *   export type UserOrderByColumn = typeof userOrderable.type;
@@ -38,7 +38,7 @@ import { dbLogger } from '../../utils/logger.ts';
  *   const orderExpr = order === 'desc' ? desc(col) : asc(col);
  */
 const userOrderable = createOrderableColumnsAndMapping(
-    ['birthDate', 'firstName', 'lastName', 'roleId'] as const,
+    ['birthDate', 'firstName', 'lastName', 'role'] as const,
     users
 );
 
@@ -57,7 +57,7 @@ export type UserSearchParams = UserPaginationParams & {
     q?: string;
     firstName?: string;
     lastName?: string;
-    roleId?: string;
+    role?: string;
 };
 
 /**
@@ -185,7 +185,7 @@ export const UserModel = {
      * const newUser = await UserModel.create({
      *   userName: 'john_doe',
      *   password: 'securePassword',
-     *   roleId: 'role-uuid'
+     *   role: 'role'
      * });
      * console.log(newUser.id);
      */
@@ -352,7 +352,7 @@ export const UserModel = {
      */
     async search(params: UserSearchParams): Promise<UserType[]> {
         const db = getDb();
-        const { q, firstName, lastName, roleId, limit, offset, order, orderBy } = params;
+        const { q, firstName, lastName, role, limit, offset, order, orderBy } = params;
         try {
             const whereClauses = [];
             if (q) {
@@ -370,8 +370,8 @@ export const UserModel = {
             if (lastName) {
                 whereClauses.push(ilike(users.lastName, prepareLikeQuery(lastName)));
             }
-            if (roleId) {
-                whereClauses.push(eq(users.roleId, roleId));
+            if (role) {
+                whereClauses.push(eq(users.role, role));
             }
             const col = getOrderableColumn(userOrderableColumns, orderBy, users.createdAt);
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
@@ -396,13 +396,13 @@ export const UserModel = {
      * @throws {Error} If the query fails
      *
      * @example
-     * const count = await UserModel.count({ roleId: 'role-uuid' });
+     * const count = await UserModel.count({ role: 'role' });
      * console.log('Users with role:', count);
      */
     async count(params?: UserSearchParams): Promise<number> {
         const db = getDb();
         try {
-            const { firstName, lastName, roleId, q } = params || {};
+            const { firstName, lastName, role, q } = params || {};
             const whereClauses = [];
             if (q) {
                 whereClauses.push(
@@ -419,8 +419,8 @@ export const UserModel = {
             if (lastName) {
                 whereClauses.push(ilike(users.lastName, prepareLikeQuery(lastName)));
             }
-            if (roleId) {
-                whereClauses.push(eq(users.roleId, roleId));
+            if (role) {
+                whereClauses.push(eq(users.role, role));
             }
             const query = db.select({ count: count().as('count') }).from(users);
             const finalQuery = whereClauses.length > 0 ? query.where(and(...whereClauses)) : query;

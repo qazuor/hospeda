@@ -59,7 +59,7 @@ export type PartialUserType = Partial<Writable<UserType>>;
  * const input: NewUserInputType = {
  *   userName: 'john_doe',
  *   password: 'securePassword',
- *   roleId: 'role-uuid',
+ *   role: 'role',
  * };
  */
 export type NewUserInputType = WithOptional<
@@ -104,7 +104,7 @@ export type UserWithRelationsType = UserType & {
  * const publicUser = createPublicUser();
  * // publicUser.id === 'public' as UserId
  * // publicUser.userName === 'public'
- * // publicUser.roleId === 'public' as RoleId
+ * // publicUser.role === 'public' as RoleEnum
  */
 export interface PublicUserType {
     id: UserId;
@@ -120,7 +120,7 @@ export interface PublicUserType {
  * const publicUser = createPublicUser();
  * // publicUser.id === 'public' as UserId
  * // publicUser.userName === 'public'
- * // publicUser.roleId === 'public' as RoleId
+ * // publicUser.role === 'public' as RoleEnum
  */
 export const createPublicUser = (): PublicUserType => ({
     id: 'public' as UserId,
