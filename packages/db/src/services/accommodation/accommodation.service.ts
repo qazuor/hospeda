@@ -38,6 +38,8 @@ import {
     type GetByNameOutput,
     type GetByOwnerInput,
     type GetByOwnerOutput,
+    type GetTopRatedByDestinationInput,
+    type GetTopRatedByDestinationOutput,
     type ListInput,
     type ListOutput,
     type UpdateInput,
@@ -47,6 +49,7 @@ import {
     getByIdInputSchema,
     getByNameInputSchema,
     getByOwnerInputSchema,
+    getTopRatedByDestinationInputSchema,
     listInputSchema,
     updateInputSchema
 } from './accommodation.schemas';
@@ -669,4 +672,77 @@ export const getByOwner = async (
     }
     logMethodEnd(dbLogger, 'getByOwner', { accommodations: result });
     return { accommodations: result };
+};
+
+/**
+ * Gets the top-rated accommodations for a given destination.
+ * Orders by averageRating (desc) and limits the result.
+ * Handles edge-cases: public user, disabled user, visibility, permissions.
+ * Always uses RO-RO pattern for input/output.
+ *
+ * @param input - The input object containing the destination ID and limit.
+ * @param actor - The user or public actor requesting the accommodations.
+ * @returns An object with the accommodations array (filtered by access).
+ * @example
+ * const result = await getTopRatedByDestination({ destinationId: 'dest-1', limit: 5 }, user);
+ */
+export const getTopRatedByDestination = async (
+    input: GetTopRatedByDestinationInput,
+    actor: UserType | PublicUserType
+): Promise<GetTopRatedByDestinationOutput> => {
+    logMethodStart(dbLogger, 'getTopRatedByDestination', input, actor);
+    const parsedInput = getTopRatedByDestinationInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+    const allAccommodations = await AccommodationModel.search({
+        destinationId: parsedInput.destinationId,
+        orderBy: 'averageRating',
+        order: 'desc',
+        limit: parsedInput.limit,
+        offset: 0
+    });
+    // If the user is disabled, deny access to all
+    if (isUserDisabled(safeActor)) {
+        for (const accommodation of allAccommodations) {
+            logUserDisabled(
+                dbLogger,
+                safeActor,
+                input,
+                accommodation,
+                PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
+            );
+        }
+        logMethodEnd(dbLogger, 'getTopRatedByDestination', { accommodations: [] });
+        return { accommodations: [] };
+    }
+    // Filter by permissions and visibility
+    const result: AccommodationType[] = [];
+    for (const accommodation of allAccommodations) {
+        const { canView, reason, checkedPermission } = canViewAccommodation(
+            safeActor,
+            accommodation
+        );
+        if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
+            logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+            continue;
+        }
+        if (!canView) {
+            logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+            continue;
+        }
+        // Log access to private/draft
+        if (accommodation.visibility !== 'PUBLIC') {
+            logGrant(
+                dbLogger,
+                safeActor,
+                input,
+                accommodation,
+                checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+                reason
+            );
+        }
+        result.push(accommodation);
+    }
+    const limitedResult = result.slice(0, parsedInput.limit);
+    logMethodEnd(dbLogger, 'getTopRatedByDestination', { accommodations: limitedResult });
+    return { accommodations: limitedResult };
 };
