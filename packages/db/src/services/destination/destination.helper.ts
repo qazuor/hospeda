@@ -1,6 +1,7 @@
 // Helpers for DestinationService (pattern: accommodation.helper.ts)
 
 import {
+    LifecycleStatusEnum,
     PermissionEnum,
     type PublicUserType,
     RoleEnum,
@@ -61,4 +62,74 @@ export const normalizeCreateInput = (input: Record<string, unknown>) => {
     const inputWithBrandedIds = castBrandedIds(input, (id: unknown) => id as string);
     const inputWithDates = castDateFields(inputWithBrandedIds);
     return inputWithDates;
+};
+
+/**
+ * Builds the update object for soft-deleting (archiving) a destination.
+ * @param actor - The user or public actor performing the delete.
+ * @returns Partial<UpdateDestinationInputType> with archive fields set.
+ * @example
+ * const update = buildSoftDeleteUpdate(user);
+ */
+export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
+    const now = new Date();
+    const deletedById = 'id' in actor ? actor.id : undefined;
+    return {
+        lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        deletedAt: now,
+        deletedById,
+        updatedAt: now,
+        updatedById: deletedById
+    };
+};
+
+/**
+ * Throws if the destination is archived or deleted.
+ * @param destination - The destination object.
+ * @throws Error if already archived or deleted.
+ * @example
+ * assertNotArchived(destination);
+ */
+export const assertNotArchived = (destination: {
+    lifecycleState?: string;
+    deletedAt?: Date | null;
+}) => {
+    if (destination.lifecycleState === 'ARCHIVED' || destination.deletedAt) {
+        throw new Error('Destination is already archived or deleted');
+    }
+};
+
+/**
+ * Builds the update object for restoring (un-archiving) a destination.
+ * @param actor - The user o public actor performing the restore.
+ * @returns Partial<UpdateDestinationInputType> with restore fields set.
+ * @example
+ * const update = buildRestoreUpdate(user);
+ */
+export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
+    const now = new Date();
+    const updatedById = 'id' in actor ? actor.id : undefined;
+    return {
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        deletedAt: undefined,
+        deletedById: undefined,
+        updatedAt: now,
+        updatedById
+    };
+};
+
+/**
+ * Throws if the destination is not archived (already active).
+ * @param destination - The destination object.
+ * @throws Error if not archived.
+ * @example
+ * assertNotActive(destination);
+ */
+export const assertNotActive = (destination: {
+    lifecycleState?: string;
+    deletedAt?: Date | null;
+}) => {
+    if (destination.lifecycleState !== 'ARCHIVED' || !destination.deletedAt) {
+        throw new Error('Destination is not archived');
+    }
 };

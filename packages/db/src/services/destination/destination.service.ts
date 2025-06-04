@@ -14,7 +14,14 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
-import { canViewDestination, normalizeCreateInput } from './destination.helper';
+import {
+    assertNotActive,
+    assertNotArchived,
+    buildRestoreUpdate,
+    buildSoftDeleteUpdate,
+    canViewDestination,
+    normalizeCreateInput
+} from './destination.helper';
 import {
     type CreateInput,
     type CreateOutput,
@@ -389,24 +396,218 @@ export const update = async (_input: unknown, _actor: unknown): Promise<never> =
 };
 
 /**
- * Soft-deletes (archives) a destination. (MVP)
+ * Soft-deletes (archives) a destination by ID.
+ * Only admin or a user with the required permission can delete.
+ * Handles edge-cases: public user, disabled user, already archived/deleted, etc.
+ *
+ * @param input - The input object with the destination ID.
+ * @param actor - The user or public actor attempting the soft-delete.
+ * @returns An object with the deleted (archived) destination, or null if not found or not allowed.
+ * @throws Error if the actor is not allowed to delete or input is invalid.
+ * @example
+ * const result = await softDelete({ id: 'dest-1' }, user);
  */
-export const softDelete = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const softDelete = async (
+    input: GetByIdInput,
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<{ destination: import('@repo/types').DestinationType | null }> => {
+    logMethodStart(dbLogger, 'delete', input, actor);
+    const parsedInput = getByIdInputSchema.parse(input);
+    const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
+    if (!destination) {
+        logMethodEnd(dbLogger, 'delete', { destination: null });
+        throw new Error('Destination not found');
+    }
+    try {
+        assertNotArchived(destination);
+    } catch (err) {
+        logMethodEnd(dbLogger, 'delete', { destination: null });
+        throw err;
+    }
+    const safeActor = getSafeActor(actor);
+    if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            'Forbidden: public user cannot delete destinations',
+            PermissionEnum.DESTINATION_DELETE
+        );
+        logMethodEnd(dbLogger, 'delete', { destination: null });
+        throw new Error('Forbidden: public user cannot delete destinations');
+    }
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(dbLogger, safeActor, input, destination, PermissionEnum.DESTINATION_DELETE);
+        logMethodEnd(dbLogger, 'delete', { destination: null });
+        throw new Error('Forbidden: user disabled');
+    }
+    // Only ADMIN or user with DESTINATION_DELETE permission can delete
+    try {
+        hasPermission(safeActor, PermissionEnum.DESTINATION_DELETE);
+    } catch (err) {
+        dbLogger.permission({
+            permission: PermissionEnum.DESTINATION_DELETE,
+            userId: 'id' in safeActor ? safeActor.id : 'public',
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            extraData: { input, error: (err as Error).message }
+        });
+        logMethodEnd(dbLogger, 'delete', { destination: null });
+        throw new Error('Forbidden: user does not have permission to delete destination');
+    }
+    const updateInput = buildSoftDeleteUpdate(safeActor);
+    const updatedDestination = await DestinationModel.update(parsedInput.id, updateInput);
+    if (!updatedDestination) {
+        logMethodEnd(dbLogger, 'delete', { destination: null });
+        throw new Error('Destination delete failed');
+    }
+    logMethodEnd(dbLogger, 'delete', { destination: updatedDestination });
+    return { destination: updatedDestination };
 };
 
 /**
  * Restores a soft-deleted destination. (MVP)
+ * Solo admin o usuario con permiso puede restaurar.
+ * Maneja edge-cases: usuario público, usuario deshabilitado, no archivado, etc.
+ *
+ * @param input - El input con el ID del destino.
+ * @param actor - El usuario o actor público que intenta restaurar.
+ * @returns Objeto con el destino restaurado, o null si no se puede.
+ * @throws Error si el actor no puede restaurar o el input es inválido.
+ * @example
+ * const result = await restore({ id: 'dest-1' }, user);
  */
-export const restore = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const restore = async (
+    input: GetByIdInput,
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<{ destination: import('@repo/types').DestinationType | null }> => {
+    logMethodStart(dbLogger, 'restore', input, actor);
+    const parsedInput = getByIdInputSchema.parse(input);
+    const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
+    if (!destination) {
+        logMethodEnd(dbLogger, 'restore', { destination: null });
+        throw new Error('Destination not found');
+    }
+    try {
+        assertNotActive(destination);
+    } catch (err) {
+        logMethodEnd(dbLogger, 'restore', { destination: null });
+        throw err;
+    }
+    const safeActor = getSafeActor(actor);
+    if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            'Forbidden: public user cannot restore destinations',
+            PermissionEnum.DESTINATION_RESTORE
+        );
+        logMethodEnd(dbLogger, 'restore', { destination: null });
+        throw new Error('Forbidden: public user cannot restore destinations');
+    }
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            PermissionEnum.DESTINATION_RESTORE
+        );
+        logMethodEnd(dbLogger, 'restore', { destination: null });
+        throw new Error('Forbidden: user disabled');
+    }
+    try {
+        hasPermission(safeActor, PermissionEnum.DESTINATION_RESTORE);
+    } catch (err) {
+        dbLogger.permission({
+            permission: PermissionEnum.DESTINATION_RESTORE,
+            userId: 'id' in safeActor ? safeActor.id : 'public',
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            extraData: { input, error: (err as Error).message }
+        });
+        logMethodEnd(dbLogger, 'restore', { destination: null });
+        throw new Error('Forbidden: user does not have permission to restore destination');
+    }
+    const updateInput = buildRestoreUpdate(safeActor);
+    const updatedDestination = await DestinationModel.update(parsedInput.id, updateInput);
+    if (!updatedDestination) {
+        logMethodEnd(dbLogger, 'restore', { destination: null });
+        throw new Error('Destination restore failed');
+    }
+    logMethodEnd(dbLogger, 'restore', { destination: updatedDestination });
+    return { destination: updatedDestination };
 };
 
 /**
- * Hard-deletes (permanently deletes) a destination. (MVP)
+ * Hard-deletes (permanently deletes) a destination by ID. (MVP)
+ * Solo admin o usuario con permiso puede hard-delete.
+ * Maneja edge-cases: usuario público, usuario deshabilitado, no encontrado, sin permisos, error de borrado.
+ *
+ * @param input - El input con el ID del destino.
+ * @param actor - El usuario o actor público que intenta borrar.
+ * @returns Objeto { success: boolean }.
+ * @throws Error si el actor no puede borrar o el input es inválido.
+ * @example
+ * const result = await hardDelete({ id: 'dest-1' }, user);
  */
-export const hardDelete = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const hardDelete = async (
+    input: GetByIdInput,
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<{ success: boolean }> => {
+    logMethodStart(dbLogger, 'hardDelete', input, actor);
+    const parsedInput = getByIdInputSchema.parse(input);
+    const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
+    if (!destination) {
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Destination not found');
+    }
+    const safeActor = getSafeActor(actor);
+    if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            'Forbidden: public user cannot hard-delete destinations',
+            PermissionEnum.DESTINATION_HARD_DELETE
+        );
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Forbidden: public user cannot hard-delete destinations');
+    }
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            PermissionEnum.DESTINATION_HARD_DELETE
+        );
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Forbidden: user disabled');
+    }
+    try {
+        hasPermission(safeActor, PermissionEnum.DESTINATION_HARD_DELETE);
+    } catch (err) {
+        dbLogger.permission({
+            permission: PermissionEnum.DESTINATION_HARD_DELETE,
+            userId: 'id' in safeActor ? safeActor.id : 'public',
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            extraData: { input, error: (err as Error).message }
+        });
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Forbidden: user does not have permission to hard-delete destination');
+    }
+    let deleted = false;
+    try {
+        deleted = await DestinationModel.hardDelete(parsedInput.id);
+    } catch (_err) {
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Destination hard delete failed');
+    }
+    logMethodEnd(dbLogger, 'hardDelete', { success: deleted });
+    return { success: deleted };
 };
 
 /**
@@ -418,9 +619,37 @@ export const search = async (_input: unknown, _actor: unknown): Promise<never> =
 
 /**
  * Gets featured destinations. (MVP)
+ * Devuelve solo los destinos destacados accesibles para el actor.
+ * Aplica lógica de visibilidad/permisos, logging, edge-cases.
+ *
+ * @param input - Objeto con paginación (limit, offset).
+ * @param actor - Usuario o actor público.
+ * @returns Objeto con el array de destinos destacados accesibles.
+ * @example
+ * const { destinations } = await getFeatured({ limit: 10, offset: 0 }, user);
  */
-export const getFeatured = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const getFeatured = async (
+    input: { limit: number; offset: number },
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<{ destinations: import('@repo/types').DestinationType[] }> => {
+    logMethodStart(dbLogger, 'getFeatured', input, actor);
+    const allFeatured = await DestinationModel.list({
+        limit: input.limit,
+        offset: input.offset,
+        isFeatured: true
+    });
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'getFeatured', { destinations: [] });
+        return { destinations: [] };
+    }
+    // Filtrar por permisos/visibilidad
+    const filtered = allFeatured.filter((destination) => {
+        const { canView } = canViewDestination(safeActor, destination);
+        return canView;
+    });
+    logMethodEnd(dbLogger, 'getFeatured', { destinations: filtered });
+    return { destinations: filtered };
 };
 
 /**
