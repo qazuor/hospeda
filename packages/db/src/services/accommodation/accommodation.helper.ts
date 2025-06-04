@@ -5,88 +5,12 @@ import {
     type PublicUserType,
     RoleEnum,
     type UserType,
-    VisibilityEnum,
-    createPublicUser
+    VisibilityEnum
 } from '@repo/types';
 import type { AccommodationOrderByColumn } from '../../models/accommodation/accommodation.model';
-import { type dbLogger, hasPermission } from '../../utils';
 import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
+import { CanViewReasonEnum, isPublicUser } from '../../utils/service-helper';
 import type { ListInput, UpdateInput } from './accommodation.schemas';
-
-/**
- * Enum representing the reason why an actor can or cannot view an accommodation.
- * Used for logging and access control explanations.
- * @example
- * CanViewReasonEnum.PUBLIC // 'public visibility'
- */
-export enum CanViewReasonEnum {
-    PUBLIC = 'public visibility',
-    OWNER = 'owner access',
-    ADMIN_BYPASS = 'admin/superadmin bypass',
-    HAS_PERMISSION = 'has permission',
-    MISSING_PERMISSION = 'missing permission',
-    PERMISSION_CHECK_REQUIRED = 'permission check required',
-    UNKNOWN_VISIBILITY = 'unknown visibility'
-}
-
-/**
- * Type guard to check if an actor is a UserType (not a PublicUserType).
- * @param actor - The actor to check.
- * @returns True if the actor is a UserType.
- * @example
- * isUserType({ id: 'user-1', role: RoleEnum.ADMIN }) // true
- */
-export const isUserType = (actor: unknown): actor is UserType => {
-    return (
-        typeof actor === 'object' &&
-        actor !== null &&
-        'id' in actor &&
-        'role' in actor &&
-        typeof (actor as { id?: unknown }).id === 'string' &&
-        typeof (actor as { role?: unknown }).role === 'string'
-    );
-};
-
-/**
- * Returns a safe actor (UserType or PublicUserType). If the input is not a UserType, returns a PublicUserType.
- * @param actor - The actor to check.
- * @returns UserType or PublicUserType.
- * @example
- * getSafeActor(undefined) // PublicUserType
- */
-export const getSafeActor = (actor: unknown): UserType | PublicUserType => {
-    return isUserType(actor) ? actor : createPublicUser();
-};
-
-/**
- * Checks if the actor is a public (anonymous) user.
- * @param actor - The actor to check.
- * @returns True if the actor is a public user.
- * @example
- * isPublicUser(getSafeActor(undefined)) // true
- */
-export const isPublicUser = (actor: UserType | PublicUserType): boolean => {
-    return 'role' in actor && actor.role === RoleEnum.GUEST;
-};
-
-/**
- * Logger type with a permission method for logging access denials.
- * Used for structured permission logging.
- */
-export type LoggerWithPermission = { permission: (args: unknown) => void };
-
-/**
- * Checks if a user is disabled (either via 'enabled' property or settings.notifications.enabled === false).
- * @param actor - The actor to check.
- * @returns True if the user is disabled.
- * @example
- * isUserDisabled(getMockUser({ enabled: false })) // true
- */
-export const isUserDisabled = (actor: UserType | PublicUserType): boolean => {
-    if ('enabled' in actor) return actor.enabled === false;
-    if ('settings' in actor && actor.settings?.notifications?.enabled === false) return true;
-    return false;
-};
 
 /**
  * Determines if the actor can view the accommodation based on visibility, ownership, and permissions.
@@ -198,34 +122,6 @@ export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
 };
 
 /**
- * Checks permission and logs if denied, throwing an error if not allowed.
- * @param actor - The user or public actor.
- * @param permission - The permission to check.
- * @param dbLoggerInstance - Logger instance for permission logging.
- * @param context - Context object for logging.
- * @param errorMessage - Custom error message to throw if permission is denied.
- */
-export const checkAndLogPermission = (
-    actor: UserType | PublicUserType,
-    permission: PermissionEnum,
-    dbLoggerInstance: typeof dbLogger,
-    context: object,
-    errorMessage: string
-) => {
-    try {
-        hasPermission(actor, permission);
-    } catch (err) {
-        dbLoggerInstance.permission({
-            permission,
-            userId: 'id' in actor ? actor.id : 'public',
-            role: 'role' in actor ? actor.role : RoleEnum.GUEST,
-            extraData: { ...context, error: (err as Error).message }
-        });
-        throw new Error(errorMessage);
-    }
-};
-
-/**
  * Normalizes the create input: casts branded IDs and dates.
  * @param input - The create input object.
  * @returns The normalized create input.
@@ -286,23 +182,4 @@ export const assertNotActive = (accommodation: AccommodationType) => {
     if (accommodation.lifecycleState !== 'ARCHIVED' || !accommodation.deletedAt) {
         throw new Error('Accommodation is not archived');
     }
-};
-
-/**
- * Logs the start of a service method.
- */
-export const logMethodStart = (
-    logger: typeof dbLogger,
-    method: string,
-    input: object,
-    actor: object
-) => {
-    logger.info({ input, actor }, `${method}:start`);
-};
-
-/**
- * Logs the end of a service method.
- */
-export const logMethodEnd = (logger: typeof dbLogger, method: string, result: object) => {
-    logger.info({ result }, `${method}:end`);
 };
