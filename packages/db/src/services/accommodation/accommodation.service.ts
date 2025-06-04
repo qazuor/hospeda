@@ -36,6 +36,8 @@ import {
     type GetByIdOutput,
     type GetByNameInput,
     type GetByNameOutput,
+    type GetByOwnerInput,
+    type GetByOwnerOutput,
     type ListInput,
     type ListOutput,
     type UpdateInput,
@@ -44,6 +46,7 @@ import {
     getByDestinationInputSchema,
     getByIdInputSchema,
     getByNameInputSchema,
+    getByOwnerInputSchema,
     listInputSchema,
     updateInputSchema
 } from './accommodation.schemas';
@@ -603,5 +606,67 @@ export const getByDestination = async (
         result.push(accommodation);
     }
     logMethodEnd(dbLogger, 'getByDestination', { accommodations: result });
+    return { accommodations: result };
+};
+
+/**
+ * Gets accommodations by owner ID.
+ * Handles edge-cases: public user, disabled owner, unknown visibility.
+ * Always uses RO-RO pattern for input/output.
+ *
+ * Why: Centralizes access and logging logic, prevents information leaks, and ensures traceability.
+ *
+ * @param input - The input object containing the owner ID.
+ * @param actor - The user or public actor requesting the accommodations.
+ * @returns An object with the accommodations accessible to the actor.
+ * @example
+ * const result = await getByOwner({ ownerId: 'user-1' }, user);
+ */
+export const getByOwner = async (
+    input: GetByOwnerInput,
+    actor: UserType | PublicUserType
+): Promise<GetByOwnerOutput> => {
+    logMethodStart(dbLogger, 'getByOwner', input, actor);
+    const safeActor = getSafeActor(actor);
+    const parsedInput = getByOwnerInputSchema.parse(input);
+    const allAccommodations = await AccommodationModel.getByOwner(parsedInput.ownerId);
+    const result: AccommodationType[] = [];
+    for (const accommodation of allAccommodations) {
+        if (isUserDisabled(safeActor)) {
+            logUserDisabled(
+                dbLogger,
+                safeActor,
+                input,
+                accommodation,
+                PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
+            );
+            continue;
+        }
+        const { canView, reason, checkedPermission } = canViewAccommodation(
+            safeActor,
+            accommodation
+        );
+        if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
+            logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+            continue;
+        }
+        if (!canView) {
+            logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+            continue;
+        }
+        // Log access to private/draft
+        if (accommodation.visibility !== 'PUBLIC') {
+            logGrant(
+                dbLogger,
+                safeActor,
+                input,
+                accommodation,
+                checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+                reason
+            );
+        }
+        result.push(accommodation);
+    }
+    logMethodEnd(dbLogger, 'getByOwner', { accommodations: result });
     return { accommodations: result };
 };
