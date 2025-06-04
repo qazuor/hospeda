@@ -997,3 +997,82 @@ export const search = async (
         total
     };
 };
+
+// --- FUTURE METHODS (stubs) ---
+
+/**
+ * Adds a FAQ to an accommodation. (Stub)
+ */
+export const addFaq = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Removes a FAQ from an accommodation. (Stub)
+ */
+export const removeFaq = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Updates a FAQ for an accommodation. (Stub)
+ */
+export const updateFaq = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets all FAQs for an accommodation. (Stub)
+ */
+export const getFaqs = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Bulk update accommodations. (Stub)
+ */
+export const bulkUpdate = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Adds IA data to an accommodation. (Stub)
+ */
+export const addIAData = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Removes IA data from an accommodation. (Stub)
+ */
+export const removeIAData = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Updates IA data for an accommodation. (Stub)
+ */
+export const updateIAData = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets all IA data for accommodations. (Stub)
+ */
+export const getAllIAData = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Changes the visibility of an accommodation. (Stub)
+ */
+export const changeVisibility = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets the owner of an accommodation. (Stub)
+ */
+export const getOwner = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
