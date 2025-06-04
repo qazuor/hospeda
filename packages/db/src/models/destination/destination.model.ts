@@ -175,6 +175,12 @@ export const DestinationModel = {
         }
     },
     /**
+     * Retrieve a destination by slug (alias for findBySlug).
+     */
+    async getBySlug(slug: string): Promise<DestinationType | undefined> {
+        return this.findBySlug(slug);
+    },
+    /**
      * Retrieve a destination by ID, including specified relations.
      */
     async getWithRelations(id: string): Promise<DestinationWithRelationsType | undefined> {
