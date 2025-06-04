@@ -311,5 +311,28 @@ export const DestinationModel = {
             dbLogger.error(error, 'DestinationModel.search');
             throw new Error(`Failed to search destinations: ${(error as Error).message}`);
         }
+    },
+    /**
+     * Retrieve a destination by name.
+     */
+    async getByName(name: string): Promise<DestinationType | undefined> {
+        const db = getDb();
+        try {
+            const result = await db
+                .select()
+                .from(destinations)
+                .where(eq(destinations.name, name))
+                .limit(1);
+            dbLogger.query({
+                table: 'destinations',
+                action: 'getByName',
+                params: { name },
+                result
+            });
+            return result[0] as DestinationType | undefined;
+        } catch (error) {
+            dbLogger.error(error, 'DestinationModel.getByName');
+            throw new Error(`Failed to get destination by name: ${(error as Error).message}`);
+        }
     }
 };
