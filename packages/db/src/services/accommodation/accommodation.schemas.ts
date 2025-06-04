@@ -1,6 +1,7 @@
 import { AccommodationSchema } from '@repo/schemas';
 import type { AccommodationType } from '@repo/types';
 import type { AccommodationId, DestinationId } from '@repo/types/common/id.types';
+import { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum';
 import { z } from 'zod';
 import {
     ACCOMMODATION_ORDERABLE_COLUMNS,
@@ -252,3 +253,45 @@ export type GetForHomeInput = z.infer<typeof getForHomeInputSchema>;
  * const output: GetForHomeOutput = { accommodationsByDestination: { 'dest-1': [mockAccommodation] } };
  */
 export type GetForHomeOutput = { accommodationsByDestination: Record<string, AccommodationType[]> };
+
+/**
+ * Input schema for search (advanced search).
+ *
+ * Filters applied in the model (DB):
+ * - destinationId
+ * - types
+ * - isFeatured
+ * - minRating
+ * - withContactInfo
+ *
+ * Filters applied in the service (in-memory):
+ * - includeWithoutPrice
+ * - amenities
+ * - features
+ * - advanced ordering (isFeatured first, then multiple fields)
+ *
+ * When the data volume grows, migrate amenities/features filters to SQL (see service doc).
+ */
+export const searchInputSchema = z.object({
+    minPrice: z.number().min(0).optional(),
+    maxPrice: z.number().min(0).optional(),
+    includeWithoutPrice: z.boolean().optional(),
+    types: z.array(z.nativeEnum(AccommodationTypeEnum)).optional(),
+    minRating: z.number().min(0).max(5).optional(),
+    amenities: z.array(z.string()).optional(), // AmenityId[]
+    features: z.array(z.string()).optional(), // FeatureId[]
+    text: z.string().optional(),
+    withContactInfo: z.boolean().optional(),
+    isFeatured: z.boolean().optional(),
+    destinationId: z.string().optional(), // string
+    orderBy: z.array(z.enum(['price', 'destination', 'type', 'rating'])).optional(),
+    limit: z.number().int().min(1).max(100).default(20),
+    offset: z.number().int().min(0).default(0)
+});
+
+export type SearchInput = z.infer<typeof searchInputSchema>;
+
+export type SearchOutput = {
+    accommodations: AccommodationType[];
+    total: number;
+};
