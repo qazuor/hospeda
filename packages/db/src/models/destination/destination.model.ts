@@ -210,24 +210,90 @@ export const DestinationModel = {
         }
     },
     /**
-     * List destinations with pagination and optional ordering.
+     * List destinations with filters, pagination and ordering.
+     * @param params - ListInput (filtros, paginación, orden)
+     * @returns Array de destinos
+     * @example
+     * const results = await DestinationModel.list({ limit: 10, offset: 0, visibility: 'PUBLIC' });
      */
-    async list(params: DestinationPaginationParams): Promise<DestinationType[]> {
+    async list(params: {
+        limit: number;
+        offset: number;
+        order?: 'asc' | 'desc';
+        orderBy?:
+            | 'name'
+            | 'slug'
+            | 'createdAt'
+            | 'updatedAt'
+            | 'isFeatured'
+            | 'reviewsCount'
+            | 'averageRating'
+            | 'accommodationsCount';
+        visibility?: string;
+        isFeatured?: boolean;
+        lifecycle?: string;
+        moderationState?: string;
+        deletedAt?: string | null;
+    }): Promise<DestinationType[]> {
         const db = getDb();
-        const { limit, offset, order, orderBy } = params;
+        const {
+            limit,
+            offset,
+            order,
+            orderBy,
+            visibility,
+            isFeatured,
+            lifecycle,
+            moderationState,
+            deletedAt
+        } = params;
         try {
-            const col = getOrderableColumn(
-                destinationOrderableColumns,
-                orderBy,
-                destinations.createdAt
-            );
+            const whereClauses = [];
+            if (visibility) whereClauses.push(eq(destinations.visibility, visibility));
+            if (isFeatured !== undefined)
+                whereClauses.push(eq(destinations.isFeatured, isFeatured));
+            if (lifecycle) whereClauses.push(eq(destinations.lifecycle, lifecycle));
+            if (moderationState)
+                whereClauses.push(eq(destinations.moderationState, moderationState));
+            if (deletedAt === null) {
+                whereClauses.push(eq(destinations.deletedAt, null));
+            } else if (deletedAt) {
+                whereClauses.push(eq(destinations.deletedAt, deletedAt));
+            }
+            // Ordenamiento
+            let col = destinations.createdAt;
+            switch (orderBy) {
+                case 'name':
+                    col = destinations.name;
+                    break;
+                case 'slug':
+                    col = destinations.slug;
+                    break;
+                case 'createdAt':
+                    col = destinations.createdAt;
+                    break;
+                case 'updatedAt':
+                    col = destinations.updatedAt;
+                    break;
+                case 'isFeatured':
+                    col = destinations.isFeatured;
+                    break;
+                case 'reviewsCount':
+                    col = destinations.reviewsCount;
+                    break;
+                case 'averageRating':
+                    col = destinations.averageRating;
+                    break;
+                case 'accommodationsCount':
+                    col = destinations.accommodationsCount;
+                    break;
+            }
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
-            const result = await db
-                .select()
-                .from(destinations)
-                .orderBy(orderExpr)
-                .limit(limit)
-                .offset(offset);
+            const queryBuilder = db.select().from(destinations);
+            const queryWithWhere =
+                whereClauses.length > 0 ? queryBuilder.where(and(...whereClauses)) : queryBuilder;
+            const finalQuery = queryWithWhere.orderBy(orderExpr).limit(limit).offset(offset);
+            const result = await finalQuery;
             dbLogger.query({ table: 'destinations', action: 'list', params, result });
             return result as DestinationType[];
         } catch (error) {
