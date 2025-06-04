@@ -1,10 +1,8 @@
 import { PermissionEnum, RoleEnum, type UserId } from '@repo/types';
 import { describe, expect, it, vi } from 'vitest';
-import {
-    CanViewReasonEnum,
-    canViewAccommodation
-} from '../../../src/services/accommodation/accommodation.helper';
+import { canViewAccommodation } from '../../../src/services/accommodation/accommodation.helper';
 import { logDenied } from '../../utils/permission-logger';
+import { CanViewReasonEnum } from '../../utils/service-helper';
 import { getMockPublicUser, getMockUser } from '../mockData';
 
 /**

@@ -16,6 +16,7 @@ import * as accommodationHelper from '../../../services/accommodation/accommodat
 import type { UpdateInput } from '../../../services/accommodation/accommodation.schemas';
 import * as AccommodationService from '../../../services/accommodation/accommodation.service';
 import * as permissionManager from '../../../utils/permission-manager';
+import { CanViewReasonEnum } from '../../../utils/service-helper';
 import {
     makeAccommodation,
     makeAccommodationWithMedia,
@@ -457,7 +458,7 @@ describe('accommodation.service.update', () => {
         // Mock canViewAccommodation para devolver canView: false
         vi.spyOn(accommodationHelper, 'canViewAccommodation').mockReturnValue({
             canView: false,
-            reason: accommodationHelper.CanViewReasonEnum.PERMISSION_CHECK_REQUIRED,
+            reason: CanViewReasonEnum.PERMISSION_CHECK_REQUIRED,
             checkedPermission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
         });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
