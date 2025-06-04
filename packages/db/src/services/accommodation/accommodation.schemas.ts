@@ -178,3 +178,77 @@ export type GetByDestinationInput = z.infer<typeof getByDestinationInputSchema>;
  * const output: GetByDestinationOutput = { accommodations: [mockAccommodation] };
  */
 export type GetByDestinationOutput = { accommodations: AccommodationType[] };
+
+/**
+ * Input schema for getByOwner.
+ *
+ * @example
+ * const input = { ownerId: 'user-1' as UserId };
+ */
+export const getByOwnerInputSchema = z.object({
+    ownerId: z.string().min(1, 'Owner ID is required')
+});
+
+/**
+ * Input type for getByOwner.
+ * @example
+ * const input: GetByOwnerInput = { ownerId: 'user-1' as UserId };
+ */
+export type GetByOwnerInput = z.infer<typeof getByOwnerInputSchema>;
+
+/**
+ * Output type for getByOwner.
+ * @example
+ * const output: GetByOwnerOutput = { accommodations: [mockAccommodation] };
+ */
+export type GetByOwnerOutput = { accommodations: AccommodationType[] };
+
+/**
+ * Input schema for getTopRatedByDestination.
+ *
+ * @example
+ * const input = { destinationId: 'dest-1', limit: 5 };
+ */
+export const getTopRatedByDestinationInputSchema = z.object({
+    destinationId: z.string().min(1, 'Destination ID is required'),
+    limit: z.number().int().min(1).max(100).default(5)
+});
+
+/**
+ * Input type for getTopRatedByDestination.
+ * @example
+ * const input: GetTopRatedByDestinationInput = { destinationId: 'dest-1', limit: 5 };
+ */
+export type GetTopRatedByDestinationInput = z.infer<typeof getTopRatedByDestinationInputSchema>;
+
+/**
+ * Output type for getTopRatedByDestination.
+ * @example
+ * const output: GetTopRatedByDestinationOutput = { accommodations: [mockAccommodation] };
+ */
+export type GetTopRatedByDestinationOutput = { accommodations: AccommodationType[] };
+
+/**
+ * Input schema for getForHome.
+ *
+ * @example
+ * const input = { destinationIds: ['dest-1', 'dest-2'], limitAccommodationByDestination: 3 };
+ */
+export const getForHomeInputSchema = z.object({
+    destinationIds: z.array(z.string()).optional(),
+    limitAccommodationByDestination: z.number().int().min(1).max(10).default(2)
+});
+
+/**
+ * Input type for getForHome.
+ * @example
+ * const input: GetForHomeInput = { destinationIds: ['dest-1'], limitAccommodationByDestination: 2 };
+ */
+export type GetForHomeInput = z.infer<typeof getForHomeInputSchema>;
+
+/**
+ * Output type for getForHome.
+ * @example
+ * const output: GetForHomeOutput = { accommodationsByDestination: { 'dest-1': [mockAccommodation] } };
+ */
+export type GetForHomeOutput = { accommodationsByDestination: Record<string, AccommodationType[]> };
