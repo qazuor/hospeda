@@ -158,7 +158,10 @@ describe('accommodation.service.softDelete', () => {
     it('should deny delete if user is disabled', async () => {
         // Arrange: Create a disabled user and a non-archived accommodation
         const ownerId = getMockUserId();
-        const disabledUser = makeDisabledUser({ id: ownerId });
+        const disabledUser = makeDisabledUser({
+            id: ownerId,
+            lifecycleState: LifecycleStatusEnum.INACTIVE
+        });
         const accommodation = makeAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 

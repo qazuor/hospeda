@@ -1,6 +1,7 @@
 import {
     type AccommodationId,
     type DestinationId,
+    LifecycleStatusEnum,
     PermissionEnum,
     RoleEnum,
     type UserId,
@@ -168,7 +169,7 @@ describe('accommodation.service.getByDestination', () => {
         vi.clearAllMocks();
         const disabledUser = makeDisabledUser({
             id: 'user-disabled' as UserId,
-            role: RoleEnum.USER
+            lifecycleState: LifecycleStatusEnum.INACTIVE
         });
         const destinationId = 'dest-5' as DestinationId;
         const accommodation1 = getMockAccommodation({
