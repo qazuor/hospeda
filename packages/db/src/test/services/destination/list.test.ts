@@ -31,7 +31,7 @@ describe('destination.service.list', () => {
     const publicUser = { ...getMockPublicUser(), permissions: [] };
     const user = getMockUser({ id: getMockUserId(), role: RoleEnum.ADMIN });
     const admin = getMockUser({ id: getMockUserId(), role: RoleEnum.ADMIN });
-    const disabledUser = { ...user, enabled: false };
+    const disabledUser = { ...user, lifecycleState: LifecycleStatusEnum.INACTIVE };
     const destinationId = getMockDestinationId();
     const publicDestination = getMockDestination({
         id: destinationId,
