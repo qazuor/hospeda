@@ -1,26 +1,31 @@
-import type { AccommodationId } from '@repo/types';
 import {
     type AccommodationType,
-    type NewAccommodationInputType,
     PermissionEnum,
     type PublicUserType,
     RoleEnum,
     type UpdateAccommodationInputType,
     type UserType
 } from '@repo/types';
-import {
-    AccommodationModel,
-    type AccommodationOrderByColumn
-} from '../../models/accommodation/accommodation.model';
+import { AccommodationModel } from '../../models/accommodation/accommodation.model';
 import { dbLogger, hasPermission } from '../../utils';
-import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
 import { logDenied, logGrant, logOverride, logUserDisabled } from '../../utils/permission-logger';
 import {
     CanViewReasonEnum,
+    assertNotActive,
+    assertNotArchived,
+    buildRestoreUpdate,
+    buildSearchParams,
+    buildSoftDeleteUpdate,
     canViewAccommodation,
+    checkAndLogPermission,
     getSafeActor,
+    isOwner,
     isPublicUser,
-    isUserDisabled
+    isUserDisabled,
+    logMethodEnd,
+    logMethodStart,
+    normalizeCreateInput,
+    normalizeUpdateInput
 } from './accommodation.helper';
 import {
     type CreateInput,
@@ -61,13 +66,11 @@ export const getById = async (
     input: GetByIdInput,
     actor: UserType | PublicUserType
 ): Promise<GetByIdOutput> => {
-    // Log the start of the operation
-    dbLogger.info({ input, actor }, 'getById:start');
-    // Validate and parse input
+    logMethodStart(dbLogger, 'getById', input, actor);
     const parsedInput = getByIdInputSchema.parse(input);
     const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
     if (!accommodation) {
-        dbLogger.info({ result: { accommodation: null } }, 'getById:end');
+        logMethodEnd(dbLogger, 'getById', { accommodation: null });
         return { accommodation: null };
     }
     // Always operate on a safe actor to avoid subtle bugs
@@ -88,19 +91,19 @@ export const getById = async (
             accommodation,
             checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
         );
-        dbLogger.info({ result: { accommodation: null } }, 'getById:end');
+        logMethodEnd(dbLogger, 'getById', { accommodation: null });
         return { accommodation: null };
     }
     // Handle unknown visibility
     if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
         logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
-        dbLogger.info({ result: { accommodation: null } }, 'getById:end');
+        logMethodEnd(dbLogger, 'getById', { accommodation: null });
         throw new Error(`Unknown accommodation visibility: ${accommodation.visibility}`);
     }
     // If cannot view, log and return null (prevents information leaks)
     if (!canView) {
         logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
-        dbLogger.info({ result: { accommodation: null } }, 'getById:end');
+        logMethodEnd(dbLogger, 'getById', { accommodation: null });
         return { accommodation: null };
     }
     // Log successful access to private/draft for traceability and audit
@@ -114,7 +117,7 @@ export const getById = async (
             reason
         );
     }
-    dbLogger.info({ result: { accommodation } }, 'getById:end');
+    logMethodEnd(dbLogger, 'getById', { accommodation });
     return { accommodation };
 };
 
@@ -136,11 +139,11 @@ export const getByName = async (
     input: GetByNameInput,
     actor: UserType | PublicUserType
 ): Promise<GetByNameOutput> => {
-    dbLogger.info({ input, actor }, 'getByName:start');
+    logMethodStart(dbLogger, 'getByName', input, actor);
     const parsedInput = getByNameInputSchema.parse(input);
     const accommodation = (await AccommodationModel.getByName(parsedInput.name)) ?? null;
     if (!accommodation) {
-        dbLogger.info({ result: { accommodation: null } }, 'getByName:end');
+        logMethodEnd(dbLogger, 'getByName', { accommodation: null });
         return { accommodation: null };
     }
     const safeActor = getSafeActor(actor); // Always operate on a safe actor to avoid subtle bugs.
@@ -160,18 +163,18 @@ export const getByName = async (
             accommodation,
             checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
         );
-        dbLogger.info({ result: { accommodation: null } }, 'getByName:end');
+        logMethodEnd(dbLogger, 'getByName', { accommodation: null });
         return { accommodation: null };
     }
     if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
         logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
-        dbLogger.info({ result: { accommodation: null } }, 'getByName:end');
+        logMethodEnd(dbLogger, 'getByName', { accommodation: null });
         throw new Error(`Unknown accommodation visibility: ${accommodation.visibility}`);
     }
     // If cannot view, log and return null (prevents information leaks).
     if (!canView) {
         logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
-        dbLogger.info({ result: { accommodation: null } }, 'getByName:end');
+        logMethodEnd(dbLogger, 'getByName', { accommodation: null });
         return { accommodation: null };
     }
     // Log successful access to private/draft for traceability and audit.
@@ -185,7 +188,7 @@ export const getByName = async (
             reason
         );
     }
-    dbLogger.info({ result: { accommodation } }, 'getByName:end');
+    logMethodEnd(dbLogger, 'getByName', { accommodation });
     return { accommodation };
 };
 
@@ -205,7 +208,7 @@ export const list = async (
     input: ListInput,
     actor: UserType | PublicUserType
 ): Promise<ListOutput> => {
-    dbLogger.info({ input, actor }, 'list:start');
+    logMethodStart(dbLogger, 'list', input, actor);
     const parsedInput = listInputSchema.parse(input);
     // Always use a safe actor (public fallback)
     const safeActor = getSafeActor(actor); // Prevents bugs and ensures consistency in access logic.
@@ -219,24 +222,11 @@ export const list = async (
             'Forced visibility=PUBLIC for public user'
         );
     }
-    // Only allow public visibility for public users
-    const searchParams: Record<string, unknown> = isPublic
-        ? { visibility: 'PUBLIC', limit: parsedInput.limit, offset: parsedInput.offset }
-        : {
-              q: parsedInput.q,
-              type: parsedInput.type,
-              limit: parsedInput.limit,
-              offset: parsedInput.offset,
-              order: parsedInput.order,
-              orderBy: parsedInput.orderBy as AccommodationOrderByColumn | undefined,
-              ...(parsedInput.visibility ? { visibility: parsedInput.visibility } : {})
-          };
-    const cleanParams = Object.fromEntries(
-        Object.entries(searchParams).filter(([_, v]) => v !== undefined)
-    );
+    // Use helper to build and clean search params
+    const cleanParams = buildSearchParams(parsedInput, safeActor);
     // biome-ignore lint/suspicious/noExplicitAny: required for type compatibility in searchParams
     const accommodations = await AccommodationModel.search(cleanParams as any);
-    dbLogger.info({ result: { accommodations } }, 'list:end');
+    logMethodEnd(dbLogger, 'list', { accommodations });
     return { accommodations };
 };
 
@@ -257,10 +247,8 @@ export const create = async (
     input: CreateInput,
     actor: UserType | PublicUserType
 ): Promise<CreateOutput> => {
-    dbLogger.info({ input, actor }, 'create:start');
-    // Always use a safe actor (public fallback)
-    const safeActor = getSafeActor(actor); // Prevents bugs and ensures consistency in access logic.
-    // Edge-case: public user cannot create accommodations
+    logMethodStart(dbLogger, 'create', input, actor);
+    const safeActor = getSafeActor(actor);
     if (isPublicUser(safeActor)) {
         logOverride(
             dbLogger,
@@ -270,7 +258,6 @@ export const create = async (
         );
         throw new Error('Forbidden: Public user cannot create accommodations');
     }
-    // Permission check (now with try/catch)
     try {
         hasPermission(safeActor, PermissionEnum.ACCOMMODATION_CREATE);
     } catch (err) {
@@ -283,11 +270,8 @@ export const create = async (
         throw new Error('Forbidden: User does not have permission to create accommodation');
     }
     const parsedInput = createInputSchema.parse(input);
-    const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as AccommodationId);
-    const inputWithDates = castDateFields(inputWithBrandedIds);
-    const accommodation = await AccommodationModel.create(
-        inputWithDates as NewAccommodationInputType
-    );
+    const normalizedInput = normalizeCreateInput(parsedInput);
+    const accommodation = await AccommodationModel.create(normalizedInput);
     // Log success for private/draft creations
     if (accommodation.visibility !== 'PUBLIC') {
         logGrant(
@@ -299,7 +283,7 @@ export const create = async (
             'created'
         );
     }
-    dbLogger.info({ result: { accommodation } }, 'create:end');
+    logMethodEnd(dbLogger, 'create', { accommodation });
     return { accommodation };
 };
 
@@ -319,11 +303,11 @@ export const update = async (
     input: UpdateInput,
     actor: UserType | PublicUserType
 ): Promise<UpdateOutput> => {
-    dbLogger.info({ input, actor }, 'update:start');
+    logMethodStart(dbLogger, 'update', input, actor);
     const parsedInput = updateInputSchema.parse(input);
     const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
     if (!accommodation) {
-        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        logMethodEnd(dbLogger, 'update', { accommodation: null });
         throw new Error('Accommodation not found');
     }
     const safeActor = getSafeActor(actor);
@@ -334,7 +318,6 @@ export const update = async (
         checkedPermission: checkedPerm
     } = canViewAccommodation(safeActor, accommodation);
     checkedPermission = checkedPerm;
-    // If the user is disabled, explicitly deny access and log.
     if (isUserDisabled(safeActor)) {
         logUserDisabled(
             dbLogger,
@@ -343,52 +326,34 @@ export const update = async (
             accommodation,
             PermissionEnum.ACCOMMODATION_UPDATE_OWN
         );
-        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        logMethodEnd(dbLogger, 'update', { accommodation: null });
         throw new Error('Forbidden: user disabled');
     }
-    // Only owner, admin, or user with permission can update
-    const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
-    try {
-        if (isOwner) {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_UPDATE_OWN);
-        } else {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_UPDATE_ANY);
-        }
-    } catch (err) {
-        dbLogger.permission({
-            permission: isOwner
-                ? PermissionEnum.ACCOMMODATION_UPDATE_OWN
-                : PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-            userId: 'id' in safeActor ? safeActor.id : 'public',
-            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
-            extraData: { input, error: (err as Error).message }
-        });
-        dbLogger.info({ result: { accommodation: null } }, 'update:end');
-        throw new Error('Forbidden: user does not have permission to update accommodation');
-    }
-    // If cannot view, log and deny update
+    // Use helper for owner check
+    const owner = isOwner(safeActor, accommodation);
+    // Use helper for permission check and logging
+    checkAndLogPermission(
+        safeActor,
+        owner ? PermissionEnum.ACCOMMODATION_UPDATE_OWN : PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+        dbLogger,
+        { input },
+        'Forbidden: user does not have permission to update accommodation'
+    );
     if (!canView) {
         logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
-        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        logMethodEnd(dbLogger, 'update', { accommodation: null });
         throw new Error('Forbidden: cannot view accommodation');
     }
-    // Cast ownerId and destinationId to their branded types if present
-    const inputWithBrandedIds = castBrandedIds(parsedInput, (id) => id as AccommodationId);
-    const inputWithDates = castDateFields(inputWithBrandedIds);
-    // Proteger campos prohibidos (ownerId)
-    const protectedUpdateInput = {
-        ...inputWithDates,
-        ownerId: accommodation.ownerId // Siempre mantener el ownerId original
-    };
+    const normalizedUpdateInput = normalizeUpdateInput(accommodation, parsedInput);
     const updatedAccommodation = await AccommodationModel.update(
         parsedInput.id,
-        protectedUpdateInput as UpdateAccommodationInputType
+        normalizedUpdateInput as UpdateAccommodationInputType
     );
     if (!updatedAccommodation) {
-        dbLogger.info({ result: { accommodation: null } }, 'update:end');
+        logMethodEnd(dbLogger, 'update', { accommodation: null });
         throw new Error('Accommodation update failed');
     }
-    dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'update:end');
+    logMethodEnd(dbLogger, 'update', { accommodation: updatedAccommodation });
     return { accommodation: updatedAccommodation };
 };
 
@@ -408,20 +373,20 @@ export const softDelete = async (
     input: GetByIdInput,
     actor: UserType | PublicUserType
 ): Promise<{ accommodation: AccommodationType | null }> => {
-    dbLogger.info({ input, actor }, 'delete:start');
+    logMethodStart(dbLogger, 'delete', input, actor);
     const parsedInput = getByIdInputSchema.parse(input);
     const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
     if (!accommodation) {
-        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
+        logMethodEnd(dbLogger, 'delete', { accommodation: null });
         throw new Error('Accommodation not found');
     }
-    const safeActor = getSafeActor(actor);
-    // If already archived or deleted, do not allow double deletion
-    if (accommodation.lifecycleState === 'ARCHIVED' || accommodation.deletedAt) {
-        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
-        throw new Error('Accommodation is already archived or deleted');
+    try {
+        assertNotArchived(accommodation);
+    } catch (err) {
+        logMethodEnd(dbLogger, 'delete', { accommodation: null });
+        throw err;
     }
-    // If the user is disabled, deny and log
+    const safeActor = getSafeActor(actor);
     if (isUserDisabled(safeActor)) {
         logUserDisabled(
             dbLogger,
@@ -430,47 +395,26 @@ export const softDelete = async (
             accommodation,
             PermissionEnum.ACCOMMODATION_DELETE_OWN
         );
-        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
+        logMethodEnd(dbLogger, 'delete', { accommodation: null });
         throw new Error('Forbidden: user disabled');
     }
-    // Permissions: owner, admin, or global
-    const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
-    try {
-        if (isOwner) {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_DELETE_OWN);
-        } else {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_DELETE_ANY);
-        }
-    } catch (err) {
-        dbLogger.permission({
-            permission: isOwner
-                ? PermissionEnum.ACCOMMODATION_DELETE_OWN
-                : PermissionEnum.ACCOMMODATION_DELETE_ANY,
-            userId: 'id' in safeActor ? safeActor.id : 'public',
-            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
-            extraData: { input, error: (err as Error).message }
-        });
-        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
-        throw new Error('Forbidden: user does not have permission to delete accommodation');
-    }
-    // Soft-delete: set deletedAt, deletedById, lifecycleState
-    const now = new Date();
-    const deletedById = 'id' in safeActor ? safeActor.id : undefined;
-    const updateInput = {
-        lifecycleState: 'ARCHIVED',
-        deletedAt: now,
-        deletedById,
-        updatedAt: now,
-        updatedById: deletedById
-    };
+    const owner = isOwner(safeActor, accommodation);
+    checkAndLogPermission(
+        safeActor,
+        owner ? PermissionEnum.ACCOMMODATION_DELETE_OWN : PermissionEnum.ACCOMMODATION_DELETE_ANY,
+        dbLogger,
+        { input },
+        'Forbidden: user does not have permission to delete accommodation'
+    );
+    const updateInput = buildSoftDeleteUpdate(safeActor);
     const updatedAccommodation = await AccommodationModel.update(parsedInput.id, {
         ...updateInput
     } as Partial<UpdateAccommodationInputType>);
     if (!updatedAccommodation) {
-        dbLogger.info({ result: { accommodation: null } }, 'delete:end');
+        logMethodEnd(dbLogger, 'delete', { accommodation: null });
         throw new Error('Accommodation delete failed');
     }
-    dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'delete:end');
+    logMethodEnd(dbLogger, 'delete', { accommodation: updatedAccommodation });
     return { accommodation: updatedAccommodation };
 };
 
@@ -490,20 +434,21 @@ export const restore = async (
     input: GetByIdInput,
     actor: UserType | PublicUserType
 ): Promise<{ accommodation: AccommodationType | null }> => {
-    dbLogger.info({ input, actor }, 'restore:start');
+    logMethodStart(dbLogger, 'restore', input, actor);
     const parsedInput = getByIdInputSchema.parse(input);
     const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
     if (!accommodation) {
-        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
+        logMethodEnd(dbLogger, 'restore', { accommodation: null });
         throw new Error('Accommodation not found');
     }
-    const safeActor = getSafeActor(actor);
-    // Only allow restore if archived (soft-deleted)
-    if (accommodation.lifecycleState !== 'ARCHIVED' || !accommodation.deletedAt) {
-        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
-        throw new Error('Accommodation is not archived');
+    try {
+        assertNotActive(accommodation);
+    } catch (err) {
+        // Log end for idempotent restore (already active)
+        logMethodEnd(dbLogger, 'restore', { accommodation: null });
+        throw err;
     }
-    // If the user is disabled, deny and log
+    const safeActor = getSafeActor(actor);
     if (isUserDisabled(safeActor)) {
         logUserDisabled(
             dbLogger,
@@ -512,47 +457,26 @@ export const restore = async (
             accommodation,
             PermissionEnum.ACCOMMODATION_RESTORE_OWN
         );
-        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
+        logMethodEnd(dbLogger, 'restore', { accommodation: null });
         throw new Error('Forbidden: user disabled');
     }
-    // Permissions: owner, admin, or global
-    const isOwner = 'id' in safeActor && accommodation.ownerId === safeActor.id;
-    try {
-        if (isOwner) {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_RESTORE_OWN);
-        } else {
-            hasPermission(safeActor, PermissionEnum.ACCOMMODATION_RESTORE_ANY);
-        }
-    } catch (err) {
-        dbLogger.permission({
-            permission: isOwner
-                ? PermissionEnum.ACCOMMODATION_RESTORE_OWN
-                : PermissionEnum.ACCOMMODATION_RESTORE_ANY,
-            userId: 'id' in safeActor ? safeActor.id : 'public',
-            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
-            extraData: { input, error: (err as Error).message }
-        });
-        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
-        throw new Error('Forbidden: user does not have permission to restore accommodation');
-    }
-    // Restore: set lifecycleState to ACTIVE, clear deletedAt/deletedById, update audit fields
-    const now = new Date();
-    const updatedById = 'id' in safeActor ? safeActor.id : undefined;
-    const updateInput = {
-        lifecycleState: 'ACTIVE',
-        deletedAt: undefined,
-        deletedById: undefined,
-        updatedAt: now,
-        updatedById
-    };
+    const owner = isOwner(safeActor, accommodation);
+    checkAndLogPermission(
+        safeActor,
+        owner ? PermissionEnum.ACCOMMODATION_RESTORE_OWN : PermissionEnum.ACCOMMODATION_RESTORE_ANY,
+        dbLogger,
+        { input },
+        'Forbidden: user does not have permission to restore accommodation'
+    );
+    const updateInput = buildRestoreUpdate(safeActor);
     const updatedAccommodation = await AccommodationModel.update(parsedInput.id, {
         ...updateInput
     } as Partial<UpdateAccommodationInputType>);
     if (!updatedAccommodation) {
-        dbLogger.info({ result: { accommodation: null } }, 'restore:end');
+        logMethodEnd(dbLogger, 'restore', { accommodation: null });
         throw new Error('Accommodation restore failed');
     }
-    dbLogger.info({ result: { accommodation: updatedAccommodation } }, 'restore:end');
+    logMethodEnd(dbLogger, 'restore', { accommodation: updatedAccommodation });
     return { accommodation: updatedAccommodation };
 };
 
@@ -572,11 +496,11 @@ export const hardDelete = async (
     input: GetByIdInput,
     actor: UserType | PublicUserType
 ): Promise<{ success: boolean }> => {
-    dbLogger.info({ input, actor }, 'hardDelete:start');
+    logMethodStart(dbLogger, 'hardDelete', input, actor);
     const parsedInput = getByIdInputSchema.parse(input);
     const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
     if (!accommodation) {
-        dbLogger.info({ result: { success: false } }, 'hardDelete:end');
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
         throw new Error('Accommodation not found');
     }
     const safeActor = getSafeActor(actor);
@@ -589,7 +513,7 @@ export const hardDelete = async (
             accommodation,
             PermissionEnum.ACCOMMODATION_HARD_DELETE
         );
-        dbLogger.info({ result: { success: false } }, 'hardDelete:end');
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
         throw new Error('Forbidden: user disabled');
     }
     // Permissions: owner, admin, or global
@@ -602,7 +526,7 @@ export const hardDelete = async (
             role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
             extraData: { input, error: (err as Error).message }
         });
-        dbLogger.info({ result: { success: false } }, 'hardDelete:end');
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
         throw new Error('Forbidden: user does not have permission to hard-delete accommodation');
     }
     // Hard-delete: remove from DB
@@ -610,10 +534,10 @@ export const hardDelete = async (
     try {
         deleted = await AccommodationModel.hardDelete(parsedInput.id);
     } catch (_err) {
-        dbLogger.info({ result: { success: false } }, 'hardDelete:end');
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
         throw new Error('Accommodation hard delete failed');
     }
-    dbLogger.info({ result: { success: deleted } }, 'hardDelete:end');
+    logMethodEnd(dbLogger, 'hardDelete', { success: deleted });
     return { success: deleted };
 };
 
@@ -632,7 +556,7 @@ export const getByDestination = async (
     input: GetByDestinationInput,
     actor: UserType | PublicUserType
 ): Promise<GetByDestinationOutput> => {
-    dbLogger.info({ input, actor }, 'getByDestination:start');
+    logMethodStart(dbLogger, 'getByDestination', input, actor);
     const parsedInput = getByDestinationInputSchema.parse(input);
     const allAccommodations = await AccommodationModel.getByDestination(parsedInput.destinationId);
     const safeActor = getSafeActor(actor);
@@ -647,7 +571,7 @@ export const getByDestination = async (
                 PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
             );
         }
-        dbLogger.info({ result: { accommodations: [] } }, 'getByDestination:end');
+        logMethodEnd(dbLogger, 'getByDestination', { accommodations: [] });
         return { accommodations: [] };
     }
     // Filter by permissions and visibility
@@ -678,6 +602,6 @@ export const getByDestination = async (
         }
         result.push(accommodation);
     }
-    dbLogger.info({ result: { accommodations: result } }, 'getByDestination:end');
+    logMethodEnd(dbLogger, 'getByDestination', { accommodations: result });
     return { accommodations: result };
 };

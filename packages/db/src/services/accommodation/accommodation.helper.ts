@@ -1,4 +1,6 @@
+import type { AccommodationType, NewAccommodationInputType } from '@repo/types';
 import {
+    AccommodationTypeEnum,
     PermissionEnum,
     type PublicUserType,
     RoleEnum,
@@ -6,6 +8,10 @@ import {
     VisibilityEnum,
     createPublicUser
 } from '@repo/types';
+import type { AccommodationOrderByColumn } from '../../models/accommodation/accommodation.model';
+import { type dbLogger, hasPermission } from '../../utils';
+import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
+import type { ListInput, UpdateInput } from './accommodation.schemas';
 
 /**
  * Enum representing the reason why an actor can or cannot view an accommodation.
@@ -131,4 +137,172 @@ export const canViewAccommodation = (
         reason: CanViewReasonEnum.UNKNOWN_VISIBILITY,
         checkedPermission: undefined
     };
+};
+
+/**
+ * Normalizes the update input: casts branded IDs, dates, and protects ownerId from being overwritten.
+ * @param accommodation - The original accommodation object.
+ * @param input - The update input object.
+ * @returns The normalized update input with protected ownerId.
+ */
+export const normalizeUpdateInput = (
+    accommodation: AccommodationType,
+    input: UpdateInput
+): UpdateInput => {
+    const inputWithBrandedIds = castBrandedIds(input, (id) => id as typeof accommodation.id);
+    const inputWithDates = castDateFields(inputWithBrandedIds);
+    return {
+        ...inputWithDates,
+        ownerId: accommodation.ownerId // Always keep the original ownerId
+    };
+};
+
+/**
+ * Checks if the actor is the owner of the accommodation.
+ */
+export const isOwner = (
+    actor: UserType | PublicUserType,
+    accommodation: AccommodationType
+): boolean => {
+    return 'id' in actor && accommodation.ownerId === actor.id;
+};
+
+/**
+ * Builds the update object for soft-deleting (archiving) an accommodation.
+ */
+export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
+    const now = new Date();
+    const deletedById = 'id' in actor ? actor.id : undefined;
+    return {
+        lifecycleState: 'ARCHIVED',
+        deletedAt: now,
+        deletedById,
+        updatedAt: now,
+        updatedById: deletedById
+    };
+};
+
+/**
+ * Builds the update object for restoring (un-archiving) an accommodation.
+ */
+export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
+    const now = new Date();
+    const updatedById = 'id' in actor ? actor.id : undefined;
+    return {
+        lifecycleState: 'ACTIVE',
+        deletedAt: undefined,
+        deletedById: undefined,
+        updatedAt: now,
+        updatedById
+    };
+};
+
+/**
+ * Checks permission and logs if denied, throwing an error if not allowed.
+ * @param actor - The user or public actor.
+ * @param permission - The permission to check.
+ * @param dbLoggerInstance - Logger instance for permission logging.
+ * @param context - Context object for logging.
+ * @param errorMessage - Custom error message to throw if permission is denied.
+ */
+export const checkAndLogPermission = (
+    actor: UserType | PublicUserType,
+    permission: PermissionEnum,
+    dbLoggerInstance: typeof dbLogger,
+    context: object,
+    errorMessage: string
+) => {
+    try {
+        hasPermission(actor, permission);
+    } catch (err) {
+        dbLoggerInstance.permission({
+            permission,
+            userId: 'id' in actor ? actor.id : 'public',
+            role: 'role' in actor ? actor.role : RoleEnum.GUEST,
+            extraData: { ...context, error: (err as Error).message }
+        });
+        throw new Error(errorMessage);
+    }
+};
+
+/**
+ * Normalizes the create input: casts branded IDs and dates.
+ * @param input - The create input object.
+ * @returns The normalized create input.
+ */
+export const normalizeCreateInput = (input: Record<string, unknown>): NewAccommodationInputType => {
+    const inputWithBrandedIds = castBrandedIds(input, (id) => id as string);
+    const inputWithDates = castDateFields(inputWithBrandedIds);
+    // Validate 'type' is AccommodationTypeEnum
+    if (
+        !Object.values(AccommodationTypeEnum).includes(inputWithDates.type as AccommodationTypeEnum)
+    ) {
+        throw new Error(`Invalid accommodation type: ${inputWithDates.type}`);
+    }
+    return {
+        ...inputWithDates,
+        type: inputWithDates.type as AccommodationTypeEnum
+    } as NewAccommodationInputType;
+};
+
+/**
+ * Builds and cleans search params for the list method, handling public/private user logic.
+ * @param input - The list input object.
+ * @param actor - The user or public actor.
+ * @returns Cleaned search params for AccommodationModel.search.
+ */
+export const buildSearchParams = (
+    input: ListInput,
+    actor: UserType | PublicUserType
+): Record<string, unknown> => {
+    const isPublic = isPublicUser(actor);
+    const searchParams: Record<string, unknown> = isPublic
+        ? { visibility: 'PUBLIC', limit: input.limit, offset: input.offset }
+        : {
+              q: input.q,
+              type: input.type,
+              limit: input.limit,
+              offset: input.offset,
+              order: input.order,
+              orderBy: input.orderBy as AccommodationOrderByColumn | undefined,
+              ...(input.visibility ? { visibility: input.visibility } : {})
+          };
+    return Object.fromEntries(Object.entries(searchParams).filter(([_, v]) => v !== undefined));
+};
+
+/**
+ * Throws if the accommodation is archived or deleted.
+ */
+export const assertNotArchived = (accommodation: AccommodationType) => {
+    if (accommodation.lifecycleState === 'ARCHIVED' || accommodation.deletedAt) {
+        throw new Error('Accommodation is already archived or deleted');
+    }
+};
+
+/**
+ * Throws if the accommodation is already active (not archived).
+ */
+export const assertNotActive = (accommodation: AccommodationType) => {
+    if (accommodation.lifecycleState !== 'ARCHIVED' || !accommodation.deletedAt) {
+        throw new Error('Accommodation is not archived');
+    }
+};
+
+/**
+ * Logs the start of a service method.
+ */
+export const logMethodStart = (
+    logger: typeof dbLogger,
+    method: string,
+    input: object,
+    actor: object
+) => {
+    logger.info({ input, actor }, `${method}:start`);
+};
+
+/**
+ * Logs the end of a service method.
+ */
+export const logMethodEnd = (logger: typeof dbLogger, method: string, result: object) => {
+    logger.info({ result }, `${method}:end`);
 };
