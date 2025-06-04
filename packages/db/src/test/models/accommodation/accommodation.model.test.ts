@@ -346,6 +346,67 @@ describe('AccommodationModel', () => {
             );
             expect(dbLogger.error).toHaveBeenCalled();
         });
+        it('should find by text in name', async () => {
+            mockDb.select.mockReturnThis();
+            mockDb.from.mockReturnThis();
+            mockDb.where.mockReturnThis();
+            mockDb.orderBy.mockReturnThis();
+            mockDb.limit.mockReturnThis();
+            mockDb.offset.mockReturnValueOnce([
+                { ...mockAccommodation, name: 'UniqueName', summary: 'Sum', description: 'Desc' }
+            ]);
+            const result = await AccommodationModel.search({
+                q: 'UniqueName',
+                limit: 10,
+                offset: 0
+            });
+            expect(result).not.toHaveLength(0);
+            expect(result[0]?.name).toBe('UniqueName');
+        });
+        it('should find by text in summary', async () => {
+            mockDb.select.mockReturnThis();
+            mockDb.from.mockReturnThis();
+            mockDb.where.mockReturnThis();
+            mockDb.orderBy.mockReturnThis();
+            mockDb.limit.mockReturnThis();
+            mockDb.offset.mockReturnValueOnce([
+                { ...mockAccommodation, name: 'N', summary: 'SpecialSummary', description: 'Desc' }
+            ]);
+            const result = await AccommodationModel.search({
+                q: 'SpecialSummary',
+                limit: 10,
+                offset: 0
+            });
+            expect(result).not.toHaveLength(0);
+            expect(result[0]?.summary).toBe('SpecialSummary');
+        });
+        it('should find by text in description', async () => {
+            mockDb.select.mockReturnThis();
+            mockDb.from.mockReturnThis();
+            mockDb.where.mockReturnThis();
+            mockDb.orderBy.mockReturnThis();
+            mockDb.limit.mockReturnThis();
+            mockDb.offset.mockReturnValueOnce([
+                { ...mockAccommodation, name: 'N', summary: 'S', description: 'SpecialDescription' }
+            ]);
+            const result = await AccommodationModel.search({
+                q: 'SpecialDescription',
+                limit: 10,
+                offset: 0
+            });
+            expect(result).not.toHaveLength(0);
+            expect(result[0]?.description).toBe('SpecialDescription');
+        });
+        it('should return empty array if no match', async () => {
+            mockDb.select.mockReturnThis();
+            mockDb.from.mockReturnThis();
+            mockDb.where.mockReturnThis();
+            mockDb.orderBy.mockReturnThis();
+            mockDb.limit.mockReturnThis();
+            mockDb.offset.mockReturnValueOnce([]);
+            const result = await AccommodationModel.search({ q: 'NoMatch', limit: 10, offset: 0 });
+            expect(result).toEqual([]);
+        });
     });
 
     describe('count', () => {
