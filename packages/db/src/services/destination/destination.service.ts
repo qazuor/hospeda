@@ -1,7 +1,8 @@
 // Destination Service - MVP and Future Methods (stubs)
 // All methods use RO-RO pattern and throw 'Not implemented yet' for now.
 
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/types';
+import type { UserId } from '@repo/types/common/id.types';
 import { DestinationModel } from '../../models/destination/destination.model';
 import { dbLogger } from '../../utils/logger';
 import { logDenied, logGrant, logUserDisabled } from '../../utils/permission-logger';
@@ -13,20 +14,24 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
-import { canViewDestination } from './destination.helper';
+import { canViewDestination, normalizeCreateInput } from './destination.helper';
 import {
+    type CreateInput,
+    type CreateOutput,
     type GetByIdInput,
     type GetByIdOutput,
     type GetByNameInput,
     type GetByNameOutput,
     type GetBySlugInput,
     type GetBySlugOutput,
+    type ListInput,
+    type ListOutput,
+    createInputSchema,
     getByIdInputSchema,
     getByNameInputSchema,
-    getBySlugInputSchema
+    getBySlugInputSchema,
+    listInputSchema
 } from './destination.schemas';
-
-// --- MVP METHODS ---
 
 /**
  * Gets a destination by its ID. (MVP)
@@ -269,17 +274,111 @@ export const getByName = async (
 };
 
 /**
- * Lists destinations with filters and pagination. (MVP)
+ * Lists destinations with filters, pagination and ordering.
+ * Aplica lógica de visibilidad/permisos según el actor.
+ * RO-RO pattern, logging, edge-cases.
+ *
+ * @param input - Parámetros de paginación, filtros y orden.
+ * @param actor - Usuario o actor público.
+ * @returns Objeto con el array de destinos accesibles.
+ * @example
+ * const { destinations } = await list({ limit: 10, offset: 0, visibility: 'PUBLIC' }, user);
  */
-export const list = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const list = async (input: ListInput, actor: unknown): Promise<ListOutput> => {
+    logMethodStart(dbLogger, 'list', input, actor as object);
+    const parsedInput = listInputSchema.parse(input);
+    const allDestinations = await DestinationModel.list(parsedInput);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'list', { destinations: [] });
+        return { destinations: [] };
+    }
+    // Filtrar por permisos/visibilidad
+    const filtered = allDestinations.filter((destination) => {
+        const { canView } = canViewDestination(safeActor, destination);
+        return canView;
+    });
+    logMethodEnd(dbLogger, 'list', { destinations: filtered });
+    return { destinations: filtered };
 };
 
 /**
- * Creates a new destination. (MVP)
+ * Creates a new destination.
+ * Solo usuarios autenticados pueden crear destinos. RO-RO, logging, permisos.
+ * @param input - Input para crear destination
+ * @param actor - Usuario o actor público
+ * @returns { destination }
+ * @throws Error si el actor es público o no tiene permiso
  */
-export const create = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const create = async (
+    input: CreateInput,
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<CreateOutput> => {
+    logMethodStart(dbLogger, 'create', input, actor);
+    const safeActor = getSafeActor(actor);
+    if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: 'PRIVATE' },
+            CanViewReasonEnum.PUBLIC,
+            PermissionEnum.DESTINATION_CREATE
+        );
+        throw new Error('Forbidden: public user cannot create destinations');
+    }
+    if ('role' in safeActor && isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: 'PRIVATE' },
+            PermissionEnum.DESTINATION_CREATE
+        );
+        throw new Error('Forbidden: user disabled');
+    }
+    if (!('role' in safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: 'PRIVATE' },
+            CanViewReasonEnum.PUBLIC,
+            PermissionEnum.DESTINATION_CREATE
+        );
+        throw new Error('Forbidden: public user cannot create destinations');
+    }
+    try {
+        hasPermission(safeActor, PermissionEnum.DESTINATION_CREATE);
+    } catch (err) {
+        dbLogger.permission({
+            permission: PermissionEnum.DESTINATION_CREATE,
+            userId: safeActor.id,
+            role: safeActor.role,
+            extraData: { input, error: (err as Error).message }
+        });
+        throw new Error('Forbidden: user does not have permission to create destination');
+    }
+    const parsedInput = createInputSchema.parse(input);
+    const normalizedInput = normalizeCreateInput(parsedInput);
+    const destinationInput = {
+        ...normalizedInput,
+        createdById:
+            (normalizedInput as { createdById?: UserId }).createdById ?? (safeActor.id as UserId)
+    } as import('@repo/types').NewDestinationInputType;
+    const destination = await DestinationModel.create(destinationInput);
+    if (destination.visibility !== 'PUBLIC') {
+        logGrant(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            PermissionEnum.DESTINATION_CREATE,
+            'created'
+        );
+    }
+    logMethodEnd(dbLogger, 'create', { destination });
+    return { destination };
 };
 
 /**

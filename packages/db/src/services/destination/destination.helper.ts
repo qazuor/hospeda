@@ -7,6 +7,7 @@ import {
     type UserType,
     VisibilityEnum
 } from '@repo/types';
+import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
 import { CanViewReasonEnum } from '../../utils/service-helper';
 
 // --- Permissions & Visibility Helpers (copied/adapted from accommodation.helper.ts) ---
@@ -49,4 +50,15 @@ export const canViewDestination = (
         reason: CanViewReasonEnum.UNKNOWN_VISIBILITY,
         checkedPermission: undefined
     };
+};
+
+/**
+ * Normalizes the create input: casts branded IDs y fechas.
+ * @param input - El input de creación
+ * @returns El input normalizado
+ */
+export const normalizeCreateInput = (input: Record<string, unknown>) => {
+    const inputWithBrandedIds = castBrandedIds(input, (id: unknown) => id as string);
+    const inputWithDates = castDateFields(inputWithBrandedIds);
+    return inputWithDates;
 };
