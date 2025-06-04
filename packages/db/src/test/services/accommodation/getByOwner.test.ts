@@ -1,4 +1,10 @@
-import { type AccommodationId, RoleEnum, type UserId, VisibilityEnum } from '@repo/types';
+import {
+    type AccommodationId,
+    LifecycleStatusEnum,
+    RoleEnum,
+    type UserId,
+    VisibilityEnum
+} from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import * as AccommodationService from '../../../services/accommodation/accommodation.service';
@@ -144,7 +150,8 @@ describe('accommodation.service.getByOwner', () => {
         vi.clearAllMocks();
         const disabledUser = makeDisabledUser({
             id: 'user-disabled' as UserId,
-            role: RoleEnum.USER
+            role: RoleEnum.USER,
+            lifecycleState: LifecycleStatusEnum.INACTIVE
         });
         const ownerId = 'user-disabled' as UserId;
         const accommodation1 = getMockAccommodation({

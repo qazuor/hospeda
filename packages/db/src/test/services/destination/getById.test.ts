@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
@@ -70,7 +70,10 @@ describe('destination.service.getById', () => {
 
     it('should return null for disabled user', async () => {
         (DestinationModel.getById as Mock).mockResolvedValue(baseDestination);
-        const result = await DestinationService.getById({ id: destinationId }, disabledUser);
+        const result = await DestinationService.getById(
+            { id: destinationId },
+            { ...disabledUser, lifecycleState: LifecycleStatusEnum.INACTIVE }
+        );
         expect(result.destination).toBeNull();
         expectPermissionLog({
             permission: expect.any(String),

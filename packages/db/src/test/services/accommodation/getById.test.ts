@@ -27,6 +27,7 @@ vi.mock('../../../models/accommodation/accommodation.model', async (importOrigin
     };
 });
 
+import { LifecycleStatusEnum } from '@repo/types';
 import type { AccommodationId } from '@repo/types/common/id.types';
 import { PermissionEnum } from '@repo/types/enums/permission.enum';
 import { RoleEnum } from '@repo/types/enums/role.enum';
@@ -139,7 +140,7 @@ describe('accommodation.service.getById', () => {
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodationPrivate);
         const result = await AccommodationService.getById(
             { id: 'acc-2' as AccommodationId },
-            disabledUser
+            { ...disabledUser, lifecycleState: LifecycleStatusEnum.INACTIVE }
         );
         expect(result.accommodation).toBeNull();
         expectPermissionLog({

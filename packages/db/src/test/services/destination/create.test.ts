@@ -5,6 +5,7 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import { create as createDestination } from '../../../services/destination/destination.service';
 import { getMockDestination, getMockPublicUser, getMockUser } from '../../../test/mockData';
+import * as permissionManager from '../../../utils/permission-manager';
 
 // vi.mock('../../../models/destination/destination.model');
 
@@ -42,19 +43,22 @@ describe('destination.service.create', () => {
 
     it('should throw for disabled user', async () => {
         const spy = vi.spyOn(DestinationModel, 'create');
-        const disabledUser = getMockUser({
-            lifecycleState: LifecycleStatusEnum.INACTIVE,
-            enabled: false
-        });
+        const disabledUser = getMockUser({ lifecycleState: LifecycleStatusEnum.INACTIVE });
         await expect(createDestination(validInput, disabledUser)).rejects.toThrow('disabled');
         expect(spy).not.toHaveBeenCalled();
     });
 
     it('should throw if user lacks permission', async () => {
         const spy = vi.spyOn(DestinationModel, 'create');
+        const hasPermissionMock = vi
+            .spyOn(permissionManager, 'hasPermission')
+            .mockImplementation(() => {
+                throw new Error('Forbidden: user does not have permission to create destination');
+            });
         const noPermUser = getMockUser({ role: RoleEnum.USER, permissions: [] });
         await expect(createDestination(validInput, noPermUser)).rejects.toThrow('permission');
         expect(spy).not.toHaveBeenCalled();
+        hasPermissionMock.mockRestore();
     });
 
     it('should throw on invalid input', async () => {

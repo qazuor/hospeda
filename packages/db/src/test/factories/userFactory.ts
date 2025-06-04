@@ -1,3 +1,4 @@
+import { LifecycleStatusEnum } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types/enums';
 import { getMockPublicUser, getMockUser, getMockUserId } from '../mockData';
 
@@ -27,14 +28,7 @@ export const makeDisabledUser = (overrides = {}) =>
     getMockUser({
         id: getMockUserId(),
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN],
-        settings: {
-            notifications: {
-                enabled: false,
-                allowEmails: true,
-                allowSms: true,
-                allowPush: true
-            }
-        },
+        lifecycleState: LifecycleStatusEnum.INACTIVE,
         ...overrides
     });
 

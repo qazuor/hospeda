@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
@@ -104,7 +104,7 @@ describe('destination.service.getBySlug', () => {
         (DestinationModel.getBySlug as Mock).mockResolvedValue(privateDestination);
         const result = await DestinationService.getBySlug(
             { slug: privateDestination.slug as string },
-            disabledUser
+            { ...disabledUser, lifecycleState: LifecycleStatusEnum.INACTIVE }
         );
         expect(result.destination).toBeNull();
         expectPermissionLog({

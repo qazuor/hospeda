@@ -175,7 +175,10 @@ describe('accommodation.service.restore', () => {
     it('should deny restore if user is disabled', async () => {
         // Arrange: Create a disabled user and an archived accommodation
         const ownerId = getMockUserId();
-        const disabledUser = makeDisabledUser({ id: ownerId });
+        const disabledUser = makeDisabledUser({
+            id: ownerId,
+            lifecycleState: LifecycleStatusEnum.INACTIVE
+        });
         const now = new Date();
         const archivedAccommodation = {
             ...makeArchivedAccommodation({ ownerId }),

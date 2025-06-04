@@ -288,7 +288,10 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const disabledUser = makeDisabledUser({ id: ownerId });
+        const disabledUser = makeDisabledUser({
+            id: ownerId,
+            lifecycleState: LifecycleStatusEnum.INACTIVE
+        });
         const accommodation = makeAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Update (Disabled User)',

@@ -1,4 +1,10 @@
-import { type PublicUserType, RoleEnum, type UserType, createPublicUser } from '@repo/types';
+import {
+    LifecycleStatusEnum,
+    type PublicUserType,
+    RoleEnum,
+    type UserType,
+    createPublicUser
+} from '@repo/types';
 import { hasPermission } from '../utils';
 import type { dbLogger } from './logger';
 
@@ -48,16 +54,14 @@ export const getSafeActor = (actor: unknown): UserType | PublicUserType => {
 };
 
 /**
- * Checks if a user is disabled (either via 'enabled' property or settings.notifications.enabled === false).
+ * Checks if a user is disabled (by lifecycleState).
  * @param actor - The actor to check.
  * @returns True if the user is disabled.
  * @example
- * isUserDisabled(getMockUser({ enabled: false })) // true
+ * isUserDisabled(getMockUser({ lifecycleState: LifecycleStatusEnum.INACTIVE })) // true
  */
 export const isUserDisabled = (actor: UserType | PublicUserType): boolean => {
-    if ('enabled' in actor) return actor.enabled === false;
-    if ('settings' in actor && actor.settings?.notifications?.enabled === false) return true;
-    return false;
+    return 'lifecycleState' in actor && actor.lifecycleState !== LifecycleStatusEnum.ACTIVE;
 };
 
 /**

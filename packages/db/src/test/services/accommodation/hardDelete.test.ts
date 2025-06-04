@@ -126,7 +126,10 @@ describe('accommodation.service.hardDelete', () => {
     it('should deny hard-delete if user is disabled', async () => {
         // Arrange: Create a disabled user and an accommodation
         const ownerId = getMockUserId();
-        const disabledUser = makeDisabledUser({ id: ownerId });
+        const disabledUser = makeDisabledUser({
+            id: ownerId,
+            lifecycleState: LifecycleStatusEnum.INACTIVE
+        });
         const accommodation = makeAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 

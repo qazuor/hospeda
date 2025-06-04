@@ -27,7 +27,13 @@ vi.mock('../../../models/accommodation/accommodation.model', async (importOrigin
         ]
     };
 });
-import { type AccommodationId, PermissionEnum, RoleEnum, type VisibilityEnum } from '@repo/types';
+import {
+    type AccommodationId,
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    type VisibilityEnum
+} from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import * as AccommodationService from '../../../services/accommodation/accommodation.service';
@@ -160,7 +166,7 @@ describe('accommodation.service.getByName', () => {
         // Act: Attempt to get the accommodation by name as a disabled user.
         const result = await AccommodationService.getByName(
             { name: accommodationPrivate.name },
-            disabledUser
+            { ...disabledUser, lifecycleState: LifecycleStatusEnum.INACTIVE }
         );
         // Assert: The result is null and a permission log is created with the reason 'user disabled'.
         expect(result.accommodation).toBeNull();
