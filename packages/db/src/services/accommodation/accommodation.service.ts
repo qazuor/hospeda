@@ -45,6 +45,8 @@ import {
     type GetTopRatedByDestinationOutput,
     type ListInput,
     type ListOutput,
+    type SearchInput,
+    type SearchOutput,
     type UpdateInput,
     type UpdateOutput,
     createInputSchema,
@@ -55,6 +57,7 @@ import {
     getForHomeInputSchema,
     getTopRatedByDestinationInputSchema,
     listInputSchema,
+    searchInputSchema,
     updateInputSchema
 } from './accommodation.schemas';
 
@@ -792,4 +795,205 @@ export const getForHome = async (
         );
     }
     return { accommodationsByDestination };
+};
+
+/**
+ * Advanced accommodation search with hybrid filtering strategy.
+ *
+ * Filters applied in the model (DB):
+ * - destinationIds
+ * - types
+ * - isFeatured
+ * - minRating
+ * - withContactInfo
+ *
+ * Filters applied in the service (in-memory):
+ * - includeWithoutPrice
+ * - amenities
+ * - features
+ * - free text in summary/description
+ * - advanced ordering (isFeatured first, then multiple fields)
+ *
+ * When the data volume grows, migrate amenities/features/free-text filters to SQL for efficiency.
+ * See comments inside the function for migration hints.
+ *
+ * NOTE: Add the actor parameter when permission logic is required.
+ */
+export const search = async (
+    input: SearchInput,
+    actor: UserType | PublicUserType
+): Promise<SearchOutput> => {
+    // 1. Validate input
+    const parsedInput = searchInputSchema.parse(input);
+
+    // 2. Build base query params for the model
+    const modelFilters: Record<string, unknown> = {};
+    if (parsedInput.destinationId) {
+        modelFilters.destinationId = parsedInput.destinationId;
+    }
+    if (parsedInput.types && parsedInput.types.length > 0) {
+        modelFilters.type = parsedInput.types[0]; // Only one type supported in model
+    }
+    if (typeof parsedInput.isFeatured === 'boolean') {
+        modelFilters.isFeatured = parsedInput.isFeatured;
+    }
+    if (typeof parsedInput.minRating === 'number') {
+        modelFilters.averageRating = parsedInput.minRating;
+    }
+    if (typeof parsedInput.withContactInfo === 'boolean') {
+        modelFilters.contactInfo = parsedInput.withContactInfo ? { $ne: null } : null;
+    }
+    if (parsedInput.text && parsedInput.text.trim().length > 0) {
+        modelFilters.q = parsedInput.text.trim();
+    }
+
+    // 3. Query the model (DB) for a base set
+    const baseAccommodations = await AccommodationModel.search({
+        ...modelFilters,
+        limit: 1000,
+        offset: 0
+    });
+
+    // 4. In-memory filtering for advanced logic
+    let filtered = baseAccommodations;
+
+    // Filter by multiple types if provided (beyond the first)
+    if (parsedInput.types && parsedInput.types.length > 1) {
+        filtered = filtered.filter(
+            (acc) => Array.isArray(parsedInput.types) && parsedInput.types.includes(acc.type)
+        );
+    }
+    // Filter by minPrice/maxPrice/includeWithoutPrice using price.price
+    if (
+        typeof parsedInput.minPrice === 'number' ||
+        typeof parsedInput.maxPrice === 'number' ||
+        parsedInput.includeWithoutPrice
+    ) {
+        filtered = filtered.filter((acc) => {
+            const priceObj = acc.price;
+            const hasPrice =
+                typeof priceObj === 'object' &&
+                priceObj !== null &&
+                Object.prototype.hasOwnProperty.call(priceObj, 'price') &&
+                typeof (priceObj as Record<string, unknown>).price === 'number';
+            if (!hasPrice) return !!parsedInput.includeWithoutPrice;
+            const priceValue = (priceObj as { price: number }).price;
+            if (typeof parsedInput.minPrice === 'number' && priceValue < parsedInput.minPrice)
+                return false;
+            if (typeof parsedInput.maxPrice === 'number' && priceValue > parsedInput.maxPrice)
+                return false;
+            return true;
+        });
+    }
+    // Filter by amenities (must have all selected)
+    if (parsedInput.amenities && parsedInput.amenities.length > 0) {
+        filtered = filtered.filter((acc) => {
+            const accAmenityIds = (acc.amenities || []).map((a) => a.amenityId as string);
+            return (
+                Array.isArray(parsedInput.amenities) &&
+                parsedInput.amenities.every((aid) => accAmenityIds.includes(aid))
+            );
+        });
+    }
+    // Filter by features (must have all selected)
+    if (parsedInput.features && parsedInput.features.length > 0) {
+        filtered = filtered.filter((acc) => {
+            const accFeatureIds = (acc.features || []).map((f) => f.featureId as string);
+            return (
+                Array.isArray(parsedInput.features) &&
+                parsedInput.features.every((fid) => accFeatureIds.includes(fid))
+            );
+        });
+    }
+
+    // 5. Permissions and logging (filter by what the actor can view)
+    const safeActor = getSafeActor(actor);
+    const result: AccommodationType[] = [];
+    for (const accommodation of filtered) {
+        if (isUserDisabled(safeActor)) {
+            logUserDisabled(
+                dbLogger,
+                safeActor,
+                parsedInput,
+                accommodation,
+                PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
+            );
+            continue;
+        }
+        const { canView, reason, checkedPermission } = canViewAccommodation(
+            safeActor,
+            accommodation
+        );
+        if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
+            logDenied(dbLogger, safeActor, parsedInput, accommodation, reason, checkedPermission);
+            continue;
+        }
+        if (!canView) {
+            logDenied(dbLogger, safeActor, parsedInput, accommodation, reason, checkedPermission);
+            continue;
+        }
+        // Log access to private/draft
+        if (accommodation.visibility !== 'PUBLIC') {
+            logGrant(
+                dbLogger,
+                safeActor,
+                parsedInput,
+                accommodation,
+                checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
+                reason
+            );
+        }
+        result.push(accommodation);
+    }
+
+    // 6. Advanced ordering: isFeatured first, then by orderBy fields
+    const ordered = result.sort((a, b) => {
+        if (a.isFeatured && !b.isFeatured) return -1;
+        if (!a.isFeatured && b.isFeatured) return 1;
+        if (parsedInput.orderBy && parsedInput.orderBy.length > 0) {
+            for (const field of parsedInput.orderBy) {
+                if (field === 'price') {
+                    const aPriceObj = a.price;
+                    const bPriceObj = b.price;
+                    const aHasPrice =
+                        typeof aPriceObj === 'object' &&
+                        aPriceObj !== null &&
+                        Object.prototype.hasOwnProperty.call(aPriceObj, 'price') &&
+                        typeof (aPriceObj as Record<string, unknown>).price === 'number';
+                    const bHasPrice =
+                        typeof bPriceObj === 'object' &&
+                        bPriceObj !== null &&
+                        Object.prototype.hasOwnProperty.call(bPriceObj, 'price') &&
+                        typeof (bPriceObj as Record<string, unknown>).price === 'number';
+                    const aPrice = aHasPrice
+                        ? (aPriceObj as { price: number }).price
+                        : Number.POSITIVE_INFINITY;
+                    const bPrice = bHasPrice
+                        ? (bPriceObj as { price: number }).price
+                        : Number.POSITIVE_INFINITY;
+                    if (aPrice !== bPrice) return aPrice - bPrice;
+                } else if (field === 'destination') {
+                    if (a.destinationId !== b.destinationId)
+                        return a.destinationId.localeCompare(b.destinationId);
+                } else if (field === 'type') {
+                    if (a.type !== b.type) return a.type.localeCompare(b.type);
+                } else if (field === 'rating') {
+                    const aRating = a.averageRating ?? 0;
+                    const bRating = b.averageRating ?? 0;
+                    if (aRating !== bRating) return bRating - aRating;
+                }
+            }
+        }
+        return 0;
+    });
+
+    // 7. Pagination (after filtering and ordering)
+    const total = ordered.length;
+    const paginated = ordered.slice(parsedInput.offset, parsedInput.offset + parsedInput.limit);
+
+    // 8. Return result
+    return {
+        accommodations: paginated,
+        total
+    };
 };
