@@ -6,7 +6,7 @@ import type {
     UpdateAccommodationInputType,
     UserType
 } from '@repo/types';
-import { and, asc, count, desc, eq, ilike } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { accommodations } from '../../dbschemas/accommodation/accommodation.dbschema.ts';
 import { rEntityTag } from '../../dbschemas/tag/r_entity_tag.dbschema.ts';
@@ -324,7 +324,13 @@ export const AccommodationModel = {
         try {
             const whereClauses = [];
             if (q) {
-                whereClauses.push(ilike(accommodations.name, prepareLikeQuery(q)));
+                whereClauses.push(
+                    or(
+                        ilike(accommodations.name, prepareLikeQuery(q)),
+                        ilike(accommodations.summary, prepareLikeQuery(q)),
+                        ilike(accommodations.description, prepareLikeQuery(q))
+                    )
+                );
             }
             if (name) {
                 whereClauses.push(ilike(accommodations.name, prepareLikeQuery(name)));
@@ -351,7 +357,7 @@ export const AccommodationModel = {
             );
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
             if (tagId) {
-                // Query con innerJoin
+                // Query with innerJoin
                 const result = await db
                     .select({ accommodations, rEntityTag })
                     .from(accommodations)
@@ -370,7 +376,7 @@ export const AccommodationModel = {
                 dbLogger.query({ table: 'accommodations', action: 'search', params, result });
                 return result.map((row) => row.accommodations as AccommodationType);
             }
-            // Query sin innerJoin
+            // Query without innerJoin
             const result = await db
                 .select()
                 .from(accommodations)
