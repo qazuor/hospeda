@@ -22,3 +22,24 @@ export type GetByIdOutput = {
 export const getByIdInputSchema = z.object({
     id: z.string() as unknown as z.ZodType<DestinationId>
 });
+
+/**
+ * Input type for getBySlug (DestinationService)
+ */
+export type GetBySlugInput = {
+    slug: string;
+};
+
+/**
+ * Output type for getBySlug (DestinationService)
+ */
+export type GetBySlugOutput = {
+    destination: DestinationType | null;
+};
+
+/**
+ * Zod schema for getBySlug input
+ */
+export const getBySlugInputSchema = z.object({
+    slug: z.string().min(1)
+});

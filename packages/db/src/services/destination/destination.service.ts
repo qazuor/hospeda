@@ -14,7 +14,14 @@ import {
     logMethodStart
 } from '../../utils/service-helper';
 import { canViewDestination } from './destination.helper';
-import { type GetByIdInput, type GetByIdOutput, getByIdInputSchema } from './destination.schemas';
+import {
+    type GetByIdInput,
+    type GetByIdOutput,
+    type GetBySlugInput,
+    type GetBySlugOutput,
+    getByIdInputSchema,
+    getBySlugInputSchema
+} from './destination.schemas';
 
 // --- MVP METHODS ---
 
@@ -64,7 +71,8 @@ export const getById = async (input: GetByIdInput, actor: unknown): Promise<GetB
     }
     if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
         try {
-            hasPermission(safeActor, checkedPermission);
+            const allowed = hasPermission(safeActor, checkedPermission);
+            if (!allowed) throw new Error('Permission denied');
         } catch (_err) {
             logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
             logMethodEnd(dbLogger, 'getById', { destination: null });
@@ -96,10 +104,86 @@ export const getById = async (input: GetByIdInput, actor: unknown): Promise<GetB
 };
 
 /**
- * Gets a destination by its slug. (MVP)
+ * Gets a destination by its slug.
+ * Handles edge-cases: public user, disabled user, unknown visibility.
+ * Always uses RO-RO pattern for input/output.
+ *
+ * Why: Permite búsqueda segura y auditable por slug, con la misma robustez que getById.
+ *
+ * @param input - The input object containing the destination slug.
+ * @param actor - The user or public actor requesting the destination.
+ * @returns An object with the destination or null if not accessible.
+ * @throws Error if the destination has unknown visibility.
+ * @example
+ * const result = await getBySlug({ slug: 'destino-uruguay' }, user);
  */
-export const getBySlug = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const getBySlug = async (
+    input: GetBySlugInput,
+    actor: unknown
+): Promise<GetBySlugOutput> => {
+    logMethodStart(dbLogger, 'getBySlug', input, actor as object);
+    const parsedInput = getBySlugInputSchema.parse(input);
+    const destination = (await DestinationModel.getBySlug(parsedInput.slug)) ?? null;
+    if (!destination) {
+        logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+        return { destination: null };
+    }
+    const safeActor = getSafeActor(actor);
+    let checkedPermission: import('@repo/types').PermissionEnum | undefined;
+    const {
+        canView,
+        reason,
+        checkedPermission: checkedPerm
+    } = canViewDestination(safeActor, destination);
+    checkedPermission = checkedPerm;
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE
+        );
+        logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+        return { destination: null };
+    }
+    if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
+        logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+        throw new Error(`Unknown destination visibility: ${destination.visibility}`);
+    }
+    if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+        try {
+            const allowed = hasPermission(safeActor, checkedPermission);
+            if (!allowed) throw new Error('Permission denied');
+        } catch (_err) {
+            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+            return { destination: null };
+        }
+        if (destination.visibility !== 'PUBLIC') {
+            logGrant(dbLogger, safeActor, input, destination, checkedPermission, reason);
+        }
+        logMethodEnd(dbLogger, 'getBySlug', { destination });
+        return { destination };
+    }
+    if (!canView) {
+        logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+        return { destination: null };
+    }
+    if (destination.visibility !== 'PUBLIC') {
+        logGrant(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE,
+            reason
+        );
+    }
+    logMethodEnd(dbLogger, 'getBySlug', { destination });
+    return { destination };
 };
 
 /**

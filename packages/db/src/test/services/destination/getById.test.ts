@@ -1,4 +1,4 @@
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
@@ -28,12 +28,6 @@ vi.mock('../../../models/destination/destination.model', async (importOriginal) 
     };
 });
 
-vi.mock('../../../utils/permission-manager', () => ({
-    hasPermission: () => {
-        throw new Error('Forbidden: User does not have permission to view destination');
-    }
-}));
-
 import * as DestinationService from '../../../services/destination/destination.service';
 
 /**
@@ -51,6 +45,15 @@ describe('destination.service.getById', () => {
     const baseDestination = getMockDestination({
         id: destinationId,
         visibility: VisibilityEnum.PUBLIC
+    });
+    const privateDestination = getMockDestination({
+        id: destinationId,
+        visibility: VisibilityEnum.PRIVATE
+    });
+    const userWithPrivatePerm = getMockUser({
+        id: getMockUserId(),
+        role: RoleEnum.USER,
+        permissions: [PermissionEnum.DESTINATION_VIEW_PRIVATE]
     });
 
     beforeEach(() => {
@@ -94,7 +97,6 @@ describe('destination.service.getById', () => {
     });
 
     it('should return destination for admin if visibility is PRIVATE', async () => {
-        const privateDestination = { ...baseDestination, visibility: VisibilityEnum.PRIVATE };
         (DestinationModel.getById as Mock).mockResolvedValue(privateDestination);
         const result = await DestinationService.getById({ id: destinationId }, admin);
         expect(result.destination).toEqual(privateDestination);
@@ -116,5 +118,19 @@ describe('destination.service.getById', () => {
         const result = await DestinationService.getById({ id: destinationId }, user);
         expect(result.destination).toBeNull();
         expectNoPermissionLog();
+    });
+
+    it('should return destination for user with DESTINATION_VIEW_PRIVATE permission', async () => {
+        (DestinationModel.getById as Mock).mockResolvedValue(privateDestination);
+        const result = await DestinationService.getById(
+            { id: privateDestination.id },
+            userWithPrivatePerm
+        );
+        expect(result.destination).toEqual(privateDestination);
+        expectInfoLog(
+            { input: { id: privateDestination.id }, actor: userWithPrivatePerm },
+            'getById:start'
+        );
+        expectInfoLog({ result: { destination: privateDestination } }, 'getById:end');
     });
 });

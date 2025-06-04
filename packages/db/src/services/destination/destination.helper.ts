@@ -17,12 +17,8 @@ import { CanViewReasonEnum } from '../../utils/service-helper';
  */
 export const canViewDestination = (
     actor: UserType | PublicUserType,
-    destination: { visibility: string; ownerId?: string }
+    destination: { visibility: string }
 ): { canView: boolean; reason: CanViewReasonEnum; checkedPermission?: PermissionEnum } => {
-    // if (process.env.NODE_ENV === 'test') {
-    //     // eslint-disable-next-line no-console
-    //     console.log('[canViewDestination DEBUG]', { visibility: destination.visibility, ownerId: destination.ownerId, actorId: 'id' in actor ? actor.id : undefined });
-    // }
     if (!Object.values(VisibilityEnum).includes(destination.visibility as VisibilityEnum)) {
         return {
             canView: false,
@@ -35,9 +31,6 @@ export const canViewDestination = (
     }
     if ('role' in actor && (actor.role === RoleEnum.ADMIN || actor.role === RoleEnum.SUPER_ADMIN)) {
         return { canView: true, reason: CanViewReasonEnum.ADMIN_BYPASS };
-    }
-    if ('id' in actor && destination.ownerId && actor.id === destination.ownerId) {
-        return { canView: true, reason: CanViewReasonEnum.OWNER };
     }
     const visibilityToPermission: Record<string, PermissionEnum> = {
         PRIVATE: PermissionEnum.DESTINATION_VIEW_PRIVATE,
