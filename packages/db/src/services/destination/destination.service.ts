@@ -17,9 +17,12 @@ import { canViewDestination } from './destination.helper';
 import {
     type GetByIdInput,
     type GetByIdOutput,
+    type GetByNameInput,
+    type GetByNameOutput,
     type GetBySlugInput,
     type GetBySlugOutput,
     getByIdInputSchema,
+    getByNameInputSchema,
     getBySlugInputSchema
 } from './destination.schemas';
 
@@ -183,6 +186,85 @@ export const getBySlug = async (
         );
     }
     logMethodEnd(dbLogger, 'getBySlug', { destination });
+    return { destination };
+};
+
+/**
+ * Gets a destination by its name.
+ * Maneja edge-cases: usuario público, usuario deshabilitado, visibilidad desconocida.
+ * RO-RO pattern.
+ *
+ * @param input - Objeto con el nombre del destino.
+ * @param actor - Usuario o actor público.
+ * @returns Objeto con el destino o null si no es accesible.
+ * @throws Error si la visibilidad es desconocida.
+ */
+export const getByName = async (
+    input: GetByNameInput,
+    actor: unknown
+): Promise<GetByNameOutput> => {
+    logMethodStart(dbLogger, 'getByName', input, actor as object);
+    const parsedInput = getByNameInputSchema.parse(input);
+    const destination = (await DestinationModel.getByName(parsedInput.name)) ?? null;
+    if (!destination) {
+        logMethodEnd(dbLogger, 'getByName', { destination: null });
+        return { destination: null };
+    }
+    const safeActor = getSafeActor(actor);
+    let checkedPermission: import('@repo/types').PermissionEnum | undefined;
+    const {
+        canView,
+        reason,
+        checkedPermission: checkedPerm
+    } = canViewDestination(safeActor, destination);
+    checkedPermission = checkedPerm;
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE
+        );
+        logMethodEnd(dbLogger, 'getByName', { destination: null });
+        return { destination: null };
+    }
+    if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
+        logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getByName', { destination: null });
+        throw new Error(`Unknown destination visibility: ${destination.visibility}`);
+    }
+    if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+        try {
+            const allowed = hasPermission(safeActor, checkedPermission);
+            if (!allowed) throw new Error('Permission denied');
+        } catch (_err) {
+            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(dbLogger, 'getByName', { destination: null });
+            return { destination: null };
+        }
+        if (destination.visibility !== 'PUBLIC') {
+            logGrant(dbLogger, safeActor, input, destination, checkedPermission, reason);
+        }
+        logMethodEnd(dbLogger, 'getByName', { destination });
+        return { destination };
+    }
+    if (!canView) {
+        logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getByName', { destination: null });
+        return { destination: null };
+    }
+    if (destination.visibility !== 'PUBLIC') {
+        logGrant(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE,
+            reason
+        );
+    }
+    logMethodEnd(dbLogger, 'getByName', { destination });
     return { destination };
 };
 

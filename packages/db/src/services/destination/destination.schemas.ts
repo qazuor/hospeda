@@ -43,3 +43,24 @@ export type GetBySlugOutput = {
 export const getBySlugInputSchema = z.object({
     slug: z.string().min(1)
 });
+
+/**
+ * Input type for getByName (DestinationService)
+ */
+export type GetByNameInput = {
+    name: string;
+};
+
+/**
+ * Output type for getByName (DestinationService)
+ */
+export type GetByNameOutput = {
+    destination: DestinationType | null;
+};
+
+/**
+ * Zod schema for getByName input
+ */
+export const getByNameInputSchema = z.object({
+    name: z.string().min(1)
+});
