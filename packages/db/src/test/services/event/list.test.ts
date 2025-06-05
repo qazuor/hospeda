@@ -176,4 +176,28 @@ describe('event.service.list', () => {
         expect(result.events).toEqual([]);
         expectInfoLog({ result: { events: [] } }, 'list:end');
     });
+
+    it('should pass minDate to EventModel.search', async () => {
+        (EventModel.search as Mock).mockResolvedValue([publicEvent]);
+        const minDate = new Date('2024-07-01T00:00:00Z');
+        await list({ minDate }, admin);
+        expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ minDate }));
+    });
+
+    it('should pass maxDate to EventModel.search', async () => {
+        (EventModel.search as Mock).mockResolvedValue([publicEvent]);
+        const maxDate = new Date('2024-08-01T00:00:00Z');
+        await list({ maxDate }, admin);
+        expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ maxDate }));
+    });
+
+    it('should pass both minDate and maxDate to EventModel.search', async () => {
+        (EventModel.search as Mock).mockResolvedValue([publicEvent]);
+        const minDate = new Date('2024-07-01T00:00:00Z');
+        const maxDate = new Date('2024-08-01T00:00:00Z');
+        await list({ minDate, maxDate }, admin);
+        expect(EventModel.search).toHaveBeenCalledWith(
+            expect.objectContaining({ minDate, maxDate })
+        );
+    });
 });

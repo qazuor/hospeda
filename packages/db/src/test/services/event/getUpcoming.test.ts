@@ -146,4 +146,38 @@ describe('event.service.getUpcoming', () => {
         expect(result.events).toEqual([]);
         expectInfoLog({ result: { events: [] } }, 'getUpcoming:end');
     });
+
+    it('should pass minDate to EventModel.search', async () => {
+        (EventModel.search as Mock).mockResolvedValue([publicEvent]);
+        const minDate = new Date('2024-07-01T00:00:00Z');
+        await getUpcoming({ minDate }, admin);
+        expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ minDate }));
+    });
+
+    it('should pass maxDate to EventModel.search', async () => {
+        (EventModel.search as Mock).mockResolvedValue([publicEvent]);
+        const maxDate = new Date('2024-08-01T00:00:00Z');
+        await getUpcoming({ maxDate }, admin);
+        expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ maxDate }));
+    });
+
+    it('should pass both minDate and maxDate to EventModel.search', async () => {
+        (EventModel.search as Mock).mockResolvedValue([publicEvent]);
+        const minDate = new Date('2024-07-01T00:00:00Z');
+        const maxDate = new Date('2024-08-01T00:00:00Z');
+        await getUpcoming({ minDate, maxDate }, admin);
+        expect(EventModel.search).toHaveBeenCalledWith(
+            expect.objectContaining({ minDate, maxDate })
+        );
+    });
+
+    it('should default minDate to now if not provided', async () => {
+        (EventModel.search as Mock).mockResolvedValue([publicEvent]);
+        const before = Date.now();
+        await getUpcoming({}, admin);
+        const call = (EventModel.search as Mock).mock.calls[0]?.[0];
+        expect(call).toBeDefined();
+        expect(call.minDate).toBeInstanceOf(Date);
+        expect(call.minDate.getTime()).toBeGreaterThanOrEqual(before);
+    });
 });
