@@ -14,9 +14,11 @@ import type {
     CreateUserInput,
     CreateUserOutput,
     GetByIdInput,
-    GetByIdOutput
+    GetByIdOutput,
+    UpdateUserInput,
+    UpdateUserOutput
 } from './user.schemas';
-import { createUserInputSchema, getByIdInputSchema } from './user.schemas';
+import { createUserInputSchema, getByIdInputSchema, updateUserInputSchema } from './user.schemas';
 
 const SYSTEM_USER_ID = 'system' as UserId;
 
@@ -166,13 +168,74 @@ export const create = async (input: CreateUserInput, actor: unknown): Promise<Cr
  * Updates an existing user. Only admin or the user themselves can update.
  * Applies validation, logging, and permission checks.
  *
- * @param input - User update data (to be defined).
+ * @param input - User update data.
  * @param actor - The user or admin actor updating the user.
- * @returns Object with the updated user (to be defined).
- * @throws Error (not implemented).
+ * @returns Object with the updated user (without password).
+ * @throws Error if not allowed, user not found, or duplicate userName/email.
  */
-export const update = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const update = async (input: UpdateUserInput, actor: unknown): Promise<UpdateUserOutput> => {
+    logMethodStart(dbLogger, 'update', input, actor as object);
+    const parsedInput = updateUserInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+
+    // Get user to update
+    const user = await UserModel.getById(parsedInput.id);
+    if (!user) {
+        logMethodEnd(dbLogger, 'update', { user: null });
+        throw new Error('User not found');
+    }
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'update', { user: null });
+        throw new Error('Disabled users cannot update users');
+    }
+    // Only admin or the user themselves can update
+    const isAdmin = 'role' in safeActor && safeActor.role === 'ADMIN';
+    const isSelf = 'id' in safeActor && safeActor.id === user.id;
+    if (!isAdmin && !isSelf) {
+        logMethodEnd(dbLogger, 'update', { user: null });
+        throw new Error('Only admin or the user themselves can update');
+    }
+    // Prevent user from changing their own role to admin or higher (unless admin)
+    if (
+        !isAdmin &&
+        parsedInput.role &&
+        (parsedInput.role === 'ADMIN' || parsedInput.role === 'SUPER_ADMIN')
+    ) {
+        logMethodEnd(dbLogger, 'update', { user: null });
+        throw new Error('Cannot assign admin or higher role');
+    }
+    // Check uniqueness (userName/email)
+    if (parsedInput.userName && parsedInput.userName !== user.userName) {
+        const existingByUserName = await UserModel.getByUserName(parsedInput.userName);
+        if (existingByUserName) {
+            logMethodEnd(dbLogger, 'update', { user: null });
+            throw new Error('User name already exists');
+        }
+    }
+    if (parsedInput.email && parsedInput.email !== user.email) {
+        const existingByEmail = await UserModel.getByEmail(parsedInput.email);
+        if (existingByEmail) {
+            logMethodEnd(dbLogger, 'update', { user: null });
+            throw new Error('Email already exists');
+        }
+    }
+    // Update user
+    const now = new Date();
+    const userId = parsedInput.id as UserId;
+    const { id, ...updateFields } = parsedInput;
+    const updatedUser = await UserModel.update(userId, {
+        ...updateFields,
+        updatedAt: now,
+        updatedById: 'id' in safeActor ? safeActor.id : user.id
+    });
+    if (!updatedUser) {
+        logMethodEnd(dbLogger, 'update', { user: null });
+        throw new Error('Failed to update user');
+    }
+    // Remove password from output
+    const { password, ...userOut } = updatedUser;
+    logMethodEnd(dbLogger, 'update', { user: userOut });
+    return { user: userOut };
 };
 
 /**
