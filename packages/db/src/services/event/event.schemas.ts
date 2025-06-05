@@ -125,3 +125,25 @@ export type UpdateInput = z.infer<typeof updateInputSchema>;
  * const output: UpdateOutput = { event: mockEvent };
  */
 export type UpdateOutput = { event: EventType };
+
+/**
+ * Zod schema for getByLocationId input.
+ * @example { locationId: 'location-123' }
+ */
+export const getByLocationIdInputSchema = z.object({
+    locationId: z.string().min(1, 'LocationId is required')
+});
+
+/**
+ * Type for getByLocationId input (RO-RO pattern).
+ * @property locationId - The unique location ID (LocationId branded type).
+ */
+export type GetByLocationIdInput = z.infer<typeof getByLocationIdInputSchema>;
+
+/**
+ * Type for getByLocationId output (RO-RO pattern).
+ * @property events - Array of events for the given location.
+ */
+export type GetByLocationIdOutput = {
+    events: EventType[];
+};

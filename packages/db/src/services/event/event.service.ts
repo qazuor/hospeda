@@ -22,12 +22,15 @@ import {
     type CreateEventOutput,
     type GetByIdInput,
     type GetByIdOutput,
+    type GetByLocationIdInput,
+    type GetByLocationIdOutput,
     type GetBySlugInput,
     type GetBySlugOutput,
     type UpdateInput,
     type UpdateOutput,
     createEventInputSchema,
     getByIdInputSchema,
+    getByLocationIdInputSchema,
     getBySlugInputSchema,
     updateInputSchema
 } from './event.schemas';
@@ -266,11 +269,62 @@ export const getByAuthorId = async (_input: unknown, _actor: unknown): Promise<n
 };
 
 /**
- * Gets events by location ID.
- * @throws Error (not implemented).
+ * Retrieves events by locationId, applying permission checks, logging, and edge-case handling.
+ * - Admins can view all events for the location.
+ * - Regular users can view public/active events, or private if they have permission.
+ * - Disabled users cannot view any event.
+ *
+ * @param input - Object containing the locationId ({ locationId: string }).
+ * @param actor - The user or public actor requesting the events.
+ * @returns An object with the events array (may be empty).
+ * @example
+ *   const { events } = await getByLocationId({ locationId: 'loc-1' }, user);
  */
-export const getByLocationId = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const getByLocationId = async (
+    input: GetByLocationIdInput,
+    actor: unknown
+): Promise<GetByLocationIdOutput> => {
+    logMethodStart(dbLogger, 'getByLocationId', input, actor as object);
+    const parsedInput = getByLocationIdInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'User disabled',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'getByLocationId', { events: [] });
+        return { events: [] };
+    }
+    // Retrieve all events for the given location
+    const allEvents = await EventModel.search({
+        locationId: parsedInput.locationId,
+        limit: 100,
+        offset: 0
+    });
+    // Filter events by permissions and visibility
+    const filtered = allEvents.filter((event) => {
+        const { canView, reason, checkedPermission } = canViewEvent(safeActor, event);
+        if (canView) return true;
+        if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+            return hasPermission(safeActor, checkedPermission);
+        }
+        return false;
+    });
+    // Log using the visibility of the first event (if any) or PUBLIC
+    logGrant(
+        dbLogger,
+        safeActor,
+        input,
+        { visibility: filtered[0]?.visibility || VisibilityEnum.PUBLIC },
+        PermissionEnum.EVENT_VIEW_PRIVATE,
+        'Events by locationId'
+    );
+    logMethodEnd(dbLogger, 'getByLocationId', { events: filtered });
+    return { events: filtered };
 };
 
 /**
