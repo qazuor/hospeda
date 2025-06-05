@@ -1,3 +1,4 @@
+import { LifecycleStatusEnum, type UserId } from '@repo/types';
 import { UserModel } from '../../models/user/user.model';
 import { dbLogger } from '../../utils/logger';
 import { hasPermission } from '../../utils/permission-manager';
@@ -9,8 +10,15 @@ import {
     logMethodStart
 } from '../../utils/service-helper';
 import { canViewUser } from './user.helper';
-import type { GetByIdInput, GetByIdOutput } from './user.schemas';
-import { getByIdInputSchema } from './user.schemas';
+import type {
+    CreateUserInput,
+    CreateUserOutput,
+    GetByIdInput,
+    GetByIdOutput
+} from './user.schemas';
+import { createUserInputSchema, getByIdInputSchema } from './user.schemas';
+
+const SYSTEM_USER_ID = 'system' as UserId;
 
 /**
  * Retrieves a user by their unique ID, applying robust permission checks, logging, and edge-case handling.
@@ -96,13 +104,62 @@ export const list = async (_input: unknown, _actor: unknown): Promise<never> => 
  * Creates a new user. Only admin or system can create users.
  * Applies validation, logging, and permission checks.
  *
- * @param input - User creation data (to be defined).
+ * @param input - User creation data.
  * @param actor - The user or system actor creating the user.
- * @returns Object with the created user (to be defined).
- * @throws Error (not implemented).
+ * @returns Object with the created user (without password).
+ * @throws Error if not allowed or user already exists.
  */
-export const create = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const create = async (input: CreateUserInput, actor: unknown): Promise<CreateUserOutput> => {
+    logMethodStart(dbLogger, 'create', input, actor as object);
+    const parsedInput = createUserInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+
+    // Only admin can create users
+    if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
+        logMethodEnd(dbLogger, 'create', { user: null });
+        throw new Error('Only admin can create users');
+    }
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'create', { user: null });
+        throw new Error('Disabled users cannot create users');
+    }
+    // Prevent creating users with equal or higher role than actor
+    if (
+        'role' in safeActor &&
+        (parsedInput.role === 'ADMIN' || parsedInput.role === 'SUPER_ADMIN')
+    ) {
+        logMethodEnd(dbLogger, 'create', { user: null });
+        throw new Error('Cannot create user with equal or higher role');
+    }
+    // Check uniqueness (userName/email)
+    const existingByUserName = await UserModel.getByUserName(parsedInput.userName);
+    if (existingByUserName) {
+        logMethodEnd(dbLogger, 'create', { user: null });
+        throw new Error('User name already exists');
+    }
+    if (parsedInput.email) {
+        // TODO: Implement getByEmail in UserModel if not present
+        const existingByEmail = await (UserModel.getByEmail(parsedInput.email) ??
+            Promise.resolve(undefined));
+        if (existingByEmail) {
+            logMethodEnd(dbLogger, 'create', { user: null });
+            throw new Error('Email already exists');
+        }
+    }
+    // Create user
+    const now = new Date();
+    const newUser = await UserModel.create({
+        ...parsedInput,
+        lifecycleState: parsedInput.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
+        createdAt: now,
+        updatedAt: now,
+        createdById: 'id' in safeActor ? safeActor.id : SYSTEM_USER_ID,
+        updatedById: 'id' in safeActor ? safeActor.id : SYSTEM_USER_ID
+    });
+    // Remove password from output
+    const { password, ...userOut } = newUser;
+    logMethodEnd(dbLogger, 'create', { user: userOut });
+    return { user: userOut };
 };
 
 /**
