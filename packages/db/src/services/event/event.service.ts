@@ -1,8 +1,9 @@
-/**
- * Event Service - MVP Methods Stubs
- */
-
-import { PermissionEnum, VisibilityEnum } from '@repo/types';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    VisibilityEnum
+} from '@repo/types';
 import { EventModel } from '../../models/event/event.model';
 import { hasPermission } from '../../utils';
 import { dbLogger } from '../../utils/logger';
@@ -14,12 +15,15 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
-import { canViewEvent } from './event.helper';
+import { canViewEvent, normalizeCreateInput } from './event.helper';
 import {
+    type CreateEventInput,
+    type CreateEventOutput,
     type GetByIdInput,
     type GetByIdOutput,
     type GetBySlugInput,
     type GetBySlugOutput,
+    createEventInputSchema,
     getByIdInputSchema,
     getBySlugInputSchema
 } from './event.schemas';
@@ -43,47 +47,85 @@ export const getById = async (input: GetByIdInput, actor: unknown): Promise<GetB
     logMethodStart(dbLogger, 'getById', input, actor as object);
     const parsedInput = getByIdInputSchema.parse(input);
     const event = (await EventModel.getById(parsedInput.id)) ?? null;
-    if (!event) {
-        logMethodEnd(dbLogger, 'getById', { event: null });
-        return { event: null };
-    }
     const safeActor = getSafeActor(actor);
     if (isUserDisabled(safeActor)) {
-        logDenied(dbLogger, safeActor, input, event, 'User disabled', undefined);
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event ?? { visibility: VisibilityEnum.PUBLIC },
+            'User disabled',
+            undefined
+        );
         logMethodEnd(dbLogger, 'getById', { event: null });
         return { event: null };
     }
-    const { canView, reason, checkedPermission } = canViewEvent(safeActor, event);
+    const { canView, reason, checkedPermission } = canViewEvent(
+        safeActor,
+        event ?? {
+            visibility: VisibilityEnum.PUBLIC,
+            authorId: '',
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        }
+    );
     if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event ?? { visibility: VisibilityEnum.PUBLIC },
+            reason,
+            checkedPermission
+        );
         logMethodEnd(dbLogger, 'getById', { event: null });
-        throw new Error(`Unknown event visibility: ${event.visibility}`);
+        throw new Error(`Unknown event visibility: ${event ? event.visibility : 'null'}`);
     }
     if (reason === CanViewReasonEnum.PUBLIC_ACTOR_DENIED) {
-        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event ?? { visibility: VisibilityEnum.PUBLIC },
+            reason,
+            checkedPermission
+        );
         logMethodEnd(dbLogger, 'getById', { event: null });
         return { event: null };
     }
     if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
         try {
             hasPermission(safeActor, checkedPermission);
-            if (event.visibility !== VisibilityEnum.PUBLIC) {
+            if (event && event.visibility !== VisibilityEnum.PUBLIC) {
                 logGrant(dbLogger, safeActor, input, event, checkedPermission, reason);
             }
             logMethodEnd(dbLogger, 'getById', { event });
             return { event };
         } catch {
-            logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                event ?? { visibility: VisibilityEnum.PUBLIC },
+                reason,
+                checkedPermission
+            );
             logMethodEnd(dbLogger, 'getById', { event: null });
             return { event: null };
         }
     }
     if (!canView) {
-        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event ?? { visibility: VisibilityEnum.PUBLIC },
+            reason,
+            checkedPermission
+        );
         logMethodEnd(dbLogger, 'getById', { event: null });
         return { event: null };
     }
-    if (event.visibility !== VisibilityEnum.PUBLIC) {
+    if (event && event.visibility !== VisibilityEnum.PUBLIC) {
         logGrant(
             dbLogger,
             safeActor,
@@ -119,47 +161,85 @@ export const getBySlug = async (
     logMethodStart(dbLogger, 'getBySlug', input, actor as object);
     const parsedInput = getBySlugInputSchema.parse(input);
     const event = (await EventModel.getBySlug(parsedInput.slug)) ?? null;
-    if (!event) {
-        logMethodEnd(dbLogger, 'getBySlug', { event: null });
-        return { event: null };
-    }
     const safeActor = getSafeActor(actor);
     if (isUserDisabled(safeActor)) {
-        logDenied(dbLogger, safeActor, input, event, 'User disabled', undefined);
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event ?? { visibility: VisibilityEnum.PUBLIC },
+            'User disabled',
+            undefined
+        );
         logMethodEnd(dbLogger, 'getBySlug', { event: null });
         return { event: null };
     }
-    const { canView, reason, checkedPermission } = canViewEvent(safeActor, event);
+    const { canView, reason, checkedPermission } = canViewEvent(
+        safeActor,
+        event ?? {
+            visibility: VisibilityEnum.PUBLIC,
+            authorId: '',
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        }
+    );
     if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event ?? { visibility: VisibilityEnum.PUBLIC },
+            reason,
+            checkedPermission
+        );
         logMethodEnd(dbLogger, 'getBySlug', { event: null });
-        throw new Error(`Unknown event visibility: ${event.visibility}`);
+        throw new Error(`Unknown event visibility: ${event ? event.visibility : 'null'}`);
     }
     if (reason === CanViewReasonEnum.PUBLIC_ACTOR_DENIED) {
-        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event ?? { visibility: VisibilityEnum.PUBLIC },
+            reason,
+            checkedPermission
+        );
         logMethodEnd(dbLogger, 'getBySlug', { event: null });
         return { event: null };
     }
     if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
         try {
             hasPermission(safeActor, checkedPermission);
-            if (event.visibility !== VisibilityEnum.PUBLIC) {
+            if (event && event.visibility !== VisibilityEnum.PUBLIC) {
                 logGrant(dbLogger, safeActor, input, event, checkedPermission, reason);
             }
             logMethodEnd(dbLogger, 'getBySlug', { event });
             return { event };
         } catch {
-            logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                event ?? { visibility: VisibilityEnum.PUBLIC },
+                reason,
+                checkedPermission
+            );
             logMethodEnd(dbLogger, 'getBySlug', { event: null });
             return { event: null };
         }
     }
     if (!canView) {
-        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event ?? { visibility: VisibilityEnum.PUBLIC },
+            reason,
+            checkedPermission
+        );
         logMethodEnd(dbLogger, 'getBySlug', { event: null });
         return { event: null };
     }
-    if (event.visibility !== VisibilityEnum.PUBLIC) {
+    if (event && event.visibility !== VisibilityEnum.PUBLIC) {
         logGrant(
             dbLogger,
             safeActor,
@@ -238,11 +318,80 @@ export const getByDateRange = async (_input: unknown, _actor: unknown): Promise<
 };
 
 /**
- * Creates a new event.
- * @throws Error (not implemented).
+ * Creates a new event, applying permission checks, validation, and logging.
+ * - Only users with EVENT_CREATE permission (or admin/superadmin) can create events.
+ * - Validates input with Zod schema.
+ * - Handles slug uniqueness and business rules.
+ * - Logs all actions and denials.
+ *
+ * @param input - Object with event creation data.
+ * @param actor - The user requesting the creation.
+ * @returns The created event.
+ * @throws Error if permission denied, validation fails, or slug is not unique.
+ * @example
+ *   const { event } = await create({ ... }, user);
  */
-export const create = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const create = async (
+    input: CreateEventInput,
+    actor: unknown
+): Promise<CreateEventOutput> => {
+    logMethodStart(dbLogger, 'create', input, actor as object);
+    const parsedInput = createEventInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: parsedInput.visibility },
+            'User disabled',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'create', { event: null });
+        throw new Error('User is disabled');
+    }
+    // Permiso: EVENT_CREATE
+    const allowed =
+        safeActor.role === 'ADMIN' ||
+        safeActor.role === 'SUPER_ADMIN' ||
+        hasPermission(safeActor, PermissionEnum.EVENT_CREATE);
+    if (!allowed) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: parsedInput.visibility },
+            'Permission denied',
+            PermissionEnum.EVENT_CREATE
+        );
+        logMethodEnd(dbLogger, 'create', { event: null });
+        throw new Error('Permission denied: EVENT_CREATE');
+    }
+    // Unicidad de slug
+    const existing = await EventModel.getBySlug(parsedInput.slug);
+    if (existing) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: parsedInput.visibility },
+            'Slug already exists',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'create', { event: null });
+        throw new Error('Slug already exists');
+    }
+    // Normaliza el input como en los otros servicios
+    const normalizedInput = normalizeCreateInput(parsedInput);
+    // Crear evento
+    const event = await EventModel.create({
+        ...normalizedInput,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        moderationState: ModerationStatusEnum.PENDING_REVIEW
+    });
+    logGrant(dbLogger, safeActor, input, event, PermissionEnum.EVENT_CREATE, 'Event created');
+    logMethodEnd(dbLogger, 'create', { event });
+    return { event };
 };
 
 /**
