@@ -27,6 +27,8 @@ import {
 import {
     type CreateEventInput,
     type CreateEventOutput,
+    type GetByCategoryInput,
+    type GetByCategoryOutput,
     type GetByIdInput,
     type GetByIdOutput,
     type GetByLocationIdInput,
@@ -40,6 +42,7 @@ import {
     type UpdateInput,
     type UpdateOutput,
     createEventInputSchema,
+    getByCategoryInputSchema,
     getByIdInputSchema,
     getByLocationIdInputSchema,
     getByOrganizerIdInputSchema,
@@ -854,11 +857,62 @@ export const getByOrganizerId = async (
 };
 
 /**
- * Gets events by category.
- * @throws Error (not implemented).
+ * Gets events by category, applying permission checks, filters, and logging.
+ * - Admins can view all events for the category.
+ * - Regular users can view public/active events, or private if they have permission.
+ * - Disabled users cannot view any event.
+ *
+ * @param input - Object with category, optional limit and offset.
+ * @param actor - The user or public actor requesting the events.
+ * @returns An object with the events array (may be empty).
+ * @example
+ *   const { events } = await getByCategory({ category: 'FESTIVAL', limit: 10 }, user);
  */
-export const getByCategory = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const getByCategory = async (
+    input: GetByCategoryInput,
+    actor: unknown
+): Promise<GetByCategoryOutput> => {
+    logMethodStart(dbLogger, 'getByCategory', input, actor as object);
+    const parsedInput = getByCategoryInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'User disabled',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'getByCategory', { events: [] });
+        return { events: [] };
+    }
+    // Retrieve events by category with pagination
+    const allEvents = await EventModel.search({
+        category: parsedInput.category,
+        limit: parsedInput.limit ?? 20,
+        offset: parsedInput.offset ?? 0
+    });
+    // Filter by permissions and visibility rules (same as list)
+    const isAdmin = safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN;
+    const canViewPrivate = isAdmin || hasPermission(safeActor, PermissionEnum.EVENT_VIEW_PRIVATE);
+    const filtered = allEvents.filter((event) => {
+        if (isAdmin) {
+            return true;
+        }
+        if (event.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+            return false;
+        }
+        if (event.visibility === VisibilityEnum.PUBLIC) {
+            return true;
+        }
+        if (event.visibility === VisibilityEnum.PRIVATE && canViewPrivate) {
+            return true;
+        }
+        return false;
+    });
+    logMethodEnd(dbLogger, 'getByCategory', { events: filtered });
+    return { events: filtered };
 };
 
 /**

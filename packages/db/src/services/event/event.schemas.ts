@@ -5,7 +5,7 @@ import { EventPriceSchema } from '@repo/schemas/entities/event/event.price.schem
 import { EventCategoryEnumSchema } from '@repo/schemas/enums/event-category.enum.schema';
 import { VisibilityEnumSchema } from '@repo/schemas/enums/visibility.enum.schema';
 import type { EventType, UserId } from '@repo/types';
-import { LifecycleStatusEnum, VisibilityEnum } from '@repo/types';
+import { EventCategoryEnum, LifecycleStatusEnum, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 
 /**
@@ -210,3 +210,27 @@ export type GetByOrganizerIdInput = z.infer<typeof getByOrganizerIdInputSchema>;
  * @property events - Array of events for the given organizer.
  */
 export type GetByOrganizerIdOutput = { events: EventType[] };
+
+/**
+ * Zod schema for getByCategory input.
+ * @example { category: 'FESTIVAL', limit: 10, offset: 0 }
+ */
+export const getByCategoryInputSchema = z.object({
+    category: z.nativeEnum(EventCategoryEnum),
+    limit: z.number().int().min(1).max(100).optional(),
+    offset: z.number().int().min(0).optional()
+});
+
+/**
+ * Type for getByCategory input (RO-RO pattern).
+ * @property category - The event category (enum).
+ * @property limit - Max number of events to return.
+ * @property offset - Number of events to skip.
+ */
+export type GetByCategoryInput = z.infer<typeof getByCategoryInputSchema>;
+
+/**
+ * Type for getByCategory output (RO-RO pattern).
+ * @property events - Array of events for the given category.
+ */
+export type GetByCategoryOutput = { events: EventType[] };
