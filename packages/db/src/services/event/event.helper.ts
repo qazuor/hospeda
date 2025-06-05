@@ -1,11 +1,14 @@
 import {
     LifecycleStatusEnum,
+    ModerationStatusEnum,
+    type NewEventInputType,
     PermissionEnum,
     type PublicUserType,
     RoleEnum,
     type UserType,
     VisibilityEnum
 } from '@repo/types';
+import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
 import { CanViewReasonEnum } from '../../utils/service-helper';
 
 /**
@@ -70,4 +73,77 @@ export const canViewEvent = (
         reason: CanViewReasonEnum.UNKNOWN_VISIBILITY,
         checkedPermission: undefined
     };
+};
+
+// Tag input type for normalization
+interface TagInput {
+    moderationState?: string | ModerationStatusEnum;
+    [key: string]: unknown;
+}
+
+/**
+ * Normalizes the create input for events: casts branded IDs, dates, and ensures moderationState is enum.
+ * @param input - The create input object.
+ * @returns The normalized create input.
+ */
+export const normalizeCreateInput = (input: Record<string, unknown>): NewEventInputType => {
+    const inputWithBrandedIds = castBrandedIds(input, (id) => id as string);
+    const inputWithDates = castDateFields(inputWithBrandedIds);
+    // Deep map for media.moderationState
+    let media = inputWithDates.media;
+    const hasMediaFields = (
+        m: unknown
+    ): m is { featuredImage?: unknown; gallery?: unknown; videos?: unknown } =>
+        typeof m === 'object' && m !== null;
+    if (media && hasMediaFields(media)) {
+        const mapModeration = <
+            T extends { moderationState?: string | ModerationStatusEnum; tags?: TagInput[] }
+        >(
+            m: T
+        ): T => ({
+            ...m,
+            moderationState:
+                m.moderationState && typeof m.moderationState === 'string'
+                    ? (ModerationStatusEnum[
+                          m.moderationState as keyof typeof ModerationStatusEnum
+                      ] ?? ModerationStatusEnum.PENDING_REVIEW)
+                    : m.moderationState,
+            tags: Array.isArray(m.tags)
+                ? m.tags.map((t) => {
+                      if (typeof t === 'object' && t !== null && 'moderationState' in t) {
+                          const tag = t as TagInput;
+                          return {
+                              ...tag,
+                              moderationState:
+                                  tag.moderationState && typeof tag.moderationState === 'string'
+                                      ? (ModerationStatusEnum[
+                                            tag.moderationState as keyof typeof ModerationStatusEnum
+                                        ] ?? ModerationStatusEnum.PENDING_REVIEW)
+                                      : tag.moderationState
+                          };
+                      }
+                      return t;
+                  })
+                : m.tags
+        });
+        media = {
+            ...media,
+            featuredImage:
+                'featuredImage' in media && media.featuredImage
+                    ? mapModeration(media.featuredImage)
+                    : undefined,
+            gallery:
+                'gallery' in media && Array.isArray(media.gallery)
+                    ? media.gallery.map(mapModeration)
+                    : undefined,
+            videos:
+                'videos' in media && Array.isArray(media.videos)
+                    ? media.videos.map(mapModeration)
+                    : undefined
+        };
+    }
+    return {
+        ...inputWithDates,
+        media
+    } as NewEventInputType;
 };

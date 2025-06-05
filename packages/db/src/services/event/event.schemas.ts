@@ -1,3 +1,9 @@
+import { ContactInfoSchema } from '@repo/schemas/common/contact.schema';
+import { MediaSchema } from '@repo/schemas/common/media.schema';
+import { EventDateSchema } from '@repo/schemas/entities/event/event.date.schema';
+import { EventPriceSchema } from '@repo/schemas/entities/event/event.price.schema';
+import { EventCategoryEnumSchema } from '@repo/schemas/enums/event-category.enum.schema';
+import { VisibilityEnumSchema } from '@repo/schemas/enums/visibility.enum.schema';
 import type { EventType } from '@repo/types';
 import { z } from 'zod';
 
@@ -43,4 +49,38 @@ export type GetBySlugInput = z.infer<typeof getBySlugInputSchema>;
  */
 export type GetBySlugOutput = {
     event: EventType | null;
+};
+
+/**
+ * Zod schema for create input.
+ * Omits auto-generated fields (id, audit, etc.).
+ */
+export const createEventInputSchema = z.object({
+    slug: z.string().min(1, 'Slug is required'),
+    summary: z.string().min(1, 'Summary is required'),
+    description: z.string().optional(),
+    media: MediaSchema.optional(),
+    category: EventCategoryEnumSchema,
+    date: EventDateSchema,
+    authorId: z.string().min(1, 'AuthorId is required'),
+    locationId: z.string().optional(),
+    organizerId: z.string().optional(),
+    pricing: EventPriceSchema.optional(),
+    contact: ContactInfoSchema.optional(),
+    visibility: VisibilityEnumSchema,
+    isFeatured: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+    seo: z.any().optional()
+});
+
+/**
+ * Type for create input (RO-RO pattern).
+ */
+export type CreateEventInput = z.infer<typeof createEventInputSchema>;
+
+/**
+ * Type for create output (RO-RO pattern).
+ */
+export type CreateEventOutput = {
+    event: EventType;
 };
