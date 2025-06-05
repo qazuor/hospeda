@@ -256,3 +256,25 @@ export type GetFeaturedInput = z.infer<typeof getFeaturedInputSchema>;
  * @property events - Array of featured events.
  */
 export type GetFeaturedOutput = { events: EventType[] };
+
+/**
+ * Zod schema for getUpcoming input.
+ * @example { limit: 10, offset: 0 }
+ */
+export const getUpcomingInputSchema = z.object({
+    limit: z.number().int().min(1).max(100).optional(),
+    offset: z.number().int().min(0).optional()
+});
+
+/**
+ * Type for getUpcoming input (RO-RO pattern).
+ * @property limit - Max number of events to return.
+ * @property offset - Number of events to skip.
+ */
+export type GetUpcomingInput = z.infer<typeof getUpcomingInputSchema>;
+
+/**
+ * Type for getUpcoming output (RO-RO pattern).
+ * @property events - Array of upcoming events.
+ */
+export type GetUpcomingOutput = { events: EventType[] };

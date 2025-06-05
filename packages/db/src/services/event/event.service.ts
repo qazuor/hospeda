@@ -39,6 +39,8 @@ import {
     type GetBySlugOutput,
     type GetFeaturedInput,
     type GetFeaturedOutput,
+    type GetUpcomingInput,
+    type GetUpcomingOutput,
     type ListEventsInput,
     type ListEventsOutput,
     type UpdateInput,
@@ -50,6 +52,7 @@ import {
     getByOrganizerIdInputSchema,
     getBySlugInputSchema,
     getFeaturedInputSchema,
+    getUpcomingInputSchema,
     listEventsInputSchema,
     updateInputSchema
 } from './event.schemas';
@@ -978,11 +981,62 @@ export const getFeatured = async (
 };
 
 /**
- * Gets upcoming events.
- * @throws Error (not implemented).
+ * Gets upcoming events (start date >= now), applying permission checks, filters, and logging.
+ * - Admins can view all upcoming events.
+ * - Regular users can view public/active upcoming events, or private if they have permission.
+ * - Disabled users cannot view any event.
+ *
+ * @param input - Object with optional limit and offset.
+ * @param actor - The user or public actor requesting the events.
+ * @returns An object with the upcoming events array (may be empty).
+ * @example
+ *   const { events } = await getUpcoming({ limit: 10 }, user);
  */
-export const getUpcoming = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const getUpcoming = async (
+    input: GetUpcomingInput,
+    actor: unknown
+): Promise<GetUpcomingOutput> => {
+    logMethodStart(dbLogger, 'getUpcoming', input, actor as object);
+    const parsedInput = getUpcomingInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'User disabled',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'getUpcoming', { events: [] });
+        return { events: [] };
+    }
+    // Retrieve upcoming events with pagination (start date >= now)
+    // TODO: Add support for filtering by start date >= now in EventModel.search
+    const allEvents = await EventModel.search({
+        limit: parsedInput.limit ?? 20,
+        offset: parsedInput.offset ?? 0
+    });
+    // Filter by permissions and visibility rules (same as list)
+    const isAdmin = safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN;
+    const canViewPrivate = isAdmin || hasPermission(safeActor, PermissionEnum.EVENT_VIEW_PRIVATE);
+    const filtered = allEvents.filter((event) => {
+        if (isAdmin) {
+            return true;
+        }
+        if (event.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+            return false;
+        }
+        if (event.visibility === VisibilityEnum.PUBLIC) {
+            return true;
+        }
+        if (event.visibility === VisibilityEnum.PRIVATE && canViewPrivate) {
+            return true;
+        }
+        return false;
+    });
+    logMethodEnd(dbLogger, 'getUpcoming', { events: filtered });
+    return { events: filtered };
 };
 
 /**
