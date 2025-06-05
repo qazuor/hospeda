@@ -119,3 +119,41 @@ export const updateUserOutputSchema = z.object({
  * Type for updateUser output (RO-RO pattern).
  */
 export type UpdateUserOutput = z.infer<typeof updateUserOutputSchema>;
+
+/**
+ * Zod schema for softDeleteUser input.
+ * Only admin can soft-delete users.
+ * @example { id: 'user-123' }
+ */
+export const softDeleteUserInputSchema = z.object({
+    id: z.string()
+});
+
+/**
+ * Type for softDeleteUser input (RO-RO pattern).
+ */
+export type SoftDeleteUserInput = z.infer<typeof softDeleteUserInputSchema>;
+
+/**
+ * Zod schema for softDeleteUser output.
+ * Returns the disabled user (without password).
+ * @example { user: { id: 'user-123', lifecycleState: 'INACTIVE', ... } }
+ */
+export const softDeleteUserOutputSchema = z.object({
+    user: z.object({
+        id: z.string(),
+        userName: z.string(),
+        role: z.nativeEnum(RoleEnum),
+        email: z.string().email().optional(),
+        lifecycleState: z.nativeEnum(LifecycleStatusEnum),
+        createdAt: z.date(),
+        updatedAt: z.date(),
+        createdById: z.string(),
+        updatedById: z.string()
+    })
+});
+
+/**
+ * Type for softDeleteUser output (RO-RO pattern).
+ */
+export type SoftDeleteUserOutput = z.infer<typeof softDeleteUserOutputSchema>;
