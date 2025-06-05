@@ -147,3 +147,36 @@ export const normalizeCreateInput = (input: Record<string, unknown>): NewEventIn
         media
     } as NewEventInputType;
 };
+
+/**
+ * Builds the update object for soft-deleting (archiving) an event.
+ * @param actor - The user or public actor performing the delete.
+ * @returns Partial<UpdateEventInputType> with archive fields set.
+ * @example
+ * const update = buildSoftDeleteUpdate(user);
+ */
+export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
+    const now = new Date();
+    const deletedById = 'id' in actor ? actor.id : undefined;
+    return {
+        lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        deletedAt: now,
+        deletedById,
+        updatedAt: now,
+        updatedById: deletedById
+    };
+};
+
+/**
+ * Throws if the event is archived or deleted.
+ * @param event - The event object.
+ * @throws Error if the event is already archived or deleted.
+ */
+export const assertNotArchived = (event: {
+    lifecycleState?: LifecycleStatusEnum;
+    deletedAt?: Date | null;
+}) => {
+    if (event.lifecycleState === LifecycleStatusEnum.ARCHIVED || event.deletedAt) {
+        throw new Error('Event is already archived or deleted');
+    }
+};

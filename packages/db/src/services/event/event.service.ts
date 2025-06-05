@@ -1,8 +1,9 @@
-import type { UpdateEventInputType } from '@repo/types';
+import type { EventType, PublicUserType, UpdateEventInputType, UserType } from '@repo/types';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    RoleEnum,
     VisibilityEnum
 } from '@repo/types';
 import { EventModel } from '../../models/event/event.model';
@@ -16,7 +17,12 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
-import { canViewEvent, normalizeCreateInput } from './event.helper';
+import {
+    assertNotArchived,
+    buildSoftDeleteUpdate,
+    canViewEvent,
+    normalizeCreateInput
+} from './event.helper';
 import {
     type CreateEventInput,
     type CreateEventOutput,
@@ -495,11 +501,67 @@ export const update = async (input: UpdateInput, actor: unknown): Promise<Update
 };
 
 /**
- * Soft-deletes (disables) an event.
- * @throws Error (not implemented).
+ * Soft-deletes (archives) an event by ID.
+ * Only the author, admin, or a user with the required permission can delete.
+ * Handles edge-cases: public user, disabled user, already archived/deleted, etc.
+ *
+ * @param input - The input object with the event ID.
+ * @param actor - The user or public actor attempting the soft-delete.
+ * @returns An object with the deleted (archived) event, or null if not found or not allowed.
+ * @throws Error if the actor is not allowed to delete or input is invalid.
+ * @example
+ * const result = await softDelete({ id: 'event-1' }, user);
  */
-export const softDelete = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const softDelete = async (
+    input: GetByIdInput,
+    actor: UserType | PublicUserType
+): Promise<{ event: EventType | null }> => {
+    logMethodStart(dbLogger, 'delete', input, actor);
+    const parsedInput = getByIdInputSchema.parse(input);
+    const event = (await EventModel.getById(parsedInput.id)) ?? null;
+    if (!event) {
+        logMethodEnd(dbLogger, 'delete', { event: null });
+        throw new Error('Event not found');
+    }
+    try {
+        assertNotArchived(event);
+    } catch (err) {
+        logMethodEnd(dbLogger, 'delete', { event: null });
+        throw err;
+    }
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(dbLogger, safeActor, input, event, 'User disabled', PermissionEnum.EVENT_DELETE);
+        logMethodEnd(dbLogger, 'delete', { event: null });
+        throw new Error('user disabled');
+    }
+    // Author, admin, or user with permission can delete
+    const isAuthor = 'id' in safeActor && event.authorId === safeActor.id;
+    const allowed =
+        isAuthor ||
+        safeActor.role === RoleEnum.ADMIN ||
+        safeActor.role === RoleEnum.SUPER_ADMIN ||
+        hasPermission(safeActor, PermissionEnum.EVENT_DELETE);
+    if (!allowed) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            event,
+            'Permission denied',
+            PermissionEnum.EVENT_DELETE
+        );
+        logMethodEnd(dbLogger, 'delete', { event: null });
+        throw new Error('Permission denied: EVENT_DELETE');
+    }
+    const updateInput = buildSoftDeleteUpdate(safeActor);
+    const updatedEvent = await EventModel.update(parsedInput.id, updateInput);
+    if (!updatedEvent) {
+        logMethodEnd(dbLogger, 'delete', { event: null });
+        throw new Error('Event delete failed');
+    }
+    logMethodEnd(dbLogger, 'delete', { event: updatedEvent });
+    return { event: updatedEvent };
 };
 
 /**
