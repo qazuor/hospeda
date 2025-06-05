@@ -8,7 +8,7 @@ import type { DestinationType } from '@repo/types/entities/destination/destinati
 import type { TagType } from '@repo/types/entities/tag/tag.types';
 import type { UserType } from '@repo/types/entities/user/user.types';
 import type { EventCategoryEnum } from '@repo/types/enums/event-category.enum';
-import { and, asc, count, desc, eq, ilike } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { events } from '../../dbschemas/event/event.dbschema.ts';
 import { eventLocations } from '../../dbschemas/event/event_location.dbschema.ts';
@@ -50,6 +50,14 @@ export type EventSearchParams = EventPaginationParams & {
     lifecycle?: string;
     visibility?: string;
     isFeatured?: boolean;
+    /**
+     * If set, only events whose date.start is greater than or equal to this value will be returned.
+     */
+    minDate?: Date;
+    /**
+     * If set, only events whose date.start is less than or equal to this value will be returned.
+     */
+    maxDate?: Date;
 };
 
 export type EventRelations = {
@@ -257,7 +265,9 @@ export const EventModel = {
             limit,
             offset,
             order,
-            orderBy
+            orderBy,
+            minDate,
+            maxDate
         } = params;
         try {
             const whereClauses = [];
@@ -285,10 +295,22 @@ export const EventModel = {
             if (typeof isFeatured === 'boolean') {
                 whereClauses.push(eq(events.isFeatured, isFeatured));
             }
+            if (minDate) {
+                // Filter events whose date.start is greater than or equal to minDate (ISO string)
+                whereClauses.push(
+                    sql`(events.date->>'start')::timestamptz >= ${minDate.toISOString()}`
+                );
+            }
+            if (maxDate) {
+                // Filter events whose date.start is less than or equal to maxDate (ISO string)
+                whereClauses.push(
+                    sql`(events.date->>'start')::timestamptz <= ${maxDate.toISOString()}`
+                );
+            }
             const col = getOrderableColumn(eventOrderableColumns, orderBy, events.createdAt);
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
             if (tagId) {
-                // Query con innerJoin
+                // Query with innerJoin for tag filtering
                 const result = await db
                     .select({ events, rEntityTag })
                     .from(events)
@@ -307,7 +329,7 @@ export const EventModel = {
                 dbLogger.query({ table: 'events', action: 'search', params, result });
                 return result.map((row) => row.events as EventType);
             }
-            // Query sin innerJoin
+            // Query without innerJoin
             const result = await db
                 .select()
                 .from(events)
@@ -468,7 +490,7 @@ export const EventModel = {
     async getByDestination(city: string): Promise<EventType[]> {
         const db = getDb();
         try {
-            // Buscamos eventos cuyo location.city coincida con el destino
+            // Find events whose location.city matches the destination
             const result = await db
                 .select({ events, eventLocations })
                 .from(events)
