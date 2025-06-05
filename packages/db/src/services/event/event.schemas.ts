@@ -84,3 +84,44 @@ export type CreateEventInput = z.infer<typeof createEventInputSchema>;
 export type CreateEventOutput = {
     event: EventType;
 };
+
+/**
+ * Zod schema for update input (EventService)
+ * Requires id, all other fields optional.
+ * @example
+ * const input = { id: 'event-1', summary: 'Updated summary' };
+ */
+export const updateInputSchema = z.object({
+    id: z.string().min(1, 'Event ID is required'),
+    slug: z.string().min(1).optional(),
+    summary: z.string().min(1).optional(),
+    description: z.string().optional(),
+    media: z.any().optional(),
+    category: z.string().optional(),
+    date: z.any().optional(),
+    authorId: z.string().optional(),
+    locationId: z.string().optional(),
+    organizerId: z.string().optional(),
+    pricing: z.any().optional(),
+    contact: z.any().optional(),
+    visibility: z.string().optional(),
+    isFeatured: z.boolean().optional(),
+    tags: z.array(z.string()).optional(),
+    seo: z.any().optional(),
+    lifecycleState: z.string().optional(),
+    moderationState: z.string().optional()
+});
+
+/**
+ * Input type for update (RO-RO pattern).
+ * @example
+ * const input: UpdateInput = { id: 'event-1', summary: 'Updated summary' };
+ */
+export type UpdateInput = z.infer<typeof updateInputSchema>;
+
+/**
+ * Output type for update (RO-RO pattern).
+ * @example
+ * const output: UpdateOutput = { event: mockEvent };
+ */
+export type UpdateOutput = { event: EventType };

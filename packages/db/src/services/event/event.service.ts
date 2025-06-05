@@ -1,3 +1,4 @@
+import type { UpdateEventInputType } from '@repo/types';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -23,9 +24,12 @@ import {
     type GetByIdOutput,
     type GetBySlugInput,
     type GetBySlugOutput,
+    type UpdateInput,
+    type UpdateOutput,
     createEventInputSchema,
     getByIdInputSchema,
-    getBySlugInputSchema
+    getBySlugInputSchema,
+    updateInputSchema
 } from './event.schemas';
 
 /**
@@ -395,11 +399,101 @@ export const create = async (
 };
 
 /**
- * Updates an existing event.
- * @throws Error (not implemented).
+ * Updates an existing event, applying permission checks, validation, and logging.
+ * - Only users with EVENT_UPDATE permission (or admin/superadmin) can update events.
+ * - Validates input with Zod schema.
+ * - Checks event existence and slug uniqueness.
+ * - Logs all actions and denials.
+ *
+ * @param input - Object with event update data (must include id).
+ * @param actor - The user requesting the update.
+ * @returns The updated event.
+ * @throws Error if permission denied, validation fails, event not found, or slug is not unique.
+ * @example
+ *   const { event } = await update({ id: 'event-1', summary: 'Updated' }, user);
  */
-export const update = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const update = async (input: UpdateInput, actor: unknown): Promise<UpdateOutput> => {
+    logMethodStart(dbLogger, 'update', input, actor as object);
+    const parsedInput = updateInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: parsedInput.visibility || '' },
+            'User disabled',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'update', { event: null });
+        throw new Error('User is disabled');
+    }
+    // Permission: EVENT_UPDATE
+    const allowed =
+        safeActor.role === 'ADMIN' ||
+        safeActor.role === 'SUPER_ADMIN' ||
+        hasPermission(safeActor, PermissionEnum.EVENT_UPDATE);
+    if (!allowed) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: parsedInput.visibility || '' },
+            'Permission denied',
+            PermissionEnum.EVENT_UPDATE
+        );
+        logMethodEnd(dbLogger, 'update', { event: null });
+        throw new Error('Permission denied: EVENT_UPDATE');
+    }
+    // Find existing event
+    const existing = await EventModel.getById(parsedInput.id);
+    if (!existing) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: parsedInput.visibility || '' },
+            'Event not found',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'update', { event: null });
+        throw new Error('Event not found');
+    }
+    // If updating slug, check uniqueness
+    if (parsedInput.slug && parsedInput.slug !== existing.slug) {
+        const slugExists = await EventModel.getBySlug(parsedInput.slug);
+        if (slugExists) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                { visibility: parsedInput.visibility || '' },
+                'Slug already exists',
+                undefined
+            );
+            logMethodEnd(dbLogger, 'update', { event: null });
+            throw new Error('Slug already exists');
+        }
+    }
+    // Normalize input (same as in create)
+    const normalizedInput = { ...parsedInput } as UpdateEventInputType;
+    // Update event
+    const updated = await EventModel.update(parsedInput.id, normalizedInput);
+    if (!updated) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: parsedInput.visibility || '' },
+            'Update failed',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'update', { event: null });
+        throw new Error('Event update failed');
+    }
+    logGrant(dbLogger, safeActor, input, updated, PermissionEnum.EVENT_UPDATE, 'Event updated');
+    logMethodEnd(dbLogger, 'update', { event: updated });
+    return { event: updated };
 };
 
 /**
