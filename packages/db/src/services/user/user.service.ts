@@ -15,10 +15,17 @@ import type {
     CreateUserOutput,
     GetByIdInput,
     GetByIdOutput,
+    SoftDeleteUserInput,
+    SoftDeleteUserOutput,
     UpdateUserInput,
     UpdateUserOutput
 } from './user.schemas';
-import { createUserInputSchema, getByIdInputSchema, updateUserInputSchema } from './user.schemas';
+import {
+    createUserInputSchema,
+    getByIdInputSchema,
+    softDeleteUserInputSchema,
+    updateUserInputSchema
+} from './user.schemas';
 
 const SYSTEM_USER_ID = 'system' as UserId;
 
@@ -242,13 +249,59 @@ export const update = async (input: UpdateUserInput, actor: unknown): Promise<Up
  * Soft-deletes (disables) a user. Only admin can perform this action.
  * Applies validation, logging, and permission checks.
  *
- * @param input - User ID or data for soft-delete (to be defined).
+ * @param input - User ID to soft-delete.
  * @param actor - The admin actor performing the soft-delete.
- * @returns Object with the disabled user (to be defined).
- * @throws Error (not implemented).
+ * @returns Object with the disabled user (without password).
+ * @throws Error if not allowed, user not found, already disabled, or self-delete.
  */
-export const softDelete = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const softDelete = async (
+    input: SoftDeleteUserInput,
+    actor: unknown
+): Promise<SoftDeleteUserOutput> => {
+    logMethodStart(dbLogger, 'softDelete', input, actor as object);
+    const parsedInput = softDeleteUserInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+
+    // First: do not allow if the actor is disabled
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'softDelete', { user: null });
+        throw new Error('Disabled users cannot soft-delete users');
+    }
+    // Solo admin puede soft-delete
+    if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
+        logMethodEnd(dbLogger, 'softDelete', { user: null });
+        throw new Error('Only admin can soft-delete users');
+    }
+    // Get user to disable
+    const user = await UserModel.getById(parsedInput.id);
+    if (!user) {
+        logMethodEnd(dbLogger, 'softDelete', { user: null });
+        throw new Error('User not found');
+    }
+    if (user.lifecycleState === LifecycleStatusEnum.INACTIVE) {
+        logMethodEnd(dbLogger, 'softDelete', { user: null });
+        throw new Error('User is already disabled');
+    }
+    // Prevent admin from disabling themselves
+    if ('id' in safeActor && safeActor.id === user.id) {
+        logMethodEnd(dbLogger, 'softDelete', { user: null });
+        throw new Error('Admin cannot soft-delete themselves');
+    }
+    // Disable user
+    const now = new Date();
+    const updatedUser = await UserModel.update(user.id, {
+        lifecycleState: LifecycleStatusEnum.INACTIVE,
+        updatedAt: now,
+        updatedById: safeActor.id
+    });
+    if (!updatedUser) {
+        logMethodEnd(dbLogger, 'softDelete', { user: null });
+        throw new Error('Failed to soft-delete user');
+    }
+    // Remove password from output
+    const { password, ...userOut } = updatedUser;
+    logMethodEnd(dbLogger, 'softDelete', { user: userOut });
+    return { user: userOut };
 };
 
 /**
