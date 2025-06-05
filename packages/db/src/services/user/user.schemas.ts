@@ -157,3 +157,41 @@ export const softDeleteUserOutputSchema = z.object({
  * Type for softDeleteUser output (RO-RO pattern).
  */
 export type SoftDeleteUserOutput = z.infer<typeof softDeleteUserOutputSchema>;
+
+/**
+ * Zod schema for restoreUser input.
+ * Only admin can restore users.
+ * @example { id: 'user-123' }
+ */
+export const restoreUserInputSchema = z.object({
+    id: z.string()
+});
+
+/**
+ * Type for restoreUser input (RO-RO pattern).
+ */
+export type RestoreUserInput = z.infer<typeof restoreUserInputSchema>;
+
+/**
+ * Zod schema for restoreUser output.
+ * Returns the restored user (without password).
+ * @example { user: { id: 'user-123', lifecycleState: 'ACTIVE', ... } }
+ */
+export const restoreUserOutputSchema = z.object({
+    user: z.object({
+        id: z.string(),
+        userName: z.string(),
+        role: z.nativeEnum(RoleEnum),
+        email: z.string().email().optional(),
+        lifecycleState: z.nativeEnum(LifecycleStatusEnum),
+        createdAt: z.date(),
+        updatedAt: z.date(),
+        createdById: z.string(),
+        updatedById: z.string()
+    })
+});
+
+/**
+ * Type for restoreUser output (RO-RO pattern).
+ */
+export type RestoreUserOutput = z.infer<typeof restoreUserOutputSchema>;

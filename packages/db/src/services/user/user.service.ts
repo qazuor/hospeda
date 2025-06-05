@@ -15,6 +15,8 @@ import type {
     CreateUserOutput,
     GetByIdInput,
     GetByIdOutput,
+    RestoreUserInput,
+    RestoreUserOutput,
     SoftDeleteUserInput,
     SoftDeleteUserOutput,
     UpdateUserInput,
@@ -23,6 +25,7 @@ import type {
 import {
     createUserInputSchema,
     getByIdInputSchema,
+    restoreUserInputSchema,
     softDeleteUserInputSchema,
     updateUserInputSchema
 } from './user.schemas';
@@ -308,13 +311,59 @@ export const softDelete = async (
  * Restores a previously soft-deleted (disabled) user. Only admin can perform this action.
  * Applies validation, logging, and permission checks.
  *
- * @param input - User ID or data for restore (to be defined).
+ * @param input - User ID to restore.
  * @param actor - The admin actor performing the restore.
- * @returns Object with the restored user (to be defined).
- * @throws Error (not implemented).
+ * @returns Object with the restored user (without password).
+ * @throws Error if not allowed, user not found, already active, or self-restore.
  */
-export const restore = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const restore = async (
+    input: RestoreUserInput,
+    actor: unknown
+): Promise<RestoreUserOutput> => {
+    logMethodStart(dbLogger, 'restore', input, actor as object);
+    const parsedInput = restoreUserInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+
+    // Primero: no permitir si el actor está deshabilitado
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'restore', { user: null });
+        throw new Error('Disabled users cannot restore users');
+    }
+    // Solo admin puede restaurar usuarios
+    if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
+        logMethodEnd(dbLogger, 'restore', { user: null });
+        throw new Error('Only admin can restore users');
+    }
+    // Buscar usuario a restaurar
+    const user = await UserModel.getById(parsedInput.id);
+    if (!user) {
+        logMethodEnd(dbLogger, 'restore', { user: null });
+        throw new Error('User not found');
+    }
+    // Prevenir que el admin se restaure a sí mismo
+    if ('id' in safeActor && safeActor.id === user.id) {
+        logMethodEnd(dbLogger, 'restore', { user: null });
+        throw new Error('Admin cannot restore themselves');
+    }
+    if (user.lifecycleState === LifecycleStatusEnum.ACTIVE) {
+        logMethodEnd(dbLogger, 'restore', { user: null });
+        throw new Error('User is already active');
+    }
+    // Restaurar usuario
+    const now = new Date();
+    const updatedUser = await UserModel.update(user.id, {
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        updatedAt: now,
+        updatedById: safeActor.id
+    });
+    if (!updatedUser) {
+        logMethodEnd(dbLogger, 'restore', { user: null });
+        throw new Error('Failed to restore user');
+    }
+    // Quitar password del output
+    const { password, ...userOut } = updatedUser;
+    logMethodEnd(dbLogger, 'restore', { user: userOut });
+    return { user: userOut };
 };
 
 /**
