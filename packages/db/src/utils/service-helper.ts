@@ -21,7 +21,8 @@ export enum CanViewReasonEnum {
     HAS_PERMISSION = 'has permission',
     MISSING_PERMISSION = 'missing permission',
     PERMISSION_CHECK_REQUIRED = 'permission check required',
-    UNKNOWN_VISIBILITY = 'unknown visibility'
+    UNKNOWN_VISIBILITY = 'unknown visibility',
+    PUBLIC_ACTOR_DENIED = 'public actor denied'
 }
 
 /**
