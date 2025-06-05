@@ -4,7 +4,8 @@ import { EventDateSchema } from '@repo/schemas/entities/event/event.date.schema'
 import { EventPriceSchema } from '@repo/schemas/entities/event/event.price.schema';
 import { EventCategoryEnumSchema } from '@repo/schemas/enums/event-category.enum.schema';
 import { VisibilityEnumSchema } from '@repo/schemas/enums/visibility.enum.schema';
-import type { EventType } from '@repo/types';
+import type { EventType, UserId } from '@repo/types';
+import { LifecycleStatusEnum, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 
 /**
@@ -147,3 +148,41 @@ export type GetByLocationIdInput = z.infer<typeof getByLocationIdInputSchema>;
 export type GetByLocationIdOutput = {
     events: EventType[];
 };
+
+/**
+ * Input type for listing events (RO-RO pattern).
+ * @property limit - Maximum number of events to return (default: 20, max: 100).
+ * @property offset - Number of events to skip (for pagination).
+ * @property filters - Optional filters: visibility, lifecycleState, authorId.
+ */
+export type ListEventsInput = {
+    limit?: number;
+    offset?: number;
+    filters?: {
+        visibility?: VisibilityEnum;
+        lifecycleState?: LifecycleStatusEnum;
+        authorId?: UserId;
+    };
+};
+
+/**
+ * Output type for listing events (RO-RO pattern).
+ * @property events - Array of events matching the filters and permissions.
+ */
+export type ListEventsOutput = { events: EventType[] };
+
+/**
+ * Zod schema for list events input validation.
+ * @example { limit: 10, offset: 0, filters: { visibility: 'PUBLIC' } }
+ */
+export const listEventsInputSchema = z.object({
+    limit: z.number().int().min(1).max(100).optional(),
+    offset: z.number().int().min(0).optional(),
+    filters: z
+        .object({
+            visibility: z.nativeEnum(VisibilityEnum).optional(),
+            lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
+            authorId: z.string().optional()
+        })
+        .optional()
+});
