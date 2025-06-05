@@ -278,30 +278,37 @@ export const UserModel = {
     },
 
     /**
-     * Hard delete a user by ID (permanently removes from DB).
+     * Hard delete a user by ID (permanently removes from DB) and returns the deleted user (without password).
      *
      * @param {string} id - User ID
-     * @returns {Promise<boolean>} True if deleted, false if not found
+     * @returns {Promise<Omit<UserType, 'password'> | null>} The deleted user (without password), or null if not found
      * @throws {Error} If the operation fails
      *
      * @example
-     * const wasDeleted = await UserModel.hardDelete('user-uuid');
-     * if (wasDeleted) {
-     *   console.log('User permanently deleted');
+     * const deletedUser = await UserModel.hardDelete('user-uuid');
+     * if (deletedUser) {
+     *   console.log('User deleted:', deletedUser);
      * }
      */
-    async hardDelete(id: string): Promise<boolean> {
+    hardDelete: async (id: string): Promise<Omit<UserType, 'password'> | null> => {
         const db = getDb();
         try {
+            const user = await UserModel.getById(id);
+            if (!user) return null;
             const result = await db.delete(users).where(eq(users.id, id)).returning();
-            const deleted = Array.isArray(result) ? result.length > 0 : false;
+            const deleted = Array.isArray(result) && result.length > 0;
             dbLogger.query({
                 table: 'users',
                 action: 'hardDelete',
                 params: { id },
                 result: deleted
             });
-            return deleted;
+            if (deleted) {
+                // Remove password from output
+                const { password, ...userOut } = user;
+                return userOut;
+            }
+            return null;
         } catch (error) {
             dbLogger.error(error, 'UserModel.hardDelete');
             throw new Error(`Failed to hard delete user: ${(error as Error).message}`);
@@ -524,6 +531,85 @@ export const UserModel = {
         } catch (error) {
             dbLogger.error(error, 'UserModel.getByPermission');
             throw new Error(`Failed to get users by permission: ${(error as Error).message}`);
+        }
+    },
+
+    /**
+     * Retrieve a user by its unique email.
+     *
+     * @param {string} email - Email
+     * @returns {Promise<UserType | undefined>} UserType if found, otherwise undefined
+     * @throws {Error} If the query fails
+     *
+     * @example
+     * const user = await UserModel.getByEmail('foo@bar.com');
+     * if (user) {
+     *   console.log(user.id);
+     * }
+     */
+    async getByEmail(email: string): Promise<UserType | undefined> {
+        const db = getDb();
+        try {
+            const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+            dbLogger.query({
+                table: 'users',
+                action: 'getByEmail',
+                params: { email },
+                result
+            });
+            return result[0] as UserType | undefined;
+        } catch (error) {
+            dbLogger.error(error, 'UserModel.getByEmail');
+            throw new Error(`Failed to get user by email: ${(error as Error).message}`);
+        }
+    },
+
+    /**
+     * Adds a permission to a user.
+     *
+     * @param {string} userId - User ID
+     * @param {PermissionEnum} permission - Permission to add
+     * @returns {Promise<Omit<UserType, 'password'> | undefined>} The updated user (without password), or undefined if not found
+     * @throws {Error} If the operation fails
+     *
+     * @example
+     * const user = await UserModel.addPermission('user-uuid', PermissionEnum.USER_CREATE);
+     * if (user) {
+     *   console.log('User updated:', user);
+     * }
+     */
+    addPermission: async (
+        userId: string,
+        permission: PermissionEnum
+    ): Promise<Omit<UserType, 'password'> | undefined> => {
+        const db = getDb();
+        try {
+            // Get current user
+            const user = await UserModel.getById(userId);
+            if (!user) return undefined;
+            // Add permission only if not already present
+            const newPermissions = user.permissions
+                ? Array.from(new Set([...user.permissions, permission]))
+                : [permission];
+            // Update permissions in the database
+            const result = await db
+                .update(users)
+                .set({ permissions: newPermissions })
+                .where(eq(users.id, userId))
+                .returning();
+            const updated = Array.isArray(result) ? result[0] : undefined;
+            dbLogger.query({
+                table: 'users',
+                action: 'addPermission',
+                params: { userId, permission },
+                result: updated
+            });
+            if (!updated) return undefined;
+            const { password, ...userOut } = updated;
+            return userOut;
+        } catch (error) {
+            dbLogger.error(error, 'UserModel.addPermission');
+            throw new Error(`Failed to add permission: ${(error as Error).message}`);
         }
     }
 };
