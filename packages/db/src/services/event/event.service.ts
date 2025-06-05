@@ -33,12 +33,15 @@ import {
     type GetByLocationIdOutput,
     type GetBySlugInput,
     type GetBySlugOutput,
+    type ListEventsInput,
+    type ListEventsOutput,
     type UpdateInput,
     type UpdateOutput,
     createEventInputSchema,
     getByIdInputSchema,
     getByLocationIdInputSchema,
     getBySlugInputSchema,
+    listEventsInputSchema,
     updateInputSchema
 } from './event.schemas';
 
@@ -731,19 +734,61 @@ export const hardDelete = async (
 };
 
 /**
- * Searches for events based on advanced filters.
- * @throws Error (not implemented).
+ * Lists events with optional filters and pagination, applying permission checks and logging.
+ * - Admins can view all events.
+ * - Regular users can view public/active events, or private if they have permission.
+ * - Disabled users cannot view any event.
+ *
+ * @param input - Object with optional limit, offset, and filters.
+ * @param actor - The user or public actor requesting the events.
+ * @returns An object with the events array (may be empty).
+ * @example
+ *   const { events } = await list({ limit: 10, offset: 0 }, user);
  */
-export const search = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Lists events with basic filters and pagination.
- * @throws Error (not implemented).
- */
-export const list = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const list = async (input: ListEventsInput, actor: unknown): Promise<ListEventsOutput> => {
+    logMethodStart(dbLogger, 'list', input, actor as object);
+    const parsedInput = listEventsInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: parsedInput.filters?.visibility || VisibilityEnum.PUBLIC },
+            'User disabled',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'list', { events: [] });
+        return { events: [] };
+    }
+    // Retrieve events with filters and pagination
+    const allEvents = await EventModel.search({
+        ...parsedInput.filters,
+        limit: parsedInput.limit ?? 20,
+        offset: parsedInput.offset ?? 0
+    });
+    // Filter by permissions and visibility rules
+    const isAdmin = safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN;
+    const canViewPrivate = isAdmin || hasPermission(safeActor, PermissionEnum.EVENT_VIEW_PRIVATE);
+    const filtered = allEvents.filter((event) => {
+        if (isAdmin) {
+            // Admins see all
+            return true;
+        }
+        if (event.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+            // Only admins see archived/deleted
+            return false;
+        }
+        if (event.visibility === VisibilityEnum.PUBLIC) {
+            return true;
+        }
+        if (event.visibility === VisibilityEnum.PRIVATE && canViewPrivate) {
+            return true;
+        }
+        return false;
+    });
+    logMethodEnd(dbLogger, 'list', { events: filtered });
+    return { events: filtered };
 };
 
 /**
@@ -801,5 +846,13 @@ export const getByAuthorId = async (_input: unknown, _actor: unknown): Promise<n
  * @throws Error (not implemented).
  */
 export const getPast = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Searches for events based on advanced filters.
+ * @throws Error (not implemented).
+ */
+export const search = async (_input: unknown, _actor: unknown): Promise<never> => {
     throw new Error('Not implemented yet');
 };
