@@ -261,14 +261,6 @@ export const getBySlug = async (
 };
 
 /**
- * Gets events by author ID.
- * @throws Error (not implemented).
- */
-export const getByAuthorId = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
  * Retrieves events by locationId, applying permission checks, logging, and edge-case handling.
  * - Admins can view all events for the location.
  * - Regular users can view public/active events, or private if they have permission.
@@ -325,54 +317,6 @@ export const getByLocationId = async (
     );
     logMethodEnd(dbLogger, 'getByLocationId', { events: filtered });
     return { events: filtered };
-};
-
-/**
- * Gets events by organizer ID.
- * @throws Error (not implemented).
- */
-export const getByOrganizerId = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Gets events by category.
- * @throws Error (not implemented).
- */
-export const getByCategory = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Gets featured events.
- * @throws Error (not implemented).
- */
-export const getFeatured = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Gets upcoming events.
- * @throws Error (not implemented).
- */
-export const getUpcoming = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Gets past events.
- * @throws Error (not implemented).
- */
-export const getPast = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Gets events within a date range.
- * @throws Error (not implemented).
- */
-export const getByDateRange = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
 };
 
 /**
@@ -587,5 +531,63 @@ export const search = async (_input: unknown, _actor: unknown): Promise<never> =
  * @throws Error (not implemented).
  */
 export const list = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets events by organizer ID.
+ * @throws Error (not implemented).
+ */
+export const getByOrganizerId = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets events by category.
+ * @throws Error (not implemented).
+ */
+export const getByCategory = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets featured events.
+ * @throws Error (not implemented).
+ */
+export const getFeatured = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets upcoming events.
+ * @throws Error (not implemented).
+ */
+export const getUpcoming = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets events within a date range.
+ * @throws Error (not implemented).
+ */
+export const getByDateRange = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+// --- FUTURE METHODS (stubs) ---
+
+/**
+ * Gets events by author ID.
+ * @throws Error (not implemented).
+ */
+export const getByAuthorId = async (_input: unknown, _actor: unknown): Promise<never> => {
+    throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets past events.
+ * @throws Error (not implemented).
+ */
+export const getPast = async (_input: unknown, _actor: unknown): Promise<never> => {
     throw new Error('Not implemented yet');
 };
