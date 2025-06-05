@@ -4,6 +4,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import type { UserId } from '@repo/types/common/id.types';
 import { DestinationModel } from '../../models/destination/destination.model';
+import { DestinationReviewModel } from '../../models/destination/destination_review.model';
 import { dbLogger } from '../../utils/logger';
 import { logDenied, logGrant, logUserDisabled } from '../../utils/permission-logger';
 import { hasPermission } from '../../utils/permission-manager';
@@ -20,7 +21,8 @@ import {
     buildRestoreUpdate,
     buildSoftDeleteUpdate,
     canViewDestination,
-    normalizeCreateInput
+    normalizeCreateInput,
+    normalizeUpdateInput
 } from './destination.helper';
 import {
     type CreateInput,
@@ -31,13 +33,18 @@ import {
     type GetByNameOutput,
     type GetBySlugInput,
     type GetBySlugOutput,
+    type GetReviewsInput,
+    type GetReviewsOutput,
     type ListInput,
     type ListOutput,
     createInputSchema,
     getByIdInputSchema,
     getByNameInputSchema,
     getBySlugInputSchema,
-    listInputSchema
+    getReviewsInputSchema,
+    listInputSchema,
+    searchInputSchema,
+    updateInputSchema
 } from './destination.schemas';
 
 /**
@@ -123,14 +130,14 @@ export const getById = async (input: GetByIdInput, actor: unknown): Promise<GetB
  * Handles edge-cases: public user, disabled user, unknown visibility.
  * Always uses RO-RO pattern for input/output.
  *
- * Why: Permite búsqueda segura y auditable por slug, con la misma robustez que getById.
+ * Why: Allows safe and auditable search by slug, with the same robustness as getById.
  *
  * @param input - The input object containing the destination slug.
  * @param actor - The user or public actor requesting the destination.
  * @returns An object with the destination or null if not accessible.
  * @throws Error if the destination has unknown visibility.
  * @example
- * const result = await getBySlug({ slug: 'destino-uruguay' }, user);
+ * const result = await getBySlug({ slug: 'uruguay-destination' }, user);
  */
 export const getBySlug = async (
     input: GetBySlugInput,
@@ -203,13 +210,13 @@ export const getBySlug = async (
 
 /**
  * Gets a destination by its name.
- * Maneja edge-cases: usuario público, usuario deshabilitado, visibilidad desconocida.
+ * Handles edge-cases: public user, disabled user, unknown visibility.
  * RO-RO pattern.
  *
- * @param input - Objeto con el nombre del destino.
- * @param actor - Usuario o actor público.
- * @returns Objeto con el destino o null si no es accesible.
- * @throws Error si la visibilidad es desconocida.
+ * @param input - Object with the destination name.
+ * @param actor - User or public actor.
+ * @returns Object with the destination or null if not accessible.
+ * @throws Error if the visibility is unknown.
  */
 export const getByName = async (
     input: GetByNameInput,
@@ -282,12 +289,12 @@ export const getByName = async (
 
 /**
  * Lists destinations with filters, pagination and ordering.
- * Aplica lógica de visibilidad/permisos según el actor.
+ * Aplies visibility/permissions logic according to the actor.
  * RO-RO pattern, logging, edge-cases.
  *
- * @param input - Parámetros de paginación, filtros y orden.
- * @param actor - Usuario o actor público.
- * @returns Objeto con el array de destinos accesibles.
+ * @param input - Pagination, filters and ordering parameters.
+ * @param actor - User or public actor.
+ * @returns Object with the accessible destinations array.
  * @example
  * const { destinations } = await list({ limit: 10, offset: 0, visibility: 'PUBLIC' }, user);
  */
@@ -311,11 +318,11 @@ export const list = async (input: ListInput, actor: unknown): Promise<ListOutput
 
 /**
  * Creates a new destination.
- * Solo usuarios autenticados pueden crear destinos. RO-RO, logging, permisos.
- * @param input - Input para crear destination
- * @param actor - Usuario o actor público
+ * Only authenticated users can create destinations. RO-RO, logging, permissions.
+ * @param input - Input to create destination
+ * @param actor - User or public actor
  * @returns { destination }
- * @throws Error si el actor es público o no tiene permiso
+ * @throws Error if the actor is public or does not have permission
  */
 export const create = async (
     input: CreateInput,
@@ -389,10 +396,70 @@ export const create = async (
 };
 
 /**
- * Updates an existing destination. (MVP)
+ * Updates an existing destination.
+ * Only admin or a user with the required permission can update.
+ * Handles edge-cases: public user, disabled user, unknown visibility, etc.
+ *
+ * @param input - The input object with fields to update (must include id).
+ * @param actor - The user or public actor attempting the update.
+ * @returns An object with the updated destination.
+ * @throws Error if the actor is not allowed to update or input is invalid.
+ * @example
+ * const result = await update({ id: 'dest-1', name: 'New Name' }, user);
  */
-export const update = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const update = async (
+    input: import('./destination.schemas').UpdateInput,
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<import('./destination.schemas').UpdateOutput> => {
+    logMethodStart(dbLogger, 'update', input, actor);
+    const parsedInput = updateInputSchema.parse(input);
+    const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
+    if (!destination) {
+        logMethodEnd(dbLogger, 'update', { destination: null });
+        throw new Error('Destination not found');
+    }
+    const safeActor = getSafeActor(actor);
+    let checkedPermission: import('@repo/types').PermissionEnum | undefined;
+    const {
+        canView,
+        reason,
+        checkedPermission: checkedPerm
+    } = canViewDestination(safeActor, destination);
+    checkedPermission = checkedPerm;
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(dbLogger, safeActor, input, destination, PermissionEnum.DESTINATION_UPDATE);
+        logMethodEnd(dbLogger, 'update', { destination: null });
+        throw new Error('Forbidden: user disabled');
+    }
+    // Only ADMIN or user with DESTINATION_UPDATE permission can update
+    try {
+        hasPermission(safeActor, PermissionEnum.DESTINATION_UPDATE);
+    } catch (err) {
+        dbLogger.permission({
+            permission: PermissionEnum.DESTINATION_UPDATE,
+            userId: 'id' in safeActor ? safeActor.id : 'public',
+            role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
+            extraData: { input, error: (err as Error).message }
+        });
+        logMethodEnd(dbLogger, 'update', { destination: null });
+        throw new Error('Forbidden: user does not have permission to update destination');
+    }
+    if (!canView) {
+        logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'update', { destination: null });
+        throw new Error('Forbidden: cannot view destination');
+    }
+    const normalizedUpdateInput = normalizeUpdateInput(destination, parsedInput);
+    const updatedDestination = await DestinationModel.update(
+        parsedInput.id,
+        normalizedUpdateInput as import('@repo/types').UpdateDestinationInputType
+    );
+    if (!updatedDestination) {
+        logMethodEnd(dbLogger, 'update', { destination: null });
+        throw new Error('Destination update failed');
+    }
+    logMethodEnd(dbLogger, 'update', { destination: updatedDestination });
+    return { destination: updatedDestination };
 };
 
 /**
@@ -467,13 +534,13 @@ export const softDelete = async (
 
 /**
  * Restores a soft-deleted destination. (MVP)
- * Solo admin o usuario con permiso puede restaurar.
- * Maneja edge-cases: usuario público, usuario deshabilitado, no archivado, etc.
+ * Solo admin or user with permission can restore.
+ * Handles edge-cases: public user, disabled user, not archived, etc.
  *
- * @param input - El input con el ID del destino.
- * @param actor - El usuario o actor público que intenta restaurar.
- * @returns Objeto con el destino restaurado, o null si no se puede.
- * @throws Error si el actor no puede restaurar o el input es inválido.
+ * @param input - The input with the destination ID.
+ * @param actor - The user or public actor attempting the restore.
+ * @returns Object with the restored destination, or null if not possible.
+ * @throws Error if the actor cannot restore or the input is invalid.
  * @example
  * const result = await restore({ id: 'dest-1' }, user);
  */
@@ -542,13 +609,13 @@ export const restore = async (
 
 /**
  * Hard-deletes (permanently deletes) a destination by ID. (MVP)
- * Solo admin o usuario con permiso puede hard-delete.
- * Maneja edge-cases: usuario público, usuario deshabilitado, no encontrado, sin permisos, error de borrado.
+ * Solo admin or user with permission can hard-delete.
+ * Handles edge-cases: public user, disabled user, not found, without permissions, delete error.
  *
- * @param input - El input con el ID del destino.
- * @param actor - El usuario o actor público que intenta borrar.
- * @returns Objeto { success: boolean }.
- * @throws Error si el actor no puede borrar o el input es inválido.
+ * @param input - The input with the destination ID.
+ * @param actor - The user or public actor attempting the hard-delete.
+ * @returns Object { success: boolean }.
+ * @throws Error if the actor cannot delete or the input is invalid.
  * @example
  * const result = await hardDelete({ id: 'dest-1' }, user);
  */
@@ -611,20 +678,99 @@ export const hardDelete = async (
 };
 
 /**
- * Advanced search for destinations. (MVP)
+ * Advanced search for destinations.
+ * Applies filters and ordering, handles permissions, logging, and pagination.
+ *
+ * @param input - Search filters and ordering.
+ * @param actor - User or public actor.
+ * @returns Object with destinations and total count.
+ * @example
+ * const { destinations, total } = await search({ text: 'playa', limit: 10 }, user);
  */
-export const search = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const search = async (
+    input: import('./destination.schemas').SearchInput,
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<import('./destination.schemas').SearchOutput> => {
+    logMethodStart(dbLogger, 'search', input, actor);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'search', { destinations: [], total: 0 });
+        return { destinations: [], total: 0 };
+    }
+    const parsedInput = searchInputSchema.parse(input);
+    // 1. Build DB filters
+    const dbFilters: import('./destination.schemas').ListInput = {
+        limit: (parsedInput.limit ?? 20) * 3, // buffer para filtrar por permisos/texto
+        offset: 0
+    };
+    if (parsedInput.isFeatured !== undefined) dbFilters.isFeatured = parsedInput.isFeatured;
+    if (parsedInput.visibility) dbFilters.visibility = parsedInput.visibility;
+    if (parsedInput.lifecycle) dbFilters.lifecycle = parsedInput.lifecycle;
+    if (parsedInput.moderationState) dbFilters.moderationState = parsedInput.moderationState;
+    if (parsedInput.orderBy) {
+        dbFilters.orderBy = parsedInput.orderBy;
+        dbFilters.order = parsedInput.order ?? 'desc';
+    }
+    // 2. Query DB
+    const all = await DestinationModel.list(dbFilters);
+    // 3. In-memory filters
+    let filtered = all;
+    if (parsedInput.text && parsedInput.text.trim().length > 0) {
+        const q = parsedInput.text.trim().toLowerCase();
+        filtered = filtered.filter(
+            (d) =>
+                d.name.toLowerCase().includes(q) ||
+                d.summary.toLowerCase().includes(q) ||
+                d.description.toLowerCase().includes(q)
+        );
+    }
+    if (typeof parsedInput.averageRatingMin === 'number') {
+        const min = parsedInput.averageRatingMin;
+        filtered = filtered.filter((d) => (d.averageRating ?? 0) >= min);
+    }
+    if (typeof parsedInput.averageRatingMax === 'number') {
+        const max = parsedInput.averageRatingMax;
+        filtered = filtered.filter((d) => (d.averageRating ?? 0) <= max);
+    }
+    // 4. Permissions/visibility
+    const permitted = filtered.filter((destination) => {
+        const { canView } = canViewDestination(safeActor, destination);
+        return canView;
+    });
+    // 5. Extra ordering if needed
+    if (parsedInput.orderBy) {
+        const col = parsedInput.orderBy;
+        const dir = parsedInput.order === 'asc' ? 1 : -1;
+        permitted.sort((a, b) => {
+            if (col === 'name') return a.name.localeCompare(b.name) * dir;
+            if (col === 'updatedAt')
+                return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * dir;
+            if (col === 'isFeatured')
+                return ((b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0)) * dir;
+            if (col === 'reviewsCount')
+                return ((b.reviewsCount ?? 0) - (a.reviewsCount ?? 0)) * dir;
+            if (col === 'averageRating')
+                return ((b.averageRating ?? 0) - (a.averageRating ?? 0)) * dir;
+            if (col === 'accommodationsCount')
+                return ((b.accommodationsCount ?? 0) - (a.accommodationsCount ?? 0)) * dir;
+            return 0;
+        });
+    }
+    // 6. Final pagination
+    const total = permitted.length;
+    const paginated = permitted.slice(parsedInput.offset, parsedInput.offset + parsedInput.limit);
+    logMethodEnd(dbLogger, 'search', { destinations: paginated, total });
+    return { destinations: paginated, total };
 };
 
 /**
  * Gets featured destinations. (MVP)
- * Devuelve solo los destinos destacados accesibles para el actor.
- * Aplica lógica de visibilidad/permisos, logging, edge-cases.
+ * Returns only the featured destinations accessible to the actor.
+ * Applies visibility/permissions logic, logging, edge-cases.
  *
- * @param input - Objeto con paginación (limit, offset).
- * @param actor - Usuario o actor público.
- * @returns Objeto con el array de destinos destacados accesibles.
+ * @param input - Object with pagination (limit, offset).
+ * @param actor - User or public actor.
+ * @returns Object with the array of featured accessible destinations.
  * @example
  * const { destinations } = await getFeatured({ limit: 10, offset: 0 }, user);
  */
@@ -653,24 +799,89 @@ export const getFeatured = async (
 };
 
 /**
- * Gets accommodations for a destination. (MVP)
+ * Gets reviews for a destination.
+ * Returns only the reviews accessible to the actor, with pagination and ordering.
+ * Applies visibility/permissions logic, logging, edge-cases.
+ *
+ * @param input - Object with destinationId, limit, offset, order, orderBy.
+ * @param actor - User or public actor.
+ * @returns Object with the array of accessible reviews.
+ * @example
+ * const { reviews } = await getReviews({ destinationId: 'dest-1', limit: 10 }, user);
  */
-export const getAccommodations = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Gets attractions for a destination. (MVP)
- */
-export const getAttractions = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Gets reviews for a destination. (MVP)
- */
-export const getReviews = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const getReviews = async (
+    input: GetReviewsInput,
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<GetReviewsOutput> => {
+    logMethodStart(dbLogger, 'getReviews', input, actor);
+    const parsedInput = getReviewsInputSchema.parse(input);
+    // 1. Get destination (for permission/visibility)
+    const destination = (await DestinationModel.getById(parsedInput.destinationId)) ?? null;
+    if (!destination) {
+        logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+        return { reviews: [] };
+    }
+    const safeActor = getSafeActor(actor);
+    let checkedPermission: import('@repo/types').PermissionEnum | undefined;
+    const {
+        canView,
+        reason,
+        checkedPermission: checkedPerm
+    } = canViewDestination(safeActor, destination);
+    checkedPermission = checkedPerm;
+    if (isUserDisabled(safeActor)) {
+        logUserDisabled(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE
+        );
+        logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+        return { reviews: [] };
+    }
+    if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
+        logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+        throw new Error(`Unknown destination visibility: ${destination.visibility}`);
+    }
+    if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+        try {
+            const allowed = hasPermission(safeActor, checkedPermission);
+            if (!allowed) throw new Error('Permission denied');
+        } catch (_err) {
+            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+            return { reviews: [] };
+        }
+        if (destination.visibility !== 'PUBLIC') {
+            logGrant(dbLogger, safeActor, input, destination, checkedPermission, reason);
+        }
+    } else if (!canView) {
+        logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+        return { reviews: [] };
+    } else if (destination.visibility !== 'PUBLIC') {
+        logGrant(
+            dbLogger,
+            safeActor,
+            input,
+            destination,
+            checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE,
+            reason
+        );
+    }
+    // 2. Get reviews paginated
+    const reviews = await DestinationReviewModel.list({
+        limit: parsedInput.limit,
+        offset: parsedInput.offset,
+        order: parsedInput.order,
+        orderBy: parsedInput.orderBy
+    });
+    // 3. Filter reviews by destinationId (defensive, in case model.list is reused)
+    const filtered = reviews.filter((r) => r.destinationId === parsedInput.destinationId);
+    logMethodEnd(dbLogger, 'getReviews', { reviews: filtered });
+    return { reviews: filtered };
 };
 
 // --- FUTURE METHODS (stubs) ---
@@ -722,4 +933,47 @@ export const changeVisibility = async (_input: unknown, _actor: unknown): Promis
  */
 export const getNearbyDestinations = async (_input: unknown, _actor: unknown): Promise<never> => {
     throw new Error('Not implemented yet');
+};
+
+/**
+ * Gets destinations for home page, ordered by rating and accommodations count.
+ * Returns only destinations accessible to the actor, ordered by averageRating and accommodationsCount.
+ *
+ * @param input - Object with the result limit.
+ * @param actor - User or public actor.
+ * @returns Object with the array of destinations for home.
+ * @example
+ * const { destinations } = await getForHome({ limit: 8 }, user);
+ */
+export const getForHome = async (
+    input: { limit: number },
+    actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
+): Promise<{ destinations: import('@repo/types').DestinationType[] }> => {
+    logMethodStart(dbLogger, 'getForHome', input, actor);
+    // Fetch more than needed to filter by permissions and then limit
+    const all = await DestinationModel.list({
+        limit: input.limit * 3, // buffer for filtering
+        offset: 0,
+        orderBy: 'averageRating',
+        order: 'desc'
+    });
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'getForHome', { destinations: [] });
+        return { destinations: [] };
+    }
+    // Filter by permissions/visibility
+    const filtered = all.filter((destination) => {
+        const { canView } = canViewDestination(safeActor, destination);
+        return canView;
+    });
+    // Sort by averageRating desc, then accommodationsCount desc
+    const ordered = filtered.sort((a, b) => {
+        const ratingDiff = (b.averageRating ?? 0) - (a.averageRating ?? 0);
+        if (ratingDiff !== 0) return ratingDiff;
+        return (b.accommodationsCount ?? 0) - (a.accommodationsCount ?? 0);
+    });
+    const limited = ordered.slice(0, input.limit);
+    logMethodEnd(dbLogger, 'getForHome', { destinations: limited });
+    return { destinations: limited };
 };

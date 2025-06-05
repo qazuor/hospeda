@@ -1,4 +1,5 @@
 import type { DestinationId } from '@repo/types/common/id.types';
+import type { DestinationReviewType } from '@repo/types/entities/destination/destination.review.types';
 import type { DestinationType } from '@repo/types/entities/destination/destination.types';
 import { z } from 'zod';
 
@@ -148,3 +149,82 @@ export const createInputSchema = z.object({
 
 export type CreateInput = z.infer<typeof createInputSchema>;
 export type CreateOutput = { destination: DestinationType };
+
+/**
+ * Input schema for update (DestinationService)
+ * Allows updating all writable fields (all except id, createdAt, createdById, deletedAt, deletedById).
+ *
+ * @example
+ * const input = { id: 'dest-1', name: 'Updated Name', summary: 'Updated summary' };
+ */
+export const updateInputSchema = z.object({
+    id: z.string().min(1) as unknown as z.ZodType<DestinationId>,
+    slug: z.string().min(1).optional(),
+    name: z.string().min(1).optional(),
+    summary: z.string().min(1).optional(),
+    description: z.string().min(1).optional(),
+    location: z.any().optional(),
+    media: z.any().optional(),
+    isFeatured: z.boolean().optional(),
+    visibility: z.string().min(1).optional(),
+    accommodationsCount: z.number().optional(),
+    seo: z.any().optional(),
+    adminInfo: z.any().optional(),
+    reviewsCount: z.number().optional(),
+    averageRating: z.number().optional(),
+    lifecycle: z.string().optional(),
+    moderationState: z.string().optional(),
+    tags: z.any().optional(),
+    attractions: z.any().optional(),
+    reviews: z.any().optional()
+});
+
+export type UpdateInput = z.infer<typeof updateInputSchema>;
+export type UpdateOutput = { destination: DestinationType };
+
+/**
+ * Input schema for getReviews (DestinationService)
+ * @example
+ * const input = { destinationId: 'dest-1', limit: 10, offset: 0 };
+ */
+export const getReviewsInputSchema = z.object({
+    destinationId: z.string().min(1),
+    limit: z.number().int().min(1).max(100).default(20),
+    offset: z.number().int().min(0).default(0),
+    order: z.enum(['asc', 'desc']).optional(),
+    orderBy: z.enum(['createdAt']).optional()
+});
+
+export type GetReviewsInput = z.infer<typeof getReviewsInputSchema>;
+export type GetReviewsOutput = { reviews: DestinationReviewType[] };
+
+/**
+ * Input schema for search (DestinationService)
+ * Filters: text, isFeatured, visibility, lifecycle, moderationState, averageRatingMin, averageRatingMax
+ * Order: name, updatedAt, isFeatured, reviewsCount, averageRating, accommodationsCount
+ */
+export const searchInputSchema = z.object({
+    text: z.string().optional(),
+    isFeatured: z.boolean().optional(),
+    visibility: z.string().optional(),
+    lifecycle: z.string().optional(),
+    moderationState: z.string().optional(),
+    averageRatingMin: z.number().min(0).max(5).optional(),
+    averageRatingMax: z.number().min(0).max(5).optional(),
+    orderBy: z
+        .enum([
+            'name',
+            'updatedAt',
+            'isFeatured',
+            'reviewsCount',
+            'averageRating',
+            'accommodationsCount'
+        ])
+        .optional(),
+    order: z.enum(['asc', 'desc']).optional(),
+    limit: z.number().int().min(1).max(100).default(20),
+    offset: z.number().int().min(0).default(0)
+});
+
+export type SearchInput = z.infer<typeof searchInputSchema>;
+export type SearchOutput = { destinations: DestinationType[]; total: number };

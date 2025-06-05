@@ -133,3 +133,18 @@ export const assertNotActive = (destination: {
         throw new Error('Destination is not archived');
     }
 };
+
+/**
+ * Normalizes the update input: casts branded IDs and dates.
+ * @param destination - The original destination object.
+ * @param input - The update input object.
+ * @returns The normalized update input.
+ */
+export const normalizeUpdateInput = (
+    destination: import('@repo/types').DestinationType,
+    input: import('./destination.schemas').UpdateInput
+): import('./destination.schemas').UpdateInput => {
+    const inputWithBrandedIds = castBrandedIds(input, (id) => id as typeof destination.id);
+    const inputWithDates = castDateFields(inputWithBrandedIds);
+    return inputWithDates;
+};
