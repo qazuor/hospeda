@@ -76,3 +76,46 @@ export const createUserOutputSchema = z.object({
  * Type for createUser output (RO-RO pattern).
  */
 export type CreateUserOutput = z.infer<typeof createUserOutputSchema>;
+
+/**
+ * Zod schema for updateUser input.
+ * Only admin or the user themselves can update.
+ * @example { id: 'user-123', userName: 'newname', email: 'new@email.com' }
+ */
+export const updateUserInputSchema = z.object({
+    id: z.string(),
+    userName: z.string().min(3).optional(),
+    password: z.string().min(8).optional(),
+    email: z.string().email().optional(),
+    role: z.nativeEnum(RoleEnum).optional(),
+    lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional()
+});
+
+/**
+ * Type for updateUser input (RO-RO pattern).
+ */
+export type UpdateUserInput = z.infer<typeof updateUserInputSchema>;
+
+/**
+ * Zod schema for updateUser output.
+ * Returns the updated user (without password).
+ * @example { user: { id: 'user-123', userName: 'newname', ... } }
+ */
+export const updateUserOutputSchema = z.object({
+    user: z.object({
+        id: z.string(),
+        userName: z.string(),
+        role: z.nativeEnum(RoleEnum),
+        email: z.string().email().optional(),
+        lifecycleState: z.nativeEnum(LifecycleStatusEnum),
+        createdAt: z.date(),
+        updatedAt: z.date(),
+        createdById: z.string(),
+        updatedById: z.string()
+    })
+});
+
+/**
+ * Type for updateUser output (RO-RO pattern).
+ */
+export type UpdateUserOutput = z.infer<typeof updateUserOutputSchema>;

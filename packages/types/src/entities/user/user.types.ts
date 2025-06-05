@@ -29,6 +29,7 @@ export interface UserType extends WithAudit, WithLifecycleState, WithAdminInfo {
     lastName?: string;
     birthDate?: Date;
 
+    email?: string;
     emailVerified?: boolean;
     phoneVerified?: boolean;
 
