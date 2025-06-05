@@ -418,6 +418,10 @@ export const hardDelete = async (
 };
 
 /**
+ * --- Future Methods Stubs ---
+ */
+
+/**
  * Changes the role of a user. Only admin can perform this action.
  * Applies validation, logging, and permission checks.
  *
@@ -427,45 +431,6 @@ export const hardDelete = async (
  * @throws Error (not implemented).
  */
 export const changeRole = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Adds a permission to a user. Only admin can perform this action.
- * Applies validation, logging, and permission checks.
- *
- * @param input - User ID and permission to add (to be defined).
- * @param actor - The admin actor adding the permission.
- * @returns Object with the updated user (to be defined).
- * @throws Error (not implemented).
- */
-export const addPermission = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Removes a permission from a user. Only admin can perform this action.
- * Applies validation, logging, and permission checks.
- *
- * @param input - User ID and permission to remove (to be defined).
- * @param actor - The admin actor removing the permission.
- * @returns Object with the updated user (to be defined).
- * @throws Error (not implemented).
- */
-export const removePermission = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
-};
-
-/**
- * Retrieves the effective permissions of a user.
- * Applies permission checks and logging.
- *
- * @param input - User ID or data (to be defined).
- * @param actor - The user or admin actor requesting permissions.
- * @returns Object with the permissions (to be defined).
- * @throws Error (not implemented).
- */
-export const getPermissions = async (_input: unknown, _actor: unknown): Promise<never> => {
     throw new Error('Not implemented yet');
 };
 
@@ -481,10 +446,6 @@ export const getPermissions = async (_input: unknown, _actor: unknown): Promise<
 export const getBookmarks = async (_input: unknown, _actor: unknown): Promise<never> => {
     throw new Error('Not implemented yet');
 };
-
-/**
- * --- Future Methods Stubs ---
- */
 
 /**
  * Lists users by role. Only admin can perform this action.
