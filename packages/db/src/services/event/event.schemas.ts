@@ -163,6 +163,14 @@ export type ListEventsInput = {
         lifecycleState?: LifecycleStatusEnum;
         authorId?: UserId;
     };
+    /**
+     * If set, only events whose date.start is greater than or equal to this value will be returned.
+     */
+    minDate?: Date;
+    /**
+     * If set, only events whose date.start is less than or equal to this value will be returned.
+     */
+    maxDate?: Date;
 };
 
 /**
@@ -184,7 +192,15 @@ export const listEventsInputSchema = z.object({
             lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
             authorId: z.string().optional()
         })
-        .optional()
+        .optional(),
+    /**
+     * If set, only events whose date.start is greater than or equal to this value will be returned.
+     */
+    minDate: z.coerce.date().optional(),
+    /**
+     * If set, only events whose date.start is less than or equal to this value will be returned.
+     */
+    maxDate: z.coerce.date().optional()
 });
 
 /**
@@ -194,7 +210,15 @@ export const listEventsInputSchema = z.object({
 export const getByOrganizerIdInputSchema = z.object({
     organizerId: z.string().min(1, 'OrganizerId is required'),
     limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional()
+    offset: z.number().int().min(0).optional(),
+    /**
+     * If set, only events whose date.start is greater than or equal to this value will be returned.
+     */
+    minDate: z.coerce.date().optional(),
+    /**
+     * If set, only events whose date.start is less than or equal to this value will be returned.
+     */
+    maxDate: z.coerce.date().optional()
 });
 
 /**
@@ -218,7 +242,15 @@ export type GetByOrganizerIdOutput = { events: EventType[] };
 export const getByCategoryInputSchema = z.object({
     category: z.nativeEnum(EventCategoryEnum),
     limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional()
+    offset: z.number().int().min(0).optional(),
+    /**
+     * If set, only events whose date.start is greater than or equal to this value will be returned.
+     */
+    minDate: z.coerce.date().optional(),
+    /**
+     * If set, only events whose date.start is less than or equal to this value will be returned.
+     */
+    maxDate: z.coerce.date().optional()
 });
 
 /**
@@ -263,13 +295,23 @@ export type GetFeaturedOutput = { events: EventType[] };
  */
 export const getUpcomingInputSchema = z.object({
     limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional()
+    offset: z.number().int().min(0).optional(),
+    /**
+     * If set, only events whose date.start is greater than or equal to this value will be returned.
+     */
+    minDate: z.coerce.date().optional(),
+    /**
+     * If set, only events whose date.start is less than or equal to this value will be returned.
+     */
+    maxDate: z.coerce.date().optional()
 });
 
 /**
  * Type for getUpcoming input (RO-RO pattern).
  * @property limit - Max number of events to return.
  * @property offset - Number of events to skip.
+ * @property minDate - If set, only events whose date.start is >= minDate will be returned.
+ * @property maxDate - If set, only events whose date.start is <= maxDate will be returned.
  */
 export type GetUpcomingInput = z.infer<typeof getUpcomingInputSchema>;
 

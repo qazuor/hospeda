@@ -777,7 +777,9 @@ export const list = async (input: ListEventsInput, actor: unknown): Promise<List
     const allEvents = await EventModel.search({
         ...parsedInput.filters,
         limit: parsedInput.limit ?? 20,
-        offset: parsedInput.offset ?? 0
+        offset: parsedInput.offset ?? 0,
+        minDate: parsedInput.minDate,
+        maxDate: parsedInput.maxDate
     });
     // Filter by permissions and visibility rules
     const isAdmin = safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN;
@@ -838,7 +840,9 @@ export const getByOrganizerId = async (
     const allEvents = await EventModel.search({
         organizerId: parsedInput.organizerId,
         limit: parsedInput.limit ?? 20,
-        offset: parsedInput.offset ?? 0
+        offset: parsedInput.offset ?? 0,
+        minDate: parsedInput.minDate,
+        maxDate: parsedInput.maxDate
     });
     // Filter by permissions and visibility rules (same as list)
     const isAdmin = safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN;
@@ -897,7 +901,9 @@ export const getByCategory = async (
     const allEvents = await EventModel.search({
         category: parsedInput.category,
         limit: parsedInput.limit ?? 20,
-        offset: parsedInput.offset ?? 0
+        offset: parsedInput.offset ?? 0,
+        minDate: parsedInput.minDate,
+        maxDate: parsedInput.maxDate
     });
     // Filter by permissions and visibility rules (same as list)
     const isAdmin = safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN;
@@ -1011,11 +1017,13 @@ export const getUpcoming = async (
         logMethodEnd(dbLogger, 'getUpcoming', { events: [] });
         return { events: [] };
     }
-    // Retrieve upcoming events with pagination (start date >= now)
-    // TODO: Add support for filtering by start date >= now in EventModel.search
+    // Retrieve upcoming events with pagination (start date >= now, or custom minDate/maxDate)
+    const now = new Date();
     const allEvents = await EventModel.search({
         limit: parsedInput.limit ?? 20,
-        offset: parsedInput.offset ?? 0
+        offset: parsedInput.offset ?? 0,
+        minDate: parsedInput.minDate ?? now,
+        maxDate: parsedInput.maxDate
     });
     // Filter by permissions and visibility rules (same as list)
     const isAdmin = safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN;
