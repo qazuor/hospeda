@@ -19,6 +19,7 @@ import {
 } from '../../utils/service-helper';
 import {
     assertNotArchived,
+    buildRestoreUpdate,
     buildSoftDeleteUpdate,
     canViewEvent,
     normalizeCreateInput
@@ -565,11 +566,89 @@ export const softDelete = async (
 };
 
 /**
- * Restores a previously soft-deleted event.
- * @throws Error (not implemented).
+ * Restores a previously soft-deleted (archived) event by ID.
+ * Only admin, superadmin, or a user with permission can restore.
+ * Handles edge-cases: disabled user, public user, not archived, no permission, not found, model error.
+ *
+ * @param input - The input object with the event ID.
+ * @param actor - The user or public actor attempting the restore.
+ * @returns An object with the restored event, or null if not found or not allowed.
+ * @throws Error if not allowed or fails.
+ * @example
+ * const result = await restore({ id: 'event-1' }, admin);
  */
-export const restore = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const restore = async (
+    input: { id: string },
+    actor: UserType | PublicUserType
+): Promise<{ event: EventType | null }> => {
+    logMethodStart(dbLogger, 'restore', input, actor);
+    const safeActor = getSafeActor(actor);
+    // Disabled user
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'User disabled',
+            PermissionEnum.EVENT_RESTORE
+        );
+        logMethodEnd(dbLogger, 'restore', { event: null });
+        throw new Error('Forbidden: user disabled');
+    }
+    // Public user (GUEST)
+    if (safeActor.role === RoleEnum.GUEST) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'Permission denied',
+            PermissionEnum.EVENT_RESTORE
+        );
+        logMethodEnd(dbLogger, 'restore', { event: null });
+        throw new Error('Forbidden: public user cannot restore events');
+    }
+    // Only admin, superadmin, or user with permission
+    const allowed =
+        safeActor.role === RoleEnum.ADMIN ||
+        safeActor.role === RoleEnum.SUPER_ADMIN ||
+        hasPermission(safeActor, PermissionEnum.EVENT_RESTORE);
+    if (!allowed) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'Permission denied',
+            PermissionEnum.EVENT_RESTORE
+        );
+        logMethodEnd(dbLogger, 'restore', { event: null });
+        throw new Error('Forbidden: user does not have permission to restore event');
+    }
+    // Find event
+    const event = await EventModel.getById(input.id);
+    if (!event) {
+        logMethodEnd(dbLogger, 'restore', { event: null });
+        throw new Error('Event not found');
+    }
+    // Only archived events can be restored
+    if (event.lifecycleState === LifecycleStatusEnum.ACTIVE) {
+        logMethodEnd(dbLogger, 'restore', { event: null });
+        throw new Error('Event is not archived');
+    }
+    // Execute restore
+    const updateInput = buildRestoreUpdate(safeActor);
+    let updatedEvent: EventType | null = null;
+    try {
+        const result = await EventModel.update(input.id, updateInput);
+        updatedEvent = result ?? null;
+    } catch (_err) {
+        logMethodEnd(dbLogger, 'restore', { event: null });
+        throw new Error('Event restore failed');
+    }
+    logMethodEnd(dbLogger, 'restore', { event: updatedEvent });
+    return { event: updatedEvent };
 };
 
 /**
