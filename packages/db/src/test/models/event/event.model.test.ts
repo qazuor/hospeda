@@ -7,7 +7,7 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { EventModel } from '../../../../src/models/event/event.model';
 import { dbLogger } from '../../../../src/utils/logger';
-import { mockEvent } from '../../mockData';
+import { getMockEvent, mockEvent } from '../../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');
@@ -302,6 +302,46 @@ describe('EventModel', () => {
             mockDb.offset.mockReturnValueOnce([]);
             const events = await EventModel.search({ limit: 10, offset: 0 });
             expect(events).toEqual([]);
+        });
+        it('filters by minDate', async () => {
+            mockDb.select.mockReturnThis();
+            mockDb.from.mockReturnThis();
+            mockDb.orderBy.mockReturnThis();
+            mockDb.limit.mockReturnThis();
+            const now = new Date('2024-06-01T12:00:00Z');
+            const eventBefore = getMockEvent({ date: { start: new Date('2024-05-01T12:00:00Z') } });
+            const eventAfter = getMockEvent({ date: { start: new Date('2024-07-01T12:00:00Z') } });
+            mockDb.offset.mockReturnValueOnce([eventBefore, eventAfter]);
+            await EventModel.search({ limit: 10, offset: 0, minDate: now });
+            expect(mockDb.where).toHaveBeenCalled();
+        });
+        it('filters by maxDate', async () => {
+            mockDb.select.mockReturnThis();
+            mockDb.from.mockReturnThis();
+            mockDb.orderBy.mockReturnThis();
+            mockDb.limit.mockReturnThis();
+            const now = new Date('2024-06-01T12:00:00Z');
+            const eventBefore = getMockEvent({ date: { start: new Date('2024-05-01T12:00:00Z') } });
+            const eventAfter = getMockEvent({ date: { start: new Date('2024-07-01T12:00:00Z') } });
+            mockDb.offset.mockReturnValueOnce([eventBefore, eventAfter]);
+            await EventModel.search({ limit: 10, offset: 0, maxDate: now });
+            expect(mockDb.where).toHaveBeenCalled();
+        });
+        it('filters by minDate and maxDate', async () => {
+            mockDb.select.mockReturnThis();
+            mockDb.from.mockReturnThis();
+            mockDb.orderBy.mockReturnThis();
+            mockDb.limit.mockReturnThis();
+            const min = new Date('2024-05-01T00:00:00Z');
+            const max = new Date('2024-07-01T00:00:00Z');
+            const eventBefore = getMockEvent({ date: { start: new Date('2024-04-01T12:00:00Z') } });
+            const eventInRange = getMockEvent({
+                date: { start: new Date('2024-06-01T12:00:00Z') }
+            });
+            const eventAfter = getMockEvent({ date: { start: new Date('2024-08-01T12:00:00Z') } });
+            mockDb.offset.mockReturnValueOnce([eventBefore, eventInRange, eventAfter]);
+            await EventModel.search({ limit: 10, offset: 0, minDate: min, maxDate: max });
+            expect(mockDb.where).toHaveBeenCalled();
         });
         it('logs and throws on db error', async () => {
             mockDb.select.mockImplementationOnce(() => {
