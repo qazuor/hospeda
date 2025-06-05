@@ -29,6 +29,8 @@ import {
     type CreateEventOutput,
     type GetByCategoryInput,
     type GetByCategoryOutput,
+    type GetByDateRangeInput,
+    type GetByDateRangeOutput,
     type GetByIdInput,
     type GetByIdOutput,
     type GetByLocationIdInput,
@@ -47,6 +49,7 @@ import {
     type UpdateOutput,
     createEventInputSchema,
     getByCategoryInputSchema,
+    getByDateRangeInputSchema,
     getByIdInputSchema,
     getByLocationIdInputSchema,
     getByOrganizerIdInputSchema,
@@ -1048,11 +1051,63 @@ export const getUpcoming = async (
 };
 
 /**
- * Gets events within a date range.
- * @throws Error (not implemented).
+ * Gets events within a date range (date.start >= minDate && date.start <= maxDate), applying permission checks, filters, and logging.
+ * - Admins can view all events in the range.
+ * - Regular users can view public/active events, or private if they have permission.
+ * - Disabled users cannot view any event.
+ *
+ * @param input - Object with minDate, maxDate, optional limit and offset.
+ * @param actor - The user or public actor requesting the events.
+ * @returns An object with the events array (may be empty).
+ * @example
+ *   const { events } = await getByDateRange({ minDate, maxDate, limit: 10 }, user);
  */
-export const getByDateRange = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const getByDateRange = async (
+    input: GetByDateRangeInput,
+    actor: unknown
+): Promise<GetByDateRangeOutput> => {
+    logMethodStart(dbLogger, 'getByDateRange', input, actor as object);
+    const parsedInput = getByDateRangeInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'User disabled',
+            undefined
+        );
+        logMethodEnd(dbLogger, 'getByDateRange', { events: [] });
+        return { events: [] };
+    }
+    // Retrieve events within the date range
+    const allEvents = await EventModel.search({
+        minDate: parsedInput.minDate,
+        maxDate: parsedInput.maxDate,
+        limit: parsedInput.limit ?? 20,
+        offset: parsedInput.offset ?? 0
+    });
+    // Filter by permissions and visibility rules (same as list)
+    const isAdmin = safeActor.role === RoleEnum.ADMIN || safeActor.role === RoleEnum.SUPER_ADMIN;
+    const canViewPrivate = isAdmin || hasPermission(safeActor, PermissionEnum.EVENT_VIEW_PRIVATE);
+    const filtered = allEvents.filter((event) => {
+        if (isAdmin) {
+            return true;
+        }
+        if (event.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+            return false;
+        }
+        if (event.visibility === VisibilityEnum.PUBLIC) {
+            return true;
+        }
+        if (event.visibility === VisibilityEnum.PRIVATE && canViewPrivate) {
+            return true;
+        }
+        return false;
+    });
+    logMethodEnd(dbLogger, 'getByDateRange', { events: filtered });
+    return { events: filtered };
 };
 
 // --- FUTURE METHODS (stubs) ---

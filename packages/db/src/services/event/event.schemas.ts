@@ -320,3 +320,35 @@ export type GetUpcomingInput = z.infer<typeof getUpcomingInputSchema>;
  * @property events - Array of upcoming events.
  */
 export type GetUpcomingOutput = { events: EventType[] };
+
+/**
+ * Zod schema for getByDateRange input.
+ * @example { minDate: '2024-07-01', maxDate: '2024-08-01', limit: 10, offset: 0 }
+ */
+export const getByDateRangeInputSchema = z.object({
+    /**
+     * Start of the date range (inclusive). Only events whose date.start >= minDate will be returned.
+     */
+    minDate: z.coerce.date(),
+    /**
+     * End of the date range (inclusive). Only events whose date.start <= maxDate will be returned.
+     */
+    maxDate: z.coerce.date(),
+    limit: z.number().int().min(1).max(100).optional(),
+    offset: z.number().int().min(0).optional()
+});
+
+/**
+ * Type for getByDateRange input (RO-RO pattern).
+ * @property minDate - Start of the date range (inclusive).
+ * @property maxDate - End of the date range (inclusive).
+ * @property limit - Max number of events to return.
+ * @property offset - Number of events to skip.
+ */
+export type GetByDateRangeInput = z.infer<typeof getByDateRangeInputSchema>;
+
+/**
+ * Type for getByDateRange output (RO-RO pattern).
+ * @property events - Array of events within the date range.
+ */
+export type GetByDateRangeOutput = { events: EventType[] };
