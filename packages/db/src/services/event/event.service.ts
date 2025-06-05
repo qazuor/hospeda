@@ -573,11 +573,82 @@ export const restore = async (_input: unknown, _actor: unknown): Promise<never> 
 };
 
 /**
- * Hard-deletes (permanently deletes) an event.
- * @throws Error (not implemented).
+ * Hard-deletes (permanently deletes) an event by ID.
+ * Only admin, superadmin, or a user with permission can hard-delete.
+ * Handles edge-cases: disabled user, public user, no permission, not found, model error.
+ *
+ * @param input - The input object with the event ID.
+ * @param actor - The user or public actor attempting the hard-delete.
+ * @returns An object with { success: boolean }.
+ * @throws Error if not allowed or fails.
+ * @example
+ * const result = await hardDelete({ id: 'event-1' }, admin);
  */
-export const hardDelete = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const hardDelete = async (
+    input: { id: string },
+    actor: UserType | PublicUserType
+): Promise<{ success: boolean }> => {
+    logMethodStart(dbLogger, 'hardDelete', input, actor);
+    const safeActor = getSafeActor(actor);
+    // Disabled user
+    if (isUserDisabled(safeActor)) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'User disabled',
+            PermissionEnum.EVENT_HARD_DELETE
+        );
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Forbidden: user disabled');
+    }
+    // Public user (GUEST)
+    if (safeActor.role === RoleEnum.GUEST) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'Permission denied',
+            PermissionEnum.EVENT_HARD_DELETE
+        );
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Forbidden: public user cannot hard-delete events');
+    }
+    // Only admin, superadmin, or user with permission
+    const allowed =
+        safeActor.role === RoleEnum.ADMIN ||
+        safeActor.role === RoleEnum.SUPER_ADMIN ||
+        hasPermission(safeActor, PermissionEnum.EVENT_HARD_DELETE);
+    if (!allowed) {
+        logDenied(
+            dbLogger,
+            safeActor,
+            input,
+            { visibility: VisibilityEnum.PUBLIC },
+            'Permission denied',
+            PermissionEnum.EVENT_HARD_DELETE
+        );
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Forbidden: user does not have permission to hard-delete event');
+    }
+    // Find event
+    const event = await EventModel.getById(input.id);
+    if (!event) {
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Event not found');
+    }
+    // Execute hard delete
+    let deleted = false;
+    try {
+        deleted = await EventModel.hardDelete(input.id);
+    } catch (_err) {
+        logMethodEnd(dbLogger, 'hardDelete', { success: false });
+        throw new Error('Event hard delete failed');
+    }
+    logMethodEnd(dbLogger, 'hardDelete', { success: deleted });
+    return { success: deleted };
 };
 
 /**
