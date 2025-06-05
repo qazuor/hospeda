@@ -15,6 +15,8 @@ import type {
     CreateUserOutput,
     GetByIdInput,
     GetByIdOutput,
+    HardDeleteUserInput,
+    HardDeleteUserOutput,
     RestoreUserInput,
     RestoreUserOutput,
     SoftDeleteUserInput,
@@ -25,6 +27,7 @@ import type {
 import {
     createUserInputSchema,
     getByIdInputSchema,
+    hardDeleteUserInputSchema,
     restoreUserInputSchema,
     softDeleteUserInputSchema,
     updateUserInputSchema
@@ -370,13 +373,48 @@ export const restore = async (
  * Hard-deletes (permanently deletes) a user. Only admin can perform this action.
  * Applies validation, logging, and permission checks.
  *
- * @param input - User ID or data for hard-delete (to be defined).
+ * @param input - User ID to hard-delete.
  * @param actor - The admin actor performing the hard-delete.
- * @returns Object indicating success (to be defined).
- * @throws Error (not implemented).
+ * @returns Object with the deleted user (without password), or null if not found.
+ * @throws Error if not allowed, user not found, self-delete, or DB error.
  */
-export const hardDelete = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const hardDelete = async (
+    input: HardDeleteUserInput,
+    actor: unknown
+): Promise<HardDeleteUserOutput> => {
+    logMethodStart(dbLogger, 'hardDelete', input, actor as object);
+    const parsedInput = hardDeleteUserInputSchema.parse(input);
+    const safeActor = getSafeActor(actor);
+
+    // Do not allow if the actor is disabled
+    if (isUserDisabled(safeActor)) {
+        logMethodEnd(dbLogger, 'hardDelete', { user: null });
+        throw new Error('Disabled users cannot hard-delete users');
+    }
+    // Only admin can hard-delete
+    if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
+        logMethodEnd(dbLogger, 'hardDelete', { user: null });
+        throw new Error('Only admin can hard-delete users');
+    }
+    // Find user to delete
+    const user = await UserModel.getById(parsedInput.id);
+    if (!user) {
+        logMethodEnd(dbLogger, 'hardDelete', { user: null });
+        throw new Error('User not found');
+    }
+    // Prevent admin from deleting themselves
+    if ('id' in safeActor && safeActor.id === user.id) {
+        logMethodEnd(dbLogger, 'hardDelete', { user: null });
+        throw new Error('Admin cannot hard-delete themselves');
+    }
+    // Perform physical deletion
+    const deletedUser = await UserModel.hardDelete(user.id);
+    if (!deletedUser) {
+        logMethodEnd(dbLogger, 'hardDelete', { user: null });
+        throw new Error('Failed to hard-delete user');
+    }
+    logMethodEnd(dbLogger, 'hardDelete', { user: deletedUser });
+    return { user: deletedUser };
 };
 
 /**

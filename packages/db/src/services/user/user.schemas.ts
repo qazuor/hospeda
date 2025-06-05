@@ -195,3 +195,26 @@ export const restoreUserOutputSchema = z.object({
  * Type for restoreUser output (RO-RO pattern).
  */
 export type RestoreUserOutput = z.infer<typeof restoreUserOutputSchema>;
+
+/**
+ * Zod schema for hardDeleteUser input.
+ * Only admin can hard-delete users.
+ * @example { id: 'user-123' }
+ */
+export const hardDeleteUserInputSchema = z.object({
+    id: z.string() // UserId as string
+});
+
+/**
+ * Type for hardDeleteUser input (RO-RO pattern).
+ * @property id - The unique user ID (UserId branded type).
+ */
+export type HardDeleteUserInput = z.infer<typeof hardDeleteUserInputSchema>;
+
+/**
+ * Type for hardDeleteUser output (RO-RO pattern).
+ * @property user - The deleted user object (without password), or null if not found.
+ */
+export type HardDeleteUserOutput = {
+    user: Omit<UserType, 'password'> | null;
+};

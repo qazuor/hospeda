@@ -277,21 +277,28 @@ describe('UserModel', () => {
     });
 
     describe('hardDelete', () => {
-        it('returns true if deleted', async () => {
+        it('returns the deleted user if deleted', async () => {
             mockDb.delete.mockReturnThis();
             mockDb.where.mockReturnThis();
             mockDb.returning.mockReturnValueOnce([{}]);
+            // Simular que getById retorna el usuario base
+            UserModel.getById = vi.fn().mockResolvedValue(baseUser);
+            const { password, ...userWithoutPassword } = baseUser;
             const result = await UserModel.hardDelete('user-uuid');
-            expect(result).toBe(true);
+            expect(result).toEqual(userWithoutPassword);
         });
-        it('returns false if not found', async () => {
+        it('returns null if not found', async () => {
             mockDb.delete.mockReturnThis();
             mockDb.where.mockReturnThis();
             mockDb.returning.mockReturnValueOnce([]);
+            // Simular que getById retorna undefined
+            UserModel.getById = vi.fn().mockResolvedValue(undefined);
             const result = await UserModel.hardDelete('not-exist');
-            expect(result).toBe(false);
+            expect(result).toBeNull();
         });
         it('logs and throws on db error', async () => {
+            // getById debe devolver un usuario válido para que se llegue al delete
+            UserModel.getById = vi.fn().mockResolvedValue(baseUser);
             mockDb.delete.mockImplementationOnce(() => {
                 throw new Error('fail');
             });
