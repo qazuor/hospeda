@@ -186,3 +186,27 @@ export const listEventsInputSchema = z.object({
         })
         .optional()
 });
+
+/**
+ * Zod schema for getByOrganizerId input.
+ * @example { organizerId: 'org-123', limit: 10, offset: 0 }
+ */
+export const getByOrganizerIdInputSchema = z.object({
+    organizerId: z.string().min(1, 'OrganizerId is required'),
+    limit: z.number().int().min(1).max(100).optional(),
+    offset: z.number().int().min(0).optional()
+});
+
+/**
+ * Type for getByOrganizerId input (RO-RO pattern).
+ * @property organizerId - The unique organizer ID.
+ * @property limit - Max number of events to return.
+ * @property offset - Number of events to skip.
+ */
+export type GetByOrganizerIdInput = z.infer<typeof getByOrganizerIdInputSchema>;
+
+/**
+ * Type for getByOrganizerId output (RO-RO pattern).
+ * @property events - Array of events for the given organizer.
+ */
+export type GetByOrganizerIdOutput = { events: EventType[] };
