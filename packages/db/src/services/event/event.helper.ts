@@ -180,3 +180,22 @@ export const assertNotArchived = (event: {
         throw new Error('Event is already archived or deleted');
     }
 };
+
+/**
+ * Builds the update object for restoring (un-archiving) an event.
+ * @param actor - The user or public actor performing the restore.
+ * @returns Partial<UpdateEventInputType> with restore fields set.
+ * @example
+ * const update = buildRestoreUpdate(user);
+ */
+export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
+    const now = new Date();
+    const updatedById = 'id' in actor ? actor.id : undefined;
+    return {
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        deletedAt: undefined,
+        deletedById: undefined,
+        updatedAt: now,
+        updatedById
+    };
+};
