@@ -15,7 +15,14 @@ import {
     logMethodStart
 } from '../../utils/service-helper';
 import { canViewEvent } from './event.helper';
-import { type GetByIdInput, type GetByIdOutput, getByIdInputSchema } from './event.schemas';
+import {
+    type GetByIdInput,
+    type GetByIdOutput,
+    type GetBySlugInput,
+    type GetBySlugOutput,
+    getByIdInputSchema,
+    getBySlugInputSchema
+} from './event.schemas';
 
 /**
  * Retrieves an event by its unique ID, applying robust permission checks, logging, and edge-case handling.
@@ -91,11 +98,79 @@ export const getById = async (input: GetByIdInput, actor: unknown): Promise<GetB
 };
 
 /**
- * Gets an event by its slug.
- * @throws Error (not implemented).
+ * Retrieves an event by its unique slug, applying robust permission checks, logging, and edge-case handling.
+ * - Admins can view any event.
+ * - The author can view their own event.
+ * - Others require explicit permission for private/draft events.
+ * - Only admins can view non-active (soft-deleted, archived, etc.) events.
+ * - Disabled users cannot view any event.
+ *
+ * @param input - Object containing the event slug ({ slug: string }).
+ * @param actor - The user or public actor requesting the event.
+ * @returns An object with the event if accessible, or null otherwise.
+ * @throws Error if the event has unknown visibility (should not occur in current logic).
+ * @example
+ *   const { event } = await getBySlug({ slug: 'event-slug' }, adminUser);
  */
-export const getBySlug = async (_input: unknown, _actor: unknown): Promise<never> => {
-    throw new Error('Not implemented yet');
+export const getBySlug = async (
+    input: GetBySlugInput,
+    actor: unknown
+): Promise<GetBySlugOutput> => {
+    logMethodStart(dbLogger, 'getBySlug', input, actor as object);
+    const parsedInput = getBySlugInputSchema.parse(input);
+    const event = (await EventModel.getBySlug(parsedInput.slug)) ?? null;
+    if (!event) {
+        logMethodEnd(dbLogger, 'getBySlug', { event: null });
+        return { event: null };
+    }
+    const safeActor = getSafeActor(actor);
+    if (isUserDisabled(safeActor)) {
+        logDenied(dbLogger, safeActor, input, event, 'User disabled', undefined);
+        logMethodEnd(dbLogger, 'getBySlug', { event: null });
+        return { event: null };
+    }
+    const { canView, reason, checkedPermission } = canViewEvent(safeActor, event);
+    if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
+        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getBySlug', { event: null });
+        throw new Error(`Unknown event visibility: ${event.visibility}`);
+    }
+    if (reason === CanViewReasonEnum.PUBLIC_ACTOR_DENIED) {
+        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getBySlug', { event: null });
+        return { event: null };
+    }
+    if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+        try {
+            hasPermission(safeActor, checkedPermission);
+            if (event.visibility !== VisibilityEnum.PUBLIC) {
+                logGrant(dbLogger, safeActor, input, event, checkedPermission, reason);
+            }
+            logMethodEnd(dbLogger, 'getBySlug', { event });
+            return { event };
+        } catch {
+            logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+            logMethodEnd(dbLogger, 'getBySlug', { event: null });
+            return { event: null };
+        }
+    }
+    if (!canView) {
+        logDenied(dbLogger, safeActor, input, event, reason, checkedPermission);
+        logMethodEnd(dbLogger, 'getBySlug', { event: null });
+        return { event: null };
+    }
+    if (event.visibility !== VisibilityEnum.PUBLIC) {
+        logGrant(
+            dbLogger,
+            safeActor,
+            input,
+            event,
+            checkedPermission ?? PermissionEnum.EVENT_VIEW_PRIVATE,
+            reason
+        );
+    }
+    logMethodEnd(dbLogger, 'getBySlug', { event });
+    return { event };
 };
 
 /**
