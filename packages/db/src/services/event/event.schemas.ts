@@ -234,3 +234,25 @@ export type GetByCategoryInput = z.infer<typeof getByCategoryInputSchema>;
  * @property events - Array of events for the given category.
  */
 export type GetByCategoryOutput = { events: EventType[] };
+
+/**
+ * Zod schema for getFeatured input.
+ * @example { limit: 10, offset: 0 }
+ */
+export const getFeaturedInputSchema = z.object({
+    limit: z.number().int().min(1).max(100).optional(),
+    offset: z.number().int().min(0).optional()
+});
+
+/**
+ * Type for getFeatured input (RO-RO pattern).
+ * @property limit - Max number of events to return.
+ * @property offset - Number of events to skip.
+ */
+export type GetFeaturedInput = z.infer<typeof getFeaturedInputSchema>;
+
+/**
+ * Type for getFeatured output (RO-RO pattern).
+ * @property events - Array of featured events.
+ */
+export type GetFeaturedOutput = { events: EventType[] };
