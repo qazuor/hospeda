@@ -31,7 +31,8 @@ import {
     type GetBySlugOutput,
     createPostInputSchema,
     getByIdInputSchema,
-    getBySlugInputSchema
+    getBySlugInputSchema,
+    updatePostInputSchema
 } from './post.schemas';
 
 /**
@@ -371,9 +372,97 @@ export const PostService = {
         logMethodEnd(dbLogger, 'create', { post });
         return { post };
     },
-    /** Update an existing post. */
-    async update(_input: unknown, _actor: unknown): Promise<{ post: PostType | null }> {
-        throw new Error('Not implemented');
+    /**
+     * Updates an existing post with strong validation, permission checks, and logging.
+     * - Only the author, admin, or user with POST_UPDATE permission can update posts.
+     * - Public users are explicitly denied.
+     * - Input is validated with Zod and strong types.
+     * - Logs start/end and permission denials.
+     *
+     * @param input - The post update input object (must include id).
+     * @param actor - The user attempting to update the post.
+     * @returns An object with the updated post or null if not found.
+     * @throws Error if the actor is public, disabled, lacks permission, or input is invalid.
+     * @example
+     *   const { post } = await PostService.update(input, user);
+     */
+    async update(
+        input: import('./post.schemas').UpdatePostInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').UpdatePostOutput> {
+        logMethodStart(dbLogger, 'update', input, actor as object);
+        const parsedInput = updatePostInputSchema.parse(input);
+        const post = await PostModel.getById(parsedInput.id);
+        if (!post) {
+            logMethodEnd(dbLogger, 'update', { post: null });
+            throw new Error('Post not found');
+        }
+        const safeActor = getSafeActor(actor);
+        if (isPublicUser(safeActor)) {
+            logOverride(
+                dbLogger,
+                input,
+                PermissionEnum.POST_UPDATE,
+                'Public user cannot update posts'
+            );
+            throw new Error('Forbidden: Public user cannot update posts');
+        }
+        if (isUserDisabled(safeActor)) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                post,
+                'disabled user cannot update',
+                'POST_UPDATE'
+            );
+            throw new Error('Disabled user cannot update posts');
+        }
+        // Only author, admin or user with POST_UPDATE can update
+        const isAuthor = safeActor && 'id' in safeActor && safeActor.id === post.authorId;
+        let hasUpdatePermission = false;
+        try {
+            hasUpdatePermission = isAuthor || hasPermission(safeActor, PermissionEnum.POST_UPDATE);
+        } catch (err) {
+            logDenied(dbLogger, safeActor, input, post, (err as Error).message, 'POST_UPDATE');
+            throw err;
+        }
+        if (!isAuthor && !hasUpdatePermission) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                post,
+                'Forbidden: user cannot update post',
+                'POST_UPDATE'
+            );
+            throw new Error('Forbidden: user cannot update post');
+        }
+        // Normalize input: remove id and non-updatable fields
+        const {
+            id,
+            authorId,
+            sponsorshipId,
+            relatedDestinationId,
+            relatedAccommodationId,
+            relatedEventId,
+            ...updateFields
+        } = parsedInput;
+        const updateInput = {
+            ...updateFields,
+            ...(authorId ? { authorId: authorId as UserId } : {}),
+            ...(sponsorshipId ? { sponsorshipId: sponsorshipId as PostSponsorshipId } : {}),
+            ...(relatedDestinationId
+                ? { relatedDestinationId: relatedDestinationId as DestinationId }
+                : {}),
+            ...(relatedAccommodationId
+                ? { relatedAccommodationId: relatedAccommodationId as AccommodationId }
+                : {}),
+            ...(relatedEventId ? { relatedEventId: relatedEventId as EventId } : {})
+        };
+        const updatedPost = await PostModel.update(id, updateInput);
+        logMethodEnd(dbLogger, 'update', { post: updatedPost });
+        return { post: updatedPost ?? null };
     },
     /** Soft delete a post. */
     async softDelete(_input: unknown, _actor: unknown): Promise<{ post: PostType | null }> {

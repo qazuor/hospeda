@@ -189,3 +189,48 @@ export type CreatePostInput = z.infer<typeof createPostInputSchema>;
  * const output: CreatePostOutput = { post };
  */
 export type CreatePostOutput = { post: PostType };
+
+/**
+ * Input schema for update post.
+ * Allows updating all writable fields except id, createdAt, createdById, updatedAt, updatedById, deletedAt, deletedById.
+ *
+ * @example
+ * const input = { id: 'post-uuid', title: 'Updated title' };
+ */
+export const updatePostInputSchema = z.object({
+    id: z.string().min(1, 'Post ID is required'),
+    slug: z.string().optional(),
+    category: z.nativeEnum(PostCategoryEnum).optional(),
+    title: z.string().optional(),
+    summary: z.string().optional(),
+    content: z.string().optional(),
+    media: z.any().optional(),
+    authorId: z.string().optional(),
+    sponsorshipId: z.string().optional(),
+    relatedDestinationId: z.string().optional(),
+    relatedAccommodationId: z.string().optional(),
+    relatedEventId: z.string().optional(),
+    visibility: z.nativeEnum(VisibilityEnum).optional(),
+    isFeatured: z.boolean().optional(),
+    isNews: z.boolean().optional(),
+    isFeaturedInWebsite: z.boolean().optional(),
+    expiresAt: z.coerce.date().optional(),
+    likes: z.number().int().optional(),
+    comments: z.number().int().optional(),
+    shares: z.number().int().optional()
+    // SEO, tags, audit fields, etc. can be added as needed
+});
+
+/**
+ * Input type for update post.
+ * @example
+ * const input: UpdatePostInput = { id: 'post-uuid', title: 'Updated title' };
+ */
+export type UpdatePostInput = z.infer<typeof updatePostInputSchema>;
+
+/**
+ * Output type for update post.
+ * @example
+ * const output: UpdatePostOutput = { post };
+ */
+export type UpdatePostOutput = { post: PostType | null };
