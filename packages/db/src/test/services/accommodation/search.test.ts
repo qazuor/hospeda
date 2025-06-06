@@ -7,7 +7,7 @@ import type {
 } from '@repo/types/common/id.types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../../src/models/accommodation/accommodation.model';
-import { search as searchAccommodation } from '../../../../src/services/accommodation/accommodation.service';
+import { AccommodationService } from '../../../../src/services/accommodation/accommodation.service';
 import {
     getMockAccommodation,
     getMockAccommodationId,
@@ -154,21 +154,21 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const result = await searchAccommodation(
+        const result = await AccommodationService.search(
             { text: 'Hotel', limit: 10, offset: 0 },
             mockAdmin
         );
         expect(result.accommodations.some((a: AccommodationType) => a.name.includes('Hotel'))).toBe(
             true
         );
-        const result2 = await searchAccommodation(
+        const result2 = await AccommodationService.search(
             { text: 'summary', limit: 10, offset: 0 },
             mockAdmin
         );
         expect(
             result2.accommodations.some((a: AccommodationType) => a.summary.includes('summary'))
         ).toBe(true);
-        const result3 = await searchAccommodation(
+        const result3 = await AccommodationService.search(
             { text: 'place', limit: 10, offset: 0 },
             mockAdmin
         );
@@ -178,7 +178,7 @@ describe('AccommodationService.search', () => {
     });
     it('should filter by destinationId', async () => {
         (AccommodationModel as Mocked<typeof AccommodationModel>).search.mockResolvedValue([acc1]);
-        const result = await searchAccommodation(
+        const result = await AccommodationService.search(
             { destinationId: getMockDestinationId(), limit: 10, offset: 0 },
             mockAdmin
         );
@@ -198,19 +198,25 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const min = await searchAccommodation({ minPrice: 150, limit: 10, offset: 0 }, mockAdmin);
+        const min = await AccommodationService.search(
+            { minPrice: 150, limit: 10, offset: 0 },
+            mockAdmin
+        );
         expect(
             min.accommodations.every((a: AccommodationType) =>
                 a.price?.price ? a.price.price >= 150 : false
             )
         ).toBe(true);
-        const max = await searchAccommodation({ maxPrice: 150, limit: 10, offset: 0 }, mockAdmin);
+        const max = await AccommodationService.search(
+            { maxPrice: 150, limit: 10, offset: 0 },
+            mockAdmin
+        );
         expect(
             max.accommodations.every((a: AccommodationType) =>
                 a.price?.price ? a.price.price <= 150 : false
             )
         ).toBe(true);
-        const withNoPrice = await searchAccommodation(
+        const withNoPrice = await AccommodationService.search(
             { includeWithoutPrice: true, limit: 10, offset: 0 },
             mockAdmin
         );
@@ -229,7 +235,7 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const result = await searchAccommodation(
+        const result = await AccommodationService.search(
             { amenities: ['a1'], features: ['f1'], limit: 10, offset: 0 },
             mockAdmin
         );
@@ -253,7 +259,7 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const result = await searchAccommodation({ limit: 10, offset: 0 }, mockPublic);
+        const result = await AccommodationService.search({ limit: 10, offset: 0 }, mockPublic);
         expect(
             result.accommodations.every(
                 (a: AccommodationType) => a.visibility === VisibilityEnum.PUBLIC
@@ -269,7 +275,7 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const result = await searchAccommodation({ limit: 10, offset: 0 }, mockAdmin);
+        const result = await AccommodationService.search({ limit: 10, offset: 0 }, mockAdmin);
         expect(result.accommodations.length).toBe(6);
     });
     it('should order by price asc', async () => {
@@ -281,7 +287,7 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const result = await searchAccommodation(
+        const result = await AccommodationService.search(
             { orderBy: ['price'], limit: 10, offset: 0 },
             mockAdmin
         );
@@ -299,7 +305,7 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const result = await searchAccommodation(
+        const result = await AccommodationService.search(
             { orderBy: ['rating'], limit: 10, offset: 0 },
             mockAdmin
         );
@@ -317,7 +323,7 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const result = await searchAccommodation(
+        const result = await AccommodationService.search(
             { orderBy: ['price'], limit: 10, offset: 0 },
             mockAdmin
         );
@@ -326,7 +332,10 @@ describe('AccommodationService.search', () => {
     });
     it('should return empty if no results', async () => {
         (AccommodationModel as Mocked<typeof AccommodationModel>).search.mockResolvedValue([]);
-        const result = await searchAccommodation({ text: 'nope', limit: 10, offset: 0 }, mockAdmin);
+        const result = await AccommodationService.search(
+            { text: 'nope', limit: 10, offset: 0 },
+            mockAdmin
+        );
         expect(result.accommodations).toEqual([]);
     });
     it('should return all if no filters', async () => {
@@ -338,7 +347,7 @@ describe('AccommodationService.search', () => {
             acc5,
             acc6
         ]);
-        const result = await searchAccommodation({ limit: 10, offset: 0 }, mockAdmin);
+        const result = await AccommodationService.search({ limit: 10, offset: 0 }, mockAdmin);
         expect(result.accommodations.length).toBe(6);
     });
 });

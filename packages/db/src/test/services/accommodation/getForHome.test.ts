@@ -1,8 +1,8 @@
-import type { AccommodationId, DestinationId, UserType } from '@repo/types';
+import type { AccommodationId, DestinationId } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { DestinationModel } from '../../../models/destination/destination.model';
-import * as AccommodationService from '../../../services/accommodation/accommodation.service';
+import { AccommodationService } from '../../../services/accommodation/accommodation.service';
 import type * as LoggerModule from '../../../utils/logger';
 import { getMockAccommodation } from '../../mockData';
 
@@ -82,10 +82,7 @@ describe('accommodation.service.getForHome', () => {
         });
         const limitAccommodationByDestination = 2;
         // Act
-        const result = await AccommodationService.getForHome(
-            { limitAccommodationByDestination },
-            {} as UserType
-        );
+        const result = await AccommodationService.getForHome({ limitAccommodationByDestination });
         // Assert
         expect(result.accommodationsByDestination).toEqual({
             [destinationId1]: [accommodation1, accommodation2],
@@ -104,10 +101,7 @@ describe('accommodation.service.getForHome', () => {
         (AccommodationModel.search as Mock).mockImplementation(() => Promise.resolve([]));
         const limitAccommodationByDestination = 2;
         // Act
-        const result = await AccommodationService.getForHome(
-            { limitAccommodationByDestination },
-            {} as UserType
-        );
+        const result = await AccommodationService.getForHome({ limitAccommodationByDestination });
         // Assert
         expect(result.accommodationsByDestination).toEqual({
             [destinationId1]: [],
@@ -144,10 +138,7 @@ describe('accommodation.service.getForHome', () => {
         });
         const limitAccommodationByDestination = 1;
         // Act
-        const result = await AccommodationService.getForHome(
-            { limitAccommodationByDestination },
-            {} as UserType
-        );
+        const result = await AccommodationService.getForHome({ limitAccommodationByDestination });
         // Assert
         expect(result.accommodationsByDestination).toEqual({
             [destinationId1]: [accommodation1],
@@ -199,10 +190,7 @@ describe('accommodation.service.getForHome', () => {
         });
         const limitAccommodationByDestination = 2;
         // Act
-        const result = await AccommodationService.getForHome(
-            { limitAccommodationByDestination },
-            {} as UserType
-        );
+        const result = await AccommodationService.getForHome({ limitAccommodationByDestination });
         // Assert
         expect(result.accommodationsByDestination).toEqual({
             [destinationId1]: [accommodation1, accommodation2],
@@ -215,10 +203,7 @@ describe('accommodation.service.getForHome', () => {
         (DestinationModel.list as Mock).mockResolvedValue([]);
         const limitAccommodationByDestination = 2;
         // Act
-        const result = await AccommodationService.getForHome(
-            { limitAccommodationByDestination },
-            {} as UserType
-        );
+        const result = await AccommodationService.getForHome({ limitAccommodationByDestination });
         // Assert
         expect(result.accommodationsByDestination).toEqual({});
     });
@@ -227,10 +212,10 @@ describe('accommodation.service.getForHome', () => {
         // Arrange
         const limitAccommodationByDestination = 2;
         // Act
-        const result = await AccommodationService.getForHome(
-            { limitAccommodationByDestination, destinationIds: [] },
-            {} as UserType
-        );
+        const result = await AccommodationService.getForHome({
+            limitAccommodationByDestination,
+            destinationIds: []
+        });
         // Assert
         expect(result.accommodationsByDestination).toEqual({});
     });

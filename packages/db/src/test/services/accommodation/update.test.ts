@@ -14,7 +14,7 @@ import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import * as accommodationHelper from '../../../services/accommodation/accommodation.helper';
 import type { UpdateInput } from '../../../services/accommodation/accommodation.schemas';
-import * as AccommodationService from '../../../services/accommodation/accommodation.service';
+import { AccommodationService } from '../../../services/accommodation/accommodation.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { CanViewReasonEnum } from '../../../utils/service-helper';
 import {

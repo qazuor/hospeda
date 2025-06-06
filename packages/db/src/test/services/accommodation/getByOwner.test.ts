@@ -7,7 +7,7 @@ import {
 } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import * as AccommodationService from '../../../services/accommodation/accommodation.service';
+import { AccommodationService } from '../../../services/accommodation/accommodation.service';
 import type * as LoggerModule from '../../../utils/logger';
 import { makeDisabledUser } from '../../factories/userFactory';
 import { getMockAccommodation, getMockPublicUser, getMockUser } from '../../mockData';
