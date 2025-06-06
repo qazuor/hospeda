@@ -241,3 +241,75 @@ export type UpdatePostOutput = { post: PostType | null };
  * const output: HardDeleteOutput = { success: true };
  */
 export type HardDeleteOutput = { success: boolean };
+
+/**
+ * Input schema for getByRelatedAccommodation.
+ *
+ * @example
+ * const input = { accommodationId: 'acc-uuid' };
+ */
+export const getByRelatedAccommodationInputSchema = z.object({
+    accommodationId: z.string().min(1, 'Accommodation ID is required')
+});
+
+/**
+ * Input type for getByRelatedAccommodation.
+ * @example
+ * const input: GetByRelatedAccommodationInput = { accommodationId: 'acc-uuid' };
+ */
+export type GetByRelatedAccommodationInput = z.infer<typeof getByRelatedAccommodationInputSchema>;
+
+/**
+ * Output type for getByRelatedAccommodation.
+ * @example
+ * const output: GetByRelatedAccommodationOutput = { posts: [mockPost] };
+ */
+export type GetByRelatedAccommodationOutput = { posts: PostType[] };
+
+/**
+ * Input schema for getByRelatedDestination.
+ *
+ * @example
+ * const input = { destinationId: 'dest-uuid' };
+ */
+export const getByRelatedDestinationInputSchema = z.object({
+    destinationId: z.string().min(1, 'Destination ID is required')
+});
+
+/**
+ * Input type for getByRelatedDestination.
+ * @example
+ * const input: GetByRelatedDestinationInput = { destinationId: 'dest-uuid' };
+ */
+export type GetByRelatedDestinationInput = z.infer<typeof getByRelatedDestinationInputSchema>;
+
+/**
+ * Output type for getByRelatedDestination.
+ * @example
+ * const output: GetByRelatedDestinationOutput = { posts: [mockPost] };
+ */
+export type GetByRelatedDestinationOutput = { posts: PostType[] };
+
+/**
+ * Input schema for getByRelatedEvent.
+ *
+ * @example
+ * const input = { eventId: 'event-uuid' };
+ */
+export const getByRelatedEventInputSchema = z.object({
+    eventId: z.string().min(1, 'Event ID is required')
+});
+
+/**
+ * Input type for getByRelatedEvent.
+ * @example
+ * const input: GetByRelatedEventInput = { eventId: 'event-uuid' };
+ */
+export type GetByRelatedEventInput = z.infer<typeof getByRelatedEventInputSchema>;
+
+/**
+ * Output type for getByRelatedEvent.
+ * @example
+ * const output: GetByRelatedEventOutput = { posts: [mockPost] };
+ */
+export type GetByRelatedEventOutput = { posts: PostType[] };
