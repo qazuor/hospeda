@@ -7,7 +7,7 @@ import {
 } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { softDelete } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
@@ -74,7 +74,7 @@ describe('event.service.softDelete', () => {
         };
         (EventModel.getById as Mock).mockResolvedValue(baseEvent);
         (EventModel.update as Mock).mockResolvedValue(archivedEvent);
-        const result = await softDelete({ id: baseEvent.id }, admin);
+        const result = await EventService.softDelete({ id: baseEvent.id }, admin);
         expect(result.event).toMatchObject({
             lifecycleState: LifecycleStatusEnum.ARCHIVED,
             deletedById: admin.id
@@ -94,7 +94,7 @@ describe('event.service.softDelete', () => {
         };
         (EventModel.getById as Mock).mockResolvedValue(baseEvent);
         (EventModel.update as Mock).mockResolvedValue(archivedEvent);
-        const result = await softDelete({ id: baseEvent.id }, superAdmin);
+        const result = await EventService.softDelete({ id: baseEvent.id }, superAdmin);
         expect(result.event).toMatchObject({
             lifecycleState: LifecycleStatusEnum.ARCHIVED,
             deletedById: superAdmin.id
@@ -114,7 +114,7 @@ describe('event.service.softDelete', () => {
         };
         (EventModel.getById as Mock).mockResolvedValue(baseEvent);
         (EventModel.update as Mock).mockResolvedValue(archivedEvent);
-        const result = await softDelete({ id: baseEvent.id }, author);
+        const result = await EventService.softDelete({ id: baseEvent.id }, author);
         expect(result.event).toMatchObject({
             lifecycleState: LifecycleStatusEnum.ARCHIVED,
             deletedById: author.id
@@ -135,7 +135,7 @@ describe('event.service.softDelete', () => {
         (EventModel.getById as Mock).mockResolvedValue(baseEvent);
         (EventModel.update as Mock).mockResolvedValue(archivedEvent);
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
-        const result = await softDelete({ id: baseEvent.id }, userWithPerm);
+        const result = await EventService.softDelete({ id: baseEvent.id }, userWithPerm);
         expect(result.event).toMatchObject({
             lifecycleState: LifecycleStatusEnum.ARCHIVED,
             deletedById: userWithPerm.id
@@ -147,7 +147,7 @@ describe('event.service.softDelete', () => {
     it('should deny soft-delete if user has no permission', async () => {
         (EventModel.getById as Mock).mockResolvedValue(baseEvent);
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
-        await expect(softDelete({ id: baseEvent.id }, userNoPerm)).rejects.toThrow(
+        await expect(EventService.softDelete({ id: baseEvent.id }, userNoPerm)).rejects.toThrow(
             /Permission denied/
         );
         expectPermissionLog({
@@ -160,7 +160,7 @@ describe('event.service.softDelete', () => {
 
     it('should deny soft-delete if user is disabled', async () => {
         (EventModel.getById as Mock).mockResolvedValue(baseEvent);
-        await expect(softDelete({ id: baseEvent.id }, disabledUser)).rejects.toThrow(
+        await expect(EventService.softDelete({ id: baseEvent.id }, disabledUser)).rejects.toThrow(
             /user disabled/
         );
         expectPermissionLog({
@@ -178,21 +178,23 @@ describe('event.service.softDelete', () => {
             deletedAt: new Date()
         };
         (EventModel.getById as Mock).mockResolvedValue(archivedEvent);
-        await expect(softDelete({ id: baseEvent.id }, admin)).rejects.toThrow(/already archived/);
+        await expect(EventService.softDelete({ id: baseEvent.id }, admin)).rejects.toThrow(
+            /already archived/
+        );
         expectInfoLog({ result: { event: null } }, 'delete:end');
     });
 
     it('should throw if event does not exist', async () => {
         (EventModel.getById as Mock).mockResolvedValue(undefined);
-        await expect(softDelete({ id: 'not-exist' as EventId }, admin)).rejects.toThrow(
-            'Event not found'
-        );
+        await expect(
+            EventService.softDelete({ id: 'not-exist' as EventId }, admin)
+        ).rejects.toThrow('Event not found');
         expectInfoLog({ result: { event: null } }, 'delete:end');
     });
 
     it('should deny soft-delete for public user', async () => {
         (EventModel.getById as Mock).mockResolvedValue(baseEvent);
-        await expect(softDelete({ id: baseEvent.id }, publicActor)).rejects.toThrow(
+        await expect(EventService.softDelete({ id: baseEvent.id }, publicActor)).rejects.toThrow(
             /Permission denied/
         );
         expectPermissionLog({

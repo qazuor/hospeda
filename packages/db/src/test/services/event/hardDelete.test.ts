@@ -7,7 +7,7 @@ import {
 } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { hardDelete } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
@@ -54,7 +54,7 @@ describe('event.service.hardDelete', () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (EventModel.getById as Mock).mockResolvedValue(event);
         (EventModel.hardDelete as Mock).mockResolvedValue(true);
-        const result = await hardDelete({ id: eventId }, admin);
+        const result = await EventService.hardDelete({ id: eventId }, admin);
         expect(result.success).toBe(true);
         expectInfoLog({ input: { id: eventId }, actor: admin }, 'hardDelete:start');
         expectInfoLog({ result: { success: true } }, 'hardDelete:end');
@@ -64,7 +64,7 @@ describe('event.service.hardDelete', () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.getById as Mock).mockResolvedValue(event);
         (EventModel.hardDelete as Mock).mockResolvedValue(true);
-        const result = await hardDelete({ id: eventId }, superAdmin);
+        const result = await EventService.hardDelete({ id: eventId }, superAdmin);
         expect(result.success).toBe(true);
         expectInfoLog({ input: { id: eventId }, actor: superAdmin }, 'hardDelete:start');
         expectInfoLog({ result: { success: true } }, 'hardDelete:end');
@@ -74,7 +74,7 @@ describe('event.service.hardDelete', () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (EventModel.getById as Mock).mockResolvedValue(event);
         (EventModel.hardDelete as Mock).mockResolvedValue(true);
-        const result = await hardDelete({ id: eventId }, userWithPerm);
+        const result = await EventService.hardDelete({ id: eventId }, userWithPerm);
         expect(result.success).toBe(true);
         expectInfoLog({ input: { id: eventId }, actor: userWithPerm }, 'hardDelete:start');
         expectInfoLog({ result: { success: true } }, 'hardDelete:end');
@@ -82,7 +82,7 @@ describe('event.service.hardDelete', () => {
 
     it('should deny hard-delete if user is disabled', async () => {
         (EventModel.getById as Mock).mockResolvedValue(event);
-        await expect(hardDelete({ id: eventId }, disabledUser)).rejects.toThrow(
+        await expect(EventService.hardDelete({ id: eventId }, disabledUser)).rejects.toThrow(
             /Forbidden: user disabled/
         );
         expectPermissionLog({
@@ -95,7 +95,9 @@ describe('event.service.hardDelete', () => {
 
     it('should deny hard-delete if user is public', async () => {
         (EventModel.getById as Mock).mockResolvedValue(event);
-        await expect(hardDelete({ id: eventId }, publicActor)).rejects.toThrow(/Forbidden/);
+        await expect(EventService.hardDelete({ id: eventId }, publicActor)).rejects.toThrow(
+            /Forbidden/
+        );
         expectPermissionLog({
             permission: PermissionEnum.EVENT_HARD_DELETE,
             userId: 'public',
@@ -107,7 +109,9 @@ describe('event.service.hardDelete', () => {
     it('should deny hard-delete if user has no permission', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.getById as Mock).mockResolvedValue(event);
-        await expect(hardDelete({ id: eventId }, userNoPerm)).rejects.toThrow(/Forbidden/);
+        await expect(EventService.hardDelete({ id: eventId }, userNoPerm)).rejects.toThrow(
+            /Forbidden/
+        );
         expectPermissionLog({
             permission: PermissionEnum.EVENT_HARD_DELETE,
             userId: userNoPerm.id,
@@ -118,7 +122,9 @@ describe('event.service.hardDelete', () => {
 
     it('should throw if event does not exist', async () => {
         (EventModel.getById as Mock).mockResolvedValue(undefined);
-        await expect(hardDelete({ id: eventId }, admin)).rejects.toThrow('Event not found');
+        await expect(EventService.hardDelete({ id: eventId }, admin)).rejects.toThrow(
+            'Event not found'
+        );
         expectInfoLog({ result: { success: false } }, 'hardDelete:end');
     });
 
@@ -126,7 +132,7 @@ describe('event.service.hardDelete', () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (EventModel.getById as Mock).mockResolvedValue(event);
         (EventModel.hardDelete as Mock).mockRejectedValue(new Error('DB error'));
-        await expect(hardDelete({ id: eventId }, admin)).rejects.toThrow(
+        await expect(EventService.hardDelete({ id: eventId }, admin)).rejects.toThrow(
             'Event hard delete failed'
         );
         expectInfoLog({ result: { success: false } }, 'hardDelete:end');
@@ -136,7 +142,7 @@ describe('event.service.hardDelete', () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (EventModel.getById as Mock).mockResolvedValue(event);
         (EventModel.hardDelete as Mock).mockResolvedValue(false);
-        const result = await hardDelete({ id: eventId }, admin);
+        const result = await EventService.hardDelete({ id: eventId }, admin);
         expect(result.success).toBe(false);
         expectInfoLog({ result: { success: false } }, 'hardDelete:end');
     });

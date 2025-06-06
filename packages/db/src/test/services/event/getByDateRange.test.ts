@@ -3,7 +3,7 @@ import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { getByDateRange } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
@@ -60,7 +60,7 @@ describe('event.service.getByDateRange', () => {
 
     it('should return all events for ADMIN', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getByDateRange({ minDate, maxDate }, admin);
+        const result = await EventService.getByDateRange({ minDate, maxDate }, admin);
         expect(result.events).toHaveLength(3);
         expect(result.events).toEqual(expect.arrayContaining(allEvents));
         expectInfoLog({ input: { minDate, maxDate }, actor: admin }, 'getByDateRange:start');
@@ -75,7 +75,7 @@ describe('event.service.getByDateRange', () => {
             (_, perm) => perm === PermissionEnum.EVENT_VIEW_PRIVATE
         );
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getByDateRange({ minDate, maxDate }, userWithPerm);
+        const result = await EventService.getByDateRange({ minDate, maxDate }, userWithPerm);
         expect(result.events).toEqual(expect.arrayContaining([publicEvent, privateEvent]));
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: { minDate, maxDate }, actor: userWithPerm }, 'getByDateRange:start');
@@ -88,7 +88,7 @@ describe('event.service.getByDateRange', () => {
     it('should return only public events for user without permission', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getByDateRange({ minDate, maxDate }, userNoPerm);
+        const result = await EventService.getByDateRange({ minDate, maxDate }, userNoPerm);
         expect(result.events).toEqual([publicEvent]);
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: { minDate, maxDate }, actor: userNoPerm }, 'getByDateRange:start');
@@ -97,7 +97,7 @@ describe('event.service.getByDateRange', () => {
 
     it('should return only public events for public user', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getByDateRange({ minDate, maxDate }, publicActor);
+        const result = await EventService.getByDateRange({ minDate, maxDate }, publicActor);
         expect(result.events).toEqual([publicEvent]);
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: { minDate, maxDate }, actor: publicActor }, 'getByDateRange:start');
@@ -106,7 +106,7 @@ describe('event.service.getByDateRange', () => {
 
     it('should return no events for disabled user', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getByDateRange({ minDate, maxDate }, disabledUser);
+        const result = await EventService.getByDateRange({ minDate, maxDate }, disabledUser);
         expect(result.events).toEqual([]);
         expectPermissionLog({
             userId: disabledUser.id,
@@ -118,7 +118,7 @@ describe('event.service.getByDateRange', () => {
 
     it('should respect limit and offset', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent, privateEvent, archivedEvent]);
-        await getByDateRange({ minDate, maxDate, limit: 1, offset: 1 }, admin);
+        await EventService.getByDateRange({ minDate, maxDate, limit: 1, offset: 1 }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(
             expect.objectContaining({ limit: 1, offset: 1, minDate, maxDate })
         );
@@ -126,15 +126,15 @@ describe('event.service.getByDateRange', () => {
 
     it('should pass minDate and maxDate to EventModel.search', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent]);
-        await getByDateRange({ minDate, maxDate }, admin);
+        await EventService.getByDateRange({ minDate, maxDate }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(
             expect.objectContaining({ minDate, maxDate })
         );
     });
 
     it('should throw if minDate or maxDate is missing', async () => {
-        await expect(getByDateRange({} as never, admin)).rejects.toThrow();
-        await expect(getByDateRange({ minDate } as never, admin)).rejects.toThrow();
-        await expect(getByDateRange({ maxDate } as never, admin)).rejects.toThrow();
+        await expect(EventService.getByDateRange({} as never, admin)).rejects.toThrow();
+        await expect(EventService.getByDateRange({ minDate } as never, admin)).rejects.toThrow();
+        await expect(EventService.getByDateRange({ maxDate } as never, admin)).rejects.toThrow();
     });
 });

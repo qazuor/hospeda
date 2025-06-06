@@ -8,7 +8,7 @@ import {
 } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { getFeatured } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
@@ -66,7 +66,7 @@ describe('event.service.getFeatured', () => {
 
     it('should return all featured events for ADMIN', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getFeatured({}, admin);
+        const result = await EventService.getFeatured({}, admin);
         expect(result.events).toHaveLength(3);
         expect(result.events).toEqual(expect.arrayContaining(allEvents));
         expectInfoLog({ input: {}, actor: admin }, 'getFeatured:start');
@@ -78,7 +78,7 @@ describe('event.service.getFeatured', () => {
             (_, perm) => perm === PermissionEnum.EVENT_VIEW_PRIVATE
         );
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getFeatured({}, userWithPerm);
+        const result = await EventService.getFeatured({}, userWithPerm);
         expect(result.events).toEqual(expect.arrayContaining([publicEvent, privateEvent]));
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: {}, actor: userWithPerm }, 'getFeatured:start');
@@ -91,7 +91,7 @@ describe('event.service.getFeatured', () => {
     it('should return only public featured events for user without permission', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getFeatured({}, userNoPerm);
+        const result = await EventService.getFeatured({}, userNoPerm);
         expect(result.events).toEqual([publicEvent]);
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: {}, actor: userNoPerm }, 'getFeatured:start');
@@ -100,7 +100,7 @@ describe('event.service.getFeatured', () => {
 
     it('should return only public featured events for public user', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getFeatured({}, publicActor);
+        const result = await EventService.getFeatured({}, publicActor);
         expect(result.events).toEqual([publicEvent]);
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: {}, actor: publicActor }, 'getFeatured:start');
@@ -109,7 +109,7 @@ describe('event.service.getFeatured', () => {
 
     it('should return no events for disabled user', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await getFeatured({}, disabledUser);
+        const result = await EventService.getFeatured({}, disabledUser);
         expect(result.events).toEqual([]);
         expectPermissionLog({
             userId: disabledUser.id,
@@ -121,7 +121,7 @@ describe('event.service.getFeatured', () => {
 
     it('should respect limit and offset', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent, privateEvent, archivedEvent]);
-        const result = await getFeatured({ limit: 1, offset: 1 }, admin);
+        const result = await EventService.getFeatured({ limit: 1, offset: 1 }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(
             expect.objectContaining({ limit: 1, offset: 1 })
         );
@@ -130,7 +130,7 @@ describe('event.service.getFeatured', () => {
 
     it('should return empty if no events found', async () => {
         (EventModel.search as Mock).mockResolvedValue([]);
-        const result = await getFeatured({}, admin);
+        const result = await EventService.getFeatured({}, admin);
         expect(result.events).toEqual([]);
         expectInfoLog({ result: { events: [] } }, 'getFeatured:end');
     });
@@ -138,7 +138,7 @@ describe('event.service.getFeatured', () => {
     it('should return empty if all events filtered by permissions', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.search as Mock).mockResolvedValue([privateEvent]);
-        const result = await getFeatured({}, userNoPerm);
+        const result = await EventService.getFeatured({}, userNoPerm);
         expect(result.events).toEqual([]);
         expectInfoLog({ result: { events: [] } }, 'getFeatured:end');
     });

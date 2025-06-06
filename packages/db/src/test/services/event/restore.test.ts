@@ -7,7 +7,7 @@ import {
 } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { restore } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
@@ -68,7 +68,7 @@ describe('event.service.restore', () => {
             updatedAt: now,
             updatedById: admin.id
         });
-        const result = await restore({ id: eventId }, admin);
+        const result = await EventService.restore({ id: eventId }, admin);
         expect(result.event).not.toBeNull();
         if (!result.event) throw new Error('event should not be null');
         expect(result.event.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
@@ -99,7 +99,7 @@ describe('event.service.restore', () => {
             updatedAt: now,
             updatedById: superAdmin.id
         });
-        const result = await restore({ id: eventId }, superAdmin);
+        const result = await EventService.restore({ id: eventId }, superAdmin);
         expect(result.event).not.toBeNull();
         if (!result.event) throw new Error('event should not be null');
         expect(result.event.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
@@ -127,7 +127,7 @@ describe('event.service.restore', () => {
             updatedAt: now,
             updatedById: userWithPerm.id
         });
-        const result = await restore({ id: eventId }, userWithPerm);
+        const result = await EventService.restore({ id: eventId }, userWithPerm);
         expect(result.event).not.toBeNull();
         if (!result.event) throw new Error('event should not be null');
         expect(result.event.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
@@ -145,7 +145,7 @@ describe('event.service.restore', () => {
 
     it('should deny restore if user is disabled', async () => {
         (EventModel.getById as Mock).mockResolvedValue(archivedEvent);
-        await expect(restore({ id: eventId }, disabledUser)).rejects.toThrow(
+        await expect(EventService.restore({ id: eventId }, disabledUser)).rejects.toThrow(
             /Forbidden: user disabled/
         );
         expectPermissionLog({
@@ -158,7 +158,9 @@ describe('event.service.restore', () => {
 
     it('should deny restore if user is public', async () => {
         (EventModel.getById as Mock).mockResolvedValue(archivedEvent);
-        await expect(restore({ id: eventId }, publicActor)).rejects.toThrow(/Forbidden/);
+        await expect(EventService.restore({ id: eventId }, publicActor)).rejects.toThrow(
+            /Forbidden/
+        );
         expectPermissionLog({
             permission: PermissionEnum.EVENT_RESTORE,
             userId: 'public',
@@ -170,7 +172,9 @@ describe('event.service.restore', () => {
     it('should deny restore if user has no permission', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.getById as Mock).mockResolvedValue(archivedEvent);
-        await expect(restore({ id: eventId }, userNoPerm)).rejects.toThrow(/Forbidden/);
+        await expect(EventService.restore({ id: eventId }, userNoPerm)).rejects.toThrow(
+            /Forbidden/
+        );
         expectPermissionLog({
             permission: PermissionEnum.EVENT_RESTORE,
             userId: userNoPerm.id,
@@ -181,13 +185,17 @@ describe('event.service.restore', () => {
 
     it('should throw if event does not exist', async () => {
         (EventModel.getById as Mock).mockResolvedValue(undefined);
-        await expect(restore({ id: eventId }, admin)).rejects.toThrow('Event not found');
+        await expect(EventService.restore({ id: eventId }, admin)).rejects.toThrow(
+            'Event not found'
+        );
         expectInfoLog({ result: { event: null } }, 'restore:end');
     });
 
     it('should throw if event is not archived', async () => {
         (EventModel.getById as Mock).mockResolvedValue(activeEvent);
-        await expect(restore({ id: eventId }, admin)).rejects.toThrow('Event is not archived');
+        await expect(EventService.restore({ id: eventId }, admin)).rejects.toThrow(
+            'Event is not archived'
+        );
         expectInfoLog({ result: { event: null } }, 'restore:end');
     });
 
@@ -195,7 +203,9 @@ describe('event.service.restore', () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (EventModel.getById as Mock).mockResolvedValue(archivedEvent);
         (EventModel.update as Mock).mockRejectedValue(new Error('DB error'));
-        await expect(restore({ id: eventId }, admin)).rejects.toThrow('Event restore failed');
+        await expect(EventService.restore({ id: eventId }, admin)).rejects.toThrow(
+            'Event restore failed'
+        );
         expectInfoLog({ result: { event: null } }, 'restore:end');
     });
 });
