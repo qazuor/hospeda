@@ -313,3 +313,47 @@ export type GetByRelatedEventInput = z.infer<typeof getByRelatedEventInputSchema
  * const output: GetByRelatedEventOutput = { posts: [mockPost] };
  */
 export type GetByRelatedEventOutput = { posts: PostType[] };
+
+/**
+ * Input schema for getFeatured.
+ *
+ * @example
+ * const input = {};
+ */
+export const getFeaturedInputSchema = z.object({}).strict();
+
+/**
+ * Input type for getFeatured.
+ * @example
+ * const input: GetFeaturedInput = {};
+ */
+export type GetFeaturedInput = z.infer<typeof getFeaturedInputSchema>;
+
+/**
+ * Output type for getFeatured.
+ * @example
+ * const output: GetFeaturedOutput = { posts: [mockPost] };
+ */
+export type GetFeaturedOutput = { posts: PostType[] };
+
+/**
+ * Input schema for getNews.
+ *
+ * @example
+ * const input = {};
+ */
+export const getNewsInputSchema = z.object({}).strict();
+
+/**
+ * Input type for getNews.
+ * @example
+ * const input: GetNewsInput = {};
+ */
+export type GetNewsInput = z.infer<typeof getNewsInputSchema>;
+
+/**
+ * Output type for getNews.
+ * @example
+ * const output: GetNewsOutput = { posts: [mockPost] };
+ */
+export type GetNewsOutput = { posts: PostType[] };
