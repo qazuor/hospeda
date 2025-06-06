@@ -1,13 +1,24 @@
-import type { PostType } from '@repo/types';
+import type {
+    AccommodationId,
+    DestinationId,
+    EventId,
+    PostSponsorshipId,
+    PostType,
+    UserId
+} from '@repo/types';
 import { RoleEnum } from '@repo/types';
+import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
+import { PermissionEnum } from '@repo/types/enums/permission.enum';
+import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
 import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
 import { PostModel } from '../../models/post/post.model';
 import { dbLogger } from '../../utils/logger';
-import { logDenied } from '../../utils/permission-logger';
+import { logDenied, logOverride } from '../../utils/permission-logger';
 import { hasPermission } from '../../utils/permission-manager';
 import {
     CanViewReasonEnum,
     getSafeActor,
+    isPublicUser,
     isUserDisabled,
     logMethodEnd,
     logMethodStart
@@ -18,6 +29,7 @@ import {
     type GetByIdOutput,
     type GetBySlugInput,
     type GetBySlugOutput,
+    createPostInputSchema,
     getByIdInputSchema,
     getBySlugInputSchema
 } from './post.schemas';
@@ -228,17 +240,136 @@ export const PostService = {
         logMethodEnd(dbLogger, 'search', { posts, total });
         return { posts, total };
     },
-    /** Get posts by category. */
-    async getByCategory(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
-        throw new Error('Not implemented');
+    /**
+     * Retrieves posts by category, with pagination and permission logic.
+     * - Public users can only see PUBLIC posts.
+     * - Uses PostCategoryEnum for category.
+     *
+     * @param input - Object containing the category and pagination.
+     * @param actor - The user or public actor requesting the posts.
+     * @returns An object with the list of posts.
+     * @example
+     *   const { posts } = await PostService.getByCategory({ category: PostCategoryEnum.EVENTS }, user);
+     */
+    async getByCategory(
+        input: import('./post.schemas').GetByCategoryInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').GetByCategoryOutput> {
+        logMethodStart(dbLogger, 'getByCategory', input, actor as object);
+        const { getByCategoryInputSchema } = await import('./post.schemas');
+        const parsedInput = getByCategoryInputSchema.parse(input);
+        const safeActor = getSafeActor(actor);
+        // Public users can only see PUBLIC posts
+        const isPublic =
+            safeActor &&
+            typeof safeActor === 'object' &&
+            'role' in safeActor &&
+            safeActor.role === RoleEnum.GUEST;
+        let posts = await PostModel.getByCategory(parsedInput.category);
+        // Filter by visibility for public users
+        if (isPublic) {
+            posts = posts.filter((p) => p.visibility === VisibilityEnum.PUBLIC);
+        }
+        // Apply ordering
+        const orderBy = parsedInput.orderBy;
+        if (orderBy) {
+            posts = posts.sort((a, b) => {
+                const aValue = a[orderBy];
+                const bValue = b[orderBy];
+                if (aValue === bValue) return 0;
+                if (parsedInput.order === 'desc') return aValue < bValue ? 1 : -1;
+                return aValue > bValue ? 1 : -1;
+            });
+        }
+        // Apply pagination
+        const paginated = posts.slice(parsedInput.offset, parsedInput.offset + parsedInput.limit);
+        logMethodEnd(dbLogger, 'getByCategory', { posts: paginated });
+        return { posts: paginated };
     },
-    /** Get posts by author. */
-    async getByAuthor(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
-        throw new Error('Not implemented');
-    },
-    /** Create a new post. */
-    async create(_input: unknown, _actor: unknown): Promise<{ post: PostType }> {
-        throw new Error('Not implemented');
+    /**
+     * Creates a new post with strong validation, permission checks, and logging.
+     * - Only authenticated users with POST_CREATE permission can create posts.
+     * - Public users are explicitly denied.
+     * - Input is validated with Zod and strong types.
+     * - Logs start/end and permission denials.
+     *
+     * @param input - The post creation input object.
+     * @param actor - The user attempting to create the post.
+     * @returns An object with the created post.
+     * @throws Error if the actor is public, disabled, lacks permission, or input is invalid.
+     * @example
+     *   const { post } = await PostService.create(input, user);
+     */
+    async create(
+        input: import('./post.schemas').CreatePostInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').CreatePostOutput> {
+        logMethodStart(dbLogger, 'create', input, actor as object);
+        const parsedInput = createPostInputSchema.parse(input);
+        const safeActor = getSafeActor(actor);
+        if (isPublicUser(safeActor)) {
+            logOverride(
+                dbLogger,
+                input,
+                PermissionEnum.POST_CREATE,
+                'Public user cannot create posts'
+            );
+            throw new Error('Forbidden: Public user cannot create posts');
+        }
+        if (isUserDisabled(safeActor)) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                { visibility: parsedInput.visibility },
+                'disabled user cannot create',
+                'POST_CREATE'
+            );
+            throw new Error('Disabled user cannot create posts');
+        }
+        try {
+            hasPermission(safeActor, PermissionEnum.POST_CREATE);
+        } catch (err) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                { visibility: parsedInput.visibility },
+                (err as Error).message,
+                'POST_CREATE'
+            );
+            throw err;
+        }
+        // Add required fields for NewPostInputType, fix branded types y media
+        const postInput = {
+            ...parsedInput,
+            authorId: parsedInput.authorId as UserId,
+            sponsorshipId: parsedInput.sponsorshipId as PostSponsorshipId | undefined,
+            relatedDestinationId: parsedInput.relatedDestinationId as DestinationId | undefined,
+            relatedAccommodationId: parsedInput.relatedAccommodationId as
+                | AccommodationId
+                | undefined,
+            relatedEventId: parsedInput.relatedEventId as EventId | undefined,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.PENDING_REVIEW,
+            media:
+                parsedInput.media && 'url' in parsedInput.media
+                    ? {
+                          featuredImage: {
+                              url: parsedInput.media.url,
+                              moderationState: ModerationStatusEnum.PENDING_REVIEW
+                          }
+                      }
+                    : {
+                          featuredImage: {
+                              url: '',
+                              moderationState: ModerationStatusEnum.PENDING_REVIEW
+                          }
+                      }
+        };
+        const post = await PostModel.create(postInput);
+        logMethodEnd(dbLogger, 'create', { post });
+        return { post };
     },
     /** Update an existing post. */
     async update(_input: unknown, _actor: unknown): Promise<{ post: PostType | null }> {
@@ -325,6 +456,10 @@ export const PostService = {
     },
     /** Share a post. */
     async share(_input: unknown, _actor: unknown): Promise<{ post: PostType | null }> {
+        throw new Error('Not implemented');
+    },
+    /** Get posts by author. */
+    async getByAuthor(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
         throw new Error('Not implemented');
     }
 };

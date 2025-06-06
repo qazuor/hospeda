@@ -395,6 +395,29 @@ export const getMockPost = (overrides: Partial<PostType> = {}): PostType => ({
     ...overrides
 });
 
+/**
+ * Returns a mock input object for creating a post.
+ * @returns Object with post input fields.
+ * @example
+ * const input = getMockPostInput();
+ */
+export const getMockPostInput = () => ({
+    slug: 'post-slug',
+    category: PostCategoryEnum.GENERAL,
+    title: 'Título del post',
+    summary: 'Resumen',
+    content: 'Contenido',
+    media: { url: 'https://example.com/image.jpg' },
+    authorId: 'user-uuid',
+    visibility: VisibilityEnum.PUBLIC,
+    isFeatured: false,
+    isNews: false,
+    isFeaturedInWebsite: false,
+    likes: 0,
+    comments: 0,
+    shares: 0
+});
+
 export const mockPost = getMockPost();
 
 /**
