@@ -1,7 +1,7 @@
 import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
-import { create } from '../../../services/user/user.service';
+import { UserService } from '../../../services/user/user.service';
 import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (
@@ -53,7 +53,7 @@ describe('user.service.create', () => {
             createdById: 'admin-1' as UserId,
             updatedById: 'admin-1' as UserId
         }));
-        const result = await create(validInput, admin);
+        const result = await UserService.create(validInput, admin);
         expect(result.user.userName).toBe(validInput.userName);
         expect(result.user.role).toBe(validInput.role);
         expect(result.user.email).toBe(validInput.email);
@@ -63,11 +63,13 @@ describe('user.service.create', () => {
     });
 
     it('should not allow normal user to create a user', async () => {
-        await expect(create(validInput, user)).rejects.toThrow('Only admin can create users');
+        await expect(UserService.create(validInput, user)).rejects.toThrow(
+            'Only admin can create users'
+        );
     });
 
     it('should not allow disabled admin to create a user', async () => {
-        await expect(create(validInput, disabledUser)).rejects.toThrow(
+        await expect(UserService.create(validInput, disabledUser)).rejects.toThrow(
             'Disabled users cannot create users'
         );
     });
@@ -76,7 +78,9 @@ describe('user.service.create', () => {
         vi.spyOn(UserModel, 'getByUserName').mockResolvedValue(
             getMockUser({ userName: validInput.userName })
         );
-        await expect(create(validInput, admin)).rejects.toThrow('User name already exists');
+        await expect(UserService.create(validInput, admin)).rejects.toThrow(
+            'User name already exists'
+        );
     });
 
     it('should not allow duplicate email', async () => {
@@ -84,6 +88,6 @@ describe('user.service.create', () => {
         vi.spyOn(UserModel, 'getByEmail').mockResolvedValue(
             getMockUser({ email: validInput.email })
         );
-        await expect(create(validInput, admin)).rejects.toThrow('Email already exists');
+        await expect(UserService.create(validInput, admin)).rejects.toThrow('Email already exists');
     });
 });

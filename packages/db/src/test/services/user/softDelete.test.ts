@@ -1,7 +1,7 @@
 import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
-import { softDelete } from '../../../services/user/user.service';
+import { UserService } from '../../../services/user/user.service';
 import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
@@ -40,7 +40,7 @@ describe('user.service.softDelete', () => {
             ...user,
             ...input
         }));
-        const result = await softDelete(validInput, admin);
+        const result = await UserService.softDelete(validInput, admin);
         expect(result.user.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
         expect(result.user).not.toHaveProperty('password');
         expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'softDelete:start');
@@ -49,32 +49,32 @@ describe('user.service.softDelete', () => {
 
     it('should not allow admin to soft-delete themselves', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(admin);
-        await expect(softDelete({ id: admin.id }, admin)).rejects.toThrow(
+        await expect(UserService.softDelete({ id: admin.id }, admin)).rejects.toThrow(
             'Admin cannot soft-delete themselves'
         );
     });
 
     it('should not allow normal user to soft-delete', async () => {
-        await expect(softDelete(validInput, user)).rejects.toThrow(
+        await expect(UserService.softDelete(validInput, user)).rejects.toThrow(
             'Only admin can soft-delete users'
         );
     });
 
     it('should not allow disabled user to soft-delete', async () => {
-        await expect(softDelete(validInput, disabledUser)).rejects.toThrow(
+        await expect(UserService.softDelete(validInput, disabledUser)).rejects.toThrow(
             'Disabled users cannot soft-delete users'
         );
     });
 
     it('should not allow soft-deleting an already disabled user', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(disabledUser);
-        await expect(softDelete({ id: disabledUser.id }, admin)).rejects.toThrow(
+        await expect(UserService.softDelete({ id: disabledUser.id }, admin)).rejects.toThrow(
             'User is already disabled'
         );
     });
 
     it('should throw if user not found', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(undefined);
-        await expect(softDelete(validInput, admin)).rejects.toThrow('User not found');
+        await expect(UserService.softDelete(validInput, admin)).rejects.toThrow('User not found');
     });
 });

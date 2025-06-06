@@ -1,7 +1,7 @@
 import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
-import { update } from '../../../services/user/user.service';
+import { UserService } from '../../../services/user/user.service';
 import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
@@ -46,7 +46,7 @@ describe('user.service.update', () => {
             ...user,
             ...input
         }));
-        const result = await update(validInput, admin);
+        const result = await UserService.update(validInput, admin);
         expect(result.user.userName).toBe(validInput.userName);
         expect(result.user.email).toBe(validInput.email);
         expect(result.user).not.toHaveProperty('password');
@@ -62,21 +62,21 @@ describe('user.service.update', () => {
             ...user,
             ...input
         }));
-        const result = await update(validInput, user);
+        const result = await UserService.update(validInput, user);
         expect(result.user.userName).toBe(validInput.userName);
         expect(result.user.email).toBe(validInput.email);
     });
 
     it('should not allow user to update another user', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(admin);
-        await expect(update({ id: admin.id, userName: 'hacker' }, user)).rejects.toThrow(
-            'Only admin or the user themselves can update'
-        );
+        await expect(
+            UserService.update({ id: admin.id, userName: 'hacker' }, user)
+        ).rejects.toThrow('Only admin or the user themselves can update');
     });
 
     it('should not allow disabled user to update', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(user);
-        await expect(update(validInput, disabledUser)).rejects.toThrow(
+        await expect(UserService.update(validInput, disabledUser)).rejects.toThrow(
             'Disabled users cannot update users'
         );
     });
@@ -86,7 +86,9 @@ describe('user.service.update', () => {
         vi.spyOn(UserModel, 'getByUserName').mockResolvedValue(
             getMockUser({ userName: validInput.userName })
         );
-        await expect(update(validInput, admin)).rejects.toThrow('User name already exists');
+        await expect(UserService.update(validInput, admin)).rejects.toThrow(
+            'User name already exists'
+        );
     });
 
     it('should not allow duplicate email', async () => {
@@ -95,11 +97,11 @@ describe('user.service.update', () => {
         vi.spyOn(UserModel, 'getByEmail').mockResolvedValue(
             getMockUser({ email: validInput.email })
         );
-        await expect(update(validInput, admin)).rejects.toThrow('Email already exists');
+        await expect(UserService.update(validInput, admin)).rejects.toThrow('Email already exists');
     });
 
     it('should throw if user not found', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(undefined);
-        await expect(update(validInput, admin)).rejects.toThrow('User not found');
+        await expect(UserService.update(validInput, admin)).rejects.toThrow('User not found');
     });
 });
