@@ -716,13 +716,83 @@ export const PostService = {
         logMethodEnd(dbLogger, 'restore', { post: updatedPost });
         return { post: updatedPost ?? null };
     },
-    /** Get featured posts. */
-    async getFeatured(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
-        throw new Error('Not implemented');
+    /**
+     * Retrieves featured posts.
+     * - Public users can only see PUBLIC posts.
+     * - Authenticated users see posts according to their permissions and visibility.
+     *
+     * @param input - (Empty object, no parameters required).
+     * @param actor - The user or public actor requesting the posts.
+     * @returns An object with the list of featured posts.
+     * @example
+     *   const { posts } = await PostService.getFeatured({}, user);
+     */
+    async getFeatured(
+        input: import('./post.schemas').GetFeaturedInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').GetFeaturedOutput> {
+        logMethodStart(dbLogger, 'getFeatured', input, actor as object);
+        const { getFeaturedInputSchema } = await import('./post.schemas');
+        getFeaturedInputSchema.parse(input);
+        const safeActor = getSafeActor(actor);
+        // Fetch all posts and filter by isFeatured in memory (TODO: optimize with DB query if needed)
+        let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
+            (p) => p.isFeatured === true
+        );
+        // Filter posts according to view permissions
+        posts = posts.filter((post) => {
+            const { canView, reason, checkedPermission } = canViewPost(safeActor, post);
+            if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+                try {
+                    hasPermission(safeActor, checkedPermission);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+            return canView;
+        });
+        logMethodEnd(dbLogger, 'getFeatured', { posts });
+        return { posts };
     },
-    /** Get news posts. */
-    async getNews(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
-        throw new Error('Not implemented');
+    /**
+     * Retrieves news posts.
+     * - Public users can only see PUBLIC posts.
+     * - Authenticated users see posts according to their permissions and visibility.
+     *
+     * @param input - (Empty object, no parameters required).
+     * @param actor - The user or public actor requesting the posts.
+     * @returns An object with the list of news posts.
+     * @example
+     *   const { posts } = await PostService.getNews({}, user);
+     */
+    async getNews(
+        input: import('./post.schemas').GetNewsInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').GetNewsOutput> {
+        logMethodStart(dbLogger, 'getNews', input, actor as object);
+        const { getNewsInputSchema } = await import('./post.schemas');
+        getNewsInputSchema.parse(input);
+        const safeActor = getSafeActor(actor);
+        // Fetch all posts and filter by isNews in memory (TODO: optimize with DB query if needed)
+        let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
+            (p) => p.isNews === true
+        );
+        // Filter posts according to view permissions
+        posts = posts.filter((post) => {
+            const { canView, reason, checkedPermission } = canViewPost(safeActor, post);
+            if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+                try {
+                    hasPermission(safeActor, checkedPermission);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+            return canView;
+        });
+        logMethodEnd(dbLogger, 'getNews', { posts });
+        return { posts };
     },
     /**
      * Retrieves posts related to a specific accommodation.
