@@ -28,7 +28,7 @@ vi.mock('../../../models/destination/destination.model', async (importOriginal) 
     };
 });
 
-import * as DestinationService from '../../../services/destination/destination.service';
+import { DestinationService } from '../../../services/destination/destination.service';
 
 /**
  * Unit tests for destination.service.getById

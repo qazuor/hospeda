@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import { DestinationReviewModel } from '../../../models/destination/destination_review.model';
 import * as destinationHelper from '../../../services/destination/destination.helper';
-import * as DestinationService from '../../../services/destination/destination.service';
+import { DestinationService } from '../../../services/destination/destination.service';
 import { CanViewReasonEnum } from '../../../utils/service-helper';
 import {
     getMockDestination,

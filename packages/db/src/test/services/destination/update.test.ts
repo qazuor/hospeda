@@ -3,7 +3,7 @@ import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import * as destinationHelper from '../../../services/destination/destination.helper';
-import * as DestinationService from '../../../services/destination/destination.service';
+import { DestinationService } from '../../../services/destination/destination.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { CanViewReasonEnum } from '../../../utils/service-helper';
 import {
