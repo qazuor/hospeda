@@ -7,7 +7,7 @@ import {
 } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
-import { addPermissionToUser } from '../../../services/permission/permission.service';
+import { PermissionService } from '../../../services/permission/permission.service';
 import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
@@ -53,7 +53,7 @@ describe('permission.service.addPermissionToUser', () => {
             permissions: [PermissionEnum.USER_CREATE]
         };
         vi.spyOn(UserModel, 'addPermission').mockResolvedValue(userWithPermOut);
-        const result = await addPermissionToUser(validInput, admin);
+        const result = await PermissionService.addPermissionToUser(validInput, admin);
         expect(result.user).toBeDefined();
         expect(result.user?.id).toBe(user.id);
         expect(result.user?.permissions).toContain(PermissionEnum.USER_CREATE);
@@ -65,7 +65,7 @@ describe('permission.service.addPermissionToUser', () => {
     it('should not allow admin to add duplicate permission', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(userWithPerm);
         await expect(
-            addPermissionToUser(
+            PermissionService.addPermissionToUser(
                 { id: userWithPerm.id, permission: PermissionEnum.USER_CREATE },
                 admin
             )
@@ -75,31 +75,36 @@ describe('permission.service.addPermissionToUser', () => {
     it('should not allow admin to add permission to themselves', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(admin);
         await expect(
-            addPermissionToUser({ id: admin.id, permission: PermissionEnum.USER_CREATE }, admin)
+            PermissionService.addPermissionToUser(
+                { id: admin.id, permission: PermissionEnum.USER_CREATE },
+                admin
+            )
         ).rejects.toThrow('Admin cannot add permission to themselves');
     });
 
     it('should not allow normal user to add permission', async () => {
-        await expect(addPermissionToUser(validInput, user)).rejects.toThrow(
+        await expect(PermissionService.addPermissionToUser(validInput, user)).rejects.toThrow(
             'Only admin can add permissions'
         );
     });
 
     it('should not allow disabled admin to add permission', async () => {
-        await expect(addPermissionToUser(validInput, adminDisabled)).rejects.toThrow(
-            'Disabled users cannot add permissions'
-        );
+        await expect(
+            PermissionService.addPermissionToUser(validInput, adminDisabled)
+        ).rejects.toThrow('Disabled users cannot add permissions');
     });
 
     it('should throw if user not found', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(undefined);
-        await expect(addPermissionToUser(validInput, admin)).rejects.toThrow('User not found');
+        await expect(PermissionService.addPermissionToUser(validInput, admin)).rejects.toThrow(
+            'User not found'
+        );
     });
 
     it('should throw if addPermission fails in the model', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(user);
         vi.spyOn(UserModel, 'addPermission').mockResolvedValue(undefined);
-        await expect(addPermissionToUser(validInput, admin)).rejects.toThrow(
+        await expect(PermissionService.addPermissionToUser(validInput, admin)).rejects.toThrow(
             'Failed to add permission'
         );
     });
