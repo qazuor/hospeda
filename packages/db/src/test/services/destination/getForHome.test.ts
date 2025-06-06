@@ -2,7 +2,7 @@ import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
-import * as DestinationService from '../../../services/destination/destination.service';
+import { DestinationService } from '../../../services/destination/destination.service';
 import {
     getMockDestination,
     getMockDestinationId,
