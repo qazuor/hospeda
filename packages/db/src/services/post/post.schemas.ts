@@ -234,3 +234,10 @@ export type UpdatePostInput = z.infer<typeof updatePostInputSchema>;
  * const output: UpdatePostOutput = { post };
  */
 export type UpdatePostOutput = { post: PostType | null };
+
+/**
+ * Output type for hard delete post.
+ * @example
+ * const output: HardDeleteOutput = { success: true };
+ */
+export type HardDeleteOutput = { success: boolean };
