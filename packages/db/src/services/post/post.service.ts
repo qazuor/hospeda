@@ -1,5 +1,6 @@
 import type { PostType } from '@repo/types';
 import { RoleEnum } from '@repo/types';
+import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
 import { PostModel } from '../../models/post/post.model';
 import { dbLogger } from '../../utils/logger';
 import { logDenied } from '../../utils/permission-logger';
@@ -177,7 +178,7 @@ export const PostService = {
             safeActor.role === RoleEnum.GUEST;
         let finalInput = { ...parsedInput };
         if (isPublic) {
-            finalInput = { ...finalInput, visibility: 'PUBLIC' };
+            finalInput = { ...finalInput, visibility: VisibilityEnum.PUBLIC };
         }
         // Call the model with the correct params
         const posts = await PostModel.list({
@@ -189,9 +190,43 @@ export const PostService = {
         logMethodEnd(dbLogger, 'list', { posts });
         return { posts };
     },
-    /** Search posts by query and filters. */
-    async search(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
-        throw new Error('Not implemented');
+    /**
+     * Advanced search for posts with filters, pagination, and strong permission logic.
+     * - Public users can only see PUBLIC posts.
+     * - Uses enums for category, lifecycle, and visibility.
+     * - Returns paginated results and total count.
+     *
+     * @param input - Search filters and pagination.
+     * @param actor - The user or public actor requesting the search.
+     * @returns An object with the list of posts and total count.
+     * @example
+     *   const { posts, total } = await PostService.search({ q: 'foo', limit: 10 }, user);
+     */
+    async search(
+        input: import('./post.schemas').SearchInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').SearchOutput> {
+        logMethodStart(dbLogger, 'search', input, actor as object);
+        const { searchInputSchema } = await import('./post.schemas');
+        const parsedInput = searchInputSchema.parse(input);
+        const safeActor = getSafeActor(actor);
+        // Public users can only see PUBLIC posts
+        const isPublic =
+            safeActor &&
+            typeof safeActor === 'object' &&
+            'role' in safeActor &&
+            safeActor.role === RoleEnum.GUEST;
+        let finalInput = { ...parsedInput };
+        if (isPublic) {
+            finalInput = { ...finalInput, visibility: VisibilityEnum.PUBLIC };
+        }
+        // Query posts and total count
+        const [posts, total] = await Promise.all([
+            PostModel.search({ ...finalInput }),
+            PostModel.count({ ...finalInput })
+        ]);
+        logMethodEnd(dbLogger, 'search', { posts, total });
+        return { posts, total };
     },
     /** Get posts by category. */
     async getByCategory(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
