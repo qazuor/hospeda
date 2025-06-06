@@ -464,17 +464,243 @@ export const PostService = {
         logMethodEnd(dbLogger, 'update', { post: updatedPost });
         return { post: updatedPost ?? null };
     },
-    /** Soft delete a post. */
-    async softDelete(_input: unknown, _actor: unknown): Promise<{ post: PostType | null }> {
-        throw new Error('Not implemented');
+    /**
+     * Soft deletes (archives) a post by ID.
+     * Only the author, admin, or a user with the required permission can delete.
+     * Handles edge-cases: public user, disabled user, already deleted, etc.
+     *
+     * @param input - The input object with the post ID.
+     * @param actor - The user or public actor attempting the soft-delete.
+     * @returns An object with the deleted (archived) post, or null if not found or not allowed.
+     * @throws Error if the actor is not allowed to delete or input is invalid.
+     * @example
+     * const result = await softDelete({ id: 'post-1' }, user);
+     */
+    async softDelete(
+        input: import('./post.schemas').GetByIdInput,
+        actor: unknown
+    ): Promise<{ post: PostType | null }> {
+        logMethodStart(dbLogger, 'delete', input, actor as object);
+        const parsedInput = getByIdInputSchema.parse(input);
+        const post = (await PostModel.getById(parsedInput.id)) ?? null;
+        if (!post) {
+            logMethodEnd(dbLogger, 'delete', { post: null });
+            throw new Error('Post not found');
+        }
+        if (post.deletedAt) {
+            logMethodEnd(dbLogger, 'delete', { post: null });
+            throw new Error('Post already deleted');
+        }
+        const safeActor = getSafeActor(actor);
+        if (isPublicUser(safeActor)) {
+            logOverride(
+                dbLogger,
+                input,
+                PermissionEnum.POST_DELETE,
+                'Public user cannot delete posts'
+            );
+            logMethodEnd(dbLogger, 'delete', { post: null });
+            throw new Error('Forbidden: Public user cannot delete posts');
+        }
+        if (isUserDisabled(safeActor)) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                post,
+                'disabled user cannot delete',
+                'POST_DELETE'
+            );
+            logMethodEnd(dbLogger, 'delete', { post: null });
+            throw new Error('Disabled user cannot delete posts');
+        }
+        // Only author, admin or user with POST_DELETE can delete
+        const isAuthor = safeActor && 'id' in safeActor && safeActor.id === post.authorId;
+        let hasDeletePermission = false;
+        try {
+            hasDeletePermission = isAuthor || hasPermission(safeActor, PermissionEnum.POST_DELETE);
+        } catch (err) {
+            logDenied(dbLogger, safeActor, input, post, (err as Error).message, 'POST_DELETE');
+            logMethodEnd(dbLogger, 'delete', { post: null });
+            throw err;
+        }
+        if (!isAuthor && !hasDeletePermission) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                post,
+                'Forbidden: user cannot delete post',
+                'POST_DELETE'
+            );
+            logMethodEnd(dbLogger, 'delete', { post: null });
+            throw new Error('Forbidden: user cannot delete post');
+        }
+        // Soft delete: set deletedAt and deletedById
+        await PostModel.delete(parsedInput.id, safeActor.id as string);
+        const updatedPost = await PostModel.getById(parsedInput.id);
+        logMethodEnd(dbLogger, 'delete', { post: updatedPost });
+        return { post: updatedPost ?? null };
     },
-    /** Hard delete a post. */
-    async hardDelete(_input: unknown, _actor: unknown): Promise<{ success: boolean }> {
-        throw new Error('Not implemented');
+    /**
+     * Hard deletes (permanently deletes) a post by ID.
+     * Only the author, admin, or a user with the required permission can hard-delete.
+     * Handles edge-cases: public user, disabled user, already deleted, etc.
+     *
+     * @param input - The input object with the post ID.
+     * @param actor - The user or public actor attempting the hard-delete.
+     * @returns An object with success true if deleted, false otherwise.
+     * @throws Error if the actor is not allowed to hard-delete or input is invalid.
+     * @example
+     * const result = await hardDelete({ id: 'post-1' }, user);
+     */
+    async hardDelete(
+        input: import('./post.schemas').GetByIdInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').HardDeleteOutput> {
+        logMethodStart(dbLogger, 'hardDelete', input, actor as object);
+        const parsedInput = getByIdInputSchema.parse(input);
+        const post = (await PostModel.getById(parsedInput.id)) ?? null;
+        if (!post) {
+            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            throw new Error('Post not found');
+        }
+        if (post.deletedAt) {
+            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            throw new Error('Post already deleted');
+        }
+        const safeActor = getSafeActor(actor);
+        if (isPublicUser(safeActor)) {
+            logOverride(
+                dbLogger,
+                input,
+                PermissionEnum.POST_HARD_DELETE,
+                'Public user cannot hard delete posts'
+            );
+            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            throw new Error('Forbidden: Public user cannot hard delete posts');
+        }
+        if (isUserDisabled(safeActor)) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                post,
+                'disabled user cannot hard delete',
+                'POST_HARD_DELETE'
+            );
+            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            throw new Error('Disabled user cannot hard delete posts');
+        }
+        // Only author, admin or user with POST_HARD_DELETE can hard-delete
+        const isAuthor = safeActor && 'id' in safeActor && safeActor.id === post.authorId;
+        let hasHardDeletePermission = false;
+        try {
+            hasHardDeletePermission =
+                isAuthor || hasPermission(safeActor, PermissionEnum.POST_HARD_DELETE);
+        } catch (err) {
+            logDenied(dbLogger, safeActor, input, post, (err as Error).message, 'POST_HARD_DELETE');
+            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            throw err;
+        }
+        if (!isAuthor && !hasHardDeletePermission) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                post,
+                'Forbidden: user cannot hard delete post',
+                'POST_HARD_DELETE'
+            );
+            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            throw new Error('Forbidden: user cannot hard delete post');
+        }
+        // Hard delete: remove from DB
+        const deleted = await PostModel.hardDelete(parsedInput.id);
+        logMethodEnd(dbLogger, 'hardDelete', { success: deleted });
+        return { success: deleted };
     },
-    /** Restore a soft-deleted post. */
-    async restore(_input: unknown, _actor: unknown): Promise<{ post: PostType | null }> {
-        throw new Error('Not implemented');
+    /**
+     * Restores (un-archives) a soft-deleted post by ID.
+     * Only the author, admin, or a user with the required permission can restore.
+     * Handles edge-cases: public user, disabled user, not deleted, etc.
+     *
+     * @param input - The input object with the post ID.
+     * @param actor - The user or public actor attempting the restore.
+     * @returns An object with the restored post, or null if not found or not allowed.
+     * @throws Error if the actor is not allowed to restore or input is invalid.
+     * @example
+     * const result = await restore({ id: 'post-1' }, user);
+     */
+    async restore(
+        input: import('./post.schemas').GetByIdInput,
+        actor: unknown
+    ): Promise<{ post: PostType | null }> {
+        logMethodStart(dbLogger, 'restore', input, actor as object);
+        const parsedInput = getByIdInputSchema.parse(input);
+        const post = (await PostModel.getById(parsedInput.id)) ?? null;
+        if (!post) {
+            logMethodEnd(dbLogger, 'restore', { post: null });
+            throw new Error('Post not found');
+        }
+        if (!post.deletedAt) {
+            logMethodEnd(dbLogger, 'restore', { post: null });
+            throw new Error('Post is not deleted');
+        }
+        const safeActor = getSafeActor(actor);
+        if (isPublicUser(safeActor)) {
+            logOverride(
+                dbLogger,
+                input,
+                PermissionEnum.POST_RESTORE,
+                'Public user cannot restore posts'
+            );
+            logMethodEnd(dbLogger, 'restore', { post: null });
+            throw new Error('Forbidden: Public user cannot restore posts');
+        }
+        if (isUserDisabled(safeActor)) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                post,
+                'disabled user cannot restore',
+                'POST_RESTORE'
+            );
+            logMethodEnd(dbLogger, 'restore', { post: null });
+            throw new Error('Disabled user cannot restore posts');
+        }
+        // Only author, admin or user with POST_RESTORE can restore
+        const isAuthor = safeActor && 'id' in safeActor && safeActor.id === post.authorId;
+        let hasRestorePermission = false;
+        try {
+            hasRestorePermission =
+                isAuthor || hasPermission(safeActor, PermissionEnum.POST_RESTORE);
+        } catch (err) {
+            logDenied(dbLogger, safeActor, input, post, (err as Error).message, 'POST_RESTORE');
+            logMethodEnd(dbLogger, 'restore', { post: null });
+            throw err;
+        }
+        if (!isAuthor && !hasRestorePermission) {
+            logDenied(
+                dbLogger,
+                safeActor,
+                input,
+                post,
+                'Forbidden: user cannot restore post',
+                'POST_RESTORE'
+            );
+            logMethodEnd(dbLogger, 'restore', { post: null });
+            throw new Error('Forbidden: user cannot restore post');
+        }
+        // Restore: set deletedAt and deletedById to null
+        await PostModel.update(parsedInput.id, {
+            deletedAt: null as unknown as Date,
+            deletedById: null as unknown as UserId
+        });
+        const updatedPost = await PostModel.getById(parsedInput.id);
+        logMethodEnd(dbLogger, 'restore', { post: updatedPost });
+        return { post: updatedPost ?? null };
     },
     /** Get featured posts. */
     async getFeatured(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
