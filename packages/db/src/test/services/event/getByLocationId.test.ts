@@ -7,7 +7,7 @@ import {
 } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { getByLocationId } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import { dbLogger } from '../../../utils/logger';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 
@@ -68,7 +68,7 @@ describe('event.service.getByLocationId', () => {
 
     it('should allow admin to see all events for the location', async () => {
         vi.spyOn(EventModel, 'search').mockResolvedValue(allEvents);
-        const { events } = await getByLocationId({ locationId }, admin);
+        const { events } = await EventService.getByLocationId({ locationId }, admin);
         expect(events).toHaveLength(3);
         expect(events).toContainEqual(publicEvent);
         expect(events).toContainEqual(privateEvent);
@@ -77,13 +77,13 @@ describe('event.service.getByLocationId', () => {
 
     it('should allow superadmin to see all events for the location', async () => {
         vi.spyOn(EventModel, 'search').mockResolvedValue(allEvents);
-        const { events } = await getByLocationId({ locationId }, superAdmin);
+        const { events } = await EventService.getByLocationId({ locationId }, superAdmin);
         expect(events).toHaveLength(3);
     });
 
     it('should allow user with permission to see public and private events', async () => {
         vi.spyOn(EventModel, 'search').mockResolvedValue(allEvents);
-        const { events } = await getByLocationId({ locationId }, userWithPerm);
+        const { events } = await EventService.getByLocationId({ locationId }, userWithPerm);
         expect(events).toHaveLength(2);
         expect(events).toContainEqual(publicEvent);
         expect(events).toContainEqual(privateEvent);
@@ -94,7 +94,7 @@ describe('event.service.getByLocationId', () => {
 
     it('should allow user without permission to see only public active events', async () => {
         vi.spyOn(EventModel, 'search').mockResolvedValue(allEvents);
-        const { events } = await getByLocationId({ locationId }, userNoPerm);
+        const { events } = await EventService.getByLocationId({ locationId }, userNoPerm);
         expect(events).toHaveLength(1);
         if (events.length === 1) {
             expect(events[0]).toBeDefined();
@@ -105,13 +105,13 @@ describe('event.service.getByLocationId', () => {
 
     it('should not allow disabled user to see any event', async () => {
         vi.spyOn(EventModel, 'search').mockResolvedValue(allEvents);
-        const { events } = await getByLocationId({ locationId }, disabledUser);
+        const { events } = await EventService.getByLocationId({ locationId }, disabledUser);
         expect(events).toEqual([]);
     });
 
     it('should allow public actor to see only public active events', async () => {
         vi.spyOn(EventModel, 'search').mockResolvedValue(allEvents);
-        const { events } = await getByLocationId({ locationId }, publicActor);
+        const { events } = await EventService.getByLocationId({ locationId }, publicActor);
         expect(events).toHaveLength(1);
         if (events.length === 1) {
             expect(events[0]).toBeDefined();
@@ -122,11 +122,11 @@ describe('event.service.getByLocationId', () => {
 
     it('should return empty array if no events for location', async () => {
         vi.spyOn(EventModel, 'search').mockResolvedValue([]);
-        const { events } = await getByLocationId({ locationId }, admin);
+        const { events } = await EventService.getByLocationId({ locationId }, admin);
         expect(events).toEqual([]);
     });
 
     it('should throw on invalid input', async () => {
-        await expect(getByLocationId({ locationId: '' }, admin)).rejects.toThrow();
+        await expect(EventService.getByLocationId({ locationId: '' }, admin)).rejects.toThrow();
     });
 });

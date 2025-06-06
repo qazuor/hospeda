@@ -9,7 +9,7 @@ import {
 } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { create } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import { dbLogger } from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockTag, getMockUser } from '../../mockData';
@@ -63,7 +63,7 @@ describe('event.service.create', () => {
                 visibility: input.visibility
             })
         );
-        const result = await create(validInput, admin);
+        const result = await EventService.create(validInput, admin);
         expect(result.event.slug).toBe(validInput.slug);
         expect(result.event.summary).toBe(validInput.summary);
         expect(result.event.category).toBe(validInput.category);
@@ -83,7 +83,7 @@ describe('event.service.create', () => {
                 visibility: input.visibility
             })
         );
-        const result = await create(validInput, superAdmin);
+        const result = await EventService.create(validInput, superAdmin);
         expect(result.event.slug).toBe(validInput.slug);
     });
 
@@ -99,33 +99,39 @@ describe('event.service.create', () => {
             })
         );
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
-        const result = await create(validInput, userWithPerm);
+        const result = await EventService.create(validInput, userWithPerm);
         expect(result.event.slug).toBe(validInput.slug);
     });
 
     it('should not allow user without permission', async () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(undefined);
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
-        await expect(create(validInput, userNoPerm)).rejects.toThrow('Permission denied');
+        await expect(EventService.create(validInput, userNoPerm)).rejects.toThrow(
+            'Permission denied'
+        );
     });
 
     it('should not allow disabled user', async () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(undefined);
-        await expect(create(validInput, disabledUser)).rejects.toThrow('User is disabled');
+        await expect(EventService.create(validInput, disabledUser)).rejects.toThrow(
+            'User is disabled'
+        );
     });
 
     it('should not allow public actor', async () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(undefined);
-        await expect(create(validInput, publicActor)).rejects.toThrow('Permission denied');
+        await expect(EventService.create(validInput, publicActor)).rejects.toThrow(
+            'Permission denied'
+        );
     });
 
     it('should not allow duplicate slug', async () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(getMockEvent());
-        await expect(create(validInput, admin)).rejects.toThrow('Slug already exists');
+        await expect(EventService.create(validInput, admin)).rejects.toThrow('Slug already exists');
     });
 
     it('should throw on invalid input', async () => {
-        await expect(create({ ...validInput, slug: '' }, admin)).rejects.toThrow();
+        await expect(EventService.create({ ...validInput, slug: '' }, admin)).rejects.toThrow();
     });
 
     it('should normalize moderationState in media', async () => {
@@ -136,6 +142,6 @@ describe('event.service.create', () => {
             );
             return getMockEvent();
         });
-        await create(validInput, admin);
+        await EventService.create(validInput, admin);
     });
 });

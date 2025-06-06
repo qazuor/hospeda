@@ -2,7 +2,7 @@ import type { EventId, UserId } from '@repo/types';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { getBySlug } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import { getMockEvent } from '../../../test/mockData';
 import * as permissionManager from '../../../utils/permission-manager';
 
@@ -78,7 +78,7 @@ describe('event.service.getBySlug', () => {
 
     it('returns null if event does not exist', async () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(undefined);
-        const result = await getBySlug({ slug: 'not-found' }, admin);
+        const result = await EventService.getBySlug({ slug: 'not-found' }, admin);
         expect(result.event).toBeNull();
     });
 
@@ -95,7 +95,7 @@ describe('event.service.getBySlug', () => {
                 vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
                     getMockEvent({ ...baseEvent, visibility, lifecycleState })
                 );
-                const result = await getBySlug({ slug: baseEvent.slug }, admin);
+                const result = await EventService.getBySlug({ slug: baseEvent.slug }, admin);
                 expect(result.event).not.toBeNull();
             }
         }
@@ -109,7 +109,7 @@ describe('event.service.getBySlug', () => {
                 lifecycleState: LifecycleStatusEnum.ARCHIVED
             })
         );
-        const result = await getBySlug({ slug: baseEvent.slug }, superAdmin);
+        const result = await EventService.getBySlug({ slug: baseEvent.slug }, superAdmin);
         expect(result.event).not.toBeNull();
     });
 
@@ -118,7 +118,7 @@ describe('event.service.getBySlug', () => {
             vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
                 getMockEvent({ ...baseEvent, visibility, authorId: author.id as UserId })
             );
-            const result = await getBySlug({ slug: baseEvent.slug }, author);
+            const result = await EventService.getBySlug({ slug: baseEvent.slug }, author);
             expect(result.event).not.toBeNull();
         }
     });
@@ -131,7 +131,7 @@ describe('event.service.getBySlug', () => {
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             })
         );
-        const result = await getBySlug({ slug: baseEvent.slug }, normalUser);
+        const result = await EventService.getBySlug({ slug: baseEvent.slug }, normalUser);
         expect(result.event).not.toBeNull();
 
         // Should not see private/draft/archived
@@ -139,7 +139,7 @@ describe('event.service.getBySlug', () => {
             vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
                 getMockEvent({ ...baseEvent, visibility })
             );
-            const res = await getBySlug({ slug: baseEvent.slug }, normalUser);
+            const res = await EventService.getBySlug({ slug: baseEvent.slug }, normalUser);
             expect(res.event).toBeNull();
         }
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
@@ -149,7 +149,7 @@ describe('event.service.getBySlug', () => {
                 lifecycleState: LifecycleStatusEnum.ARCHIVED
             })
         );
-        const res2 = await getBySlug({ slug: baseEvent.slug }, normalUser);
+        const res2 = await EventService.getBySlug({ slug: baseEvent.slug }, normalUser);
         expect(res2.event).toBeNull();
     });
 
@@ -165,7 +165,7 @@ describe('event.service.getBySlug', () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
             getMockEvent({ ...baseEvent, visibility: VisibilityEnum.PRIVATE })
         );
-        const result = await getBySlug({ slug: baseEvent.slug }, privatePermUser);
+        const result = await EventService.getBySlug({ slug: baseEvent.slug }, privatePermUser);
         expect(result.event).not.toBeNull();
     });
 
@@ -181,13 +181,13 @@ describe('event.service.getBySlug', () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
             getMockEvent({ ...baseEvent, visibility: VisibilityEnum.DRAFT })
         );
-        const result = await getBySlug({ slug: baseEvent.slug }, draftPermUser);
+        const result = await EventService.getBySlug({ slug: baseEvent.slug }, draftPermUser);
         expect(result.event).not.toBeNull();
     });
 
     it('disabled user cannot view any event', async () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(getMockEvent({ ...baseEvent }));
-        const result = await getBySlug({ slug: baseEvent.slug }, disabledUser);
+        const result = await EventService.getBySlug({ slug: baseEvent.slug }, disabledUser);
         expect(result.event).toBeNull();
     });
 
@@ -199,7 +199,7 @@ describe('event.service.getBySlug', () => {
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             })
         );
-        const result = await getBySlug({ slug: baseEvent.slug }, publicActor);
+        const result = await EventService.getBySlug({ slug: baseEvent.slug }, publicActor);
         expect(result.event).not.toBeNull();
 
         // Should not see private/draft/archived
@@ -207,7 +207,7 @@ describe('event.service.getBySlug', () => {
             vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
                 getMockEvent({ ...baseEvent, visibility })
             );
-            const res = await getBySlug({ slug: baseEvent.slug }, publicActor);
+            const res = await EventService.getBySlug({ slug: baseEvent.slug }, publicActor);
             expect(res.event).toBeNull();
         }
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
@@ -217,7 +217,7 @@ describe('event.service.getBySlug', () => {
                 lifecycleState: LifecycleStatusEnum.ARCHIVED
             })
         );
-        const res2 = await getBySlug({ slug: baseEvent.slug }, publicActor);
+        const res2 = await EventService.getBySlug({ slug: baseEvent.slug }, publicActor);
         expect(res2.event).toBeNull();
     });
 });

@@ -9,7 +9,7 @@ import {
 } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { update } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import { dbLogger } from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
@@ -48,7 +48,7 @@ describe('event.service.update', () => {
         vi.spyOn(EventModel, 'update').mockImplementation(async (_id, input) =>
             getMockEvent({ ...baseEvent, ...input })
         );
-        const result = await update(validInput, admin);
+        const result = await EventService.update(validInput, admin);
         expect(result.event.summary).toBe(validInput.summary);
         expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:start');
         expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:end');
@@ -59,7 +59,7 @@ describe('event.service.update', () => {
         vi.spyOn(EventModel, 'update').mockImplementation(async (_id, input) =>
             getMockEvent({ ...baseEvent, ...input })
         );
-        const result = await update(validInput, superAdmin);
+        const result = await EventService.update(validInput, superAdmin);
         expect(result.event.summary).toBe(validInput.summary);
     });
 
@@ -69,24 +69,30 @@ describe('event.service.update', () => {
             getMockEvent({ ...baseEvent, ...input })
         );
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
-        const result = await update(validInput, userWithPerm);
+        const result = await EventService.update(validInput, userWithPerm);
         expect(result.event.summary).toBe(validInput.summary);
     });
 
     it('should not allow user without permission', async () => {
         vi.spyOn(EventModel, 'getById').mockResolvedValue(baseEvent);
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
-        await expect(update(validInput, userNoPerm)).rejects.toThrow('Permission denied');
+        await expect(EventService.update(validInput, userNoPerm)).rejects.toThrow(
+            'Permission denied'
+        );
     });
 
     it('should not allow disabled user', async () => {
         vi.spyOn(EventModel, 'getById').mockResolvedValue(baseEvent);
-        await expect(update(validInput, disabledUser)).rejects.toThrow('User is disabled');
+        await expect(EventService.update(validInput, disabledUser)).rejects.toThrow(
+            'User is disabled'
+        );
     });
 
     it('should not allow public actor', async () => {
         vi.spyOn(EventModel, 'getById').mockResolvedValue(baseEvent);
-        await expect(update(validInput, publicActor)).rejects.toThrow('Permission denied');
+        await expect(EventService.update(validInput, publicActor)).rejects.toThrow(
+            'Permission denied'
+        );
     });
 
     it('should not allow duplicate slug', async () => {
@@ -94,17 +100,17 @@ describe('event.service.update', () => {
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
             getMockEvent({ id: 'event-2' as EventId, slug: 'new-slug' })
         );
-        await expect(update({ ...validInput, slug: 'new-slug' }, admin)).rejects.toThrow(
-            'Slug already exists'
-        );
+        await expect(
+            EventService.update({ ...validInput, slug: 'new-slug' }, admin)
+        ).rejects.toThrow('Slug already exists');
     });
 
     it('should throw if event not found', async () => {
         vi.spyOn(EventModel, 'getById').mockResolvedValue(undefined);
-        await expect(update(validInput, admin)).rejects.toThrow('Event not found');
+        await expect(EventService.update(validInput, admin)).rejects.toThrow('Event not found');
     });
 
     it('should throw on invalid input', async () => {
-        await expect(update({ id: '' }, admin)).rejects.toThrow();
+        await expect(EventService.update({ id: '' }, admin)).rejects.toThrow();
     });
 });

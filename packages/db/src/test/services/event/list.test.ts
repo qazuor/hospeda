@@ -8,7 +8,7 @@ import {
 } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
-import { list } from '../../../services/event/event.service';
+import { EventService } from '../../../services/event/event.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
@@ -67,7 +67,7 @@ describe('event.service.list', () => {
 
     it('should return all events for ADMIN', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await list({}, admin);
+        const result = await EventService.list({}, admin);
         expect(result.events).toHaveLength(3);
         expect(result.events).toEqual(expect.arrayContaining(allEvents));
         expectInfoLog({ input: {}, actor: admin }, 'list:start');
@@ -79,7 +79,7 @@ describe('event.service.list', () => {
             (_, perm) => perm === PermissionEnum.EVENT_VIEW_PRIVATE
         );
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await list({}, userWithPerm);
+        const result = await EventService.list({}, userWithPerm);
         expect(result.events).toEqual(expect.arrayContaining([publicEvent, privateEvent]));
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: {}, actor: userWithPerm }, 'list:start');
@@ -96,7 +96,7 @@ describe('event.service.list', () => {
     it('should return only public events for user without permission', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await list({}, userNoPerm);
+        const result = await EventService.list({}, userNoPerm);
         expect(result.events).toEqual([publicEvent]);
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: {}, actor: userNoPerm }, 'list:start');
@@ -105,7 +105,7 @@ describe('event.service.list', () => {
 
     it('should return no events for disabled user', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await list({}, disabledUser);
+        const result = await EventService.list({}, disabledUser);
         expect(result.events).toEqual([]);
         expectPermissionLog({
             userId: disabledUser.id,
@@ -117,7 +117,7 @@ describe('event.service.list', () => {
 
     it('should return only public events for public user', async () => {
         (EventModel.search as Mock).mockResolvedValue(allEvents);
-        const result = await list({}, publicActor);
+        const result = await EventService.list({}, publicActor);
         expect(result.events).toEqual([publicEvent]);
         expect(result.events).not.toContainEqual(archivedEvent);
         expectInfoLog({ input: {}, actor: publicActor }, 'list:start');
@@ -126,7 +126,7 @@ describe('event.service.list', () => {
 
     it('should respect limit and offset', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent, privateEvent, archivedEvent]);
-        const result = await list({ limit: 1, offset: 1 }, admin);
+        const result = await EventService.list({ limit: 1, offset: 1 }, admin);
         // The model mock returns all, but we check that the service passes the params
         expect(EventModel.search).toHaveBeenCalledWith(
             expect.objectContaining({ limit: 1, offset: 1 })
@@ -136,7 +136,10 @@ describe('event.service.list', () => {
 
     it('should filter by visibility', async () => {
         (EventModel.search as Mock).mockResolvedValue([privateEvent]);
-        const result = await list({ filters: { visibility: VisibilityEnum.PRIVATE } }, admin);
+        const result = await EventService.list(
+            { filters: { visibility: VisibilityEnum.PRIVATE } },
+            admin
+        );
         expect(EventModel.search).toHaveBeenCalledWith(
             expect.objectContaining({ visibility: VisibilityEnum.PRIVATE })
         );
@@ -145,7 +148,7 @@ describe('event.service.list', () => {
 
     it('should filter by lifecycleState', async () => {
         (EventModel.search as Mock).mockResolvedValue([archivedEvent]);
-        const result = await list(
+        const result = await EventService.list(
             { filters: { lifecycleState: LifecycleStatusEnum.ARCHIVED } },
             admin
         );
@@ -157,14 +160,14 @@ describe('event.service.list', () => {
 
     it('should filter by authorId', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent]);
-        const result = await list({ filters: { authorId } }, admin);
+        const result = await EventService.list({ filters: { authorId } }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ authorId }));
         expect(result.events).toEqual([publicEvent]);
     });
 
     it('should return empty if no events found', async () => {
         (EventModel.search as Mock).mockResolvedValue([]);
-        const result = await list({}, admin);
+        const result = await EventService.list({}, admin);
         expect(result.events).toEqual([]);
         expectInfoLog({ result: { events: [] } }, 'list:end');
     });
@@ -172,7 +175,7 @@ describe('event.service.list', () => {
     it('should return empty if all events filtered by permissions', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.search as Mock).mockResolvedValue([privateEvent]);
-        const result = await list({}, userNoPerm);
+        const result = await EventService.list({}, userNoPerm);
         expect(result.events).toEqual([]);
         expectInfoLog({ result: { events: [] } }, 'list:end');
     });
@@ -180,14 +183,14 @@ describe('event.service.list', () => {
     it('should pass minDate to EventModel.search', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent]);
         const minDate = new Date('2024-07-01T00:00:00Z');
-        await list({ minDate }, admin);
+        await EventService.list({ minDate }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ minDate }));
     });
 
     it('should pass maxDate to EventModel.search', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent]);
         const maxDate = new Date('2024-08-01T00:00:00Z');
-        await list({ maxDate }, admin);
+        await EventService.list({ maxDate }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ maxDate }));
     });
 
@@ -195,7 +198,7 @@ describe('event.service.list', () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent]);
         const minDate = new Date('2024-07-01T00:00:00Z');
         const maxDate = new Date('2024-08-01T00:00:00Z');
-        await list({ minDate, maxDate }, admin);
+        await EventService.list({ minDate, maxDate }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(
             expect.objectContaining({ minDate, maxDate })
         );
