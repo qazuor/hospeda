@@ -1,7 +1,7 @@
 import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
-import { restore } from '../../../services/user/user.service';
+import { UserService } from '../../../services/user/user.service';
 import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
@@ -59,7 +59,7 @@ describe('user.service.restore', () => {
             ...input,
             lifecycleState: LifecycleStatusEnum.ACTIVE
         }));
-        const result = await restore(validInput, admin);
+        const result = await UserService.restore(validInput, admin);
         expect(result.user.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
         expect(result.user).not.toHaveProperty('password');
         expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'restore:start');
@@ -68,32 +68,32 @@ describe('user.service.restore', () => {
 
     it('should not allow admin to restore themselves', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(admin);
-        await expect(restore({ id: admin.id }, admin)).rejects.toThrow(
+        await expect(UserService.restore({ id: admin.id }, admin)).rejects.toThrow(
             'Admin cannot restore themselves'
         );
     });
 
     it('should not allow normal user to restore', async () => {
-        await expect(restore(validInput, activeUserForPerm)).rejects.toThrow(
+        await expect(UserService.restore(validInput, activeUserForPerm)).rejects.toThrow(
             'Only admin can restore users'
         );
     });
 
     it('should not allow disabled user to restore', async () => {
-        await expect(restore(validInput, disabledUser)).rejects.toThrow(
+        await expect(UserService.restore(validInput, disabledUser)).rejects.toThrow(
             'Disabled users cannot restore users'
         );
     });
 
     it('should not allow restoring an already active user', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(activeUser);
-        await expect(restore({ id: activeUser.id }, admin)).rejects.toThrow(
+        await expect(UserService.restore({ id: activeUser.id }, admin)).rejects.toThrow(
             'User is already active'
         );
     });
 
     it('should throw if user not found', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(undefined);
-        await expect(restore(validInput, admin)).rejects.toThrow('User not found');
+        await expect(UserService.restore(validInput, admin)).rejects.toThrow('User not found');
     });
 });

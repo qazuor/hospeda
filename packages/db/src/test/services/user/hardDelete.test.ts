@@ -1,7 +1,7 @@
 import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
-import { hardDelete } from '../../../services/user/user.service';
+import { UserService } from '../../../services/user/user.service';
 import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
@@ -38,7 +38,7 @@ describe('user.service.hardDelete', () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(user);
         const { password, ...userWithoutPassword } = user;
         vi.spyOn(UserModel, 'hardDelete').mockResolvedValue(userWithoutPassword);
-        const result = await hardDelete(validInput, admin);
+        const result = await UserService.hardDelete(validInput, admin);
         expect(result.user).toBeDefined();
         expect(result.user?.id).toBe(user.id);
         expect(result.user).not.toHaveProperty('password');
@@ -48,31 +48,33 @@ describe('user.service.hardDelete', () => {
 
     it('should not allow admin to hard-delete themselves', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(admin);
-        await expect(hardDelete({ id: admin.id }, admin)).rejects.toThrow(
+        await expect(UserService.hardDelete({ id: admin.id }, admin)).rejects.toThrow(
             'Admin cannot hard-delete themselves'
         );
     });
 
     it('should not allow normal user to hard-delete', async () => {
-        await expect(hardDelete(validInput, user)).rejects.toThrow(
+        await expect(UserService.hardDelete(validInput, user)).rejects.toThrow(
             'Only admin can hard-delete users'
         );
     });
 
     it('should not allow disabled user to hard-delete', async () => {
-        await expect(hardDelete(validInput, adminDisabled)).rejects.toThrow(
+        await expect(UserService.hardDelete(validInput, adminDisabled)).rejects.toThrow(
             'Disabled users cannot hard-delete users'
         );
     });
 
     it('should throw if user not found', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(undefined);
-        await expect(hardDelete(validInput, admin)).rejects.toThrow('User not found');
+        await expect(UserService.hardDelete(validInput, admin)).rejects.toThrow('User not found');
     });
 
     it('should throw if hardDelete fails in the model', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(user);
         vi.spyOn(UserModel, 'hardDelete').mockResolvedValue(null);
-        await expect(hardDelete(validInput, admin)).rejects.toThrow('Failed to hard-delete user');
+        await expect(UserService.hardDelete(validInput, admin)).rejects.toThrow(
+            'Failed to hard-delete user'
+        );
     });
 });
