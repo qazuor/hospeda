@@ -267,9 +267,23 @@ export const PostService = {
             'role' in safeActor &&
             safeActor.role === RoleEnum.GUEST;
         let posts = await PostModel.getByCategory(parsedInput.category);
-        // Filter by visibility for public users
+        // Si el actor es público, solo puede ver posts públicos
         if (isPublic) {
-            posts = posts.filter((p) => p.visibility === VisibilityEnum.PUBLIC);
+            posts = posts.filter((post) => post.visibility === VisibilityEnum.PUBLIC);
+        } else {
+            // Filtrar posts según permisos de visualización
+            posts = posts.filter((post) => {
+                const { canView, reason, checkedPermission } = canViewPost(safeActor, post);
+                if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+                    try {
+                        hasPermission(safeActor, checkedPermission);
+                        return true;
+                    } catch {
+                        return false;
+                    }
+                }
+                return canView;
+            });
         }
         // Apply ordering
         const orderBy = parsedInput.orderBy;
@@ -710,23 +724,122 @@ export const PostService = {
     async getNews(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
         throw new Error('Not implemented');
     },
-    /** Get posts related to an accommodation. */
+    /**
+     * Retrieves posts related to a specific accommodation.
+     * - Public users can only see PUBLIC posts.
+     * - Authenticated users see posts according to their permissions and visibility.
+     *
+     * @param input - Object containing the accommodationId.
+     * @param actor - The user or public actor requesting the posts.
+     * @returns An object with the list of related posts.
+     * @example
+     *   const { posts } = await PostService.getByRelatedAccommodation({ accommodationId }, user);
+     */
     async getByRelatedAccommodation(
-        _input: unknown,
-        _actor: unknown
-    ): Promise<{ posts: PostType[] }> {
-        throw new Error('Not implemented');
+        input: import('./post.schemas').GetByRelatedAccommodationInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').GetByRelatedAccommodationOutput> {
+        logMethodStart(dbLogger, 'getByRelatedAccommodation', input, actor as object);
+        const { getByRelatedAccommodationInputSchema } = await import('./post.schemas');
+        const parsedInput = getByRelatedAccommodationInputSchema.parse(input);
+        const safeActor = getSafeActor(actor);
+        // Fetch all posts and filter by relatedAccommodationId in memory (TODO: optimize with DB query if needed)
+        let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
+            (p) => p.relatedAccommodationId === parsedInput.accommodationId
+        );
+        // Filtrar posts según permisos de visualización
+        posts = posts.filter((post) => {
+            const { canView, reason, checkedPermission } = canViewPost(safeActor, post);
+            if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+                try {
+                    hasPermission(safeActor, checkedPermission);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+            return canView;
+        });
+        logMethodEnd(dbLogger, 'getByRelatedAccommodation', { posts });
+        return { posts };
     },
-    /** Get posts related to a destination. */
+    /**
+     * Retrieves posts related to a specific destination.
+     * - Public users can only see PUBLIC posts.
+     * - Authenticated users see posts according to their permissions and visibility.
+     *
+     * @param input - Object containing the destinationId.
+     * @param actor - The user or public actor requesting the posts.
+     * @returns An object with the list of related posts.
+     * @example
+     *   const { posts } = await PostService.getByRelatedDestination({ destinationId }, user);
+     */
     async getByRelatedDestination(
-        _input: unknown,
-        _actor: unknown
-    ): Promise<{ posts: PostType[] }> {
-        throw new Error('Not implemented');
+        input: import('./post.schemas').GetByRelatedDestinationInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').GetByRelatedDestinationOutput> {
+        logMethodStart(dbLogger, 'getByRelatedDestination', input, actor as object);
+        const { getByRelatedDestinationInputSchema } = await import('./post.schemas');
+        const parsedInput = getByRelatedDestinationInputSchema.parse(input);
+        const safeActor = getSafeActor(actor);
+        // Fetch all posts and filter by relatedDestinationId in memory (TODO: optimize with DB query if needed)
+        let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
+            (p) => p.relatedDestinationId === parsedInput.destinationId
+        );
+        // Filter posts according to view permissions
+        posts = posts.filter((post) => {
+            const { canView, reason, checkedPermission } = canViewPost(safeActor, post);
+            if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+                try {
+                    hasPermission(safeActor, checkedPermission);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+            return canView;
+        });
+        logMethodEnd(dbLogger, 'getByRelatedDestination', { posts });
+        return { posts };
     },
-    /** Get posts related to an event. */
-    async getByRelatedEvent(_input: unknown, _actor: unknown): Promise<{ posts: PostType[] }> {
-        throw new Error('Not implemented');
+    /**
+     * Retrieves posts related to a specific event.
+     * - Public users can only see PUBLIC posts.
+     * - Authenticated users see posts according to their permissions and visibility.
+     *
+     * @param input - Object containing the eventId.
+     * @param actor - The user or public actor requesting the posts.
+     * @returns An object with the list of related posts.
+     * @example
+     *   const { posts } = await PostService.getByRelatedEvent({ eventId }, user);
+     */
+    async getByRelatedEvent(
+        input: import('./post.schemas').GetByRelatedEventInput,
+        actor: unknown
+    ): Promise<import('./post.schemas').GetByRelatedEventOutput> {
+        logMethodStart(dbLogger, 'getByRelatedEvent', input, actor as object);
+        const { getByRelatedEventInputSchema } = await import('./post.schemas');
+        const parsedInput = getByRelatedEventInputSchema.parse(input);
+        const safeActor = getSafeActor(actor);
+        // Fetch all posts and filter by relatedEventId in memory (TODO: optimize with DB query if needed)
+        let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
+            (p) => p.relatedEventId === parsedInput.eventId
+        );
+        // Filter posts according to view permissions
+        posts = posts.filter((post) => {
+            const { canView, reason, checkedPermission } = canViewPost(safeActor, post);
+            if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
+                try {
+                    hasPermission(safeActor, checkedPermission);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+            return canView;
+        });
+        logMethodEnd(dbLogger, 'getByRelatedEvent', { posts });
+        return { posts };
     },
     // --- Future methods ---
     /** Get posts by tag. */
