@@ -1,0 +1,236 @@
+import type { AccommodationId, TagId } from '@repo/types';
+import { EntityTypeEnum } from '@repo/types/enums/entity-type.enum';
+import { PermissionEnum } from '@repo/types/enums/permission.enum';
+import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EntityTagModel } from '../../../models/tag/entity_tag.model';
+import { TagService } from '../../../services/tag/tag.service';
+import { dbLogger } from '../../../utils/logger';
+import {
+    getMockAccommodationId,
+    getMockDestinationId,
+    getMockEntityTag,
+    getMockEventId,
+    getMockPostId,
+    getMockPublicUser,
+    getMockTagId,
+    getMockUser,
+    getMockUserId
+} from '../../mockData';
+import {
+    expectInfoLog,
+    expectNoPermissionLog,
+    expectPermissionLog
+} from '../../utils/logAssertions';
+
+vi.mock('../../../models/tag/entity_tag.model');
+vi.mock('../../../utils/logger', async (importOriginal) => {
+    const actualImport = await importOriginal();
+    return Object.assign({}, actualImport, {
+        dbLogger: {
+            info: vi.fn(),
+            error: vi.fn(),
+            permission: vi.fn()
+        }
+    });
+});
+
+describe('TagService.addTag', () => {
+    const user = getMockUser({
+        permissions: [
+            PermissionEnum.ACCOMMODATION_TAGS_MANAGE,
+            PermissionEnum.DESTINATION_TAGS_MANAGE,
+            PermissionEnum.EVENT_UPDATE,
+            PermissionEnum.POST_TAGS_MANAGE,
+            PermissionEnum.USER_UPDATE_PROFILE
+        ]
+    });
+    const publicUser = getMockPublicUser();
+    const tagId = getMockTagId();
+    const accommodationId = getMockAccommodationId();
+    const destinationId = getMockDestinationId();
+    const eventId = getMockEventId();
+    const postId = getMockPostId();
+    const userId = getMockUserId();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should add tag to accommodation with correct permission', async () => {
+        const entityTag = getMockEntityTag({
+            tagId,
+            entityId: accommodationId,
+            entityType: EntityTypeEnum.ACCOMMODATION
+        });
+        (EntityTagModel.create as Mocked<typeof EntityTagModel>['create']).mockResolvedValue(
+            entityTag
+        );
+        const result = await TagService.addTag(
+            { tagId, entityId: accommodationId, entityType: EntityTypeEnum.ACCOMMODATION },
+            user
+        );
+        expect(result.entityTag).toEqual(entityTag);
+        expectInfoLog(
+            {
+                input: {
+                    tagId,
+                    entityId: accommodationId,
+                    entityType: EntityTypeEnum.ACCOMMODATION
+                },
+                actor: user
+            },
+            'addTag:start'
+        );
+        expectInfoLog({ result: { entityTag } }, 'addTag:end');
+    });
+
+    it('should add tag to destination with correct permission', async () => {
+        const entityTag = getMockEntityTag({
+            tagId,
+            entityId: destinationId,
+            entityType: EntityTypeEnum.DESTINATION
+        });
+        (EntityTagModel.create as Mocked<typeof EntityTagModel>['create']).mockResolvedValue(
+            entityTag
+        );
+        const result = await TagService.addTag(
+            { tagId, entityId: destinationId, entityType: EntityTypeEnum.DESTINATION },
+            user
+        );
+        expect(result.entityTag).toEqual(entityTag);
+        expectInfoLog(
+            {
+                input: { tagId, entityId: destinationId, entityType: EntityTypeEnum.DESTINATION },
+                actor: user
+            },
+            'addTag:start'
+        );
+        expectInfoLog({ result: { entityTag } }, 'addTag:end');
+    });
+
+    it('should add tag to event with correct permission', async () => {
+        const entityTag = getMockEntityTag({
+            tagId,
+            entityId: eventId,
+            entityType: EntityTypeEnum.EVENT
+        });
+        (EntityTagModel.create as Mocked<typeof EntityTagModel>['create']).mockResolvedValue(
+            entityTag
+        );
+        const result = await TagService.addTag(
+            { tagId, entityId: eventId, entityType: EntityTypeEnum.EVENT },
+            user
+        );
+        expect(result.entityTag).toEqual(entityTag);
+        expectInfoLog(
+            { input: { tagId, entityId: eventId, entityType: EntityTypeEnum.EVENT }, actor: user },
+            'addTag:start'
+        );
+        expectInfoLog({ result: { entityTag } }, 'addTag:end');
+    });
+
+    it('should add tag to post with correct permission', async () => {
+        const entityTag = getMockEntityTag({
+            tagId,
+            entityId: postId,
+            entityType: EntityTypeEnum.POST
+        });
+        (EntityTagModel.create as Mocked<typeof EntityTagModel>['create']).mockResolvedValue(
+            entityTag
+        );
+        const result = await TagService.addTag(
+            { tagId, entityId: postId, entityType: EntityTypeEnum.POST },
+            user
+        );
+        expect(result.entityTag).toEqual(entityTag);
+        expectInfoLog(
+            { input: { tagId, entityId: postId, entityType: EntityTypeEnum.POST }, actor: user },
+            'addTag:start'
+        );
+        expectInfoLog({ result: { entityTag } }, 'addTag:end');
+    });
+
+    it('should add tag to user with correct permission', async () => {
+        const entityTag = getMockEntityTag({
+            tagId,
+            entityId: userId,
+            entityType: EntityTypeEnum.USER
+        });
+        (EntityTagModel.create as Mocked<typeof EntityTagModel>['create']).mockResolvedValue(
+            entityTag
+        );
+        const result = await TagService.addTag(
+            { tagId, entityId: userId, entityType: EntityTypeEnum.USER },
+            user
+        );
+        expect(result.entityTag).toEqual(entityTag);
+        expectInfoLog(
+            { input: { tagId, entityId: userId, entityType: EntityTypeEnum.USER }, actor: user },
+            'addTag:start'
+        );
+        expectInfoLog({ result: { entityTag } }, 'addTag:end');
+    });
+
+    it('should throw error if user lacks permission', async () => {
+        const noPermUser = getMockUser({ permissions: [] });
+        await expect(
+            TagService.addTag(
+                { tagId, entityId: accommodationId, entityType: EntityTypeEnum.ACCOMMODATION },
+                noPermUser
+            )
+        ).rejects.toThrow('Forbidden: insufficient permission to add tag');
+        expectPermissionLog({
+            permission: PermissionEnum.ACCOMMODATION_TAGS_MANAGE,
+            userId: noPermUser.id,
+            role: noPermUser.role,
+            extraData: expect.anything()
+        });
+    });
+
+    it('should throw error for invalid input', async () => {
+        await expect(
+            TagService.addTag(
+                {
+                    tagId: '' as TagId,
+                    entityId: '' as AccommodationId,
+                    entityType: 'INVALID' as EntityTypeEnum
+                },
+                user
+            )
+        ).rejects.toThrow();
+        expectNoPermissionLog();
+    });
+
+    it('should throw error for unsupported entity type', async () => {
+        await expect(
+            TagService.addTag(
+                {
+                    tagId: getMockTagId(),
+                    entityId: getMockAccommodationId(),
+                    entityType: 'SOMETHING_ELSE' as unknown as EntityTypeEnum
+                },
+                user
+            )
+        ).rejects.toThrowError();
+        expectNoPermissionLog();
+    });
+
+    it('should throw error if public user tries to add tag', async () => {
+        await expect(
+            TagService.addTag(
+                { tagId, entityId: accommodationId, entityType: EntityTypeEnum.ACCOMMODATION },
+                publicUser
+            )
+        ).rejects.toThrow('Forbidden: insufficient permission to add tag');
+        expect(dbLogger.permission).toHaveBeenCalledWith(
+            expect.objectContaining({
+                permission: 'UNKNOWN_PERMISSION',
+                role: 'GUEST',
+                userId: 'public',
+                extraData: expect.objectContaining({
+                    error: 'Forbidden: insufficient permission to add tag'
+                })
+            })
+        );
+    });
+});

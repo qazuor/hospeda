@@ -4,14 +4,11 @@ import type {
     NewDestinationInputType,
     UpdateDestinationInputType
 } from '@repo/types';
-import { type SQLWrapper, and, asc, count, desc, eq } from 'drizzle-orm';
+import { type SQLWrapper, and, asc, count, desc, eq, ilike } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { destinations } from '../../dbschemas/destination/destination.dbschema.ts';
-import {
-    createOrderableColumnsAndMapping,
-    getOrderableColumn,
-    prepareLikeQuery
-} from '../../utils';
+import { rEntityTag } from '../../dbschemas/tag/r_entity_tag.dbschema';
+import { createOrderableColumnsAndMapping, prepareLikeQuery } from '../../utils';
 import { dbLogger } from '../../utils/logger.ts';
 
 const destinationOrderable = createOrderableColumnsAndMapping(
@@ -19,9 +16,7 @@ const destinationOrderable = createOrderableColumnsAndMapping(
     destinations
 );
 
-export const DESTINATION_ORDERABLE_COLUMNS = destinationOrderable.columns;
 export type DestinationOrderByColumn = typeof destinationOrderable.type;
-const destinationOrderableColumns = destinationOrderable.mapping;
 
 export type DestinationPaginationParams = {
     limit: number;
@@ -335,8 +330,7 @@ export const DestinationModel = {
             const { name, slug, isFeatured, visibility, lifecycle } = params || {};
             const whereClauses: SQLWrapper[] = [];
             if (name) {
-                // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm typing
-                whereClauses.push((destinations as any).name.ilike(prepareLikeQuery(name)));
+                whereClauses.push(ilike(destinations.name, prepareLikeQuery(name)));
             }
             if (slug) {
                 whereClauses.push(eq(destinations.slug, slug));
@@ -361,65 +355,74 @@ export const DestinationModel = {
         }
     },
     /**
-     * Search destinations by partial name, slug, isFeatured, visibility, lifecycle, with pagination, ordering, and optional relations.
-     *
-     * If withRelations.attractions is requested, the field 'attractions' will be present as DestinationAttractionType[] and should be mapped in the service as needed.
-     *
-     * @param params - Search, pagination, and ordering parameters
-     * @param withRelations - Optional relations to include (e.g., { attractions: true })
-     * @returns Array of DestinationType (with optional attractions relation)
-     * @throws Error if the query fails
+     * Search destinations by filters, including tagId (with join), paginación y orden.
+     * @param params - Search, paginación y orden
+     * @returns Array de DestinationType
      */
-    async search(
-        params: DestinationSearchParams,
-        withRelations?: { attractions?: boolean }
-    ): Promise<DestinationType[]> {
+    async search(params: DestinationSearchParams & { tagId?: string }): Promise<DestinationType[]> {
         const db = getDb();
-        const { name, slug, isFeatured, visibility, lifecycle, limit, offset, order, orderBy } =
-            params;
+        const {
+            name,
+            slug,
+            isFeatured,
+            visibility,
+            lifecycle,
+            limit,
+            offset,
+            order,
+            orderBy,
+            tagId
+        } = params;
         try {
             const whereClauses: SQLWrapper[] = [];
-            if (name) {
-                // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm typing
-                whereClauses.push((destinations as any).name.ilike(prepareLikeQuery(name)));
-            }
-            if (slug) {
-                whereClauses.push(eq(destinations.slug, slug));
-            }
-            if (isFeatured !== undefined) {
+            if (name) whereClauses.push(ilike(destinations.name, prepareLikeQuery(name)));
+            if (slug) whereClauses.push(eq(destinations.slug, slug));
+            if (isFeatured !== undefined)
                 whereClauses.push(eq(destinations.isFeatured, isFeatured));
+            if (visibility) whereClauses.push(eq(destinations.visibility, visibility));
+            if (lifecycle) whereClauses.push(eq(destinations.lifecycle, lifecycle));
+            let col = destinations.createdAt;
+            switch (orderBy) {
+                case 'name':
+                    col = destinations.name;
+                    break;
+                case 'slug':
+                    col = destinations.slug;
+                    break;
+                case 'createdAt':
+                    col = destinations.createdAt;
+                    break;
+                case 'updatedAt':
+                    col = destinations.updatedAt;
+                    break;
             }
-            if (visibility) {
-                whereClauses.push(eq(destinations.visibility, visibility));
-            }
-            if (lifecycle) {
-                whereClauses.push(eq(destinations.lifecycle, lifecycle));
-            }
-            const col = getOrderableColumn(
-                destinationOrderableColumns,
-                orderBy,
-                destinations.createdAt
-            );
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
-            if (withRelations?.attractions) {
-                // Usar drizzle query builder para incluir attractions
-                const result = await db.query.destinations.findMany({
-                    where: (_d, { and: _and }) => _and(...whereClauses),
-                    orderBy: orderExpr,
-                    limit,
-                    offset,
-                    with: {
-                        attractions: true
+            if (tagId) {
+                // Join con rEntityTag para filtrar por tag y entityType DESTINATION
+                const result = await db
+                    .select({ destinations, rEntityTag })
+                    .from(destinations)
+                    .innerJoin(
+                        rEntityTag,
+                        and(
+                            eq(rEntityTag.entityId, destinations.id),
+                            eq(rEntityTag.tagId, tagId),
+                            eq(rEntityTag.entityType, 'DESTINATION')
+                        )
+                    )
+                    .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
+                    .orderBy(orderExpr)
+                    .limit(limit)
+                    .offset(offset);
+                dbLogger.query({ table: 'destinations', action: 'search_by_tag', params, result });
+                return (result as Array<{ destinations: unknown }>).map((row) => {
+                    if (row && typeof row === 'object' && 'destinations' in row) {
+                        return row.destinations as DestinationType;
                     }
+                    throw new Error('Unexpected row format in DestinationModel.search');
                 });
-                dbLogger.query({
-                    table: 'destinations',
-                    action: 'search_with_attractions',
-                    params: { ...params, withRelations },
-                    result
-                });
-                return result as DestinationType[];
             }
+            // Sin tagId: búsqueda normal
             const queryBuilder = db.select().from(destinations);
             const queryWithWhere =
                 whereClauses.length > 0 ? queryBuilder.where(and(...whereClauses)) : queryBuilder;
