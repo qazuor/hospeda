@@ -43,6 +43,10 @@ export type FaqSearchParams = FaqPaginationParams & {
 export const AccommodationFaqModel = {
     /**
      * Get FAQ by its unique ID.
+     *
+     * @param id - FAQ ID
+     * @returns AccommodationFaqType if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getById(id: string): Promise<AccommodationFaqType | undefined> {
         const db = getDb();
@@ -67,6 +71,10 @@ export const AccommodationFaqModel = {
 
     /**
      * Get FAQs by accommodation ID.
+     *
+     * @param accommodationId - Accommodation ID
+     * @returns Array of AccommodationFaqType
+     * @throws Error if the query fails
      */
     async getByAccommodation(accommodationId: string): Promise<AccommodationFaqType[]> {
         const db = getDb();
@@ -92,6 +100,10 @@ export const AccommodationFaqModel = {
 
     /**
      * Create a new FAQ entry.
+     *
+     * @param input - New FAQ input
+     * @returns The created AccommodationFaqType
+     * @throws Error if the insert fails
      */
     async create(input: NewAccommodationFaqInputType): Promise<AccommodationFaqType> {
         const db = getDb();
@@ -114,6 +126,11 @@ export const AccommodationFaqModel = {
 
     /**
      * Update a FAQ entry by ID.
+     *
+     * @param id - FAQ ID
+     * @param input - Update input
+     * @returns Updated AccommodationFaqType if found, otherwise undefined
+     * @throws Error if the update fails
      */
     async update(
         id: string,
@@ -142,6 +159,11 @@ export const AccommodationFaqModel = {
 
     /**
      * Soft delete a FAQ entry by ID.
+     *
+     * @param id - FAQ ID
+     * @param deletedById - User ID who deletes
+     * @returns Object with deleted FAQ id if found, otherwise undefined
+     * @throws Error if the delete fails
      */
     async delete(id: string, deletedById: string): Promise<{ id: string } | undefined> {
         const db = getDb();
@@ -168,6 +190,10 @@ export const AccommodationFaqModel = {
 
     /**
      * Hard delete a FAQ entry by ID.
+     *
+     * @param id - FAQ ID
+     * @returns True if deleted, false otherwise
+     * @throws Error if the delete fails
      */
     async hardDelete(id: string): Promise<boolean> {
         const db = getDb();
@@ -192,6 +218,10 @@ export const AccommodationFaqModel = {
 
     /**
      * List FAQ entries with pagination and optional ordering.
+     *
+     * @param params - Pagination and ordering parameters
+     * @returns Array of AccommodationFaqType
+     * @throws Error if the query fails
      */
     async list(params: FaqPaginationParams): Promise<AccommodationFaqType[]> {
         const db = getDb();
@@ -219,6 +249,10 @@ export const AccommodationFaqModel = {
 
     /**
      * Search FAQ entries by question, category, etc.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of AccommodationFaqType
+     * @throws Error if the query fails
      */
     async search(params: FaqSearchParams): Promise<AccommodationFaqType[]> {
         const db = getDb();
@@ -260,6 +294,10 @@ export const AccommodationFaqModel = {
 
     /**
      * Count FAQ entries with optional filters.
+     *
+     * @param params - Search parameters
+     * @returns Number of FAQ entries matching the query
+     * @throws Error if the query fails
      */
     async count(params?: FaqSearchParams): Promise<number> {
         const db = getDb();

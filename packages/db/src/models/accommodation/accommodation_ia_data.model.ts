@@ -43,6 +43,10 @@ export type IaDataSearchParams = IaDataPaginationParams & {
 export const AccommodationIaDataModel = {
     /**
      * Get IA data by its unique ID.
+     *
+     * @param id - IA data ID
+     * @returns AccommodationIaDataType if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getById(id: string): Promise<AccommodationIaDataType | undefined> {
         const db = getDb();
@@ -69,6 +73,10 @@ export const AccommodationIaDataModel = {
 
     /**
      * Get IA data by accommodation ID.
+     *
+     * @param accommodationId - Accommodation ID
+     * @returns Array of AccommodationIaDataType
+     * @throws Error if the query fails
      */
     async getByAccommodation(accommodationId: string): Promise<AccommodationIaDataType[]> {
         const db = getDb();
@@ -94,6 +102,10 @@ export const AccommodationIaDataModel = {
 
     /**
      * Create a new IA data entry.
+     *
+     * @param input - New IA data input
+     * @returns The created AccommodationIaDataType
+     * @throws Error if the insert fails
      */
     async create(input: NewAccommodationIaDataInputType): Promise<AccommodationIaDataType> {
         const db = getDb();
@@ -116,6 +128,11 @@ export const AccommodationIaDataModel = {
 
     /**
      * Update an IA data entry by ID.
+     *
+     * @param id - IA data ID
+     * @param input - Update input
+     * @returns Updated AccommodationIaDataType if found, otherwise undefined
+     * @throws Error if the update fails
      */
     async update(
         id: string,
@@ -144,6 +161,11 @@ export const AccommodationIaDataModel = {
 
     /**
      * Soft delete an IA data entry by ID.
+     *
+     * @param id - IA data ID
+     * @param deletedById - User ID who deletes
+     * @returns Object with deleted IA data id if found, otherwise undefined
+     * @throws Error if the delete fails
      */
     async delete(id: string, deletedById: string): Promise<{ id: string } | undefined> {
         const db = getDb();
@@ -170,6 +192,10 @@ export const AccommodationIaDataModel = {
 
     /**
      * Hard delete an IA data entry by ID.
+     *
+     * @param id - IA data ID
+     * @returns True if deleted, false otherwise
+     * @throws Error if the delete fails
      */
     async hardDelete(id: string): Promise<boolean> {
         const db = getDb();
@@ -196,6 +222,10 @@ export const AccommodationIaDataModel = {
 
     /**
      * List IA data entries with pagination and optional ordering.
+     *
+     * @param params - Pagination and ordering parameters
+     * @returns Array of AccommodationIaDataType
+     * @throws Error if the query fails
      */
     async list(params: IaDataPaginationParams): Promise<AccommodationIaDataType[]> {
         const db = getDb();
@@ -223,6 +253,10 @@ export const AccommodationIaDataModel = {
 
     /**
      * Search IA data entries by title, category, etc.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of AccommodationIaDataType
+     * @throws Error if the query fails
      */
     async search(params: IaDataSearchParams): Promise<AccommodationIaDataType[]> {
         const db = getDb();
@@ -264,6 +298,10 @@ export const AccommodationIaDataModel = {
 
     /**
      * Count IA data entries with optional filters.
+     *
+     * @param params - Search parameters
+     * @returns Number of IA data entries matching the query
+     * @throws Error if the query fails
      */
     async count(params?: IaDataSearchParams): Promise<number> {
         const db = getDb();

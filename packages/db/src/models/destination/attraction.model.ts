@@ -57,6 +57,10 @@ export type AttractionWithRelationsType = AttractionType & {
 export const AttractionModel = {
     /**
      * Get an attraction by its unique ID.
+     *
+     * @param id - Attraction ID
+     * @returns AttractionType if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getById(id: string): Promise<AttractionType | undefined> {
         const db = getDb();
@@ -76,6 +80,10 @@ export const AttractionModel = {
 
     /**
      * Get an attraction by its unique name.
+     *
+     * @param name - Attraction name
+     * @returns AttractionType if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getByName(name: string): Promise<AttractionType | undefined> {
         const db = getDb();
@@ -100,6 +108,10 @@ export const AttractionModel = {
 
     /**
      * Get an attraction by its unique slug.
+     *
+     * @param slug - Attraction slug
+     * @returns AttractionType if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getBySlug(slug: string): Promise<AttractionType | undefined> {
         const db = getDb();
@@ -124,6 +136,10 @@ export const AttractionModel = {
 
     /**
      * Get attractions by isBuiltin flag.
+     *
+     * @param isBuiltin - Whether the attraction is builtin
+     * @returns Array of AttractionType
+     * @throws Error if the query fails
      */
     async getByType(isBuiltin: boolean): Promise<AttractionType[]> {
         const db = getDb();
@@ -147,6 +163,10 @@ export const AttractionModel = {
 
     /**
      * Create a new attraction.
+     *
+     * @param input - New attraction input
+     * @returns The created AttractionType
+     * @throws Error if the insert fails
      */
     async create(input: NewAttractionInputType): Promise<AttractionType> {
         const db = getDb();
@@ -169,6 +189,11 @@ export const AttractionModel = {
 
     /**
      * Update an attraction by ID.
+     *
+     * @param id - Attraction ID
+     * @param input - Update input
+     * @returns Updated AttractionType if found, otherwise undefined
+     * @throws Error if the update fails
      */
     async update(
         id: string,
@@ -197,6 +222,11 @@ export const AttractionModel = {
 
     /**
      * Soft delete an attraction by ID.
+     *
+     * @param id - Attraction ID
+     * @param deletedById - User ID who deletes
+     * @returns Object with deleted attraction id if found, otherwise undefined
+     * @throws Error if the delete fails
      */
     async delete(id: string, deletedById: string): Promise<{ id: string } | undefined> {
         const db = getDb();
@@ -223,6 +253,10 @@ export const AttractionModel = {
 
     /**
      * Hard delete an attraction by ID.
+     *
+     * @param id - Attraction ID
+     * @returns True if deleted, false otherwise
+     * @throws Error if the delete fails
      */
     async hardDelete(id: string): Promise<boolean> {
         const db = getDb();
@@ -244,6 +278,10 @@ export const AttractionModel = {
 
     /**
      * List attractions with pagination and optional ordering.
+     *
+     * @param params - Pagination and ordering parameters
+     * @returns Array of AttractionType
+     * @throws Error if the query fails
      */
     async list(params: AttractionPaginationParams): Promise<AttractionType[]> {
         const db = getDb();
@@ -271,6 +309,10 @@ export const AttractionModel = {
 
     /**
      * Search attractions by name, isBuiltin, lifecycle, etc.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of AttractionType
+     * @throws Error if the query fails
      */
     async search(params: AttractionSearchParams): Promise<AttractionType[]> {
         const db = getDb();
@@ -312,6 +354,10 @@ export const AttractionModel = {
 
     /**
      * Count attractions with optional filters.
+     *
+     * @param params - Search parameters
+     * @returns Number of attractions matching the query
+     * @throws Error if the query fails
      */
     async count(params?: AttractionSearchParams): Promise<number> {
         const db = getDb();
@@ -344,6 +390,12 @@ export const AttractionModel = {
 
     /**
      * Get an attraction by ID, including specified relations.
+     *
+     * @template T
+     * @param id - Attraction ID
+     * @param withRelations - Relations to include (destinations)
+     * @returns AttractionType with relations if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getWithRelations<T extends AttractionRelations>(
         id: string,
@@ -372,6 +424,10 @@ export const AttractionModel = {
 
     /**
      * Get attractions by destination.
+     *
+     * @param destinationId - Destination ID
+     * @returns Array of AttractionType
+     * @throws Error if the query fails
      */
     async getByDestination(destinationId: string): Promise<AttractionType[]> {
         const db = getDb();

@@ -249,6 +249,10 @@ export const EventModel = {
 
     /**
      * Search events by summary, category, organizer, tag, etc.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of EventType
+     * @throws Error if the query fails
      */
     async search(params: EventSearchParams): Promise<EventType[]> {
         const db = getDb();
@@ -347,6 +351,10 @@ export const EventModel = {
 
     /**
      * Count events with optional filters.
+     *
+     * @param params - Search parameters
+     * @returns Number of events matching the query
+     * @throws Error if the query fails
      */
     async count(params?: EventSearchParams): Promise<number> {
         const db = getDb();
@@ -407,6 +415,12 @@ export const EventModel = {
 
     /**
      * Get an event by ID, including specified relations.
+     *
+     * @template T
+     * @param id - Event ID
+     * @param withRelations - Relations to include (tags, organizer, location)
+     * @returns EventType with relations if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getWithRelations<T extends EventRelations>(
         id: string,
@@ -433,6 +447,10 @@ export const EventModel = {
 
     /**
      * Get events by tag.
+     *
+     * @param tagId - Tag ID
+     * @returns Array of EventType
+     * @throws Error if the query fails
      */
     async getByTag(tagId: string): Promise<EventType[]> {
         const db = getDb();
@@ -463,6 +481,10 @@ export const EventModel = {
 
     /**
      * Get events by organizer.
+     *
+     * @param organizerId - Organizer (user) ID
+     * @returns Array of EventType
+     * @throws Error if the query fails
      */
     async getByOrganizer(organizerId: string): Promise<EventType[]> {
         const db = getDb();
@@ -486,6 +508,10 @@ export const EventModel = {
 
     /**
      * Get events by destination (via event location).
+     *
+     * @param city - City name (destination)
+     * @returns Array of EventType
+     * @throws Error if the query fails
      */
     async getByDestination(city: string): Promise<EventType[]> {
         const db = getDb();

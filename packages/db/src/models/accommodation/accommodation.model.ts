@@ -276,17 +276,19 @@ export const AccommodationModel = {
     },
 
     /**
-     * List accommodations with pagination, optional ordering, y relaciones opcionales.
-     * Si se solicita withRelations.destination, solo se incluyen los campos id, slug y name.
-     * Si se solicita withRelations.features o withRelations.amenities, se incluyen completos.
+     * List accommodations with pagination, optional ordering, and optional relations.
+     * If withRelations.destination is requested, only the fields id, slug, and name are included.
+     * If withRelations.features or withRelations.amenities is requested, they are included in full.
      *
-     * El tipo de retorno es unknown[] por la naturaleza dinámica de Drizzle y las relaciones.
-     * TODO: Refina los tipos si necesitas mayor seguridad en features/amenities.
+     * @param params - Pagination and ordering parameters
+     * @param withRelations - Optional relations to include (destination, features, amenities)
+     * @returns Array of accommodations, possibly with relations
+     * @throws Error if the query fails
      */
     async list(
         params: AccommodationPaginationParams,
         withRelations?: { destination?: boolean; features?: boolean; amenities?: boolean }
-    ): Promise<unknown[]> {
+    ): Promise<AccommodationType[]> {
         const db = getDb();
         const { limit, offset, order, orderBy } = params;
         try {
@@ -320,7 +322,7 @@ export const AccommodationModel = {
                             name: row.destination.name
                         };
                     }
-                    return row;
+                    return row as AccommodationType;
                 });
             }
             // Consulta simple sin relaciones
@@ -331,7 +333,7 @@ export const AccommodationModel = {
                 .limit(limit)
                 .offset(offset);
             dbLogger.query({ table: 'accommodations', action: 'list', params, result });
-            return result as unknown[];
+            return result as AccommodationType[];
         } catch (error) {
             dbLogger.error(error, 'AccommodationModel.list');
             throw new Error(`Failed to list accommodations: ${(error as Error).message}`);
@@ -339,17 +341,19 @@ export const AccommodationModel = {
     },
 
     /**
-     * Search accommodations by name, type, owner, destination, tag, etc. y relaciones opcionales.
-     * Si se solicita withRelations.destination, solo se incluyen los campos id, slug y name.
-     * Si se solicita withRelations.features o withRelations.amenities, se incluyen completos.
+     * Search accommodations by name, type, owner, destination, tag, etc. and optional relations.
+     * If withRelations.destination is requested, only the fields id, slug, and name are included.
+     * If withRelations.features or withRelations.amenities is requested, they are included in full.
      *
-     * El tipo de retorno es unknown[] por la naturaleza dinámica de Drizzle y las relaciones.
-     * TODO: Refina los tipos si necesitas mayor seguridad en features/amenities.
+     * @param params - Search and pagination parameters
+     * @param withRelations - Optional relations to include (destination, features, amenities)
+     * @returns Array of accommodations, possibly with relations
+     * @throws Error if the query fails
      */
     async search(
         params: AccommodationSearchParams,
         withRelations?: { destination?: boolean; features?: boolean; amenities?: boolean }
-    ): Promise<unknown[]> {
+    ): Promise<AccommodationType[]> {
         const db = getDb();
         const {
             q,
@@ -453,7 +457,7 @@ export const AccommodationModel = {
                             name: row.destination.name
                         };
                     }
-                    return row;
+                    return row as AccommodationType;
                 });
             }
             if (tagId) {
@@ -506,7 +510,7 @@ export const AccommodationModel = {
                     .offset(offset);
             }
             dbLogger.query({ table: 'accommodations', action: 'search', params, result });
-            return result as unknown[];
+            return result as AccommodationType[];
         } catch (error) {
             dbLogger.error(error, 'AccommodationModel.search');
             throw new Error(`Failed to search accommodations: ${(error as Error).message}`);

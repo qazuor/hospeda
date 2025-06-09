@@ -211,7 +211,13 @@ export const DestinationModel = {
     },
     /**
      * List destinations with filters, pagination, ordering, and optional relations.
-     * Si se solicita withRelations.attractions, el campo attractions estará presente como DestinationAttractionType[] y debe ser mapeado en el servicio.
+     *
+     * If withRelations.attractions is requested, the field 'attractions' will be present as DestinationAttractionType[] and should be mapped in the service as needed.
+     *
+     * @param params - Filtering, pagination, and ordering parameters
+     * @param withRelations - Optional relations to include (e.g., { attractions: true })
+     * @returns Array of DestinationType (with optional attractions relation)
+     * @throws Error if the query fails
      */
     async list(
         params: {
@@ -356,7 +362,13 @@ export const DestinationModel = {
     },
     /**
      * Search destinations by partial name, slug, isFeatured, visibility, lifecycle, with pagination, ordering, and optional relations.
-     * Si se solicita withRelations.attractions, el campo attractions estará presente como DestinationAttractionType[] y debe ser mapeado en el servicio.
+     *
+     * If withRelations.attractions is requested, the field 'attractions' will be present as DestinationAttractionType[] and should be mapped in the service as needed.
+     *
+     * @param params - Search, pagination, and ordering parameters
+     * @param withRelations - Optional relations to include (e.g., { attractions: true })
+     * @returns Array of DestinationType (with optional attractions relation)
+     * @throws Error if the query fails
      */
     async search(
         params: DestinationSearchParams,

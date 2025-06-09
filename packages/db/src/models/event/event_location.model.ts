@@ -250,7 +250,11 @@ export const EventLocationModel = {
     },
 
     /**
-     * Search event locations by city, place name, etc.
+     * Search event locations by city, place name, lifecycle, etc.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of EventLocationType
+     * @throws Error if the query fails
      */
     async search(params: EventLocationSearchParams): Promise<EventLocationType[]> {
         const db = getDb();
@@ -292,6 +296,10 @@ export const EventLocationModel = {
 
     /**
      * Count event locations with optional filters.
+     *
+     * @param params - Search parameters
+     * @returns Number of event locations matching the query
+     * @throws Error if the query fails
      */
     async count(params?: EventLocationSearchParams): Promise<number> {
         const db = getDb();
@@ -324,6 +332,12 @@ export const EventLocationModel = {
 
     /**
      * Get an event location by ID, including specified relations.
+     *
+     * @template T
+     * @param id - EventLocation ID
+     * @param withRelations - Relations to include (events)
+     * @returns EventLocationType with relations if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getWithRelations<T extends EventLocationRelations>(
         id: string,
@@ -353,7 +367,11 @@ export const EventLocationModel = {
     },
 
     /**
-     * Get event locations by event.
+     * Get event locations by event ID.
+     *
+     * @param eventId - Event ID
+     * @returns Array of EventLocationType
+     * @throws Error if the query fails
      */
     async getByEvent(eventId: string): Promise<EventLocationType[]> {
         const db = getDb();

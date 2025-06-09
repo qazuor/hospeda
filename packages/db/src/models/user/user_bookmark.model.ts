@@ -162,7 +162,11 @@ export const UserBookmarkModel = {
         }
     },
     /**
-     * List bookmarks paginated
+     * List bookmarks paginated.
+     *
+     * @param params - Pagination and ordering parameters
+     * @returns Array of UserBookmarkType
+     * @throws Error if the query fails
      */
     async list(params: UserBookmarkPaginationParams): Promise<UserBookmarkType[]> {
         const db = getDb();
@@ -188,7 +192,11 @@ export const UserBookmarkModel = {
         }
     },
     /**
-     * Search bookmarks paginated
+     * Search bookmarks paginated.
+     *
+     * @param params - Search, pagination, and ordering parameters
+     * @returns Array of UserBookmarkType
+     * @throws Error if the query fails
      */
     async search(params: UserBookmarkSearchParams): Promise<UserBookmarkType[]> {
         const db = getDb();
@@ -218,7 +226,11 @@ export const UserBookmarkModel = {
         }
     },
     /**
-     * Count bookmarks (optionally by search query)
+     * Count bookmarks (optionally by search query).
+     *
+     * @param params - Search parameters
+     * @returns Number of bookmarks matching the query
+     * @throws Error if the query fails
      */
     async count(params: UserBookmarkSearchParams): Promise<number> {
         const db = getDb();

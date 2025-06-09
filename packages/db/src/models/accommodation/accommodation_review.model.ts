@@ -39,7 +39,11 @@ export interface AccommodationReviewSearchParams extends AccommodationReviewPagi
 
 export const AccommodationReviewModel = {
     /**
-     * Get a review by id
+     * Get a review by id.
+     *
+     * @param id - Review ID
+     * @returns AccommodationReviewType if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getById(id: string): Promise<AccommodationReviewType | undefined> {
         const db = getDb();
@@ -56,7 +60,11 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * Get reviews by accommodationId
+     * Get reviews by accommodationId.
+     *
+     * @param accommodationId - Accommodation ID
+     * @returns Array of AccommodationReviewType
+     * @throws Error if the query fails
      */
     async getByAccommodationId(accommodationId: string): Promise<AccommodationReviewType[]> {
         const db = getDb();
@@ -76,7 +84,11 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * Get reviews by userId
+     * Get reviews by userId.
+     *
+     * @param userId - User ID
+     * @returns Array of AccommodationReviewType
+     * @throws Error if the query fails
      */
     async getByUserId(userId: string): Promise<AccommodationReviewType[]> {
         const db = getDb();
@@ -94,7 +106,11 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * Create a new review
+     * Create a new review.
+     *
+     * @param input - New review input
+     * @returns The created AccommodationReviewType
+     * @throws Error if the insert fails
      */
     async create(input: NewAccommodationReviewInputType): Promise<AccommodationReviewType> {
         const db = getDb();
@@ -111,7 +127,12 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * Update a review by id
+     * Update a review by id.
+     *
+     * @param id - Review ID
+     * @param input - Update input
+     * @returns Updated AccommodationReviewType if found, otherwise undefined
+     * @throws Error if the update fails
      */
     async update(
         id: string,
@@ -131,7 +152,12 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * Soft delete a review by id
+     * Soft delete a review by id.
+     *
+     * @param id - Review ID
+     * @param deletedById - User ID who deletes
+     * @returns Object with deleted review id if found, otherwise undefined
+     * @throws Error if the delete fails
      */
     async delete(id: string, deletedById: string): Promise<{ id: string } | undefined> {
         const db = getDb();
@@ -148,7 +174,11 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * Hard delete a review by id
+     * Hard delete a review by id.
+     *
+     * @param id - Review ID
+     * @returns True if deleted, false otherwise
+     * @throws Error if the delete fails
      */
     async hardDelete(id: string): Promise<boolean> {
         const db = getDb();
@@ -166,7 +196,11 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * List reviews paginated
+     * List reviews paginated.
+     *
+     * @param params - Pagination and ordering parameters
+     * @returns Array of AccommodationReviewType
+     * @throws Error if the query fails
      */
     async list(params: AccommodationReviewPaginationParams): Promise<AccommodationReviewType[]> {
         const db = getDb();
@@ -192,7 +226,11 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * Search reviews paginated
+     * Search reviews paginated.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of AccommodationReviewType
+     * @throws Error if the query fails
      */
     async search(params: AccommodationReviewSearchParams): Promise<AccommodationReviewType[]> {
         const db = getDb();
@@ -222,7 +260,11 @@ export const AccommodationReviewModel = {
         }
     },
     /**
-     * Count reviews (optionally by search query)
+     * Count reviews (optionally by search query).
+     *
+     * @param params - Search parameters
+     * @returns Number of reviews matching the query
+     * @throws Error if the query fails
      */
     async count(params: AccommodationReviewSearchParams): Promise<number> {
         const db = getDb();

@@ -216,7 +216,11 @@ export const PostModel = {
     },
 
     /**
-     * Search posts by title, summary, etc.
+     * Search posts by title, summary, category, author, lifecycle, visibility, etc.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of PostType
+     * @throws Error if the query fails
      */
     async search(params: PostSearchParams): Promise<PostType[]> {
         const db = getDb();
@@ -275,6 +279,10 @@ export const PostModel = {
 
     /**
      * Count posts with optional filters.
+     *
+     * @param params - Search parameters
+     * @returns Number of posts matching the query
+     * @throws Error if the query fails
      */
     async count(params?: PostSearchParams): Promise<number> {
         const db = getDb();

@@ -197,7 +197,11 @@ export const EntityTagModel = {
         }
     },
     /**
-     * Search relations paginated
+     * Search entity-tag relations by entityId, paginated.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of EntityTagType
+     * @throws Error if the query fails
      */
     async search(params: EntityTagSearchParams): Promise<EntityTagType[]> {
         const db = getDb();
@@ -227,7 +231,11 @@ export const EntityTagModel = {
         }
     },
     /**
-     * Count relations (optionally by search query)
+     * Count entity-tag relations (optionally by search query).
+     *
+     * @param params - Search parameters
+     * @returns Number of entity-tag relations matching the query
+     * @throws Error if the query fails
      */
     async count(params: EntityTagSearchParams): Promise<number> {
         const db = getDb();

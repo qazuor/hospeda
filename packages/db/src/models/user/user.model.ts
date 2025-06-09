@@ -347,15 +347,11 @@ export const UserModel = {
     },
 
     /**
-     * Search users by name, role, or general query, with pagination and ordering.
+     * Search users by first name, last name, role, etc.
      *
-     * @param {UserSearchParams} params - Search and pagination params
-     * @returns {Promise<UserType[]>} Array of users matching the search
-     * @throws {Error} If the query fails
-     *
-     * @example
-     * const users = await UserModel.search({ q: 'Jane', limit: 10, offset: 0 });
-     * users.forEach(user => console.log(user.userName));
+     * @param params - Search and pagination parameters
+     * @returns Array of UserType
+     * @throws Error if the query fails
      */
     async search(params: UserSearchParams): Promise<UserType[]> {
         const db = getDb();
@@ -396,15 +392,11 @@ export const UserModel = {
     },
 
     /**
-     * Count users with optional filters (name, role, etc).
+     * Count users with optional filters.
      *
-     * @param {UserSearchParams} [params] - Search filters
-     * @returns {Promise<number>} Number of users matching the filters
-     * @throws {Error} If the query fails
-     *
-     * @example
-     * const count = await UserModel.count({ role: 'role' });
-     * console.log('Users with role:', count);
+     * @param params - Search parameters
+     * @returns Number of users matching the query
+     * @throws Error if the query fails
      */
     async count(params?: UserSearchParams): Promise<number> {
         const db = getDb();
@@ -441,19 +433,13 @@ export const UserModel = {
     },
 
     /**
-     * Retrieve a user by ID, including specified relations.
+     * Get a user by ID, including specified relations.
      *
      * @template T
-     * @param {string} id - User ID
-     * @param {T} withRelations - Relations to populate (e.g., { role: true, permissions: true })
-     * @returns {Promise<(UserWithRelationsType & UserRelationResult<T>) | undefined>} User with requested relations or undefined
-     * @throws {Error} If the query fails
-     *
-     * @example
-     * const user = await UserModel.getWithRelations('user-uuid', { role: true, permissions: true });
-     * if (user?.role) {
-     *   console.log(user.role.name);
-     * }
+     * @param id - User ID
+     * @param withRelations - Relations to include (role, permissions, bookmarks)
+     * @returns UserWithRelationsType with relations if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getWithRelations<T extends UserRelations>(
         id: string,
@@ -479,15 +465,11 @@ export const UserModel = {
     },
 
     /**
-     * Get all users with a given role.
+     * Get users by role.
      *
-     * @param {RoleEnum} role - Role
-     * @returns {Promise<UserType[]>} Array of users with the given role
-     * @throws {Error} If the query fails
-     *
-     * @example
-     * const users = await UserModel.getByRole('role-uuid');
-     * users.forEach(user => console.log(user.userName));
+     * @param role - RoleEnum value
+     * @returns Array of UserType
+     * @throws Error if the query fails
      */
     async getByRole(role: RoleEnum): Promise<UserType[]> {
         const db = getDb();
@@ -502,15 +484,11 @@ export const UserModel = {
     },
 
     /**
-     * Get all users with a given permission.
+     * Get users by permission.
      *
-     * @param {PermissionEnum} permission - Permission
-     * @returns {Promise<UserType[]>} Array of users with the given permission
-     * @throws {Error} If the query fails
-     *
-     * @example
-     * const users = await UserModel.getByPermission('permission-uuid');
-     * users.forEach(user => console.log(user.userName));
+     * @param permission - PermissionEnum value
+     * @returns Array of UserType
+     * @throws Error if the query fails
      */
     async getByPermission(permission: PermissionEnum): Promise<UserType[]> {
         const db = getDb();
@@ -535,17 +513,11 @@ export const UserModel = {
     },
 
     /**
-     * Retrieve a user by its unique email.
+     * Get a user by email address.
      *
-     * @param {string} email - Email
-     * @returns {Promise<UserType | undefined>} UserType if found, otherwise undefined
-     * @throws {Error} If the query fails
-     *
-     * @example
-     * const user = await UserModel.getByEmail('foo@bar.com');
-     * if (user) {
-     *   console.log(user.id);
-     * }
+     * @param email - User email address
+     * @returns UserType if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getByEmail(email: string): Promise<UserType | undefined> {
         const db = getDb();
