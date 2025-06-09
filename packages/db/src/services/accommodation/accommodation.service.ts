@@ -7,7 +7,6 @@ import {
     type UserType
 } from '@repo/types';
 import { AccommodationModel } from '../../models/accommodation/accommodation.model';
-import { DestinationModel } from '../../models/destination/destination.model';
 import { dbLogger, hasPermission } from '../../utils';
 import { logDenied, logGrant, logOverride, logUserDisabled } from '../../utils/permission-logger';
 import {
@@ -41,8 +40,6 @@ import {
     type GetByNameOutput,
     type GetByOwnerInput,
     type GetByOwnerOutput,
-    type GetForHomeInput,
-    type GetForHomeOutput,
     type GetTopRatedByDestinationInput,
     type GetTopRatedByDestinationOutput,
     type ListInput,
@@ -56,7 +53,6 @@ import {
     getByIdInputSchema,
     getByNameInputSchema,
     getByOwnerInputSchema,
-    getForHomeInputSchema,
     getTopRatedByDestinationInputSchema,
     listInputSchema,
     searchInputSchema,
@@ -743,44 +739,6 @@ export const AccommodationService = {
         const limitedResult = result.slice(0, parsedInput.limit);
         logMethodEnd(dbLogger, 'getTopRatedByDestination', { accommodations: limitedResult });
         return { accommodations: limitedResult };
-    },
-    /**
-     * Gets the most top rated accommodations for every destination (for home page).
-     * If destinationIds is provided, only those destinations are used. Otherwise, all destinations in the system are used.
-     * For each destination, returns up to limitAccommodationByDestination accommodations ordered by averageRating desc.
-     * Handles edge-cases: public user, disabled user, visibility, permissions.
-     * Always uses RO-RO pattern for input/output.
-     *
-     * @param input - The input object with optional destinationIds and limitAccommodationByDestination.
-     * @returns An object with accommodationsByDestination: Record<destinationId, AccommodationType[]>
-     * @example
-     * const result = await getForHome({ destinationIds: ['dest-1'], limitAccommodationByDestination: 2 }, user);
-     */
-    async getForHome(input: GetForHomeInput): Promise<GetForHomeOutput> {
-        const parsedInput = getForHomeInputSchema.parse(input);
-        let destinationIds: string[];
-        if (parsedInput.destinationIds && parsedInput.destinationIds.length > 0) {
-            destinationIds = parsedInput.destinationIds;
-        } else {
-            // Get all destinations in the system
-            const allDestinations = await DestinationModel.list({ limit: 1000, offset: 0 });
-            destinationIds = allDestinations.map((d) => d.id);
-        }
-        const accommodationsByDestination: Record<string, AccommodationType[]> = {};
-        for (const destinationId of destinationIds) {
-            const allAccommodations = await AccommodationModel.search({
-                destinationId,
-                orderBy: 'averageRating',
-                order: 'desc',
-                limit: parsedInput.limitAccommodationByDestination,
-                offset: 0
-            });
-            accommodationsByDestination[destinationId] = allAccommodations.slice(
-                0,
-                parsedInput.limitAccommodationByDestination
-            );
-        }
-        return { accommodationsByDestination };
     },
     /**
      * Advanced accommodation search with hybrid filtering strategy.

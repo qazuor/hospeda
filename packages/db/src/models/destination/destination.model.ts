@@ -4,7 +4,7 @@ import type {
     NewDestinationInputType,
     UpdateDestinationInputType
 } from '@repo/types';
-import { and, asc, count, desc, eq } from 'drizzle-orm';
+import { type SQLWrapper, and, asc, count, desc, eq } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { destinations } from '../../dbschemas/destination/destination.dbschema.ts';
 import {
@@ -210,31 +210,31 @@ export const DestinationModel = {
         }
     },
     /**
-     * List destinations with filters, pagination and ordering.
-     * @param params - ListInput (filtros, paginación, orden)
-     * @returns Array de destinos
-     * @example
-     * const results = await DestinationModel.list({ limit: 10, offset: 0, visibility: 'PUBLIC' });
+     * List destinations with filters, pagination, ordering, and optional relations.
+     * Si se solicita withRelations.attractions, el campo attractions estará presente como DestinationAttractionType[] y debe ser mapeado en el servicio.
      */
-    async list(params: {
-        limit: number;
-        offset: number;
-        order?: 'asc' | 'desc';
-        orderBy?:
-            | 'name'
-            | 'slug'
-            | 'createdAt'
-            | 'updatedAt'
-            | 'isFeatured'
-            | 'reviewsCount'
-            | 'averageRating'
-            | 'accommodationsCount';
-        visibility?: string;
-        isFeatured?: boolean;
-        lifecycle?: string;
-        moderationState?: string;
-        deletedAt?: string | null;
-    }): Promise<DestinationType[]> {
+    async list(
+        params: {
+            limit: number;
+            offset: number;
+            order?: 'asc' | 'desc';
+            orderBy?:
+                | 'name'
+                | 'slug'
+                | 'createdAt'
+                | 'updatedAt'
+                | 'isFeatured'
+                | 'reviewsCount'
+                | 'averageRating'
+                | 'accommodationsCount';
+            visibility?: string;
+            isFeatured?: boolean;
+            lifecycle?: string;
+            moderationState?: string;
+            deletedAt?: string | null;
+        },
+        withRelations?: { attractions?: boolean }
+    ): Promise<DestinationType[]> {
         const db = getDb();
         const {
             limit,
@@ -248,7 +248,7 @@ export const DestinationModel = {
             deletedAt
         } = params;
         try {
-            const whereClauses = [];
+            const whereClauses: SQLWrapper[] = [];
             if (visibility) whereClauses.push(eq(destinations.visibility, visibility));
             if (isFeatured !== undefined)
                 whereClauses.push(eq(destinations.isFeatured, isFeatured));
@@ -289,6 +289,25 @@ export const DestinationModel = {
                     break;
             }
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
+            if (withRelations?.attractions) {
+                // Usar drizzle query builder para incluir attractions
+                const result = await db.query.destinations.findMany({
+                    where: (_d, { and: _and }) => _and(...whereClauses),
+                    orderBy: orderExpr,
+                    limit,
+                    offset,
+                    with: {
+                        attractions: true
+                    }
+                });
+                dbLogger.query({
+                    table: 'destinations',
+                    action: 'list_with_attractions',
+                    params: { ...params, withRelations },
+                    result
+                });
+                return result as DestinationType[];
+            }
             const queryBuilder = db.select().from(destinations);
             const queryWithWhere =
                 whereClauses.length > 0 ? queryBuilder.where(and(...whereClauses)) : queryBuilder;
@@ -308,7 +327,7 @@ export const DestinationModel = {
         const db = getDb();
         try {
             const { name, slug, isFeatured, visibility, lifecycle } = params || {};
-            const whereClauses = [];
+            const whereClauses: SQLWrapper[] = [];
             if (name) {
                 // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm typing
                 whereClauses.push((destinations as any).name.ilike(prepareLikeQuery(name)));
@@ -336,14 +355,18 @@ export const DestinationModel = {
         }
     },
     /**
-     * Search destinations by partial name, slug, isFeatured, visibility, lifecycle, with pagination and ordering.
+     * Search destinations by partial name, slug, isFeatured, visibility, lifecycle, with pagination, ordering, and optional relations.
+     * Si se solicita withRelations.attractions, el campo attractions estará presente como DestinationAttractionType[] y debe ser mapeado en el servicio.
      */
-    async search(params: DestinationSearchParams): Promise<DestinationType[]> {
+    async search(
+        params: DestinationSearchParams,
+        withRelations?: { attractions?: boolean }
+    ): Promise<DestinationType[]> {
         const db = getDb();
         const { name, slug, isFeatured, visibility, lifecycle, limit, offset, order, orderBy } =
             params;
         try {
-            const whereClauses = [];
+            const whereClauses: SQLWrapper[] = [];
             if (name) {
                 // biome-ignore lint/suspicious/noExplicitAny: drizzle-orm typing
                 whereClauses.push((destinations as any).name.ilike(prepareLikeQuery(name)));
@@ -366,6 +389,25 @@ export const DestinationModel = {
                 destinations.createdAt
             );
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
+            if (withRelations?.attractions) {
+                // Usar drizzle query builder para incluir attractions
+                const result = await db.query.destinations.findMany({
+                    where: (_d, { and: _and }) => _and(...whereClauses),
+                    orderBy: orderExpr,
+                    limit,
+                    offset,
+                    with: {
+                        attractions: true
+                    }
+                });
+                dbLogger.query({
+                    table: 'destinations',
+                    action: 'search_with_attractions',
+                    params: { ...params, withRelations },
+                    result
+                });
+                return result as DestinationType[];
+            }
             const queryBuilder = db.select().from(destinations);
             const queryWithWhere =
                 whereClauses.length > 0 ? queryBuilder.where(and(...whereClauses)) : queryBuilder;

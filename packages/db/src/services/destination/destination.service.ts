@@ -946,48 +946,5 @@ export const DestinationService = {
      */
     async getNearbyDestinations(): Promise<never> {
         throw new Error('Not implemented yet');
-    },
-
-    /**
-     * Gets destinations for home page, ordered by rating and accommodations count.
-     * Returns only destinations accessible to the actor, ordered by averageRating and accommodationsCount.
-     *
-     * @param input - Object with the result limit.
-     * @param actor - User or public actor.
-     * @returns Object with the array of destinations for home.
-     * @example
-     * const { destinations } = await getForHome({ limit: 8 }, user);
-     */
-    async getForHome(
-        input: { limit: number },
-        actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
-    ): Promise<{ destinations: import('@repo/types').DestinationType[] }> {
-        logMethodStart(dbLogger, 'getForHome', input, actor);
-        // Fetch more than needed to filter by permissions and then limit
-        const all = await DestinationModel.list({
-            limit: input.limit * 3, // buffer for filtering
-            offset: 0,
-            orderBy: 'averageRating',
-            order: 'desc'
-        });
-        const safeActor = getSafeActor(actor);
-        if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'getForHome', { destinations: [] });
-            return { destinations: [] };
-        }
-        // Filter by permissions/visibility
-        const filtered = all.filter((destination) => {
-            const { canView } = canViewDestination(safeActor, destination);
-            return canView;
-        });
-        // Sort by averageRating desc, then accommodationsCount desc
-        const ordered = filtered.sort((a, b) => {
-            const ratingDiff = (b.averageRating ?? 0) - (a.averageRating ?? 0);
-            if (ratingDiff !== 0) return ratingDiff;
-            return (b.accommodationsCount ?? 0) - (a.accommodationsCount ?? 0);
-        });
-        const limited = ordered.slice(0, input.limit);
-        logMethodEnd(dbLogger, 'getForHome', { destinations: limited });
-        return { destinations: limited };
     }
 };

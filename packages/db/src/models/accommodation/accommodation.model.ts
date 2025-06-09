@@ -6,7 +6,7 @@ import type {
     UpdateAccommodationInputType,
     UserType
 } from '@repo/types';
-import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { type SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { accommodations } from '../../dbschemas/accommodation/accommodation.dbschema.ts';
 import { rEntityTag } from '../../dbschemas/tag/r_entity_tag.dbschema.ts';
@@ -276,9 +276,17 @@ export const AccommodationModel = {
     },
 
     /**
-     * List accommodations with pagination and optional ordering.
+     * List accommodations with pagination, optional ordering, y relaciones opcionales.
+     * Si se solicita withRelations.destination, solo se incluyen los campos id, slug y name.
+     * Si se solicita withRelations.features o withRelations.amenities, se incluyen completos.
+     *
+     * El tipo de retorno es unknown[] por la naturaleza dinámica de Drizzle y las relaciones.
+     * TODO: Refina los tipos si necesitas mayor seguridad en features/amenities.
      */
-    async list(params: AccommodationPaginationParams): Promise<AccommodationType[]> {
+    async list(
+        params: AccommodationPaginationParams,
+        withRelations?: { destination?: boolean; features?: boolean; amenities?: boolean }
+    ): Promise<unknown[]> {
         const db = getDb();
         const { limit, offset, order, orderBy } = params;
         try {
@@ -288,6 +296,34 @@ export const AccommodationModel = {
                 accommodations.createdAt
             );
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
+            if (
+                withRelations &&
+                (withRelations.destination || withRelations.features || withRelations.amenities)
+            ) {
+                // Usar drizzle query builder para incluir relaciones
+                const drizzleWith: Record<string, true> = {};
+                if (withRelations.destination) drizzleWith.destination = true;
+                if (withRelations.features) drizzleWith.features = true;
+                if (withRelations.amenities) drizzleWith.amenities = true;
+                const result = await db.query.accommodations.findMany({
+                    orderBy: orderExpr,
+                    limit,
+                    offset,
+                    with: drizzleWith
+                });
+                // Mapear destination para devolver solo los campos básicos
+                return result.map((row) => {
+                    if (withRelations.destination && row.destination) {
+                        row.destination = {
+                            id: row.destination.id,
+                            slug: row.destination.slug,
+                            name: row.destination.name
+                        };
+                    }
+                    return row;
+                });
+            }
+            // Consulta simple sin relaciones
             const result = await db
                 .select()
                 .from(accommodations)
@@ -295,7 +331,7 @@ export const AccommodationModel = {
                 .limit(limit)
                 .offset(offset);
             dbLogger.query({ table: 'accommodations', action: 'list', params, result });
-            return result as AccommodationType[];
+            return result as unknown[];
         } catch (error) {
             dbLogger.error(error, 'AccommodationModel.list');
             throw new Error(`Failed to list accommodations: ${(error as Error).message}`);
@@ -303,9 +339,17 @@ export const AccommodationModel = {
     },
 
     /**
-     * Search accommodations by name, type, owner, destination, tag, etc.
+     * Search accommodations by name, type, owner, destination, tag, etc. y relaciones opcionales.
+     * Si se solicita withRelations.destination, solo se incluyen los campos id, slug y name.
+     * Si se solicita withRelations.features o withRelations.amenities, se incluyen completos.
+     *
+     * El tipo de retorno es unknown[] por la naturaleza dinámica de Drizzle y las relaciones.
+     * TODO: Refina los tipos si necesitas mayor seguridad en features/amenities.
      */
-    async search(params: AccommodationSearchParams): Promise<AccommodationType[]> {
+    async search(
+        params: AccommodationSearchParams,
+        withRelations?: { destination?: boolean; features?: boolean; amenities?: boolean }
+    ): Promise<unknown[]> {
         const db = getDb();
         const {
             q,
@@ -322,33 +366,47 @@ export const AccommodationModel = {
             orderBy
         } = params;
         try {
-            const whereClauses = [];
+            const whereClauses: SQL<unknown>[] = [];
             if (q) {
-                whereClauses.push(
-                    or(
-                        ilike(accommodations.name, prepareLikeQuery(q)),
-                        ilike(accommodations.summary, prepareLikeQuery(q)),
-                        ilike(accommodations.description, prepareLikeQuery(q))
-                    )
+                const qClausesRaw = [
+                    ilike(accommodations.name, prepareLikeQuery(q)),
+                    ilike(accommodations.summary, prepareLikeQuery(q)),
+                    ilike(accommodations.description, prepareLikeQuery(q))
+                ];
+                const qClauses = qClausesRaw.filter(
+                    (clause): clause is SQL<unknown> => clause !== undefined
                 );
+                if (qClauses.length > 1) {
+                    // @ts-expect-error Drizzle types are too strict, but this is safe after filtering
+                    whereClauses.push(or(...qClauses));
+                } else if (qClauses.length === 1) {
+                    // @ts-expect-error Drizzle types are too strict, but this is safe after filtering
+                    whereClauses.push(qClauses[0]);
+                }
             }
             if (name) {
-                whereClauses.push(ilike(accommodations.name, prepareLikeQuery(name)));
+                const clause = ilike(accommodations.name, prepareLikeQuery(name));
+                if (clause) whereClauses.push(clause);
             }
             if (type) {
-                whereClauses.push(eq(accommodations.type, type));
+                const clause = eq(accommodations.type, type);
+                if (clause) whereClauses.push(clause);
             }
             if (ownerId) {
-                whereClauses.push(eq(accommodations.ownerId, ownerId));
+                const clause = eq(accommodations.ownerId, ownerId);
+                if (clause) whereClauses.push(clause);
             }
             if (destinationId) {
-                whereClauses.push(eq(accommodations.destinationId, destinationId));
+                const clause = eq(accommodations.destinationId, destinationId);
+                if (clause) whereClauses.push(clause);
             }
             if (lifecycle) {
-                whereClauses.push(eq(accommodations.lifecycle, lifecycle));
+                const clause = eq(accommodations.lifecycle, lifecycle);
+                if (clause) whereClauses.push(clause);
             }
             if (visibility) {
-                whereClauses.push(eq(accommodations.visibility, visibility));
+                const clause = eq(accommodations.visibility, visibility);
+                if (clause) whereClauses.push(clause);
             }
             const col = getOrderableColumn(
                 accommodationOrderableColumns,
@@ -356,9 +414,51 @@ export const AccommodationModel = {
                 accommodations.createdAt
             );
             const orderExpr = order === 'desc' ? desc(col) : asc(col);
+            if (
+                withRelations &&
+                (withRelations.destination || withRelations.features || withRelations.amenities)
+            ) {
+                const drizzleWith: Record<string, true> = {};
+                if (withRelations.destination) drizzleWith.destination = true;
+                if (withRelations.features) drizzleWith.features = true;
+                if (withRelations.amenities) drizzleWith.amenities = true;
+                const findManyOptions = {
+                    orderBy: orderExpr,
+                    limit,
+                    offset,
+                    with: drizzleWith,
+                    ...(whereClauses.length > 0
+                        ? {
+                              where: (
+                                  _fields: Record<string, unknown>,
+                                  operators: {
+                                      and: (
+                                          ...conditions: (SQL<unknown> | undefined)[]
+                                      ) => SQL<unknown> | undefined;
+                                  }
+                              ) =>
+                                  whereClauses.length > 0
+                                      ? operators.and(...whereClauses)
+                                      : undefined
+                          }
+                        : {})
+                };
+                const result = await db.query.accommodations.findMany(findManyOptions);
+                // Mapear destination para devolver solo los campos básicos
+                return result.map((row) => {
+                    if (withRelations.destination && row.destination) {
+                        row.destination = {
+                            id: row.destination.id,
+                            slug: row.destination.slug,
+                            name: row.destination.name
+                        };
+                    }
+                    return row;
+                });
+            }
             if (tagId) {
-                // Query with innerJoin
-                const result = await db
+                // Query con innerJoin
+                const tagQuery = db
                     .select({ accommodations, rEntityTag })
                     .from(accommodations)
                     .innerJoin(
@@ -368,24 +468,45 @@ export const AccommodationModel = {
                             eq(rEntityTag.tagId, tagId),
                             eq(rEntityTag.entityType, 'ACCOMMODATION')
                         )
-                    )
-                    .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
+                    );
+                let result: unknown[];
+                if (whereClauses.length > 0) {
+                    result = await tagQuery
+                        .where(and(...whereClauses))
+                        .orderBy(orderExpr)
+                        .limit(limit)
+                        .offset(offset);
+                } else {
+                    result = await tagQuery.orderBy(orderExpr).limit(limit).offset(offset);
+                }
+                dbLogger.query({ table: 'accommodations', action: 'search', params, result });
+                return (result as Array<{ accommodations: unknown }>).map((row) => {
+                    if (row && typeof row === 'object' && 'accommodations' in row) {
+                        return row.accommodations as AccommodationType;
+                    }
+                    throw new Error('Unexpected row format in AccommodationModel.search');
+                });
+            }
+            // Query sin innerJoin
+            let result: unknown[];
+            if (whereClauses.length > 0) {
+                result = await db
+                    .select()
+                    .from(accommodations)
+                    .where(and(...whereClauses))
                     .orderBy(orderExpr)
                     .limit(limit)
                     .offset(offset);
-                dbLogger.query({ table: 'accommodations', action: 'search', params, result });
-                return result.map((row) => row.accommodations as AccommodationType);
+            } else {
+                result = await db
+                    .select()
+                    .from(accommodations)
+                    .orderBy(orderExpr)
+                    .limit(limit)
+                    .offset(offset);
             }
-            // Query without innerJoin
-            const result = await db
-                .select()
-                .from(accommodations)
-                .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
-                .orderBy(orderExpr)
-                .limit(limit)
-                .offset(offset);
             dbLogger.query({ table: 'accommodations', action: 'search', params, result });
-            return result as AccommodationType[];
+            return result as unknown[];
         } catch (error) {
             dbLogger.error(error, 'AccommodationModel.search');
             throw new Error(`Failed to search accommodations: ${(error as Error).message}`);
@@ -478,84 +599,6 @@ export const AccommodationModel = {
             dbLogger.error(error, 'AccommodationModel.getWithRelations');
             throw new Error(
                 `Failed to get accommodation with relations: ${(error as Error).message}`
-            );
-        }
-    },
-
-    /**
-     * Get accommodations by tag.
-     */
-    async getByTag(tagId: string): Promise<AccommodationType[]> {
-        const db = getDb();
-        try {
-            const result = await db
-                .select({ accommodations, rEntityTag })
-                .from(accommodations)
-                .innerJoin(
-                    rEntityTag,
-                    and(
-                        eq(rEntityTag.entityId, accommodations.id),
-                        eq(rEntityTag.tagId, tagId),
-                        eq(rEntityTag.entityType, 'ACCOMMODATION')
-                    )
-                );
-            dbLogger.query({
-                table: 'accommodations',
-                action: 'getByTag',
-                params: { tagId },
-                result
-            });
-            return result.map((row) => row.accommodations as AccommodationType);
-        } catch (error) {
-            dbLogger.error(error, 'AccommodationModel.getByTag');
-            throw new Error(`Failed to get accommodations by tag: ${(error as Error).message}`);
-        }
-    },
-
-    /**
-     * Get accommodations by owner.
-     */
-    async getByOwner(ownerId: string): Promise<AccommodationType[]> {
-        const db = getDb();
-        try {
-            const result = await db
-                .select()
-                .from(accommodations)
-                .where(eq(accommodations.ownerId, ownerId));
-            dbLogger.query({
-                table: 'accommodations',
-                action: 'getByOwner',
-                params: { ownerId },
-                result
-            });
-            return result as AccommodationType[];
-        } catch (error) {
-            dbLogger.error(error, 'AccommodationModel.getByOwner');
-            throw new Error(`Failed to get accommodations by owner: ${(error as Error).message}`);
-        }
-    },
-
-    /**
-     * Get accommodations by destination.
-     */
-    async getByDestination(destinationId: string): Promise<AccommodationType[]> {
-        const db = getDb();
-        try {
-            const result = await db
-                .select()
-                .from(accommodations)
-                .where(eq(accommodations.destinationId, destinationId));
-            dbLogger.query({
-                table: 'accommodations',
-                action: 'getByDestination',
-                params: { destinationId },
-                result
-            });
-            return result as AccommodationType[];
-        } catch (error) {
-            dbLogger.error(error, 'AccommodationModel.getByDestination');
-            throw new Error(
-                `Failed to get accommodations by destination: ${(error as Error).message}`
             );
         }
     }

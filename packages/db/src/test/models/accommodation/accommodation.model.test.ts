@@ -5,6 +5,8 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import type {
+    AccommodationType,
+    AccommodationWithRelationsType,
     NewAccommodationInputType,
     UpdateAccommodationInputType
 } from '@repo/types/entities/accommodation/accommodation.types';
@@ -34,7 +36,8 @@ const mockDb = {
     innerJoin: vi.fn().mockReturnThis(),
     query: {
         accommodations: {
-            findFirst: vi.fn()
+            findFirst: vi.fn(),
+            findMany: vi.fn()
         }
     }
 };
@@ -354,12 +357,12 @@ describe('AccommodationModel', () => {
             mockDb.limit.mockReturnThis();
             mockDb.offset.mockReturnValueOnce([
                 { ...mockAccommodation, name: 'UniqueName', summary: 'Sum', description: 'Desc' }
-            ]);
-            const result = await AccommodationModel.search({
+            ] as AccommodationType[]);
+            const result = (await AccommodationModel.search({
                 q: 'UniqueName',
                 limit: 10,
                 offset: 0
-            });
+            })) as AccommodationType[];
             expect(result).not.toHaveLength(0);
             expect(result[0]?.name).toBe('UniqueName');
         });
@@ -371,12 +374,12 @@ describe('AccommodationModel', () => {
             mockDb.limit.mockReturnThis();
             mockDb.offset.mockReturnValueOnce([
                 { ...mockAccommodation, name: 'N', summary: 'SpecialSummary', description: 'Desc' }
-            ]);
-            const result = await AccommodationModel.search({
+            ] as AccommodationType[]);
+            const result = (await AccommodationModel.search({
                 q: 'SpecialSummary',
                 limit: 10,
                 offset: 0
-            });
+            })) as AccommodationType[];
             expect(result).not.toHaveLength(0);
             expect(result[0]?.summary).toBe('SpecialSummary');
         });
@@ -388,12 +391,12 @@ describe('AccommodationModel', () => {
             mockDb.limit.mockReturnThis();
             mockDb.offset.mockReturnValueOnce([
                 { ...mockAccommodation, name: 'N', summary: 'S', description: 'SpecialDescription' }
-            ]);
-            const result = await AccommodationModel.search({
+            ] as AccommodationType[]);
+            const result = (await AccommodationModel.search({
                 q: 'SpecialDescription',
                 limit: 10,
                 offset: 0
-            });
+            })) as AccommodationType[];
             expect(result).not.toHaveLength(0);
             expect(result[0]?.description).toBe('SpecialDescription');
         });
@@ -502,92 +505,153 @@ describe('AccommodationModel', () => {
         });
     });
 
-    describe('getByTag', () => {
-        beforeEach(() => {
-            mockDb.innerJoin.mockReset();
+    describe('list with relations', () => {
+        it('returns accommodations with destination (only id, slug, name)', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([
+                {
+                    ...mockAccommodation,
+                    destination: {
+                        id: 'dest-1',
+                        slug: 'slug-1',
+                        name: 'Destino 1'
+                    }
+                }
+            ] as AccommodationWithRelationsType[]);
+            const accs = (await AccommodationModel.list(
+                { limit: 10, offset: 0 },
+                { destination: true }
+            )) as AccommodationWithRelationsType[];
+            expect(accs[0]?.destination).toEqual({
+                id: 'dest-1',
+                slug: 'slug-1',
+                name: 'Destino 1'
+            });
         });
-        it('returns accommodations for given tag', async () => {
-            mockDb.select.mockReturnThis();
-            mockDb.from.mockReturnThis();
-            mockDb.innerJoin.mockReturnValueOnce([
-                { accommodations: { ...mockAccommodation }, rEntityTag: {} }
-            ]);
-            const accs = await AccommodationModel.getByTag('tag-uuid');
-            expect(accs).toEqual([mockAccommodation]);
+        it('returns accommodations with features and amenities', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([
+                {
+                    ...mockAccommodation,
+                    features: [{ id: 'f1', name: 'WiFi' }],
+                    amenities: [{ id: 'a1', name: 'Pool' }]
+                }
+            ] as AccommodationWithRelationsType[]);
+            const accs = (await AccommodationModel.list(
+                { limit: 10, offset: 0 },
+                { features: true, amenities: true }
+            )) as AccommodationWithRelationsType[];
+            expect(accs[0]?.features).toEqual([{ id: 'f1', name: 'WiFi' }]);
+            expect(accs[0]?.amenities).toEqual([{ id: 'a1', name: 'Pool' }]);
         });
-        it('returns empty array if none found', async () => {
-            mockDb.select.mockReturnThis();
-            mockDb.from.mockReturnThis();
-            mockDb.innerJoin.mockReturnValueOnce([]);
-            const accs = await AccommodationModel.getByTag('not-exist');
+        it('returns accommodations with all relations', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([
+                {
+                    ...mockAccommodation,
+                    destination: { id: 'd', slug: 's', name: 'N' },
+                    features: [{ id: 'f', name: 'F' }],
+                    amenities: [{ id: 'a', name: 'A' }]
+                }
+            ] as AccommodationWithRelationsType[]);
+            const accs = (await AccommodationModel.list(
+                { limit: 10, offset: 0 },
+                { destination: true, features: true, amenities: true }
+            )) as AccommodationWithRelationsType[];
+            expect(accs[0]?.destination).toEqual({ id: 'd', slug: 's', name: 'N' });
+            expect(accs[0]?.features).toEqual([{ id: 'f', name: 'F' }]);
+            expect(accs[0]?.amenities).toEqual([{ id: 'a', name: 'A' }]);
+        });
+        it('returns empty array if none found (with relations)', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([]);
+            const accs = (await AccommodationModel.list(
+                { limit: 10, offset: 0 },
+                { destination: true }
+            )) as AccommodationWithRelationsType[];
             expect(accs).toEqual([]);
         });
-        it('logs and throws on db error', async () => {
-            mockDb.select.mockImplementationOnce(() => {
-                throw new Error('fail');
-            });
-            await expect(AccommodationModel.getByTag('err')).rejects.toThrow(
-                'Failed to get accommodations by tag: fail'
-            );
-            expect(dbLogger.error).toHaveBeenCalled();
+        it('returns accommodations with empty relations arrays', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([
+                { ...mockAccommodation, features: [], amenities: [] }
+            ] as AccommodationWithRelationsType[]);
+            const accs = (await AccommodationModel.list(
+                { limit: 10, offset: 0 },
+                { features: true, amenities: true }
+            )) as AccommodationWithRelationsType[];
+            expect(accs[0]?.features).toEqual([]);
+            expect(accs[0]?.amenities).toEqual([]);
         });
     });
 
-    describe('getByOwner', () => {
-        beforeEach(() => {
-            mockDb.where.mockReset();
+    describe('search with relations', () => {
+        it('returns accommodations with destination (only id, slug, name)', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([
+                {
+                    ...mockAccommodation,
+                    destination: {
+                        id: 'dest-2',
+                        slug: 'slug-2',
+                        name: 'Destino 2'
+                    }
+                }
+            ] as AccommodationWithRelationsType[]);
+            const accs = (await AccommodationModel.search(
+                { limit: 10, offset: 0 },
+                { destination: true }
+            )) as AccommodationWithRelationsType[];
+            expect(accs[0]?.destination).toEqual({
+                id: 'dest-2',
+                slug: 'slug-2',
+                name: 'Destino 2'
+            });
         });
-        it('returns accommodations for given owner', async () => {
-            mockDb.select.mockReturnThis();
-            mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([mockAccommodation]);
-            const accs = await AccommodationModel.getByOwner('user-uuid');
-            expect(accs).toEqual([mockAccommodation]);
+        it('returns accommodations with features and amenities', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([
+                {
+                    ...mockAccommodation,
+                    features: [{ id: 'f2', name: 'WiFi' }],
+                    amenities: [{ id: 'a2', name: 'Pool' }]
+                }
+            ] as AccommodationWithRelationsType[]);
+            const accs = (await AccommodationModel.search(
+                { limit: 10, offset: 0 },
+                { features: true, amenities: true }
+            )) as AccommodationWithRelationsType[];
+            expect(accs[0]?.features).toEqual([{ id: 'f2', name: 'WiFi' }]);
+            expect(accs[0]?.amenities).toEqual([{ id: 'a2', name: 'Pool' }]);
         });
-        it('returns empty array if none found', async () => {
-            mockDb.select.mockReturnThis();
-            mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([]);
-            const accs = await AccommodationModel.getByOwner('not-exist');
+        it('returns accommodations with all relations', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([
+                {
+                    ...mockAccommodation,
+                    destination: { id: 'd2', slug: 's2', name: 'N2' },
+                    features: [{ id: 'f2', name: 'F2' }],
+                    amenities: [{ id: 'a2', name: 'A2' }]
+                }
+            ] as AccommodationWithRelationsType[]);
+            const accs = (await AccommodationModel.search(
+                { limit: 10, offset: 0 },
+                { destination: true, features: true, amenities: true }
+            )) as AccommodationWithRelationsType[];
+            expect(accs[0]?.destination).toEqual({ id: 'd2', slug: 's2', name: 'N2' });
+            expect(accs[0]?.features).toEqual([{ id: 'f2', name: 'F2' }]);
+            expect(accs[0]?.amenities).toEqual([{ id: 'a2', name: 'A2' }]);
+        });
+        it('returns empty array if none found (with relations)', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([]);
+            const accs = (await AccommodationModel.search(
+                { limit: 10, offset: 0 },
+                { destination: true }
+            )) as AccommodationWithRelationsType[];
             expect(accs).toEqual([]);
         });
-        it('logs and throws on db error', async () => {
-            mockDb.select.mockImplementationOnce(() => {
-                throw new Error('fail');
-            });
-            await expect(AccommodationModel.getByOwner('err')).rejects.toThrow(
-                'Failed to get accommodations by owner: fail'
-            );
-            expect(dbLogger.error).toHaveBeenCalled();
-        });
-    });
-
-    describe('getByDestination', () => {
-        beforeEach(() => {
-            mockDb.where.mockReset();
-        });
-        it('returns accommodations for given destination', async () => {
-            mockDb.select.mockReturnThis();
-            mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([mockAccommodation]);
-            const accs = await AccommodationModel.getByDestination('dest-uuid');
-            expect(accs).toEqual([mockAccommodation]);
-        });
-        it('returns empty array if none found', async () => {
-            mockDb.select.mockReturnThis();
-            mockDb.from.mockReturnThis();
-            mockDb.where.mockReturnValueOnce([]);
-            const accs = await AccommodationModel.getByDestination('not-exist');
-            expect(accs).toEqual([]);
-        });
-        it('logs and throws on db error', async () => {
-            mockDb.select.mockImplementationOnce(() => {
-                throw new Error('fail');
-            });
-            await expect(AccommodationModel.getByDestination('err')).rejects.toThrow(
-                'Failed to get accommodations by destination: fail'
-            );
-            expect(dbLogger.error).toHaveBeenCalled();
+        it('returns accommodations with empty relations arrays', async () => {
+            mockDb.query.accommodations.findMany.mockResolvedValueOnce([
+                { ...mockAccommodation, features: [], amenities: [] }
+            ] as AccommodationWithRelationsType[]);
+            const accs = (await AccommodationModel.search(
+                { limit: 10, offset: 0 },
+                { features: true, amenities: true }
+            )) as AccommodationWithRelationsType[];
+            expect(accs[0]?.features).toEqual([]);
+            expect(accs[0]?.amenities).toEqual([]);
         });
     });
 });
