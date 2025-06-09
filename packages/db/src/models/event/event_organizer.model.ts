@@ -229,7 +229,11 @@ export const EventOrganizerModel = {
     },
 
     /**
-     * Search event organizers by name, etc.
+     * Search event organizers by name, lifecycle, etc.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of EventOrganizerType
+     * @throws Error if the query fails
      */
     async search(params: EventOrganizerSearchParams): Promise<EventOrganizerType[]> {
         const db = getDb();
@@ -268,6 +272,10 @@ export const EventOrganizerModel = {
 
     /**
      * Count event organizers with optional filters.
+     *
+     * @param params - Search parameters
+     * @returns Number of event organizers matching the query
+     * @throws Error if the query fails
      */
     async count(params?: EventOrganizerSearchParams): Promise<number> {
         const db = getDb();
@@ -297,6 +305,12 @@ export const EventOrganizerModel = {
 
     /**
      * Get an event organizer by ID, including specified relations.
+     *
+     * @template T
+     * @param id - EventOrganizer ID
+     * @param withRelations - Relations to include (events)
+     * @returns EventOrganizerType with relations if found, otherwise undefined
+     * @throws Error if the query fails
      */
     async getWithRelations<T extends EventOrganizerRelations>(
         id: string,
@@ -326,7 +340,11 @@ export const EventOrganizerModel = {
     },
 
     /**
-     * Get event organizers by event.
+     * Get event organizers by event ID.
+     *
+     * @param eventId - Event ID
+     * @returns Array of EventOrganizerType
+     * @throws Error if the query fails
      */
     async getByEvent(eventId: string): Promise<EventOrganizerType[]> {
         const db = getDb();

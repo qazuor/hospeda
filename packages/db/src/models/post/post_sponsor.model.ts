@@ -167,7 +167,11 @@ export const PostSponsorModel = {
         }
     },
     /**
-     * Search sponsors paginated
+     * Search sponsors by name, paginated.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of PostSponsorType
+     * @throws Error if the query fails
      */
     async search(params: PostSponsorSearchParams): Promise<PostSponsorType[]> {
         const db = getDb();
@@ -195,7 +199,11 @@ export const PostSponsorModel = {
         }
     },
     /**
-     * Count sponsors (optionally by search query)
+     * Count sponsors (optionally by search query).
+     *
+     * @param params - Search parameters
+     * @returns Number of sponsors matching the query
+     * @throws Error if the query fails
      */
     async count(params: PostSponsorSearchParams): Promise<number> {
         const db = getDb();

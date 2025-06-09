@@ -51,6 +51,13 @@ export type FeatureWithRelationsType = FeatureType & {
 };
 
 export const FeatureModel = {
+    /**
+     * Get a feature by its unique ID.
+     *
+     * @param id - Feature ID
+     * @returns FeatureType if found, otherwise undefined
+     * @throws Error if the query fails
+     */
     async getById(id: string): Promise<FeatureType | undefined> {
         const db = getDb();
         try {
@@ -62,6 +69,13 @@ export const FeatureModel = {
             throw new Error(`Failed to get feature by id: ${(error as Error).message}`);
         }
     },
+    /**
+     * Get a feature by its unique name.
+     *
+     * @param name - Feature name
+     * @returns FeatureType if found, otherwise undefined
+     * @throws Error if the query fails
+     */
     async getByName(name: string): Promise<FeatureType | undefined> {
         const db = getDb();
         try {
@@ -73,6 +87,12 @@ export const FeatureModel = {
             throw new Error(`Failed to get feature by name: ${(error as Error).message}`);
         }
     },
+    /**
+     * Get all features by type. (Currently returns an empty array; extend as needed.)
+     *
+     * @returns Array of FeatureType
+     * @throws Error if the query fails
+     */
     async getByType(): Promise<FeatureType[]> {
         try {
             dbLogger.query({
@@ -87,6 +107,13 @@ export const FeatureModel = {
             throw new Error(`Failed to get features by type: ${(error as Error).message}`);
         }
     },
+    /**
+     * Get all features for a given accommodation.
+     *
+     * @param accommodationId - Accommodation ID
+     * @returns Array of FeatureType
+     * @throws Error if the query fails
+     */
     async getByAccommodation(accommodationId: string): Promise<FeatureType[]> {
         const db = getDb();
         try {
@@ -113,6 +140,13 @@ export const FeatureModel = {
             throw new Error(`Failed to get features by accommodation: ${(error as Error).message}`);
         }
     },
+    /**
+     * Create a new feature.
+     *
+     * @param input - New feature input
+     * @returns The created FeatureType
+     * @throws Error if the insert fails
+     */
     async create(input: NewFeatureInputType): Promise<FeatureType> {
         const db = getDb();
         try {
@@ -131,6 +165,14 @@ export const FeatureModel = {
             throw new Error(`Failed to create feature: ${(error as Error).message}`);
         }
     },
+    /**
+     * Update a feature by ID.
+     *
+     * @param id - Feature ID
+     * @param input - Update input
+     * @returns Updated FeatureType if found, otherwise undefined
+     * @throws Error if the update fails
+     */
     async update(id: string, input: UpdateFeatureInputType): Promise<FeatureType | undefined> {
         const db = getDb();
         try {
@@ -152,6 +194,14 @@ export const FeatureModel = {
             throw new Error(`Failed to update feature: ${(error as Error).message}`);
         }
     },
+    /**
+     * Soft delete a feature by ID.
+     *
+     * @param id - Feature ID
+     * @param deletedById - User ID who deletes
+     * @returns Object with deleted feature id if found, otherwise undefined
+     * @throws Error if the delete fails
+     */
     async delete(id: string, deletedById: string): Promise<{ id: string } | undefined> {
         const db = getDb();
         try {
@@ -174,6 +224,13 @@ export const FeatureModel = {
             throw new Error(`Failed to delete feature: ${(error as Error).message}`);
         }
     },
+    /**
+     * Hard delete a feature by ID.
+     *
+     * @param id - Feature ID
+     * @returns True if deleted, false otherwise
+     * @throws Error if the delete fails
+     */
     async hardDelete(id: string): Promise<boolean> {
         const db = getDb();
         try {
@@ -191,6 +248,13 @@ export const FeatureModel = {
             throw new Error(`Failed to hard delete feature: ${(error as Error).message}`);
         }
     },
+    /**
+     * List features with pagination and optional ordering.
+     *
+     * @param params - Pagination and ordering parameters
+     * @returns Array of FeatureType
+     * @throws Error if the query fails
+     */
     async list(params: FeaturePaginationParams): Promise<FeatureType[]> {
         const db = getDb();
         const { limit, offset, order, orderBy } = params;
@@ -210,6 +274,13 @@ export const FeatureModel = {
             throw new Error(`Failed to list features: ${(error as Error).message}`);
         }
     },
+    /**
+     * Search features by name, isBuiltin, lifecycle, etc.
+     *
+     * @param params - Search and pagination parameters
+     * @returns Array of FeatureType
+     * @throws Error if the query fails
+     */
     async search(params: FeatureSearchParams): Promise<FeatureType[]> {
         const db = getDb();
         const { q, name, isBuiltin, lifecycle, limit, offset, order, orderBy } = params;
@@ -241,6 +312,13 @@ export const FeatureModel = {
             throw new Error(`Failed to search features: ${(error as Error).message}`);
         }
     },
+    /**
+     * Count features with optional filters.
+     *
+     * @param params - Search parameters
+     * @returns Number of features matching the query
+     * @throws Error if the query fails
+     */
     async count(params?: FeatureSearchParams): Promise<number> {
         const db = getDb();
         try {
@@ -268,6 +346,14 @@ export const FeatureModel = {
             throw new Error(`Failed to count features: ${(error as Error).message}`);
         }
     },
+    /**
+     * Get a feature by ID, including specified relations.
+     *
+     * @param id - Feature ID
+     * @param withRelations - Relations to include (accommodations)
+     * @returns FeatureType with relations if found, otherwise undefined
+     * @throws Error if the query fails
+     */
     async getWithRelations<T extends FeatureRelations>(
         id: string,
         withRelations: T
