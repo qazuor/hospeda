@@ -230,31 +230,6 @@ export type GetTopRatedByDestinationInput = z.infer<typeof getTopRatedByDestinat
 export type GetTopRatedByDestinationOutput = { accommodations: AccommodationType[] };
 
 /**
- * Input schema for getForHome.
- *
- * @example
- * const input = { destinationIds: ['dest-1', 'dest-2'], limitAccommodationByDestination: 3 };
- */
-export const getForHomeInputSchema = z.object({
-    destinationIds: z.array(z.string()).optional(),
-    limitAccommodationByDestination: z.number().int().min(1).max(10).default(2)
-});
-
-/**
- * Input type for getForHome.
- * @example
- * const input: GetForHomeInput = { destinationIds: ['dest-1'], limitAccommodationByDestination: 2 };
- */
-export type GetForHomeInput = z.infer<typeof getForHomeInputSchema>;
-
-/**
- * Output type for getForHome.
- * @example
- * const output: GetForHomeOutput = { accommodationsByDestination: { 'dest-1': [mockAccommodation] } };
- */
-export type GetForHomeOutput = { accommodationsByDestination: Record<string, AccommodationType[]> };
-
-/**
  * Input schema for search (advanced search).
  *
  * Filters applied in the model (DB):
