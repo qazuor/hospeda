@@ -1,4 +1,3 @@
-// Imports necesarios (ajustados para la nueva ubicación)
 vi.mock('../../../../utils/logger');
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
