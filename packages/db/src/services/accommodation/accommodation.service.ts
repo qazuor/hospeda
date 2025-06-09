@@ -558,9 +558,11 @@ export const AccommodationService = {
     ): Promise<GetByDestinationOutput> {
         logMethodStart(dbLogger, 'getByDestination', input, actor);
         const parsedInput = getByDestinationInputSchema.parse(input);
-        const allAccommodations = await AccommodationModel.getByDestination(
-            parsedInput.destinationId
-        );
+        const allAccommodations = await AccommodationModel.search({
+            destinationId: parsedInput.destinationId,
+            limit: 1000,
+            offset: 0
+        });
         const safeActor = getSafeActor(actor);
         // If the user is disabled, deny access to all
         if (isUserDisabled(safeActor)) {
@@ -578,31 +580,45 @@ export const AccommodationService = {
         }
         // Filter by permissions and visibility
         const result: AccommodationType[] = [];
-        for (const accommodation of allAccommodations) {
+        for (const accommodation of allAccommodations as AccommodationType[]) {
             const { canView, reason, checkedPermission } = canViewAccommodation(
                 safeActor,
-                accommodation
+                accommodation as AccommodationType
             );
             if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-                logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+                logDenied(
+                    dbLogger,
+                    safeActor,
+                    input,
+                    accommodation as AccommodationType,
+                    reason,
+                    checkedPermission
+                );
                 continue;
             }
             if (!canView) {
-                logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+                logDenied(
+                    dbLogger,
+                    safeActor,
+                    input,
+                    accommodation as AccommodationType,
+                    reason,
+                    checkedPermission
+                );
                 continue;
             }
             // Log access to private/draft
-            if (accommodation.visibility !== 'PUBLIC') {
+            if ((accommodation as AccommodationType).visibility !== 'PUBLIC') {
                 logGrant(
                     dbLogger,
                     safeActor,
                     input,
-                    accommodation,
+                    accommodation as AccommodationType,
                     checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                     reason
                 );
             }
-            result.push(accommodation);
+            result.push(accommodation as AccommodationType);
         }
         logMethodEnd(dbLogger, 'getByDestination', { accommodations: result });
         return { accommodations: result };
@@ -627,43 +643,61 @@ export const AccommodationService = {
         logMethodStart(dbLogger, 'getByOwner', input, actor);
         const safeActor = getSafeActor(actor);
         const parsedInput = getByOwnerInputSchema.parse(input);
-        const allAccommodations = await AccommodationModel.getByOwner(parsedInput.ownerId);
+        const allAccommodations = await AccommodationModel.search({
+            ownerId: parsedInput.ownerId,
+            limit: 1000,
+            offset: 0
+        });
         const result: AccommodationType[] = [];
-        for (const accommodation of allAccommodations) {
+        for (const accommodation of allAccommodations as AccommodationType[]) {
             if (isUserDisabled(safeActor)) {
                 logUserDisabled(
                     dbLogger,
                     safeActor,
                     input,
-                    accommodation,
+                    accommodation as AccommodationType,
                     PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
                 );
                 continue;
             }
             const { canView, reason, checkedPermission } = canViewAccommodation(
                 safeActor,
-                accommodation
+                accommodation as AccommodationType
             );
             if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-                logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+                logDenied(
+                    dbLogger,
+                    safeActor,
+                    input,
+                    accommodation as AccommodationType,
+                    reason,
+                    checkedPermission
+                );
                 continue;
             }
             if (!canView) {
-                logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+                logDenied(
+                    dbLogger,
+                    safeActor,
+                    input,
+                    accommodation as AccommodationType,
+                    reason,
+                    checkedPermission
+                );
                 continue;
             }
             // Log access to private/draft
-            if (accommodation.visibility !== 'PUBLIC') {
+            if ((accommodation as AccommodationType).visibility !== 'PUBLIC') {
                 logGrant(
                     dbLogger,
                     safeActor,
                     input,
-                    accommodation,
+                    accommodation as AccommodationType,
                     checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                     reason
                 );
             }
-            result.push(accommodation);
+            result.push(accommodation as AccommodationType);
         }
         logMethodEnd(dbLogger, 'getByOwner', { accommodations: result });
         return { accommodations: result };
@@ -710,31 +744,45 @@ export const AccommodationService = {
         }
         // Filter by permissions and visibility
         const result: AccommodationType[] = [];
-        for (const accommodation of allAccommodations) {
+        for (const accommodation of allAccommodations as AccommodationType[]) {
             const { canView, reason, checkedPermission } = canViewAccommodation(
                 safeActor,
-                accommodation
+                accommodation as AccommodationType
             );
             if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-                logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+                logDenied(
+                    dbLogger,
+                    safeActor,
+                    input,
+                    accommodation as AccommodationType,
+                    reason,
+                    checkedPermission
+                );
                 continue;
             }
             if (!canView) {
-                logDenied(dbLogger, safeActor, input, accommodation, reason, checkedPermission);
+                logDenied(
+                    dbLogger,
+                    safeActor,
+                    input,
+                    accommodation as AccommodationType,
+                    reason,
+                    checkedPermission
+                );
                 continue;
             }
             // Log access to private/draft
-            if (accommodation.visibility !== 'PUBLIC') {
+            if ((accommodation as AccommodationType).visibility !== 'PUBLIC') {
                 logGrant(
                     dbLogger,
                     safeActor,
                     input,
-                    accommodation,
+                    accommodation as AccommodationType,
                     checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                     reason
                 );
             }
-            result.push(accommodation);
+            result.push(accommodation as AccommodationType);
         }
         const limitedResult = result.slice(0, parsedInput.limit);
         logMethodEnd(dbLogger, 'getTopRatedByDestination', { accommodations: limitedResult });
@@ -795,12 +843,13 @@ export const AccommodationService = {
         });
 
         // 4. In-memory filtering for advanced logic
-        let filtered = baseAccommodations;
+        let filtered: AccommodationType[] = baseAccommodations;
 
         // Filter by multiple types if provided (beyond the first)
         if (parsedInput.types && parsedInput.types.length > 1) {
             filtered = filtered.filter(
-                (acc) => Array.isArray(parsedInput.types) && parsedInput.types.includes(acc.type)
+                (acc: AccommodationType) =>
+                    Array.isArray(parsedInput.types) && parsedInput.types.includes(acc.type)
             );
         }
         // Filter by minPrice/maxPrice/includeWithoutPrice using price.price
@@ -809,7 +858,7 @@ export const AccommodationService = {
             typeof parsedInput.maxPrice === 'number' ||
             parsedInput.includeWithoutPrice
         ) {
-            filtered = filtered.filter((acc) => {
+            filtered = filtered.filter((acc: AccommodationType) => {
                 const priceObj = acc.price;
                 const hasPrice =
                     typeof priceObj === 'object' &&
@@ -827,7 +876,7 @@ export const AccommodationService = {
         }
         // Filter by amenities (must have all selected)
         if (parsedInput.amenities && parsedInput.amenities.length > 0) {
-            filtered = filtered.filter((acc) => {
+            filtered = filtered.filter((acc: AccommodationType) => {
                 const accAmenityIds = (acc.amenities || []).map((a) => a.amenityId as string);
                 return (
                     Array.isArray(parsedInput.amenities) &&
@@ -837,7 +886,7 @@ export const AccommodationService = {
         }
         // Filter by features (must have all selected)
         if (parsedInput.features && parsedInput.features.length > 0) {
-            filtered = filtered.filter((acc) => {
+            filtered = filtered.filter((acc: AccommodationType) => {
                 const accFeatureIds = (acc.features || []).map((f) => f.featureId as string);
                 return (
                     Array.isArray(parsedInput.features) &&
@@ -862,14 +911,14 @@ export const AccommodationService = {
             }
             const { canView, reason, checkedPermission } = canViewAccommodation(
                 safeActor,
-                accommodation
+                accommodation as AccommodationType
             );
             if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
                 logDenied(
                     dbLogger,
                     safeActor,
                     parsedInput,
-                    accommodation,
+                    accommodation as AccommodationType,
                     reason,
                     checkedPermission
                 );
@@ -880,24 +929,24 @@ export const AccommodationService = {
                     dbLogger,
                     safeActor,
                     parsedInput,
-                    accommodation,
+                    accommodation as AccommodationType,
                     reason,
                     checkedPermission
                 );
                 continue;
             }
             // Log access to private/draft
-            if (accommodation.visibility !== 'PUBLIC') {
+            if ((accommodation as AccommodationType).visibility !== 'PUBLIC') {
                 logGrant(
                     dbLogger,
                     safeActor,
                     parsedInput,
-                    accommodation,
+                    accommodation as AccommodationType,
                     checkedPermission ?? PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                     reason
                 );
             }
-            result.push(accommodation);
+            result.push(accommodation as AccommodationType);
         }
 
         // 6. Advanced ordering: isFeatured first, then by orderBy fields
@@ -984,36 +1033,60 @@ export const AccommodationService = {
     },
     /**
      * Adds IA data to an accommodation. (Stub)
+     *
+     * @param _input - Input parameters (not used)
+     * @param _actor - Actor (not used)
+     * @throws Error always (not implemented)
      */
     async addIAData(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
     /**
      * Removes IA data from an accommodation. (Stub)
+     *
+     * @param _input - Input parameters (not used)
+     * @param _actor - Actor (not used)
+     * @throws Error always (not implemented)
      */
     async removeIAData(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
     /**
      * Updates IA data for an accommodation. (Stub)
+     *
+     * @param _input - Input parameters (not used)
+     * @param _actor - Actor (not used)
+     * @throws Error always (not implemented)
      */
     async updateIAData(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
     /**
      * Gets all IA data for accommodations. (Stub)
+     *
+     * @param _input - Input parameters (not used)
+     * @param _actor - Actor (not used)
+     * @throws Error always (not implemented)
      */
     async getAllIAData(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
     /**
      * Changes the visibility of an accommodation. (Stub)
+     *
+     * @param _input - Input parameters (not used)
+     * @param _actor - Actor (not used)
+     * @throws Error always (not implemented)
      */
     async changeVisibility(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
     /**
      * Gets the owner of an accommodation. (Stub)
+     *
+     * @param _input - Input parameters (not used)
+     * @param _actor - Actor (not used)
+     * @throws Error always (not implemented)
      */
     async getOwner(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
