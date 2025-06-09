@@ -809,3 +809,27 @@ export const getMockAccommodationWithRelations = (
  *   AccommodationSchema.parse(mock);
  * });
  */
+
+/**
+ * Returns a mock TagId.
+ * @returns TagId
+ * @example
+ * const id = getMockTagId();
+ */
+export const getMockTagId = (): TagId => '33333333-3333-3333-3333-333333333333' as TagId;
+
+/**
+ * Returns a mock EventId.
+ * @returns EventId
+ * @example
+ * const id = getMockEventId();
+ */
+export const getMockEventId = (): EventId => 'event-uuid' as EventId;
+
+/**
+ * Returns a mock PostId.
+ * @returns PostId
+ * @example
+ * const id = getMockPostId();
+ */
+export const getMockPostId = (): PostId => 'post-uuid' as PostId;

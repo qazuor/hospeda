@@ -2,6 +2,7 @@ import type { NewPostInputType, PostType, UpdatePostInputType } from '@repo/type
 import { and, asc, count, desc, eq, ilike } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { posts } from '../../dbschemas/post/post.dbschema.ts';
+import { rEntityTag } from '../../dbschemas/tag/r_entity_tag.dbschema.ts';
 import {
     createOrderableColumnsAndMapping,
     getOrderableColumn,
@@ -319,6 +320,45 @@ export const PostModel = {
         } catch (error) {
             dbLogger.error(error, 'PostModel.count');
             throw new Error(`Failed to count posts: ${(error as Error).message}`);
+        }
+    },
+
+    /**
+     * Get posts by tag.
+     * @param tagId - Tag ID
+     * @param params - Paginación y orden opcional
+     * @returns Array de PostType
+     */
+    async getByTag(tagId: string, params?: PostPaginationParams): Promise<PostType[]> {
+        const db = getDb();
+        const { limit = 20, offset = 0, order, orderBy } = params || {};
+        try {
+            const col = getOrderableColumn(postOrderableColumns, orderBy, posts.createdAt);
+            const orderExpr = order === 'desc' ? desc(col) : asc(col);
+            const result = await db
+                .select({ posts, rEntityTag })
+                .from(posts)
+                .innerJoin(
+                    rEntityTag,
+                    and(
+                        eq(rEntityTag.entityId, posts.id),
+                        eq(rEntityTag.tagId, tagId),
+                        eq(rEntityTag.entityType, 'POST')
+                    )
+                )
+                .orderBy(orderExpr)
+                .limit(limit)
+                .offset(offset);
+            dbLogger.query({
+                table: 'posts',
+                action: 'getByTag',
+                params: { tagId, ...params },
+                result
+            });
+            return result.map((row) => row.posts as PostType);
+        } catch (error) {
+            dbLogger.error(error, 'PostModel.getByTag');
+            throw new Error(`Failed to get posts by tag: ${(error as Error).message}`);
         }
     }
 };
