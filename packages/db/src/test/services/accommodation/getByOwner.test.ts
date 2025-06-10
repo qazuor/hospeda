@@ -32,8 +32,22 @@ vi.mock('../../../models/accommodation/accommodation.model', async (importOrigin
         ...actual,
         AccommodationModel: {
             ...((actual as Record<string, unknown>).AccommodationModel ?? {}),
-            getByOwner: vi.fn()
-        }
+            create: vi.fn(),
+            getById: vi.fn(),
+            getByName: vi.fn(),
+            search: vi.fn(),
+            update: vi.fn(),
+            hardDelete: vi.fn()
+        },
+        ACCOMMODATION_ORDERABLE_COLUMNS: [
+            'ownerId',
+            'destinationId',
+            'averageRating',
+            'visibility',
+            'lifecycle',
+            'name',
+            'type'
+        ]
     };
 });
 
@@ -52,7 +66,7 @@ describe('accommodation.service.getByOwner', () => {
             ownerId,
             visibility: VisibilityEnum.PUBLIC
         });
-        (AccommodationModel.getByOwner as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic1,
             accommodationPublic2
         ]);
@@ -81,7 +95,7 @@ describe('accommodation.service.getByOwner', () => {
             ownerId,
             visibility: VisibilityEnum.PRIVATE
         });
-        (AccommodationModel.getByOwner as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic,
             accommodationPrivate
         ]);
@@ -116,7 +130,7 @@ describe('accommodation.service.getByOwner', () => {
             ownerId: 'other-user' as UserId,
             visibility: VisibilityEnum.PRIVATE
         });
-        (AccommodationModel.getByOwner as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic,
             accommodationPrivateOwned,
             accommodationPrivateOther
@@ -136,7 +150,7 @@ describe('accommodation.service.getByOwner', () => {
         // Arrange
         const user = getMockUser();
         const ownerId = 'user-4' as UserId;
-        (AccommodationModel.getByOwner as Mock).mockResolvedValue([]);
+        (AccommodationModel.search as Mock).mockResolvedValue([]);
         // Act
         const result = await AccommodationService.getByOwner({ ownerId }, user);
         // Assert
@@ -164,7 +178,7 @@ describe('accommodation.service.getByOwner', () => {
             ownerId,
             visibility: VisibilityEnum.PRIVATE
         });
-        (AccommodationModel.getByOwner as Mock).mockResolvedValue([accommodation1, accommodation2]);
+        (AccommodationModel.search as Mock).mockResolvedValue([accommodation1, accommodation2]);
         // Act
         const result = await AccommodationService.getByOwner({ ownerId }, disabledUser);
         // Assert
@@ -196,7 +210,7 @@ describe('accommodation.service.getByOwner', () => {
             ownerId,
             visibility: VisibilityEnum.PUBLIC
         });
-        (AccommodationModel.getByOwner as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationUnknown,
             accommodationPublic
         ]);

@@ -237,6 +237,7 @@ export const getMockUserBookmark = (
     overrides: Partial<UserBookmarkType> = {}
 ): UserBookmarkType => ({
     id: 'bookmark-uuid' as UserBookmarkId,
+    userId: getMockUserId(),
     entityId: 'accommodation-uuid' as AccommodationId,
     entityType: EntityTypeEnum.DESTINATION,
     name: 'Mi destino favorito',
