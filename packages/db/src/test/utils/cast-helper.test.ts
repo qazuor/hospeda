@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { castBrandedIds, castDateFields } from './cast-helper';
+import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
 
 // Tipos de ejemplo para tests
 import type { AccommodationId, DestinationId } from '@repo/types';

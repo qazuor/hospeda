@@ -12,7 +12,7 @@ import {
     expectInfoLog,
     expectNoPermissionLog,
     expectPermissionLog
-} from '../../utils/logAssertions';
+} from '../../utils/log-assertions';
 import {
     getMockAccommodation,
     getMockAccommodationPrivate,

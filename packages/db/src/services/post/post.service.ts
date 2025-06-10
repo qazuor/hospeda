@@ -24,7 +24,7 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/serviceLogger';
+import { serviceLogger } from '../../utils/service-logger';
 import { canViewPost } from './post.helper';
 import {
     type GetByIdInput,

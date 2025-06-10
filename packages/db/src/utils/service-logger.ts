@@ -10,10 +10,9 @@ interface PermissionValidationParams {
     role: string;
     extraData: unknown;
 }
-
 serviceLogger.registerLogMethod<PermissionValidationParams>(
     'permission',
-    LogLevel.WARN,
+    LogLevel.INFO,
     'Permission'
 );
 

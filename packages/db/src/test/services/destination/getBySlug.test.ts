@@ -7,7 +7,7 @@ import {
     expectInfoLog,
     expectNoPermissionLog,
     expectPermissionLog
-} from '../../utils/logAssertions';
+} from '../../utils/log-assertions';
 import {
     getMockDestination,
     getMockDestinationId,

@@ -9,7 +9,7 @@ import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
 import { makeDisabledUser } from '../../factories/userFactory';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
 import { getMockAccommodation, getMockPublicUser, getMockUser } from '../mockData';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {

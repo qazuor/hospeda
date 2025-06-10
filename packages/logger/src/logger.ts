@@ -289,5 +289,6 @@ export const logger: ILogger = {
     createLogger,
     registerLogMethod: <T>(methodName: string, level: LogLevel, defaultLabel?: string): ILogger => {
         return registerCustomLogMethod<T>(methodName, level, defaultLabel);
-    }
+    },
+    getConfig: getConfig
 };

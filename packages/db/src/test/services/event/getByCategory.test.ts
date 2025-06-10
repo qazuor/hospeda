@@ -11,7 +11,7 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
 import { EventService } from '../../../services/event/event.service';
 import * as permissionManager from '../../../utils/permission-manager';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
 
 vi.mock('../../../models/event/event.model', async (importOriginal) => {

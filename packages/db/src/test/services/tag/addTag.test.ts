@@ -19,7 +19,7 @@ import {
     expectInfoLog,
     expectNoPermissionLog,
     expectPermissionLog
-} from '../../utils/logAssertions';
+} from '../../utils/log-assertions';
 
 vi.mock('../../../models/tag/entity_tag.model');
 

@@ -8,7 +8,7 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/serviceLogger';
+import { serviceLogger } from '../../utils/service-logger';
 import { canViewUser } from './user.helper';
 import type {
     CreateUserInput,

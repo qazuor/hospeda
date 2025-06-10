@@ -3,7 +3,7 @@ import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import { DestinationService } from '../../../services/destination/destination.service';
-import { expectInfoLog } from '../../utils/logAssertions';
+import { expectInfoLog } from '../../utils/log-assertions';
 import {
     getMockDestination,
     getMockDestinationId,
