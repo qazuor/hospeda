@@ -49,7 +49,7 @@ vi.mock('../client.ts', () => ({
 vi.mock('../utils/logger.ts', () => ({
     dbLogger: globalThis.mockDbLogger
 }));
-vi.mock('../utils/serviceLogger.ts', () => ({
+vi.mock('../utils/service-logger.ts', () => ({
     serviceLogger: globalThis.mockServiceLogger
 }));
 

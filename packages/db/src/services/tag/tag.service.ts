@@ -9,7 +9,7 @@ import { EventModel } from '../../models/event/event.model';
 import { EntityTagModel } from '../../models/tag/entity_tag.model';
 import { hasPermission } from '../../utils/permission-manager';
 import { isUserType, logMethodEnd, logMethodStart } from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/serviceLogger';
+import { serviceLogger } from '../../utils/service-logger';
 import {
     type AddTagInput,
     type AddTagOutput,

@@ -4,7 +4,7 @@ import { AccommodationModel } from '../../../models/accommodation/accommodation.
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import type { TestAccommodationCreateInput } from '../../types/testAccommodation.types';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
 import {
     getExpectedCreatedAccommodationMatchObject,
     getMockAccommodationCreated,

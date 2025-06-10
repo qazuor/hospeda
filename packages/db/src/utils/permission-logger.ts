@@ -1,5 +1,5 @@
 import { type PermissionEnum, type PublicUserType, RoleEnum, type UserType } from '@repo/types';
-import type { serviceLogger } from './serviceLogger';
+import type { serviceLogger } from './service-logger';
 
 /**
  * Logger type with a permission method for logging access denials.

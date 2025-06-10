@@ -2,7 +2,7 @@ import { PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
 import {
     getMockAccommodationPrivate,
     getMockAccommodationPublic,

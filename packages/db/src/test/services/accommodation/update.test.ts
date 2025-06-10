@@ -31,9 +31,9 @@ import {
     makeUserWithoutPermissions
 } from '../../factories/userFactory';
 import type { TestAccommodationUpdateInput } from '../../types/testAccommodation.types';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
-import { getNormalizedUpdateInput } from '../../utils/normalizeAccommodationInput';
-import { restoreMock } from '../../utils/restoreMock';
+import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
+import { getNormalizedUpdateInput } from '../../utils/normalize-accommodation-input';
+import { restoreMock } from '../../utils/restore-mock';
 import { getMockAccommodationUpdateInput, getMockSeo, getMockUserId } from '../mockData';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {

@@ -18,7 +18,7 @@ import {
 } from '../../factories/userFactory';
 import { getMockUserId } from '../mockData';
 
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();

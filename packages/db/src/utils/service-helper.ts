@@ -6,7 +6,7 @@ import {
     createPublicUser
 } from '@repo/types';
 import { hasPermission } from '../utils';
-import type { serviceLogger } from './serviceLogger';
+import type { serviceLogger } from './service-logger';
 
 /**
  * Enum representing the reason why an actor can or cannot view an entity (accommodation, destination, etc).

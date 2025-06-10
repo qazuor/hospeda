@@ -2,7 +2,7 @@ import type { PublicUserType, UserType } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types';
 import { UserBookmarkModel } from '../../models/user/user_bookmark.model';
 import { isUserType, logMethodEnd, logMethodStart } from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/serviceLogger';
+import { serviceLogger } from '../../utils/service-logger';
 import type {
     AddBookmarkInput,
     AddBookmarkOutput,

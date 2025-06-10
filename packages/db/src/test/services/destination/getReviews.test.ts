@@ -6,7 +6,7 @@ import { DestinationReviewModel } from '../../../models/destination/destination_
 import * as destinationHelper from '../../../services/destination/destination.helper';
 import { DestinationService } from '../../../services/destination/destination.service';
 import { CanViewReasonEnum } from '../../../utils/service-helper';
-import { expectInfoLog } from '../../utils/logAssertions';
+import { expectInfoLog } from '../../utils/log-assertions';
 import { getMockDestination, getMockDestinationId, getMockUser, getMockUserId } from '../mockData';
 
 vi.mock('../../../models/destination/destination.model', async (importOriginal) => {

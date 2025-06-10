@@ -1,13 +1,13 @@
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import { describe, expect, it, vi } from 'vitest';
-import { getMockPublicUser, getMockUser } from '../test/services/mockData';
 import {
     type LoggerWithPermission,
     logDenied,
     logGrant,
     logOverride,
     logUserDisabled
-} from './permission-logger';
+} from '../../utils/permission-logger';
+import { getMockPublicUser, getMockUser } from '../services/mockData';
 
 /**
  * Returns a mock logger with a spy for the permission method.

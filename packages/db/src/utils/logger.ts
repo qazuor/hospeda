@@ -1,11 +1,9 @@
 import logger, { type ILogger, LoggerColors, LogLevel } from '@repo/logger';
 
-// --- dbLogger ---
 const dbLogger = logger.registerCategory('Database', 'DB', {
     color: LoggerColors.BLUE
 });
 
-// Define type for query parameters
 interface QueryParams {
     table: string;
     action: string;
