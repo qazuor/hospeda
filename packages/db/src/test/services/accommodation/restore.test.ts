@@ -7,7 +7,6 @@ import {
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import * as LoggerModule from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import { makeAccommodation, makeArchivedAccommodation } from '../../factories/accommodationFactory';
 import {
@@ -19,19 +18,6 @@ import {
 } from '../../factories/userFactory';
 import { getMockUserId } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
-
-vi.mock('../../../utils/logger', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        dbLogger: {
-            info: vi.fn(),
-            error: vi.fn(),
-            permission: vi.fn()
-        }
-    };
-});
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -217,7 +203,7 @@ describe('accommodation.service.restore', () => {
             AccommodationService.restore({ id: archivedAccommodation.id }, publicUser)
         ).rejects.toThrow(/Forbidden/);
         // Assert permission log for public user
-        expect(LoggerModule.dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 userId: 'public',
                 role: publicUser.role,
@@ -289,7 +275,7 @@ describe('accommodation.service.restore', () => {
         expectInfoLog({ result: { accommodation: null } }, 'restore:end');
     });
 
-    it('restore should call dbLogger.info and dbLogger.permission at the correct points', async () => {
+    it('restore should call serviceLogger.info and serviceLogger.permission at the correct points', async () => {
         // Arrange: test that logs are called correctly on success and permission error
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });

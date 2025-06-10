@@ -1,19 +1,10 @@
 import { RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../models/post/post.model';
-import { dbLogger } from '../../../utils/logger';
+import { PostService } from '../../../services/post/post.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import * as serviceHelper from '../../../utils/service-helper';
 import { getMockPost, getMockPublicUser, getMockUser } from '../../mockData';
-
-vi.mock('../../../utils/logger', () => ({
-    dbLogger: {
-        info: vi.fn(),
-        error: vi.fn(),
-        query: vi.fn(),
-        permission: vi.fn()
-    }
-}));
 
 vi.mock('../../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -27,8 +18,6 @@ vi.mock('../../../utils/service-helper', async (importOriginal) => {
 });
 
 vi.mock('../../../models/post/post.model');
-
-import { PostService } from '../../../services/post/post.service';
 
 const user = getMockUser();
 const admin = getMockUser({
@@ -56,7 +45,7 @@ describe('PostService.update', () => {
         const input = { id: post.id, title: 'Updated' };
         const result = await PostService.update(input, user);
         expect(result.post).toMatchObject({ ...post, title: 'Updated' });
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should update post as admin', async () => {
@@ -66,7 +55,7 @@ describe('PostService.update', () => {
         const input = { id: post.id, title: 'Admin Updated' };
         const result = await PostService.update(input, admin);
         expect(result.post).toMatchObject({ ...post, title: 'Admin Updated' });
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should throw and log permission if user has no permission', async () => {
@@ -77,7 +66,7 @@ describe('PostService.update', () => {
         });
         const input = { id: post.id, title: 'NoPerm' };
         await expect(PostService.update(input, noPermUser)).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
             })
@@ -87,7 +76,7 @@ describe('PostService.update', () => {
     it('should throw and log if input is invalid', async () => {
         const input = { id: '', title: 'Invalid' };
         await expect(PostService.update(input, user)).rejects.toThrow();
-        expect(dbLogger.info).toHaveBeenCalledTimes(1);
+        expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
     });
 
     it('should throw and log if actor is public user', async () => {
@@ -96,7 +85,7 @@ describe('PostService.update', () => {
         await expect(PostService.update(input, publicUser)).rejects.toThrow(
             /Forbidden: Public user cannot update posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     override: expect.stringContaining('Public user cannot update posts')
@@ -116,7 +105,7 @@ describe('PostService.update', () => {
         await expect(PostService.update(input, disabledUser)).rejects.toThrow(
             /Disabled user cannot update posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     error: expect.stringContaining('disabled user cannot update')

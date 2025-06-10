@@ -14,7 +14,6 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { PostModel } from '../../models/post/post.model';
-import { dbLogger } from '../../utils/logger';
 import { logDenied, logOverride } from '../../utils/permission-logger';
 import { hasPermission } from '../../utils/permission-manager';
 import {
@@ -25,6 +24,7 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
+import { serviceLogger } from '../../utils/serviceLogger';
 import { canViewPost } from './post.helper';
 import {
     type GetByIdInput,
@@ -58,16 +58,16 @@ export const PostService = {
      *   const { post } = await PostService.getById({ id: 'post-123' }, adminUser);
      */
     async getById(input: GetByIdInput, actor: unknown): Promise<GetByIdOutput> {
-        logMethodStart(dbLogger, 'getById', input, actor as object);
+        logMethodStart(serviceLogger, 'getById', input, actor as object);
         const parsedInput = getByIdInputSchema.parse(input);
         const post = (await PostModel.getById(parsedInput.id)) ?? null;
         if (!post) {
-            logMethodEnd(dbLogger, 'getById', { post: null });
+            logMethodEnd(serviceLogger, 'getById', { post: null });
             return { post: null };
         }
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'getById', { post: null });
+            logMethodEnd(serviceLogger, 'getById', { post: null });
             return { post: null };
         }
         const { canView, reason, checkedPermission } = canViewPost(safeActor, post);
@@ -75,33 +75,33 @@ export const PostService = {
             reason === CanViewReasonEnum.UNKNOWN_VISIBILITY ||
             reason === CanViewReasonEnum.PUBLIC_ACTOR_DENIED
         ) {
-            logMethodEnd(dbLogger, 'getById', { post: null });
+            logMethodEnd(serviceLogger, 'getById', { post: null });
             return { post: null };
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
             try {
                 hasPermission(safeActor, checkedPermission);
-                logMethodEnd(dbLogger, 'getById', { post });
+                logMethodEnd(serviceLogger, 'getById', { post });
                 return { post };
             } catch {
                 logDenied(
-                    dbLogger,
+                    serviceLogger,
                     safeActor,
                     input,
                     post,
                     'missing permission',
                     checkedPermission
                 );
-                logMethodEnd(dbLogger, 'getById', { post: null });
+                logMethodEnd(serviceLogger, 'getById', { post: null });
                 return { post: null };
             }
         }
         if (canView) {
-            logMethodEnd(dbLogger, 'getById', { post });
+            logMethodEnd(serviceLogger, 'getById', { post });
             return { post };
         }
         // Explicit deny for all other cases
-        logMethodEnd(dbLogger, 'getById', { post: null });
+        logMethodEnd(serviceLogger, 'getById', { post: null });
         return { post: null };
     },
     /**
@@ -120,16 +120,16 @@ export const PostService = {
      *   const { post } = await PostService.getBySlug({ slug: 'my-post' }, adminUser);
      */
     async getBySlug(input: GetBySlugInput, actor: unknown): Promise<GetBySlugOutput> {
-        logMethodStart(dbLogger, 'getBySlug', input, actor as object);
+        logMethodStart(serviceLogger, 'getBySlug', input, actor as object);
         const parsedInput = getBySlugInputSchema.parse(input);
         const post = (await PostModel.getBySlug(parsedInput.slug)) ?? null;
         if (!post) {
-            logMethodEnd(dbLogger, 'getBySlug', { post: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { post: null });
             return { post: null };
         }
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'getBySlug', { post: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { post: null });
             return { post: null };
         }
         const { canView, reason, checkedPermission } = canViewPost(safeActor, post);
@@ -137,33 +137,33 @@ export const PostService = {
             reason === CanViewReasonEnum.UNKNOWN_VISIBILITY ||
             reason === CanViewReasonEnum.PUBLIC_ACTOR_DENIED
         ) {
-            logMethodEnd(dbLogger, 'getBySlug', { post: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { post: null });
             return { post: null };
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
             try {
                 hasPermission(safeActor, checkedPermission);
-                logMethodEnd(dbLogger, 'getBySlug', { post });
+                logMethodEnd(serviceLogger, 'getBySlug', { post });
                 return { post };
             } catch {
                 logDenied(
-                    dbLogger,
+                    serviceLogger,
                     safeActor,
                     input,
                     post,
                     'missing permission',
                     checkedPermission
                 );
-                logMethodEnd(dbLogger, 'getBySlug', { post: null });
+                logMethodEnd(serviceLogger, 'getBySlug', { post: null });
                 return { post: null };
             }
         }
         if (canView) {
-            logMethodEnd(dbLogger, 'getBySlug', { post });
+            logMethodEnd(serviceLogger, 'getBySlug', { post });
             return { post };
         }
         // Explicit deny for all other cases
-        logMethodEnd(dbLogger, 'getBySlug', { post: null });
+        logMethodEnd(serviceLogger, 'getBySlug', { post: null });
         return { post: null };
     },
     /**
@@ -182,7 +182,7 @@ export const PostService = {
         input: import('./post.schemas').ListInput,
         actor: unknown
     ): Promise<import('./post.schemas').ListOutput> {
-        logMethodStart(dbLogger, 'list', input, actor as object);
+        logMethodStart(serviceLogger, 'list', input, actor as object);
         const parsedInput = (await import('./post.schemas')).listInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Public users can only see PUBLIC posts
@@ -202,7 +202,7 @@ export const PostService = {
             order: finalInput.order,
             orderBy: finalInput.orderBy
         });
-        logMethodEnd(dbLogger, 'list', { posts });
+        logMethodEnd(serviceLogger, 'list', { posts });
         return { posts };
     },
     /**
@@ -221,7 +221,7 @@ export const PostService = {
         input: import('./post.schemas').SearchInput,
         actor: unknown
     ): Promise<import('./post.schemas').SearchOutput> {
-        logMethodStart(dbLogger, 'search', input, actor as object);
+        logMethodStart(serviceLogger, 'search', input, actor as object);
         const { searchInputSchema } = await import('./post.schemas');
         const parsedInput = searchInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
@@ -240,7 +240,7 @@ export const PostService = {
             PostModel.search({ ...finalInput }),
             PostModel.count({ ...finalInput })
         ]);
-        logMethodEnd(dbLogger, 'search', { posts, total });
+        logMethodEnd(serviceLogger, 'search', { posts, total });
         return { posts, total };
     },
     /**
@@ -258,7 +258,7 @@ export const PostService = {
         input: import('./post.schemas').GetByCategoryInput,
         actor: unknown
     ): Promise<import('./post.schemas').GetByCategoryOutput> {
-        logMethodStart(dbLogger, 'getByCategory', input, actor as object);
+        logMethodStart(serviceLogger, 'getByCategory', input, actor as object);
         const { getByCategoryInputSchema } = await import('./post.schemas');
         const parsedInput = getByCategoryInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
@@ -300,7 +300,7 @@ export const PostService = {
         }
         // Apply pagination
         const paginated = posts.slice(parsedInput.offset, parsedInput.offset + parsedInput.limit);
-        logMethodEnd(dbLogger, 'getByCategory', { posts: paginated });
+        logMethodEnd(serviceLogger, 'getByCategory', { posts: paginated });
         return { posts: paginated };
     },
     /**
@@ -321,12 +321,12 @@ export const PostService = {
         input: import('./post.schemas').CreatePostInput,
         actor: unknown
     ): Promise<import('./post.schemas').CreatePostOutput> {
-        logMethodStart(dbLogger, 'create', input, actor as object);
+        logMethodStart(serviceLogger, 'create', input, actor as object);
         const parsedInput = createPostInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isPublicUser(safeActor)) {
             logOverride(
-                dbLogger,
+                serviceLogger,
                 input,
                 PermissionEnum.POST_CREATE,
                 'Public user cannot create posts'
@@ -335,7 +335,7 @@ export const PostService = {
         }
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility },
@@ -348,7 +348,7 @@ export const PostService = {
             hasPermission(safeActor, PermissionEnum.POST_CREATE);
         } catch (err) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility },
@@ -385,7 +385,7 @@ export const PostService = {
                       }
         };
         const post = await PostModel.create(postInput);
-        logMethodEnd(dbLogger, 'create', { post });
+        logMethodEnd(serviceLogger, 'create', { post });
         return { post };
     },
     /**
@@ -406,17 +406,17 @@ export const PostService = {
         input: import('./post.schemas').UpdatePostInput,
         actor: unknown
     ): Promise<import('./post.schemas').UpdatePostOutput> {
-        logMethodStart(dbLogger, 'update', input, actor as object);
+        logMethodStart(serviceLogger, 'update', input, actor as object);
         const parsedInput = updatePostInputSchema.parse(input);
         const post = await PostModel.getById(parsedInput.id);
         if (!post) {
-            logMethodEnd(dbLogger, 'update', { post: null });
+            logMethodEnd(serviceLogger, 'update', { post: null });
             throw new Error('Post not found');
         }
         const safeActor = getSafeActor(actor);
         if (isPublicUser(safeActor)) {
             logOverride(
-                dbLogger,
+                serviceLogger,
                 input,
                 PermissionEnum.POST_UPDATE,
                 'Public user cannot update posts'
@@ -425,7 +425,7 @@ export const PostService = {
         }
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 post,
@@ -440,12 +440,12 @@ export const PostService = {
         try {
             hasUpdatePermission = isAuthor || hasPermission(safeActor, PermissionEnum.POST_UPDATE);
         } catch (err) {
-            logDenied(dbLogger, safeActor, input, post, (err as Error).message, 'POST_UPDATE');
+            logDenied(serviceLogger, safeActor, input, post, (err as Error).message, 'POST_UPDATE');
             throw err;
         }
         if (!isAuthor && !hasUpdatePermission) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 post,
@@ -477,7 +477,7 @@ export const PostService = {
             ...(relatedEventId ? { relatedEventId: relatedEventId as EventId } : {})
         };
         const updatedPost = await PostModel.update(id, updateInput);
-        logMethodEnd(dbLogger, 'update', { post: updatedPost });
+        logMethodEnd(serviceLogger, 'update', { post: updatedPost });
         return { post: updatedPost ?? null };
     },
     /**
@@ -496,38 +496,38 @@ export const PostService = {
         input: import('./post.schemas').GetByIdInput,
         actor: unknown
     ): Promise<{ post: PostType | null }> {
-        logMethodStart(dbLogger, 'delete', input, actor as object);
+        logMethodStart(serviceLogger, 'delete', input, actor as object);
         const parsedInput = getByIdInputSchema.parse(input);
         const post = (await PostModel.getById(parsedInput.id)) ?? null;
         if (!post) {
-            logMethodEnd(dbLogger, 'delete', { post: null });
+            logMethodEnd(serviceLogger, 'delete', { post: null });
             throw new Error('Post not found');
         }
         if (post.deletedAt) {
-            logMethodEnd(dbLogger, 'delete', { post: null });
+            logMethodEnd(serviceLogger, 'delete', { post: null });
             throw new Error('Post already deleted');
         }
         const safeActor = getSafeActor(actor);
         if (isPublicUser(safeActor)) {
             logOverride(
-                dbLogger,
+                serviceLogger,
                 input,
                 PermissionEnum.POST_DELETE,
                 'Public user cannot delete posts'
             );
-            logMethodEnd(dbLogger, 'delete', { post: null });
+            logMethodEnd(serviceLogger, 'delete', { post: null });
             throw new Error('Forbidden: Public user cannot delete posts');
         }
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 post,
                 'disabled user cannot delete',
                 'POST_DELETE'
             );
-            logMethodEnd(dbLogger, 'delete', { post: null });
+            logMethodEnd(serviceLogger, 'delete', { post: null });
             throw new Error('Disabled user cannot delete posts');
         }
         // Only author, admin or user with POST_DELETE can delete
@@ -536,26 +536,26 @@ export const PostService = {
         try {
             hasDeletePermission = isAuthor || hasPermission(safeActor, PermissionEnum.POST_DELETE);
         } catch (err) {
-            logDenied(dbLogger, safeActor, input, post, (err as Error).message, 'POST_DELETE');
-            logMethodEnd(dbLogger, 'delete', { post: null });
+            logDenied(serviceLogger, safeActor, input, post, (err as Error).message, 'POST_DELETE');
+            logMethodEnd(serviceLogger, 'delete', { post: null });
             throw err;
         }
         if (!isAuthor && !hasDeletePermission) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 post,
                 'Forbidden: user cannot delete post',
                 'POST_DELETE'
             );
-            logMethodEnd(dbLogger, 'delete', { post: null });
+            logMethodEnd(serviceLogger, 'delete', { post: null });
             throw new Error('Forbidden: user cannot delete post');
         }
         // Soft delete: set deletedAt and deletedById
         await PostModel.delete(parsedInput.id, safeActor.id as string);
         const updatedPost = await PostModel.getById(parsedInput.id);
-        logMethodEnd(dbLogger, 'delete', { post: updatedPost });
+        logMethodEnd(serviceLogger, 'delete', { post: updatedPost });
         return { post: updatedPost ?? null };
     },
     /**
@@ -574,38 +574,38 @@ export const PostService = {
         input: import('./post.schemas').GetByIdInput,
         actor: unknown
     ): Promise<import('./post.schemas').HardDeleteOutput> {
-        logMethodStart(dbLogger, 'hardDelete', input, actor as object);
+        logMethodStart(serviceLogger, 'hardDelete', input, actor as object);
         const parsedInput = getByIdInputSchema.parse(input);
         const post = (await PostModel.getById(parsedInput.id)) ?? null;
         if (!post) {
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Post not found');
         }
         if (post.deletedAt) {
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Post already deleted');
         }
         const safeActor = getSafeActor(actor);
         if (isPublicUser(safeActor)) {
             logOverride(
-                dbLogger,
+                serviceLogger,
                 input,
                 PermissionEnum.POST_HARD_DELETE,
                 'Public user cannot hard delete posts'
             );
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Forbidden: Public user cannot hard delete posts');
         }
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 post,
                 'disabled user cannot hard delete',
                 'POST_HARD_DELETE'
             );
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Disabled user cannot hard delete posts');
         }
         // Only author, admin or user with POST_HARD_DELETE can hard-delete
@@ -615,25 +615,32 @@ export const PostService = {
             hasHardDeletePermission =
                 isAuthor || hasPermission(safeActor, PermissionEnum.POST_HARD_DELETE);
         } catch (err) {
-            logDenied(dbLogger, safeActor, input, post, (err as Error).message, 'POST_HARD_DELETE');
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logDenied(
+                serviceLogger,
+                safeActor,
+                input,
+                post,
+                (err as Error).message,
+                'POST_HARD_DELETE'
+            );
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw err;
         }
         if (!isAuthor && !hasHardDeletePermission) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 post,
                 'Forbidden: user cannot hard delete post',
                 'POST_HARD_DELETE'
             );
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Forbidden: user cannot hard delete post');
         }
         // Hard delete: remove from DB
         const deleted = await PostModel.hardDelete(parsedInput.id);
-        logMethodEnd(dbLogger, 'hardDelete', { success: deleted });
+        logMethodEnd(serviceLogger, 'hardDelete', { success: deleted });
         return { success: deleted };
     },
     /**
@@ -652,38 +659,38 @@ export const PostService = {
         input: import('./post.schemas').GetByIdInput,
         actor: unknown
     ): Promise<{ post: PostType | null }> {
-        logMethodStart(dbLogger, 'restore', input, actor as object);
+        logMethodStart(serviceLogger, 'restore', input, actor as object);
         const parsedInput = getByIdInputSchema.parse(input);
         const post = (await PostModel.getById(parsedInput.id)) ?? null;
         if (!post) {
-            logMethodEnd(dbLogger, 'restore', { post: null });
+            logMethodEnd(serviceLogger, 'restore', { post: null });
             throw new Error('Post not found');
         }
         if (!post.deletedAt) {
-            logMethodEnd(dbLogger, 'restore', { post: null });
+            logMethodEnd(serviceLogger, 'restore', { post: null });
             throw new Error('Post is not deleted');
         }
         const safeActor = getSafeActor(actor);
         if (isPublicUser(safeActor)) {
             logOverride(
-                dbLogger,
+                serviceLogger,
                 input,
                 PermissionEnum.POST_RESTORE,
                 'Public user cannot restore posts'
             );
-            logMethodEnd(dbLogger, 'restore', { post: null });
+            logMethodEnd(serviceLogger, 'restore', { post: null });
             throw new Error('Forbidden: Public user cannot restore posts');
         }
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 post,
                 'disabled user cannot restore',
                 'POST_RESTORE'
             );
-            logMethodEnd(dbLogger, 'restore', { post: null });
+            logMethodEnd(serviceLogger, 'restore', { post: null });
             throw new Error('Disabled user cannot restore posts');
         }
         // Only author, admin or user with POST_RESTORE can restore
@@ -693,20 +700,27 @@ export const PostService = {
             hasRestorePermission =
                 isAuthor || hasPermission(safeActor, PermissionEnum.POST_RESTORE);
         } catch (err) {
-            logDenied(dbLogger, safeActor, input, post, (err as Error).message, 'POST_RESTORE');
-            logMethodEnd(dbLogger, 'restore', { post: null });
+            logDenied(
+                serviceLogger,
+                safeActor,
+                input,
+                post,
+                (err as Error).message,
+                'POST_RESTORE'
+            );
+            logMethodEnd(serviceLogger, 'restore', { post: null });
             throw err;
         }
         if (!isAuthor && !hasRestorePermission) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 post,
                 'Forbidden: user cannot restore post',
                 'POST_RESTORE'
             );
-            logMethodEnd(dbLogger, 'restore', { post: null });
+            logMethodEnd(serviceLogger, 'restore', { post: null });
             throw new Error('Forbidden: user cannot restore post');
         }
         // Restore: set deletedAt and deletedById to null
@@ -715,7 +729,7 @@ export const PostService = {
             deletedById: null as unknown as UserId
         });
         const updatedPost = await PostModel.getById(parsedInput.id);
-        logMethodEnd(dbLogger, 'restore', { post: updatedPost });
+        logMethodEnd(serviceLogger, 'restore', { post: updatedPost });
         return { post: updatedPost ?? null };
     },
     /**
@@ -733,7 +747,7 @@ export const PostService = {
         input: import('./post.schemas').GetFeaturedInput,
         actor: unknown
     ): Promise<import('./post.schemas').GetFeaturedOutput> {
-        logMethodStart(dbLogger, 'getFeatured', input, actor as object);
+        logMethodStart(serviceLogger, 'getFeatured', input, actor as object);
         const { getFeaturedInputSchema } = await import('./post.schemas');
         getFeaturedInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
@@ -754,7 +768,7 @@ export const PostService = {
             }
             return canView;
         });
-        logMethodEnd(dbLogger, 'getFeatured', { posts });
+        logMethodEnd(serviceLogger, 'getFeatured', { posts });
         return { posts };
     },
     /**
@@ -772,7 +786,7 @@ export const PostService = {
         input: import('./post.schemas').GetNewsInput,
         actor: unknown
     ): Promise<import('./post.schemas').GetNewsOutput> {
-        logMethodStart(dbLogger, 'getNews', input, actor as object);
+        logMethodStart(serviceLogger, 'getNews', input, actor as object);
         const { getNewsInputSchema } = await import('./post.schemas');
         getNewsInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
@@ -793,7 +807,7 @@ export const PostService = {
             }
             return canView;
         });
-        logMethodEnd(dbLogger, 'getNews', { posts });
+        logMethodEnd(serviceLogger, 'getNews', { posts });
         return { posts };
     },
     /**
@@ -811,7 +825,7 @@ export const PostService = {
         input: import('./post.schemas').GetByRelatedAccommodationInput,
         actor: unknown
     ): Promise<import('./post.schemas').GetByRelatedAccommodationOutput> {
-        logMethodStart(dbLogger, 'getByRelatedAccommodation', input, actor as object);
+        logMethodStart(serviceLogger, 'getByRelatedAccommodation', input, actor as object);
         const { getByRelatedAccommodationInputSchema } = await import('./post.schemas');
         const parsedInput = getByRelatedAccommodationInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
@@ -832,7 +846,7 @@ export const PostService = {
             }
             return canView;
         });
-        logMethodEnd(dbLogger, 'getByRelatedAccommodation', { posts });
+        logMethodEnd(serviceLogger, 'getByRelatedAccommodation', { posts });
         return { posts };
     },
     /**
@@ -850,7 +864,7 @@ export const PostService = {
         input: import('./post.schemas').GetByRelatedDestinationInput,
         actor: unknown
     ): Promise<import('./post.schemas').GetByRelatedDestinationOutput> {
-        logMethodStart(dbLogger, 'getByRelatedDestination', input, actor as object);
+        logMethodStart(serviceLogger, 'getByRelatedDestination', input, actor as object);
         const { getByRelatedDestinationInputSchema } = await import('./post.schemas');
         const parsedInput = getByRelatedDestinationInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
@@ -871,7 +885,7 @@ export const PostService = {
             }
             return canView;
         });
-        logMethodEnd(dbLogger, 'getByRelatedDestination', { posts });
+        logMethodEnd(serviceLogger, 'getByRelatedDestination', { posts });
         return { posts };
     },
     /**
@@ -889,7 +903,7 @@ export const PostService = {
         input: import('./post.schemas').GetByRelatedEventInput,
         actor: unknown
     ): Promise<import('./post.schemas').GetByRelatedEventOutput> {
-        logMethodStart(dbLogger, 'getByRelatedEvent', input, actor as object);
+        logMethodStart(serviceLogger, 'getByRelatedEvent', input, actor as object);
         const { getByRelatedEventInputSchema } = await import('./post.schemas');
         const parsedInput = getByRelatedEventInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
@@ -910,7 +924,7 @@ export const PostService = {
             }
             return canView;
         });
-        logMethodEnd(dbLogger, 'getByRelatedEvent', { posts });
+        logMethodEnd(serviceLogger, 'getByRelatedEvent', { posts });
         return { posts };
     },
     // --- Future methods ---

@@ -1,9 +1,10 @@
 import { PermissionEnum, RoleEnum, type UserId } from '@repo/types';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { canViewAccommodation } from '../../../src/services/accommodation/accommodation.helper';
 import { logDenied } from '../../utils/permission-logger';
 import { CanViewReasonEnum } from '../../utils/service-helper';
 import { getMockPublicUser, getMockUser } from '../mockData';
+import { mockServiceLogger } from '../setupTest';
 
 /**
  * Unit tests for canViewAccommodation helper.
@@ -69,18 +70,18 @@ describe('canViewAccommodation', () => {
  * @see logDenied
  */
 describe('logDenied', () => {
-    it('calls dbLogger.permission with correct arguments', () => {
-        const mockLogger = { permission: vi.fn() };
+    it('calls mockServiceLogger.permission with correct arguments', () => {
+        const logger = mockServiceLogger;
         const actor = getMockUser({ id: 'user-1' as UserId, role: RoleEnum.USER });
         logDenied(
-            mockLogger,
+            logger,
             actor,
             { foo: 'bar' },
             { visibility: 'PRIVATE' },
             CanViewReasonEnum.MISSING_PERMISSION,
             PermissionEnum.ACCOMMODATION_VIEW_PRIVATE
         );
-        expect(mockLogger.permission).toHaveBeenCalledWith(
+        expect(logger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
                 userId: actor.id,

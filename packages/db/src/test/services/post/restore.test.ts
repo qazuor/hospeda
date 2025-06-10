@@ -2,19 +2,9 @@ import type { PostId, UserId } from '@repo/types';
 import { RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../models/post/post.model';
-import { dbLogger } from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import * as serviceHelper from '../../../utils/service-helper';
 import { getMockPost, getMockPublicUser, getMockUser } from '../../mockData';
-
-vi.mock('../../../utils/logger', () => ({
-    dbLogger: {
-        info: vi.fn(),
-        error: vi.fn(),
-        query: vi.fn(),
-        permission: vi.fn()
-    }
-}));
 
 vi.mock('../../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -70,7 +60,7 @@ describe('PostService.restore', () => {
             deletedAt: undefined,
             deletedById: undefined
         });
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should restore post as admin', async () => {
@@ -92,7 +82,7 @@ describe('PostService.restore', () => {
             deletedAt: undefined,
             deletedById: undefined
         });
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should throw and log permission if user has no permission', async () => {
@@ -103,7 +93,7 @@ describe('PostService.restore', () => {
         });
         const input = { id: deletedPost.id };
         await expect(PostService.restore(input, noPermUser)).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
             })
@@ -113,7 +103,7 @@ describe('PostService.restore', () => {
     it('should throw and log if input is invalid', async () => {
         const input = { id: '' as PostId };
         await expect(PostService.restore(input, user)).rejects.toThrow();
-        expect(dbLogger.info).toHaveBeenCalledTimes(1);
+        expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
     });
 
     it('should throw and log if actor is public user', async () => {
@@ -122,7 +112,7 @@ describe('PostService.restore', () => {
         await expect(PostService.restore(input, publicUser)).rejects.toThrow(
             /Forbidden: Public user cannot restore posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     override: expect.stringContaining('Public user cannot restore posts')
@@ -142,7 +132,7 @@ describe('PostService.restore', () => {
         await expect(PostService.restore(input, disabledUser)).rejects.toThrow(
             /Disabled user cannot restore posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     error: expect.stringContaining('disabled user cannot restore')

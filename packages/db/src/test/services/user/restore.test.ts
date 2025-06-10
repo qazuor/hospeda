@@ -2,7 +2,6 @@ import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
 import { UserService } from '../../../services/user/user.service';
-import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
     id: 'user-1' as UserId,
@@ -62,8 +61,8 @@ describe('user.service.restore', () => {
         const result = await UserService.restore(validInput, admin);
         expect(result.user.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
         expect(result.user).not.toHaveProperty('password');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'restore:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'restore:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'restore:start');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'restore:end');
     });
 
     it('should not allow admin to restore themselves', async () => {

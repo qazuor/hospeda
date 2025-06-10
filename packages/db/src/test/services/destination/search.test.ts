@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import * as destinationHelper from '../../../services/destination/destination.helper';
 import { DestinationService } from '../../../services/destination/destination.service';
-import { dbLogger } from '../../../utils';
 import { CanViewReasonEnum } from '../../../utils/service-helper';
 import { getMockDestination, getMockUser } from '../../mockData';
 
@@ -60,8 +59,8 @@ describe('destination.service.search', () => {
         expect(destinations).toHaveLength(3);
         expect(total).toBe(5);
         expect(destinations[0]?.name).toBe('Destination 0');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'search:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'search:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'search:start');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'search:end');
     });
 
     it('should filter by averageRatingMin and averageRatingMax', async () => {
@@ -79,8 +78,8 @@ describe('destination.service.search', () => {
             destinations.every((d) => (d.averageRating ?? 0) >= 3 && (d.averageRating ?? 0) <= 5)
         ).toBe(true);
         expect(total).toBe(3);
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'search:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'search:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'search:start');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'search:end');
     });
 
     it('should return empty if user is disabled', async () => {
@@ -94,7 +93,7 @@ describe('destination.service.search', () => {
         const { destinations, total } = await DestinationService.search(input, disabledUser);
         expect(destinations).toHaveLength(0);
         expect(total).toBe(0);
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
             expect.objectContaining({ result: { destinations: [], total: 0 } }),
             'search:end'
         );
@@ -111,11 +110,11 @@ describe('destination.service.search', () => {
         const { destinations, total } = await DestinationService.search(input, user);
         expect(destinations).toHaveLength(0);
         expect(total).toBe(0);
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
             expect.objectContaining({ actor: expect.any(Object), input: expect.any(Object) }),
             'search:start'
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
             expect.objectContaining({ result: { destinations: [], total: 0 } }),
             'search:end'
         );
@@ -133,11 +132,11 @@ describe('destination.service.search', () => {
         expect(destinations).toHaveLength(3);
         expect(destinations[0]?.name).toBe('Destination 2');
         expect(total).toBe(10);
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
             expect.objectContaining({ actor: expect.any(Object), input: expect.any(Object) }),
             'search:start'
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
             expect.objectContaining({ result: expect.any(Object) }),
             'search:end'
         );
@@ -159,11 +158,11 @@ describe('destination.service.search', () => {
         expect(destinations).toHaveLength(1);
         expect(destinations[0]?.name).toBe('Playa Dorada');
         expect(total).toBe(1);
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
             expect.objectContaining({ actor: expect.any(Object), input: expect.any(Object) }),
             'search:start'
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
             expect.objectContaining({ result: expect.any(Object) }),
             'search:end'
         );

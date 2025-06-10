@@ -2,19 +2,9 @@ import type { PostId, UserId } from '@repo/types';
 import { RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../models/post/post.model';
-import { dbLogger } from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import * as serviceHelper from '../../../utils/service-helper';
 import { getMockPost, getMockPublicUser, getMockUser } from '../../mockData';
-
-vi.mock('../../../utils/logger', () => ({
-    dbLogger: {
-        info: vi.fn(),
-        error: vi.fn(),
-        query: vi.fn(),
-        permission: vi.fn()
-    }
-}));
 
 vi.mock('../../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -63,7 +53,7 @@ describe('PostService.softDelete', () => {
             deletedAt: expect.any(Date),
             deletedById: user.id
         });
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should soft delete post as admin', async () => {
@@ -79,7 +69,7 @@ describe('PostService.softDelete', () => {
             deletedAt: expect.any(Date),
             deletedById: admin.id
         });
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should throw and log permission if user has no permission', async () => {
@@ -90,7 +80,7 @@ describe('PostService.softDelete', () => {
         });
         const input = { id: post.id };
         await expect(PostService.softDelete(input, noPermUser)).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
             })
@@ -100,7 +90,7 @@ describe('PostService.softDelete', () => {
     it('should throw and log if input is invalid', async () => {
         const input = { id: '' as PostId };
         await expect(PostService.softDelete(input, user)).rejects.toThrow();
-        expect(dbLogger.info).toHaveBeenCalledTimes(1);
+        expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
     });
 
     it('should throw and log if actor is public user', async () => {
@@ -109,7 +99,7 @@ describe('PostService.softDelete', () => {
         await expect(PostService.softDelete(input, publicUser)).rejects.toThrow(
             /Forbidden: Public user cannot delete posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     override: expect.stringContaining('Public user cannot delete posts')
@@ -129,7 +119,7 @@ describe('PostService.softDelete', () => {
         await expect(PostService.softDelete(input, disabledUser)).rejects.toThrow(
             /Disabled user cannot delete posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     error: expect.stringContaining('disabled user cannot delete')

@@ -3,7 +3,6 @@ import { EntityTypeEnum, PermissionEnum } from '@repo/types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EntityTagModel } from '../../../models/tag/entity_tag.model';
 import { TagService } from '../../../services/tag/tag.service';
-import { dbLogger } from '../../../utils/logger';
 import {
     getMockAccommodationId,
     getMockDestinationId,
@@ -14,6 +13,7 @@ import {
     getMockUser,
     getMockUserId
 } from '../../mockData';
+
 import {
     expectInfoLog,
     expectNoPermissionLog,
@@ -21,16 +21,6 @@ import {
 } from '../../utils/logAssertions';
 
 vi.mock('../../../models/tag/entity_tag.model');
-vi.mock('../../../utils/logger', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    return Object.assign({}, actualImport, {
-        dbLogger: {
-            info: vi.fn(),
-            error: vi.fn(),
-            permission: vi.fn()
-        }
-    });
-});
 
 describe('TagService.removeTag', () => {
     const user = getMockUser({
@@ -228,7 +218,7 @@ describe('TagService.removeTag', () => {
                 publicUser
             )
         ).rejects.toThrow('Forbidden: insufficient permission to remove tag');
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 permission: 'UNKNOWN_PERMISSION',
                 role: 'GUEST',

@@ -8,7 +8,6 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
 import { PermissionService } from '../../../services/permission/permission.service';
-import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
     id: 'user-1' as UserId,
@@ -58,8 +57,14 @@ describe('permission.service.addPermissionToUser', () => {
         expect(result.user?.id).toBe(user.id);
         expect(result.user?.permissions).toContain(PermissionEnum.USER_CREATE);
         expect(result.user).not.toHaveProperty('password');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'addPermissionToUser:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'addPermissionToUser:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
+            expect.anything(),
+            'addPermissionToUser:start'
+        );
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(
+            expect.anything(),
+            'addPermissionToUser:end'
+        );
     });
 
     it('should not allow admin to add duplicate permission', async () => {

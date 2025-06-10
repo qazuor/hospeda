@@ -2,7 +2,6 @@ import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
 import { UserService } from '../../../services/user/user.service';
-import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
     id: 'user-1' as UserId,
@@ -50,8 +49,8 @@ describe('user.service.update', () => {
         expect(result.user.userName).toBe(validInput.userName);
         expect(result.user.email).toBe(validInput.email);
         expect(result.user).not.toHaveProperty('password');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:start');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:end');
     });
 
     it('should allow user to update themselves', async () => {

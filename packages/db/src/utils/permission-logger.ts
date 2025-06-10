@@ -1,10 +1,11 @@
 import { type PermissionEnum, type PublicUserType, RoleEnum, type UserType } from '@repo/types';
+import type { serviceLogger } from './serviceLogger';
 
 /**
  * Logger type with a permission method for logging access denials.
  * Used for structured permission logging in all services.
  */
-export type LoggerWithPermission = { permission: (args: unknown) => void };
+export type LoggerWithPermission = typeof serviceLogger;
 
 /**
  * Logs denied access to a resource, including the reason and permission checked.

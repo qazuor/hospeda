@@ -8,7 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../models/post/post.model';
 import { PostService } from '../../../services/post/post.service';
-import { dbLogger } from '../../../utils/logger';
+
 import { getMockPost, getMockPublicUser, getMockUser } from '../../mockData';
 
 const admin = getMockUser({ role: RoleEnum.ADMIN });
@@ -45,14 +45,14 @@ vi.mock('../../../utils/permission-manager', () => ({
 }));
 
 const expectInfoLog = (method: string) => {
-    expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), `${method}:start`);
-    expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), `${method}:end`);
+    expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), `${method}:start`);
+    expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), `${method}:end`);
 };
 const expectNoPermissionLog = () => {
-    expect(dbLogger.permission).not.toHaveBeenCalled();
+    expect(mockServiceLogger.permission).not.toHaveBeenCalled();
 };
 const expectPermissionLog = () => {
-    expect(dbLogger.permission).toHaveBeenCalled();
+    expect(mockServiceLogger.permission).toHaveBeenCalled();
 };
 
 describe('PostService.getById', () => {

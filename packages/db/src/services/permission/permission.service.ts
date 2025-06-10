@@ -1,11 +1,11 @@
 import { UserModel } from '../../models/user/user.model';
-import { dbLogger } from '../../utils/logger';
 import {
     getSafeActor,
     isUserDisabled,
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
+import { serviceLogger } from '../../utils/serviceLogger';
 import {
     type AddPermissionToUserInput,
     type AddPermissionToUserOutput,
@@ -26,43 +26,43 @@ export const PermissionService = {
         input: AddPermissionToUserInput,
         actor: unknown
     ): Promise<AddPermissionToUserOutput> {
-        logMethodStart(dbLogger, 'addPermissionToUser', input, actor as object);
+        logMethodStart(serviceLogger, 'addPermissionToUser', input, actor as object);
         const parsedInput = addPermissionToUserInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Do not allow if the actor is disabled
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'addPermissionToUser', { user: null });
+            logMethodEnd(serviceLogger, 'addPermissionToUser', { user: null });
             throw new Error('Disabled users cannot add permissions');
         }
         // Only admin can add permissions
         if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
-            logMethodEnd(dbLogger, 'addPermissionToUser', { user: null });
+            logMethodEnd(serviceLogger, 'addPermissionToUser', { user: null });
             throw new Error('Only admin can add permissions');
         }
         // Find user to update
         const user = await UserModel.getById(parsedInput.id);
         if (!user) {
-            logMethodEnd(dbLogger, 'addPermissionToUser', { user: null });
+            logMethodEnd(serviceLogger, 'addPermissionToUser', { user: null });
             throw new Error('User not found');
         }
         // Prevent admin from adding permission to themselves
         if ('id' in safeActor && safeActor.id === user.id) {
-            logMethodEnd(dbLogger, 'addPermissionToUser', { user: null });
+            logMethodEnd(serviceLogger, 'addPermissionToUser', { user: null });
             throw new Error('Admin cannot add permission to themselves');
         }
         // Check for duplicate permission
         if (user.permissions?.includes(parsedInput.permission)) {
-            logMethodEnd(dbLogger, 'addPermissionToUser', { user: null });
+            logMethodEnd(serviceLogger, 'addPermissionToUser', { user: null });
             throw new Error('User already has this permission');
         }
         // Add permission
         const userOut = await UserModel.addPermission(user.id, parsedInput.permission);
         if (!userOut) {
-            logMethodEnd(dbLogger, 'addPermissionToUser', { user: null });
+            logMethodEnd(serviceLogger, 'addPermissionToUser', { user: null });
             throw new Error('Failed to add permission');
         }
-        logMethodEnd(dbLogger, 'addPermissionToUser', { user: userOut });
+        logMethodEnd(serviceLogger, 'addPermissionToUser', { user: userOut });
         return { user: userOut };
     },
     /**

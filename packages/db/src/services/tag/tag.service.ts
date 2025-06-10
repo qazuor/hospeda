@@ -7,9 +7,9 @@ import {
 import { DestinationModel } from '../../models/destination/destination.model';
 import { EventModel } from '../../models/event/event.model';
 import { EntityTagModel } from '../../models/tag/entity_tag.model';
-import { dbLogger } from '../../utils/logger';
 import { hasPermission } from '../../utils/permission-manager';
 import { isUserType, logMethodEnd, logMethodStart } from '../../utils/service-helper';
+import { serviceLogger } from '../../utils/serviceLogger';
 import {
     type AddTagInput,
     type AddTagOutput,
@@ -47,12 +47,12 @@ export const TagService = {
      * const result = await TagService.addTag({ tagId, entityId, entityType }, user);
      */
     async addTag(input: AddTagInput, actor: UserType | PublicUserType): Promise<AddTagOutput> {
-        logMethodStart(dbLogger, 'addTag', input, actor);
+        logMethodStart(serviceLogger, 'addTag', input, actor);
         const parsedInput = addTagInputSchema.parse(input);
 
         // Unify public user and insufficient permission control
         if (!isUserType(actor) || actor.role === RoleEnum.GUEST) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: 'UNKNOWN_PERMISSION',
                 userId: 'public',
                 role: RoleEnum.GUEST,
@@ -80,7 +80,7 @@ export const TagService = {
                 requiredPermission = PermissionEnum.USER_UPDATE_PROFILE;
                 break;
             default:
-                dbLogger.permission({
+                serviceLogger.permission({
                     permission: 'UNKNOWN_PERMISSION',
                     userId: actor.id,
                     role: actor.role,
@@ -94,7 +94,7 @@ export const TagService = {
         // Here we must throw if the user lacks permission
         // (Pattern same as other services)
         if (!hasPermission(actor, requiredPermission)) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: requiredPermission,
                 userId: actor.id,
                 role: actor.role,
@@ -108,7 +108,7 @@ export const TagService = {
             entityId: parsedInput.entityId,
             entityType: parsedInput.entityType
         });
-        logMethodEnd(dbLogger, 'addTag', { entityTag });
+        logMethodEnd(serviceLogger, 'addTag', { entityTag });
         return { entityTag };
     },
 
@@ -126,10 +126,10 @@ export const TagService = {
         input: RemoveTagInput,
         actor: UserType | PublicUserType
     ): Promise<RemoveTagOutput> {
-        logMethodStart(dbLogger, 'removeTag', input, actor);
+        logMethodStart(serviceLogger, 'removeTag', input, actor);
         const parsedInput = removeTagInputSchema.parse(input);
         if (!isUserType(actor) || actor.role === RoleEnum.GUEST) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: 'UNKNOWN_PERMISSION',
                 userId: 'public',
                 role: RoleEnum.GUEST,
@@ -155,7 +155,7 @@ export const TagService = {
                 requiredPermission = PermissionEnum.USER_UPDATE_PROFILE;
                 break;
             default:
-                dbLogger.permission({
+                serviceLogger.permission({
                     permission: 'UNKNOWN_PERMISSION',
                     userId: actor.id,
                     role: actor.role,
@@ -164,7 +164,7 @@ export const TagService = {
                 throw new Error('Unsupported entity type for tag removal');
         }
         if (!hasPermission(actor, requiredPermission)) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: requiredPermission,
                 userId: actor.id,
                 role: actor.role,
@@ -177,7 +177,7 @@ export const TagService = {
             parsedInput.entityId,
             parsedInput.entityType
         );
-        logMethodEnd(dbLogger, 'removeTag', { removed: !!removed });
+        logMethodEnd(serviceLogger, 'removeTag', { removed: !!removed });
         return { removed: !!removed };
     },
 
@@ -194,7 +194,7 @@ export const TagService = {
         input: GetAccommodationsByTagInput,
         actor: UserType | PublicUserType
     ): Promise<GetAccommodationsByTagOutput> {
-        logMethodStart(dbLogger, 'getAccommodationsByTag', input, actor);
+        logMethodStart(serviceLogger, 'getAccommodationsByTag', input, actor);
         const parsedInput = getAccommodationsByTagInputSchema.parse(input);
         // Only 'name' is valid for AccommodationOrderByColumn
         const orderBy: AccommodationOrderByColumn | undefined =
@@ -206,7 +206,7 @@ export const TagService = {
             order: parsedInput.order,
             orderBy
         });
-        logMethodEnd(dbLogger, 'getAccommodationsByTag', { count: accommodations.length });
+        logMethodEnd(serviceLogger, 'getAccommodationsByTag', { count: accommodations.length });
         return { accommodations };
     },
 
@@ -223,7 +223,7 @@ export const TagService = {
         input: GetDestinationsByTagInput,
         actor: UserType | PublicUserType
     ): Promise<GetDestinationsByTagOutput> {
-        logMethodStart(dbLogger, 'getDestinationsByTag', input, actor);
+        logMethodStart(serviceLogger, 'getDestinationsByTag', input, actor);
         const parsedInput = getDestinationsByTagInputSchema.parse(input);
         // Only 'name' is valid for orderBy (DestinationModel)
         const orderBy = parsedInput.orderBy === 'name' ? 'name' : undefined;
@@ -234,7 +234,7 @@ export const TagService = {
             order: parsedInput.order,
             orderBy
         });
-        logMethodEnd(dbLogger, 'getDestinationsByTag', { count: destinations.length });
+        logMethodEnd(serviceLogger, 'getDestinationsByTag', { count: destinations.length });
         return { destinations };
     },
 
@@ -251,7 +251,7 @@ export const TagService = {
         input: GetEventsByTagInput,
         actor: UserType | PublicUserType
     ): Promise<GetEventsByTagOutput> {
-        logMethodStart(dbLogger, 'getEventsByTag', input, actor);
+        logMethodStart(serviceLogger, 'getEventsByTag', input, actor);
         const parsedInput = getEventsByTagInputSchema.parse(input);
         // Only 'summary' and 'createdAt' are valid for orderBy (EventModel)
         const orderBy = parsedInput.orderBy === 'summary' ? 'summary' : undefined;
@@ -262,7 +262,7 @@ export const TagService = {
             order: parsedInput.order,
             orderBy
         });
-        logMethodEnd(dbLogger, 'getEventsByTag', { count: events.length });
+        logMethodEnd(serviceLogger, 'getEventsByTag', { count: events.length });
         return { events };
     },
 
@@ -279,7 +279,7 @@ export const TagService = {
         input: import('./tag.schemas').GetPostsByTagInput,
         actor: UserType | PublicUserType
     ): Promise<import('./tag.schemas').GetPostsByTagOutput> {
-        logMethodStart(dbLogger, 'getPostsByTag', input, actor);
+        logMethodStart(serviceLogger, 'getPostsByTag', input, actor);
         const parsedInput = (await import('./tag.schemas')).getPostsByTagInputSchema.parse(input);
         // Only 'title' and 'createdAt' are valid for orderBy (PostModel)
         const orderBy =
@@ -297,7 +297,7 @@ export const TagService = {
                 orderBy
             }
         );
-        logMethodEnd(dbLogger, 'getPostsByTag', { count: posts.length });
+        logMethodEnd(serviceLogger, 'getPostsByTag', { count: posts.length });
         return { posts };
     },
 

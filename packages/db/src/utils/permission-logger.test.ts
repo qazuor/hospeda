@@ -12,7 +12,7 @@ import {
 /**
  * Returns a mock logger with a spy for the permission method.
  */
-const mockLogger = () => {
+const mockServiceLogger = () => {
     return { permission: vi.fn() } as unknown as LoggerWithPermission;
 };
 
@@ -28,7 +28,7 @@ const input = { foo: 'bar' };
  */
 describe('permission-logger', () => {
     it('logDenied logs correct structure', () => {
-        const logger = mockLogger();
+        const logger = mockServiceLogger();
         logDenied(
             logger,
             user,
@@ -46,7 +46,7 @@ describe('permission-logger', () => {
     });
 
     it('logDenied uses fallback for missing permission', () => {
-        const logger = mockLogger();
+        const logger = mockServiceLogger();
         logDenied(logger, publicUser, input, resource, 'reason');
         expect(logger.permission).toHaveBeenCalledWith({
             permission: 'UNKNOWN_PERMISSION',
@@ -57,7 +57,7 @@ describe('permission-logger', () => {
     });
 
     it('logGrant logs correct structure', () => {
-        const logger = mockLogger();
+        const logger = mockServiceLogger();
         logGrant(logger, user, input, resource, PermissionEnum.ACCOMMODATION_CREATE, 'created');
         expect(logger.permission).toHaveBeenCalledWith({
             permission: PermissionEnum.ACCOMMODATION_CREATE,
@@ -74,7 +74,7 @@ describe('permission-logger', () => {
     });
 
     it('logUserDisabled logs correct structure', () => {
-        const logger = mockLogger();
+        const logger = mockServiceLogger();
         logUserDisabled(logger, user, input, resource, PermissionEnum.ACCOMMODATION_UPDATE_OWN);
         expect(logger.permission).toHaveBeenCalledWith({
             permission: PermissionEnum.ACCOMMODATION_UPDATE_OWN,
@@ -91,7 +91,7 @@ describe('permission-logger', () => {
     });
 
     it('logOverride logs correct structure', () => {
-        const logger = mockLogger();
+        const logger = mockServiceLogger();
         logOverride(
             logger,
             input,

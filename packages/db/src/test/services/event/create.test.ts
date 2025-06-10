@@ -10,7 +10,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
 import { EventService } from '../../../services/event/event.service';
-import { dbLogger } from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockTag, getMockUser } from '../../mockData';
 
@@ -68,8 +67,8 @@ describe('event.service.create', () => {
         expect(result.event.summary).toBe(validInput.summary);
         expect(result.event.category).toBe(validInput.category);
         expect(result.event.visibility).toBe(validInput.visibility);
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:start');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:end');
     });
 
     it('should allow superadmin to create an event', async () => {

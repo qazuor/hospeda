@@ -1,8 +1,8 @@
 import type { PublicUserType, UserType } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types';
 import { UserBookmarkModel } from '../../models/user/user_bookmark.model';
-import { dbLogger } from '../../utils/logger';
 import { isUserType, logMethodEnd, logMethodStart } from '../../utils/service-helper';
+import { serviceLogger } from '../../utils/serviceLogger';
 import type {
     AddBookmarkInput,
     AddBookmarkOutput,
@@ -30,11 +30,11 @@ export const BookmarkService = {
         input: AddBookmarkInput,
         actor: UserType | PublicUserType
     ): Promise<AddBookmarkOutput> {
-        logMethodStart(dbLogger, 'addBookmark', input, actor);
+        logMethodStart(serviceLogger, 'addBookmark', input, actor);
         const parsedInput = addBookmarkInputSchema.parse(input);
         // Only the user themselves can add bookmarks
         if (!isUserType(actor) || actor.id !== parsedInput.userId) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: 'BOOKMARK_ADD',
                 userId: isUserType(actor) ? actor.id : 'public',
                 role: isUserType(actor) ? actor.role : 'PUBLIC',
@@ -50,7 +50,7 @@ export const BookmarkService = {
             description: parsedInput.description,
             lifecycleState: LifecycleStatusEnum.ACTIVE
         });
-        logMethodEnd(dbLogger, 'addBookmark', { bookmark });
+        logMethodEnd(serviceLogger, 'addBookmark', { bookmark });
         return { bookmark };
     },
 
@@ -66,11 +66,11 @@ export const BookmarkService = {
         input: RemoveBookmarkInput,
         actor: UserType | PublicUserType
     ): Promise<RemoveBookmarkOutput> {
-        logMethodStart(dbLogger, 'removeBookmark', input, actor);
+        logMethodStart(serviceLogger, 'removeBookmark', input, actor);
         // Validar input
         const { userId, bookmarkId } = input;
         if (!isUserType(actor) || actor.id !== userId) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: 'BOOKMARK_REMOVE',
                 userId: isUserType(actor) ? actor.id : 'public',
                 role: isUserType(actor) ? actor.role : 'PUBLIC',
@@ -84,7 +84,7 @@ export const BookmarkService = {
         // Buscar el bookmark y validar que sea del usuario
         const bookmark = await UserBookmarkModel.getById(bookmarkId);
         if (!bookmark) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: 'BOOKMARK_REMOVE',
                 userId: actor.id,
                 role: actor.role,
@@ -93,7 +93,7 @@ export const BookmarkService = {
             throw new Error('Bookmark not found');
         }
         if (bookmark.userId !== userId) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: 'BOOKMARK_REMOVE',
                 userId: actor.id,
                 role: actor.role,
@@ -104,7 +104,7 @@ export const BookmarkService = {
         // Soft delete
         const deleted = await UserBookmarkModel.delete(bookmarkId, userId);
         const removed = !!deleted;
-        logMethodEnd(dbLogger, 'removeBookmark', { removed });
+        logMethodEnd(serviceLogger, 'removeBookmark', { removed });
         return { removed };
     },
 
@@ -120,10 +120,10 @@ export const BookmarkService = {
         input: GetUserBookmarksInput,
         actor: UserType | PublicUserType
     ): Promise<GetUserBookmarksOutput> {
-        logMethodStart(dbLogger, 'getUserBookmarks', input, actor);
+        logMethodStart(serviceLogger, 'getUserBookmarks', input, actor);
         const { userId } = input;
         if (!isUserType(actor) || actor.id !== userId) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: 'BOOKMARK_LIST',
                 userId: isUserType(actor) ? actor.id : 'public',
                 role: isUserType(actor) ? actor.role : 'PUBLIC',
@@ -132,7 +132,7 @@ export const BookmarkService = {
             throw new Error('Forbidden: only the user can view their own bookmarks');
         }
         const bookmarks = await UserBookmarkModel.getByUserId(userId);
-        logMethodEnd(dbLogger, 'getUserBookmarks', { bookmarks });
+        logMethodEnd(serviceLogger, 'getUserBookmarks', { bookmarks });
         return { bookmarks };
     }
 };
