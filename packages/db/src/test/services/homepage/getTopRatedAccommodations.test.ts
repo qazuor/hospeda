@@ -1,6 +1,18 @@
-import type { AmenityId, AmenityType, FeatureId, FeatureType, UserId } from '@repo/types';
+import type {
+    AccommodationId,
+    AmenityId,
+    AmenityType,
+    DestinationId,
+    FeatureId,
+    FeatureType,
+    UserId
+} from '@repo/types';
+import { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum';
 import { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum';
+import { PriceCurrencyEnum } from '@repo/types/enums/currency.enum';
 import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
+import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
+import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { getTopRatedAccommodationsOutputSchema } from '../../../services/homepage/homepage.schemas';
@@ -36,20 +48,52 @@ const mockAmenity: AmenityType = {
 };
 
 const mockAccommodation = {
-    id: '11111111-1111-1111-1111-111111111111',
+    id: '11111111-1111-1111-1111-111111111111' as AccommodationId,
     slug: 'hotel-uno',
     name: 'Hotel Uno',
     summary: 'Un hotel excelente',
-    price: { amount: 100, currency: 'USD' },
+    price: { amount: 100, currency: PriceCurrencyEnum.USD },
     reviewsCount: 12,
     averageRating: 4.9,
-    features: [mockFeature],
-    amenities: [mockAmenity]
+    features: [
+        {
+            accommodationId: '11111111-1111-1111-1111-111111111111' as AccommodationId,
+            featureId: mockFeature.id,
+            feature: mockFeature
+        }
+    ],
+    amenities: [
+        {
+            accommodationId: '11111111-1111-1111-1111-111111111111' as AccommodationId,
+            amenityId: mockAmenity.id,
+            isOptional: false,
+            amenity: mockAmenity
+        }
+    ],
+    type: AccommodationTypeEnum.HOTEL,
+    description: 'Descripción larga y válida para Zod, más de 30 caracteres.',
+    ownerId: '11111111-1111-1111-1111-111111111111' as UserId,
+    destinationId: '22222222-2222-2222-2222-222222222222' as DestinationId,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    visibility: VisibilityEnum.PUBLIC,
+    moderationState: ModerationStatusEnum.PENDING_REVIEW,
+    isFeatured: false,
+    createdById: '11111111-1111-1111-1111-111111111111' as UserId,
+    updatedById: '11111111-1111-1111-1111-111111111111' as UserId,
+    adminInfo: undefined
 };
 
 describe('homepageService.getTopRatedAccommodations', () => {
     beforeAll(() => {
-        vi.spyOn(AccommodationModel, 'list').mockResolvedValue([mockAccommodation]);
+        vi.spyOn(AccommodationModel, 'list').mockResolvedValue([
+            {
+                ...mockAccommodation,
+                features: [mockFeature],
+                amenities: [mockAmenity]
+            } as unknown as typeof mockAccommodation
+        ]);
     });
 
     afterAll(() => {
@@ -100,7 +144,12 @@ describe('homepageService.getTopRatedAccommodations', () => {
     });
 
     it('should return accommodation with empty features and amenities if none', async () => {
-        const accNoRelations = { ...mockAccommodation, features: [], amenities: [] };
+        const accNoRelations = {
+            ...mockAccommodation,
+            features: [],
+            amenities: [],
+            price: { amount: 100, currency: PriceCurrencyEnum.USD }
+        };
         vi.spyOn(AccommodationModel, 'list').mockResolvedValue([accNoRelations]);
         const input = { limit: 1 };
         const result = await homepageService.getTopRatedAccommodations(input);

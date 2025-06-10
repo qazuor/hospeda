@@ -299,8 +299,7 @@ describe('DestinationModel', () => {
     it('count logs and throws on db error', async () => {
         mockDb.select.mockReturnThis();
         mockDb.from.mockReturnThis();
-        mockDb.where.mockReturnThis();
-        (destinations.name.ilike as Mock).mockImplementation(() => {
+        mockDb.where.mockImplementationOnce(() => {
             throw new Error('fail');
         });
         await expect(

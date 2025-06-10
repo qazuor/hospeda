@@ -39,8 +39,7 @@ vi.mock('../../../models/accommodation/accommodation.model', async (importOrigin
             getByName: vi.fn(),
             search: vi.fn(),
             update: vi.fn(),
-            hardDelete: vi.fn(),
-            getByDestination: vi.fn()
+            hardDelete: vi.fn()
         },
         ACCOMMODATION_ORDERABLE_COLUMNS: [
             'ownerId',
@@ -69,7 +68,7 @@ describe('accommodation.service.getByDestination', () => {
             destinationId,
             visibility: VisibilityEnum.PUBLIC
         });
-        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic1,
             accommodationPublic2
         ]);
@@ -98,7 +97,7 @@ describe('accommodation.service.getByDestination', () => {
             destinationId,
             visibility: VisibilityEnum.PRIVATE
         });
-        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic,
             accommodationPrivate
         ]);
@@ -135,7 +134,7 @@ describe('accommodation.service.getByDestination', () => {
             visibility: VisibilityEnum.PRIVATE,
             ownerId: 'other-user' as UserId
         });
-        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic,
             accommodationPrivateOwned,
             accommodationPrivateOther
@@ -155,7 +154,7 @@ describe('accommodation.service.getByDestination', () => {
         // Arrange
         const user = getMockUser();
         const destinationId = 'dest-4' as DestinationId;
-        (AccommodationModel.getByDestination as Mock).mockResolvedValue([]);
+        (AccommodationModel.search as Mock).mockResolvedValue([]);
         // Act
         const result = await AccommodationService.getByDestination({ destinationId }, user);
         // Assert
@@ -182,10 +181,7 @@ describe('accommodation.service.getByDestination', () => {
             destinationId,
             visibility: VisibilityEnum.PRIVATE
         });
-        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
-            accommodation1,
-            accommodation2
-        ]);
+        (AccommodationModel.search as Mock).mockResolvedValue([accommodation1, accommodation2]);
         // Act
         const result = await AccommodationService.getByDestination({ destinationId }, disabledUser);
         // Assert
@@ -217,7 +213,7 @@ describe('accommodation.service.getByDestination', () => {
             destinationId,
             visibility: 'UNKNOWN' as VisibilityEnum
         });
-        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic,
             accommodationUnknown
         ]);
@@ -259,7 +255,7 @@ describe('accommodation.service.getByDestination', () => {
             destinationId,
             visibility: VisibilityEnum.DRAFT
         });
-        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPrivate,
             accommodationDraft
         ]);
@@ -329,7 +325,7 @@ describe('accommodation.service.getByDestination', () => {
             destinationId,
             visibility: 'UNKNOWN' as VisibilityEnum
         });
-        (AccommodationModel.getByDestination as Mock).mockResolvedValue([
+        (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic,
             accommodationPrivateOwner,
             accommodationPrivateOther,
