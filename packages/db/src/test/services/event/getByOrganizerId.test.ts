@@ -1,3 +1,4 @@
+import type { EventOrganizerId } from '@repo/types';
 import {
     type EventId,
     LifecycleStatusEnum,
@@ -6,7 +7,6 @@ import {
     type UserId,
     VisibilityEnum
 } from '@repo/types';
-import type { EventOrganizerId } from '@repo/types/common/id.types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
 import { EventService } from '../../../services/event/event.service';

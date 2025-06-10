@@ -1,8 +1,9 @@
-import type { AttractionId, DestinationId } from '@repo/types/common/id.types';
 import type {
+    AttractionId,
+    DestinationId,
     NewAttractionInputType,
     UpdateAttractionInputType
-} from '@repo/types/entities/destination/destination.attraction.types';
+} from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';

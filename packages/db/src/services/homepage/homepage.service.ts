@@ -1,8 +1,10 @@
-import type { AttractionType } from '@repo/types';
-import type { AmenityType } from '@repo/types/entities/accommodation/accommodation.amenity.types';
-import type { FeatureType } from '@repo/types/entities/accommodation/accommodation.feature.types';
-import type { AccommodationWithRelationsType } from '@repo/types/entities/accommodation/accommodation.types';
-import { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum';
+import type {
+    AccommodationWithRelationsType,
+    AmenityType,
+    AttractionType,
+    FeatureType
+} from '@repo/types';
+import { AccommodationTypeEnum } from '@repo/types';
 import { AccommodationModel } from '../../models/accommodation/accommodation.model';
 import { AccommodationReviewModel } from '../../models/accommodation/accommodation_review.model';
 import { DestinationModel } from '../../models/destination/destination.model';

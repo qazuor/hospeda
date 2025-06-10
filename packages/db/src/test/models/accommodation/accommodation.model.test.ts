@@ -1,15 +1,15 @@
+import type {
+    AccommodationType,
+    AccommodationWithRelationsType,
+    NewAccommodationInputType,
+    UpdateAccommodationInputType
+} from '@repo/types';
 import {
     AccommodationTypeEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     VisibilityEnum
 } from '@repo/types';
-import type {
-    AccommodationType,
-    AccommodationWithRelationsType,
-    NewAccommodationInputType,
-    UpdateAccommodationInputType
-} from '@repo/types/entities/accommodation/accommodation.types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';

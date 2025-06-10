@@ -1,7 +1,5 @@
-import type { DestinationId, UserId } from '@repo/types/common/id.types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import type { DestinationId, UserId } from '@repo/types';
+import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import { getDestinationsListOutputSchema } from '../../../services/homepage/homepage.schemas';

@@ -1,7 +1,4 @@
-import type {
-    NewPostSponsorInputType,
-    UpdatePostSponsorInputType
-} from '@repo/types/entities/post/post.sponsor.types';
+import type { NewPostSponsorInputType, UpdatePostSponsorInputType } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';

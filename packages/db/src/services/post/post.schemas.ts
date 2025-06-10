@@ -1,7 +1,5 @@
 import type { PostId, PostType } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { PostCategoryEnum } from '@repo/types/enums/post-category.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import { LifecycleStatusEnum, PostCategoryEnum, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 
 /**

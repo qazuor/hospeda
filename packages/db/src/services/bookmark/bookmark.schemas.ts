@@ -1,12 +1,12 @@
 import type {
     AccommodationId,
     DestinationId,
+    EntityTypeEnum,
     EventId,
     PostId,
+    UserBookmarkType,
     UserId
-} from '@repo/types/common/id.types';
-import type { UserBookmarkType } from '@repo/types/entities/user/user.bookmark.types';
-import type { EntityTypeEnum } from '@repo/types/enums/entity-type.enum';
+} from '@repo/types';
 import { z } from 'zod';
 
 /**

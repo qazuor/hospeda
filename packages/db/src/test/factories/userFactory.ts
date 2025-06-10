@@ -1,5 +1,4 @@
-import { LifecycleStatusEnum } from '@repo/types';
-import { PermissionEnum, RoleEnum } from '@repo/types/enums';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import { getMockPublicUser, getMockUser, getMockUserId } from '../mockData';
 
 export const makeAdmin = (overrides = {}) =>

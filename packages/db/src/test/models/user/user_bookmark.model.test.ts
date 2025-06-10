@@ -1,9 +1,9 @@
-import { EntityTypeEnum } from '@repo/types';
-import type { AccommodationId } from '@repo/types/common/id.types';
 import type {
+    AccommodationId,
     NewUserBookmarkInputType,
     UpdateUserBookmarkInputType
-} from '@repo/types/entities/user/user.bookmark.types';
+} from '@repo/types';
+import { EntityTypeEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';

@@ -1,6 +1,4 @@
-import type { DestinationId } from '@repo/types/common/id.types';
-import type { DestinationReviewType } from '@repo/types/entities/destination/destination.review.types';
-import type { DestinationType } from '@repo/types/entities/destination/destination.types';
+import type { DestinationId, DestinationReviewType, DestinationType } from '@repo/types';
 import { z } from 'zod';
 
 /**

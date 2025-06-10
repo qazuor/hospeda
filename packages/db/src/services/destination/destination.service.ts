@@ -1,8 +1,8 @@
 // Destination Service - MVP and Future Methods (stubs)
 // All methods use RO-RO pattern and throw 'Not implemented yet' for now.
 
+import type { UserId } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types';
-import type { UserId } from '@repo/types/common/id.types';
 import { DestinationModel } from '../../models/destination/destination.model';
 import { DestinationReviewModel } from '../../models/destination/destination_review.model';
 import { dbLogger } from '../../utils/logger';

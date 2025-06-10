@@ -1,10 +1,12 @@
-import { LifecycleStatusEnum } from '@repo/types';
-import type { AccommodationIaDataId, AccommodationId, UserId } from '@repo/types/common/id.types';
 import type {
+    AccommodationIaDataId,
     AccommodationIaDataType,
+    AccommodationId,
     NewAccommodationIaDataInputType,
-    UpdateAccommodationIaDataInputType
-} from '@repo/types/entities/accommodation/accommodation.ia.types';
+    UpdateAccommodationIaDataInputType,
+    UserId
+} from '@repo/types';
+import { LifecycleStatusEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';

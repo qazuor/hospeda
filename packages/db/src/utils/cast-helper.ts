@@ -1,11 +1,4 @@
-import type {
-    DestinationId,
-    EventId,
-    PostId,
-    RoleId,
-    TagId,
-    UserId
-} from '@repo/types/common/id.types';
+import type { DestinationId, EventId, PostId, RoleId, TagId, UserId } from '@repo/types';
 
 /**
  * Casts all known brandId fields to their corresponding branded type if present in the input object.

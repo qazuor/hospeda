@@ -1,17 +1,17 @@
 import { EntityTypeEnumSchema } from '@repo/schemas/enums/entity-type.enum.schema';
 import type {
     AccommodationId,
+    AccommodationType,
     DestinationId,
+    DestinationType,
+    EntityTagType,
     EventId,
+    EventType,
     PostId,
+    PostType,
     TagId,
     UserId
-} from '@repo/types/common/id.types';
-import type { AccommodationType } from '@repo/types/entities/accommodation/accommodation.types';
-import type { DestinationType } from '@repo/types/entities/destination/destination.types';
-import type { EventType } from '@repo/types/entities/event/event.types';
-import type { PostType } from '@repo/types/entities/post/post.types';
-import type { EntityTagType } from '@repo/types/entities/tag/tag.types';
+} from '@repo/types';
 import { z } from 'zod';
 
 /**

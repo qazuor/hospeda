@@ -1,4 +1,4 @@
-import type { TagId } from '@repo/types/common/id.types';
+import type { TagId } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../../src/models/destination/destination.model';
 import type { GetDestinationsByTagInput } from '../../../../src/services/tag/tag.schemas';

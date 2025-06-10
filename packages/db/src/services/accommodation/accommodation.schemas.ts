@@ -1,7 +1,6 @@
 import { AccommodationSchema } from '@repo/schemas';
-import type { AccommodationType } from '@repo/types';
-import type { AccommodationId, DestinationId } from '@repo/types/common/id.types';
-import { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum';
+import type { AccommodationId, AccommodationType, DestinationId } from '@repo/types';
+import { AccommodationTypeEnum } from '@repo/types';
 import { z } from 'zod';
 import {
     ACCOMMODATION_ORDERABLE_COLUMNS,

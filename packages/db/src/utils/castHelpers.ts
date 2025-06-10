@@ -6,7 +6,7 @@ import type {
     RoleId,
     TagId,
     UserId
-} from '@repo/types/common/id.types';
+} from '@repo/types';
 
 /**
  * Castea todos los campos brandId conocidos a su tipo correspondiente si existen en el input.

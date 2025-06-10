@@ -1,4 +1,4 @@
-import { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum';
+import { AccommodationTypeEnum } from '@repo/types';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { getAccommodationsCategoriesOutputSchema } from '../../../services/homepage/homepage.schemas';
