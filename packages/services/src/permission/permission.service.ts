@@ -1,11 +1,11 @@
-import { UserModel } from '../../models/user/user.model';
+import { UserModel } from '@repo/db';
 import {
     getSafeActor,
     isUserDisabled,
     logMethodEnd,
-    logMethodStart
-} from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/service-logger';
+    logMethodStart,
+    serviceLogger
+} from '../utils';
 import {
     type AddPermissionToUserInput,
     type AddPermissionToUserOutput,
@@ -65,80 +65,36 @@ export const PermissionService = {
         logMethodEnd(serviceLogger, 'addPermissionToUser', { user: userOut });
         return { user: userOut };
     },
-    /**
-     * Adds a permission to a role. Only admin can perform this action.
-     * @throws Error (not implemented).
-     */
     async addPermissionToRole(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Removes a permission from a role. Only admin can perform this action.
-     * @throws Error (not implemented).
-     */
     async removePermissionFromRole(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Gets the permissions assigned to a role.
-     * @throws Error (not implemented).
-     */
     async getRolePermissions(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Lists all roles that have a specific permission.
-     * @throws Error (not implemented).
-     */
     async listRolesWithPermission(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Removes a permission from a user. Only admin can perform this action.
-     * @throws Error (not implemented).
-     */
     async removePermissionFromUser(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Gets the effective permissions of a user.
-     * @throws Error (not implemented).
-     */
     async getUserPermissions(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Lists all users that have a specific permission.
-     * @throws Error (not implemented).
-     */
     async listUsersWithPermission(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Checks if a user has a specific permission.
-     * @throws Error (not implemented).
-     */
     async hasPermission(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Adds multiple permissions to a user in bulk. Only admin can perform this action.
-     * @throws Error (not implemented).
-     */
     async bulkAddPermissionsToUser(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Removes multiple permissions from a user in bulk. Only admin can perform this action.
-     * @throws Error (not implemented).
-     */
     async bulkRemovePermissionsFromUser(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     },
-    /**
-     * Gets the list of all available permissions in the system.
-     * @throws Error (not implemented).
-     */
     async getAllPermissions(_input: unknown, _actor: unknown): Promise<never> {
         throw new Error('Not implemented yet');
     }

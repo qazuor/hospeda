@@ -18,6 +18,7 @@
             "@/*": ["./src/*"],
             "@repo/typescript-config/*": ["../../packages/typescript-config/src/*"],
             "@repo/schemas": ["../../packages/schemas/src/index.ts"],
+            "@repo/db": ["../../packages/db/src/index.ts"],
             "@repo/schemas/*": ["../../packages/schemas/src/*"],
             "@repo/types": ["../../packages/types/src/index.ts"],
             "@repo/types/*": ["../../packages/types/src/*"],
@@ -26,5 +27,5 @@
         }
     },
     "include": ["src", "../schemas/src", "../types/src"],
-    "exclude": ["dist", "node_modules", "src/seeds"]
+    "exclude": ["dist", "node_modules"]
 }
