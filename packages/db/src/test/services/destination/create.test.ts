@@ -2,8 +2,8 @@ import { LifecycleStatusEnum, ModerationStatusEnum, RoleEnum, VisibilityEnum } f
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import { DestinationService } from '../../../services/destination/destination.service';
-import { getMockDestination, getMockPublicUser, getMockUser } from '../../../test/mockData';
 import * as permissionManager from '../../../utils/permission-manager';
+import { getMockDestination, getMockPublicUser, getMockUser } from '../mockData';
 
 // vi.mock('../../../models/destination/destination.model');
 

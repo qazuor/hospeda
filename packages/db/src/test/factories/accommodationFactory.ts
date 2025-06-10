@@ -1,5 +1,5 @@
 import { LifecycleStatusEnum, VisibilityEnum } from '@repo/types';
-import { getMockAccommodation, getMockAccommodationWithMedia } from '../mockData';
+import { getMockAccommodation, getMockAccommodationWithMedia } from '../services/mockData';
 
 export const makePublicAccommodation = (overrides = {}) =>
     getMockAccommodation({ visibility: VisibilityEnum.PUBLIC, ...overrides });

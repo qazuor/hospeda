@@ -8,7 +8,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
 import { EventService } from '../../../services/event/event.service';
-import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
+import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
 
 import type { EventId, EventLocationId } from '@repo/types';
 

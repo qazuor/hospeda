@@ -30,11 +30,11 @@ import {
     makePublicUser,
     makeUserWithoutPermissions
 } from '../../factories/userFactory';
-import { getMockAccommodationUpdateInput, getMockSeo, getMockUserId } from '../../mockData';
 import type { TestAccommodationUpdateInput } from '../../types/testAccommodation.types';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 import { getNormalizedUpdateInput } from '../../utils/normalizeAccommodationInput';
 import { restoreMock } from '../../utils/restoreMock';
+import { getMockAccommodationUpdateInput, getMockSeo, getMockUserId } from '../mockData';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();

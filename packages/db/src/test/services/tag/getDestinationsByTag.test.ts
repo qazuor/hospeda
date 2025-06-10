@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../../src/models/destination/destination.model';
 import type { GetDestinationsByTagInput } from '../../../../src/services/tag/tag.schemas';
 import { TagService } from '../../../../src/services/tag/tag.service';
-import { getMockDestination, getMockPublicUser, getMockTagId } from '../../mockData';
+import { getMockDestination, getMockPublicUser, getMockTagId } from '../mockData';
 
 vi.mock('../../../../src/models/destination/destination.model');
 

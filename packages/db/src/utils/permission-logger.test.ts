@@ -1,6 +1,6 @@
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import { describe, expect, it, vi } from 'vitest';
-import { getMockPublicUser, getMockUser } from '../test/mockData';
+import { getMockPublicUser, getMockUser } from '../test/services/mockData';
 import {
     type LoggerWithPermission,
     logDenied,

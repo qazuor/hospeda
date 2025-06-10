@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { PostSponsorModel } from '../../../../src/models/post/post_sponsor.model';
 import { dbLogger } from '../../../../src/utils/logger';
-import { mockPostSponsor } from '../../mockData';
+import { mockPostSponsor } from '../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { FeatureModel } from '../../../../src/models/accommodation/feature.model';
 import { dbLogger } from '../../../../src/utils/logger';
-import { mockFeature } from '../../mockData';
+import { mockFeature } from '../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');

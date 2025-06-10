@@ -6,13 +6,8 @@ import * as destinationHelper from '../../../services/destination/destination.he
 import { DestinationService } from '../../../services/destination/destination.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import { CanViewReasonEnum } from '../../../utils/service-helper';
-import {
-    getMockDestination,
-    getMockDestinationId,
-    getMockUser,
-    getMockUserId
-} from '../../mockData';
 import { expectInfoLog } from '../../utils/logAssertions';
+import { getMockDestination, getMockDestinationId, getMockUser, getMockUserId } from '../mockData';
 
 vi.mock('../../../models/destination/destination.model', async (importOriginal) => {
     const actualImport = await importOriginal();

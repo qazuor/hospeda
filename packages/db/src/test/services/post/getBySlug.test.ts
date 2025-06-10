@@ -2,7 +2,7 @@ import { LifecycleStatusEnum, RoleEnum, type UserId, VisibilityEnum } from '@rep
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../models/post/post.model';
 import { PostService } from '../../../services/post/post.service';
-import { getMockPost, getMockPublicUser, getMockUser } from '../../mockData';
+import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
 
 const admin = getMockUser({ role: RoleEnum.ADMIN });
 const superAdmin = getMockUser({ role: RoleEnum.SUPER_ADMIN });

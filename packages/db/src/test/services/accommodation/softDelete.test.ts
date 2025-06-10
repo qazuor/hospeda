@@ -16,8 +16,8 @@ import {
     makePublicUser,
     makeUserWithoutPermissions
 } from '../../factories/userFactory';
-import { getMockUserId } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+import { getMockUserId } from '../mockData';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();

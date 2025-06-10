@@ -4,7 +4,7 @@ import { PostModel } from '../../../models/post/post.model';
 import { PostService } from '../../../services/post/post.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import * as serviceHelper from '../../../utils/service-helper';
-import { getMockPost, getMockPublicUser, getMockUser } from '../../mockData';
+import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
 
 vi.mock('../../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
