@@ -4,7 +4,7 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { EventModel } from '../../../../src/models/event/event.model';
 import { dbLogger } from '../../../../src/utils/logger';
-import { getMockEvent, mockEvent } from '../../mockData';
+import { getMockEvent, mockEvent } from '../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');

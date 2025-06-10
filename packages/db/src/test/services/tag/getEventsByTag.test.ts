@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../../src/models/event/event.model';
 import type { GetEventsByTagInput } from '../../../../src/services/tag/tag.schemas';
 import { TagService } from '../../../../src/services/tag/tag.service';
-import { getMockEvent, getMockPublicUser, getMockTagId } from '../../mockData';
+import { getMockEvent, getMockPublicUser, getMockTagId } from '../mockData';
 
 vi.mock('../../../../src/models/event/event.model');
 

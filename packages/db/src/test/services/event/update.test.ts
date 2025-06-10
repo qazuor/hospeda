@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
 import { EventService } from '../../../services/event/event.service';
 import * as permissionManager from '../../../utils/permission-manager';
-import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
+import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
 
 const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
 const superAdmin = getMockUser({ id: 'superadmin-1' as UserId, role: RoleEnum.SUPER_ADMIN });

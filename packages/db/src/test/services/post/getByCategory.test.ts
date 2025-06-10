@@ -3,7 +3,7 @@ import { PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../../src/models/post/post.model';
 import { PostService } from '../../../../src/services/post/post.service';
-import { getMockPost, getMockPublicUser, getMockUser } from '../../mockData';
+import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
 
 vi.mock('../../../../src/models/post/post.model');
 

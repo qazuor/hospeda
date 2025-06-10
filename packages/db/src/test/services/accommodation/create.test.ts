@@ -3,6 +3,8 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
 import * as permissionManager from '../../../utils/permission-manager';
+import type { TestAccommodationCreateInput } from '../../types/testAccommodation.types';
+import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 import {
     getExpectedCreatedAccommodationMatchObject,
     getMockAccommodationCreated,
@@ -10,9 +12,7 @@ import {
     getMockPublicUser,
     getMockUser,
     getMockUserId
-} from '../../mockData';
-import type { TestAccommodationCreateInput } from '../../types/testAccommodation.types';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+} from '../mockData';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();

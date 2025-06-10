@@ -4,7 +4,7 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import { getDb } from '../../../../src/client';
 import { EntityTagModel } from '../../../../src/models/tag/entity_tag.model';
 import { dbLogger } from '../../../../src/utils/logger';
-import { mockEntityTag } from '../../mockData';
+import { mockEntityTag } from '../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');

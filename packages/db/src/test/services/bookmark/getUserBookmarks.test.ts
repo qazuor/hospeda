@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserBookmarkModel } from '../../../../src/models/user/user_bookmark.model';
 import type { GetUserBookmarksInput } from '../../../../src/services/bookmark/bookmark.schemas';
 import { BookmarkService } from '../../../../src/services/bookmark/bookmark.service';
-import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../../mockData';
+import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../mockData';
 
 vi.mock('../../../../src/models/user/user_bookmark.model');
 

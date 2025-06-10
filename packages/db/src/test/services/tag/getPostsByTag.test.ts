@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../../src/models/post/post.model';
 import type { GetPostsByTagInput } from '../../../../src/services/tag/tag.schemas';
 import { TagService } from '../../../../src/services/tag/tag.service';
-import { getMockPost, getMockPublicUser, getMockTagId } from '../../mockData';
+import { getMockPost, getMockPublicUser, getMockTagId } from '../mockData';
 
 vi.mock('../../../../src/models/post/post.model');
 

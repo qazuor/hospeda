@@ -2,14 +2,14 @@ import { PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
+import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 import {
     getMockAccommodationPrivate,
     getMockAccommodationPublic,
     getMockPublicUser,
     getMockUser,
     getMockUserId
-} from '../../mockData';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+} from '../mockData';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();

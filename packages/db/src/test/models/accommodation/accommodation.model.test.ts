@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { AccommodationModel } from '../../../../src/models/accommodation/accommodation.model';
 import { dbLogger } from '../../../../src/utils/logger';
-import { mockAccommodation } from '../../mockData';
+import { mockAccommodation } from '../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');

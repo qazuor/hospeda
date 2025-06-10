@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { AttractionModel } from '../../../../src/models/destination/attraction.model';
 import { dbLogger } from '../../../../src/utils/logger';
-import { mockAttraction } from '../../mockData';
+import { mockAttraction } from '../mockData';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');

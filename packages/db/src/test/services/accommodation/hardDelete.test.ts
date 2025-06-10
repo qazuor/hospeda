@@ -16,7 +16,7 @@ import {
     makePublicUser,
     makeUserWithoutPermissions
 } from '../../factories/userFactory';
-import { getMockUserId } from '../../mockData';
+import { getMockUserId } from '../mockData';
 
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../../src/models/accommodation/accommodation.model';
 import type { GetAccommodationsByTagInput } from '../../../../src/services/tag/tag.schemas';
 import { TagService } from '../../../../src/services/tag/tag.service';
-import { getMockAccommodation, getMockPublicUser, getMockTagId } from '../../mockData';
+import { getMockAccommodation, getMockPublicUser, getMockTagId } from '../mockData';
 
 vi.mock('../../../../src/models/accommodation/accommodation.model');
 

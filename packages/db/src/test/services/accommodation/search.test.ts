@@ -9,7 +9,7 @@ import {
     getMockDestinationId,
     getMockPublicUser,
     getMockUser
-} from '../../mockData';
+} from '../mockData';
 
 vi.mock('../../../../src/models/accommodation/accommodation.model');
 

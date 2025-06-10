@@ -5,18 +5,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
 import {
+    expectInfoLog,
+    expectNoPermissionLog,
+    expectPermissionLog
+} from '../../utils/logAssertions';
+import {
     getMockAccommodation,
     getMockAccommodationPrivate,
     getMockAccommodationPublic,
     getMockPublicUser,
     getMockUser,
     getMockUserId
-} from '../../mockData';
-import {
-    expectInfoLog,
-    expectNoPermissionLog,
-    expectPermissionLog
-} from '../../utils/logAssertions';
+} from '../mockData';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();

@@ -4,14 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import { DestinationService } from '../../../services/destination/destination.service';
 import * as permissionManager from '../../../utils/permission-manager';
+import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 import {
     getMockDestination,
     getMockDestinationId,
     getMockPublicUser,
     getMockUser,
     getMockUserId
-} from '../../mockData';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
+} from '../mockData';
 
 vi.mock('../../../models/destination/destination.model', async (importOriginal) => {
     const actualImport = await importOriginal();

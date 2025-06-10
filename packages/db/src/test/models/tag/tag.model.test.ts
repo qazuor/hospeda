@@ -3,7 +3,7 @@ import { LifecycleStatusEnum, TagColorEnum } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tags } from '../../../dbschemas/tag/tag.dbschema';
 import { TagModel } from '../../../models/tag/tag.model.js';
-import { getMockTag, mockTag } from '../../mockData';
+import { getMockTag, mockTag } from '../../services/mockData.js';
 
 declare global {
     // biome-ignore lint/suspicious/noExplicitAny: test mock typing

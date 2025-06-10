@@ -12,7 +12,7 @@ import {
     getMockTagId,
     getMockUser,
     getMockUserId
-} from '../../mockData';
+} from '../mockData';
 
 import {
     expectInfoLog,

@@ -4,7 +4,7 @@ import { DestinationModel } from '../../../models/destination/destination.model'
 import * as destinationHelper from '../../../services/destination/destination.helper';
 import { DestinationService } from '../../../services/destination/destination.service';
 import { CanViewReasonEnum } from '../../../utils/service-helper';
-import { getMockDestination, getMockUser } from '../../mockData';
+import { getMockDestination, getMockUser } from '../mockData';
 
 // Helper to generate a valid DestinationId (cast string)
 const toDestinationId = (id: string) => id as unknown as import('@repo/types').DestinationId;
