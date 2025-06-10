@@ -5,7 +5,6 @@ import type { UserId } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import { DestinationModel } from '../../models/destination/destination.model';
 import { DestinationReviewModel } from '../../models/destination/destination_review.model';
-import { dbLogger } from '../../utils/logger';
 import { logDenied, logGrant, logUserDisabled } from '../../utils/permission-logger';
 import { hasPermission } from '../../utils/permission-manager';
 import {
@@ -15,6 +14,7 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
+import { serviceLogger } from '../../utils/serviceLogger';
 import {
     assertNotActive,
     assertNotArchived,
@@ -61,11 +61,11 @@ export const DestinationService = {
      * @throws Error if the destination has unknown visibility.
      */
     async getById(input: GetByIdInput, actor: unknown): Promise<GetByIdOutput> {
-        logMethodStart(dbLogger, 'getById', input, actor as object);
+        logMethodStart(serviceLogger, 'getById', input, actor as object);
         const parsedInput = getByIdInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
-            logMethodEnd(dbLogger, 'getById', { destination: null });
+            logMethodEnd(serviceLogger, 'getById', { destination: null });
             return { destination: null };
         }
         const safeActor = getSafeActor(actor);
@@ -78,18 +78,18 @@ export const DestinationService = {
         checkedPermission = checkedPerm;
         if (isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE
             );
-            logMethodEnd(dbLogger, 'getById', { destination: null });
+            logMethodEnd(serviceLogger, 'getById', { destination: null });
             return { destination: null };
         }
         if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'getById', { destination: null });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'getById', { destination: null });
             throw new Error(`Unknown destination visibility: ${destination.visibility}`);
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
@@ -97,24 +97,24 @@ export const DestinationService = {
                 const allowed = hasPermission(safeActor, checkedPermission);
                 if (!allowed) throw new Error('Permission denied');
             } catch (_err) {
-                logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-                logMethodEnd(dbLogger, 'getById', { destination: null });
+                logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+                logMethodEnd(serviceLogger, 'getById', { destination: null });
                 return { destination: null };
             }
             if (destination.visibility !== 'PUBLIC') {
-                logGrant(dbLogger, safeActor, input, destination, checkedPermission, reason);
+                logGrant(serviceLogger, safeActor, input, destination, checkedPermission, reason);
             }
-            logMethodEnd(dbLogger, 'getById', { destination });
+            logMethodEnd(serviceLogger, 'getById', { destination });
             return { destination };
         }
         if (!canView) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'getById', { destination: null });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'getById', { destination: null });
             return { destination: null };
         }
         if (destination.visibility !== 'PUBLIC') {
             logGrant(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
@@ -122,7 +122,7 @@ export const DestinationService = {
                 reason
             );
         }
-        logMethodEnd(dbLogger, 'getById', { destination });
+        logMethodEnd(serviceLogger, 'getById', { destination });
         return { destination };
     },
 
@@ -141,11 +141,11 @@ export const DestinationService = {
      * const result = await getBySlug({ slug: 'uruguay-destination' }, user);
      */
     async getBySlug(input: GetBySlugInput, actor: unknown): Promise<GetBySlugOutput> {
-        logMethodStart(dbLogger, 'getBySlug', input, actor as object);
+        logMethodStart(serviceLogger, 'getBySlug', input, actor as object);
         const parsedInput = getBySlugInputSchema.parse(input);
         const destination = (await DestinationModel.getBySlug(parsedInput.slug)) ?? null;
         if (!destination) {
-            logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { destination: null });
             return { destination: null };
         }
         const safeActor = getSafeActor(actor);
@@ -158,18 +158,18 @@ export const DestinationService = {
         checkedPermission = checkedPerm;
         if (isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE
             );
-            logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { destination: null });
             return { destination: null };
         }
         if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'getBySlug', { destination: null });
             throw new Error(`Unknown destination visibility: ${destination.visibility}`);
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
@@ -177,24 +177,24 @@ export const DestinationService = {
                 const allowed = hasPermission(safeActor, checkedPermission);
                 if (!allowed) throw new Error('Permission denied');
             } catch (_err) {
-                logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-                logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+                logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+                logMethodEnd(serviceLogger, 'getBySlug', { destination: null });
                 return { destination: null };
             }
             if (destination.visibility !== 'PUBLIC') {
-                logGrant(dbLogger, safeActor, input, destination, checkedPermission, reason);
+                logGrant(serviceLogger, safeActor, input, destination, checkedPermission, reason);
             }
-            logMethodEnd(dbLogger, 'getBySlug', { destination });
+            logMethodEnd(serviceLogger, 'getBySlug', { destination });
             return { destination };
         }
         if (!canView) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'getBySlug', { destination: null });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'getBySlug', { destination: null });
             return { destination: null };
         }
         if (destination.visibility !== 'PUBLIC') {
             logGrant(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
@@ -202,7 +202,7 @@ export const DestinationService = {
                 reason
             );
         }
-        logMethodEnd(dbLogger, 'getBySlug', { destination });
+        logMethodEnd(serviceLogger, 'getBySlug', { destination });
         return { destination };
     },
 
@@ -217,11 +217,11 @@ export const DestinationService = {
      * @throws Error if the visibility is unknown.
      */
     async getByName(input: GetByNameInput, actor: unknown): Promise<GetByNameOutput> {
-        logMethodStart(dbLogger, 'getByName', input, actor as object);
+        logMethodStart(serviceLogger, 'getByName', input, actor as object);
         const parsedInput = getByNameInputSchema.parse(input);
         const destination = (await DestinationModel.getByName(parsedInput.name)) ?? null;
         if (!destination) {
-            logMethodEnd(dbLogger, 'getByName', { destination: null });
+            logMethodEnd(serviceLogger, 'getByName', { destination: null });
             return { destination: null };
         }
         const safeActor = getSafeActor(actor);
@@ -234,18 +234,18 @@ export const DestinationService = {
         checkedPermission = checkedPerm;
         if (isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE
             );
-            logMethodEnd(dbLogger, 'getByName', { destination: null });
+            logMethodEnd(serviceLogger, 'getByName', { destination: null });
             return { destination: null };
         }
         if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'getByName', { destination: null });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'getByName', { destination: null });
             throw new Error(`Unknown destination visibility: ${destination.visibility}`);
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
@@ -253,24 +253,24 @@ export const DestinationService = {
                 const allowed = hasPermission(safeActor, checkedPermission);
                 if (!allowed) throw new Error('Permission denied');
             } catch (_err) {
-                logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-                logMethodEnd(dbLogger, 'getByName', { destination: null });
+                logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+                logMethodEnd(serviceLogger, 'getByName', { destination: null });
                 return { destination: null };
             }
             if (destination.visibility !== 'PUBLIC') {
-                logGrant(dbLogger, safeActor, input, destination, checkedPermission, reason);
+                logGrant(serviceLogger, safeActor, input, destination, checkedPermission, reason);
             }
-            logMethodEnd(dbLogger, 'getByName', { destination });
+            logMethodEnd(serviceLogger, 'getByName', { destination });
             return { destination };
         }
         if (!canView) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'getByName', { destination: null });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'getByName', { destination: null });
             return { destination: null };
         }
         if (destination.visibility !== 'PUBLIC') {
             logGrant(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
@@ -278,7 +278,7 @@ export const DestinationService = {
                 reason
             );
         }
-        logMethodEnd(dbLogger, 'getByName', { destination });
+        logMethodEnd(serviceLogger, 'getByName', { destination });
         return { destination };
     },
 
@@ -294,12 +294,12 @@ export const DestinationService = {
      * const { destinations } = await list({ limit: 10, offset: 0, visibility: 'PUBLIC' }, user);
      */
     async list(input: ListInput, actor: unknown): Promise<ListOutput> {
-        logMethodStart(dbLogger, 'list', input, actor as object);
+        logMethodStart(serviceLogger, 'list', input, actor as object);
         const parsedInput = listInputSchema.parse(input);
         const allDestinations = await DestinationModel.list(parsedInput);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'list', { destinations: [] });
+            logMethodEnd(serviceLogger, 'list', { destinations: [] });
             return { destinations: [] };
         }
         // Filtrar por permisos/visibilidad
@@ -307,7 +307,7 @@ export const DestinationService = {
             const { canView } = canViewDestination(safeActor, destination);
             return canView;
         });
-        logMethodEnd(dbLogger, 'list', { destinations: filtered });
+        logMethodEnd(serviceLogger, 'list', { destinations: filtered });
         return { destinations: filtered };
     },
 
@@ -323,11 +323,11 @@ export const DestinationService = {
         input: CreateInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<CreateOutput> {
-        logMethodStart(dbLogger, 'create', input, actor);
+        logMethodStart(serviceLogger, 'create', input, actor);
         const safeActor = getSafeActor(actor);
         if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: 'PRIVATE' },
@@ -338,7 +338,7 @@ export const DestinationService = {
         }
         if ('role' in safeActor && isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: 'PRIVATE' },
@@ -348,7 +348,7 @@ export const DestinationService = {
         }
         if (!('role' in safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: 'PRIVATE' },
@@ -360,7 +360,7 @@ export const DestinationService = {
         try {
             hasPermission(safeActor, PermissionEnum.DESTINATION_CREATE);
         } catch (err) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: PermissionEnum.DESTINATION_CREATE,
                 userId: safeActor.id,
                 role: safeActor.role,
@@ -379,7 +379,7 @@ export const DestinationService = {
         const destination = await DestinationModel.create(destinationInput);
         if (destination.visibility !== 'PUBLIC') {
             logGrant(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
@@ -387,7 +387,7 @@ export const DestinationService = {
                 'created'
             );
         }
-        logMethodEnd(dbLogger, 'create', { destination });
+        logMethodEnd(serviceLogger, 'create', { destination });
         return { destination };
     },
 
@@ -407,11 +407,11 @@ export const DestinationService = {
         input: import('./destination.schemas').UpdateInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<import('./destination.schemas').UpdateOutput> {
-        logMethodStart(dbLogger, 'update', input, actor);
+        logMethodStart(serviceLogger, 'update', input, actor);
         const parsedInput = updateInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
-            logMethodEnd(dbLogger, 'update', { destination: null });
+            logMethodEnd(serviceLogger, 'update', { destination: null });
             throw new Error('Destination not found');
         }
         const safeActor = getSafeActor(actor);
@@ -424,31 +424,31 @@ export const DestinationService = {
         checkedPermission = checkedPerm;
         if (isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 PermissionEnum.DESTINATION_UPDATE
             );
-            logMethodEnd(dbLogger, 'update', { destination: null });
+            logMethodEnd(serviceLogger, 'update', { destination: null });
             throw new Error('Forbidden: user disabled');
         }
         // Only ADMIN or user with DESTINATION_UPDATE permission can update
         try {
             hasPermission(safeActor, PermissionEnum.DESTINATION_UPDATE);
         } catch (err) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: PermissionEnum.DESTINATION_UPDATE,
                 userId: 'id' in safeActor ? safeActor.id : 'public',
                 role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
                 extraData: { input, error: (err as Error).message }
             });
-            logMethodEnd(dbLogger, 'update', { destination: null });
+            logMethodEnd(serviceLogger, 'update', { destination: null });
             throw new Error('Forbidden: user does not have permission to update destination');
         }
         if (!canView) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'update', { destination: null });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'update', { destination: null });
             throw new Error('Forbidden: cannot view destination');
         }
         const normalizedUpdateInput = normalizeUpdateInput(destination, parsedInput);
@@ -457,10 +457,10 @@ export const DestinationService = {
             normalizedUpdateInput as import('@repo/types').UpdateDestinationInputType
         );
         if (!updatedDestination) {
-            logMethodEnd(dbLogger, 'update', { destination: null });
+            logMethodEnd(serviceLogger, 'update', { destination: null });
             throw new Error('Destination update failed');
         }
-        logMethodEnd(dbLogger, 'update', { destination: updatedDestination });
+        logMethodEnd(serviceLogger, 'update', { destination: updatedDestination });
         return { destination: updatedDestination };
     },
 
@@ -480,63 +480,63 @@ export const DestinationService = {
         input: GetByIdInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<{ destination: import('@repo/types').DestinationType | null }> {
-        logMethodStart(dbLogger, 'delete', input, actor);
+        logMethodStart(serviceLogger, 'delete', input, actor);
         const parsedInput = getByIdInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
-            logMethodEnd(dbLogger, 'delete', { destination: null });
+            logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw new Error('Destination not found');
         }
         try {
             assertNotArchived(destination);
         } catch (err) {
-            logMethodEnd(dbLogger, 'delete', { destination: null });
+            logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw err;
         }
         const safeActor = getSafeActor(actor);
         if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 'Forbidden: public user cannot delete destinations',
                 PermissionEnum.DESTINATION_DELETE
             );
-            logMethodEnd(dbLogger, 'delete', { destination: null });
+            logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw new Error('Forbidden: public user cannot delete destinations');
         }
         if (isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 PermissionEnum.DESTINATION_DELETE
             );
-            logMethodEnd(dbLogger, 'delete', { destination: null });
+            logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw new Error('Forbidden: user disabled');
         }
         // Only ADMIN or user with DESTINATION_DELETE permission can delete
         try {
             hasPermission(safeActor, PermissionEnum.DESTINATION_DELETE);
         } catch (err) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: PermissionEnum.DESTINATION_DELETE,
                 userId: 'id' in safeActor ? safeActor.id : 'public',
                 role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
                 extraData: { input, error: (err as Error).message }
             });
-            logMethodEnd(dbLogger, 'delete', { destination: null });
+            logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw new Error('Forbidden: user does not have permission to delete destination');
         }
         const updateInput = buildSoftDeleteUpdate(safeActor);
         const updatedDestination = await DestinationModel.update(parsedInput.id, updateInput);
         if (!updatedDestination) {
-            logMethodEnd(dbLogger, 'delete', { destination: null });
+            logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw new Error('Destination delete failed');
         }
-        logMethodEnd(dbLogger, 'delete', { destination: updatedDestination });
+        logMethodEnd(serviceLogger, 'delete', { destination: updatedDestination });
         return { destination: updatedDestination };
     },
 
@@ -556,62 +556,62 @@ export const DestinationService = {
         input: GetByIdInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<{ destination: import('@repo/types').DestinationType | null }> {
-        logMethodStart(dbLogger, 'restore', input, actor);
+        logMethodStart(serviceLogger, 'restore', input, actor);
         const parsedInput = getByIdInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
-            logMethodEnd(dbLogger, 'restore', { destination: null });
+            logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw new Error('Destination not found');
         }
         try {
             assertNotActive(destination);
         } catch (err) {
-            logMethodEnd(dbLogger, 'restore', { destination: null });
+            logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw err;
         }
         const safeActor = getSafeActor(actor);
         if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 'Forbidden: public user cannot restore destinations',
                 PermissionEnum.DESTINATION_RESTORE
             );
-            logMethodEnd(dbLogger, 'restore', { destination: null });
+            logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw new Error('Forbidden: public user cannot restore destinations');
         }
         if (isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 PermissionEnum.DESTINATION_RESTORE
             );
-            logMethodEnd(dbLogger, 'restore', { destination: null });
+            logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw new Error('Forbidden: user disabled');
         }
         try {
             hasPermission(safeActor, PermissionEnum.DESTINATION_RESTORE);
         } catch (err) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: PermissionEnum.DESTINATION_RESTORE,
                 userId: 'id' in safeActor ? safeActor.id : 'public',
                 role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
                 extraData: { input, error: (err as Error).message }
             });
-            logMethodEnd(dbLogger, 'restore', { destination: null });
+            logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw new Error('Forbidden: user does not have permission to restore destination');
         }
         const updateInput = buildRestoreUpdate(safeActor);
         const updatedDestination = await DestinationModel.update(parsedInput.id, updateInput);
         if (!updatedDestination) {
-            logMethodEnd(dbLogger, 'restore', { destination: null });
+            logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw new Error('Destination restore failed');
         }
-        logMethodEnd(dbLogger, 'restore', { destination: updatedDestination });
+        logMethodEnd(serviceLogger, 'restore', { destination: updatedDestination });
         return { destination: updatedDestination };
     },
 
@@ -631,57 +631,57 @@ export const DestinationService = {
         input: GetByIdInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<{ success: boolean }> {
-        logMethodStart(dbLogger, 'hardDelete', input, actor);
+        logMethodStart(serviceLogger, 'hardDelete', input, actor);
         const parsedInput = getByIdInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Destination not found');
         }
         const safeActor = getSafeActor(actor);
         if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 'Forbidden: public user cannot hard-delete destinations',
                 PermissionEnum.DESTINATION_HARD_DELETE
             );
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Forbidden: public user cannot hard-delete destinations');
         }
         if (isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 PermissionEnum.DESTINATION_HARD_DELETE
             );
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Forbidden: user disabled');
         }
         try {
             hasPermission(safeActor, PermissionEnum.DESTINATION_HARD_DELETE);
         } catch (err) {
-            dbLogger.permission({
+            serviceLogger.permission({
                 permission: PermissionEnum.DESTINATION_HARD_DELETE,
                 userId: 'id' in safeActor ? safeActor.id : 'public',
                 role: 'role' in safeActor ? safeActor.role : RoleEnum.GUEST,
                 extraData: { input, error: (err as Error).message }
             });
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Forbidden: user does not have permission to hard-delete destination');
         }
         let deleted = false;
         try {
             deleted = await DestinationModel.hardDelete(parsedInput.id);
         } catch (_err) {
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Destination hard delete failed');
         }
-        logMethodEnd(dbLogger, 'hardDelete', { success: deleted });
+        logMethodEnd(serviceLogger, 'hardDelete', { success: deleted });
         return { success: deleted };
     },
 
@@ -699,10 +699,10 @@ export const DestinationService = {
         input: import('./destination.schemas').SearchInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<import('./destination.schemas').SearchOutput> {
-        logMethodStart(dbLogger, 'search', input, actor);
+        logMethodStart(serviceLogger, 'search', input, actor);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'search', { destinations: [], total: 0 });
+            logMethodEnd(serviceLogger, 'search', { destinations: [], total: 0 });
             return { destinations: [], total: 0 };
         }
         const parsedInput = searchInputSchema.parse(input);
@@ -772,7 +772,7 @@ export const DestinationService = {
             parsedInput.offset,
             parsedInput.offset + parsedInput.limit
         );
-        logMethodEnd(dbLogger, 'search', { destinations: paginated, total });
+        logMethodEnd(serviceLogger, 'search', { destinations: paginated, total });
         return { destinations: paginated, total };
     },
 
@@ -791,7 +791,7 @@ export const DestinationService = {
         input: { limit: number; offset: number },
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<{ destinations: import('@repo/types').DestinationType[] }> {
-        logMethodStart(dbLogger, 'getFeatured', input, actor);
+        logMethodStart(serviceLogger, 'getFeatured', input, actor);
         const allFeatured = await DestinationModel.list({
             limit: input.limit,
             offset: input.offset,
@@ -799,7 +799,7 @@ export const DestinationService = {
         });
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'getFeatured', { destinations: [] });
+            logMethodEnd(serviceLogger, 'getFeatured', { destinations: [] });
             return { destinations: [] };
         }
         // Filtrar por permisos/visibilidad
@@ -807,7 +807,7 @@ export const DestinationService = {
             const { canView } = canViewDestination(safeActor, destination);
             return canView;
         });
-        logMethodEnd(dbLogger, 'getFeatured', { destinations: filtered });
+        logMethodEnd(serviceLogger, 'getFeatured', { destinations: filtered });
         return { destinations: filtered };
     },
 
@@ -826,12 +826,12 @@ export const DestinationService = {
         input: GetReviewsInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<GetReviewsOutput> {
-        logMethodStart(dbLogger, 'getReviews', input, actor);
+        logMethodStart(serviceLogger, 'getReviews', input, actor);
         const parsedInput = getReviewsInputSchema.parse(input);
         // 1. Get destination (for permission/visibility)
         const destination = (await DestinationModel.getById(parsedInput.destinationId)) ?? null;
         if (!destination) {
-            logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+            logMethodEnd(serviceLogger, 'getReviews', { reviews: [] });
             return { reviews: [] };
         }
         const safeActor = getSafeActor(actor);
@@ -844,18 +844,18 @@ export const DestinationService = {
         checkedPermission = checkedPerm;
         if (isUserDisabled(safeActor)) {
             logUserDisabled(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
                 checkedPermission ?? PermissionEnum.DESTINATION_VIEW_PRIVATE
             );
-            logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+            logMethodEnd(serviceLogger, 'getReviews', { reviews: [] });
             return { reviews: [] };
         }
         if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'getReviews', { reviews: [] });
             throw new Error(`Unknown destination visibility: ${destination.visibility}`);
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
@@ -863,20 +863,20 @@ export const DestinationService = {
                 const allowed = hasPermission(safeActor, checkedPermission);
                 if (!allowed) throw new Error('Permission denied');
             } catch (_err) {
-                logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-                logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+                logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+                logMethodEnd(serviceLogger, 'getReviews', { reviews: [] });
                 return { reviews: [] };
             }
             if (destination.visibility !== 'PUBLIC') {
-                logGrant(dbLogger, safeActor, input, destination, checkedPermission, reason);
+                logGrant(serviceLogger, safeActor, input, destination, checkedPermission, reason);
             }
         } else if (!canView) {
-            logDenied(dbLogger, safeActor, input, destination, reason, checkedPermission);
-            logMethodEnd(dbLogger, 'getReviews', { reviews: [] });
+            logDenied(serviceLogger, safeActor, input, destination, reason, checkedPermission);
+            logMethodEnd(serviceLogger, 'getReviews', { reviews: [] });
             return { reviews: [] };
         } else if (destination.visibility !== 'PUBLIC') {
             logGrant(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 destination,
@@ -893,7 +893,7 @@ export const DestinationService = {
         });
         // 3. Filter reviews by destinationId (defensive, in case model.list is reused)
         const filtered = reviews.filter((r) => r.destinationId === parsedInput.destinationId);
-        logMethodEnd(dbLogger, 'getReviews', { reviews: filtered });
+        logMethodEnd(serviceLogger, 'getReviews', { reviews: filtered });
         return { reviews: filtered };
     },
 

@@ -7,7 +7,6 @@ import {
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import * as LoggerModule from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import { makeAccommodation } from '../../factories/accommodationFactory';
 import {
@@ -18,20 +17,8 @@ import {
     makeUserWithoutPermissions
 } from '../../factories/userFactory';
 import { getMockUserId } from '../../mockData';
-import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 
-vi.mock('../../../utils/logger', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        dbLogger: {
-            info: vi.fn(),
-            error: vi.fn(),
-            permission: vi.fn()
-        }
-    };
-});
+import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -158,7 +145,7 @@ describe('accommodation.service.hardDelete', () => {
             AccommodationService.hardDelete({ id: accommodation.id }, publicUser)
         ).rejects.toThrow(/Forbidden/);
         // Assert permission log for public user
-        expect(LoggerModule.dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 userId: 'public',
                 role: publicUser.role,
@@ -208,7 +195,7 @@ describe('accommodation.service.hardDelete', () => {
         expectInfoLog({ result: { success: false } }, 'hardDelete:end');
     });
 
-    it('hardDelete should call dbLogger.info and dbLogger.permission at the correct points', async () => {
+    it('hardDelete should call serviceLogger.info and serviceLogger.permission at the correct points', async () => {
         // Arrange: test that logs are called correctly on success and permission error
         const ownerId = getMockUserId();
         const user = makeOwner({ id: ownerId });

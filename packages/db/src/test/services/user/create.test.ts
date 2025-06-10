@@ -2,7 +2,6 @@ import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserModel } from '../../../models/user/user.model';
 import { UserService } from '../../../services/user/user.service';
-import { dbLogger } from '../../../utils/logger';
 
 const getMockUser = (
     overrides: Partial<UserType & { email?: string }> = {}
@@ -58,8 +57,8 @@ describe('user.service.create', () => {
         expect(result.user.role).toBe(validInput.role);
         expect(result.user.email).toBe(validInput.email);
         expect(result.user).not.toHaveProperty('password');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:start');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:end');
     });
 
     it('should not allow normal user to create a user', async () => {

@@ -10,7 +10,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
 import { EventService } from '../../../services/event/event.service';
-import { dbLogger } from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 
@@ -50,8 +49,8 @@ describe('event.service.update', () => {
         );
         const result = await EventService.update(validInput, admin);
         expect(result.event.summary).toBe(validInput.summary);
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:start');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'update:end');
     });
 
     it('should allow superadmin to update an event', async () => {

@@ -6,7 +6,7 @@ import {
     createPublicUser
 } from '@repo/types';
 import { hasPermission } from '../utils';
-import type { dbLogger } from './logger';
+import type { serviceLogger } from './serviceLogger';
 
 /**
  * Enum representing the reason why an actor can or cannot view an entity (accommodation, destination, etc).
@@ -86,7 +86,7 @@ export const isPublicUser = (actor: UserType | PublicUserType): boolean => {
  * logMethodStart(logger, 'getById', { id: 'x' }, user)
  */
 export const logMethodStart = (
-    logger: typeof dbLogger,
+    logger: typeof serviceLogger,
     method: string,
     input: object,
     actor: object
@@ -102,7 +102,7 @@ export const logMethodStart = (
  * @example
  * logMethodEnd(logger, 'getById', { result })
  */
-export const logMethodEnd = (logger: typeof dbLogger, method: string, result: object) => {
+export const logMethodEnd = (logger: typeof serviceLogger, method: string, result: object) => {
     logger.info({ result }, `${method}:end`);
 };
 

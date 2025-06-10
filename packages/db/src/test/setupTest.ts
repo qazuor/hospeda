@@ -18,22 +18,28 @@ export const createMockDb = () => ({
 });
 
 /**
- * Creates a new mockLogger object for use in tests.
+ * Creates a new db mockLogger object for use in tests.
  */
-export const createMockLogger = () => ({
+export const createMockDbLogger = () => ({
     query: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn()
+});
+
+/**
+ * Creates a new service mockLogger object for use in tests.
+ */
+export const createMockServiceLogger = () => ({
     error: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     permission: vi.fn()
 });
 
-// Global mockDb and mockLogger for compatibility with existing tests
+export const mockServiceLogger = createMockServiceLogger();
 const mockDb = createMockDb();
-const mockLogger = createMockLogger();
-
-globalThis.mockDb = mockDb;
-globalThis.mockLogger = mockLogger;
+const mockDbLogger = createMockDbLogger();
 
 // Base module mocks for all tests
 vi.mock('../client.ts', () => ({
@@ -41,5 +47,12 @@ vi.mock('../client.ts', () => ({
     initializeDb: vi.fn(() => globalThis.mockDb)
 }));
 vi.mock('../utils/logger.ts', () => ({
-    dbLogger: globalThis.mockLogger
+    dbLogger: globalThis.mockDbLogger
 }));
+vi.mock('../utils/serviceLogger.ts', () => ({
+    serviceLogger: globalThis.mockServiceLogger
+}));
+
+globalThis.mockDb = mockDb;
+globalThis.mockDbLogger = mockDbLogger;
+globalThis.mockServiceLogger = mockServiceLogger;

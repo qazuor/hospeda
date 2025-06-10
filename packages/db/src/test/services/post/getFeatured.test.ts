@@ -3,17 +3,7 @@ import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../models/post/post.model';
 import { PostService } from '../../../services/post/post.service';
-import { dbLogger } from '../../../utils/logger';
 import { getMockPost, getMockUser } from '../../mockData';
-
-vi.mock('../../../utils/logger', () => ({
-    dbLogger: {
-        info: vi.fn(),
-        error: vi.fn(),
-        query: vi.fn(),
-        permission: vi.fn()
-    }
-}));
 
 vi.mock('../../../models/post/post.model');
 
@@ -65,7 +55,7 @@ describe('PostService.getFeatured', () => {
                 visibility: VisibilityEnum.PUBLIC
             })
         ]);
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should return all featured posts for admin', async () => {
@@ -82,7 +72,7 @@ describe('PostService.getFeatured', () => {
                 visibility: VisibilityEnum.PRIVATE
             })
         ]);
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should return only public featured posts for user without permission', async () => {
@@ -96,12 +86,12 @@ describe('PostService.getFeatured', () => {
             expect(post.id).toBe('public-featured-post-uuid');
             expect(post.visibility).toBe(VisibilityEnum.PUBLIC);
         }
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should throw and log if input is invalid', async () => {
         const input = { foo: 'bar' };
         await expect(PostService.getFeatured(input, user)).rejects.toThrow();
-        expect(dbLogger.info).toHaveBeenCalledTimes(1);
+        expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
     });
 });

@@ -8,7 +8,6 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../models/event/event.model';
 import { EventService } from '../../../services/event/event.service';
-import { dbLogger } from '../../../utils/logger';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../../mockData';
 
 import type { EventId, EventLocationId } from '@repo/types';
@@ -57,9 +56,9 @@ const publicActor = getMockPublicUser();
 
 const allEvents: EventType[] = [publicEvent, privateEvent, archivedEvent];
 
-vi.spyOn(dbLogger, 'info').mockImplementation(() => {});
-vi.spyOn(dbLogger, 'warn').mockImplementation(() => {});
-vi.spyOn(dbLogger, 'error').mockImplementation(() => {});
+vi.spyOn(mockServiceLogger, 'info').mockImplementation(() => {});
+vi.spyOn(mockServiceLogger, 'warn').mockImplementation(() => {});
+vi.spyOn(mockServiceLogger, 'error').mockImplementation(() => {});
 
 describe('event.service.getByLocationId', () => {
     beforeEach(() => {

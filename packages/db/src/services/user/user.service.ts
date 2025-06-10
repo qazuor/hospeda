@@ -1,6 +1,5 @@
 import { LifecycleStatusEnum, type UserId } from '@repo/types';
 import { UserModel } from '../../models/user/user.model';
-import { dbLogger } from '../../utils/logger';
 import { hasPermission } from '../../utils/permission-manager';
 import {
     CanViewReasonEnum,
@@ -9,6 +8,7 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
+import { serviceLogger } from '../../utils/serviceLogger';
 import { canViewUser } from './user.helper';
 import type {
     CreateUserInput,
@@ -51,16 +51,16 @@ export const UserService = {
      *   const { user } = await UserService.getById({ id: 'user-123' }, adminUser);
      */
     async getById(input: GetByIdInput, actor: unknown): Promise<GetByIdOutput> {
-        logMethodStart(dbLogger, 'getById', input, actor as object);
+        logMethodStart(serviceLogger, 'getById', input, actor as object);
         const parsedInput = getByIdInputSchema.parse(input);
         const user = (await UserModel.getById(parsedInput.id)) ?? null;
         if (!user) {
-            logMethodEnd(dbLogger, 'getById', { user: null });
+            logMethodEnd(serviceLogger, 'getById', { user: null });
             return { user: null };
         }
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'getById', { user: null });
+            logMethodEnd(serviceLogger, 'getById', { user: null });
             return { user: null };
         }
         const { canView, reason, checkedPermission } = canViewUser(safeActor, user);
@@ -68,25 +68,25 @@ export const UserService = {
             reason === CanViewReasonEnum.UNKNOWN_VISIBILITY ||
             reason === CanViewReasonEnum.PUBLIC_ACTOR_DENIED
         ) {
-            logMethodEnd(dbLogger, 'getById', { user: null });
+            logMethodEnd(serviceLogger, 'getById', { user: null });
             return { user: null };
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
             try {
                 hasPermission(safeActor, checkedPermission);
-                logMethodEnd(dbLogger, 'getById', { user });
+                logMethodEnd(serviceLogger, 'getById', { user });
                 return { user };
             } catch {
-                logMethodEnd(dbLogger, 'getById', { user: null });
+                logMethodEnd(serviceLogger, 'getById', { user: null });
                 return { user: null };
             }
         }
         if (canView) {
-            logMethodEnd(dbLogger, 'getById', { user });
+            logMethodEnd(serviceLogger, 'getById', { user });
             return { user };
         }
         // Explicit deny for all other cases (public, no permission, etc)
-        logMethodEnd(dbLogger, 'getById', { user: null });
+        logMethodEnd(serviceLogger, 'getById', { user: null });
         return { user: null };
     },
     /**
@@ -123,17 +123,17 @@ export const UserService = {
      * @throws Error if not allowed or user already exists.
      */
     async create(input: CreateUserInput, actor: unknown): Promise<CreateUserOutput> {
-        logMethodStart(dbLogger, 'create', input, actor as object);
+        logMethodStart(serviceLogger, 'create', input, actor as object);
         const parsedInput = createUserInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Only admin can create users
         if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
-            logMethodEnd(dbLogger, 'create', { user: null });
+            logMethodEnd(serviceLogger, 'create', { user: null });
             throw new Error('Only admin can create users');
         }
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'create', { user: null });
+            logMethodEnd(serviceLogger, 'create', { user: null });
             throw new Error('Disabled users cannot create users');
         }
         // Prevent creating users with equal or higher role than actor
@@ -141,13 +141,13 @@ export const UserService = {
             'role' in safeActor &&
             (parsedInput.role === 'ADMIN' || parsedInput.role === 'SUPER_ADMIN')
         ) {
-            logMethodEnd(dbLogger, 'create', { user: null });
+            logMethodEnd(serviceLogger, 'create', { user: null });
             throw new Error('Cannot create user with equal or higher role');
         }
         // Check uniqueness (userName/email)
         const existingByUserName = await UserModel.getByUserName(parsedInput.userName);
         if (existingByUserName) {
-            logMethodEnd(dbLogger, 'create', { user: null });
+            logMethodEnd(serviceLogger, 'create', { user: null });
             throw new Error('User name already exists');
         }
         if (parsedInput.email) {
@@ -155,7 +155,7 @@ export const UserService = {
             const existingByEmail = await (UserModel.getByEmail(parsedInput.email) ??
                 Promise.resolve(undefined));
             if (existingByEmail) {
-                logMethodEnd(dbLogger, 'create', { user: null });
+                logMethodEnd(serviceLogger, 'create', { user: null });
                 throw new Error('Email already exists');
             }
         }
@@ -171,7 +171,7 @@ export const UserService = {
         });
         // Remove password from output
         const { password, ...userOut } = newUser;
-        logMethodEnd(dbLogger, 'create', { user: userOut });
+        logMethodEnd(serviceLogger, 'create', { user: userOut });
         return { user: userOut };
     },
     /**
@@ -184,25 +184,25 @@ export const UserService = {
      * @throws Error if not allowed, user not found, or duplicate userName/email.
      */
     async update(input: UpdateUserInput, actor: unknown): Promise<UpdateUserOutput> {
-        logMethodStart(dbLogger, 'update', input, actor as object);
+        logMethodStart(serviceLogger, 'update', input, actor as object);
         const parsedInput = updateUserInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Get user to update
         const user = await UserModel.getById(parsedInput.id);
         if (!user) {
-            logMethodEnd(dbLogger, 'update', { user: null });
+            logMethodEnd(serviceLogger, 'update', { user: null });
             throw new Error('User not found');
         }
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'update', { user: null });
+            logMethodEnd(serviceLogger, 'update', { user: null });
             throw new Error('Disabled users cannot update users');
         }
         // Only admin or the user themselves can update
         const isAdmin = 'role' in safeActor && safeActor.role === 'ADMIN';
         const isSelf = 'id' in safeActor && safeActor.id === user.id;
         if (!isAdmin && !isSelf) {
-            logMethodEnd(dbLogger, 'update', { user: null });
+            logMethodEnd(serviceLogger, 'update', { user: null });
             throw new Error('Only admin or the user themselves can update');
         }
         // Prevent user from changing their own role to admin or higher (unless admin)
@@ -211,21 +211,21 @@ export const UserService = {
             parsedInput.role &&
             (parsedInput.role === 'ADMIN' || parsedInput.role === 'SUPER_ADMIN')
         ) {
-            logMethodEnd(dbLogger, 'update', { user: null });
+            logMethodEnd(serviceLogger, 'update', { user: null });
             throw new Error('Cannot assign admin or higher role');
         }
         // Check uniqueness (userName/email)
         if (parsedInput.userName && parsedInput.userName !== user.userName) {
             const existingByUserName = await UserModel.getByUserName(parsedInput.userName);
             if (existingByUserName) {
-                logMethodEnd(dbLogger, 'update', { user: null });
+                logMethodEnd(serviceLogger, 'update', { user: null });
                 throw new Error('User name already exists');
             }
         }
         if (parsedInput.email && parsedInput.email !== user.email) {
             const existingByEmail = await UserModel.getByEmail(parsedInput.email);
             if (existingByEmail) {
-                logMethodEnd(dbLogger, 'update', { user: null });
+                logMethodEnd(serviceLogger, 'update', { user: null });
                 throw new Error('Email already exists');
             }
         }
@@ -239,12 +239,12 @@ export const UserService = {
             updatedById: 'id' in safeActor ? safeActor.id : user.id
         });
         if (!updatedUser) {
-            logMethodEnd(dbLogger, 'update', { user: null });
+            logMethodEnd(serviceLogger, 'update', { user: null });
             throw new Error('Failed to update user');
         }
         // Remove password from output
         const { password, ...userOut } = updatedUser;
-        logMethodEnd(dbLogger, 'update', { user: userOut });
+        logMethodEnd(serviceLogger, 'update', { user: userOut });
         return { user: userOut };
     },
     /**
@@ -257,33 +257,33 @@ export const UserService = {
      * @throws Error if not allowed, user not found, already disabled, or self-delete.
      */
     async softDelete(input: SoftDeleteUserInput, actor: unknown): Promise<SoftDeleteUserOutput> {
-        logMethodStart(dbLogger, 'softDelete', input, actor as object);
+        logMethodStart(serviceLogger, 'softDelete', input, actor as object);
         const parsedInput = softDeleteUserInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // First: do not allow if the actor is disabled
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'softDelete', { user: null });
+            logMethodEnd(serviceLogger, 'softDelete', { user: null });
             throw new Error('Disabled users cannot soft-delete users');
         }
         // Solo admin puede soft-delete
         if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
-            logMethodEnd(dbLogger, 'softDelete', { user: null });
+            logMethodEnd(serviceLogger, 'softDelete', { user: null });
             throw new Error('Only admin can soft-delete users');
         }
         // Get user to disable
         const user = await UserModel.getById(parsedInput.id);
         if (!user) {
-            logMethodEnd(dbLogger, 'softDelete', { user: null });
+            logMethodEnd(serviceLogger, 'softDelete', { user: null });
             throw new Error('User not found');
         }
         if (user.lifecycleState === LifecycleStatusEnum.INACTIVE) {
-            logMethodEnd(dbLogger, 'softDelete', { user: null });
+            logMethodEnd(serviceLogger, 'softDelete', { user: null });
             throw new Error('User is already disabled');
         }
         // Prevent admin from disabling themselves
         if ('id' in safeActor && safeActor.id === user.id) {
-            logMethodEnd(dbLogger, 'softDelete', { user: null });
+            logMethodEnd(serviceLogger, 'softDelete', { user: null });
             throw new Error('Admin cannot soft-delete themselves');
         }
         // Disable user
@@ -294,12 +294,12 @@ export const UserService = {
             updatedById: safeActor.id
         });
         if (!updatedUser) {
-            logMethodEnd(dbLogger, 'softDelete', { user: null });
+            logMethodEnd(serviceLogger, 'softDelete', { user: null });
             throw new Error('Failed to soft-delete user');
         }
         // Remove password from output
         const { password, ...userOut } = updatedUser;
-        logMethodEnd(dbLogger, 'softDelete', { user: userOut });
+        logMethodEnd(serviceLogger, 'softDelete', { user: userOut });
         return { user: userOut };
     },
     /**
@@ -312,33 +312,33 @@ export const UserService = {
      * @throws Error if not allowed, user not found, already active, or self-restore.
      */
     async restore(input: RestoreUserInput, actor: unknown): Promise<RestoreUserOutput> {
-        logMethodStart(dbLogger, 'restore', input, actor as object);
+        logMethodStart(serviceLogger, 'restore', input, actor as object);
         const parsedInput = restoreUserInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Primero: no permitir si el actor está deshabilitado
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'restore', { user: null });
+            logMethodEnd(serviceLogger, 'restore', { user: null });
             throw new Error('Disabled users cannot restore users');
         }
         // Solo admin puede restaurar usuarios
         if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
-            logMethodEnd(dbLogger, 'restore', { user: null });
+            logMethodEnd(serviceLogger, 'restore', { user: null });
             throw new Error('Only admin can restore users');
         }
         // Buscar usuario a restaurar
         const user = await UserModel.getById(parsedInput.id);
         if (!user) {
-            logMethodEnd(dbLogger, 'restore', { user: null });
+            logMethodEnd(serviceLogger, 'restore', { user: null });
             throw new Error('User not found');
         }
         // Prevenir que el admin se restaure a sí mismo
         if ('id' in safeActor && safeActor.id === user.id) {
-            logMethodEnd(dbLogger, 'restore', { user: null });
+            logMethodEnd(serviceLogger, 'restore', { user: null });
             throw new Error('Admin cannot restore themselves');
         }
         if (user.lifecycleState === LifecycleStatusEnum.ACTIVE) {
-            logMethodEnd(dbLogger, 'restore', { user: null });
+            logMethodEnd(serviceLogger, 'restore', { user: null });
             throw new Error('User is already active');
         }
         // Restaurar usuario
@@ -349,12 +349,12 @@ export const UserService = {
             updatedById: safeActor.id
         });
         if (!updatedUser) {
-            logMethodEnd(dbLogger, 'restore', { user: null });
+            logMethodEnd(serviceLogger, 'restore', { user: null });
             throw new Error('Failed to restore user');
         }
         // Quitar password del output
         const { password, ...userOut } = updatedUser;
-        logMethodEnd(dbLogger, 'restore', { user: userOut });
+        logMethodEnd(serviceLogger, 'restore', { user: userOut });
         return { user: userOut };
     },
     /**
@@ -367,38 +367,38 @@ export const UserService = {
      * @throws Error if not allowed, user not found, self-delete, or DB error.
      */
     async hardDelete(input: HardDeleteUserInput, actor: unknown): Promise<HardDeleteUserOutput> {
-        logMethodStart(dbLogger, 'hardDelete', input, actor as object);
+        logMethodStart(serviceLogger, 'hardDelete', input, actor as object);
         const parsedInput = hardDeleteUserInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Do not allow if the actor is disabled
         if (isUserDisabled(safeActor)) {
-            logMethodEnd(dbLogger, 'hardDelete', { user: null });
+            logMethodEnd(serviceLogger, 'hardDelete', { user: null });
             throw new Error('Disabled users cannot hard-delete users');
         }
         // Only admin can hard-delete
         if (!('role' in safeActor) || safeActor.role !== 'ADMIN') {
-            logMethodEnd(dbLogger, 'hardDelete', { user: null });
+            logMethodEnd(serviceLogger, 'hardDelete', { user: null });
             throw new Error('Only admin can hard-delete users');
         }
         // Find user to delete
         const user = await UserModel.getById(parsedInput.id);
         if (!user) {
-            logMethodEnd(dbLogger, 'hardDelete', { user: null });
+            logMethodEnd(serviceLogger, 'hardDelete', { user: null });
             throw new Error('User not found');
         }
         // Prevent admin from deleting themselves
         if ('id' in safeActor && safeActor.id === user.id) {
-            logMethodEnd(dbLogger, 'hardDelete', { user: null });
+            logMethodEnd(serviceLogger, 'hardDelete', { user: null });
             throw new Error('Admin cannot hard-delete themselves');
         }
         // Perform physical deletion
         const deletedUser = await UserModel.hardDelete(user.id);
         if (!deletedUser) {
-            logMethodEnd(dbLogger, 'hardDelete', { user: null });
+            logMethodEnd(serviceLogger, 'hardDelete', { user: null });
             throw new Error('Failed to hard-delete user');
         }
-        logMethodEnd(dbLogger, 'hardDelete', { user: deletedUser });
+        logMethodEnd(serviceLogger, 'hardDelete', { user: deletedUser });
         return { user: deletedUser };
     },
     /**

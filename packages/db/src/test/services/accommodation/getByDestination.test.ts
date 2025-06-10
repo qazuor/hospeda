@@ -10,22 +10,9 @@ import {
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import * as LoggerModule from '../../../utils/logger';
 import { makeDisabledUser } from '../../factories/userFactory';
 import { getMockAccommodation, getMockPublicUser, getMockUser } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
-
-vi.mock('../../../utils/logger', async (importOriginal) => {
-    const actual: typeof LoggerModule = await importOriginal();
-    return {
-        ...actual,
-        dbLogger: {
-            info: vi.fn(),
-            error: vi.fn(),
-            permission: vi.fn()
-        }
-    };
-});
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -195,7 +182,7 @@ describe('accommodation.service.getByDestination', () => {
             role: disabledUser.role,
             extraData: expect.objectContaining({ reason: 'user disabled' })
         });
-        expect(LoggerModule.dbLogger.permission).toHaveBeenCalledTimes(2);
+        expect(mockServiceLogger.permission).toHaveBeenCalledTimes(2);
     });
 
     it('should filter out accommodations with unknown visibility and log denied', async () => {
@@ -237,7 +224,7 @@ describe('accommodation.service.getByDestination', () => {
                 input: expect.objectContaining({ destinationId })
             })
         });
-        expect(LoggerModule.dbLogger.permission).toHaveBeenCalledTimes(1);
+        expect(mockServiceLogger.permission).toHaveBeenCalledTimes(1);
     });
 
     it('should log access to private/draft accommodations for users with permission', async () => {
@@ -268,7 +255,7 @@ describe('accommodation.service.getByDestination', () => {
             { result: { accommodations: [accommodationPrivate, accommodationDraft] } },
             'getByDestination:end'
         );
-        // Should log access to private/draft (logGrant -> dbLogger.permission)
+        // Should log access to private/draft (logGrant -> mockServiceLogger.permission)
         expectPermissionLog({
             permission: PermissionEnum.ACCOMMODATION_VIEW_PRIVATE,
             userId: adminUser.id,
@@ -289,7 +276,7 @@ describe('accommodation.service.getByDestination', () => {
                 visibility: VisibilityEnum.DRAFT
             })
         });
-        expect(LoggerModule.dbLogger.permission).toHaveBeenCalledTimes(2);
+        expect(mockServiceLogger.permission).toHaveBeenCalledTimes(2);
     });
 
     it('should handle a mix of visibilities and permissions correctly', async () => {
@@ -365,7 +352,7 @@ describe('accommodation.service.getByDestination', () => {
         // There should be no logGrant for DRAFT (regular user without permission)
         // (already covered by not being in the result)
         // There should be two denied permission logs
-        const deniedLogs = (LoggerModule.dbLogger.permission as Mock).mock.calls.filter(
+        const deniedLogs = (mockServiceLogger.permission as Mock).mock.calls.filter(
             ([arg]) => !arg.extraData || arg.extraData.access !== 'granted'
         );
         expect(deniedLogs).toHaveLength(3);

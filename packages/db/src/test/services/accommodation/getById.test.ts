@@ -1,4 +1,22 @@
-vi.mock('../../../utils/logger');
+import type { AccommodationId, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/types';
+import type { Mock } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
+import { AccommodationService } from '../../../services/accommodation/accommodation.service';
+import {
+    getMockAccommodation,
+    getMockAccommodationPrivate,
+    getMockAccommodationPublic,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../../mockData';
+import {
+    expectInfoLog,
+    expectNoPermissionLog,
+    expectPermissionLog
+} from '../../utils/logAssertions';
 
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -24,39 +42,6 @@ vi.mock('../../../models/accommodation/accommodation.model', async (importOrigin
             'name',
             'type'
         ]
-    };
-});
-
-import type { AccommodationId, VisibilityEnum } from '@repo/types';
-import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/types';
-import type { Mock } from 'vitest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import type * as LoggerModule from '../../../utils/logger';
-import {
-    getMockAccommodation,
-    getMockAccommodationPrivate,
-    getMockAccommodationPublic,
-    getMockPublicUser,
-    getMockUser,
-    getMockUserId
-} from '../../mockData';
-import {
-    expectInfoLog,
-    expectNoPermissionLog,
-    expectPermissionLog
-} from '../../utils/logAssertions';
-
-vi.mock('../../../utils/logger', async (importOriginal) => {
-    const actual: typeof LoggerModule = await importOriginal();
-    return {
-        ...actual,
-        dbLogger: {
-            info: vi.fn(),
-            error: vi.fn(),
-            permission: vi.fn()
-        }
     };
 });
 

@@ -8,7 +8,6 @@ import {
 } from '@repo/types';
 import { EventModel } from '../../models/event/event.model';
 import { hasPermission } from '../../utils';
-import { dbLogger } from '../../utils/logger';
 import { logDenied, logGrant } from '../../utils/permission-logger';
 import {
     CanViewReasonEnum,
@@ -17,6 +16,7 @@ import {
     logMethodEnd,
     logMethodStart
 } from '../../utils/service-helper';
+import { serviceLogger } from '../../utils/serviceLogger';
 import {
     assertNotArchived,
     buildRestoreUpdate,
@@ -77,20 +77,20 @@ export const EventService = {
      *   const { event } = await EventService.getById({ id: 'event-123' }, adminUser);
      */
     async getById(input: GetByIdInput, actor: unknown): Promise<GetByIdOutput> {
-        logMethodStart(dbLogger, 'getById', input, actor as object);
+        logMethodStart(serviceLogger, 'getById', input, actor as object);
         const parsedInput = getByIdInputSchema.parse(input);
         const event = (await EventModel.getById(parsedInput.id)) ?? null;
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event ?? { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'getById', { event: null });
+            logMethodEnd(serviceLogger, 'getById', { event: null });
             return { event: null };
         }
         const { canView, reason, checkedPermission } = canViewEvent(
@@ -103,64 +103,64 @@ export const EventService = {
         );
         if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event ?? { visibility: VisibilityEnum.PUBLIC },
                 reason,
                 checkedPermission
             );
-            logMethodEnd(dbLogger, 'getById', { event: null });
+            logMethodEnd(serviceLogger, 'getById', { event: null });
             throw new Error(`Unknown event visibility: ${event ? event.visibility : 'null'}`);
         }
         if (reason === CanViewReasonEnum.PUBLIC_ACTOR_DENIED) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event ?? { visibility: VisibilityEnum.PUBLIC },
                 reason,
                 checkedPermission
             );
-            logMethodEnd(dbLogger, 'getById', { event: null });
+            logMethodEnd(serviceLogger, 'getById', { event: null });
             return { event: null };
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
             try {
                 hasPermission(safeActor, checkedPermission);
                 if (event && event.visibility !== VisibilityEnum.PUBLIC) {
-                    logGrant(dbLogger, safeActor, input, event, checkedPermission, reason);
+                    logGrant(serviceLogger, safeActor, input, event, checkedPermission, reason);
                 }
-                logMethodEnd(dbLogger, 'getById', { event });
+                logMethodEnd(serviceLogger, 'getById', { event });
                 return { event };
             } catch {
                 logDenied(
-                    dbLogger,
+                    serviceLogger,
                     safeActor,
                     input,
                     event ?? { visibility: VisibilityEnum.PUBLIC },
                     reason,
                     checkedPermission
                 );
-                logMethodEnd(dbLogger, 'getById', { event: null });
+                logMethodEnd(serviceLogger, 'getById', { event: null });
                 return { event: null };
             }
         }
         if (!canView) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event ?? { visibility: VisibilityEnum.PUBLIC },
                 reason,
                 checkedPermission
             );
-            logMethodEnd(dbLogger, 'getById', { event: null });
+            logMethodEnd(serviceLogger, 'getById', { event: null });
             return { event: null };
         }
         if (event && event.visibility !== VisibilityEnum.PUBLIC) {
             logGrant(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event,
@@ -168,7 +168,7 @@ export const EventService = {
                 reason
             );
         }
-        logMethodEnd(dbLogger, 'getById', { event });
+        logMethodEnd(serviceLogger, 'getById', { event });
         return { event };
     },
     /**
@@ -187,20 +187,20 @@ export const EventService = {
      *   const { event } = await EventService.getBySlug({ slug: 'event-slug' }, adminUser);
      */
     async getBySlug(input: GetBySlugInput, actor: unknown): Promise<GetBySlugOutput> {
-        logMethodStart(dbLogger, 'getBySlug', input, actor as object);
+        logMethodStart(serviceLogger, 'getBySlug', input, actor as object);
         const parsedInput = getBySlugInputSchema.parse(input);
         const event = (await EventModel.getBySlug(parsedInput.slug)) ?? null;
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event ?? { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'getBySlug', { event: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { event: null });
             return { event: null };
         }
         const { canView, reason, checkedPermission } = canViewEvent(
@@ -213,64 +213,64 @@ export const EventService = {
         );
         if (reason === CanViewReasonEnum.UNKNOWN_VISIBILITY) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event ?? { visibility: VisibilityEnum.PUBLIC },
                 reason,
                 checkedPermission
             );
-            logMethodEnd(dbLogger, 'getBySlug', { event: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { event: null });
             throw new Error(`Unknown event visibility: ${event ? event.visibility : 'null'}`);
         }
         if (reason === CanViewReasonEnum.PUBLIC_ACTOR_DENIED) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event ?? { visibility: VisibilityEnum.PUBLIC },
                 reason,
                 checkedPermission
             );
-            logMethodEnd(dbLogger, 'getBySlug', { event: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { event: null });
             return { event: null };
         }
         if (reason === CanViewReasonEnum.PERMISSION_CHECK_REQUIRED && checkedPermission) {
             try {
                 hasPermission(safeActor, checkedPermission);
                 if (event && event.visibility !== VisibilityEnum.PUBLIC) {
-                    logGrant(dbLogger, safeActor, input, event, checkedPermission, reason);
+                    logGrant(serviceLogger, safeActor, input, event, checkedPermission, reason);
                 }
-                logMethodEnd(dbLogger, 'getBySlug', { event });
+                logMethodEnd(serviceLogger, 'getBySlug', { event });
                 return { event };
             } catch {
                 logDenied(
-                    dbLogger,
+                    serviceLogger,
                     safeActor,
                     input,
                     event ?? { visibility: VisibilityEnum.PUBLIC },
                     reason,
                     checkedPermission
                 );
-                logMethodEnd(dbLogger, 'getBySlug', { event: null });
+                logMethodEnd(serviceLogger, 'getBySlug', { event: null });
                 return { event: null };
             }
         }
         if (!canView) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event ?? { visibility: VisibilityEnum.PUBLIC },
                 reason,
                 checkedPermission
             );
-            logMethodEnd(dbLogger, 'getBySlug', { event: null });
+            logMethodEnd(serviceLogger, 'getBySlug', { event: null });
             return { event: null };
         }
         if (event && event.visibility !== VisibilityEnum.PUBLIC) {
             logGrant(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event,
@@ -278,7 +278,7 @@ export const EventService = {
                 reason
             );
         }
-        logMethodEnd(dbLogger, 'getBySlug', { event });
+        logMethodEnd(serviceLogger, 'getBySlug', { event });
         return { event };
     },
     /**
@@ -297,19 +297,19 @@ export const EventService = {
         input: GetByLocationIdInput,
         actor: unknown
     ): Promise<GetByLocationIdOutput> {
-        logMethodStart(dbLogger, 'getByLocationId', input, actor as object);
+        logMethodStart(serviceLogger, 'getByLocationId', input, actor as object);
         const parsedInput = getByLocationIdInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'getByLocationId', { events: [] });
+            logMethodEnd(serviceLogger, 'getByLocationId', { events: [] });
             return { events: [] };
         }
         // Retrieve all events for the given location
@@ -329,14 +329,14 @@ export const EventService = {
         });
         // Log using the visibility of the first event (if any) or PUBLIC
         logGrant(
-            dbLogger,
+            serviceLogger,
             safeActor,
             input,
             { visibility: filtered[0]?.visibility || VisibilityEnum.PUBLIC },
             PermissionEnum.EVENT_VIEW_PRIVATE,
             'Events by locationId'
         );
-        logMethodEnd(dbLogger, 'getByLocationId', { events: filtered });
+        logMethodEnd(serviceLogger, 'getByLocationId', { events: filtered });
         return { events: filtered };
     },
     /**
@@ -354,19 +354,19 @@ export const EventService = {
      *   const { event } = await EventService.create({ ... }, user);
      */
     async create(input: CreateEventInput, actor: unknown): Promise<CreateEventOutput> {
-        logMethodStart(dbLogger, 'create', input, actor as object);
+        logMethodStart(serviceLogger, 'create', input, actor as object);
         const parsedInput = createEventInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'create', { event: null });
+            logMethodEnd(serviceLogger, 'create', { event: null });
             throw new Error('User is disabled');
         }
         // Permiso: EVENT_CREATE
@@ -376,28 +376,28 @@ export const EventService = {
             hasPermission(safeActor, PermissionEnum.EVENT_CREATE);
         if (!allowed) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility },
                 'Permission denied',
                 PermissionEnum.EVENT_CREATE
             );
-            logMethodEnd(dbLogger, 'create', { event: null });
+            logMethodEnd(serviceLogger, 'create', { event: null });
             throw new Error('Permission denied: EVENT_CREATE');
         }
         // Unicidad de slug
         const existing = await EventModel.getBySlug(parsedInput.slug);
         if (existing) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility },
                 'Slug already exists',
                 undefined
             );
-            logMethodEnd(dbLogger, 'create', { event: null });
+            logMethodEnd(serviceLogger, 'create', { event: null });
             throw new Error('Slug already exists');
         }
         // Normaliza el input como en los otros servicios
@@ -408,8 +408,15 @@ export const EventService = {
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             moderationState: ModerationStatusEnum.PENDING_REVIEW
         });
-        logGrant(dbLogger, safeActor, input, event, PermissionEnum.EVENT_CREATE, 'Event created');
-        logMethodEnd(dbLogger, 'create', { event });
+        logGrant(
+            serviceLogger,
+            safeActor,
+            input,
+            event,
+            PermissionEnum.EVENT_CREATE,
+            'Event created'
+        );
+        logMethodEnd(serviceLogger, 'create', { event });
         return { event };
     },
     /**
@@ -427,19 +434,19 @@ export const EventService = {
      *   const { event } = await EventService.update({ id: 'event-1', summary: 'Updated' }, user);
      */
     async update(input: UpdateInput, actor: unknown): Promise<UpdateOutput> {
-        logMethodStart(dbLogger, 'update', input, actor as object);
+        logMethodStart(serviceLogger, 'update', input, actor as object);
         const parsedInput = updateInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility || '' },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'update', { event: null });
+            logMethodEnd(serviceLogger, 'update', { event: null });
             throw new Error('User is disabled');
         }
         // Permission: EVENT_UPDATE
@@ -449,28 +456,28 @@ export const EventService = {
             hasPermission(safeActor, PermissionEnum.EVENT_UPDATE);
         if (!allowed) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility || '' },
                 'Permission denied',
                 PermissionEnum.EVENT_UPDATE
             );
-            logMethodEnd(dbLogger, 'update', { event: null });
+            logMethodEnd(serviceLogger, 'update', { event: null });
             throw new Error('Permission denied: EVENT_UPDATE');
         }
         // Find existing event
         const existing = await EventModel.getById(parsedInput.id);
         if (!existing) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility || '' },
                 'Event not found',
                 undefined
             );
-            logMethodEnd(dbLogger, 'update', { event: null });
+            logMethodEnd(serviceLogger, 'update', { event: null });
             throw new Error('Event not found');
         }
         // If updating slug, check uniqueness
@@ -478,14 +485,14 @@ export const EventService = {
             const slugExists = await EventModel.getBySlug(parsedInput.slug);
             if (slugExists) {
                 logDenied(
-                    dbLogger,
+                    serviceLogger,
                     safeActor,
                     input,
                     { visibility: parsedInput.visibility || '' },
                     'Slug already exists',
                     undefined
                 );
-                logMethodEnd(dbLogger, 'update', { event: null });
+                logMethodEnd(serviceLogger, 'update', { event: null });
                 throw new Error('Slug already exists');
             }
         }
@@ -495,18 +502,25 @@ export const EventService = {
         const updated = await EventModel.update(parsedInput.id, normalizedInput);
         if (!updated) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.visibility || '' },
                 'Update failed',
                 undefined
             );
-            logMethodEnd(dbLogger, 'update', { event: null });
+            logMethodEnd(serviceLogger, 'update', { event: null });
             throw new Error('Event update failed');
         }
-        logGrant(dbLogger, safeActor, input, updated, PermissionEnum.EVENT_UPDATE, 'Event updated');
-        logMethodEnd(dbLogger, 'update', { event: updated });
+        logGrant(
+            serviceLogger,
+            safeActor,
+            input,
+            updated,
+            PermissionEnum.EVENT_UPDATE,
+            'Event updated'
+        );
+        logMethodEnd(serviceLogger, 'update', { event: updated });
         return { event: updated };
     },
     /**
@@ -525,30 +539,30 @@ export const EventService = {
         input: GetByIdInput,
         actor: UserType | PublicUserType
     ): Promise<{ event: EventType | null }> {
-        logMethodStart(dbLogger, 'delete', input, actor);
+        logMethodStart(serviceLogger, 'delete', input, actor);
         const parsedInput = getByIdInputSchema.parse(input);
         const event = (await EventModel.getById(parsedInput.id)) ?? null;
         if (!event) {
-            logMethodEnd(dbLogger, 'delete', { event: null });
+            logMethodEnd(serviceLogger, 'delete', { event: null });
             throw new Error('Event not found');
         }
         try {
             assertNotArchived(event);
         } catch (err) {
-            logMethodEnd(dbLogger, 'delete', { event: null });
+            logMethodEnd(serviceLogger, 'delete', { event: null });
             throw err;
         }
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event,
                 'User disabled',
                 PermissionEnum.EVENT_DELETE
             );
-            logMethodEnd(dbLogger, 'delete', { event: null });
+            logMethodEnd(serviceLogger, 'delete', { event: null });
             throw new Error('user disabled');
         }
         // Author, admin, or user with permission can delete
@@ -560,23 +574,23 @@ export const EventService = {
             hasPermission(safeActor, PermissionEnum.EVENT_DELETE);
         if (!allowed) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 event,
                 'Permission denied',
                 PermissionEnum.EVENT_DELETE
             );
-            logMethodEnd(dbLogger, 'delete', { event: null });
+            logMethodEnd(serviceLogger, 'delete', { event: null });
             throw new Error('Permission denied: EVENT_DELETE');
         }
         const updateInput = buildSoftDeleteUpdate(safeActor);
         const updatedEvent = await EventModel.update(parsedInput.id, updateInput);
         if (!updatedEvent) {
-            logMethodEnd(dbLogger, 'delete', { event: null });
+            logMethodEnd(serviceLogger, 'delete', { event: null });
             throw new Error('Event delete failed');
         }
-        logMethodEnd(dbLogger, 'delete', { event: updatedEvent });
+        logMethodEnd(serviceLogger, 'delete', { event: updatedEvent });
         return { event: updatedEvent };
     },
     /**
@@ -595,32 +609,32 @@ export const EventService = {
         input: { id: string },
         actor: UserType | PublicUserType
     ): Promise<{ event: EventType | null }> {
-        logMethodStart(dbLogger, 'restore', input, actor);
+        logMethodStart(serviceLogger, 'restore', input, actor);
         const safeActor = getSafeActor(actor);
         // Disabled user
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 PermissionEnum.EVENT_RESTORE
             );
-            logMethodEnd(dbLogger, 'restore', { event: null });
+            logMethodEnd(serviceLogger, 'restore', { event: null });
             throw new Error('Forbidden: user disabled');
         }
         // Public user (GUEST)
         if (safeActor.role === RoleEnum.GUEST) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'Permission denied',
                 PermissionEnum.EVENT_RESTORE
             );
-            logMethodEnd(dbLogger, 'restore', { event: null });
+            logMethodEnd(serviceLogger, 'restore', { event: null });
             throw new Error('Forbidden: public user cannot restore events');
         }
         // Only admin, superadmin, or user with permission
@@ -630,25 +644,25 @@ export const EventService = {
             hasPermission(safeActor, PermissionEnum.EVENT_RESTORE);
         if (!allowed) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'Permission denied',
                 PermissionEnum.EVENT_RESTORE
             );
-            logMethodEnd(dbLogger, 'restore', { event: null });
+            logMethodEnd(serviceLogger, 'restore', { event: null });
             throw new Error('Forbidden: user does not have permission to restore event');
         }
         // Find event
         const event = await EventModel.getById(input.id);
         if (!event) {
-            logMethodEnd(dbLogger, 'restore', { event: null });
+            logMethodEnd(serviceLogger, 'restore', { event: null });
             throw new Error('Event not found');
         }
         // Only archived events can be restored
         if (event.lifecycleState === LifecycleStatusEnum.ACTIVE) {
-            logMethodEnd(dbLogger, 'restore', { event: null });
+            logMethodEnd(serviceLogger, 'restore', { event: null });
             throw new Error('Event is not archived');
         }
         // Execute restore
@@ -658,10 +672,10 @@ export const EventService = {
             const result = await EventModel.update(input.id, updateInput);
             updatedEvent = result ?? null;
         } catch (_err) {
-            logMethodEnd(dbLogger, 'restore', { event: null });
+            logMethodEnd(serviceLogger, 'restore', { event: null });
             throw new Error('Event restore failed');
         }
-        logMethodEnd(dbLogger, 'restore', { event: updatedEvent });
+        logMethodEnd(serviceLogger, 'restore', { event: updatedEvent });
         return { event: updatedEvent };
     },
     /**
@@ -680,32 +694,32 @@ export const EventService = {
         input: { id: string },
         actor: UserType | PublicUserType
     ): Promise<{ success: boolean }> {
-        logMethodStart(dbLogger, 'hardDelete', input, actor);
+        logMethodStart(serviceLogger, 'hardDelete', input, actor);
         const safeActor = getSafeActor(actor);
         // Disabled user
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 PermissionEnum.EVENT_HARD_DELETE
             );
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Forbidden: user disabled');
         }
         // Public user (GUEST)
         if (safeActor.role === RoleEnum.GUEST) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'Permission denied',
                 PermissionEnum.EVENT_HARD_DELETE
             );
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Forbidden: public user cannot hard-delete events');
         }
         // Only admin, superadmin, or user with permission
@@ -715,20 +729,20 @@ export const EventService = {
             hasPermission(safeActor, PermissionEnum.EVENT_HARD_DELETE);
         if (!allowed) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'Permission denied',
                 PermissionEnum.EVENT_HARD_DELETE
             );
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Forbidden: user does not have permission to hard-delete event');
         }
         // Find event
         const event = await EventModel.getById(input.id);
         if (!event) {
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Event not found');
         }
         // Execute hard delete
@@ -736,10 +750,10 @@ export const EventService = {
         try {
             deleted = await EventModel.hardDelete(input.id);
         } catch (_err) {
-            logMethodEnd(dbLogger, 'hardDelete', { success: false });
+            logMethodEnd(serviceLogger, 'hardDelete', { success: false });
             throw new Error('Event hard delete failed');
         }
-        logMethodEnd(dbLogger, 'hardDelete', { success: deleted });
+        logMethodEnd(serviceLogger, 'hardDelete', { success: deleted });
         return { success: deleted };
     },
     /**
@@ -755,19 +769,19 @@ export const EventService = {
      *   const { events } = await EventService.list({ limit: 10, offset: 0 }, user);
      */
     async list(input: ListEventsInput, actor: unknown): Promise<ListEventsOutput> {
-        logMethodStart(dbLogger, 'list', input, actor as object);
+        logMethodStart(serviceLogger, 'list', input, actor as object);
         const parsedInput = listEventsInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: parsedInput.filters?.visibility || VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'list', { events: [] });
+            logMethodEnd(serviceLogger, 'list', { events: [] });
             return { events: [] };
         }
         // Retrieve events with filters and pagination
@@ -800,7 +814,7 @@ export const EventService = {
             }
             return false;
         });
-        logMethodEnd(dbLogger, 'list', { events: filtered });
+        logMethodEnd(serviceLogger, 'list', { events: filtered });
         return { events: filtered };
     },
     /**
@@ -819,19 +833,19 @@ export const EventService = {
         input: GetByOrganizerIdInput,
         actor: unknown
     ): Promise<GetByOrganizerIdOutput> {
-        logMethodStart(dbLogger, 'getByOrganizerId', input, actor as object);
+        logMethodStart(serviceLogger, 'getByOrganizerId', input, actor as object);
         const parsedInput = getByOrganizerIdInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'getByOrganizerId', { events: [] });
+            logMethodEnd(serviceLogger, 'getByOrganizerId', { events: [] });
             return { events: [] };
         }
         // Retrieve events by organizerId with pagination
@@ -862,7 +876,7 @@ export const EventService = {
             }
             return false;
         });
-        logMethodEnd(dbLogger, 'getByOrganizerId', { events: filtered });
+        logMethodEnd(serviceLogger, 'getByOrganizerId', { events: filtered });
         return { events: filtered };
     },
     /**
@@ -878,19 +892,19 @@ export const EventService = {
      *   const { events } = await EventService.getByCategory({ category: 'FESTIVAL', limit: 10 }, user);
      */
     async getByCategory(input: GetByCategoryInput, actor: unknown): Promise<GetByCategoryOutput> {
-        logMethodStart(dbLogger, 'getByCategory', input, actor as object);
+        logMethodStart(serviceLogger, 'getByCategory', input, actor as object);
         const parsedInput = getByCategoryInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'getByCategory', { events: [] });
+            logMethodEnd(serviceLogger, 'getByCategory', { events: [] });
             return { events: [] };
         }
         // Retrieve events by category with pagination
@@ -921,7 +935,7 @@ export const EventService = {
             }
             return false;
         });
-        logMethodEnd(dbLogger, 'getByCategory', { events: filtered });
+        logMethodEnd(serviceLogger, 'getByCategory', { events: filtered });
         return { events: filtered };
     },
     /**
@@ -937,19 +951,19 @@ export const EventService = {
      *   const { events } = await EventService.getFeatured({ limit: 10 }, user);
      */
     async getFeatured(input: GetFeaturedInput, actor: unknown): Promise<GetFeaturedOutput> {
-        logMethodStart(dbLogger, 'getFeatured', input, actor as object);
+        logMethodStart(serviceLogger, 'getFeatured', input, actor as object);
         const parsedInput = getFeaturedInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'getFeatured', { events: [] });
+            logMethodEnd(serviceLogger, 'getFeatured', { events: [] });
             return { events: [] };
         }
         // Retrieve featured events with pagination
@@ -978,7 +992,7 @@ export const EventService = {
             }
             return false;
         });
-        logMethodEnd(dbLogger, 'getFeatured', { events: filtered });
+        logMethodEnd(serviceLogger, 'getFeatured', { events: filtered });
         return { events: filtered };
     },
     /**
@@ -994,19 +1008,19 @@ export const EventService = {
      *   const { events } = await EventService.getUpcoming({ limit: 10 }, user);
      */
     async getUpcoming(input: GetUpcomingInput, actor: unknown): Promise<GetUpcomingOutput> {
-        logMethodStart(dbLogger, 'getUpcoming', input, actor as object);
+        logMethodStart(serviceLogger, 'getUpcoming', input, actor as object);
         const parsedInput = getUpcomingInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'getUpcoming', { events: [] });
+            logMethodEnd(serviceLogger, 'getUpcoming', { events: [] });
             return { events: [] };
         }
         // Retrieve upcoming events with pagination (start date >= now, or custom minDate/maxDate)
@@ -1037,7 +1051,7 @@ export const EventService = {
             }
             return false;
         });
-        logMethodEnd(dbLogger, 'getUpcoming', { events: filtered });
+        logMethodEnd(serviceLogger, 'getUpcoming', { events: filtered });
         return { events: filtered };
     },
     /**
@@ -1056,19 +1070,19 @@ export const EventService = {
         input: GetByDateRangeInput,
         actor: unknown
     ): Promise<GetByDateRangeOutput> {
-        logMethodStart(dbLogger, 'getByDateRange', input, actor as object);
+        logMethodStart(serviceLogger, 'getByDateRange', input, actor as object);
         const parsedInput = getByDateRangeInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
-                dbLogger,
+                serviceLogger,
                 safeActor,
                 input,
                 { visibility: VisibilityEnum.PUBLIC },
                 'User disabled',
                 undefined
             );
-            logMethodEnd(dbLogger, 'getByDateRange', { events: [] });
+            logMethodEnd(serviceLogger, 'getByDateRange', { events: [] });
             return { events: [] };
         }
         // Retrieve events within the date range
@@ -1098,7 +1112,7 @@ export const EventService = {
             }
             return false;
         });
-        logMethodEnd(dbLogger, 'getByDateRange', { events: filtered });
+        logMethodEnd(serviceLogger, 'getByDateRange', { events: filtered });
         return { events: filtered };
     },
     /**

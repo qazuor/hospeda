@@ -13,7 +13,6 @@ import {
 } from '../../mockData';
 import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 
-vi.mock('../../../utils/logger');
 vi.mock('../../../models/destination/destination.model', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};

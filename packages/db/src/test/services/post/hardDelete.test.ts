@@ -2,19 +2,10 @@ import type { PostId, UserId } from '@repo/types';
 import { RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../models/post/post.model';
-import { dbLogger } from '../../../utils/logger';
+import { PostService } from '../../../services/post/post.service';
 import * as permissionManager from '../../../utils/permission-manager';
 import * as serviceHelper from '../../../utils/service-helper';
 import { getMockPost, getMockPublicUser, getMockUser } from '../../mockData';
-
-vi.mock('../../../utils/logger', () => ({
-    dbLogger: {
-        info: vi.fn(),
-        error: vi.fn(),
-        query: vi.fn(),
-        permission: vi.fn()
-    }
-}));
 
 vi.mock('../../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -28,8 +19,6 @@ vi.mock('../../../utils/service-helper', async (importOriginal) => {
 });
 
 vi.mock('../../../models/post/post.model');
-
-import { PostService } from '../../../services/post/post.service';
 
 const user = getMockUser();
 const admin = getMockUser({
@@ -57,7 +46,7 @@ describe('PostService.hardDelete', () => {
         const input = { id: post.id };
         const result = await PostService.hardDelete(input, user);
         expect(result.success).toBe(true);
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should hard delete post as admin', async () => {
@@ -67,7 +56,7 @@ describe('PostService.hardDelete', () => {
         const input = { id: post.id };
         const result = await PostService.hardDelete(input, admin);
         expect(result.success).toBe(true);
-        expect(dbLogger.info).toHaveBeenCalled();
+        expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should throw and log permission if user has no permission', async () => {
@@ -78,7 +67,7 @@ describe('PostService.hardDelete', () => {
         });
         const input = { id: post.id };
         await expect(PostService.hardDelete(input, noPermUser)).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
             })
@@ -88,7 +77,7 @@ describe('PostService.hardDelete', () => {
     it('should throw and log if input is invalid', async () => {
         const input = { id: '' as PostId };
         await expect(PostService.hardDelete(input, user)).rejects.toThrow();
-        expect(dbLogger.info).toHaveBeenCalledTimes(1);
+        expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
     });
 
     it('should throw and log if actor is public user', async () => {
@@ -97,7 +86,7 @@ describe('PostService.hardDelete', () => {
         await expect(PostService.hardDelete(input, publicUser)).rejects.toThrow(
             /Forbidden: Public user cannot hard delete posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     override: expect.stringContaining('Public user cannot hard delete posts')
@@ -117,7 +106,7 @@ describe('PostService.hardDelete', () => {
         await expect(PostService.hardDelete(input, disabledUser)).rejects.toThrow(
             /Disabled user cannot hard delete posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     error: expect.stringContaining('disabled user cannot hard delete')

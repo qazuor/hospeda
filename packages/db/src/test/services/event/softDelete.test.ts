@@ -25,19 +25,6 @@ vi.mock('../../../models/event/event.model', async (importOriginal) => {
     };
 });
 
-vi.mock('../../../utils/logger', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        dbLogger: {
-            info: vi.fn(),
-            error: vi.fn(),
-            permission: vi.fn()
-        }
-    };
-});
-
 describe('event.service.softDelete', () => {
     const baseEvent = getMockEvent({ id: 'event-1' as EventId, authorId: 'user-1' as UserId });
     const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });

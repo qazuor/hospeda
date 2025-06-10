@@ -36,19 +36,6 @@ import { expectInfoLog, expectPermissionLog } from '../../utils/logAssertions';
 import { getNormalizedUpdateInput } from '../../utils/normalizeAccommodationInput';
 import { restoreMock } from '../../utils/restoreMock';
 
-vi.mock('../../../utils/logger', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        dbLogger: {
-            info: vi.fn(),
-            error: vi.fn(),
-            permission: vi.fn()
-        }
-    };
-});
-
 vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
@@ -644,7 +631,7 @@ describe('accommodation.service.update', () => {
         expectInfoLog({ result: { accommodation: updatedAccommodation } }, 'update:end');
     });
 
-    it('update should call dbLogger.info and dbLogger.permission at the correct points', async () => {
+    it('update should call serviceLogger.info and serviceLogger.permission at the correct points', async () => {
         // Arrange: test that logs are called correctly on success and permission error
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);

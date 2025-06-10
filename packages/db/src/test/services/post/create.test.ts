@@ -2,22 +2,8 @@ import { PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../models/post/post.model';
 import { PostService } from '../../../services/post/post.service';
-import { dbLogger } from '../../../utils/logger';
 import * as permissionManager from '../../../utils/permission-manager';
 import { getMockPost, getMockPostInput, getMockPublicUser, getMockUser } from '../../mockData';
-
-vi.mock('../../../utils/logger', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        dbLogger: {
-            info: vi.fn(),
-            error: vi.fn(),
-            permission: vi.fn()
-        }
-    };
-});
 
 vi.mock('../../../models/post/post.model', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -62,8 +48,8 @@ describe('PostService.create', () => {
                 visibility: input.visibility
             })
         );
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:start');
-        expect(dbLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:end');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:start');
+        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'create:end');
     });
 
     it('should throw and log permission if user has no permission', async () => {
@@ -73,7 +59,7 @@ describe('PostService.create', () => {
         });
         const input = getMockPostInput();
         await expect(PostService.create(input, noPermUser)).rejects.toThrow(/Forbidden/);
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     error: expect.stringContaining('Forbidden')
@@ -92,7 +78,7 @@ describe('PostService.create', () => {
         await expect(PostService.create(input, publicUser)).rejects.toThrow(
             /Forbidden: Public user cannot create posts/
         );
-        expect(dbLogger.permission).toHaveBeenCalledWith(
+        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
             expect.objectContaining({
                 extraData: expect.objectContaining({
                     override: expect.stringContaining('Public user cannot create posts')
