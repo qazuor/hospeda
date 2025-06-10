@@ -133,7 +133,8 @@ describe('UserBookmarkModel', () => {
                 name: mockUserBookmark.name,
                 description: mockUserBookmark.description,
                 adminInfo: mockUserBookmark.adminInfo,
-                lifecycleState: mockUserBookmark.lifecycleState
+                lifecycleState: mockUserBookmark.lifecycleState,
+                userId: mockUserBookmark.userId
             };
             const res = await UserBookmarkModel.create(input);
             expect(res).toEqual(mockUserBookmark);
@@ -148,7 +149,8 @@ describe('UserBookmarkModel', () => {
                 name: mockUserBookmark.name,
                 description: mockUserBookmark.description,
                 adminInfo: mockUserBookmark.adminInfo,
-                lifecycleState: mockUserBookmark.lifecycleState
+                lifecycleState: mockUserBookmark.lifecycleState,
+                userId: mockUserBookmark.userId
             };
             await expect(UserBookmarkModel.create(input)).rejects.toThrow('Insert failed');
         });
@@ -162,7 +164,8 @@ describe('UserBookmarkModel', () => {
                 name: mockUserBookmark.name,
                 description: mockUserBookmark.description,
                 adminInfo: mockUserBookmark.adminInfo,
-                lifecycleState: mockUserBookmark.lifecycleState
+                lifecycleState: mockUserBookmark.lifecycleState,
+                userId: mockUserBookmark.userId
             };
             await expect(UserBookmarkModel.create(input)).rejects.toThrow(
                 'Failed to create user bookmark: fail'
