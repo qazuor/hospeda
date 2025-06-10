@@ -1,45 +1,47 @@
 import type {
-    AccommodationType,
-    DestinationType,
-    DestinationWithRelationsType,
-    FeatureType,
-    PublicUserType,
-    SeoType,
-    TagType,
-    UserType
-} from '@repo/types';
-import { EntityTypeEnum, TagColorEnum, createPublicUser } from '@repo/types';
-import type {
     AccommodationId,
+    AccommodationType,
     AttractionId,
+    AttractionType,
     DestinationId,
     DestinationReviewId,
+    DestinationReviewType,
+    DestinationType,
+    DestinationWithRelationsType,
+    EntityTagType,
     EventId,
     EventLocationId,
+    EventLocationType,
+    EventType,
     FeatureId,
+    FeatureType,
     PostId,
     PostSponsorId,
+    PostSponsorType,
+    PostType,
+    PublicUserType,
     RoleId,
+    SeoType,
     TagId,
+    TagType,
     UserBookmarkId,
-    UserId
-} from '@repo/types/common/id.types';
-import type { AttractionType } from '@repo/types/entities/destination/destination.attraction.types';
-import type { DestinationReviewType } from '@repo/types/entities/destination/destination.review.types';
-import type { EventLocationType } from '@repo/types/entities/event/event.location.types';
-import type { EventType } from '@repo/types/entities/event/event.types';
-import type { PostSponsorType } from '@repo/types/entities/post/post.sponsor.types';
-import type { PostType } from '@repo/types/entities/post/post.types';
-import type { EntityTagType } from '@repo/types/entities/tag/tag.types';
-import type { UserBookmarkType } from '@repo/types/entities/user/user.bookmark.types';
-import { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum';
-import { ClientTypeEnum } from '@repo/types/enums/client-type.enum';
-import { EventCategoryEnum } from '@repo/types/enums/event-category.enum';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { PostCategoryEnum } from '@repo/types/enums/post-category.enum';
-import { RoleEnum } from '@repo/types/enums/role.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+    UserBookmarkType,
+    UserId,
+    UserType
+} from '@repo/types';
+import {
+    AccommodationTypeEnum,
+    ClientTypeEnum,
+    EntityTypeEnum,
+    EventCategoryEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PostCategoryEnum,
+    RoleEnum,
+    TagColorEnum,
+    VisibilityEnum,
+    createPublicUser
+} from '@repo/types';
 import { expect } from 'vitest';
 
 /**

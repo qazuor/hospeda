@@ -6,11 +6,13 @@ import type {
     PostType,
     UserId
 } from '@repo/types';
-import { RoleEnum } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { PermissionEnum } from '@repo/types/enums/permission.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    VisibilityEnum
+} from '@repo/types';
 import { PostModel } from '../../models/post/post.model';
 import { dbLogger } from '../../utils/logger';
 import { logDenied, logOverride } from '../../utils/permission-logger';

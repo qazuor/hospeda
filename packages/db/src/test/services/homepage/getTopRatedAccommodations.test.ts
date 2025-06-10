@@ -7,12 +7,14 @@ import type {
     FeatureType,
     UserId
 } from '@repo/types';
-import { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum';
-import { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum';
-import { PriceCurrencyEnum } from '@repo/types/enums/currency.enum';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import {
+    AccommodationTypeEnum,
+    AmenitiesTypeEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PriceCurrencyEnum,
+    VisibilityEnum
+} from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { getTopRatedAccommodationsOutputSchema } from '../../../services/homepage/homepage.schemas';

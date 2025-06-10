@@ -1,10 +1,5 @@
+import type { AccommodationId, AmenityId, DestinationId, FeatureId } from '@repo/types';
 import { type AccommodationType, RoleEnum, VisibilityEnum } from '@repo/types';
-import type {
-    AccommodationId,
-    AmenityId,
-    DestinationId,
-    FeatureId
-} from '@repo/types/common/id.types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../../src/models/accommodation/accommodation.model';
 import { AccommodationService } from '../../../../src/services/accommodation/accommodation.service';

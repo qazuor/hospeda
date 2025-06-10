@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { castBrandedIds, castDateFields } from './cast-helper';
 
 // Tipos de ejemplo para tests
-import type { AccommodationId, DestinationId } from '@repo/types/common/id.types';
+import type { AccommodationId, DestinationId } from '@repo/types';
 
 describe('castBrandedIds', () => {
     it('should cast known brandId fields to their branded types', () => {

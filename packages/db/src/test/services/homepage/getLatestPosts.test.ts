@@ -6,12 +6,14 @@ import type {
     PostId,
     UserId
 } from '@repo/types';
-import { AccommodationTypeEnum } from '@repo/types/enums/accommodation-type.enum';
-import { EventCategoryEnum } from '@repo/types/enums/event-category.enum';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { PostCategoryEnum } from '@repo/types/enums/post-category.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import {
+    AccommodationTypeEnum,
+    EventCategoryEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PostCategoryEnum,
+    VisibilityEnum
+} from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
 import { DestinationModel } from '../../../models/destination/destination.model';

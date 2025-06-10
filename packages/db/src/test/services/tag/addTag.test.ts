@@ -1,6 +1,5 @@
 import type { AccommodationId, TagId } from '@repo/types';
-import { EntityTypeEnum } from '@repo/types/enums/entity-type.enum';
-import { PermissionEnum } from '@repo/types/enums/permission.enum';
+import { EntityTypeEnum, PermissionEnum } from '@repo/types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EntityTagModel } from '../../../models/tag/entity_tag.model';
 import { TagService } from '../../../services/tag/tag.service';

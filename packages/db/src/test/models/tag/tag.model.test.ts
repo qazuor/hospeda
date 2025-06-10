@@ -1,6 +1,5 @@
-import type { NewTagInputType, TagType, UpdateTagInputType } from '@repo/types';
+import type { NewTagInputType, TagId, TagType, UpdateTagInputType } from '@repo/types';
 import { LifecycleStatusEnum, TagColorEnum } from '@repo/types';
-import type { TagId } from '@repo/types/common/id.types.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { tags } from '../../../dbschemas/tag/tag.dbschema';
 import { TagModel } from '../../../models/tag/tag.model.js';

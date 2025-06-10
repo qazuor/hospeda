@@ -1,7 +1,4 @@
-import type {
-    NewEventLocationInputType,
-    UpdateEventLocationInputType
-} from '@repo/types/entities/event/event.location.types';
+import type { NewEventLocationInputType, UpdateEventLocationInputType } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';

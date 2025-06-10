@@ -1,4 +1,4 @@
-import type { TagId } from '@repo/types/common/id.types';
+import type { TagId } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../../src/models/post/post.model';
 import type { GetPostsByTagInput } from '../../../../src/services/tag/tag.schemas';

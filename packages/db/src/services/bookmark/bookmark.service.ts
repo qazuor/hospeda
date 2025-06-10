@@ -1,5 +1,5 @@
 import type { PublicUserType, UserType } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
+import { LifecycleStatusEnum } from '@repo/types';
 import { UserBookmarkModel } from '../../models/user/user_bookmark.model';
 import { dbLogger } from '../../utils/logger';
 import { isUserType, logMethodEnd, logMethodStart } from '../../utils/service-helper';

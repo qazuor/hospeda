@@ -1,8 +1,10 @@
 import type { DestinationId, EventId, EventLocationId, UserId } from '@repo/types';
-import { EventCategoryEnum } from '@repo/types/enums/event-category.enum';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import {
+    EventCategoryEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    VisibilityEnum
+} from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import { EventModel } from '../../../models/event/event.model';

@@ -1,5 +1,5 @@
 import type { PostId } from '@repo/types';
-import { LifecycleStatusEnum, PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/types/enums';
+import { LifecycleStatusEnum, PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostModel } from '../../../../src/models/post/post.model';
 import { PostService } from '../../../../src/services/post/post.service';

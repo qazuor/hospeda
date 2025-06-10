@@ -1,8 +1,5 @@
+import type { NewEventInputType, UpdateEventInputType } from '@repo/types';
 import { EventCategoryEnum, LifecycleStatusEnum } from '@repo/types';
-import type {
-    NewEventInputType,
-    UpdateEventInputType
-} from '@repo/types/entities/event/event.types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { EventModel } from '../../../../src/models/event/event.model';

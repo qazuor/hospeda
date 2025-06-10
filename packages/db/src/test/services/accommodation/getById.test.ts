@@ -27,11 +27,8 @@ vi.mock('../../../models/accommodation/accommodation.model', async (importOrigin
     };
 });
 
-import { LifecycleStatusEnum } from '@repo/types';
-import type { AccommodationId } from '@repo/types/common/id.types';
-import { PermissionEnum } from '@repo/types/enums/permission.enum';
-import { RoleEnum } from '@repo/types/enums/role.enum';
-import type { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import type { AccommodationId, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationModel } from '../../../models/accommodation/accommodation.model';

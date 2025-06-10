@@ -1,4 +1,4 @@
-import type { TagId } from '@repo/types/common/id.types';
+import type { TagId } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventModel } from '../../../../src/models/event/event.model';
 import type { GetEventsByTagInput } from '../../../../src/services/tag/tag.schemas';

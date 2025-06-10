@@ -1,7 +1,5 @@
 import type { PublicUserType, UserType } from '@repo/types';
-import { EntityTypeEnum } from '@repo/types/enums/entity-type.enum';
-import { PermissionEnum } from '@repo/types/enums/permission.enum';
-import { RoleEnum } from '@repo/types/enums/role.enum';
+import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import {
     AccommodationModel,
     type AccommodationOrderByColumn

@@ -1,5 +1,5 @@
+import type { AccommodationId } from '@repo/types';
 import { EntityTypeEnum } from '@repo/types';
-import type { AccommodationId } from '@repo/types/common/id.types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';
 import { EntityTagModel } from '../../../../src/models/tag/entity_tag.model';

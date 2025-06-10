@@ -1,4 +1,4 @@
-import type { UserId } from '@repo/types/common/id.types';
+import type { UserId } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserBookmarkModel } from '../../../../src/models/user/user_bookmark.model';
 import type { RemoveBookmarkInput } from '../../../../src/services/bookmark/bookmark.schemas';

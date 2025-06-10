@@ -4,8 +4,8 @@ import type {
     DestinationId,
     DestinationReviewId,
     UserId
-} from '@repo/types/common/id.types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
+} from '@repo/types';
+import { LifecycleStatusEnum } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewModel } from '../../../models/accommodation/accommodation_review.model';
 import { DestinationReviewModel } from '../../../models/destination/destination_review.model';

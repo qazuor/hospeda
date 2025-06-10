@@ -1,7 +1,4 @@
-import type {
-    NewDestinationReviewInputType,
-    UpdateDestinationReviewInputType
-} from '@repo/types/entities/destination/destination.review.types';
+import type { NewDestinationReviewInputType, UpdateDestinationReviewInputType } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';

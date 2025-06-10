@@ -1,10 +1,13 @@
-import { LifecycleStatusEnum, PriceCurrencyEnum } from '@repo/types';
-import type { PostId, PostSponsorId, PostSponsorshipId, UserId } from '@repo/types/common/id.types';
 import type {
     NewPostSponsorshipInputType,
+    PostId,
+    PostSponsorId,
+    PostSponsorshipId,
     PostSponsorshipType,
-    UpdatePostSponsorshipInputType
-} from '@repo/types/entities/post/post.sponsorship.types';
+    UpdatePostSponsorshipInputType,
+    UserId
+} from '@repo/types';
+import { LifecycleStatusEnum, PriceCurrencyEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../../../src/client';

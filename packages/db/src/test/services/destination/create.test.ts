@@ -1,6 +1,4 @@
-import { RoleEnum, VisibilityEnum } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
+import { LifecycleStatusEnum, ModerationStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationModel } from '../../../models/destination/destination.model';
 import { DestinationService } from '../../../services/destination/destination.service';
