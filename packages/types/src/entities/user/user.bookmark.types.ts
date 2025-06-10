@@ -17,6 +17,7 @@ import type { EntityTypeEnum } from '../../enums/entity-type.enum.js';
 
 export interface UserBookmarkType extends WithAudit, WithLifecycleState, WithAdminInfo {
     id: UserBookmarkId;
+    userId: UserId;
     entityId: AccommodationId | DestinationId | PostId | EventId | UserId;
     entityType: EntityTypeEnum;
     name?: string;
