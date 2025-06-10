@@ -1,9 +1,9 @@
 import type {
     EventOrganizerType,
+    EventType,
     NewEventOrganizerInputType,
     UpdateEventOrganizerInputType
 } from '@repo/types';
-import type { EventType } from '@repo/types/entities/event/event.types';
 import { and, asc, count, desc, eq, ilike } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { events } from '../../dbschemas/event/event.dbschema.ts';

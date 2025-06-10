@@ -1,13 +1,13 @@
 import type {
+    DestinationType,
+    EventCategoryEnum,
     EventType,
     EventWithRelationsType,
     NewEventInputType,
-    UpdateEventInputType
+    TagType,
+    UpdateEventInputType,
+    UserType
 } from '@repo/types';
-import type { DestinationType } from '@repo/types/entities/destination/destination.types';
-import type { TagType } from '@repo/types/entities/tag/tag.types';
-import type { UserType } from '@repo/types/entities/user/user.types';
-import type { EventCategoryEnum } from '@repo/types/enums/event-category.enum';
 import { and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { events } from '../../dbschemas/event/event.dbschema.ts';
