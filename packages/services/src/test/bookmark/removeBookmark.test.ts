@@ -1,11 +1,9 @@
+import { UserBookmarkModel } from '@repo/db';
 import type { UserId } from '@repo/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserBookmarkModel } from '../../../../src/models/user/user_bookmark.model';
-import type { RemoveBookmarkInput } from '../../../../src/services/bookmark/bookmark.schemas';
-import { BookmarkService } from '../../../../src/services/bookmark/bookmark.service';
+import { describe, expect, it, type vi } from 'vitest';
+import type { RemoveBookmarkInput } from '../../bookmark/bookmark.schemas';
+import { BookmarkService } from '../../bookmark/bookmark.service';
 import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../mockData';
-
-vi.mock('../../../../src/models/user/user_bookmark.model');
 
 const mockUser = getMockUser();
 const mockUserId: UserId = getMockUserId();
@@ -13,10 +11,6 @@ const mockBookmark = getMockUserBookmark();
 const publicUser = getMockPublicUser();
 
 describe('BookmarkService.removeBookmark', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
     it('removes a bookmark for the user (happy path)', async () => {
         (UserBookmarkModel.getById as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
             mockBookmark

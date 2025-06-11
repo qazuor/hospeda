@@ -18,3 +18,17 @@ vi.mock('../utils/service-logger.ts', () => ({
 }));
 
 globalThis.mockServiceLogger = mockServiceLogger;
+
+// Partial global mock for UserBookmarkModel from @repo/db for all service tests
+vi.mock('@repo/db', async () => {
+    const actual = await vi.importActual<typeof import('@repo/db')>('@repo/db');
+    return {
+        ...actual,
+        UserBookmarkModel: {
+            create: vi.fn(),
+            getById: vi.fn(),
+            getByUserId: vi.fn(),
+            delete: vi.fn()
+        }
+    };
+});
