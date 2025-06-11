@@ -1,21 +1,21 @@
+import { PostModel } from '@repo/db';
 import type { TagId } from '@repo/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PostModel } from '../../../../src/models/post/post.model';
-import type { GetPostsByTagInput } from '../../../../src/services/tag/tag.schemas';
-import { TagService } from '../../../../src/services/tag/tag.service';
+import { describe, expect, it, vi } from 'vitest';
+import type { GetPostsByTagInput } from '../../tag/tag.schemas';
+import { TagService } from '../../tag/tag.service';
 import { getMockPost, getMockPublicUser, getMockTagId } from '../mockData';
 
-vi.mock('../../../../src/models/post/post.model');
+vi.mock('@repo/db', () => ({
+    PostModel: {
+        getByTag: vi.fn()
+    }
+}));
 
 const mockPost = getMockPost();
 const mockTagId: TagId = getMockTagId();
 const publicUser = getMockPublicUser();
 
 describe('TagService.getPostsByTag', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
     it('returns posts for a valid tag', async () => {
         (PostModel.getByTag as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockPost

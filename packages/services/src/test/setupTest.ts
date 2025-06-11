@@ -29,6 +29,15 @@ vi.mock('@repo/db', async () => {
             getById: vi.fn(),
             getByUserId: vi.fn(),
             delete: vi.fn()
+        },
+        TagModel: {
+            addTag: vi.fn(),
+            removeTag: vi.fn(),
+            getAccommodationsByTag: vi.fn(),
+            getDestinationsByTag: vi.fn(),
+            getEventsByTag: vi.fn(),
+            getPostsByTag: vi.fn()
+            // Agrega aquí otros métodos si los tests los requieren
         }
     };
 });

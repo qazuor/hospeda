@@ -1,21 +1,21 @@
+import { DestinationModel } from '@repo/db';
 import type { TagId } from '@repo/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DestinationModel } from '../../../../src/models/destination/destination.model';
-import type { GetDestinationsByTagInput } from '../../../../src/services/tag/tag.schemas';
-import { TagService } from '../../../../src/services/tag/tag.service';
+import { describe, expect, it, vi } from 'vitest';
+import type { GetDestinationsByTagInput } from '../../tag/tag.schemas';
+import { TagService } from '../../tag/tag.service';
 import { getMockDestination, getMockPublicUser, getMockTagId } from '../mockData';
 
-vi.mock('../../../../src/models/destination/destination.model');
+vi.mock('@repo/db', () => ({
+    DestinationModel: {
+        search: vi.fn()
+    }
+}));
 
 const mockDestination = getMockDestination();
 const mockTagId: TagId = getMockTagId();
 const publicUser = getMockPublicUser();
 
 describe('TagService.getDestinationsByTag', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
     it('returns destinations for a valid tag', async () => {
         (DestinationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockDestination

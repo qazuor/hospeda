@@ -1,4 +1,4 @@
-import { EntityTypeEnumSchema } from '@repo/schemas/enums/entity-type.enum.schema';
+import { EntityTypeEnumSchema } from '@repo/schemas';
 import type {
     AccommodationId,
     AccommodationType,
