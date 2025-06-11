@@ -8,8 +8,8 @@ import {
     type UserType,
     VisibilityEnum
 } from '@repo/types';
-import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
-import { CanViewReasonEnum } from '../../utils/service-helper';
+import { castBrandedIds, castDateFields } from '../utils/cast-helper';
+import { CanViewReasonEnum } from '../utils/service-helper';
 
 // --- Permissions & Visibility Helpers (copied/adapted from accommodation.helper.ts) ---
 

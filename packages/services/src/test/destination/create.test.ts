@@ -1,8 +1,8 @@
+import { DestinationModel } from '@repo/db';
 import { LifecycleStatusEnum, ModerationStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DestinationModel } from '../../../models/destination/destination.model';
-import { DestinationService } from '../../../services/destination/destination.service';
-import * as permissionManager from '../../../utils/permission-manager';
+import { DestinationService } from '../../destination/destination.service';
+import * as permissionManager from '../../utils/permission-manager';
 import { getMockDestination, getMockPublicUser, getMockUser } from '../mockData';
 
 // vi.mock('../../../models/destination/destination.model');

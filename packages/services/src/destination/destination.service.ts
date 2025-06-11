@@ -1,20 +1,19 @@
 // Destination Service - MVP and Future Methods (stubs)
 // All methods use RO-RO pattern and throw 'Not implemented yet' for now.
 
+import { DestinationModel, DestinationReviewModel } from '@repo/db';
 import type { UserId } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types';
-import { DestinationModel } from '../../models/destination/destination.model';
-import { DestinationReviewModel } from '../../models/destination/destination_review.model';
-import { logDenied, logGrant, logUserDisabled } from '../../utils/permission-logger';
-import { hasPermission } from '../../utils/permission-manager';
+import { logDenied, logGrant, logUserDisabled } from '../utils/permission-logger';
+import { hasPermission } from '../utils/permission-manager';
 import {
     CanViewReasonEnum,
     getSafeActor,
     isUserDisabled,
     logMethodEnd,
     logMethodStart
-} from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/service-logger';
+} from '../utils/service-helper';
+import { serviceLogger } from '../utils/service-logger';
 import {
     assertNotActive,
     assertNotArchived,
