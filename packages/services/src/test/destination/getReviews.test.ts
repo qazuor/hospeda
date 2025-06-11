@@ -1,15 +1,14 @@
+import { DestinationModel, DestinationReviewModel } from '@repo/db';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DestinationModel } from '../../../models/destination/destination.model';
-import { DestinationReviewModel } from '../../../models/destination/destination_review.model';
-import * as destinationHelper from '../../../services/destination/destination.helper';
-import { DestinationService } from '../../../services/destination/destination.service';
-import { CanViewReasonEnum } from '../../../utils/service-helper';
-import { expectInfoLog } from '../../utils/log-assertions';
+import * as destinationHelper from '../../destination/destination.helper';
+import { DestinationService } from '../../destination/destination.service';
+import { CanViewReasonEnum } from '../../utils/service-helper';
 import { getMockDestination, getMockDestinationId, getMockUser, getMockUserId } from '../mockData';
+import { expectInfoLog } from '../utils/log-assertions';
 
-vi.mock('../../../models/destination/destination.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {
@@ -17,14 +16,7 @@ vi.mock('../../../models/destination/destination.model', async (importOriginal) 
         DestinationModel: {
             ...((actual as Record<string, unknown>).DestinationModel ?? {}),
             getById: vi.fn()
-        }
-    };
-});
-vi.mock('../../../models/destination/destination_review.model', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
+        },
         DestinationReviewModel: {
             ...((actual as Record<string, unknown>).DestinationReviewModel ?? {}),
             list: vi.fn()

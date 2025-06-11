@@ -1,9 +1,8 @@
+import { DestinationModel } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DestinationModel } from '../../../models/destination/destination.model';
-import { DestinationService } from '../../../services/destination/destination.service';
-import { expectInfoLog } from '../../utils/log-assertions';
+import { DestinationService } from '../../destination/destination.service';
 import {
     getMockDestination,
     getMockDestinationId,
@@ -11,8 +10,9 @@ import {
     getMockUser,
     getMockUserId
 } from '../mockData';
+import { expectInfoLog } from '../utils/log-assertions';
 
-vi.mock('../../../models/destination/destination.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {
