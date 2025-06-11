@@ -1,3 +1,4 @@
+import { AccommodationModel } from '@repo/db';
 import {
     type AccommodationId,
     LifecycleStatusEnum,
@@ -5,22 +6,21 @@ import {
     type UserId
 } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import * as permissionManager from '../../../utils/permission-manager';
-import { makeAccommodation } from '../../factories/accommodationFactory';
+import { AccommodationService } from '../../accommodation/accommodation.service';
+import * as permissionManager from '../../utils/permission-manager';
+import { makeAccommodation } from '../factories/accommodationFactory';
 import {
     makeAdmin,
     makeDisabledUser,
     makeOwner,
     makePublicUser,
     makeUserWithoutPermissions
-} from '../../factories/userFactory';
+} from '../factories/userFactory';
 import { getMockUserId } from '../mockData';
 
-import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
+import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {

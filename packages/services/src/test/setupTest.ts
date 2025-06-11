@@ -7,7 +7,14 @@ export const createMockServiceLogger = () => ({
     error: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
-    permission: vi.fn()
+    permission: vi.fn(),
+    log: vi.fn(),
+    debug: vi.fn(),
+    registerCategory: vi.fn(),
+    configure: vi.fn(),
+    resetConfig: vi.fn(),
+    createLogger: vi.fn(),
+    registerLogMethod: vi.fn()
 });
 
 export const mockServiceLogger = createMockServiceLogger();

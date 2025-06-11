@@ -1,4 +1,4 @@
-import type { CreateInput, UpdateInput } from '../../services/accommodation/accommodation.schemas';
+import type { CreateInput, UpdateInput } from '../../accommodation/accommodation.schemas';
 
 export type TestAccommodationUpdateInput = UpdateInput;
 export type TestAccommodationCreateInput = CreateInput;

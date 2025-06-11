@@ -1,10 +1,9 @@
+import { AccommodationModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import * as permissionManager from '../../../utils/permission-manager';
+import { AccommodationService } from '../../accommodation/accommodation.service';
 import type { TestAccommodationCreateInput } from '../../types/testAccommodation.types';
-import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
+import * as permissionManager from '../../utils/permission-manager';
 import {
     getExpectedCreatedAccommodationMatchObject,
     getMockAccommodationCreated,
@@ -13,8 +12,9 @@ import {
     getMockUser,
     getMockUserId
 } from '../mockData';
+import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {

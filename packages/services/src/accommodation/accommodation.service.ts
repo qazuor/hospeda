@@ -1,3 +1,4 @@
+import { AccommodationModel } from '@repo/db';
 import {
     type AccommodationType,
     PermissionEnum,
@@ -6,9 +7,8 @@ import {
     type UpdateAccommodationInputType,
     type UserType
 } from '@repo/types';
-import { AccommodationModel } from '../../models/accommodation/accommodation.model';
-import { hasPermission, serviceLogger } from '../../utils';
-import { logDenied, logGrant, logOverride, logUserDisabled } from '../../utils/permission-logger';
+import { hasPermission, serviceLogger } from '../utils';
+import { logDenied, logGrant, logOverride, logUserDisabled } from '../utils/permission-logger';
 import {
     CanViewReasonEnum,
     checkAndLogPermission,
@@ -17,7 +17,7 @@ import {
     isUserDisabled,
     logMethodEnd,
     logMethodStart
-} from '../../utils/service-helper';
+} from '../utils/service-helper';
 import {
     assertNotActive,
     assertNotArchived,

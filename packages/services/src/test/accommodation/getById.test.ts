@@ -1,14 +1,9 @@
+import { AccommodationModel } from '@repo/db';
 import type { AccommodationId, VisibilityEnum } from '@repo/types';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import {
-    expectInfoLog,
-    expectNoPermissionLog,
-    expectPermissionLog
-} from '../../utils/log-assertions';
+import { AccommodationService } from '../../accommodation/accommodation.service';
 import {
     getMockAccommodation,
     getMockAccommodationPrivate,
@@ -17,8 +12,9 @@ import {
     getMockUser,
     getMockUserId
 } from '../mockData';
+import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {

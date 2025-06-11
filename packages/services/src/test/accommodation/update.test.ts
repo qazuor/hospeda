@@ -1,3 +1,4 @@
+import { AccommodationModel } from '@repo/db';
 import {
     type AccommodationId,
     AccommodationTypeEnum,
@@ -11,32 +12,31 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import * as accommodationHelper from '../../../services/accommodation/accommodation.helper';
-import type { UpdateInput } from '../../../services/accommodation/accommodation.schemas';
-import { AccommodationService } from '../../../services/accommodation/accommodation.service';
-import * as permissionManager from '../../../utils/permission-manager';
-import { CanViewReasonEnum } from '../../../utils/service-helper';
+import * as accommodationHelper from '../../accommodation/accommodation.helper';
+import type { UpdateInput } from '../../accommodation/accommodation.schemas';
+import { AccommodationService } from '../../accommodation/accommodation.service';
+import * as permissionManager from '../../utils/permission-manager';
+import { CanViewReasonEnum } from '../../utils/service-helper';
 import {
     makeAccommodation,
     makeAccommodationWithMedia,
     makeArchivedAccommodation,
     makePrivateAccommodation
-} from '../../factories/accommodationFactory';
+} from '../factories/accommodationFactory';
 import {
     makeAdmin,
     makeDisabledUser,
     makeOwner,
     makePublicUser,
     makeUserWithoutPermissions
-} from '../../factories/userFactory';
-import type { TestAccommodationUpdateInput } from '../../types/testAccommodation.types';
-import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
-import { getNormalizedUpdateInput } from '../../utils/normalize-accommodation-input';
-import { restoreMock } from '../../utils/restore-mock';
+} from '../factories/userFactory';
 import { getMockAccommodationUpdateInput, getMockSeo, getMockUserId } from '../mockData';
+import type { TestAccommodationUpdateInput } from '../types/testAccommodation.types';
+import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
+import { getNormalizedUpdateInput } from '../utils/normalize-accommodation-input';
+import { restoreMock } from '../utils/restore-mock';
 
-vi.mock('../../../models/accommodation/accommodation.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {

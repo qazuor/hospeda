@@ -1,3 +1,4 @@
+import type { AccommodationOrderByColumn } from '@repo/db';
 import type { AccommodationType, NewAccommodationInputType } from '@repo/types';
 import {
     AccommodationTypeEnum,
@@ -7,9 +8,8 @@ import {
     type UserType,
     VisibilityEnum
 } from '@repo/types';
-import type { AccommodationOrderByColumn } from '../../models/accommodation/accommodation.model';
-import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
-import { CanViewReasonEnum, isPublicUser } from '../../utils/service-helper';
+import { castBrandedIds, castDateFields } from '../utils/cast-helper';
+import { CanViewReasonEnum, isPublicUser } from '../utils/service-helper';
 import type { ListInput, UpdateInput } from './accommodation.schemas';
 
 /**
