@@ -1,8 +1,8 @@
+import { AccommodationModel } from '@repo/db';
 import type { AccommodationId, AmenityId, DestinationId, FeatureId } from '@repo/types';
 import { type AccommodationType, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../../src/models/accommodation/accommodation.model';
-import { AccommodationService } from '../../../../src/services/accommodation/accommodation.service';
+import { AccommodationService } from '../../accommodation/accommodation.service';
 import {
     getMockAccommodation,
     getMockAccommodationId,
@@ -11,7 +11,7 @@ import {
     getMockUser
 } from '../mockData';
 
-vi.mock('../../../../src/models/accommodation/accommodation.model');
+vi.mock('@repo/db');
 
 const mockAdmin = getMockUser({ role: RoleEnum.ADMIN });
 const mockPublic = getMockPublicUser();

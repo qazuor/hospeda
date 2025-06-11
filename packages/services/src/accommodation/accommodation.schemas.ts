@@ -1,11 +1,8 @@
+import { ACCOMMODATION_ORDERABLE_COLUMNS, type AccommodationOrderByColumn } from '@repo/db';
 import { AccommodationSchema } from '@repo/schemas';
 import type { AccommodationId, AccommodationType, DestinationId } from '@repo/types';
 import { AccommodationTypeEnum } from '@repo/types';
 import { z } from 'zod';
-import {
-    ACCOMMODATION_ORDERABLE_COLUMNS,
-    type AccommodationOrderByColumn
-} from '../../models/accommodation/accommodation.model';
 
 /**
  * Input schema for getById.
