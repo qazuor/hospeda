@@ -1,21 +1,21 @@
+import { AccommodationModel } from '@repo/db';
 import type { TagId } from '@repo/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../../src/models/accommodation/accommodation.model';
-import type { GetAccommodationsByTagInput } from '../../../../src/services/tag/tag.schemas';
-import { TagService } from '../../../../src/services/tag/tag.service';
+import { describe, expect, it, vi } from 'vitest';
+import type { GetAccommodationsByTagInput } from '../../tag/tag.schemas';
+import { TagService } from '../../tag/tag.service';
 import { getMockAccommodation, getMockPublicUser, getMockTagId } from '../mockData';
 
-vi.mock('../../../../src/models/accommodation/accommodation.model');
+vi.mock('@repo/db', () => ({
+    AccommodationModel: {
+        search: vi.fn()
+    }
+}));
 
 const mockAccommodation = getMockAccommodation();
 const mockTagId: TagId = getMockTagId();
 const publicUser = getMockPublicUser();
 
 describe('TagService.getAccommodationsByTag', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
     it('returns accommodations for a valid tag', async () => {
         // Arrange
         (AccommodationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([

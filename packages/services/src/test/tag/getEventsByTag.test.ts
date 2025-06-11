@@ -1,21 +1,21 @@
+import { EventModel } from '@repo/db';
 import type { TagId } from '@repo/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EventModel } from '../../../../src/models/event/event.model';
-import type { GetEventsByTagInput } from '../../../../src/services/tag/tag.schemas';
-import { TagService } from '../../../../src/services/tag/tag.service';
+import { describe, expect, it, vi } from 'vitest';
+import type { GetEventsByTagInput } from '../../tag/tag.schemas';
+import { TagService } from '../../tag/tag.service';
 import { getMockEvent, getMockPublicUser, getMockTagId } from '../mockData';
 
-vi.mock('../../../../src/models/event/event.model');
+vi.mock('@repo/db', () => ({
+    EventModel: {
+        search: vi.fn()
+    }
+}));
 
 const mockEvent = getMockEvent();
 const mockTagId: TagId = getMockTagId();
 const publicUser = getMockPublicUser();
 
 describe('TagService.getEventsByTag', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
     it('returns events for a valid tag', async () => {
         (EventModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockEvent

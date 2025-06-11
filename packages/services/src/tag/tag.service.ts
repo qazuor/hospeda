@@ -1,15 +1,13 @@
-import type { PublicUserType, UserType } from '@repo/types';
-import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import {
     AccommodationModel,
-    type AccommodationOrderByColumn
-} from '../../models/accommodation/accommodation.model';
-import { DestinationModel } from '../../models/destination/destination.model';
-import { EventModel } from '../../models/event/event.model';
-import { EntityTagModel } from '../../models/tag/entity_tag.model';
-import { hasPermission } from '../../utils/permission-manager';
-import { isUserType, logMethodEnd, logMethodStart } from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/service-logger';
+    type AccommodationOrderByColumn,
+    DestinationModel,
+    EntityTagModel,
+    EventModel
+} from '@repo/db';
+import type { PublicUserType, UserType } from '@repo/types';
+import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/types';
+import { hasPermission, isUserType, logMethodEnd, logMethodStart, serviceLogger } from '../utils';
 import {
     type AddTagInput,
     type AddTagOutput,
@@ -49,8 +47,6 @@ export const TagService = {
     async addTag(input: AddTagInput, actor: UserType | PublicUserType): Promise<AddTagOutput> {
         logMethodStart(serviceLogger, 'addTag', input, actor);
         const parsedInput = addTagInputSchema.parse(input);
-
-        // Unify public user and insufficient permission control
         if (!isUserType(actor) || actor.role === RoleEnum.GUEST) {
             serviceLogger.permission({
                 permission: 'UNKNOWN_PERMISSION',
@@ -60,8 +56,6 @@ export const TagService = {
             });
             throw new Error('Forbidden: insufficient permission to add tag');
         }
-
-        // Permission check by entity type
         let requiredPermission: PermissionEnum | undefined;
         switch (parsedInput.entityType) {
             case EntityTypeEnum.ACCOMMODATION:
@@ -88,11 +82,6 @@ export const TagService = {
                 });
                 throw new Error('Unsupported entity type for tagging');
         }
-
-        // Insufficient permission check (hasPermission returns boolean)
-        // checkAndLogPermission does not throw, only logs if hasPermission throws
-        // Here we must throw if the user lacks permission
-        // (Pattern same as other services)
         if (!hasPermission(actor, requiredPermission)) {
             serviceLogger.permission({
                 permission: requiredPermission,
@@ -102,7 +91,6 @@ export const TagService = {
             });
             throw new Error('Forbidden: insufficient permission to add tag');
         }
-
         const entityTag = await EntityTagModel.create({
             tagId: parsedInput.tagId,
             entityId: parsedInput.entityId,
@@ -196,7 +184,6 @@ export const TagService = {
     ): Promise<GetAccommodationsByTagOutput> {
         logMethodStart(serviceLogger, 'getAccommodationsByTag', input, actor);
         const parsedInput = getAccommodationsByTagInputSchema.parse(input);
-        // Only 'name' is valid for AccommodationOrderByColumn
         const orderBy: AccommodationOrderByColumn | undefined =
             parsedInput.orderBy === 'name' ? 'name' : undefined;
         const accommodations = await AccommodationModel.search({
@@ -225,7 +212,6 @@ export const TagService = {
     ): Promise<GetDestinationsByTagOutput> {
         logMethodStart(serviceLogger, 'getDestinationsByTag', input, actor);
         const parsedInput = getDestinationsByTagInputSchema.parse(input);
-        // Only 'name' is valid for orderBy (DestinationModel)
         const orderBy = parsedInput.orderBy === 'name' ? 'name' : undefined;
         const destinations = await DestinationModel.search({
             tagId: parsedInput.tagId,
@@ -253,7 +239,6 @@ export const TagService = {
     ): Promise<GetEventsByTagOutput> {
         logMethodStart(serviceLogger, 'getEventsByTag', input, actor);
         const parsedInput = getEventsByTagInputSchema.parse(input);
-        // Only 'summary' and 'createdAt' are valid for orderBy (EventModel)
         const orderBy = parsedInput.orderBy === 'summary' ? 'summary' : undefined;
         const events = await EventModel.search({
             tagId: parsedInput.tagId,
@@ -281,22 +266,18 @@ export const TagService = {
     ): Promise<import('./tag.schemas').GetPostsByTagOutput> {
         logMethodStart(serviceLogger, 'getPostsByTag', input, actor);
         const parsedInput = (await import('./tag.schemas')).getPostsByTagInputSchema.parse(input);
-        // Only 'title' and 'createdAt' are valid for orderBy (PostModel)
         const orderBy =
             parsedInput.orderBy === 'title'
                 ? 'title'
                 : parsedInput.orderBy === 'createdAt'
                   ? 'createdAt'
                   : undefined;
-        const posts = await (await import('../../models/post/post.model')).PostModel.getByTag(
-            parsedInput.tagId,
-            {
-                limit: parsedInput.limit ?? 20,
-                offset: parsedInput.offset ?? 0,
-                order: parsedInput.order,
-                orderBy
-            }
-        );
+        const posts = await (await import('@repo/db')).PostModel.getByTag(parsedInput.tagId, {
+            limit: parsedInput.limit ?? 20,
+            offset: parsedInput.offset ?? 0,
+            order: parsedInput.order,
+            orderBy
+        });
         logMethodEnd(serviceLogger, 'getPostsByTag', { count: posts.length });
         return { posts };
     },
