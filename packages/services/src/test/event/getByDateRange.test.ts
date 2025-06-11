@@ -1,14 +1,14 @@
+import { EventModel } from '@repo/db';
 import type { EventId, UserId } from '@repo/types';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EventModel } from '../../../models/event/event.model';
-import { EventService } from '../../../services/event/event.service';
-import * as permissionManager from '../../../utils/permission-manager';
-import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
+import { EventService } from '../../event/event.service';
+import * as permissionManager from '../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
+import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('../../../models/event/event.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {

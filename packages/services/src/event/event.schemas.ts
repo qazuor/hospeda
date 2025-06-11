@@ -1,9 +1,11 @@
-import { ContactInfoSchema } from '@repo/schemas/common/contact.schema';
-import { MediaSchema } from '@repo/schemas/common/media.schema';
-import { EventDateSchema } from '@repo/schemas/entities/event/event.date.schema';
-import { EventPriceSchema } from '@repo/schemas/entities/event/event.price.schema';
-import { EventCategoryEnumSchema } from '@repo/schemas/enums/event-category.enum.schema';
-import { VisibilityEnumSchema } from '@repo/schemas/enums/visibility.enum.schema';
+import {
+    ContactInfoSchema,
+    EventCategoryEnumSchema,
+    EventDateSchema,
+    EventPriceSchema,
+    MediaSchema,
+    VisibilityEnumSchema
+} from '@repo/schemas';
 import type { EventType, UserId } from '@repo/types';
 import { EventCategoryEnum, LifecycleStatusEnum, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';

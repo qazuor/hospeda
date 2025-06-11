@@ -1,3 +1,4 @@
+import { EventModel } from '@repo/db';
 import type { EventType, PublicUserType, UpdateEventInputType, UserType } from '@repo/types';
 import {
     LifecycleStatusEnum,
@@ -6,17 +7,16 @@ import {
     RoleEnum,
     VisibilityEnum
 } from '@repo/types';
-import { EventModel } from '../../models/event/event.model';
-import { hasPermission } from '../../utils';
-import { logDenied, logGrant } from '../../utils/permission-logger';
+import { hasPermission } from '../utils';
+import { logDenied, logGrant } from '../utils/permission-logger';
 import {
     CanViewReasonEnum,
     getSafeActor,
     isUserDisabled,
     logMethodEnd,
     logMethodStart
-} from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/service-logger';
+} from '../utils/service-helper';
+import { serviceLogger } from '../utils/service-logger';
 import {
     assertNotArchived,
     buildRestoreUpdate,

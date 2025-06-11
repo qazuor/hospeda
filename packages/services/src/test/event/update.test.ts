@@ -1,3 +1,4 @@
+import { EventModel } from '@repo/db';
 import {
     EventCategoryEnum,
     type EventId,
@@ -8,9 +9,8 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EventModel } from '../../../models/event/event.model';
-import { EventService } from '../../../services/event/event.service';
-import * as permissionManager from '../../../utils/permission-manager';
+import { EventService } from '../../event/event.service';
+import * as permissionManager from '../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
 
 const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
