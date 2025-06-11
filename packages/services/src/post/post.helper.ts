@@ -5,7 +5,7 @@ import {
     type UserType,
     VisibilityEnum
 } from '@repo/types';
-import { CanViewReasonEnum } from '../../utils/service-helper';
+import { CanViewReasonEnum } from '../utils/service-helper';
 
 /**
  * Determines if the actor can view the post based on visibility, authorship, and permissions.

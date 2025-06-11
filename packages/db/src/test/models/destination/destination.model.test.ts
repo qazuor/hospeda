@@ -4,7 +4,7 @@ import { getDb } from '../../../../src/client';
 import { destinations } from '../../../../src/dbschemas/destination/destination.dbschema.ts';
 import { DestinationModel } from '../../../../src/models/destination/destination.model';
 import { dbLogger } from '../../../../src/utils/logger';
-import { mockDestination, mockDestinationWithRelations } from '../../services/mockData.ts';
+import { mockDestination, mockDestinationWithRelations } from '../../models/mockData.ts';
 
 vi.mock('../../../../src/utils/logger');
 vi.mock('../../../../src/client');

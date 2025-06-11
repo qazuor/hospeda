@@ -1,3 +1,4 @@
+import { PostModel } from '@repo/db';
 import type {
     AccommodationId,
     DestinationId,
@@ -13,9 +14,8 @@ import {
     RoleEnum,
     VisibilityEnum
 } from '@repo/types';
-import { PostModel } from '../../models/post/post.model';
-import { logDenied, logOverride } from '../../utils/permission-logger';
-import { hasPermission } from '../../utils/permission-manager';
+import { logDenied, logOverride } from '../utils/permission-logger';
+import { hasPermission } from '../utils/permission-manager';
 import {
     CanViewReasonEnum,
     getSafeActor,
@@ -23,8 +23,8 @@ import {
     isUserDisabled,
     logMethodEnd,
     logMethodStart
-} from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/service-logger';
+} from '../utils/service-helper';
+import { serviceLogger } from '../utils/service-logger';
 import { canViewPost } from './post.helper';
 import {
     type GetByIdInput,
