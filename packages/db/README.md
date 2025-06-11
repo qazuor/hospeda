@@ -381,7 +381,7 @@ See `TagModel` for a full implementation.
 - contactInfo: jsonb<ContactInfoType>
 - location: jsonb<FullLocationType>
 - socialNetworks: jsonb<SocialNetworkType[]>
-- roleId: uuid (FK roles.id, cascade, not null)
+- role: enum (RolePgEnum, not null, default USER)
 - profile: jsonb<UserProfile>
 - settings: jsonb<UserSettingsType> (not null)
 - lifecycle: enum (LifecycleStatusPgEnum, not null, default ACTIVE)
@@ -429,7 +429,7 @@ See `TagModel` for a full implementation.
 ### user/r_user_role
 
 - userId: uuid (FK users.id, cascade, PK)
-- roleId: uuid (FK roles.id, cascade, PK)
+- role: enum (RolePgEnum, not null, default USER)
 
 ### user/r_user_permission
 
@@ -438,7 +438,7 @@ See `TagModel` for a full implementation.
 
 ### user/r_role_permission
 
-- roleId: uuid (FK roles.id, cascade, PK)
+- role: enum (RolePgEnum, not null, default USER)
 - permissionId: uuid (FK permissions.id, cascade, PK)
 
 ### user/user_bookmarks
@@ -458,7 +458,133 @@ See `TagModel` for a full implementation.
 - deletedAt: timestamp
 - deletedById: uuid (FK users.id, set null)
 
----
+## RoleModel
+
+RoleModel provides CRUD and query operations for Role entities, with strong typing, robust error handling, and support for relations and advanced search. All methods are fully documented and tested.
+
+### Methods
+
+- `getById(id: string): Promise<RoleType | undefined>`
+  - Retrieve a role by its unique ID.
+- `getByName(name: string): Promise<RoleType | undefined>`
+  - Retrieve a role by its unique name.
+- `create(input: NewRoleInputType): Promise<RoleType>`
+  - Create a new role.
+- `update(id: string, input: UpdateRoleInputType): Promise<RoleType | undefined>`
+  - Update a role by ID.
+- `delete(id: string, deletedById: string): Promise<{ id: string } | undefined>`
+  - Soft delete a role by ID (sets deletedAt and deletedById).
+- `hardDelete(id: string): Promise<boolean>`
+  - Hard delete a role by ID (permanently removes from DB).
+- `list(params: RolePaginationParams): Promise<RoleType[]>`
+  - List roles with pagination and optional ordering.
+- `search(params: RoleSearchParams): Promise<RoleType[]>`
+  - Search roles by name, built-in, or default, with pagination and ordering.
+- `count(params?: RoleSearchParams): Promise<number>`
+  - Count roles with optional filters (name, built-in, default).
+- `getWithRelations<T extends RoleRelations>(id: string, withRelations: T): Promise<(RoleWithRelationsType & RoleRelationResult<T>) | undefined>`
+  - Retrieve a role by ID, including specified relations (e.g., permissions, users).
+- `getByPermission(permissionId: string): Promise<RoleType[]>`
+  - Get all roles with a given permission.
+
+### Orderable Columns Pattern
+
+RoleModel uses the orderable columns pattern to provide a type-safe, maintainable way to specify which columns can be used for ordering in list and search queries. See the model source for details and usage examples.
+
+## PermissionModel
+
+PermissionModel provides CRUD and query operations for Permission entities, with strong typing, robust error handling, and support for relations and advanced search. All methods are fully documented and tested.
+
+### Methods
+
+- `getById(id: string): Promise<PermissionType | undefined>`
+  - Retrieve a permission by its unique ID.
+- `getByName(name: string): Promise<PermissionType | undefined>`
+  - Retrieve a permission by its unique name.
+- `create(input: NewPermissionInputType): Promise<PermissionType>`
+  - Create a new permission.
+- `update(id: string, input: UpdatePermissionInputType): Promise<PermissionType | undefined>`
+  - Update a permission by ID.
+- `delete(id: string, deletedById: string): Promise<{ id: string } | undefined>`
+  - Soft delete a permission by ID (sets deletedAt and deletedById).
+- `hardDelete(id: string): Promise<boolean>`
+  - Hard delete a permission by ID (permanently removes from DB).
+- `list(params: PermissionPaginationParams): Promise<PermissionType[]>`
+  - List permissions with pagination and optional ordering.
+- `search(params: PermissionSearchParams): Promise<PermissionType[]>`
+  - Search permissions by name, built-in, or deprecated, with pagination and ordering.
+- `count(params?: PermissionSearchParams): Promise<number>`
+  - Count permissions with optional filters (name, built-in, deprecated).
+- `getWithRelations<T extends PermissionRelations>(id: string, withRelations: T): Promise<(PermissionWithRelationsType & PermissionRelationResult<T>) | undefined>`
+  - Retrieve a permission by ID, including specified relations (e.g., roles, users).
+- `getByRole(role: string): Promise<PermissionType[]>`
+  - Get all permissions for a given role.
+- `getByUser(userId: string): Promise<PermissionType[]>`
+  - Get all permissions for a given user.
+
+### Orderable Columns Pattern
+
+PermissionModel uses the orderable columns pattern to provide a type-safe, maintainable way to specify which columns can be used for ordering in list and search queries. See the model source for details and usage examples.
+
+## AccommodationModel
+
+AccommodationModel provides CRUD and query operations for Accommodation entities, with strong typing, robust error handling, and support for relations and advanced search. All methods are fully documented and tested.
+
+### Methods
+
+- `getById(id: string): Promise<AccommodationType | undefined>`
+  - Retrieve an accommodation by its unique ID.
+- `create(input: NewAccommodationInputType): Promise<AccommodationType>`
+  - Create a new accommodation.
+- `update(id: string, input: UpdateAccommodationInputType): Promise<AccommodationType | undefined>`
+  - Update an accommodation by ID.
+- `delete(id: string, deletedById: string): Promise<{ id: string } | undefined>`
+  - Soft delete an accommodation by ID (sets deletedAt and deletedById).
+- `hardDelete(id: string): Promise<boolean>`
+  - Hard delete an accommodation by ID (permanently removes from DB).
+- `list(params: AccommodationPaginationParams): Promise<AccommodationType[]>`
+  - List accommodations with pagination and optional ordering.
+- `search(params: AccommodationSearchParams): Promise<AccommodationType[]>`
+  - Search accommodations by name, type, or lifecycle, with pagination and ordering.
+- `count(params?: AccommodationSearchParams): Promise<number>`
+  - Count accommodations with optional filters (name, type, lifecycle).
+- `getWithRelations<T extends AccommodationRelations>(id: string, withRelations: T): Promise<(AccommodationWithRelationsType & AccommodationRelationResult<T>) | undefined>`
+  - Retrieve an accommodation by ID, including specified relations (e.g., amenities, features, reviews).
+
+### Orderable Columns Pattern
+
+AccommodationModel uses the orderable columns pattern to provide a type-safe, maintainable way to specify which columns can be used for ordering in list and search queries. See the model source for details and usage examples.
+
+## TagModel
+
+TagModel provides CRUD and query operations for Tag entities, with strong typing, robust error handling, and support for relations and advanced search. All methods are fully documented and tested.
+
+### Methods
+
+- `getById(id: string): Promise<TagType | undefined>`
+  - Retrieve a tag by its unique ID.
+- `create(input: NewTagInputType): Promise<TagType>`
+  - Create a new tag.
+- `update(id: string, input: UpdateTagInputType): Promise<TagType | undefined>`
+  - Update a tag by ID.
+- `delete(id: string, deletedById: string): Promise<{ id: string } | undefined>`
+  - Soft delete a tag by ID (sets deletedAt and deletedById).
+- `hardDelete(id: string): Promise<boolean>`
+  - Hard delete a tag by ID (permanently removes from DB).
+- `list(params: TagPaginationParams): Promise<TagType[]>`
+  - List tags with pagination and optional ordering.
+- `search(params: TagSearchParams): Promise<TagType[]>`
+  - Search tags by name, color, or lifecycle, with pagination and ordering.
+- `count(params?: TagSearchParams): Promise<number>`
+  - Count tags with optional filters (name, color, lifecycle).
+- `getWithRelations<T extends TagRelations>(id: string, withRelations: T): Promise<(TagType & RelationResult<T>) | undefined>`
+  - Retrieve a tag by ID, including specified relations (e.g., entityTags).
+- `findByName(name: string): Promise<TagType | undefined>`
+  - Find a tag by its exact name.
+
+### Orderable Columns Pattern
+
+TagModel uses the orderable columns pattern to provide a type-safe, maintainable way to specify which columns can be used for ordering in list and search queries. See the model source for details and usage examples.
 
 ## Diagrama de relaciones (Mermaid)
 
@@ -494,7 +620,7 @@ See `TagModel` for a full implementation.
   destinations ||--o{ r_destination_attraction : "id"
   attractions ||--o{ r_destination_attraction : "id"
 
-events ||--o{ posts : "relatedEventId"
+  events ||--o{ posts : "relatedEventId"
   events ||--o{ event_locations : "locationId"
   events ||--o{ event_organizers : "organizerId"
 
@@ -513,6 +639,32 @@ events ||--o{ posts : "relatedEventId"
   tags ||--o{ r_entity_tag : "id"
 ```
 
----
+## Models and Available Methods
 
-Este README se irá actualizando a medida que se agreguen modelos, servicios y seeds, así como instrucciones de uso y ejemplos.
+Below is a list of all models available in this package, along with their public methods, parameters, and return values. All methods are fully typed and documented with JSDoc in the source code.
+
+| Model | Methods | Parameters | Returns |
+|-------|---------|------------|---------|
+| Accommodation | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewAccommodationInputType`, `input: UpdateAccommodationInputType` | `Promise<AccommodationType | null>`, `Promise<AccommodationType[]>`, etc. |
+| AccommodationFaq | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewAccommodationFaqInputType`, `input: UpdateAccommodationFaqInputType` | `Promise<AccommodationFaqType | null>`, `Promise<AccommodationFaqType[]>`, etc. |
+| AccommodationIaData | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewAccommodationIaDataInputType`, `input: UpdateAccommodationIaDataInputType` | `Promise<AccommodationIaDataType | null>`, `Promise<AccommodationIaDataType[]>`, etc. |
+| AccommodationReview | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewAccommodationReviewInputType`, `input: UpdateAccommodationReviewInputType` | `Promise<AccommodationReviewType | null>`, `Promise<AccommodationReviewType[]>`, etc. |
+| Amenity | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewAmenityInputType`, `input: UpdateAmenityInputType` | `Promise<AmenityType | null>`, `Promise<AmenityType[]>`, etc. |
+| Feature | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewFeatureInputType`, `input: UpdateFeatureInputType` | `Promise<FeatureType | null>`, `Promise<FeatureType[]>`, etc. |
+| Attraction | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewAttractionInputType`, `input: UpdateAttractionInputType` | `Promise<AttractionType | null>`, `Promise<AttractionType[]>`, etc. |
+| Destination | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewDestinationInputType`, `input: UpdateDestinationInputType` | `Promise<DestinationType | null>`, `Promise<DestinationType[]>`, etc. |
+| DestinationReview | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewDestinationReviewInputType`, `input: UpdateDestinationReviewInputType` | `Promise<DestinationReviewType | null>`, `Promise<DestinationReviewType[]>`, etc. |
+| Event | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewEventInputType`, `input: UpdateEventInputType` | `Promise<EventType | null>`, `Promise<EventType[]>`, etc. |
+| EventLocation | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewEventLocationInputType`, `input: UpdateEventLocationInputType` | `Promise<EventLocationType | null>`, `Promise<EventLocationType[]>`, etc. |
+| EventOrganizer | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewEventOrganizerInputType`, `input: UpdateEventOrganizerInputType` | `Promise<EventOrganizerType | null>`, `Promise<EventOrganizerType[]>`, etc. |
+| Post | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewPostInputType`, `input: UpdatePostInputType` | `Promise<PostType | null>`, `Promise<PostType[]>`, etc. |
+| PostSponsor | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewPostSponsorInputType`, `input: UpdatePostSponsorInputType` | `Promise<PostSponsorType | null>`, `Promise<PostSponsorType[]>`, etc. |
+| PostSponsorship | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewPostSponsorshipInputType`, `input: UpdatePostSponsorshipInputType` | `Promise<PostSponsorshipType | null>`, `Promise<PostSponsorshipType[]>`, etc. |
+| EntityTag | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewEntityTagInputType`, `input: UpdateEntityTagInputType` | `Promise<EntityTagType | null>`, `Promise<EntityTagType[]>`, etc. |
+| Tag | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewTagInputType`, `input: UpdateTagInputType` | `Promise<TagType | null>`, `Promise<TagType[]>`, etc. |
+| Permission | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewPermissionInputType`, `input: UpdatePermissionInputType` | `Promise<PermissionType | null>`, `Promise<PermissionType[]>`, etc. |
+| Role | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewRoleInputType`, `input: UpdateRoleInputType` | `Promise<RoleType | null>`, `Promise<RoleType[]>`, etc. |
+| User | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewUserInputType`, `input: UpdateUserInputType` | `Promise<UserType | null>`, `Promise<UserType[]>`, etc. |
+| UserBookmark | `getById`, `getAll`, `create`, `update`, `delete` | `id: string`, `input: NewUserBookmarkInputType`, `input: UpdateUserBookmarkInputType` | `Promise<UserBookmarkType | null>`, `Promise<UserBookmarkType[]>`, etc. |
+
+> **Note:** For detailed usage, see the JSDoc comments in each model file. All methods are fully typed and include usage examples.
