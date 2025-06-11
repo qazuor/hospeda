@@ -1,12 +1,10 @@
+import { UserBookmarkModel } from '@repo/db';
 import type { UserId } from '@repo/types';
 import { EntityTypeEnum } from '@repo/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserBookmarkModel } from '../../../../src/models/user/user_bookmark.model';
-import type { AddBookmarkInput } from '../../../../src/services/bookmark/bookmark.schemas';
-import { BookmarkService } from '../../../../src/services/bookmark/bookmark.service';
+import { describe, expect, it, type vi } from 'vitest';
+import type { AddBookmarkInput } from '../../bookmark/bookmark.schemas';
+import { BookmarkService } from '../../bookmark/bookmark.service';
 import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../mockData';
-
-vi.mock('../../../../src/models/user/user_bookmark.model');
 
 const mockUser = getMockUser();
 const mockUserId: UserId = getMockUserId();
@@ -14,10 +12,6 @@ const mockBookmark = getMockUserBookmark();
 const publicUser = getMockPublicUser();
 
 describe('BookmarkService.addBookmark', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
     it('creates a bookmark for the user (happy path)', async () => {
         (UserBookmarkModel.create as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
             mockBookmark
