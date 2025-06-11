@@ -1,4 +1,6 @@
+import { EventModel } from '@repo/db';
 import {
+    EventCategoryEnum,
     type EventId,
     LifecycleStatusEnum,
     PermissionEnum,
@@ -7,13 +9,12 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EventModel } from '../../../models/event/event.model';
-import { EventService } from '../../../services/event/event.service';
-import * as permissionManager from '../../../utils/permission-manager';
-import { expectInfoLog, expectPermissionLog } from '../../utils/log-assertions';
+import { EventService } from '../../event/event.service';
+import * as permissionManager from '../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
+import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('../../../models/event/event.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {
@@ -25,7 +26,7 @@ vi.mock('../../../models/event/event.model', async (importOriginal) => {
     };
 });
 
-describe('event.service.getUpcoming', () => {
+describe('event.service.getByCategory', () => {
     const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
     const userWithPerm = getMockUser({
         id: 'user-2' as UserId,
@@ -42,90 +43,90 @@ describe('event.service.getUpcoming', () => {
         lifecycleState: LifecycleStatusEnum.INACTIVE
     });
     const publicActor = getMockPublicUser();
-    const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24); // +1 day
+    const category = EventCategoryEnum.FESTIVAL;
     const publicEvent = getMockEvent({
         id: 'event-1' as EventId,
         visibility: VisibilityEnum.PUBLIC,
-        date: { start: futureDate }
+        category
     });
     const privateEvent = getMockEvent({
         id: 'event-2' as EventId,
         visibility: VisibilityEnum.PRIVATE,
-        date: { start: futureDate }
+        category
     });
     const archivedEvent = getMockEvent({
         id: 'event-3' as EventId,
         visibility: VisibilityEnum.PUBLIC,
         lifecycleState: LifecycleStatusEnum.ARCHIVED,
-        date: { start: futureDate }
+        category
     });
-    const allUpcoming = [publicEvent, privateEvent, archivedEvent];
+    const allEvents = [publicEvent, privateEvent, archivedEvent];
 
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('should return all upcoming events for ADMIN', async () => {
-        (EventModel.search as Mock).mockResolvedValue(allUpcoming);
-        const result = await EventService.getUpcoming({}, admin);
+    it('should return all events for ADMIN', async () => {
+        (EventModel.search as Mock).mockResolvedValue(allEvents);
+        const result = await EventService.getByCategory({ category }, admin);
         expect(result.events).toHaveLength(3);
-        expect(result.events).toEqual(expect.arrayContaining(allUpcoming));
-        expectInfoLog({ input: {}, actor: admin }, 'getUpcoming:start');
+        expect(result.events).toEqual(expect.arrayContaining(allEvents));
+        expectInfoLog({ input: { category }, actor: admin }, 'getByCategory:start');
         expectInfoLog(
-            { result: { events: expect.arrayContaining(allUpcoming) } },
-            'getUpcoming:end'
+            { result: { events: expect.arrayContaining(allEvents) } },
+            'getByCategory:end'
         );
     });
 
-    it('should return public and private upcoming events for user with permission', async () => {
+    it('should return public and private events for user with permission', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(
             (_, perm) => perm === PermissionEnum.EVENT_VIEW_PRIVATE
         );
-        (EventModel.search as Mock).mockResolvedValue(allUpcoming);
-        const result = await EventService.getUpcoming({}, userWithPerm);
+        (EventModel.search as Mock).mockResolvedValue(allEvents);
+        const result = await EventService.getByCategory({ category }, userWithPerm);
         expect(result.events).toEqual(expect.arrayContaining([publicEvent, privateEvent]));
         expect(result.events).not.toContainEqual(archivedEvent);
-        expectInfoLog({ input: {}, actor: userWithPerm }, 'getUpcoming:start');
+        expectInfoLog({ input: { category }, actor: userWithPerm }, 'getByCategory:start');
         expectInfoLog(
             { result: { events: expect.arrayContaining([publicEvent, privateEvent]) } },
-            'getUpcoming:end'
+            'getByCategory:end'
         );
     });
 
-    it('should return only public upcoming events for user without permission', async () => {
+    it('should return only public events for user without permission', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
-        (EventModel.search as Mock).mockResolvedValue(allUpcoming);
-        const result = await EventService.getUpcoming({}, userNoPerm);
+        (EventModel.search as Mock).mockResolvedValue(allEvents);
+        const result = await EventService.getByCategory({ category }, userNoPerm);
         expect(result.events).toEqual([publicEvent]);
         expect(result.events).not.toContainEqual(archivedEvent);
-        expectInfoLog({ input: {}, actor: userNoPerm }, 'getUpcoming:start');
-        expectInfoLog({ result: { events: [publicEvent] } }, 'getUpcoming:end');
+        expectInfoLog({ input: { category }, actor: userNoPerm }, 'getByCategory:start');
+        expectInfoLog({ result: { events: [publicEvent] } }, 'getByCategory:end');
     });
 
-    it('should return only public upcoming events for public user', async () => {
-        (EventModel.search as Mock).mockResolvedValue(allUpcoming);
-        const result = await EventService.getUpcoming({}, publicActor);
+    it('should return only public events for public user', async () => {
+        (EventModel.search as Mock).mockResolvedValue(allEvents);
+        const result = await EventService.getByCategory({ category }, publicActor);
         expect(result.events).toEqual([publicEvent]);
         expect(result.events).not.toContainEqual(archivedEvent);
-        expectInfoLog({ input: {}, actor: publicActor }, 'getUpcoming:start');
-        expectInfoLog({ result: { events: [publicEvent] } }, 'getUpcoming:end');
+        expectInfoLog({ input: { category }, actor: publicActor }, 'getByCategory:start');
+        expectInfoLog({ result: { events: [publicEvent] } }, 'getByCategory:end');
     });
 
     it('should return no events for disabled user', async () => {
-        (EventModel.search as Mock).mockResolvedValue(allUpcoming);
-        const result = await EventService.getUpcoming({}, disabledUser);
+        (EventModel.search as Mock).mockResolvedValue(allEvents);
+        const result = await EventService.getByCategory({ category }, disabledUser);
         expect(result.events).toEqual([]);
         expectPermissionLog({
             userId: disabledUser.id,
             role: disabledUser.role,
             extraData: expect.objectContaining({ error: 'User disabled' })
         });
-        expectInfoLog({ result: { events: [] } }, 'getUpcoming:end');
+        expectInfoLog({ result: { events: [] } }, 'getByCategory:end');
     });
 
     it('should respect limit and offset', async () => {
-        (EventModel.search as Mock).mockResolvedValue(allUpcoming);
-        const result = await EventService.getUpcoming({ limit: 1, offset: 1 }, admin);
+        (EventModel.search as Mock).mockResolvedValue([publicEvent, privateEvent, archivedEvent]);
+        const result = await EventService.getByCategory({ category, limit: 1, offset: 1 }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(
             expect.objectContaining({ limit: 1, offset: 1 })
         );
@@ -134,30 +135,30 @@ describe('event.service.getUpcoming', () => {
 
     it('should return empty if no events found', async () => {
         (EventModel.search as Mock).mockResolvedValue([]);
-        const result = await EventService.getUpcoming({}, admin);
+        const result = await EventService.getByCategory({ category }, admin);
         expect(result.events).toEqual([]);
-        expectInfoLog({ result: { events: [] } }, 'getUpcoming:end');
+        expectInfoLog({ result: { events: [] } }, 'getByCategory:end');
     });
 
     it('should return empty if all events filtered by permissions', async () => {
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(false);
         (EventModel.search as Mock).mockResolvedValue([privateEvent]);
-        const result = await EventService.getUpcoming({}, userNoPerm);
+        const result = await EventService.getByCategory({ category }, userNoPerm);
         expect(result.events).toEqual([]);
-        expectInfoLog({ result: { events: [] } }, 'getUpcoming:end');
+        expectInfoLog({ result: { events: [] } }, 'getByCategory:end');
     });
 
     it('should pass minDate to EventModel.search', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent]);
         const minDate = new Date('2024-07-01T00:00:00Z');
-        await EventService.getUpcoming({ minDate }, admin);
+        await EventService.getByCategory({ category, minDate }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ minDate }));
     });
 
     it('should pass maxDate to EventModel.search', async () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent]);
         const maxDate = new Date('2024-08-01T00:00:00Z');
-        await EventService.getUpcoming({ maxDate }, admin);
+        await EventService.getByCategory({ category, maxDate }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(expect.objectContaining({ maxDate }));
     });
 
@@ -165,19 +166,9 @@ describe('event.service.getUpcoming', () => {
         (EventModel.search as Mock).mockResolvedValue([publicEvent]);
         const minDate = new Date('2024-07-01T00:00:00Z');
         const maxDate = new Date('2024-08-01T00:00:00Z');
-        await EventService.getUpcoming({ minDate, maxDate }, admin);
+        await EventService.getByCategory({ category, minDate, maxDate }, admin);
         expect(EventModel.search).toHaveBeenCalledWith(
             expect.objectContaining({ minDate, maxDate })
         );
-    });
-
-    it('should default minDate to now if not provided', async () => {
-        (EventModel.search as Mock).mockResolvedValue([publicEvent]);
-        const before = Date.now();
-        await EventService.getUpcoming({}, admin);
-        const call = (EventModel.search as Mock).mock.calls[0]?.[0];
-        expect(call).toBeDefined();
-        expect(call.minDate).toBeInstanceOf(Date);
-        expect(call.minDate.getTime()).toBeGreaterThanOrEqual(before);
     });
 });

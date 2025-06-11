@@ -1,3 +1,4 @@
+import { EventModel } from '@repo/db';
 import {
     type EventType,
     LifecycleStatusEnum,
@@ -6,8 +7,7 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EventModel } from '../../../models/event/event.model';
-import { EventService } from '../../../services/event/event.service';
+import { EventService } from '../../event/event.service';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
 
 import type { EventId, EventLocationId } from '@repo/types';

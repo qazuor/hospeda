@@ -8,8 +8,8 @@ import {
     type UserType,
     VisibilityEnum
 } from '@repo/types';
-import { castBrandedIds, castDateFields } from '../../utils/cast-helper';
-import { CanViewReasonEnum } from '../../utils/service-helper';
+import { castBrandedIds, castDateFields } from '../utils/cast-helper';
+import { CanViewReasonEnum } from '../utils/service-helper';
 
 /**
  * Determines if the actor can view the event based on visibility and permissions.
