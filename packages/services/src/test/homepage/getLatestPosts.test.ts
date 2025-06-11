@@ -1,3 +1,4 @@
+import { AccommodationModel, DestinationModel, EventModel, PostModel } from '@repo/db';
 import type {
     AccommodationId,
     DestinationId,
@@ -15,12 +16,8 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import { DestinationModel } from '../../../models/destination/destination.model';
-import { EventModel } from '../../../models/event/event.model';
-import { PostModel } from '../../../models/post/post.model';
-import { getLatestPostsOutputSchema } from '../../../services/homepage/homepage.schemas';
-import { homepageService } from '../../../services/homepage/homepage.service';
+import { getLatestPostsOutputSchema } from '../../homepage/homepage.schemas';
+import { homepageService } from '../../homepage/homepage.service';
 
 const postId = '11111111-1111-1111-1111-111111111111' as PostId;
 const accId = '22222222-2222-2222-2222-222222222222' as AccommodationId;

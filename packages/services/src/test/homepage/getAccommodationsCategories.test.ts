@@ -1,8 +1,8 @@
+import { AccommodationModel } from '@repo/db';
 import { AccommodationTypeEnum } from '@repo/types';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import { getAccommodationsCategoriesOutputSchema } from '../../../services/homepage/homepage.schemas';
-import { homepageService } from '../../../services/homepage/homepage.service';
+import { getAccommodationsCategoriesOutputSchema } from '../../homepage/homepage.schemas';
+import { homepageService } from '../../homepage/homepage.service';
 
 describe('homepageService.getAccommodationsCategories', () => {
     afterAll(() => {

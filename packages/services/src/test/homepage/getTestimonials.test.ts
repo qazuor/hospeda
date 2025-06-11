@@ -1,3 +1,4 @@
+import { AccommodationReviewModel, DestinationReviewModel } from '@repo/db';
 import type {
     AccommodationId,
     AccommodationReviewId,
@@ -7,10 +8,8 @@ import type {
 } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { AccommodationReviewModel } from '../../../models/accommodation/accommodation_review.model';
-import { DestinationReviewModel } from '../../../models/destination/destination_review.model';
-import { getTestimonialsOutputSchema } from '../../../services/homepage/homepage.schemas';
-import { homepageService } from '../../../services/homepage/homepage.service';
+import { getTestimonialsOutputSchema } from '../../homepage/homepage.schemas';
+import { homepageService } from '../../homepage/homepage.service';
 
 const accReviewId = '11111111-1111-1111-1111-111111111111';
 const destReviewId = '22222222-2222-2222-2222-222222222222';

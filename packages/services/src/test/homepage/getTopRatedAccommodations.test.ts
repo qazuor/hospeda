@@ -1,3 +1,4 @@
+import { AccommodationModel } from '@repo/db';
 import type {
     AccommodationId,
     AmenityId,
@@ -16,9 +17,8 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { AccommodationModel } from '../../../models/accommodation/accommodation.model';
-import { getTopRatedAccommodationsOutputSchema } from '../../../services/homepage/homepage.schemas';
-import { homepageService } from '../../../services/homepage/homepage.service';
+import { getTopRatedAccommodationsOutputSchema } from '../../homepage/homepage.schemas';
+import { homepageService } from '../../homepage/homepage.service';
 
 const mockFeature: FeatureType = {
     id: '33333333-3333-3333-3333-333333333333' as FeatureId,

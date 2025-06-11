@@ -1,3 +1,4 @@
+import { DestinationModel, EventModel } from '@repo/db';
 import type { DestinationId, EventId, EventLocationId, UserId } from '@repo/types';
 import {
     EventCategoryEnum,
@@ -6,10 +7,8 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { DestinationModel } from '../../../models/destination/destination.model';
-import { EventModel } from '../../../models/event/event.model';
-import { getNextEventsOutputSchema } from '../../../services/homepage/homepage.schemas';
-import { homepageService } from '../../../services/homepage/homepage.service';
+import { getNextEventsOutputSchema } from '../../homepage/homepage.schemas';
+import { homepageService } from '../../homepage/homepage.service';
 
 const eventId = '11111111-1111-1111-1111-111111111111' as EventId;
 const destinationId = '22222222-2222-2222-2222-222222222222' as DestinationId;
