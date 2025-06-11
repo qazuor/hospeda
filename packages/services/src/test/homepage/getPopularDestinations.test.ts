@@ -1,3 +1,4 @@
+import { DestinationModel } from '@repo/db';
 import type {
     AdminInfoType,
     AttractionId,
@@ -11,9 +12,8 @@ import type {
 } from '@repo/types';
 import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { DestinationModel } from '../../../models/destination/destination.model';
-import { getPopularDestinationsOutputSchema } from '../../../services/homepage/homepage.schemas';
-import { homepageService } from '../../../services/homepage/homepage.service';
+import { getPopularDestinationsOutputSchema } from '../../homepage/homepage.schemas';
+import { homepageService } from '../../homepage/homepage.service';
 
 // Mock data
 const mockAdminInfo: AdminInfoType = {

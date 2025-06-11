@@ -1,9 +1,9 @@
+import { DestinationModel } from '@repo/db';
 import type { DestinationId, UserId } from '@repo/types';
 import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { DestinationModel } from '../../../models/destination/destination.model';
-import { getDestinationsListOutputSchema } from '../../../services/homepage/homepage.schemas';
-import { homepageService } from '../../../services/homepage/homepage.service';
+import { getDestinationsListOutputSchema } from '../../homepage/homepage.schemas';
+import { homepageService } from '../../homepage/homepage.service';
 
 const destId1 = '11111111-1111-1111-1111-111111111111' as DestinationId;
 const destId2 = '22222222-2222-2222-2222-222222222222' as DestinationId;

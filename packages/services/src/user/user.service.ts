@@ -1,14 +1,14 @@
+import { UserModel } from '@repo/db';
 import { LifecycleStatusEnum, type UserId } from '@repo/types';
-import { UserModel } from '../../models/user/user.model';
-import { hasPermission } from '../../utils/permission-manager';
+import { hasPermission } from '../utils/permission-manager';
 import {
     CanViewReasonEnum,
     getSafeActor,
     isUserDisabled,
     logMethodEnd,
     logMethodStart
-} from '../../utils/service-helper';
-import { serviceLogger } from '../../utils/service-logger';
+} from '../utils/service-helper';
+import { serviceLogger } from '../utils/service-logger';
 import { canViewUser } from './user.helper';
 import type {
     CreateUserInput,

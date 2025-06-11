@@ -1,3 +1,11 @@
+import {
+    AccommodationModel,
+    AccommodationReviewModel,
+    DestinationModel,
+    DestinationReviewModel,
+    EventModel,
+    PostModel
+} from '@repo/db';
 import type {
     AccommodationWithRelationsType,
     AmenityType,
@@ -5,12 +13,6 @@ import type {
     FeatureType
 } from '@repo/types';
 import { AccommodationTypeEnum } from '@repo/types';
-import { AccommodationModel } from '../../models/accommodation/accommodation.model';
-import { AccommodationReviewModel } from '../../models/accommodation/accommodation_review.model';
-import { DestinationModel } from '../../models/destination/destination.model';
-import { DestinationReviewModel } from '../../models/destination/destination_review.model';
-import { EventModel } from '../../models/event/event.model';
-import { PostModel } from '../../models/post/post.model';
 import type {
     GetAccommodationsCategoriesOutput,
     GetDestinationsListInput,
