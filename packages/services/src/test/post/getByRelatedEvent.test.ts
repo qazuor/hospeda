@@ -1,13 +1,13 @@
-import type { AccommodationId, PostId, UserId } from '@repo/types';
+import { PostModel } from '@repo/db';
+import type { EventId, PostId, UserId } from '@repo/types';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PostModel } from '../../../models/post/post.model';
-import { PostService } from '../../../services/post/post.service';
+import { PostService } from '../../post/post.service';
 import { getMockPost, getMockUser } from '../mockData';
 
-vi.mock('../../../models/post/post.model');
+vi.mock('@repo/db');
 
-vi.mock('../../../utils/permission-manager', () => ({
+vi.mock('../../utils/permission-manager', () => ({
     hasPermission: vi.fn(() => {
         throw new Error('No permission');
     })
@@ -16,23 +16,23 @@ vi.mock('../../../utils/permission-manager', () => ({
 const user = getMockUser({ id: 'not-author-uuid' as UserId, role: RoleEnum.USER });
 const admin = getMockUser({ role: RoleEnum.ADMIN, id: 'admin-uuid' as UserId });
 const publicUser = { role: RoleEnum.GUEST };
-const accommodationId = 'acc-uuid' as AccommodationId;
+const eventId = 'event-uuid' as EventId;
 const posts = [
     getMockPost({
         id: 'public-post-uuid' as PostId,
-        relatedAccommodationId: accommodationId,
+        relatedEventId: eventId,
         visibility: VisibilityEnum.PUBLIC,
         authorId: 'other-author-uuid' as UserId
     }),
     getMockPost({
         id: 'private-post-uuid' as PostId,
-        relatedAccommodationId: accommodationId,
+        relatedEventId: eventId,
         visibility: VisibilityEnum.PRIVATE,
         authorId: 'other-author-uuid' as UserId
     }),
     getMockPost({
         id: 'other-public-post-uuid' as PostId,
-        relatedAccommodationId: 'other-acc' as AccommodationId,
+        relatedEventId: 'other-event' as EventId,
         visibility: VisibilityEnum.PUBLIC,
         authorId: 'other-author-uuid' as UserId
     })
@@ -45,14 +45,14 @@ afterEach(() => {
     // No redefinir el mock aquí
 });
 
-describe('PostService.getByRelatedAccommodation', () => {
+describe('PostService.getByRelatedEvent', () => {
     it('should return only public posts for public user', async () => {
         (PostModel.search as Mock).mockResolvedValue(posts);
-        const input = { accommodationId };
-        const result = await PostService.getByRelatedAccommodation(input, publicUser);
+        const input = { eventId };
+        const result = await PostService.getByRelatedEvent(input, publicUser);
         expect(result.posts).toEqual([
             expect.objectContaining({
-                relatedAccommodationId: accommodationId,
+                relatedEventId: eventId,
                 visibility: VisibilityEnum.PUBLIC
             })
         ]);
@@ -61,15 +61,15 @@ describe('PostService.getByRelatedAccommodation', () => {
 
     it('should return all related posts for admin', async () => {
         (PostModel.search as Mock).mockResolvedValue(posts);
-        const input = { accommodationId };
-        const result = await PostService.getByRelatedAccommodation(input, admin);
+        const input = { eventId };
+        const result = await PostService.getByRelatedEvent(input, admin);
         expect(result.posts).toEqual([
             expect.objectContaining({
-                relatedAccommodationId: accommodationId,
+                relatedEventId: eventId,
                 visibility: VisibilityEnum.PUBLIC
             }),
             expect.objectContaining({
-                relatedAccommodationId: accommodationId,
+                relatedEventId: eventId,
                 visibility: VisibilityEnum.PRIVATE
             })
         ]);
@@ -78,8 +78,8 @@ describe('PostService.getByRelatedAccommodation', () => {
 
     it('should return only public posts for user without permission', async () => {
         (PostModel.search as Mock).mockResolvedValue(posts);
-        const input = { accommodationId };
-        const result = await PostService.getByRelatedAccommodation(input, user);
+        const input = { eventId };
+        const result = await PostService.getByRelatedEvent(input, user);
         expect(result.posts).toHaveLength(1);
         const post = result.posts[0];
         expect(post).toBeDefined();
@@ -91,8 +91,8 @@ describe('PostService.getByRelatedAccommodation', () => {
     });
 
     it('should throw and log if input is invalid', async () => {
-        const input = { accommodationId: '' as PostId };
-        await expect(PostService.getByRelatedAccommodation(input, user)).rejects.toThrow();
+        const input = { eventId: '' as PostId };
+        await expect(PostService.getByRelatedEvent(input, user)).rejects.toThrow();
         expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
     });
 });

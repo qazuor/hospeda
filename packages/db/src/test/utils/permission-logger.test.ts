@@ -7,7 +7,7 @@ import {
     logOverride,
     logUserDisabled
 } from '../../utils/permission-logger';
-import { getMockPublicUser, getMockUser } from '../services/mockData';
+import { getMockPublicUser, getMockUser } from '../models/mockData';
 
 /**
  * Returns a mock logger with a spy for the permission method.

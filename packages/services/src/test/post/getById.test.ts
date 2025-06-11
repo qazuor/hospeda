@@ -1,3 +1,4 @@
+import { PostModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
     type PostId,
@@ -6,8 +7,7 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PostModel } from '../../../models/post/post.model';
-import { PostService } from '../../../services/post/post.service';
+import { PostService } from '../../post/post.service';
 
 import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
 
@@ -38,7 +38,7 @@ const draftPost = getMockPost({
     authorId: author.id
 });
 
-vi.mock('../../../utils/permission-manager', () => ({
+vi.mock('../../utils/permission-manager', () => ({
     hasPermission: vi.fn(() => {
         throw new Error('Forbidden');
     })

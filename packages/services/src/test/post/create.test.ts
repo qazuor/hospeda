@@ -1,11 +1,11 @@
+import { PostModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PostModel } from '../../../models/post/post.model';
-import { PostService } from '../../../services/post/post.service';
-import * as permissionManager from '../../../utils/permission-manager';
+import { PostService } from '../../post/post.service';
+import * as permissionManager from '../../utils/permission-manager';
 import { getMockPost, getMockPostInput, getMockPublicUser, getMockUser } from '../mockData';
 
-vi.mock('../../../models/post/post.model', async (importOriginal) => {
+vi.mock('@repo/db', async (importOriginal) => {
     const actualImport = await importOriginal();
     const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
     return {

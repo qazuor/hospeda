@@ -1,13 +1,13 @@
-import type { DestinationId, PostId, UserId } from '@repo/types';
+import { PostModel } from '@repo/db';
+import type { PostId, UserId } from '@repo/types';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PostModel } from '../../../models/post/post.model';
-import { PostService } from '../../../services/post/post.service';
+import { PostService } from '../../post/post.service';
 import { getMockPost, getMockUser } from '../mockData';
 
-vi.mock('../../../models/post/post.model');
+vi.mock('@repo/db');
 
-vi.mock('../../../utils/permission-manager', () => ({
+vi.mock('../../utils/permission-manager', () => ({
     hasPermission: vi.fn(() => {
         throw new Error('No permission');
     })
@@ -16,23 +16,22 @@ vi.mock('../../../utils/permission-manager', () => ({
 const user = getMockUser({ id: 'not-author-uuid' as UserId, role: RoleEnum.USER });
 const admin = getMockUser({ role: RoleEnum.ADMIN, id: 'admin-uuid' as UserId });
 const publicUser = { role: RoleEnum.GUEST };
-const destinationId = 'dest-uuid' as DestinationId;
 const posts = [
     getMockPost({
-        id: 'public-post-uuid' as PostId,
-        relatedDestinationId: destinationId,
+        id: 'public-news-post-uuid' as PostId,
+        isNews: true,
         visibility: VisibilityEnum.PUBLIC,
         authorId: 'other-author-uuid' as UserId
     }),
     getMockPost({
-        id: 'private-post-uuid' as PostId,
-        relatedDestinationId: destinationId,
+        id: 'private-news-post-uuid' as PostId,
+        isNews: true,
         visibility: VisibilityEnum.PRIVATE,
         authorId: 'other-author-uuid' as UserId
     }),
     getMockPost({
-        id: 'other-public-post-uuid' as PostId,
-        relatedDestinationId: 'other-dest' as DestinationId,
+        id: 'public-nonnews-post-uuid' as PostId,
+        isNews: false,
         visibility: VisibilityEnum.PUBLIC,
         authorId: 'other-author-uuid' as UserId
     })
@@ -45,54 +44,54 @@ afterEach(() => {
     // No redefinir el mock aquí
 });
 
-describe('PostService.getByRelatedDestination', () => {
-    it('should return only public posts for public user', async () => {
+describe('PostService.getNews', () => {
+    it('should return only public news posts for public user', async () => {
         (PostModel.search as Mock).mockResolvedValue(posts);
-        const input = { destinationId };
-        const result = await PostService.getByRelatedDestination(input, publicUser);
+        const input = {};
+        const result = await PostService.getNews(input, publicUser);
         expect(result.posts).toEqual([
             expect.objectContaining({
-                relatedDestinationId: destinationId,
+                isNews: true,
                 visibility: VisibilityEnum.PUBLIC
             })
         ]);
         expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
-    it('should return all related posts for admin', async () => {
+    it('should return all news posts for admin', async () => {
         (PostModel.search as Mock).mockResolvedValue(posts);
-        const input = { destinationId };
-        const result = await PostService.getByRelatedDestination(input, admin);
+        const input = {};
+        const result = await PostService.getNews(input, admin);
         expect(result.posts).toEqual([
             expect.objectContaining({
-                relatedDestinationId: destinationId,
+                isNews: true,
                 visibility: VisibilityEnum.PUBLIC
             }),
             expect.objectContaining({
-                relatedDestinationId: destinationId,
+                isNews: true,
                 visibility: VisibilityEnum.PRIVATE
             })
         ]);
         expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
-    it('should return only public posts for user without permission', async () => {
+    it('should return only public news posts for user without permission', async () => {
         (PostModel.search as Mock).mockResolvedValue(posts);
-        const input = { destinationId };
-        const result = await PostService.getByRelatedDestination(input, user);
+        const input = {};
+        const result = await PostService.getNews(input, user);
         expect(result.posts).toHaveLength(1);
         const post = result.posts[0];
         expect(post).toBeDefined();
         if (post) {
-            expect(post.id).toBe('public-post-uuid');
+            expect(post.id).toBe('public-news-post-uuid');
             expect(post.visibility).toBe(VisibilityEnum.PUBLIC);
         }
         expect(mockServiceLogger.info).toHaveBeenCalled();
     });
 
     it('should throw and log if input is invalid', async () => {
-        const input = { destinationId: '' as PostId };
-        await expect(PostService.getByRelatedDestination(input, user)).rejects.toThrow();
+        const input = { foo: 'bar' };
+        await expect(PostService.getNews(input, user)).rejects.toThrow();
         expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
     });
 });
