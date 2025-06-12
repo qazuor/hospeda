@@ -2,6 +2,7 @@ import { UserModel } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../user/user.service';
+import { expectInfoLog } from '../utils/log-assertions';
 
 // --- Mock helpers ---
 const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
@@ -43,47 +44,47 @@ describe('user.service.getById', () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(user);
         const result = await UserService.getById({ id: user.id }, admin);
         expect(result.user).toEqual(user);
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:start');
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:end');
+        expectInfoLog({}, 'getById:start');
+        expectInfoLog({}, 'getById:end');
     });
 
     it('should allow user to view themselves', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(user);
         const result = await UserService.getById({ id: user.id }, user);
         expect(result.user).toEqual(user);
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:start');
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:end');
+        expectInfoLog({}, 'getById:start');
+        expectInfoLog({}, 'getById:end');
     });
 
     it('should not allow user to view another user without permission', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(admin);
         const result = await UserService.getById({ id: admin.id }, user);
         expect(result.user).toBeNull();
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:start');
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:end');
+        expectInfoLog({}, 'getById:start');
+        expectInfoLog({}, 'getById:end');
     });
 
     it('should not allow disabled user to view any user', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(user);
         const result = await UserService.getById({ id: user.id }, disabledUser);
         expect(result.user).toBeNull();
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:start');
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:end');
+        expectInfoLog({}, 'getById:start');
+        expectInfoLog({}, 'getById:end');
     });
 
     it('should return null if user not found', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(undefined);
         const result = await UserService.getById({ id: 'nonexistent' as UserId }, admin);
         expect(result.user).toBeNull();
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:start');
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:end');
+        expectInfoLog({}, 'getById:start');
+        expectInfoLog({}, 'getById:end');
     });
 
     it('should not allow public actor to view any user', async () => {
         vi.spyOn(UserModel, 'getById').mockResolvedValue(user);
         const result = await UserService.getById({ id: user.id }, publicActor);
         expect(result.user).toBeNull();
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:start');
-        expect(mockServiceLogger.info).toHaveBeenCalledWith(expect.anything(), 'getById:end');
+        expectInfoLog({}, 'getById:start');
+        expectInfoLog({}, 'getById:end');
     });
 });

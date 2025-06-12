@@ -4,6 +4,7 @@ import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
 import { getMockPost, getMockUser } from '../mockData';
+import { expectInfoLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/permission-manager', () => ({
     hasPermission: vi.fn(() => {
@@ -53,7 +54,14 @@ describe('PostService.getFeatured', () => {
                 visibility: VisibilityEnum.PUBLIC
             })
         ]);
-        expect(mockServiceLogger.info).toHaveBeenCalled();
+        expectInfoLog(
+            { actor: expect.objectContaining({ role: 'GUEST' }), input: {} },
+            'getFeatured:start'
+        );
+        expectInfoLog(
+            { result: expect.objectContaining({ posts: expect.any(Array) }) },
+            'getFeatured:end'
+        );
     });
 
     it('should return all featured posts for admin', async () => {
@@ -70,7 +78,14 @@ describe('PostService.getFeatured', () => {
                 visibility: VisibilityEnum.PRIVATE
             })
         ]);
-        expect(mockServiceLogger.info).toHaveBeenCalled();
+        expectInfoLog(
+            { actor: expect.objectContaining({ role: 'ADMIN' }), input: {} },
+            'getFeatured:start'
+        );
+        expectInfoLog(
+            { result: expect.objectContaining({ posts: expect.any(Array) }) },
+            'getFeatured:end'
+        );
     });
 
     it('should return only public featured posts for user without permission', async () => {
@@ -84,12 +99,22 @@ describe('PostService.getFeatured', () => {
             expect(post.id).toBe('public-featured-post-uuid');
             expect(post.visibility).toBe(VisibilityEnum.PUBLIC);
         }
-        expect(mockServiceLogger.info).toHaveBeenCalled();
+        expectInfoLog(
+            { actor: expect.objectContaining({ role: 'USER' }), input: {} },
+            'getFeatured:start'
+        );
+        expectInfoLog(
+            { result: expect.objectContaining({ posts: expect.any(Array) }) },
+            'getFeatured:end'
+        );
     });
 
     it('should throw and log if input is invalid', async () => {
         const input = { foo: 'bar' };
         await expect(PostService.getFeatured(input, user)).rejects.toThrow();
-        expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
+        expectInfoLog(
+            { actor: expect.objectContaining({ role: 'USER' }), input: { foo: 'bar' } },
+            'getFeatured:start'
+        );
     });
 });
