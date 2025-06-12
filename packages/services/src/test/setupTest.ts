@@ -26,25 +26,88 @@ vi.mock('../utils/service-logger.ts', () => ({
 
 globalThis.mockServiceLogger = mockServiceLogger;
 
-// Partial global mock for UserBookmarkModel from @repo/db for all service tests
+// Mock global para todos los modelos y métodos de @repo/db usados en tests de services
 vi.mock('@repo/db', async () => {
     const actual = await vi.importActual<typeof import('@repo/db')>('@repo/db');
     return {
         ...actual,
+        // Accommodation
+        AccommodationModel: {
+            create: vi.fn(),
+            getById: vi.fn(),
+            getByName: vi.fn(),
+            search: vi.fn(),
+            update: vi.fn(),
+            hardDelete: vi.fn(),
+            getByDestination: vi.fn(),
+            list: vi.fn(),
+            delete: vi.fn(),
+            count: vi.fn()
+        },
+        ACCOMMODATION_ORDERABLE_COLUMNS: [
+            'ownerId',
+            'destinationId',
+            'averageRating',
+            'visibility',
+            'lifecycle',
+            'name',
+            'type'
+        ],
+        // Destination
+        DestinationModel: {
+            getById: vi.fn(),
+            getByName: vi.fn(),
+            list: vi.fn(),
+            update: vi.fn(),
+            hardDelete: vi.fn(),
+            search: vi.fn()
+        },
+        DestinationReviewModel: {
+            list: vi.fn()
+        },
+        // Event
+        EventModel: {
+            search: vi.fn(),
+            getById: vi.fn(),
+            list: vi.fn(),
+            update: vi.fn(),
+            create: vi.fn(),
+            delete: vi.fn(),
+            hardDelete: vi.fn(),
+            count: vi.fn()
+        },
+        // Post
+        PostModel: {
+            list: vi.fn(),
+            search: vi.fn(),
+            getById: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
+            hardDelete: vi.fn(),
+            count: vi.fn(),
+            create: vi.fn(),
+            restore: vi.fn()
+        },
+        // UserBookmark
         UserBookmarkModel: {
             create: vi.fn(),
             getById: vi.fn(),
             getByUserId: vi.fn(),
             delete: vi.fn()
         },
+        // Tag
         TagModel: {
             addTag: vi.fn(),
             removeTag: vi.fn(),
             getAccommodationsByTag: vi.fn(),
             getDestinationsByTag: vi.fn(),
             getEventsByTag: vi.fn(),
-            getPostsByTag: vi.fn()
-            // Agrega aquí otros métodos si los tests los requieren
+            getPostsByTag: vi.fn(),
+            search: vi.fn(),
+            list: vi.fn(),
+            update: vi.fn(),
+            create: vi.fn(),
+            delete: vi.fn()
         }
     };
 });

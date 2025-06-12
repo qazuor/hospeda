@@ -14,33 +14,6 @@ import {
 } from '../mockData';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('@repo/db', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        AccommodationModel: {
-            ...((actual as Record<string, unknown>).AccommodationModel ?? {}),
-            create: vi.fn(),
-            getById: vi.fn(),
-            getByName: vi.fn(),
-            search: vi.fn(),
-            update: vi.fn(),
-            hardDelete: vi.fn(),
-            getByDestination: vi.fn()
-        },
-        ACCOMMODATION_ORDERABLE_COLUMNS: [
-            'ownerId',
-            'destinationId',
-            'averageRating',
-            'visibility',
-            'lifecycle',
-            'name',
-            'type'
-        ]
-    };
-});
-
 describe('accommodation.service.getById', () => {
     const publicUser = getMockPublicUser();
     const user = getMockUser({

@@ -18,8 +18,6 @@ vi.mock('../../utils/service-helper', async (importOriginal) => {
     };
 });
 
-vi.mock('@repo/db');
-
 const user = getMockUser();
 const admin = getMockUser({
     role: RoleEnum.ADMIN,
