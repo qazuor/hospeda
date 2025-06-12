@@ -10,23 +10,23 @@ import { z } from 'zod';
  * @example
  * const input = { id: 'acc-1' as AccommodationId };
  */
-export const getByIdInputSchema = z.object({
+export const AccommodationGetByIdInputSchema = z.object({
     id: z.string().min(1, 'Accommodation ID is required') as unknown as z.ZodType<AccommodationId>
 });
 
 /**
  * Input type for getById.
  * @example
- * const input: GetByIdInput = { id: 'acc-1' as AccommodationId };
+ * const input: AccommodationGetByIdInput = { id: 'acc-1' as AccommodationId };
  */
-export type GetByIdInput = z.infer<typeof getByIdInputSchema>;
+export type AccommodationGetByIdInput = z.infer<typeof AccommodationGetByIdInputSchema>;
 
 /**
  * Output type for getById.
  * @example
- * const output: GetByIdOutput = { accommodation: mockAccommodation };
+ * const output: AccommodationGetByIdOutput = { accommodation: mockAccommodation };
  */
-export type GetByIdOutput = { accommodation: AccommodationType | null };
+export type AccommodationGetByIdOutput = { accommodation: AccommodationType | null };
 
 /**
  * Input schema for getByName.
@@ -34,23 +34,23 @@ export type GetByIdOutput = { accommodation: AccommodationType | null };
  * @example
  * const input = { name: 'Hotel Uruguay' };
  */
-export const getByNameInputSchema = z.object({
+export const AccommodationGetByNameInputSchema = z.object({
     name: z.string().min(1, 'Accommodation name is required')
 });
 
 /**
  * Input type for getByName.
  * @example
- * const input: GetByNameInput = { name: 'Hotel Uruguay' };
+ * const input: AccommodationGetByNameInput = { name: 'Hotel Uruguay' };
  */
-export type GetByNameInput = z.infer<typeof getByNameInputSchema>;
+export type AccommodationGetByNameInput = z.infer<typeof AccommodationGetByNameInputSchema>;
 
 /**
  * Output type for getByName.
  * @example
- * const output: GetByNameOutput = { accommodation: mockAccommodation };
+ * const output: AccommodationGetByNameOutput = { accommodation: mockAccommodation };
  */
-export type GetByNameOutput = { accommodation: AccommodationType | null };
+export type AccommodationGetByNameOutput = { accommodation: AccommodationType | null };
 
 /**
  * Input schema for list.
@@ -58,7 +58,7 @@ export type GetByNameOutput = { accommodation: AccommodationType | null };
  * @example
  * const input = { limit: 10, offset: 0 };
  */
-export const listInputSchema = z.object({
+export const AccommodationListInputSchema = z.object({
     q: z.string().optional(),
     type: z.string().optional(),
     visibility: z.enum(['PUBLIC', 'DRAFT', 'PRIVATE']).optional(),
@@ -76,16 +76,16 @@ export const listInputSchema = z.object({
 /**
  * Input type for list.
  * @example
- * const input: ListInput = { limit: 10, offset: 0 };
+ * const input: AccommodationListInput = { limit: 10, offset: 0 };
  */
-export type ListInput = z.infer<typeof listInputSchema>;
+export type AccommodationListInput = z.infer<typeof AccommodationListInputSchema>;
 
 /**
  * Output type for list.
  * @example
- * const output: ListOutput = { accommodations: [mockAccommodation] };
+ * const output: AccommodationListOutput = { accommodations: [mockAccommodation] };
  */
-export type ListOutput = { accommodations: AccommodationType[] };
+export type AccommodationListOutput = { accommodations: AccommodationType[] };
 
 /**
  * Input schema for create.
@@ -93,7 +93,7 @@ export type ListOutput = { accommodations: AccommodationType[] };
  * @example
  * const input = { ... };
  */
-export const createInputSchema = AccommodationSchema.omit({
+export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -106,16 +106,16 @@ export const createInputSchema = AccommodationSchema.omit({
 /**
  * Input type for create.
  * @example
- * const input: CreateInput = { ... };
+ * const input: AccommodationCreateInput = { ... };
  */
-export type CreateInput = z.infer<typeof createInputSchema>;
+export type AccommodationCreateInput = z.infer<typeof AccommodationCreateInputSchema>;
 
 /**
  * Output type for create.
  * @example
- * const output: CreateOutput = { accommodation: mockAccommodation };
+ * const output: AccommodationCreateOutput = { accommodation: mockAccommodation };
  */
-export type CreateOutput = { accommodation: AccommodationType };
+export type AccommodationCreateOutput = { accommodation: AccommodationType };
 
 /**
  * Input schema for update.
@@ -124,7 +124,7 @@ export type CreateOutput = { accommodation: AccommodationType };
  * @example
  * const input = { id: 'acc-1', name: 'Updated Name', summary: 'Updated summary' };
  */
-export const updateInputSchema = AccommodationSchema.omit({
+export const AccommodationUpdateInputSchema = AccommodationSchema.omit({
     id: true,
     createdAt: true,
     createdById: true,
@@ -139,16 +139,16 @@ export const updateInputSchema = AccommodationSchema.omit({
 /**
  * Input type for update.
  * @example
- * const input: UpdateInput = { id: 'acc-1', name: 'Updated Name' };
+ * const input: AccommodationUpdateInput = { id: 'acc-1', name: 'Updated Name' };
  */
-export type UpdateInput = z.infer<typeof updateInputSchema>;
+export type AccommodationUpdateInput = z.infer<typeof AccommodationUpdateInputSchema>;
 
 /**
  * Output type for update.
  * @example
- * const output: UpdateOutput = { accommodation: mockAccommodation };
+ * const output: AccommodationUpdateOutput = { accommodation: mockAccommodation };
  */
-export type UpdateOutput = { accommodation: AccommodationType };
+export type AccommodationUpdateOutput = { accommodation: AccommodationType };
 
 /**
  * Input schema for getByDestination.
@@ -156,7 +156,7 @@ export type UpdateOutput = { accommodation: AccommodationType };
  * @example
  * const input = { destinationId: 'dest-1' as DestinationId };
  */
-export const getByDestinationInputSchema = z.object({
+export const AccommodationGetByDestinationInputSchema = z.object({
     destinationId: z
         .string()
         .min(1, 'Destination ID is required') as unknown as z.ZodType<DestinationId>
@@ -165,16 +165,18 @@ export const getByDestinationInputSchema = z.object({
 /**
  * Input type for getByDestination.
  * @example
- * const input: GetByDestinationInput = { destinationId: 'dest-1' as DestinationId };
+ * const input: AccommodationGetByDestinationInput = { destinationId: 'dest-1' as DestinationId };
  */
-export type GetByDestinationInput = z.infer<typeof getByDestinationInputSchema>;
+export type AccommodationGetByDestinationInput = z.infer<
+    typeof AccommodationGetByDestinationInputSchema
+>;
 
 /**
  * Output type for getByDestination.
  * @example
- * const output: GetByDestinationOutput = { accommodations: [mockAccommodation] };
+ * const output: AccommodationGetByDestinationOutput = { accommodations: [mockAccommodation] };
  */
-export type GetByDestinationOutput = { accommodations: AccommodationType[] };
+export type AccommodationGetByDestinationOutput = { accommodations: AccommodationType[] };
 
 /**
  * Input schema for getByOwner.
@@ -182,23 +184,23 @@ export type GetByDestinationOutput = { accommodations: AccommodationType[] };
  * @example
  * const input = { ownerId: 'user-1' as UserId };
  */
-export const getByOwnerInputSchema = z.object({
+export const AccommodationGetByOwnerInputSchema = z.object({
     ownerId: z.string().min(1, 'Owner ID is required')
 });
 
 /**
  * Input type for getByOwner.
  * @example
- * const input: GetByOwnerInput = { ownerId: 'user-1' as UserId };
+ * const input: AccommodationGetByOwnerInput = { ownerId: 'user-1' as UserId };
  */
-export type GetByOwnerInput = z.infer<typeof getByOwnerInputSchema>;
+export type AccommodationGetByOwnerInput = z.infer<typeof AccommodationGetByOwnerInputSchema>;
 
 /**
  * Output type for getByOwner.
  * @example
- * const output: GetByOwnerOutput = { accommodations: [mockAccommodation] };
+ * const output: AccommodationGetByOwnerOutput = { accommodations: [mockAccommodation] };
  */
-export type GetByOwnerOutput = { accommodations: AccommodationType[] };
+export type AccommodationGetByOwnerOutput = { accommodations: AccommodationType[] };
 
 /**
  * Input schema for getTopRatedByDestination.
@@ -206,7 +208,7 @@ export type GetByOwnerOutput = { accommodations: AccommodationType[] };
  * @example
  * const input = { destinationId: 'dest-1', limit: 5 };
  */
-export const getTopRatedByDestinationInputSchema = z.object({
+export const AccommodationGetTopRatedByDestinationInputSchema = z.object({
     destinationId: z.string().min(1, 'Destination ID is required'),
     limit: z.number().int().min(1).max(100).default(5)
 });
@@ -214,16 +216,18 @@ export const getTopRatedByDestinationInputSchema = z.object({
 /**
  * Input type for getTopRatedByDestination.
  * @example
- * const input: GetTopRatedByDestinationInput = { destinationId: 'dest-1', limit: 5 };
+ * const input: AccommodationGetTopRatedByDestinationInput = { destinationId: 'dest-1', limit: 5 };
  */
-export type GetTopRatedByDestinationInput = z.infer<typeof getTopRatedByDestinationInputSchema>;
+export type AccommodationGetTopRatedByDestinationInput = z.infer<
+    typeof AccommodationGetTopRatedByDestinationInputSchema
+>;
 
 /**
  * Output type for getTopRatedByDestination.
  * @example
- * const output: GetTopRatedByDestinationOutput = { accommodations: [mockAccommodation] };
+ * const output: AccommodationGetTopRatedByDestinationOutput = { accommodations: [mockAccommodation] };
  */
-export type GetTopRatedByDestinationOutput = { accommodations: AccommodationType[] };
+export type AccommodationGetTopRatedByDestinationOutput = { accommodations: AccommodationType[] };
 
 /**
  * Input schema for search (advanced search).
@@ -243,7 +247,7 @@ export type GetTopRatedByDestinationOutput = { accommodations: AccommodationType
  *
  * When the data volume grows, migrate amenities/features filters to SQL (see service doc).
  */
-export const searchInputSchema = z.object({
+export const AccommodationSearchInputSchema = z.object({
     minPrice: z.number().min(0).optional(),
     maxPrice: z.number().min(0).optional(),
     includeWithoutPrice: z.boolean().optional(),
@@ -260,9 +264,9 @@ export const searchInputSchema = z.object({
     offset: z.number().int().min(0).default(0)
 });
 
-export type SearchInput = z.infer<typeof searchInputSchema>;
+export type AccommodationSearchInput = z.infer<typeof AccommodationSearchInputSchema>;
 
-export type SearchOutput = {
+export type AccommodationSearchOutput = {
     accommodations: AccommodationType[];
     total: number;
 };

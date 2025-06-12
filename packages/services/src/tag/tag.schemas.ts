@@ -20,7 +20,7 @@ import { z } from 'zod';
  * @example
  * const input = { tagId: 'tag-1' as TagId, entityId: 'acc-1' as AccommodationId, entityType: EntityTypeEnum.ACCOMMODATION };
  */
-export const addTagInputSchema = z.object({
+export const TagAddTagInputSchema = z.object({
     tagId: z.string().min(1, 'Tag ID is required') as unknown as z.ZodType<TagId>,
     entityId: z.string().min(1, 'Entity ID is required') as unknown as z.ZodType<
         AccommodationId | DestinationId | UserId | PostId | EventId
@@ -31,11 +31,11 @@ export const addTagInputSchema = z.object({
 /**
  * Output type for addTag.
  * @example
- * const output: AddTagOutput = { entityTag: { tagId, entityId, entityType } };
+ * const output: TagAddTagOutput = { entityTag: { tagId, entityId, entityType } };
  */
-export type AddTagInput = z.infer<typeof addTagInputSchema>;
+export type TagAddTagInput = z.infer<typeof TagAddTagInputSchema>;
 
-export type AddTagOutput = { entityTag: EntityTagType };
+export type TagAddTagOutput = { entityTag: EntityTagType };
 
 /**
  * Input schema for removeTag (same as addTag).
@@ -43,15 +43,15 @@ export type AddTagOutput = { entityTag: EntityTagType };
  * @example
  * const input = { tagId: 'tag-1' as TagId, entityId: 'acc-1' as AccommodationId, entityType: EntityTypeEnum.ACCOMMODATION };
  */
-export const removeTagInputSchema = addTagInputSchema;
+export const TagRemoveTagInputSchema = TagAddTagInputSchema;
 
 /**
  * Output type for removeTag.
  * @example
- * const output: RemoveTagOutput = { removed: true };
+ * const output: TagRemoveTagOutput = { removed: true };
  */
-export type RemoveTagInput = z.infer<typeof removeTagInputSchema>;
-export type RemoveTagOutput = { removed: boolean };
+export type TagRemoveTagInput = z.infer<typeof TagRemoveTagInputSchema>;
+export type TagRemoveTagOutput = { removed: boolean };
 
 /**
  * Input schema for getAccommodationsByTag.
@@ -59,7 +59,7 @@ export type RemoveTagOutput = { removed: boolean };
  * @example
  * const input = { tagId: 'tag-1' as TagId, limit: 10, offset: 0 };
  */
-export const getAccommodationsByTagInputSchema = z.object({
+export const TagGetAccommodationsByTagInputSchema = z.object({
     tagId: z.string().min(1, 'Tag ID is required') as unknown as z.ZodType<TagId>,
     limit: z.number().int().min(1).max(100).default(20).optional(),
     offset: z.number().int().min(0).default(0).optional(),
@@ -70,10 +70,10 @@ export const getAccommodationsByTagInputSchema = z.object({
 /**
  * Output type for getAccommodationsByTag.
  * @example
- * const output: GetAccommodationsByTagOutput = { accommodations: [...] };
+ * const output: TagGetAccommodationsByTagOutput = { accommodations: [...] };
  */
-export type GetAccommodationsByTagInput = z.infer<typeof getAccommodationsByTagInputSchema>;
-export type GetAccommodationsByTagOutput = { accommodations: AccommodationType[] };
+export type TagGetAccommodationsByTagInput = z.infer<typeof TagGetAccommodationsByTagInputSchema>;
+export type TagGetAccommodationsByTagOutput = { accommodations: AccommodationType[] };
 
 /**
  * Input schema for getDestinationsByTag.
@@ -81,7 +81,7 @@ export type GetAccommodationsByTagOutput = { accommodations: AccommodationType[]
  * @example
  * const input = { tagId: 'tag-1' as TagId, limit: 10, offset: 0 };
  */
-export const getDestinationsByTagInputSchema = z.object({
+export const TagGetDestinationsByTagInputSchema = z.object({
     tagId: z.string().min(1, 'Tag ID is required') as unknown as z.ZodType<TagId>,
     limit: z.number().int().min(1).max(100).default(20).optional(),
     offset: z.number().int().min(0).default(0).optional(),
@@ -92,10 +92,10 @@ export const getDestinationsByTagInputSchema = z.object({
 /**
  * Output type for getDestinationsByTag.
  * @example
- * const output: GetDestinationsByTagOutput = { destinations: [...] };
+ * const output: TagGetDestinationsByTagOutput = { destinations: [...] };
  */
-export type GetDestinationsByTagInput = z.infer<typeof getDestinationsByTagInputSchema>;
-export type GetDestinationsByTagOutput = { destinations: DestinationType[] };
+export type TagGetDestinationsByTagInput = z.infer<typeof TagGetDestinationsByTagInputSchema>;
+export type TagGetDestinationsByTagOutput = { destinations: DestinationType[] };
 
 /**
  * Input schema for getEventsByTag.
@@ -103,7 +103,7 @@ export type GetDestinationsByTagOutput = { destinations: DestinationType[] };
  * @example
  * const input = { tagId: 'tag-1' as TagId, limit: 10, offset: 0 };
  */
-export const getEventsByTagInputSchema = z.object({
+export const TagGetEventsByTagInputSchema = z.object({
     tagId: z.string().min(1, 'Tag ID is required') as unknown as z.ZodType<TagId>,
     limit: z.number().int().min(1).max(100).default(20).optional(),
     offset: z.number().int().min(0).default(0).optional(),
@@ -114,10 +114,10 @@ export const getEventsByTagInputSchema = z.object({
 /**
  * Output type for getEventsByTag.
  * @example
- * const output: GetEventsByTagOutput = { events: [...] };
+ * const output: TagGetEventsByTagOutput = { events: [...] };
  */
-export type GetEventsByTagInput = z.infer<typeof getEventsByTagInputSchema>;
-export type GetEventsByTagOutput = { events: EventType[] };
+export type TagGetEventsByTagInput = z.infer<typeof TagGetEventsByTagInputSchema>;
+export type TagGetEventsByTagOutput = { events: EventType[] };
 
 /**
  * Input schema for getPostsByTag.
@@ -125,7 +125,7 @@ export type GetEventsByTagOutput = { events: EventType[] };
  * @example
  * const input = { tagId: 'tag-1' as TagId, limit: 10, offset: 0 };
  */
-export const getPostsByTagInputSchema = z.object({
+export const TagGetPostsByTagInputSchema = z.object({
     tagId: z.string().min(1, 'Tag ID is required') as unknown as z.ZodType<TagId>,
     limit: z.number().int().min(1).max(100).default(20).optional(),
     offset: z.number().int().min(0).default(0).optional(),
@@ -136,7 +136,7 @@ export const getPostsByTagInputSchema = z.object({
 /**
  * Output type for getPostsByTag.
  * @example
- * const output: GetPostsByTagOutput = { posts: [...] };
+ * const output: TagGetPostsByTagOutput = { posts: [...] };
  */
-export type GetPostsByTagInput = z.infer<typeof getPostsByTagInputSchema>;
-export type GetPostsByTagOutput = { posts: PostType[] };
+export type TagGetPostsByTagInput = z.infer<typeof TagGetPostsByTagInputSchema>;
+export type TagGetPostsByTagOutput = { posts: PostType[] };

@@ -6,7 +6,7 @@ import { z } from 'zod';
  * Only admin can add permissions to users.
  * @example { id: 'user-123', permission: 'USER_CREATE' }
  */
-export const addPermissionToUserInputSchema = z.object({
+export const PermissionAddPermissionToUserInputSchema = z.object({
     id: z.string(), // UserId as string
     permission: z.nativeEnum(PermissionEnum)
 });
@@ -16,12 +16,14 @@ export const addPermissionToUserInputSchema = z.object({
  * @property id - The unique user ID (UserId branded type).
  * @property permission - The permission to add (PermissionEnum).
  */
-export type AddPermissionToUserInput = z.infer<typeof addPermissionToUserInputSchema>;
+export type PermissionAddPermissionToUserInput = z.infer<
+    typeof PermissionAddPermissionToUserInputSchema
+>;
 
 /**
  * Type for addPermissionToUser output (RO-RO pattern).
  * @property user - The updated user object (without password), or null if not found.
  */
-export type AddPermissionToUserOutput = {
+export type PermissionAddPermissionToUserOutput = {
     user: Omit<UserType, 'password'> | null;
 };

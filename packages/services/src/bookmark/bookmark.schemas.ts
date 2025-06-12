@@ -14,7 +14,7 @@ import { z } from 'zod';
  * @example
  * const input = { userId, entityId, entityType, name, description };
  */
-export const addBookmarkInputSchema = z.object({
+export const BookmarkAddInputSchema = z.object({
     userId: z.string().min(1, 'User ID is required') as unknown as z.ZodType<UserId>,
     entityId: z.string().min(1, 'Entity ID is required') as unknown as z.ZodType<
         AccommodationId | DestinationId | PostId | EventId | UserId
@@ -25,28 +25,28 @@ export const addBookmarkInputSchema = z.object({
     name: z.string().min(1, 'Name is required').max(100),
     description: z.string().max(500).optional()
 });
-export type AddBookmarkInput = z.infer<typeof addBookmarkInputSchema>;
-export type AddBookmarkOutput = { bookmark: UserBookmarkType };
+export type BookmarkAddInput = z.infer<typeof BookmarkAddInputSchema>;
+export type BookmarkAddOutput = { bookmark: UserBookmarkType };
 
 /**
  * Input schema for removeBookmark.
  * @example
  * const input = { userId, bookmarkId };
  */
-export const removeBookmarkInputSchema = z.object({
+export const BookmarkRemoveInputSchema = z.object({
     userId: z.string().min(1, 'User ID is required') as unknown as z.ZodType<UserId>,
     bookmarkId: z.string().min(1, 'Bookmark ID is required')
 });
-export type RemoveBookmarkInput = z.infer<typeof removeBookmarkInputSchema>;
-export type RemoveBookmarkOutput = { removed: boolean };
+export type BookmarkRemoveInput = z.infer<typeof BookmarkRemoveInputSchema>;
+export type BookmarkRemoveOutput = { removed: boolean };
 
 /**
  * Input schema for getUserBookmarks.
  * @example
  * const input = { userId };
  */
-export const getUserBookmarksInputSchema = z.object({
+export const BookmarkGetUserBookmarksInputSchema = z.object({
     userId: z.string().min(1, 'User ID is required') as unknown as z.ZodType<UserId>
 });
-export type GetUserBookmarksInput = z.infer<typeof getUserBookmarksInputSchema>;
-export type GetUserBookmarksOutput = { bookmarks: UserBookmarkType[] };
+export type BookmarkGetUserBookmarksInput = z.infer<typeof BookmarkGetUserBookmarksInputSchema>;
+export type BookmarkGetUserBookmarksOutput = { bookmarks: UserBookmarkType[] };

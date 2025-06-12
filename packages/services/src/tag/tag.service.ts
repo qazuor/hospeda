@@ -9,21 +9,24 @@ import type { PublicUserType, UserType } from '@repo/types';
 import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import { hasPermission, isUserType, logMethodEnd, logMethodStart, serviceLogger } from '../utils';
 import {
-    type AddTagInput,
-    type AddTagOutput,
-    type GetAccommodationsByTagInput,
-    type GetAccommodationsByTagOutput,
-    type GetDestinationsByTagInput,
-    type GetDestinationsByTagOutput,
-    type GetEventsByTagInput,
-    type GetEventsByTagOutput,
-    type RemoveTagInput,
-    type RemoveTagOutput,
-    addTagInputSchema,
-    getAccommodationsByTagInputSchema,
-    getDestinationsByTagInputSchema,
-    getEventsByTagInputSchema,
-    removeTagInputSchema
+    type TagAddTagInput,
+    TagAddTagInputSchema,
+    type TagAddTagOutput,
+    type TagGetAccommodationsByTagInput,
+    TagGetAccommodationsByTagInputSchema,
+    type TagGetAccommodationsByTagOutput,
+    type TagGetDestinationsByTagInput,
+    TagGetDestinationsByTagInputSchema,
+    type TagGetDestinationsByTagOutput,
+    type TagGetEventsByTagInput,
+    TagGetEventsByTagInputSchema,
+    type TagGetEventsByTagOutput,
+    type TagGetPostsByTagInput,
+    TagGetPostsByTagInputSchema,
+    type TagGetPostsByTagOutput,
+    type TagRemoveTagInput,
+    TagRemoveTagInputSchema,
+    type TagRemoveTagOutput
 } from './tag.schemas';
 
 /**
@@ -44,9 +47,12 @@ export const TagService = {
      * @example
      * const result = await TagService.addTag({ tagId, entityId, entityType }, user);
      */
-    async addTag(input: AddTagInput, actor: UserType | PublicUserType): Promise<AddTagOutput> {
+    async addTag(
+        input: TagAddTagInput,
+        actor: UserType | PublicUserType
+    ): Promise<TagAddTagOutput> {
         logMethodStart(serviceLogger, 'addTag', input, actor);
-        const parsedInput = addTagInputSchema.parse(input);
+        const parsedInput = TagAddTagInputSchema.parse(input);
         if (!isUserType(actor) || actor.role === RoleEnum.GUEST) {
             serviceLogger.permission({
                 permission: 'UNKNOWN_PERMISSION',
@@ -111,11 +117,11 @@ export const TagService = {
      * const result = await TagService.removeTag({ tagId, entityId, entityType }, user);
      */
     async removeTag(
-        input: RemoveTagInput,
+        input: TagRemoveTagInput,
         actor: UserType | PublicUserType
-    ): Promise<RemoveTagOutput> {
+    ): Promise<TagRemoveTagOutput> {
         logMethodStart(serviceLogger, 'removeTag', input, actor);
-        const parsedInput = removeTagInputSchema.parse(input);
+        const parsedInput = TagRemoveTagInputSchema.parse(input);
         if (!isUserType(actor) || actor.role === RoleEnum.GUEST) {
             serviceLogger.permission({
                 permission: 'UNKNOWN_PERMISSION',
@@ -179,11 +185,11 @@ export const TagService = {
      * const result = await TagService.getAccommodationsByTag({ tagId }, user);
      */
     async getAccommodationsByTag(
-        input: GetAccommodationsByTagInput,
+        input: TagGetAccommodationsByTagInput,
         actor: UserType | PublicUserType
-    ): Promise<GetAccommodationsByTagOutput> {
+    ): Promise<TagGetAccommodationsByTagOutput> {
         logMethodStart(serviceLogger, 'getAccommodationsByTag', input, actor);
-        const parsedInput = getAccommodationsByTagInputSchema.parse(input);
+        const parsedInput = TagGetAccommodationsByTagInputSchema.parse(input);
         const orderBy: AccommodationOrderByColumn | undefined =
             parsedInput.orderBy === 'name' ? 'name' : undefined;
         const accommodations = await AccommodationModel.search({
@@ -207,11 +213,11 @@ export const TagService = {
      * const result = await TagService.getDestinationsByTag({ tagId }, user);
      */
     async getDestinationsByTag(
-        input: GetDestinationsByTagInput,
+        input: TagGetDestinationsByTagInput,
         actor: UserType | PublicUserType
-    ): Promise<GetDestinationsByTagOutput> {
+    ): Promise<TagGetDestinationsByTagOutput> {
         logMethodStart(serviceLogger, 'getDestinationsByTag', input, actor);
-        const parsedInput = getDestinationsByTagInputSchema.parse(input);
+        const parsedInput = TagGetDestinationsByTagInputSchema.parse(input);
         const orderBy = parsedInput.orderBy === 'name' ? 'name' : undefined;
         const destinations = await DestinationModel.search({
             tagId: parsedInput.tagId,
@@ -234,11 +240,11 @@ export const TagService = {
      * const result = await TagService.getEventsByTag({ tagId }, user);
      */
     async getEventsByTag(
-        input: GetEventsByTagInput,
+        input: TagGetEventsByTagInput,
         actor: UserType | PublicUserType
-    ): Promise<GetEventsByTagOutput> {
+    ): Promise<TagGetEventsByTagOutput> {
         logMethodStart(serviceLogger, 'getEventsByTag', input, actor);
-        const parsedInput = getEventsByTagInputSchema.parse(input);
+        const parsedInput = TagGetEventsByTagInputSchema.parse(input);
         const orderBy = parsedInput.orderBy === 'summary' ? 'summary' : undefined;
         const events = await EventModel.search({
             tagId: parsedInput.tagId,
@@ -261,11 +267,11 @@ export const TagService = {
      * const result = await TagService.getPostsByTag({ tagId }, user);
      */
     async getPostsByTag(
-        input: import('./tag.schemas').GetPostsByTagInput,
+        input: TagGetPostsByTagInput,
         actor: UserType | PublicUserType
-    ): Promise<import('./tag.schemas').GetPostsByTagOutput> {
+    ): Promise<TagGetPostsByTagOutput> {
         logMethodStart(serviceLogger, 'getPostsByTag', input, actor);
-        const parsedInput = (await import('./tag.schemas')).getPostsByTagInputSchema.parse(input);
+        const parsedInput = TagGetPostsByTagInputSchema.parse(input);
         const orderBy =
             parsedInput.orderBy === 'title'
                 ? 'title'

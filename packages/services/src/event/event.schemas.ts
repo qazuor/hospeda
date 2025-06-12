@@ -14,7 +14,7 @@ import { z } from 'zod';
  * Zod schema for getById input.
  * @example { id: 'event-123' }
  */
-export const getByIdInputSchema = z.object({
+export const EventGetByIdInputSchema = z.object({
     id: z.string() // EventId as string
 });
 
@@ -22,13 +22,13 @@ export const getByIdInputSchema = z.object({
  * Type for getById input (RO-RO pattern).
  * @property id - The unique event ID (EventId branded type).
  */
-export type GetByIdInput = z.infer<typeof getByIdInputSchema>;
+export type EventGetByIdInput = z.infer<typeof EventGetByIdInputSchema>;
 
 /**
  * Type for getById output (RO-RO pattern).
  * @property event - The event object if found, or null otherwise.
  */
-export type GetByIdOutput = {
+export type EventGetByIdOutput = {
     event: EventType | null;
 };
 
@@ -36,7 +36,7 @@ export type GetByIdOutput = {
  * Zod schema for getBySlug input.
  * @example { slug: 'event-slug' }
  */
-export const getBySlugInputSchema = z.object({
+export const EventGetBySlugInputSchema = z.object({
     slug: z.string().min(1, 'Slug is required')
 });
 
@@ -44,13 +44,13 @@ export const getBySlugInputSchema = z.object({
  * Type for getBySlug input (RO-RO pattern).
  * @property slug - The unique event slug.
  */
-export type GetBySlugInput = z.infer<typeof getBySlugInputSchema>;
+export type EventGetBySlugInput = z.infer<typeof EventGetBySlugInputSchema>;
 
 /**
  * Type for getBySlug output (RO-RO pattern).
  * @property event - The event object if found, or null otherwise.
  */
-export type GetBySlugOutput = {
+export type EventGetBySlugOutput = {
     event: EventType | null;
 };
 
@@ -58,7 +58,7 @@ export type GetBySlugOutput = {
  * Zod schema for create input.
  * Omits auto-generated fields (id, audit, etc.).
  */
-export const createEventInputSchema = z.object({
+export const EventCreateInputSchema = z.object({
     slug: z.string().min(1, 'Slug is required'),
     summary: z.string().min(1, 'Summary is required'),
     description: z.string().optional(),
@@ -79,12 +79,12 @@ export const createEventInputSchema = z.object({
 /**
  * Type for create input (RO-RO pattern).
  */
-export type CreateEventInput = z.infer<typeof createEventInputSchema>;
+export type EventCreateInput = z.infer<typeof EventCreateInputSchema>;
 
 /**
  * Type for create output (RO-RO pattern).
  */
-export type CreateEventOutput = {
+export type EventCreateOutput = {
     event: EventType;
 };
 
@@ -94,7 +94,7 @@ export type CreateEventOutput = {
  * @example
  * const input = { id: 'event-1', summary: 'Updated summary' };
  */
-export const updateInputSchema = z.object({
+export const EventUpdateInputSchema = z.object({
     id: z.string().min(1, 'Event ID is required'),
     slug: z.string().min(1).optional(),
     summary: z.string().min(1).optional(),
@@ -118,22 +118,22 @@ export const updateInputSchema = z.object({
 /**
  * Input type for update (RO-RO pattern).
  * @example
- * const input: UpdateInput = { id: 'event-1', summary: 'Updated summary' };
+ * const input: EventUpdateInput = { id: 'event-1', summary: 'Updated summary' };
  */
-export type UpdateInput = z.infer<typeof updateInputSchema>;
+export type EventUpdateInput = z.infer<typeof EventUpdateInputSchema>;
 
 /**
  * Output type for update (RO-RO pattern).
  * @example
- * const output: UpdateOutput = { event: mockEvent };
+ * const output: EventUpdateOutput = { event: mockEvent };
  */
-export type UpdateOutput = { event: EventType };
+export type EventUpdateOutput = { event: EventType };
 
 /**
  * Zod schema for getByLocationId input.
  * @example { locationId: 'location-123' }
  */
-export const getByLocationIdInputSchema = z.object({
+export const EventGetByLocationIdInputSchema = z.object({
     locationId: z.string().min(1, 'LocationId is required')
 });
 
@@ -141,13 +141,13 @@ export const getByLocationIdInputSchema = z.object({
  * Type for getByLocationId input (RO-RO pattern).
  * @property locationId - The unique location ID (LocationId branded type).
  */
-export type GetByLocationIdInput = z.infer<typeof getByLocationIdInputSchema>;
+export type EventGetByLocationIdInput = z.infer<typeof EventGetByLocationIdInputSchema>;
 
 /**
  * Type for getByLocationId output (RO-RO pattern).
  * @property events - Array of events for the given location.
  */
-export type GetByLocationIdOutput = {
+export type EventGetByLocationIdOutput = {
     events: EventType[];
 };
 
@@ -157,7 +157,7 @@ export type GetByLocationIdOutput = {
  * @property offset - Number of events to skip (for pagination).
  * @property filters - Optional filters: visibility, lifecycleState, authorId.
  */
-export type ListEventsInput = {
+export type EventListInput = {
     limit?: number;
     offset?: number;
     filters?: {
@@ -179,13 +179,13 @@ export type ListEventsInput = {
  * Output type for listing events (RO-RO pattern).
  * @property events - Array of events matching the filters and permissions.
  */
-export type ListEventsOutput = { events: EventType[] };
+export type EventListOutput = { events: EventType[] };
 
 /**
  * Zod schema for list events input validation.
  * @example { limit: 10, offset: 0, filters: { visibility: 'PUBLIC' } }
  */
-export const listEventsInputSchema = z.object({
+export const EventListInputSchema = z.object({
     limit: z.number().int().min(1).max(100).optional(),
     offset: z.number().int().min(0).optional(),
     filters: z
@@ -354,3 +354,43 @@ export type GetByDateRangeInput = z.infer<typeof getByDateRangeInputSchema>;
  * @property events - Array of events within the date range.
  */
 export type GetByDateRangeOutput = { events: EventType[] };
+
+/**
+ * Zod schema for getByOrganizerId input.
+ * @example { organizerId: 'org-123', limit: 10, offset: 0 }
+ */
+export const EventGetByOrganizerIdInputSchema = getByOrganizerIdInputSchema;
+export type EventGetByOrganizerIdInput = GetByOrganizerIdInput;
+export type EventGetByOrganizerIdOutput = GetByOrganizerIdOutput;
+
+/**
+ * Zod schema for getByCategory input.
+ * @example { category: 'FESTIVAL', limit: 10, offset: 0 }
+ */
+export const EventGetByCategoryInputSchema = getByCategoryInputSchema;
+export type EventGetByCategoryInput = GetByCategoryInput;
+export type EventGetByCategoryOutput = GetByCategoryOutput;
+
+/**
+ * Zod schema for getFeatured input.
+ * @example { limit: 10, offset: 0 }
+ */
+export const EventGetFeaturedInputSchema = getFeaturedInputSchema;
+export type EventGetFeaturedInput = GetFeaturedInput;
+export type EventGetFeaturedOutput = GetFeaturedOutput;
+
+/**
+ * Zod schema for getUpcoming input.
+ * @example { limit: 10, offset: 0 }
+ */
+export const EventGetUpcomingInputSchema = getUpcomingInputSchema;
+export type EventGetUpcomingInput = GetUpcomingInput;
+export type EventGetUpcomingOutput = GetUpcomingOutput;
+
+/**
+ * Zod schema for getByDateRange input.
+ * @example { minDate: '2024-07-01', maxDate: '2024-08-01', limit: 10, offset: 0 }
+ */
+export const EventGetByDateRangeInputSchema = getByDateRangeInputSchema;
+export type EventGetByDateRangeInput = GetByDateRangeInput;
+export type EventGetByDateRangeOutput = GetByDateRangeOutput;

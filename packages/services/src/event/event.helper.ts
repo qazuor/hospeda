@@ -86,7 +86,7 @@ interface TagInput {
  * @param input - The create input object.
  * @returns The normalized create input.
  */
-export const normalizeCreateInput = (input: Record<string, unknown>): NewEventInputType => {
+export const eventNormalizeCreateInput = (input: Record<string, unknown>): NewEventInputType => {
     const inputWithBrandedIds = castBrandedIds(input, (id) => id as string);
     const inputWithDates = castDateFields(inputWithBrandedIds);
     // Deep map for media.moderationState
@@ -155,7 +155,7 @@ export const normalizeCreateInput = (input: Record<string, unknown>): NewEventIn
  * @example
  * const update = buildSoftDeleteUpdate(user);
  */
-export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
+export const eventBuildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
     const now = new Date();
     const deletedById = 'id' in actor ? actor.id : undefined;
     return {
@@ -172,7 +172,7 @@ export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
  * @param event - The event object.
  * @throws Error if the event is already archived or deleted.
  */
-export const assertNotArchived = (event: {
+export const eventAssertNotArchived = (event: {
     lifecycleState?: LifecycleStatusEnum;
     deletedAt?: Date | null;
 }) => {
@@ -188,7 +188,7 @@ export const assertNotArchived = (event: {
  * @example
  * const update = buildRestoreUpdate(user);
  */
-export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
+export const eventBuildRestoreUpdate = (actor: UserType | PublicUserType) => {
     const now = new Date();
     const updatedById = 'id' in actor ? actor.id : undefined;
     return {
