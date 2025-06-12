@@ -1,12 +1,5 @@
 import { AccommodationModel, DestinationModel, EventModel, PostModel } from '@repo/db';
-import type {
-    AccommodationId,
-    DestinationId,
-    EventId,
-    EventLocationId,
-    PostId,
-    UserId
-} from '@repo/types';
+import type { DestinationId, EventLocationId, UserId } from '@repo/types';
 import {
     AccommodationTypeEnum,
     EventCategoryEnum,
@@ -18,14 +11,19 @@ import {
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { getLatestPostsOutputSchema } from '../../homepage/homepage.schemas';
 import { homepageService } from '../../homepage/homepage.service';
+import { getMockAccommodationId } from '../factories/accommodationFactory';
+import { getMockDestinationId } from '../factories/destinationFactory';
+import { getMockEventId } from '../factories/eventFactory';
+import { getMockPostId } from '../factories/postFactory';
+import { getMockUserId } from '../factories/userFactory';
 
-const postId = '11111111-1111-1111-1111-111111111111' as PostId;
-const accId = '22222222-2222-2222-2222-222222222222' as AccommodationId;
-const eventId = '33333333-3333-3333-3333-333333333333' as EventId;
-const destId = '44444444-4444-4444-4444-444444444444' as DestinationId;
+const postId = getMockPostId();
+const accId = getMockAccommodationId();
+const eventId = getMockEventId();
+const destId = getMockDestinationId() as DestinationId;
 const now = new Date();
 
-const userId = '55555555-5555-5555-5555-555555555555' as UserId;
+const userId = getMockUserId() as UserId;
 const destinationId = destId;
 const eventLocationId = '66666666-6666-6666-6666-666666666666' as EventLocationId;
 

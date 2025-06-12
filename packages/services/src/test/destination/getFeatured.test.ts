@@ -3,13 +3,8 @@ import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationService } from '../../destination/destination.service';
-import {
-    getMockDestination,
-    getMockDestinationId,
-    getMockPublicUser,
-    getMockUser,
-    getMockUserId
-} from '../mockData';
+import { getMockDestination, getMockDestinationId } from '../factories/destinationFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 import { expectInfoLog } from '../utils/log-assertions';
 
 describe('destination.service.getFeatured', () => {

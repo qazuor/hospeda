@@ -10,7 +10,7 @@ import type {
     BookmarkRemoveInput,
     BookmarkRemoveOutput
 } from './bookmark.schemas';
-import { BookmarkAddInputSchema } from './bookmark.schemas';
+import { BookmarkAddInputSchema, BookmarkGetUserBookmarksInputSchema } from './bookmark.schemas';
 
 /**
  * BookmarkService provides methods to manage user bookmarks.
@@ -120,7 +120,8 @@ export const BookmarkService = {
         actor: UserType | PublicUserType
     ): Promise<BookmarkGetUserBookmarksOutput> {
         logMethodStart(serviceLogger, 'getUserBookmarks', input, actor);
-        const { userId } = input;
+        const parsedInput = BookmarkGetUserBookmarksInputSchema.parse(input);
+        const { userId } = parsedInput;
         if (!isUserType(actor) || actor.id !== userId) {
             serviceLogger.permission({
                 permission: 'BOOKMARK_LIST',

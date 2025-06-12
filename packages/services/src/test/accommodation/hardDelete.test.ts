@@ -8,24 +8,23 @@ import {
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { makeAccommodation } from '../factories/accommodationFactory';
+import { createMockAccommodation } from '../factories/accommodationFactory';
 import {
-    makeAdmin,
-    makeDisabledUser,
-    makeOwner,
-    makePublicUser,
-    makeUserWithoutPermissions
+    createMockAdmin,
+    createMockDisabledUser,
+    createMockOwner,
+    createMockPublicUser,
+    createMockUserWithoutPermissions,
+    getMockUserId
 } from '../factories/userFactory';
-import { getMockUserId } from '../mockData';
-
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.hardDelete', () => {
     it('should hard-delete accommodation when user is the owner and has permission', async () => {
         // Arrange: Create an owner user and an accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.hardDelete as Mock).mockResolvedValue(true);
@@ -42,8 +41,8 @@ describe('accommodation.service.hardDelete', () => {
     it('should hard-delete accommodation when user is ADMIN and has global permission', async () => {
         // Arrange: Create an admin user and an accommodation
         const adminId = getMockUserId();
-        const adminUser = makeAdmin({ id: adminId });
-        const accommodation = makeAccommodation({ ownerId: getMockUserId() });
+        const adminUser = createMockAdmin({ id: adminId });
+        const accommodation = createMockAccommodation({ ownerId: getMockUserId() });
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.hardDelete as Mock).mockResolvedValue(true);
@@ -61,8 +60,8 @@ describe('accommodation.service.hardDelete', () => {
         // Arrange: Create a user who is not the owner and has no global permissions
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = makeUserWithoutPermissions({ id: notOwnerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockUserWithoutPermissions({ id: notOwnerId });
+        const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error(
                 'Forbidden: User does not have permission to hard-delete accommodation'
@@ -86,11 +85,11 @@ describe('accommodation.service.hardDelete', () => {
     it('should deny hard-delete if user is disabled', async () => {
         // Arrange: Create a disabled user and an accommodation
         const ownerId = getMockUserId();
-        const disabledUser = makeDisabledUser({
+        const disabledUser = createMockDisabledUser({
             id: ownerId,
             lifecycleState: LifecycleStatusEnum.INACTIVE
         });
-        const accommodation = makeAccommodation({ ownerId });
+        const accommodation = createMockAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
         // Act & Assert: Attempt to hard-delete and expect forbidden error
@@ -109,8 +108,8 @@ describe('accommodation.service.hardDelete', () => {
     it('should deny hard-delete if user is public (unauthenticated)', async () => {
         // Arrange: Create a public user and an accommodation
         const ownerId = getMockUserId();
-        const publicUser = makePublicUser();
-        const accommodation = makeAccommodation({ ownerId });
+        const publicUser = createMockPublicUser();
+        const accommodation = createMockAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
         // Act & Assert: Attempt to hard-delete and expect forbidden error
@@ -133,8 +132,8 @@ describe('accommodation.service.hardDelete', () => {
         // Arrange: Create a user who is not the owner and has insufficient permissions
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = makeUserWithoutPermissions({ id: notOwnerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockUserWithoutPermissions({ id: notOwnerId });
+        const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error(
                 'Forbidden: User does not have permission to hard-delete accommodation'
@@ -157,7 +156,7 @@ describe('accommodation.service.hardDelete', () => {
 
     it('should throw if accommodation does not exist', async () => {
         // Arrange: Create a user and mock getById to return undefined
-        const user = makeOwner();
+        const user = createMockOwner();
         (AccommodationModel.getById as Mock).mockResolvedValue(undefined);
 
         // Act & Assert: Attempt to hard-delete and expect not found error
@@ -171,8 +170,8 @@ describe('accommodation.service.hardDelete', () => {
     it('hardDelete should call serviceLogger.info and serviceLogger.permission at the correct points', async () => {
         // Arrange: test that logs are called correctly on success and permission error
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.hardDelete as Mock).mockResolvedValue(true);
@@ -210,8 +209,8 @@ describe('accommodation.service.hardDelete', () => {
     it('should not allow double hard-delete (idempotency)', async () => {
         // Arrange: Create an owner user and an already deleted accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const accommodation = createMockAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.hardDelete as Mock).mockResolvedValue(true);
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
@@ -232,10 +231,10 @@ describe('accommodation.service.hardDelete', () => {
     it('should allow hard-delete if already soft-deleted (archived)', async () => {
         // Arrange: Create an owner user and an archived accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
+        const user = createMockOwner({ id: ownerId });
         const now = new Date();
         const archivedAccommodation = {
-            ...makeAccommodation({ ownerId }),
+            ...createMockAccommodation({ ownerId }),
             lifecycleState: LifecycleStatusEnum.ARCHIVED,
             deletedAt: now,
             deletedById: ownerId

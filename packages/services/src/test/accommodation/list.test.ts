@@ -2,13 +2,8 @@ import { AccommodationModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
-import {
-    getMockAccommodationPrivate,
-    getMockAccommodationPublic,
-    getMockPublicUser,
-    getMockUser,
-    getMockUserId
-} from '../mockData';
+import { getMockAccommodationPrivate, getMockAccommodationPublic } from '../factories';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.list', () => {

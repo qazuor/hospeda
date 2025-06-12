@@ -3,7 +3,8 @@ import { LifecycleStatusEnum, ModerationStatusEnum, RoleEnum, VisibilityEnum } f
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationService } from '../../destination/destination.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockDestination, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockDestination } from '../factories/destinationFactory';
+import { getMockPublicUser, getMockUser } from '../factories/userFactory';
 
 const admin = getMockUser({ role: RoleEnum.ADMIN });
 const publicUser = getMockPublicUser();

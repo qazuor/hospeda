@@ -4,7 +4,7 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
-import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockPost, getMockPostId, getMockPublicUser, getMockUser } from '../factories';
 
 vi.mock('../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -114,7 +114,7 @@ describe('PostService.update', () => {
 
     it('should throw if post not found', async () => {
         (PostModel.getById as Mock).mockResolvedValue(null);
-        const input = { id: 'not-found', title: 'NotFound' };
+        const input = { id: getMockPostId('not-found'), title: 'NotFound' };
         await expect(PostService.update(input, user)).rejects.toThrow(/Post not found/);
     });
 });

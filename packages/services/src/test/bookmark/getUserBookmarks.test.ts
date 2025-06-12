@@ -3,7 +3,8 @@ import type { UserId } from '@repo/types';
 import { describe, expect, it, type vi } from 'vitest';
 import type { BookmarkGetUserBookmarksInput } from '../../bookmark/bookmark.schemas';
 import { BookmarkService } from '../../bookmark/bookmark.service';
-import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../mockData';
+import { getMockUserBookmark } from '../factories/userBookmarkFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 
 const mockUser = getMockUser();
 const mockUserId: UserId = getMockUserId();
@@ -43,7 +44,7 @@ describe('BookmarkService.getUserBookmarks', () => {
     });
 
     it('throws on invalid input (Zod)', async () => {
-        const input = { userId: '' as UserId } as BookmarkGetUserBookmarksInput;
+        const input = { userId: '' } as BookmarkGetUserBookmarksInput;
         await expect(BookmarkService.getUserBookmarks(input, mockUser)).rejects.toThrow();
     });
 });

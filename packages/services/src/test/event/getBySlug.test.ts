@@ -4,7 +4,7 @@ import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockEvent } from '../mockData';
+import { getMockEvent } from '../factories';
 
 /**
  * Unit tests for event.service.getBySlug

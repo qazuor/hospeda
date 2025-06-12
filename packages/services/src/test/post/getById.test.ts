@@ -8,8 +8,8 @@ import {
 } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-
-import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockPost, getMockPostId } from '../factories/postFactory';
+import { getMockPublicUser, getMockUser } from '../factories/userFactory';
 
 const admin = getMockUser({ role: RoleEnum.ADMIN });
 const superAdmin = getMockUser({ role: RoleEnum.SUPER_ADMIN });
@@ -113,7 +113,7 @@ describe('PostService.getById', () => {
 
     it('should return null if post not found', async () => {
         vi.spyOn(PostModel, 'getById').mockResolvedValue(undefined);
-        const result = await PostService.getById({ id: 'not-exist' as PostId }, admin);
+        const result = await PostService.getById({ id: getMockPostId('not-exist') }, admin);
         expect(result.post).toBeNull();
         expectInfoLog('getById');
         expectNoPermissionLog();

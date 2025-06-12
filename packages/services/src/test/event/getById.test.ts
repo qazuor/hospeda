@@ -1,10 +1,11 @@
 import { EventModel } from '@repo/db';
-import type { EventId, UserId } from '@repo/types';
+import type { UserId } from '@repo/types';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockEvent } from '../mockData';
+import { getMockEvent, getMockEventId } from '../factories/eventFactory';
+import { getMockUserId } from '../factories/userFactory';
 
 /**
  * Unit tests for event.service.getById
@@ -21,8 +22,8 @@ import { getMockEvent } from '../mockData';
  */
 describe('event.service.getById', () => {
     const baseEvent = getMockEvent({
-        id: 'event-1' as EventId,
-        authorId: 'user-1' as UserId
+        id: getMockEventId('event-1'),
+        authorId: getMockUserId('user-1')
     });
     const admin = {
         id: 'admin-1',

@@ -3,7 +3,7 @@ import type { PostId } from '@repo/types';
 import { LifecycleStatusEnum, PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockPost, getMockPublicUser, getMockUser } from '../factories';
 
 const mockPosts = [
     getMockPost({
