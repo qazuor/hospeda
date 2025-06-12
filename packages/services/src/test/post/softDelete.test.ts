@@ -6,6 +6,7 @@ import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
 import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
+import { expectPermissionLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -77,11 +78,9 @@ describe('PostService.softDelete', () => {
         });
         const input = { id: post.id };
         await expect(PostService.softDelete(input, noPermUser)).rejects.toThrow(/Forbidden/);
-        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
-            })
-        );
+        expectPermissionLog({
+            extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
+        });
     });
 
     it('should throw and log if input is invalid', async () => {
@@ -96,13 +95,11 @@ describe('PostService.softDelete', () => {
         await expect(PostService.softDelete(input, publicUser)).rejects.toThrow(
             /Forbidden: Public user cannot delete posts/
         );
-        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                extraData: expect.objectContaining({
-                    override: expect.stringContaining('Public user cannot delete posts')
-                })
+        expectPermissionLog({
+            extraData: expect.objectContaining({
+                override: expect.stringContaining('Public user cannot delete posts')
             })
-        );
+        });
     });
 
     it('should throw and log if actor is disabled', async () => {
@@ -116,13 +113,11 @@ describe('PostService.softDelete', () => {
         await expect(PostService.softDelete(input, disabledUser)).rejects.toThrow(
             /Disabled user cannot delete posts/
         );
-        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                extraData: expect.objectContaining({
-                    error: expect.stringContaining('disabled user cannot delete')
-                })
+        expectPermissionLog({
+            extraData: expect.objectContaining({
+                error: expect.stringContaining('disabled user cannot delete')
             })
-        );
+        });
     });
 
     it('should throw if post not found', async () => {

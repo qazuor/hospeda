@@ -6,6 +6,7 @@ import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
 import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
+import { expectPermissionLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -90,11 +91,9 @@ describe('PostService.restore', () => {
         });
         const input = { id: deletedPost.id };
         await expect(PostService.restore(input, noPermUser)).rejects.toThrow(/Forbidden/);
-        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
-            })
-        );
+        expectPermissionLog({
+            extraData: expect.objectContaining({ error: expect.stringContaining('Forbidden') })
+        });
     });
 
     it('should throw and log if input is invalid', async () => {
@@ -109,13 +108,11 @@ describe('PostService.restore', () => {
         await expect(PostService.restore(input, publicUser)).rejects.toThrow(
             /Forbidden: Public user cannot restore posts/
         );
-        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                extraData: expect.objectContaining({
-                    override: expect.stringContaining('Public user cannot restore posts')
-                })
+        expectPermissionLog({
+            extraData: expect.objectContaining({
+                override: expect.stringContaining('Public user cannot restore posts')
             })
-        );
+        });
     });
 
     it('should throw and log if actor is disabled', async () => {
@@ -129,13 +126,11 @@ describe('PostService.restore', () => {
         await expect(PostService.restore(input, disabledUser)).rejects.toThrow(
             /Disabled user cannot restore posts/
         );
-        expect(mockServiceLogger.permission).toHaveBeenCalledWith(
-            expect.objectContaining({
-                extraData: expect.objectContaining({
-                    error: expect.stringContaining('disabled user cannot restore')
-                })
+        expectPermissionLog({
+            extraData: expect.objectContaining({
+                error: expect.stringContaining('disabled user cannot restore')
             })
-        );
+        });
     });
 
     it('should throw if post not found', async () => {
