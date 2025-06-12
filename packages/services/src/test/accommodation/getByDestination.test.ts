@@ -14,32 +14,6 @@ import { makeDisabledUser } from '../factories/userFactory';
 import { getMockAccommodation, getMockPublicUser, getMockUser } from '../mockData';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('@repo/db', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        AccommodationModel: {
-            ...((actual as Record<string, unknown>).AccommodationModel ?? {}),
-            create: vi.fn(),
-            getById: vi.fn(),
-            getByName: vi.fn(),
-            search: vi.fn(),
-            update: vi.fn(),
-            hardDelete: vi.fn()
-        },
-        ACCOMMODATION_ORDERABLE_COLUMNS: [
-            'ownerId',
-            'destinationId',
-            'averageRating',
-            'visibility',
-            'lifecycle',
-            'name',
-            'type'
-        ]
-    };
-});
-
 describe('accommodation.service.getByDestination', () => {
     it('should return all PUBLIC accommodations for a destination to a public user', async () => {
         // Arrange

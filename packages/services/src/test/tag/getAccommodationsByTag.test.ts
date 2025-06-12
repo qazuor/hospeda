@@ -1,15 +1,9 @@
 import { AccommodationModel } from '@repo/db';
 import type { TagId } from '@repo/types';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type vi } from 'vitest';
 import type { GetAccommodationsByTagInput } from '../../tag/tag.schemas';
 import { TagService } from '../../tag/tag.service';
 import { getMockAccommodation, getMockPublicUser, getMockTagId } from '../mockData';
-
-vi.mock('@repo/db', () => ({
-    AccommodationModel: {
-        search: vi.fn()
-    }
-}));
 
 const mockAccommodation = getMockAccommodation();
 const mockTagId: TagId = getMockTagId();

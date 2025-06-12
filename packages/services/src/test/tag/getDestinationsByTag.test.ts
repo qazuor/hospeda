@@ -1,15 +1,9 @@
 import { DestinationModel } from '@repo/db';
 import type { TagId } from '@repo/types';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, type vi } from 'vitest';
 import type { GetDestinationsByTagInput } from '../../tag/tag.schemas';
 import { TagService } from '../../tag/tag.service';
 import { getMockDestination, getMockPublicUser, getMockTagId } from '../mockData';
-
-vi.mock('@repo/db', () => ({
-    DestinationModel: {
-        search: vi.fn()
-    }
-}));
 
 const mockDestination = getMockDestination();
 const mockTagId: TagId = getMockTagId();
