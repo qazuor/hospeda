@@ -13,7 +13,7 @@ export const getMockFeature = (overrides: Partial<FeatureType> = {}): FeatureTyp
     name: 'General Feature',
     description: 'A general feature',
     icon: 'star',
-    entities: [],
+    isBuiltin: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: 'user-uuid' as UserId,

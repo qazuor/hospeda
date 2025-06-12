@@ -1,5 +1,5 @@
 import type { AttractionId, AttractionType, UserId } from '@repo/types';
-import { AttractionTypeEnum, ModerationStatusEnum } from '@repo/types';
+import { LifecycleStatusEnum } from '@repo/types';
 
 /**
  * Returns a mock AttractionType object with default values. You can override any field.
@@ -11,9 +11,10 @@ import { AttractionTypeEnum, ModerationStatusEnum } from '@repo/types';
 export const getMockAttraction = (overrides: Partial<AttractionType> = {}): AttractionType => ({
     id: 'attraction-uuid' as AttractionId,
     name: 'Attraction Test',
+    slug: 'attraction-test',
     description: 'A test attraction',
-    type: AttractionTypeEnum.CULTURAL,
-    media: { featuredImage: { url: '', moderationState: ModerationStatusEnum.PENDING_REVIEW } },
+    isBuiltin: false,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: 'user-uuid' as UserId,
