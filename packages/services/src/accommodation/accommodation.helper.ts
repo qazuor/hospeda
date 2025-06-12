@@ -10,7 +10,7 @@ import {
 } from '@repo/types';
 import { castBrandedIds, castDateFields } from '../utils/cast-helper';
 import { CanViewReasonEnum, isPublicUser } from '../utils/service-helper';
-import type { ListInput, UpdateInput } from './accommodation.schemas';
+import type { AccommodationListInput, AccommodationUpdateInput } from './accommodation.schemas';
 
 /**
  * Determines if the actor can view the accommodation based on visibility, ownership, and permissions.
@@ -69,10 +69,10 @@ export const canViewAccommodation = (
  * @param input - The update input object.
  * @returns The normalized update input with protected ownerId.
  */
-export const normalizeUpdateInput = (
+export const accommodationNormalizeUpdateInput = (
     accommodation: AccommodationType,
-    input: UpdateInput
-): UpdateInput => {
+    input: AccommodationUpdateInput
+): AccommodationUpdateInput => {
     const inputWithBrandedIds = castBrandedIds(input, (id) => id as typeof accommodation.id);
     const inputWithDates = castDateFields(inputWithBrandedIds);
     return {
@@ -84,7 +84,7 @@ export const normalizeUpdateInput = (
 /**
  * Checks if the actor is the owner of the accommodation.
  */
-export const isOwner = (
+export const accommodationIsOwner = (
     actor: UserType | PublicUserType,
     accommodation: AccommodationType
 ): boolean => {
@@ -94,7 +94,7 @@ export const isOwner = (
 /**
  * Builds the update object for soft-deleting (archiving) an accommodation.
  */
-export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
+export const accommodationBuildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
     const now = new Date();
     const deletedById = 'id' in actor ? actor.id : undefined;
     return {
@@ -109,7 +109,7 @@ export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
 /**
  * Builds the update object for restoring (un-archiving) an accommodation.
  */
-export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
+export const accommodationBuildRestoreUpdate = (actor: UserType | PublicUserType) => {
     const now = new Date();
     const updatedById = 'id' in actor ? actor.id : undefined;
     return {
@@ -126,7 +126,9 @@ export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
  * @param input - The create input object.
  * @returns The normalized create input.
  */
-export const normalizeCreateInput = (input: Record<string, unknown>): NewAccommodationInputType => {
+export const accommodationNormalizeCreateInput = (
+    input: Record<string, unknown>
+): NewAccommodationInputType => {
     const inputWithBrandedIds = castBrandedIds(input, (id) => id as string);
     const inputWithDates = castDateFields(inputWithBrandedIds);
     // Validate 'type' is AccommodationTypeEnum
@@ -147,8 +149,8 @@ export const normalizeCreateInput = (input: Record<string, unknown>): NewAccommo
  * @param actor - The user or public actor.
  * @returns Cleaned search params for AccommodationModel.search.
  */
-export const buildSearchParams = (
-    input: ListInput,
+export const accommodationBuildSearchParams = (
+    input: AccommodationListInput,
     actor: UserType | PublicUserType
 ): Record<string, unknown> => {
     const isPublic = isPublicUser(actor);
@@ -169,7 +171,7 @@ export const buildSearchParams = (
 /**
  * Throws if the accommodation is archived or deleted.
  */
-export const assertNotArchived = (accommodation: AccommodationType) => {
+export const accommodationAssertNotArchived = (accommodation: AccommodationType) => {
     if (accommodation.lifecycleState === 'ARCHIVED' || accommodation.deletedAt) {
         throw new Error('Accommodation is already archived or deleted');
     }
@@ -178,7 +180,7 @@ export const assertNotArchived = (accommodation: AccommodationType) => {
 /**
  * Throws if the accommodation is already active (not archived).
  */
-export const assertNotActive = (accommodation: AccommodationType) => {
+export const accommodationAssertNotActive = (accommodation: AccommodationType) => {
     if (accommodation.lifecycleState !== 'ARCHIVED' || !accommodation.deletedAt) {
         throw new Error('Accommodation is not archived');
     }

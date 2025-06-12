@@ -187,18 +187,57 @@ export const getAccommodationsCategoriesOutputSchema = z.object({
     categories: z.array(z.string()) // TODO: Replace with enum if available
 });
 
-export type GetPopularDestinationsInput = z.infer<typeof getPopularDestinationsInputSchema>;
-export type GetPopularDestinationsOutput = z.infer<typeof getPopularDestinationsOutputSchema>;
-export type GetTopRatedAccommodationsInput = z.infer<typeof getTopRatedAccommodationsInputSchema>;
-export type GetTopRatedAccommodationsOutput = z.infer<typeof getTopRatedAccommodationsOutputSchema>;
-export type GetNextEventsInput = z.infer<typeof getNextEventsInputSchema>;
-export type GetNextEventsOutput = z.infer<typeof getNextEventsOutputSchema>;
-export type GetLatestPostsInput = z.infer<typeof getLatestPostsInputSchema>;
-export type GetLatestPostsOutput = z.infer<typeof getLatestPostsOutputSchema>;
-export type GetTestimonialsInput = z.infer<typeof getTestimonialsInputSchema>;
-export type GetTestimonialsOutput = z.infer<typeof getTestimonialsOutputSchema>;
-export type GetDestinationsListInput = z.infer<typeof getDestinationsListInputSchema>;
-export type GetDestinationsListOutput = z.infer<typeof getDestinationsListOutputSchema>;
-export type GetAccommodationsCategoriesOutput = z.infer<
-    typeof getAccommodationsCategoriesOutputSchema
+// Popular Destinations
+export const HomepageGetPopularDestinationsInputSchema = getPopularDestinationsInputSchema;
+export const HomepageGetPopularDestinationsOutputSchema = getPopularDestinationsOutputSchema;
+export type HomepageGetPopularDestinationsInput = z.infer<
+    typeof HomepageGetPopularDestinationsInputSchema
+>;
+export type HomepageGetPopularDestinationsOutput = z.infer<
+    typeof HomepageGetPopularDestinationsOutputSchema
+>;
+
+// Top Rated Accommodations
+export const HomepageGetTopRatedAccommodationsInputSchema = getTopRatedAccommodationsInputSchema;
+export const HomepageGetTopRatedAccommodationsOutputSchema = getTopRatedAccommodationsOutputSchema;
+export type HomepageGetTopRatedAccommodationsInput = z.infer<
+    typeof HomepageGetTopRatedAccommodationsInputSchema
+>;
+export type HomepageGetTopRatedAccommodationsOutput = z.infer<
+    typeof HomepageGetTopRatedAccommodationsOutputSchema
+>;
+
+// Next Events
+export const HomepageGetNextEventsInputSchema = getNextEventsInputSchema;
+export const HomepageGetNextEventsOutputSchema = getNextEventsOutputSchema;
+export type HomepageGetNextEventsInput = z.infer<typeof HomepageGetNextEventsInputSchema>;
+export type HomepageGetNextEventsOutput = z.infer<typeof HomepageGetNextEventsOutputSchema>;
+
+// Latest Posts
+export const HomepageGetLatestPostsInputSchema = getLatestPostsInputSchema;
+export const HomepageGetLatestPostsOutputSchema = getLatestPostsOutputSchema;
+export type HomepageGetLatestPostsInput = z.infer<typeof HomepageGetLatestPostsInputSchema>;
+export type HomepageGetLatestPostsOutput = z.infer<typeof HomepageGetLatestPostsOutputSchema>;
+
+// Testimonials
+export const HomepageGetTestimonialsInputSchema = getTestimonialsInputSchema;
+export const HomepageGetTestimonialsOutputSchema = getTestimonialsOutputSchema;
+export type HomepageGetTestimonialsInput = z.infer<typeof HomepageGetTestimonialsInputSchema>;
+export type HomepageGetTestimonialsOutput = z.infer<typeof HomepageGetTestimonialsOutputSchema>;
+
+// Destinations List
+export const HomepageGetDestinationsListInputSchema = getDestinationsListInputSchema;
+export const HomepageGetDestinationsListOutputSchema = getDestinationsListOutputSchema;
+export type HomepageGetDestinationsListInput = z.infer<
+    typeof HomepageGetDestinationsListInputSchema
+>;
+export type HomepageGetDestinationsListOutput = z.infer<
+    typeof HomepageGetDestinationsListOutputSchema
+>;
+
+// Accommodations Categories
+export const HomepageGetAccommodationsCategoriesOutputSchema =
+    getAccommodationsCategoriesOutputSchema;
+export type HomepageGetAccommodationsCategoriesOutput = z.infer<
+    typeof HomepageGetAccommodationsCategoriesOutputSchema
 >;

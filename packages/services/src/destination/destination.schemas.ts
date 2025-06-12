@@ -4,70 +4,70 @@ import { z } from 'zod';
 /**
  * Input type for getById (DestinationService)
  */
-export type GetByIdInput = {
+export type DestinationGetByIdInput = {
     id: DestinationId;
 };
 
 /**
  * Output type for getById (DestinationService)
  */
-export type GetByIdOutput = {
+export type DestinationGetByIdOutput = {
     destination: DestinationType | null;
 };
 
 /**
  * Zod schema for getById input
  */
-export const getByIdInputSchema = z.object({
+export const DestinationGetByIdInputSchema = z.object({
     id: z.string() as unknown as z.ZodType<DestinationId>
 });
 
 /**
  * Input type for getBySlug (DestinationService)
  */
-export type GetBySlugInput = {
+export type DestinationGetBySlugInput = {
     slug: string;
 };
 
 /**
  * Output type for getBySlug (DestinationService)
  */
-export type GetBySlugOutput = {
+export type DestinationGetBySlugOutput = {
     destination: DestinationType | null;
 };
 
 /**
  * Zod schema for getBySlug input
  */
-export const getBySlugInputSchema = z.object({
+export const DestinationGetBySlugInputSchema = z.object({
     slug: z.string().min(1)
 });
 
 /**
  * Input type for getByName (DestinationService)
  */
-export type GetByNameInput = {
+export type DestinationGetByNameInput = {
     name: string;
 };
 
 /**
  * Output type for getByName (DestinationService)
  */
-export type GetByNameOutput = {
+export type DestinationGetByNameOutput = {
     destination: DestinationType | null;
 };
 
 /**
  * Zod schema for getByName input
  */
-export const getByNameInputSchema = z.object({
+export const DestinationGetByNameInputSchema = z.object({
     name: z.string().min(1)
 });
 
 /**
  * Input type for list (DestinationService)
  */
-export type ListInput = {
+export type DestinationListInput = {
     limit: number;
     offset: number;
     order?: 'asc' | 'desc';
@@ -90,14 +90,14 @@ export type ListInput = {
 /**
  * Output type for list (DestinationService)
  */
-export type ListOutput = {
+export type DestinationListOutput = {
     destinations: DestinationType[];
 };
 
 /**
  * Zod schema for list input
  */
-export const listInputSchema = z.object({
+export const DestinationListInputSchema = z.object({
     limit: z.number().int().positive().max(100).default(20),
     offset: z.number().int().min(0).default(0),
     order: z.enum(['asc', 'desc']).optional(),
@@ -124,7 +124,7 @@ export const listInputSchema = z.object({
  * Input schema for create (DestinationService)
  * Omite campos autogenerados y de auditoría.
  */
-export const createInputSchema = z.object({
+export const DestinationCreateInputSchema = z.object({
     slug: z.string().min(1),
     name: z.string().min(1),
     summary: z.string().min(1),
@@ -145,8 +145,8 @@ export const createInputSchema = z.object({
     reviews: z.any().optional()
 });
 
-export type CreateInput = z.infer<typeof createInputSchema>;
-export type CreateOutput = { destination: DestinationType };
+export type DestinationCreateInput = z.infer<typeof DestinationCreateInputSchema>;
+export type DestinationCreateOutput = { destination: DestinationType };
 
 /**
  * Input schema for update (DestinationService)
@@ -155,7 +155,7 @@ export type CreateOutput = { destination: DestinationType };
  * @example
  * const input = { id: 'dest-1', name: 'Updated Name', summary: 'Updated summary' };
  */
-export const updateInputSchema = z.object({
+export const DestinationUpdateInputSchema = z.object({
     id: z.string().min(1) as unknown as z.ZodType<DestinationId>,
     slug: z.string().min(1).optional(),
     name: z.string().min(1).optional(),
@@ -177,15 +177,15 @@ export const updateInputSchema = z.object({
     reviews: z.any().optional()
 });
 
-export type UpdateInput = z.infer<typeof updateInputSchema>;
-export type UpdateOutput = { destination: DestinationType };
+export type DestinationUpdateInput = z.infer<typeof DestinationUpdateInputSchema>;
+export type DestinationUpdateOutput = { destination: DestinationType };
 
 /**
  * Input schema for getReviews (DestinationService)
  * @example
  * const input = { destinationId: 'dest-1', limit: 10, offset: 0 };
  */
-export const getReviewsInputSchema = z.object({
+export const DestinationGetReviewsInputSchema = z.object({
     destinationId: z.string().min(1),
     limit: z.number().int().min(1).max(100).default(20),
     offset: z.number().int().min(0).default(0),
@@ -193,15 +193,15 @@ export const getReviewsInputSchema = z.object({
     orderBy: z.enum(['createdAt']).optional()
 });
 
-export type GetReviewsInput = z.infer<typeof getReviewsInputSchema>;
-export type GetReviewsOutput = { reviews: DestinationReviewType[] };
+export type DestinationGetReviewsInput = z.infer<typeof DestinationGetReviewsInputSchema>;
+export type DestinationGetReviewsOutput = { reviews: DestinationReviewType[] };
 
 /**
  * Input schema for search (DestinationService)
  * Filters: text, isFeatured, visibility, lifecycle, moderationState, averageRatingMin, averageRatingMax
  * Order: name, updatedAt, isFeatured, reviewsCount, averageRating, accommodationsCount
  */
-export const searchInputSchema = z.object({
+export const DestinationSearchInputSchema = z.object({
     text: z.string().optional(),
     isFeatured: z.boolean().optional(),
     visibility: z.string().optional(),
@@ -224,5 +224,5 @@ export const searchInputSchema = z.object({
     offset: z.number().int().min(0).default(0)
 });
 
-export type SearchInput = z.infer<typeof searchInputSchema>;
-export type SearchOutput = { destinations: DestinationType[]; total: number };
+export type DestinationSearchInput = z.infer<typeof DestinationSearchInputSchema>;
+export type DestinationSearchOutput = { destinations: DestinationType[]; total: number };

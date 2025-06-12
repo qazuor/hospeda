@@ -58,7 +58,7 @@ export const canViewDestination = (
  * @param input - El input de creación
  * @returns El input normalizado
  */
-export const normalizeCreateInput = (input: Record<string, unknown>) => {
+export const destinationNormalizeCreateInput = (input: Record<string, unknown>) => {
     const inputWithBrandedIds = castBrandedIds(input, (id: unknown) => id as string);
     const inputWithDates = castDateFields(inputWithBrandedIds);
     return inputWithDates;
@@ -71,7 +71,7 @@ export const normalizeCreateInput = (input: Record<string, unknown>) => {
  * @example
  * const update = buildSoftDeleteUpdate(user);
  */
-export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
+export const destinationBuildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
     const now = new Date();
     const deletedById = 'id' in actor ? actor.id : undefined;
     return {
@@ -90,7 +90,7 @@ export const buildSoftDeleteUpdate = (actor: UserType | PublicUserType) => {
  * @example
  * assertNotArchived(destination);
  */
-export const assertNotArchived = (destination: {
+export const destinationAssertNotArchived = (destination: {
     lifecycleState?: string;
     deletedAt?: Date | null;
 }) => {
@@ -106,7 +106,7 @@ export const assertNotArchived = (destination: {
  * @example
  * const update = buildRestoreUpdate(user);
  */
-export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
+export const destinationBuildRestoreUpdate = (actor: UserType | PublicUserType) => {
     const now = new Date();
     const updatedById = 'id' in actor ? actor.id : undefined;
     return {
@@ -125,7 +125,7 @@ export const buildRestoreUpdate = (actor: UserType | PublicUserType) => {
  * @example
  * assertNotActive(destination);
  */
-export const assertNotActive = (destination: {
+export const destinationAssertNotActive = (destination: {
     lifecycleState?: string;
     deletedAt?: Date | null;
 }) => {
@@ -140,10 +140,10 @@ export const assertNotActive = (destination: {
  * @param input - The update input object.
  * @returns The normalized update input.
  */
-export const normalizeUpdateInput = (
+export const destinationNormalizeUpdateInput = (
     destination: import('@repo/types').DestinationType,
-    input: import('./destination.schemas').UpdateInput
-): import('./destination.schemas').UpdateInput => {
+    input: import('./destination.schemas').DestinationUpdateInput
+): import('./destination.schemas').DestinationUpdateInput => {
     const inputWithBrandedIds = castBrandedIds(input, (id) => id as typeof destination.id);
     const inputWithDates = castDateFields(inputWithBrandedIds);
     return inputWithDates;

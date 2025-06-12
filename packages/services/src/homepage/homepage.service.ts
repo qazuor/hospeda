@@ -14,34 +14,34 @@ import type {
 } from '@repo/types';
 import { AccommodationTypeEnum } from '@repo/types';
 import type {
-    GetAccommodationsCategoriesOutput,
-    GetDestinationsListInput,
-    GetDestinationsListOutput,
-    GetLatestPostsInput,
-    GetLatestPostsOutput,
-    GetNextEventsInput,
-    GetNextEventsOutput,
-    GetPopularDestinationsInput,
-    GetPopularDestinationsOutput,
-    GetTestimonialsInput,
-    GetTestimonialsOutput,
-    GetTopRatedAccommodationsInput,
-    GetTopRatedAccommodationsOutput
+    HomepageGetAccommodationsCategoriesOutput,
+    HomepageGetDestinationsListInput,
+    HomepageGetDestinationsListOutput,
+    HomepageGetLatestPostsInput,
+    HomepageGetLatestPostsOutput,
+    HomepageGetNextEventsInput,
+    HomepageGetNextEventsOutput,
+    HomepageGetPopularDestinationsInput,
+    HomepageGetPopularDestinationsOutput,
+    HomepageGetTestimonialsInput,
+    HomepageGetTestimonialsOutput,
+    HomepageGetTopRatedAccommodationsInput,
+    HomepageGetTopRatedAccommodationsOutput
 } from './homepage.schemas';
 import {
-    getAccommodationsCategoriesOutputSchema,
-    getDestinationsListInputSchema,
-    getDestinationsListOutputSchema,
-    getLatestPostsInputSchema,
-    getLatestPostsOutputSchema,
-    getNextEventsInputSchema,
-    getNextEventsOutputSchema,
-    getPopularDestinationsInputSchema,
-    getPopularDestinationsOutputSchema,
-    getTestimonialsInputSchema,
-    getTestimonialsOutputSchema,
-    getTopRatedAccommodationsInputSchema,
-    getTopRatedAccommodationsOutputSchema
+    HomepageGetAccommodationsCategoriesOutputSchema,
+    HomepageGetDestinationsListInputSchema,
+    HomepageGetDestinationsListOutputSchema,
+    HomepageGetLatestPostsInputSchema,
+    HomepageGetLatestPostsOutputSchema,
+    HomepageGetNextEventsInputSchema,
+    HomepageGetNextEventsOutputSchema,
+    HomepageGetPopularDestinationsInputSchema,
+    HomepageGetPopularDestinationsOutputSchema,
+    HomepageGetTestimonialsInputSchema,
+    HomepageGetTestimonialsOutputSchema,
+    HomepageGetTopRatedAccommodationsInputSchema,
+    HomepageGetTopRatedAccommodationsOutputSchema
 } from './homepage.schemas';
 
 /**
@@ -57,10 +57,10 @@ export const homepageService = {
      *   const result = await homepageService.getPopularDestinations({ limit: 5 });
      */
     async getPopularDestinations(
-        input: GetPopularDestinationsInput
-    ): Promise<GetPopularDestinationsOutput> {
+        input: HomepageGetPopularDestinationsInput
+    ): Promise<HomepageGetPopularDestinationsOutput> {
         // Validate input
-        const parsedInput = getPopularDestinationsInputSchema.parse(input);
+        const parsedInput = HomepageGetPopularDestinationsInputSchema.parse(input);
         // Query destinations ordered by averageRating desc, with attractions
         const destinations = await DestinationModel.list(
             {
@@ -107,7 +107,7 @@ export const homepageService = {
             };
         });
         // Validate output
-        return getPopularDestinationsOutputSchema.parse({ destinations: mapped });
+        return HomepageGetPopularDestinationsOutputSchema.parse({ destinations: mapped });
     },
 
     /**
@@ -118,10 +118,10 @@ export const homepageService = {
      *   const result = await homepageService.getTopRatedAccommodations({ limit: 5 });
      */
     async getTopRatedAccommodations(
-        input: GetTopRatedAccommodationsInput
-    ): Promise<GetTopRatedAccommodationsOutput> {
+        input: HomepageGetTopRatedAccommodationsInput
+    ): Promise<HomepageGetTopRatedAccommodationsOutput> {
         // Validate input
-        const parsedInput = getTopRatedAccommodationsInputSchema.parse(input);
+        const parsedInput = HomepageGetTopRatedAccommodationsInputSchema.parse(input);
         // Fetch accommodations ordered by averageRating descending, with features and amenities
         const accommodations = await AccommodationModel.list(
             {
@@ -158,7 +158,7 @@ export const homepageService = {
             }))
         }));
         // Validate and return output
-        return getTopRatedAccommodationsOutputSchema.parse({ accommodations: mapped });
+        return HomepageGetTopRatedAccommodationsOutputSchema.parse({ accommodations: mapped });
     },
 
     /**
@@ -168,9 +168,9 @@ export const homepageService = {
      * @example
      *   const result = await homepageService.getNextEvents({ limit: 5 });
      */
-    async getNextEvents(input: GetNextEventsInput): Promise<GetNextEventsOutput> {
+    async getNextEvents(input: HomepageGetNextEventsInput): Promise<HomepageGetNextEventsOutput> {
         // Validate input
-        const parsedInput = getNextEventsInputSchema.parse(input);
+        const parsedInput = HomepageGetNextEventsInputSchema.parse(input);
         // Fetch future events ordered by ascending start date
         const now = new Date();
         const events = await EventModel.search({
@@ -217,7 +217,7 @@ export const homepageService = {
         // Filter events without destination (optional, according to schema)
         const filtered = mapped.filter((e) => e.destination);
         // Validate and return output
-        return getNextEventsOutputSchema.parse({ events: filtered });
+        return HomepageGetNextEventsOutputSchema.parse({ events: filtered });
     },
 
     /**
@@ -227,9 +227,11 @@ export const homepageService = {
      * @example
      *   const result = await homepageService.getLatestPosts({ limit: 5 });
      */
-    async getLatestPosts(input: GetLatestPostsInput): Promise<GetLatestPostsOutput> {
+    async getLatestPosts(
+        input: HomepageGetLatestPostsInput
+    ): Promise<HomepageGetLatestPostsOutput> {
         // Validate input
-        const parsedInput = getLatestPostsInputSchema.parse(input);
+        const parsedInput = HomepageGetLatestPostsInputSchema.parse(input);
         // Fetch latest posts ordered by createdAt desc
         const posts = await PostModel.list({
             limit: parsedInput.limit,
@@ -298,7 +300,7 @@ export const homepageService = {
             })
         );
         // Validate and return output
-        return getLatestPostsOutputSchema.parse({ posts: mapped });
+        return HomepageGetLatestPostsOutputSchema.parse({ posts: mapped });
     },
 
     /**
@@ -308,9 +310,11 @@ export const homepageService = {
      * @example
      *   const result = await homepageService.getTestimonials({ limit: 5 });
      */
-    async getTestimonials(input: GetTestimonialsInput): Promise<GetTestimonialsOutput> {
+    async getTestimonials(
+        input: HomepageGetTestimonialsInput
+    ): Promise<HomepageGetTestimonialsOutput> {
         // Validate input
-        const parsedInput = getTestimonialsInputSchema.parse(input);
+        const parsedInput = HomepageGetTestimonialsInputSchema.parse(input);
         // Fetch accommodation reviews with rating > 4
         const accReviews = await AccommodationReviewModel.list({
             limit: 100,
@@ -373,7 +377,7 @@ export const homepageService = {
         // Limit to input.limit
         const limited = testimonials.slice(0, parsedInput.limit);
         // Validate and return output
-        return getTestimonialsOutputSchema.parse({ testimonials: limited });
+        return HomepageGetTestimonialsOutputSchema.parse({ testimonials: limited });
     },
 
     /**
@@ -383,9 +387,11 @@ export const homepageService = {
      * @example
      *   const result = await homepageService.getDestinationsList({ limit: 10 });
      */
-    async getDestinationsList(input: GetDestinationsListInput): Promise<GetDestinationsListOutput> {
+    async getDestinationsList(
+        input: HomepageGetDestinationsListInput
+    ): Promise<HomepageGetDestinationsListOutput> {
         // Validate input
-        const parsedInput = getDestinationsListInputSchema.parse(input);
+        const parsedInput = HomepageGetDestinationsListInputSchema.parse(input);
         // Fetch destinations
         const destinations = await DestinationModel.list({
             limit: parsedInput.limit,
@@ -402,7 +408,7 @@ export const homepageService = {
             image: dest.media?.featuredImage?.url
         }));
         // Validate and return output
-        return getDestinationsListOutputSchema.parse({ destinations: mapped });
+        return HomepageGetDestinationsListOutputSchema.parse({ destinations: mapped });
     },
 
     /**
@@ -411,7 +417,7 @@ export const homepageService = {
      * @example
      *   const result = await homepageService.getAccommodationsCategories();
      */
-    async getAccommodationsCategories(): Promise<GetAccommodationsCategoriesOutput> {
+    async getAccommodationsCategories(): Promise<HomepageGetAccommodationsCategoriesOutput> {
         // Get all possible categories
         const allCategories = Object.values(AccommodationTypeEnum);
         // For each category, count accommodations
@@ -428,6 +434,6 @@ export const homepageService = {
         // Filter categories with at least one accommodation
         const filtered = categoriesWithCount.filter((c) => c.count > 0).map((c) => c.category);
         // Validate and return output
-        return getAccommodationsCategoriesOutputSchema.parse({ categories: filtered });
+        return HomepageGetAccommodationsCategoriesOutputSchema.parse({ categories: filtered });
     }
 };

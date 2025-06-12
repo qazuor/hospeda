@@ -27,14 +27,36 @@ import {
 import { serviceLogger } from '../utils/service-logger';
 import { canViewPost } from './post.helper';
 import {
-    type GetByIdInput,
-    type GetByIdOutput,
-    type GetBySlugInput,
-    type GetBySlugOutput,
-    createPostInputSchema,
-    getByIdInputSchema,
-    getBySlugInputSchema,
-    updatePostInputSchema
+    type PostCreateInput,
+    PostCreateInputSchema,
+    type PostCreateOutput,
+    type PostGetByCategoryInput,
+    type PostGetByCategoryOutput,
+    type PostGetByIdInput,
+    PostGetByIdInputSchema,
+    type PostGetByIdOutput,
+    type PostGetByRelatedAccommodationInput,
+    type PostGetByRelatedAccommodationOutput,
+    type PostGetByRelatedDestinationInput,
+    type PostGetByRelatedDestinationOutput,
+    type PostGetByRelatedEventInput,
+    type PostGetByRelatedEventOutput,
+    type PostGetBySlugInput,
+    PostGetBySlugInputSchema,
+    type PostGetBySlugOutput,
+    type PostGetFeaturedInput,
+    type PostGetFeaturedOutput,
+    type PostGetNewsInput,
+    type PostGetNewsOutput,
+    type PostHardDeleteOutput,
+    type PostListInput,
+    PostListInputSchema,
+    type PostListOutput,
+    type PostSearchInput,
+    type PostSearchOutput,
+    type PostUpdateInput,
+    PostUpdateInputSchema,
+    type PostUpdateOutput
 } from './post.schemas';
 
 /**
@@ -57,9 +79,9 @@ export const PostService = {
      * @example
      *   const { post } = await PostService.getById({ id: 'post-123' }, adminUser);
      */
-    async getById(input: GetByIdInput, actor: unknown): Promise<GetByIdOutput> {
+    async getById(input: PostGetByIdInput, actor: unknown): Promise<PostGetByIdOutput> {
         logMethodStart(serviceLogger, 'getById', input, actor as object);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = PostGetByIdInputSchema.parse(input);
         const post = (await PostModel.getById(parsedInput.id)) ?? null;
         if (!post) {
             logMethodEnd(serviceLogger, 'getById', { post: null });
@@ -119,9 +141,9 @@ export const PostService = {
      * @example
      *   const { post } = await PostService.getBySlug({ slug: 'my-post' }, adminUser);
      */
-    async getBySlug(input: GetBySlugInput, actor: unknown): Promise<GetBySlugOutput> {
+    async getBySlug(input: PostGetBySlugInput, actor: unknown): Promise<PostGetBySlugOutput> {
         logMethodStart(serviceLogger, 'getBySlug', input, actor as object);
-        const parsedInput = getBySlugInputSchema.parse(input);
+        const parsedInput = PostGetBySlugInputSchema.parse(input);
         const post = (await PostModel.getBySlug(parsedInput.slug)) ?? null;
         if (!post) {
             logMethodEnd(serviceLogger, 'getBySlug', { post: null });
@@ -178,12 +200,9 @@ export const PostService = {
      * @example
      *   const result = await PostService.list({ limit: 10, offset: 0 }, user);
      */
-    async list(
-        input: import('./post.schemas').ListInput,
-        actor: unknown
-    ): Promise<import('./post.schemas').ListOutput> {
+    async list(input: PostListInput, actor: unknown): Promise<PostListOutput> {
         logMethodStart(serviceLogger, 'list', input, actor as object);
-        const parsedInput = (await import('./post.schemas')).listInputSchema.parse(input);
+        const parsedInput = PostListInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Public users can only see PUBLIC posts
         const isPublic =
@@ -217,13 +236,10 @@ export const PostService = {
      * @example
      *   const { posts, total } = await PostService.search({ q: 'foo', limit: 10 }, user);
      */
-    async search(
-        input: import('./post.schemas').SearchInput,
-        actor: unknown
-    ): Promise<import('./post.schemas').SearchOutput> {
+    async search(input: PostSearchInput, actor: unknown): Promise<PostSearchOutput> {
         logMethodStart(serviceLogger, 'search', input, actor as object);
-        const { searchInputSchema } = await import('./post.schemas');
-        const parsedInput = searchInputSchema.parse(input);
+        const { PostSearchInputSchema } = await import('./post.schemas');
+        const parsedInput = PostSearchInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Public users can only see PUBLIC posts
         const isPublic =
@@ -255,12 +271,12 @@ export const PostService = {
      *   const { posts } = await PostService.getByCategory({ category: PostCategoryEnum.EVENTS }, user);
      */
     async getByCategory(
-        input: import('./post.schemas').GetByCategoryInput,
+        input: PostGetByCategoryInput,
         actor: unknown
-    ): Promise<import('./post.schemas').GetByCategoryOutput> {
+    ): Promise<PostGetByCategoryOutput> {
         logMethodStart(serviceLogger, 'getByCategory', input, actor as object);
-        const { getByCategoryInputSchema } = await import('./post.schemas');
-        const parsedInput = getByCategoryInputSchema.parse(input);
+        const { PostGetByCategoryInputSchema } = await import('./post.schemas');
+        const parsedInput = PostGetByCategoryInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Public users can only see PUBLIC posts
         const isPublic =
@@ -317,12 +333,9 @@ export const PostService = {
      * @example
      *   const { post } = await PostService.create(input, user);
      */
-    async create(
-        input: import('./post.schemas').CreatePostInput,
-        actor: unknown
-    ): Promise<import('./post.schemas').CreatePostOutput> {
+    async create(input: PostCreateInput, actor: unknown): Promise<PostCreateOutput> {
         logMethodStart(serviceLogger, 'create', input, actor as object);
-        const parsedInput = createPostInputSchema.parse(input);
+        const parsedInput = PostCreateInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isPublicUser(safeActor)) {
             logOverride(
@@ -402,12 +415,9 @@ export const PostService = {
      * @example
      *   const { post } = await PostService.update(input, user);
      */
-    async update(
-        input: import('./post.schemas').UpdatePostInput,
-        actor: unknown
-    ): Promise<import('./post.schemas').UpdatePostOutput> {
+    async update(input: PostUpdateInput, actor: unknown): Promise<PostUpdateOutput> {
         logMethodStart(serviceLogger, 'update', input, actor as object);
-        const parsedInput = updatePostInputSchema.parse(input);
+        const parsedInput = PostUpdateInputSchema.parse(input);
         const post = await PostModel.getById(parsedInput.id);
         if (!post) {
             logMethodEnd(serviceLogger, 'update', { post: null });
@@ -492,12 +502,9 @@ export const PostService = {
      * @example
      * const result = await softDelete({ id: 'post-1' }, user);
      */
-    async softDelete(
-        input: import('./post.schemas').GetByIdInput,
-        actor: unknown
-    ): Promise<{ post: PostType | null }> {
+    async softDelete(input: PostGetByIdInput, actor: unknown): Promise<{ post: PostType | null }> {
         logMethodStart(serviceLogger, 'delete', input, actor as object);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = PostGetByIdInputSchema.parse(input);
         const post = (await PostModel.getById(parsedInput.id)) ?? null;
         if (!post) {
             logMethodEnd(serviceLogger, 'delete', { post: null });
@@ -570,12 +577,9 @@ export const PostService = {
      * @example
      * const result = await hardDelete({ id: 'post-1' }, user);
      */
-    async hardDelete(
-        input: import('./post.schemas').GetByIdInput,
-        actor: unknown
-    ): Promise<import('./post.schemas').HardDeleteOutput> {
+    async hardDelete(input: PostGetByIdInput, actor: unknown): Promise<PostHardDeleteOutput> {
         logMethodStart(serviceLogger, 'hardDelete', input, actor as object);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = PostGetByIdInputSchema.parse(input);
         const post = (await PostModel.getById(parsedInput.id)) ?? null;
         if (!post) {
             logMethodEnd(serviceLogger, 'hardDelete', { success: false });
@@ -655,12 +659,9 @@ export const PostService = {
      * @example
      * const result = await restore({ id: 'post-1' }, user);
      */
-    async restore(
-        input: import('./post.schemas').GetByIdInput,
-        actor: unknown
-    ): Promise<{ post: PostType | null }> {
+    async restore(input: PostGetByIdInput, actor: unknown): Promise<{ post: PostType | null }> {
         logMethodStart(serviceLogger, 'restore', input, actor as object);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = PostGetByIdInputSchema.parse(input);
         const post = (await PostModel.getById(parsedInput.id)) ?? null;
         if (!post) {
             logMethodEnd(serviceLogger, 'restore', { post: null });
@@ -743,13 +744,10 @@ export const PostService = {
      * @example
      *   const { posts } = await PostService.getFeatured({}, user);
      */
-    async getFeatured(
-        input: import('./post.schemas').GetFeaturedInput,
-        actor: unknown
-    ): Promise<import('./post.schemas').GetFeaturedOutput> {
+    async getFeatured(input: PostGetFeaturedInput, actor: unknown): Promise<PostGetFeaturedOutput> {
         logMethodStart(serviceLogger, 'getFeatured', input, actor as object);
-        const { getFeaturedInputSchema } = await import('./post.schemas');
-        getFeaturedInputSchema.parse(input);
+        const { PostGetFeaturedInputSchema } = await import('./post.schemas');
+        PostGetFeaturedInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Fetch all posts and filter by isFeatured in memory (TODO: optimize with DB query if needed)
         let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
@@ -782,13 +780,10 @@ export const PostService = {
      * @example
      *   const { posts } = await PostService.getNews({}, user);
      */
-    async getNews(
-        input: import('./post.schemas').GetNewsInput,
-        actor: unknown
-    ): Promise<import('./post.schemas').GetNewsOutput> {
+    async getNews(input: PostGetNewsInput, actor: unknown): Promise<PostGetNewsOutput> {
         logMethodStart(serviceLogger, 'getNews', input, actor as object);
-        const { getNewsInputSchema } = await import('./post.schemas');
-        getNewsInputSchema.parse(input);
+        const { PostGetNewsInputSchema } = await import('./post.schemas');
+        PostGetNewsInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Fetch all posts and filter by isNews in memory (TODO: optimize with DB query if needed)
         let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
@@ -822,12 +817,12 @@ export const PostService = {
      *   const { posts } = await PostService.getByRelatedAccommodation({ accommodationId }, user);
      */
     async getByRelatedAccommodation(
-        input: import('./post.schemas').GetByRelatedAccommodationInput,
+        input: PostGetByRelatedAccommodationInput,
         actor: unknown
-    ): Promise<import('./post.schemas').GetByRelatedAccommodationOutput> {
+    ): Promise<PostGetByRelatedAccommodationOutput> {
         logMethodStart(serviceLogger, 'getByRelatedAccommodation', input, actor as object);
-        const { getByRelatedAccommodationInputSchema } = await import('./post.schemas');
-        const parsedInput = getByRelatedAccommodationInputSchema.parse(input);
+        const { PostGetByRelatedAccommodationInputSchema } = await import('./post.schemas');
+        const parsedInput = PostGetByRelatedAccommodationInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Fetch all posts and filter by relatedAccommodationId in memory (TODO: optimize with DB query if needed)
         let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
@@ -861,12 +856,12 @@ export const PostService = {
      *   const { posts } = await PostService.getByRelatedDestination({ destinationId }, user);
      */
     async getByRelatedDestination(
-        input: import('./post.schemas').GetByRelatedDestinationInput,
+        input: PostGetByRelatedDestinationInput,
         actor: unknown
-    ): Promise<import('./post.schemas').GetByRelatedDestinationOutput> {
+    ): Promise<PostGetByRelatedDestinationOutput> {
         logMethodStart(serviceLogger, 'getByRelatedDestination', input, actor as object);
-        const { getByRelatedDestinationInputSchema } = await import('./post.schemas');
-        const parsedInput = getByRelatedDestinationInputSchema.parse(input);
+        const { PostGetByRelatedDestinationInputSchema } = await import('./post.schemas');
+        const parsedInput = PostGetByRelatedDestinationInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Fetch all posts and filter by relatedDestinationId in memory (TODO: optimize with DB query if needed)
         let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(
@@ -900,12 +895,12 @@ export const PostService = {
      *   const { posts } = await PostService.getByRelatedEvent({ eventId }, user);
      */
     async getByRelatedEvent(
-        input: import('./post.schemas').GetByRelatedEventInput,
+        input: PostGetByRelatedEventInput,
         actor: unknown
-    ): Promise<import('./post.schemas').GetByRelatedEventOutput> {
+    ): Promise<PostGetByRelatedEventOutput> {
         logMethodStart(serviceLogger, 'getByRelatedEvent', input, actor as object);
-        const { getByRelatedEventInputSchema } = await import('./post.schemas');
-        const parsedInput = getByRelatedEventInputSchema.parse(input);
+        const { PostGetByRelatedEventInputSchema } = await import('./post.schemas');
+        const parsedInput = PostGetByRelatedEventInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         // Fetch all posts and filter by relatedEventId in memory (TODO: optimize with DB query if needed)
         let posts = (await PostModel.search({ limit: 1000, offset: 0 })).filter(

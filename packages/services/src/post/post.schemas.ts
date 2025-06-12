@@ -8,7 +8,7 @@ import { z } from 'zod';
  * @example
  * const input = { id: 'post-uuid' as PostId };
  */
-export const getByIdInputSchema = z.object({
+export const PostGetByIdInputSchema = z.object({
     id: z.string().min(1, 'Post ID is required') as unknown as z.ZodType<PostId>
 });
 
@@ -18,8 +18,8 @@ export const getByIdInputSchema = z.object({
  * @example
  * const output = { post: postObjectOrNull };
  */
-export type GetByIdInput = z.infer<typeof getByIdInputSchema>;
-export type GetByIdOutput = { post: PostType | null };
+export type PostGetByIdInput = z.infer<typeof PostGetByIdInputSchema>;
+export type PostGetByIdOutput = { post: PostType | null };
 
 /**
  * Input schema for getBySlug.
@@ -27,7 +27,7 @@ export type GetByIdOutput = { post: PostType | null };
  * @example
  * const input = { slug: 'my-post-slug' };
  */
-export const getBySlugInputSchema = z.object({
+export const PostGetBySlugInputSchema = z.object({
     slug: z.string().min(1, 'Post slug is required')
 });
 
@@ -37,8 +37,8 @@ export const getBySlugInputSchema = z.object({
  * @example
  * const output = { post: postObjectOrNull };
  */
-export type GetBySlugInput = z.infer<typeof getBySlugInputSchema>;
-export type GetBySlugOutput = { post: PostType | null };
+export type PostGetBySlugInput = z.infer<typeof PostGetBySlugInputSchema>;
+export type PostGetBySlugOutput = { post: PostType | null };
 
 /**
  * Input schema for list.
@@ -46,7 +46,7 @@ export type GetBySlugOutput = { post: PostType | null };
  * @example
  * const input = { limit: 10, offset: 0 };
  */
-export const listInputSchema = z.object({
+export const PostListInputSchema = z.object({
     q: z.string().optional(),
     title: z.string().optional(),
     summary: z.string().optional(),
@@ -63,16 +63,16 @@ export const listInputSchema = z.object({
 /**
  * Input type for list.
  * @example
- * const input: ListInput = { limit: 10, offset: 0 };
+ * const input: PostListInput = { limit: 10, offset: 0 };
  */
-export type ListInput = z.infer<typeof listInputSchema>;
+export type PostListInput = z.infer<typeof PostListInputSchema>;
 
 /**
  * Output type for list.
  * @example
- * const output: ListOutput = { posts: [mockPost] };
+ * const output: PostListOutput = { posts: [mockPost] };
  */
-export type ListOutput = { posts: PostType[] };
+export type PostListOutput = { posts: PostType[] };
 
 /**
  * Input schema for search (advanced search).
@@ -80,7 +80,7 @@ export type ListOutput = { posts: PostType[] };
  * @example
  * const input = { q: 'foo', category: 'news', limit: 10, offset: 0 };
  */
-export const searchInputSchema = z.object({
+export const PostSearchInputSchema = z.object({
     q: z.string().optional(),
     title: z.string().optional(),
     summary: z.string().optional(),
@@ -97,16 +97,16 @@ export const searchInputSchema = z.object({
 /**
  * Input type for search.
  * @example
- * const input: SearchInput = { q: 'foo', limit: 10, offset: 0 };
+ * const input: PostSearchInput = { q: 'foo', limit: 10, offset: 0 };
  */
-export type SearchInput = z.infer<typeof searchInputSchema>;
+export type PostSearchInput = z.infer<typeof PostSearchInputSchema>;
 
 /**
  * Output type for search.
  * @example
- * const output: SearchOutput = { posts: [mockPost], total: 1 };
+ * const output: PostSearchOutput = { posts: [mockPost], total: 1 };
  */
-export type SearchOutput = { posts: PostType[]; total: number };
+export type PostSearchOutput = { posts: PostType[]; total: number };
 
 /**
  * Input schema for getByCategory.
@@ -114,7 +114,7 @@ export type SearchOutput = { posts: PostType[]; total: number };
  * @example
  * const input = { category: PostCategoryEnum.EVENTS, limit: 10, offset: 0 };
  */
-export const getByCategoryInputSchema = z.object({
+export const PostGetByCategoryInputSchema = z.object({
     category: z.nativeEnum(PostCategoryEnum),
     limit: z.number().int().min(1).max(100).default(20),
     offset: z.number().int().min(0).default(0),
@@ -125,16 +125,16 @@ export const getByCategoryInputSchema = z.object({
 /**
  * Input type for getByCategory.
  * @example
- * const input: GetByCategoryInput = { category: PostCategoryEnum.EVENTS, limit: 10, offset: 0 };
+ * const input: PostGetByCategoryInput = { category: PostCategoryEnum.EVENTS, limit: 10, offset: 0 };
  */
-export type GetByCategoryInput = z.infer<typeof getByCategoryInputSchema>;
+export type PostGetByCategoryInput = z.infer<typeof PostGetByCategoryInputSchema>;
 
 /**
  * Output type for getByCategory.
  * @example
- * const output: GetByCategoryOutput = { posts: [mockPost] };
+ * const output: PostGetByCategoryOutput = { posts: [mockPost] };
  */
-export type GetByCategoryOutput = { posts: PostType[] };
+export type PostGetByCategoryOutput = { posts: PostType[] };
 
 /**
  * Input schema for create post.
@@ -151,7 +151,7 @@ export type GetByCategoryOutput = { posts: PostType[] };
  *   visibility: VisibilityEnum.PUBLIC
  * };
  */
-export const createPostInputSchema = z.object({
+export const PostCreateInputSchema = z.object({
     slug: z.string().min(1, 'Slug is required'),
     category: z.nativeEnum(PostCategoryEnum),
     title: z.string().min(1, 'Title is required'),
@@ -177,16 +177,16 @@ export const createPostInputSchema = z.object({
 /**
  * Input type for create post.
  * @example
- * const input: CreatePostInput = { ... };
+ * const input: PostCreateInput = { ... };
  */
-export type CreatePostInput = z.infer<typeof createPostInputSchema>;
+export type PostCreateInput = z.infer<typeof PostCreateInputSchema>;
 
 /**
  * Output type for create post.
  * @example
- * const output: CreatePostOutput = { post };
+ * const output: PostCreateOutput = { post };
  */
-export type CreatePostOutput = { post: PostType };
+export type PostCreateOutput = { post: PostType };
 
 /**
  * Input schema for update post.
@@ -195,7 +195,7 @@ export type CreatePostOutput = { post: PostType };
  * @example
  * const input = { id: 'post-uuid', title: 'Updated title' };
  */
-export const updatePostInputSchema = z.object({
+export const PostUpdateInputSchema = z.object({
     id: z.string().min(1, 'Post ID is required'),
     slug: z.string().optional(),
     category: z.nativeEnum(PostCategoryEnum).optional(),
@@ -222,23 +222,23 @@ export const updatePostInputSchema = z.object({
 /**
  * Input type for update post.
  * @example
- * const input: UpdatePostInput = { id: 'post-uuid', title: 'Updated title' };
+ * const input: PostUpdateInput = { id: 'post-uuid', title: 'Updated title' };
  */
-export type UpdatePostInput = z.infer<typeof updatePostInputSchema>;
+export type PostUpdateInput = z.infer<typeof PostUpdateInputSchema>;
 
 /**
  * Output type for update post.
  * @example
- * const output: UpdatePostOutput = { post };
+ * const output: PostUpdateOutput = { post };
  */
-export type UpdatePostOutput = { post: PostType | null };
+export type PostUpdateOutput = { post: PostType | null };
 
 /**
  * Output type for hard delete post.
  * @example
- * const output: HardDeleteOutput = { success: true };
+ * const output: PostHardDeleteOutput = { success: true };
  */
-export type HardDeleteOutput = { success: boolean };
+export type PostHardDeleteOutput = { success: boolean };
 
 /**
  * Input schema for getByRelatedAccommodation.
@@ -246,23 +246,25 @@ export type HardDeleteOutput = { success: boolean };
  * @example
  * const input = { accommodationId: 'acc-uuid' };
  */
-export const getByRelatedAccommodationInputSchema = z.object({
+export const PostGetByRelatedAccommodationInputSchema = z.object({
     accommodationId: z.string().min(1, 'Accommodation ID is required')
 });
 
 /**
  * Input type for getByRelatedAccommodation.
  * @example
- * const input: GetByRelatedAccommodationInput = { accommodationId: 'acc-uuid' };
+ * const input: PostGetByRelatedAccommodationInput = { accommodationId: 'acc-uuid' };
  */
-export type GetByRelatedAccommodationInput = z.infer<typeof getByRelatedAccommodationInputSchema>;
+export type PostGetByRelatedAccommodationInput = z.infer<
+    typeof PostGetByRelatedAccommodationInputSchema
+>;
 
 /**
  * Output type for getByRelatedAccommodation.
  * @example
- * const output: GetByRelatedAccommodationOutput = { posts: [mockPost] };
+ * const output: PostGetByRelatedAccommodationOutput = { posts: [mockPost] };
  */
-export type GetByRelatedAccommodationOutput = { posts: PostType[] };
+export type PostGetByRelatedAccommodationOutput = { posts: PostType[] };
 
 /**
  * Input schema for getByRelatedDestination.
@@ -270,23 +272,25 @@ export type GetByRelatedAccommodationOutput = { posts: PostType[] };
  * @example
  * const input = { destinationId: 'dest-uuid' };
  */
-export const getByRelatedDestinationInputSchema = z.object({
+export const PostGetByRelatedDestinationInputSchema = z.object({
     destinationId: z.string().min(1, 'Destination ID is required')
 });
 
 /**
  * Input type for getByRelatedDestination.
  * @example
- * const input: GetByRelatedDestinationInput = { destinationId: 'dest-uuid' };
+ * const input: PostGetByRelatedDestinationInput = { destinationId: 'dest-uuid' };
  */
-export type GetByRelatedDestinationInput = z.infer<typeof getByRelatedDestinationInputSchema>;
+export type PostGetByRelatedDestinationInput = z.infer<
+    typeof PostGetByRelatedDestinationInputSchema
+>;
 
 /**
  * Output type for getByRelatedDestination.
  * @example
- * const output: GetByRelatedDestinationOutput = { posts: [mockPost] };
+ * const output: PostGetByRelatedDestinationOutput = { posts: [mockPost] };
  */
-export type GetByRelatedDestinationOutput = { posts: PostType[] };
+export type PostGetByRelatedDestinationOutput = { posts: PostType[] };
 
 /**
  * Input schema for getByRelatedEvent.
@@ -294,23 +298,23 @@ export type GetByRelatedDestinationOutput = { posts: PostType[] };
  * @example
  * const input = { eventId: 'event-uuid' };
  */
-export const getByRelatedEventInputSchema = z.object({
+export const PostGetByRelatedEventInputSchema = z.object({
     eventId: z.string().min(1, 'Event ID is required')
 });
 
 /**
  * Input type for getByRelatedEvent.
  * @example
- * const input: GetByRelatedEventInput = { eventId: 'event-uuid' };
+ * const input: PostGetByRelatedEventInput = { eventId: 'event-uuid' };
  */
-export type GetByRelatedEventInput = z.infer<typeof getByRelatedEventInputSchema>;
+export type PostGetByRelatedEventInput = z.infer<typeof PostGetByRelatedEventInputSchema>;
 
 /**
  * Output type for getByRelatedEvent.
  * @example
- * const output: GetByRelatedEventOutput = { posts: [mockPost] };
+ * const output: PostGetByRelatedEventOutput = { posts: [mockPost] };
  */
-export type GetByRelatedEventOutput = { posts: PostType[] };
+export type PostGetByRelatedEventOutput = { posts: PostType[] };
 
 /**
  * Input schema for getFeatured.
@@ -318,21 +322,21 @@ export type GetByRelatedEventOutput = { posts: PostType[] };
  * @example
  * const input = {};
  */
-export const getFeaturedInputSchema = z.object({}).strict();
+export const PostGetFeaturedInputSchema = z.object({}).strict();
 
 /**
  * Input type for getFeatured.
  * @example
- * const input: GetFeaturedInput = {};
+ * const input: PostGetFeaturedInput = {};
  */
-export type GetFeaturedInput = z.infer<typeof getFeaturedInputSchema>;
+export type PostGetFeaturedInput = z.infer<typeof PostGetFeaturedInputSchema>;
 
 /**
  * Output type for getFeatured.
  * @example
- * const output: GetFeaturedOutput = { posts: [mockPost] };
+ * const output: PostGetFeaturedOutput = { posts: [mockPost] };
  */
-export type GetFeaturedOutput = { posts: PostType[] };
+export type PostGetFeaturedOutput = { posts: PostType[] };
 
 /**
  * Input schema for getNews.
@@ -340,18 +344,18 @@ export type GetFeaturedOutput = { posts: PostType[] };
  * @example
  * const input = {};
  */
-export const getNewsInputSchema = z.object({}).strict();
+export const PostGetNewsInputSchema = z.object({}).strict();
 
 /**
  * Input type for getNews.
  * @example
- * const input: GetNewsInput = {};
+ * const input: PostGetNewsInput = {};
  */
-export type GetNewsInput = z.infer<typeof getNewsInputSchema>;
+export type PostGetNewsInput = z.infer<typeof PostGetNewsInputSchema>;
 
 /**
  * Output type for getNews.
  * @example
- * const output: GetNewsOutput = { posts: [mockPost] };
+ * const output: PostGetNewsOutput = { posts: [mockPost] };
  */
-export type GetNewsOutput = { posts: PostType[] };
+export type PostGetNewsOutput = { posts: PostType[] };

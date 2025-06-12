@@ -11,26 +11,26 @@ import {
 import { serviceLogger } from '../utils/service-logger';
 import { canViewUser } from './user.helper';
 import type {
-    CreateUserInput,
-    CreateUserOutput,
-    GetByIdInput,
-    GetByIdOutput,
-    HardDeleteUserInput,
-    HardDeleteUserOutput,
-    RestoreUserInput,
-    RestoreUserOutput,
-    SoftDeleteUserInput,
-    SoftDeleteUserOutput,
-    UpdateUserInput,
-    UpdateUserOutput
+    UserCreateInput,
+    UserCreateOutput,
+    UserGetByIdInput,
+    UserGetByIdOutput,
+    UserHardDeleteInput,
+    UserHardDeleteOutput,
+    UserRestoreInput,
+    UserRestoreOutput,
+    UserSoftDeleteInput,
+    UserSoftDeleteOutput,
+    UserUpdateInput,
+    UserUpdateOutput
 } from './user.schemas';
 import {
-    createUserInputSchema,
-    getByIdInputSchema,
-    hardDeleteUserInputSchema,
-    restoreUserInputSchema,
-    softDeleteUserInputSchema,
-    updateUserInputSchema
+    UserCreateInputSchema,
+    UserGetByIdInputSchema,
+    UserHardDeleteInputSchema,
+    UserRestoreInputSchema,
+    UserSoftDeleteInputSchema,
+    UserUpdateInputSchema
 } from './user.schemas';
 
 const SYSTEM_USER_ID = 'system' as UserId;
@@ -50,9 +50,9 @@ export const UserService = {
      * @example
      *   const { user } = await UserService.getById({ id: 'user-123' }, adminUser);
      */
-    async getById(input: GetByIdInput, actor: unknown): Promise<GetByIdOutput> {
+    async getById(input: UserGetByIdInput, actor: unknown): Promise<UserGetByIdOutput> {
         logMethodStart(serviceLogger, 'getById', input, actor as object);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = UserGetByIdInputSchema.parse(input);
         const user = (await UserModel.getById(parsedInput.id)) ?? null;
         if (!user) {
             logMethodEnd(serviceLogger, 'getById', { user: null });
@@ -122,9 +122,9 @@ export const UserService = {
      * @returns Object with the created user (without password).
      * @throws Error if not allowed or user already exists.
      */
-    async create(input: CreateUserInput, actor: unknown): Promise<CreateUserOutput> {
+    async create(input: UserCreateInput, actor: unknown): Promise<UserCreateOutput> {
         logMethodStart(serviceLogger, 'create', input, actor as object);
-        const parsedInput = createUserInputSchema.parse(input);
+        const parsedInput = UserCreateInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Only admin can create users
@@ -183,9 +183,9 @@ export const UserService = {
      * @returns Object with the updated user (without password).
      * @throws Error if not allowed, user not found, or duplicate userName/email.
      */
-    async update(input: UpdateUserInput, actor: unknown): Promise<UpdateUserOutput> {
+    async update(input: UserUpdateInput, actor: unknown): Promise<UserUpdateOutput> {
         logMethodStart(serviceLogger, 'update', input, actor as object);
-        const parsedInput = updateUserInputSchema.parse(input);
+        const parsedInput = UserUpdateInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Get user to update
@@ -256,9 +256,9 @@ export const UserService = {
      * @returns Object with the disabled user (without password).
      * @throws Error if not allowed, user not found, already disabled, or self-delete.
      */
-    async softDelete(input: SoftDeleteUserInput, actor: unknown): Promise<SoftDeleteUserOutput> {
+    async softDelete(input: UserSoftDeleteInput, actor: unknown): Promise<UserSoftDeleteOutput> {
         logMethodStart(serviceLogger, 'softDelete', input, actor as object);
-        const parsedInput = softDeleteUserInputSchema.parse(input);
+        const parsedInput = UserSoftDeleteInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // First: do not allow if the actor is disabled
@@ -311,9 +311,9 @@ export const UserService = {
      * @returns Object with the restored user (without password).
      * @throws Error if not allowed, user not found, already active, or self-restore.
      */
-    async restore(input: RestoreUserInput, actor: unknown): Promise<RestoreUserOutput> {
+    async restore(input: UserRestoreInput, actor: unknown): Promise<UserRestoreOutput> {
         logMethodStart(serviceLogger, 'restore', input, actor as object);
-        const parsedInput = restoreUserInputSchema.parse(input);
+        const parsedInput = UserRestoreInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Primero: no permitir si el actor está deshabilitado
@@ -366,9 +366,9 @@ export const UserService = {
      * @returns Object with the deleted user (without password), or null if not found.
      * @throws Error if not allowed, user not found, self-delete, or DB error.
      */
-    async hardDelete(input: HardDeleteUserInput, actor: unknown): Promise<HardDeleteUserOutput> {
+    async hardDelete(input: UserHardDeleteInput, actor: unknown): Promise<UserHardDeleteOutput> {
         logMethodStart(serviceLogger, 'hardDelete', input, actor as object);
-        const parsedInput = hardDeleteUserInputSchema.parse(input);
+        const parsedInput = UserHardDeleteInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Do not allow if the actor is disabled

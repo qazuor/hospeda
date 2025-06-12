@@ -18,46 +18,46 @@ import {
 } from '../utils/service-helper';
 import { serviceLogger } from '../utils/service-logger';
 import {
-    assertNotArchived,
-    buildRestoreUpdate,
-    buildSoftDeleteUpdate,
     canViewEvent,
-    normalizeCreateInput
+    eventAssertNotArchived,
+    eventBuildRestoreUpdate,
+    eventBuildSoftDeleteUpdate,
+    eventNormalizeCreateInput
 } from './event.helper';
 import {
-    type CreateEventInput,
-    type CreateEventOutput,
-    type GetByCategoryInput,
-    type GetByCategoryOutput,
-    type GetByDateRangeInput,
-    type GetByDateRangeOutput,
-    type GetByIdInput,
-    type GetByIdOutput,
-    type GetByLocationIdInput,
-    type GetByLocationIdOutput,
-    type GetByOrganizerIdInput,
-    type GetByOrganizerIdOutput,
-    type GetBySlugInput,
-    type GetBySlugOutput,
-    type GetFeaturedInput,
-    type GetFeaturedOutput,
-    type GetUpcomingInput,
-    type GetUpcomingOutput,
-    type ListEventsInput,
-    type ListEventsOutput,
-    type UpdateInput,
-    type UpdateOutput,
-    createEventInputSchema,
-    getByCategoryInputSchema,
-    getByDateRangeInputSchema,
-    getByIdInputSchema,
-    getByLocationIdInputSchema,
-    getByOrganizerIdInputSchema,
-    getBySlugInputSchema,
-    getFeaturedInputSchema,
-    getUpcomingInputSchema,
-    listEventsInputSchema,
-    updateInputSchema
+    type EventCreateInput,
+    EventCreateInputSchema,
+    type EventCreateOutput,
+    type EventGetByCategoryInput,
+    EventGetByCategoryInputSchema,
+    type EventGetByCategoryOutput,
+    type EventGetByDateRangeInput,
+    EventGetByDateRangeInputSchema,
+    type EventGetByDateRangeOutput,
+    type EventGetByIdInput,
+    EventGetByIdInputSchema,
+    type EventGetByIdOutput,
+    type EventGetByLocationIdInput,
+    EventGetByLocationIdInputSchema,
+    type EventGetByLocationIdOutput,
+    type EventGetByOrganizerIdInput,
+    EventGetByOrganizerIdInputSchema,
+    type EventGetByOrganizerIdOutput,
+    type EventGetBySlugInput,
+    EventGetBySlugInputSchema,
+    type EventGetBySlugOutput,
+    type EventGetFeaturedInput,
+    EventGetFeaturedInputSchema,
+    type EventGetFeaturedOutput,
+    type EventGetUpcomingInput,
+    EventGetUpcomingInputSchema,
+    type EventGetUpcomingOutput,
+    type EventListInput,
+    EventListInputSchema,
+    type EventListOutput,
+    type EventUpdateInput,
+    EventUpdateInputSchema,
+    type EventUpdateOutput
 } from './event.schemas';
 
 export const EventService = {
@@ -76,9 +76,9 @@ export const EventService = {
      * @example
      *   const { event } = await EventService.getById({ id: 'event-123' }, adminUser);
      */
-    async getById(input: GetByIdInput, actor: unknown): Promise<GetByIdOutput> {
+    async getById(input: EventGetByIdInput, actor: unknown): Promise<EventGetByIdOutput> {
         logMethodStart(serviceLogger, 'getById', input, actor as object);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = EventGetByIdInputSchema.parse(input);
         const event = (await EventModel.getById(parsedInput.id)) ?? null;
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
@@ -186,9 +186,9 @@ export const EventService = {
      * @example
      *   const { event } = await EventService.getBySlug({ slug: 'event-slug' }, adminUser);
      */
-    async getBySlug(input: GetBySlugInput, actor: unknown): Promise<GetBySlugOutput> {
+    async getBySlug(input: EventGetBySlugInput, actor: unknown): Promise<EventGetBySlugOutput> {
         logMethodStart(serviceLogger, 'getBySlug', input, actor as object);
-        const parsedInput = getBySlugInputSchema.parse(input);
+        const parsedInput = EventGetBySlugInputSchema.parse(input);
         const event = (await EventModel.getBySlug(parsedInput.slug)) ?? null;
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
@@ -294,11 +294,11 @@ export const EventService = {
      *   const { events } = await EventService.getByLocationId({ locationId: 'loc-1' }, user);
      */
     async getByLocationId(
-        input: GetByLocationIdInput,
+        input: EventGetByLocationIdInput,
         actor: unknown
-    ): Promise<GetByLocationIdOutput> {
+    ): Promise<EventGetByLocationIdOutput> {
         logMethodStart(serviceLogger, 'getByLocationId', input, actor as object);
-        const parsedInput = getByLocationIdInputSchema.parse(input);
+        const parsedInput = EventGetByLocationIdInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
@@ -353,9 +353,9 @@ export const EventService = {
      * @example
      *   const { event } = await EventService.create({ ... }, user);
      */
-    async create(input: CreateEventInput, actor: unknown): Promise<CreateEventOutput> {
+    async create(input: EventCreateInput, actor: unknown): Promise<EventCreateOutput> {
         logMethodStart(serviceLogger, 'create', input, actor as object);
-        const parsedInput = createEventInputSchema.parse(input);
+        const parsedInput = EventCreateInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
@@ -401,7 +401,7 @@ export const EventService = {
             throw new Error('Slug already exists');
         }
         // Normaliza el input como en los otros servicios
-        const normalizedInput = normalizeCreateInput(parsedInput);
+        const normalizedInput = eventNormalizeCreateInput(parsedInput);
         // Crear evento
         const event = await EventModel.create({
             ...normalizedInput,
@@ -433,9 +433,9 @@ export const EventService = {
      * @example
      *   const { event } = await EventService.update({ id: 'event-1', summary: 'Updated' }, user);
      */
-    async update(input: UpdateInput, actor: unknown): Promise<UpdateOutput> {
+    async update(input: EventUpdateInput, actor: unknown): Promise<EventUpdateOutput> {
         logMethodStart(serviceLogger, 'update', input, actor as object);
-        const parsedInput = updateInputSchema.parse(input);
+        const parsedInput = EventUpdateInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
@@ -536,18 +536,18 @@ export const EventService = {
      * const result = await EventService.softDelete({ id: 'event-1' }, user);
      */
     async softDelete(
-        input: GetByIdInput,
+        input: EventGetByIdInput,
         actor: UserType | PublicUserType
     ): Promise<{ event: EventType | null }> {
         logMethodStart(serviceLogger, 'delete', input, actor);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = EventGetByIdInputSchema.parse(input);
         const event = (await EventModel.getById(parsedInput.id)) ?? null;
         if (!event) {
             logMethodEnd(serviceLogger, 'delete', { event: null });
             throw new Error('Event not found');
         }
         try {
-            assertNotArchived(event);
+            eventAssertNotArchived(event);
         } catch (err) {
             logMethodEnd(serviceLogger, 'delete', { event: null });
             throw err;
@@ -584,7 +584,7 @@ export const EventService = {
             logMethodEnd(serviceLogger, 'delete', { event: null });
             throw new Error('Permission denied: EVENT_DELETE');
         }
-        const updateInput = buildSoftDeleteUpdate(safeActor);
+        const updateInput = eventBuildSoftDeleteUpdate(safeActor);
         const updatedEvent = await EventModel.update(parsedInput.id, updateInput);
         if (!updatedEvent) {
             logMethodEnd(serviceLogger, 'delete', { event: null });
@@ -666,7 +666,7 @@ export const EventService = {
             throw new Error('Event is not archived');
         }
         // Execute restore
-        const updateInput = buildRestoreUpdate(safeActor);
+        const updateInput = eventBuildRestoreUpdate(safeActor);
         let updatedEvent: EventType | null = null;
         try {
             const result = await EventModel.update(input.id, updateInput);
@@ -768,9 +768,9 @@ export const EventService = {
      * @example
      *   const { events } = await EventService.list({ limit: 10, offset: 0 }, user);
      */
-    async list(input: ListEventsInput, actor: unknown): Promise<ListEventsOutput> {
+    async list(input: EventListInput, actor: unknown): Promise<EventListOutput> {
         logMethodStart(serviceLogger, 'list', input, actor as object);
-        const parsedInput = listEventsInputSchema.parse(input);
+        const parsedInput = EventListInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
@@ -830,11 +830,11 @@ export const EventService = {
      *   const { events } = await EventService.getByOrganizerId({ organizerId: 'org-1', limit: 10 }, user);
      */
     async getByOrganizerId(
-        input: GetByOrganizerIdInput,
+        input: EventGetByOrganizerIdInput,
         actor: unknown
-    ): Promise<GetByOrganizerIdOutput> {
+    ): Promise<EventGetByOrganizerIdOutput> {
         logMethodStart(serviceLogger, 'getByOrganizerId', input, actor as object);
-        const parsedInput = getByOrganizerIdInputSchema.parse(input);
+        const parsedInput = EventGetByOrganizerIdInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
@@ -891,9 +891,12 @@ export const EventService = {
      * @example
      *   const { events } = await EventService.getByCategory({ category: 'FESTIVAL', limit: 10 }, user);
      */
-    async getByCategory(input: GetByCategoryInput, actor: unknown): Promise<GetByCategoryOutput> {
+    async getByCategory(
+        input: EventGetByCategoryInput,
+        actor: unknown
+    ): Promise<EventGetByCategoryOutput> {
         logMethodStart(serviceLogger, 'getByCategory', input, actor as object);
-        const parsedInput = getByCategoryInputSchema.parse(input);
+        const parsedInput = EventGetByCategoryInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
@@ -950,9 +953,12 @@ export const EventService = {
      * @example
      *   const { events } = await EventService.getFeatured({ limit: 10 }, user);
      */
-    async getFeatured(input: GetFeaturedInput, actor: unknown): Promise<GetFeaturedOutput> {
+    async getFeatured(
+        input: EventGetFeaturedInput,
+        actor: unknown
+    ): Promise<EventGetFeaturedOutput> {
         logMethodStart(serviceLogger, 'getFeatured', input, actor as object);
-        const parsedInput = getFeaturedInputSchema.parse(input);
+        const parsedInput = EventGetFeaturedInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
@@ -1007,9 +1013,12 @@ export const EventService = {
      * @example
      *   const { events } = await EventService.getUpcoming({ limit: 10 }, user);
      */
-    async getUpcoming(input: GetUpcomingInput, actor: unknown): Promise<GetUpcomingOutput> {
+    async getUpcoming(
+        input: EventGetUpcomingInput,
+        actor: unknown
+    ): Promise<EventGetUpcomingOutput> {
         logMethodStart(serviceLogger, 'getUpcoming', input, actor as object);
-        const parsedInput = getUpcomingInputSchema.parse(input);
+        const parsedInput = EventGetUpcomingInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(
@@ -1067,11 +1076,11 @@ export const EventService = {
      *   const { events } = await EventService.getByDateRange({ minDate, maxDate, limit: 10 }, user);
      */
     async getByDateRange(
-        input: GetByDateRangeInput,
+        input: EventGetByDateRangeInput,
         actor: unknown
-    ): Promise<GetByDateRangeOutput> {
+    ): Promise<EventGetByDateRangeOutput> {
         logMethodStart(serviceLogger, 'getByDateRange', input, actor as object);
-        const parsedInput = getByDateRangeInputSchema.parse(input);
+        const parsedInput = EventGetByDateRangeInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logDenied(

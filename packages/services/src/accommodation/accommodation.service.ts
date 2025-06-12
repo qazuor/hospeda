@@ -19,44 +19,44 @@ import {
     logMethodStart
 } from '../utils/service-helper';
 import {
-    assertNotActive,
-    assertNotArchived,
-    buildRestoreUpdate,
-    buildSearchParams,
-    buildSoftDeleteUpdate,
-    canViewAccommodation,
-    isOwner,
-    normalizeCreateInput,
-    normalizeUpdateInput
+    accommodationAssertNotActive,
+    accommodationAssertNotArchived,
+    accommodationBuildRestoreUpdate,
+    accommodationBuildSearchParams,
+    accommodationBuildSoftDeleteUpdate,
+    accommodationIsOwner,
+    accommodationNormalizeCreateInput,
+    accommodationNormalizeUpdateInput,
+    canViewAccommodation
 } from './accommodation.helper';
 import {
-    type CreateInput,
-    type CreateOutput,
-    type GetByDestinationInput,
-    type GetByDestinationOutput,
-    type GetByIdInput,
-    type GetByIdOutput,
-    type GetByNameInput,
-    type GetByNameOutput,
-    type GetByOwnerInput,
-    type GetByOwnerOutput,
-    type GetTopRatedByDestinationInput,
-    type GetTopRatedByDestinationOutput,
-    type ListInput,
-    type ListOutput,
-    type SearchInput,
-    type SearchOutput,
-    type UpdateInput,
-    type UpdateOutput,
-    createInputSchema,
-    getByDestinationInputSchema,
-    getByIdInputSchema,
-    getByNameInputSchema,
-    getByOwnerInputSchema,
-    getTopRatedByDestinationInputSchema,
-    listInputSchema,
-    searchInputSchema,
-    updateInputSchema
+    type AccommodationCreateInput,
+    AccommodationCreateInputSchema,
+    type AccommodationCreateOutput,
+    type AccommodationGetByDestinationInput,
+    AccommodationGetByDestinationInputSchema,
+    type AccommodationGetByDestinationOutput,
+    type AccommodationGetByIdInput,
+    AccommodationGetByIdInputSchema,
+    type AccommodationGetByIdOutput,
+    type AccommodationGetByNameInput,
+    AccommodationGetByNameInputSchema,
+    type AccommodationGetByNameOutput,
+    type AccommodationGetByOwnerInput,
+    AccommodationGetByOwnerInputSchema,
+    type AccommodationGetByOwnerOutput,
+    type AccommodationGetTopRatedByDestinationInput,
+    AccommodationGetTopRatedByDestinationInputSchema,
+    type AccommodationGetTopRatedByDestinationOutput,
+    type AccommodationListInput,
+    AccommodationListInputSchema,
+    type AccommodationListOutput,
+    type AccommodationSearchInput,
+    AccommodationSearchInputSchema,
+    type AccommodationSearchOutput,
+    type AccommodationUpdateInput,
+    AccommodationUpdateInputSchema,
+    type AccommodationUpdateOutput
 } from './accommodation.schemas';
 
 export const AccommodationService = {
@@ -74,9 +74,12 @@ export const AccommodationService = {
      * @example
      * const result = await getById({ id: 'acc-1' as AccommodationId }, user);
      */
-    async getById(input: GetByIdInput, actor: UserType | PublicUserType): Promise<GetByIdOutput> {
+    async getById(
+        input: AccommodationGetByIdInput,
+        actor: UserType | PublicUserType
+    ): Promise<AccommodationGetByIdOutput> {
         logMethodStart(serviceLogger, 'getById', input, actor);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = AccommodationGetByIdInputSchema.parse(input);
         const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
         if (!accommodation) {
             logMethodEnd(serviceLogger, 'getById', { accommodation: null });
@@ -144,11 +147,11 @@ export const AccommodationService = {
      * const result = await getByName({ name: 'Hotel Uruguay' }, user);
      */
     async getByName(
-        input: GetByNameInput,
+        input: AccommodationGetByNameInput,
         actor: UserType | PublicUserType
-    ): Promise<GetByNameOutput> {
+    ): Promise<AccommodationGetByNameOutput> {
         logMethodStart(serviceLogger, 'getByName', input, actor);
-        const parsedInput = getByNameInputSchema.parse(input);
+        const parsedInput = AccommodationGetByNameInputSchema.parse(input);
         const accommodation = (await AccommodationModel.getByName(parsedInput.name)) ?? null;
         if (!accommodation) {
             logMethodEnd(serviceLogger, 'getByName', { accommodation: null });
@@ -211,9 +214,12 @@ export const AccommodationService = {
      * @example
      * const result = await list({ limit: 10, offset: 0 }, user);
      */
-    async list(input: ListInput, actor: UserType | PublicUserType): Promise<ListOutput> {
+    async list(
+        input: AccommodationListInput,
+        actor: UserType | PublicUserType
+    ): Promise<AccommodationListOutput> {
         logMethodStart(serviceLogger, 'list', input, actor);
-        const parsedInput = listInputSchema.parse(input);
+        const parsedInput = AccommodationListInputSchema.parse(input);
         // Always use a safe actor (public fallback)
         const safeActor = getSafeActor(actor); // Prevents bugs and ensures consistency in access logic.
         // Edge-case: public user can only see PUBLIC accommodations
@@ -227,7 +233,7 @@ export const AccommodationService = {
             );
         }
         // Use helper to build and clean search params
-        const cleanParams = buildSearchParams(parsedInput, safeActor);
+        const cleanParams = accommodationBuildSearchParams(parsedInput, safeActor);
         // biome-ignore lint/suspicious/noExplicitAny: required for type compatibility in searchParams
         const accommodations = await AccommodationModel.search(cleanParams as any);
         logMethodEnd(serviceLogger, 'list', { accommodations });
@@ -246,7 +252,10 @@ export const AccommodationService = {
      * @example
      * const result = await create(getMockAccommodationInput(), user);
      */
-    async create(input: CreateInput, actor: UserType | PublicUserType): Promise<CreateOutput> {
+    async create(
+        input: AccommodationCreateInput,
+        actor: UserType | PublicUserType
+    ): Promise<AccommodationCreateOutput> {
         logMethodStart(serviceLogger, 'create', input, actor);
         const safeActor = getSafeActor(actor);
         if (isPublicUser(safeActor)) {
@@ -269,8 +278,8 @@ export const AccommodationService = {
             });
             throw new Error('Forbidden: User does not have permission to create accommodation');
         }
-        const parsedInput = createInputSchema.parse(input);
-        const normalizedInput = normalizeCreateInput(parsedInput);
+        const parsedInput = AccommodationCreateInputSchema.parse(input);
+        const normalizedInput = accommodationNormalizeCreateInput(parsedInput);
         const accommodation = await AccommodationModel.create(normalizedInput);
         // Log success for private/draft creations
         if (accommodation.visibility !== 'PUBLIC') {
@@ -298,9 +307,12 @@ export const AccommodationService = {
      * @example
      * const result = await update({ id: 'acc-1', name: 'New Name' }, user);
      */
-    async update(input: UpdateInput, actor: UserType | PublicUserType): Promise<UpdateOutput> {
+    async update(
+        input: AccommodationUpdateInput,
+        actor: UserType | PublicUserType
+    ): Promise<AccommodationUpdateOutput> {
         logMethodStart(serviceLogger, 'update', input, actor);
-        const parsedInput = updateInputSchema.parse(input);
+        const parsedInput = AccommodationUpdateInputSchema.parse(input);
         const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
         if (!accommodation) {
             logMethodEnd(serviceLogger, 'update', { accommodation: null });
@@ -326,7 +338,7 @@ export const AccommodationService = {
             throw new Error('Forbidden: user disabled');
         }
         // Use helper for owner check
-        const owner = isOwner(safeActor, accommodation);
+        const owner = accommodationIsOwner(safeActor, accommodation);
         // Use helper for permission check and logging
         checkAndLogPermission(
             safeActor,
@@ -342,7 +354,7 @@ export const AccommodationService = {
             logMethodEnd(serviceLogger, 'update', { accommodation: null });
             throw new Error('Forbidden: cannot view accommodation');
         }
-        const normalizedUpdateInput = normalizeUpdateInput(accommodation, parsedInput);
+        const normalizedUpdateInput = accommodationNormalizeUpdateInput(accommodation, parsedInput);
         const updatedAccommodation = await AccommodationModel.update(
             parsedInput.id,
             normalizedUpdateInput as UpdateAccommodationInputType
@@ -367,18 +379,18 @@ export const AccommodationService = {
      * const result = await softDelete({ id: 'acc-1' }, user);
      */
     async softDelete(
-        input: GetByIdInput,
+        input: AccommodationGetByIdInput,
         actor: UserType | PublicUserType
     ): Promise<{ accommodation: AccommodationType | null }> {
         logMethodStart(serviceLogger, 'delete', input, actor);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = AccommodationGetByIdInputSchema.parse(input);
         const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
         if (!accommodation) {
             logMethodEnd(serviceLogger, 'delete', { accommodation: null });
             throw new Error('Accommodation not found');
         }
         try {
-            assertNotArchived(accommodation);
+            accommodationAssertNotArchived(accommodation);
         } catch (err) {
             logMethodEnd(serviceLogger, 'delete', { accommodation: null });
             throw err;
@@ -395,7 +407,7 @@ export const AccommodationService = {
             logMethodEnd(serviceLogger, 'delete', { accommodation: null });
             throw new Error('Forbidden: user disabled');
         }
-        const owner = isOwner(safeActor, accommodation);
+        const owner = accommodationIsOwner(safeActor, accommodation);
         checkAndLogPermission(
             safeActor,
             owner
@@ -405,7 +417,7 @@ export const AccommodationService = {
             { input },
             'Forbidden: user does not have permission to delete accommodation'
         );
-        const updateInput = buildSoftDeleteUpdate(safeActor);
+        const updateInput = accommodationBuildSoftDeleteUpdate(safeActor);
         const updatedAccommodation = await AccommodationModel.update(parsedInput.id, {
             ...updateInput
         } as Partial<UpdateAccommodationInputType>);
@@ -429,18 +441,18 @@ export const AccommodationService = {
      * const result = await restore({ id: 'acc-1' }, user);
      */
     async restore(
-        input: GetByIdInput,
+        input: AccommodationGetByIdInput,
         actor: UserType | PublicUserType
     ): Promise<{ accommodation: AccommodationType | null }> {
         logMethodStart(serviceLogger, 'restore', input, actor);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = AccommodationGetByIdInputSchema.parse(input);
         const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
         if (!accommodation) {
             logMethodEnd(serviceLogger, 'restore', { accommodation: null });
             throw new Error('Accommodation not found');
         }
         try {
-            assertNotActive(accommodation);
+            accommodationAssertNotActive(accommodation);
         } catch (err) {
             // Log end for idempotent restore (already active)
             logMethodEnd(serviceLogger, 'restore', { accommodation: null });
@@ -458,7 +470,7 @@ export const AccommodationService = {
             logMethodEnd(serviceLogger, 'restore', { accommodation: null });
             throw new Error('Forbidden: user disabled');
         }
-        const owner = isOwner(safeActor, accommodation);
+        const owner = accommodationIsOwner(safeActor, accommodation);
         checkAndLogPermission(
             safeActor,
             owner
@@ -468,7 +480,7 @@ export const AccommodationService = {
             { input },
             'Forbidden: user does not have permission to restore accommodation'
         );
-        const updateInput = buildRestoreUpdate(safeActor);
+        const updateInput = accommodationBuildRestoreUpdate(safeActor);
         const updatedAccommodation = await AccommodationModel.update(parsedInput.id, {
             ...updateInput
         } as Partial<UpdateAccommodationInputType>);
@@ -492,11 +504,11 @@ export const AccommodationService = {
      * const result = await hardDelete({ id: 'acc-1' }, user);
      */
     async hardDelete(
-        input: GetByIdInput,
+        input: AccommodationGetByIdInput,
         actor: UserType | PublicUserType
     ): Promise<{ success: boolean }> {
         logMethodStart(serviceLogger, 'hardDelete', input, actor);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = AccommodationGetByIdInputSchema.parse(input);
         const accommodation = (await AccommodationModel.getById(parsedInput.id)) ?? null;
         if (!accommodation) {
             logMethodEnd(serviceLogger, 'hardDelete', { success: false });
@@ -553,11 +565,11 @@ export const AccommodationService = {
      * const result = await getByDestination({ destinationId: 'dest-1' }, user);
      */
     async getByDestination(
-        input: GetByDestinationInput,
+        input: AccommodationGetByDestinationInput,
         actor: UserType | PublicUserType
-    ): Promise<GetByDestinationOutput> {
+    ): Promise<AccommodationGetByDestinationOutput> {
         logMethodStart(serviceLogger, 'getByDestination', input, actor);
-        const parsedInput = getByDestinationInputSchema.parse(input);
+        const parsedInput = AccommodationGetByDestinationInputSchema.parse(input);
         const allAccommodations = await AccommodationModel.search({
             destinationId: parsedInput.destinationId,
             limit: 1000,
@@ -637,12 +649,12 @@ export const AccommodationService = {
      * const result = await getByOwner({ ownerId: 'user-1' }, user);
      */
     async getByOwner(
-        input: GetByOwnerInput,
+        input: AccommodationGetByOwnerInput,
         actor: UserType | PublicUserType
-    ): Promise<GetByOwnerOutput> {
+    ): Promise<AccommodationGetByOwnerOutput> {
         logMethodStart(serviceLogger, 'getByOwner', input, actor);
         const safeActor = getSafeActor(actor);
-        const parsedInput = getByOwnerInputSchema.parse(input);
+        const parsedInput = AccommodationGetByOwnerInputSchema.parse(input);
         const allAccommodations = await AccommodationModel.search({
             ownerId: parsedInput.ownerId,
             limit: 1000,
@@ -715,11 +727,11 @@ export const AccommodationService = {
      * const result = await getTopRatedByDestination({ destinationId: 'dest-1', limit: 5 }, user);
      */
     async getTopRatedByDestination(
-        input: GetTopRatedByDestinationInput,
+        input: AccommodationGetTopRatedByDestinationInput,
         actor: UserType | PublicUserType
-    ): Promise<GetTopRatedByDestinationOutput> {
+    ): Promise<AccommodationGetTopRatedByDestinationOutput> {
         logMethodStart(serviceLogger, 'getTopRatedByDestination', input, actor);
-        const parsedInput = getTopRatedByDestinationInputSchema.parse(input);
+        const parsedInput = AccommodationGetTopRatedByDestinationInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
         const allAccommodations = await AccommodationModel.search({
             destinationId: parsedInput.destinationId,
@@ -810,9 +822,12 @@ export const AccommodationService = {
      *
      * NOTE: Add the actor parameter when permission logic is required.
      */
-    async search(input: SearchInput, actor: UserType | PublicUserType): Promise<SearchOutput> {
+    async search(
+        input: AccommodationSearchInput,
+        actor: UserType | PublicUserType
+    ): Promise<AccommodationSearchOutput> {
         // 1. Validate input
-        const parsedInput = searchInputSchema.parse(input);
+        const parsedInput = AccommodationSearchInputSchema.parse(input);
 
         // 2. Build base query params for the model
         const modelFilters: Record<string, unknown> = {};

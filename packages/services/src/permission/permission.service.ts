@@ -7,9 +7,9 @@ import {
     serviceLogger
 } from '../utils';
 import {
-    type AddPermissionToUserInput,
-    type AddPermissionToUserOutput,
-    addPermissionToUserInputSchema
+    type PermissionAddPermissionToUserInput,
+    PermissionAddPermissionToUserInputSchema,
+    type PermissionAddPermissionToUserOutput
 } from './permission.schemas';
 
 export const PermissionService = {
@@ -23,11 +23,11 @@ export const PermissionService = {
      * @throws Error if not allowed, user not found, self-action, or duplicate permission.
      */
     async addPermissionToUser(
-        input: AddPermissionToUserInput,
+        input: PermissionAddPermissionToUserInput,
         actor: unknown
-    ): Promise<AddPermissionToUserOutput> {
+    ): Promise<PermissionAddPermissionToUserOutput> {
         logMethodStart(serviceLogger, 'addPermissionToUser', input, actor as object);
-        const parsedInput = addPermissionToUserInputSchema.parse(input);
+        const parsedInput = PermissionAddPermissionToUserInputSchema.parse(input);
         const safeActor = getSafeActor(actor);
 
         // Do not allow if the actor is disabled

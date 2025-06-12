@@ -15,35 +15,39 @@ import {
 } from '../utils/service-helper';
 import { serviceLogger } from '../utils/service-logger';
 import {
-    assertNotActive,
-    assertNotArchived,
-    buildRestoreUpdate,
-    buildSoftDeleteUpdate,
     canViewDestination,
-    normalizeCreateInput,
-    normalizeUpdateInput
+    destinationAssertNotActive,
+    destinationAssertNotArchived,
+    destinationBuildRestoreUpdate,
+    destinationBuildSoftDeleteUpdate,
+    destinationNormalizeCreateInput,
+    destinationNormalizeUpdateInput
 } from './destination.helper';
 import {
-    type CreateInput,
-    type CreateOutput,
-    type GetByIdInput,
-    type GetByIdOutput,
-    type GetByNameInput,
-    type GetByNameOutput,
-    type GetBySlugInput,
-    type GetBySlugOutput,
-    type GetReviewsInput,
-    type GetReviewsOutput,
-    type ListInput,
-    type ListOutput,
-    createInputSchema,
-    getByIdInputSchema,
-    getByNameInputSchema,
-    getBySlugInputSchema,
-    getReviewsInputSchema,
-    listInputSchema,
-    searchInputSchema,
-    updateInputSchema
+    type DestinationCreateInput,
+    DestinationCreateInputSchema,
+    type DestinationCreateOutput,
+    type DestinationGetByIdInput,
+    DestinationGetByIdInputSchema,
+    type DestinationGetByIdOutput,
+    type DestinationGetByNameInput,
+    DestinationGetByNameInputSchema,
+    type DestinationGetByNameOutput,
+    type DestinationGetBySlugInput,
+    DestinationGetBySlugInputSchema,
+    type DestinationGetBySlugOutput,
+    type DestinationGetReviewsInput,
+    DestinationGetReviewsInputSchema,
+    type DestinationGetReviewsOutput,
+    type DestinationListInput,
+    DestinationListInputSchema,
+    type DestinationListOutput,
+    type DestinationSearchInput,
+    DestinationSearchInputSchema,
+    type DestinationSearchOutput,
+    type DestinationUpdateInput,
+    DestinationUpdateInputSchema,
+    type DestinationUpdateOutput
 } from './destination.schemas';
 
 export const DestinationService = {
@@ -59,9 +63,12 @@ export const DestinationService = {
      * @returns An object with the destination or null if not accessible.
      * @throws Error if the destination has unknown visibility.
      */
-    async getById(input: GetByIdInput, actor: unknown): Promise<GetByIdOutput> {
+    async getById(
+        input: DestinationGetByIdInput,
+        actor: unknown
+    ): Promise<DestinationGetByIdOutput> {
         logMethodStart(serviceLogger, 'getById', input, actor as object);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = DestinationGetByIdInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
             logMethodEnd(serviceLogger, 'getById', { destination: null });
@@ -139,9 +146,12 @@ export const DestinationService = {
      * @example
      * const result = await getBySlug({ slug: 'uruguay-destination' }, user);
      */
-    async getBySlug(input: GetBySlugInput, actor: unknown): Promise<GetBySlugOutput> {
+    async getBySlug(
+        input: DestinationGetBySlugInput,
+        actor: unknown
+    ): Promise<DestinationGetBySlugOutput> {
         logMethodStart(serviceLogger, 'getBySlug', input, actor as object);
-        const parsedInput = getBySlugInputSchema.parse(input);
+        const parsedInput = DestinationGetBySlugInputSchema.parse(input);
         const destination = (await DestinationModel.getBySlug(parsedInput.slug)) ?? null;
         if (!destination) {
             logMethodEnd(serviceLogger, 'getBySlug', { destination: null });
@@ -215,9 +225,12 @@ export const DestinationService = {
      * @returns Object with the destination or null if not accessible.
      * @throws Error if the visibility is unknown.
      */
-    async getByName(input: GetByNameInput, actor: unknown): Promise<GetByNameOutput> {
+    async getByName(
+        input: DestinationGetByNameInput,
+        actor: unknown
+    ): Promise<DestinationGetByNameOutput> {
         logMethodStart(serviceLogger, 'getByName', input, actor as object);
-        const parsedInput = getByNameInputSchema.parse(input);
+        const parsedInput = DestinationGetByNameInputSchema.parse(input);
         const destination = (await DestinationModel.getByName(parsedInput.name)) ?? null;
         if (!destination) {
             logMethodEnd(serviceLogger, 'getByName', { destination: null });
@@ -292,9 +305,9 @@ export const DestinationService = {
      * @example
      * const { destinations } = await list({ limit: 10, offset: 0, visibility: 'PUBLIC' }, user);
      */
-    async list(input: ListInput, actor: unknown): Promise<ListOutput> {
+    async list(input: DestinationListInput, actor: unknown): Promise<DestinationListOutput> {
         logMethodStart(serviceLogger, 'list', input, actor as object);
-        const parsedInput = listInputSchema.parse(input);
+        const parsedInput = DestinationListInputSchema.parse(input);
         const allDestinations = await DestinationModel.list(parsedInput);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
@@ -319,9 +332,9 @@ export const DestinationService = {
      * @throws Error if the actor is public or does not have permission
      */
     async create(
-        input: CreateInput,
+        input: DestinationCreateInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
-    ): Promise<CreateOutput> {
+    ): Promise<DestinationCreateOutput> {
         logMethodStart(serviceLogger, 'create', input, actor);
         const safeActor = getSafeActor(actor);
         if ('role' in safeActor && safeActor.role === RoleEnum.GUEST) {
@@ -367,8 +380,8 @@ export const DestinationService = {
             });
             throw new Error('Forbidden: user does not have permission to create destination');
         }
-        const parsedInput = createInputSchema.parse(input);
-        const normalizedInput = normalizeCreateInput(parsedInput);
+        const parsedInput = DestinationCreateInputSchema.parse(input);
+        const normalizedInput = destinationNormalizeCreateInput(parsedInput);
         const destinationInput = {
             ...normalizedInput,
             createdById:
@@ -403,11 +416,11 @@ export const DestinationService = {
      * const result = await update({ id: 'dest-1', name: 'New Name' }, user);
      */
     async update(
-        input: import('./destination.schemas').UpdateInput,
+        input: DestinationUpdateInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
-    ): Promise<import('./destination.schemas').UpdateOutput> {
+    ): Promise<DestinationUpdateOutput> {
         logMethodStart(serviceLogger, 'update', input, actor);
-        const parsedInput = updateInputSchema.parse(input);
+        const parsedInput = DestinationUpdateInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
             logMethodEnd(serviceLogger, 'update', { destination: null });
@@ -450,7 +463,7 @@ export const DestinationService = {
             logMethodEnd(serviceLogger, 'update', { destination: null });
             throw new Error('Forbidden: cannot view destination');
         }
-        const normalizedUpdateInput = normalizeUpdateInput(destination, parsedInput);
+        const normalizedUpdateInput = destinationNormalizeUpdateInput(destination, parsedInput);
         const updatedDestination = await DestinationModel.update(
             parsedInput.id,
             normalizedUpdateInput as import('@repo/types').UpdateDestinationInputType
@@ -476,18 +489,18 @@ export const DestinationService = {
      * const result = await softDelete({ id: 'dest-1' }, user);
      */
     async softDelete(
-        input: GetByIdInput,
+        input: DestinationGetByIdInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<{ destination: import('@repo/types').DestinationType | null }> {
         logMethodStart(serviceLogger, 'delete', input, actor);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = DestinationGetByIdInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
             logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw new Error('Destination not found');
         }
         try {
-            assertNotArchived(destination);
+            destinationAssertNotArchived(destination);
         } catch (err) {
             logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw err;
@@ -529,7 +542,7 @@ export const DestinationService = {
             logMethodEnd(serviceLogger, 'delete', { destination: null });
             throw new Error('Forbidden: user does not have permission to delete destination');
         }
-        const updateInput = buildSoftDeleteUpdate(safeActor);
+        const updateInput = destinationBuildSoftDeleteUpdate(safeActor);
         const updatedDestination = await DestinationModel.update(parsedInput.id, updateInput);
         if (!updatedDestination) {
             logMethodEnd(serviceLogger, 'delete', { destination: null });
@@ -552,18 +565,18 @@ export const DestinationService = {
      * const result = await restore({ id: 'dest-1' }, user);
      */
     async restore(
-        input: GetByIdInput,
+        input: DestinationGetByIdInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<{ destination: import('@repo/types').DestinationType | null }> {
         logMethodStart(serviceLogger, 'restore', input, actor);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = DestinationGetByIdInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
             logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw new Error('Destination not found');
         }
         try {
-            assertNotActive(destination);
+            destinationAssertNotActive(destination);
         } catch (err) {
             logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw err;
@@ -604,7 +617,7 @@ export const DestinationService = {
             logMethodEnd(serviceLogger, 'restore', { destination: null });
             throw new Error('Forbidden: user does not have permission to restore destination');
         }
-        const updateInput = buildRestoreUpdate(safeActor);
+        const updateInput = destinationBuildRestoreUpdate(safeActor);
         const updatedDestination = await DestinationModel.update(parsedInput.id, updateInput);
         if (!updatedDestination) {
             logMethodEnd(serviceLogger, 'restore', { destination: null });
@@ -627,11 +640,11 @@ export const DestinationService = {
      * const result = await hardDelete({ id: 'dest-1' }, user);
      */
     async hardDelete(
-        input: GetByIdInput,
+        input: DestinationGetByIdInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
     ): Promise<{ success: boolean }> {
         logMethodStart(serviceLogger, 'hardDelete', input, actor);
-        const parsedInput = getByIdInputSchema.parse(input);
+        const parsedInput = DestinationGetByIdInputSchema.parse(input);
         const destination = (await DestinationModel.getById(parsedInput.id)) ?? null;
         if (!destination) {
             logMethodEnd(serviceLogger, 'hardDelete', { success: false });
@@ -695,18 +708,18 @@ export const DestinationService = {
      * const { destinations, total } = await search({ text: 'playa', limit: 10 }, user);
      */
     async search(
-        input: import('./destination.schemas').SearchInput,
+        input: DestinationSearchInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
-    ): Promise<import('./destination.schemas').SearchOutput> {
+    ): Promise<DestinationSearchOutput> {
         logMethodStart(serviceLogger, 'search', input, actor);
         const safeActor = getSafeActor(actor);
         if (isUserDisabled(safeActor)) {
             logMethodEnd(serviceLogger, 'search', { destinations: [], total: 0 });
             return { destinations: [], total: 0 };
         }
-        const parsedInput = searchInputSchema.parse(input);
+        const parsedInput = DestinationSearchInputSchema.parse(input);
         // 1. Build DB filters
-        const dbFilters: import('./destination.schemas').ListInput = {
+        const dbFilters: DestinationListInput = {
             limit: (parsedInput.limit ?? 20) * 3, // buffer para filtrar por permisos/texto
             offset: 0
         };
@@ -822,11 +835,11 @@ export const DestinationService = {
      * const { reviews } = await getReviews({ destinationId: 'dest-1', limit: 10 }, user);
      */
     async getReviews(
-        input: GetReviewsInput,
+        input: DestinationGetReviewsInput,
         actor: import('@repo/types').UserType | import('@repo/types').PublicUserType
-    ): Promise<GetReviewsOutput> {
+    ): Promise<DestinationGetReviewsOutput> {
         logMethodStart(serviceLogger, 'getReviews', input, actor);
-        const parsedInput = getReviewsInputSchema.parse(input);
+        const parsedInput = DestinationGetReviewsInputSchema.parse(input);
         // 1. Get destination (for permission/visibility)
         const destination = (await DestinationModel.getById(parsedInput.destinationId)) ?? null;
         if (!destination) {

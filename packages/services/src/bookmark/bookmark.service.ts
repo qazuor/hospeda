@@ -3,14 +3,14 @@ import type { PublicUserType, UserType } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types';
 import { isUserType, logMethodEnd, logMethodStart, serviceLogger } from '../utils';
 import type {
-    AddBookmarkInput,
-    AddBookmarkOutput,
-    GetUserBookmarksInput,
-    GetUserBookmarksOutput,
-    RemoveBookmarkInput,
-    RemoveBookmarkOutput
+    BookmarkAddInput,
+    BookmarkAddOutput,
+    BookmarkGetUserBookmarksInput,
+    BookmarkGetUserBookmarksOutput,
+    BookmarkRemoveInput,
+    BookmarkRemoveOutput
 } from './bookmark.schemas';
-import { addBookmarkInputSchema } from './bookmark.schemas';
+import { BookmarkAddInputSchema } from './bookmark.schemas';
 
 /**
  * BookmarkService provides methods to manage user bookmarks.
@@ -26,11 +26,11 @@ export const BookmarkService = {
      * @throws Error if the actor lacks permission or input is invalid.
      */
     async addBookmark(
-        input: AddBookmarkInput,
+        input: BookmarkAddInput,
         actor: UserType | PublicUserType
-    ): Promise<AddBookmarkOutput> {
+    ): Promise<BookmarkAddOutput> {
         logMethodStart(serviceLogger, 'addBookmark', input, actor);
-        const parsedInput = addBookmarkInputSchema.parse(input);
+        const parsedInput = BookmarkAddInputSchema.parse(input);
         // Only the user themselves can add bookmarks
         if (!isUserType(actor) || actor.id !== parsedInput.userId) {
             serviceLogger.permission({
@@ -62,9 +62,9 @@ export const BookmarkService = {
      * @throws Error if the actor lacks permission or input is invalid.
      */
     async removeBookmark(
-        input: RemoveBookmarkInput,
+        input: BookmarkRemoveInput,
         actor: UserType | PublicUserType
-    ): Promise<RemoveBookmarkOutput> {
+    ): Promise<BookmarkRemoveOutput> {
         logMethodStart(serviceLogger, 'removeBookmark', input, actor);
         // Validar input
         const { userId, bookmarkId } = input;
@@ -116,9 +116,9 @@ export const BookmarkService = {
      * @throws Error if the actor lacks permission or input is invalid.
      */
     async getUserBookmarks(
-        input: GetUserBookmarksInput,
+        input: BookmarkGetUserBookmarksInput,
         actor: UserType | PublicUserType
-    ): Promise<GetUserBookmarksOutput> {
+    ): Promise<BookmarkGetUserBookmarksOutput> {
         logMethodStart(serviceLogger, 'getUserBookmarks', input, actor);
         const { userId } = input;
         if (!isUserType(actor) || actor.id !== userId) {
