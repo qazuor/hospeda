@@ -2,7 +2,7 @@ import { UserBookmarkModel } from '@repo/db';
 import type { UserId } from '@repo/types';
 import { EntityTypeEnum } from '@repo/types';
 import { describe, expect, it, type vi } from 'vitest';
-import type { AddBookmarkInput } from '../../bookmark/bookmark.schemas';
+import type { BookmarkAddInput } from '../../bookmark/bookmark.schemas';
 import { BookmarkService } from '../../bookmark/bookmark.service';
 import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../mockData';
 
@@ -16,7 +16,7 @@ describe('BookmarkService.addBookmark', () => {
         (UserBookmarkModel.create as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
             mockBookmark
         );
-        const input: AddBookmarkInput = {
+        const input: BookmarkAddInput = {
             userId: mockUserId,
             entityId: mockBookmark.entityId,
             entityType: mockBookmark.entityType,
@@ -32,7 +32,7 @@ describe('BookmarkService.addBookmark', () => {
 
     it('throws if actor is not the user', async () => {
         const otherUser = getMockUser({ id: 'other-user-id' as UserId });
-        const input: AddBookmarkInput = {
+        const input: BookmarkAddInput = {
             userId: mockUserId,
             entityId: mockBookmark.entityId,
             entityType: mockBookmark.entityType,
@@ -43,7 +43,7 @@ describe('BookmarkService.addBookmark', () => {
     });
 
     it('throws if actor is public', async () => {
-        const input: AddBookmarkInput = {
+        const input: BookmarkAddInput = {
             userId: mockUserId,
             entityId: mockBookmark.entityId,
             entityType: mockBookmark.entityType,
@@ -59,7 +59,7 @@ describe('BookmarkService.addBookmark', () => {
             entityId: '' as UserId,
             entityType: EntityTypeEnum.ACCOMMODATION,
             name: ''
-        } as AddBookmarkInput;
+        } as BookmarkAddInput;
         await expect(BookmarkService.addBookmark(input, mockUser)).rejects.toThrow();
     });
 });

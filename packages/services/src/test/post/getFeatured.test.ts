@@ -5,8 +5,6 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import { PostService } from '../../post/post.service';
 import { getMockPost, getMockUser } from '../mockData';
 
-vi.mock('@repo/db');
-
 vi.mock('../../utils/permission-manager', () => ({
     hasPermission: vi.fn(() => {
         throw new Error('No permission');

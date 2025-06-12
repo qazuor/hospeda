@@ -36,6 +36,7 @@ vi.mock('@repo/db', async () => {
             create: vi.fn(),
             getById: vi.fn(),
             getByName: vi.fn(),
+            getBySlug: vi.fn(),
             search: vi.fn(),
             update: vi.fn(),
             hardDelete: vi.fn(),
@@ -55,8 +56,10 @@ vi.mock('@repo/db', async () => {
         ],
         // Destination
         DestinationModel: {
+            create: vi.fn(),
             getById: vi.fn(),
             getByName: vi.fn(),
+            getBySlug: vi.fn(),
             list: vi.fn(),
             update: vi.fn(),
             hardDelete: vi.fn(),
@@ -69,6 +72,7 @@ vi.mock('@repo/db', async () => {
         EventModel: {
             search: vi.fn(),
             getById: vi.fn(),
+            getBySlug: vi.fn(),
             list: vi.fn(),
             update: vi.fn(),
             create: vi.fn(),
@@ -80,13 +84,15 @@ vi.mock('@repo/db', async () => {
         PostModel: {
             list: vi.fn(),
             search: vi.fn(),
+            getBySlug: vi.fn(),
             getById: vi.fn(),
             update: vi.fn(),
             delete: vi.fn(),
             hardDelete: vi.fn(),
             count: vi.fn(),
             create: vi.fn(),
-            restore: vi.fn()
+            restore: vi.fn(),
+            getByCategory: vi.fn()
         },
         // UserBookmark
         UserBookmarkModel: {

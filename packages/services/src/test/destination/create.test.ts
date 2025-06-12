@@ -5,8 +5,6 @@ import { DestinationService } from '../../destination/destination.service';
 import * as permissionManager from '../../utils/permission-manager';
 import { getMockDestination, getMockPublicUser, getMockUser } from '../mockData';
 
-// vi.mock('../../../models/destination/destination.model');
-
 const admin = getMockUser({ role: RoleEnum.ADMIN });
 const publicUser = getMockPublicUser();
 const validInput = {

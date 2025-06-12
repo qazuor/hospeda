@@ -12,19 +12,6 @@ import * as permissionManager from '../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('@repo/db', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        EventModel: {
-            ...((actual as Record<string, unknown>).EventModel ?? {}),
-            getById: vi.fn(),
-            update: vi.fn()
-        }
-    };
-});
-
 describe('event.service.softDelete', () => {
     const baseEvent = getMockEvent({ id: 'event-1' as EventId, authorId: 'user-1' as UserId });
     const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });

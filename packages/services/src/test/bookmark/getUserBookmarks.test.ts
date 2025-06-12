@@ -1,7 +1,7 @@
 import { UserBookmarkModel } from '@repo/db';
 import type { UserId } from '@repo/types';
 import { describe, expect, it, type vi } from 'vitest';
-import type { GetUserBookmarksInput } from '../../bookmark/bookmark.schemas';
+import type { BookmarkGetUserBookmarksInput } from '../../bookmark/bookmark.schemas';
 import { BookmarkService } from '../../bookmark/bookmark.service';
 import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../mockData';
 
@@ -15,7 +15,7 @@ describe('BookmarkService.getUserBookmarks', () => {
         (
             UserBookmarkModel.getByUserId as unknown as ReturnType<typeof vi.fn>
         ).mockResolvedValueOnce([mockBookmark]);
-        const input: GetUserBookmarksInput = {
+        const input: BookmarkGetUserBookmarksInput = {
             userId: mockUserId
         };
         const result = await BookmarkService.getUserBookmarks(input, mockUser);
@@ -25,7 +25,7 @@ describe('BookmarkService.getUserBookmarks', () => {
 
     it('throws if actor is not the user', async () => {
         const otherUser = getMockUser({ id: 'other-user-id' as UserId });
-        const input: GetUserBookmarksInput = {
+        const input: BookmarkGetUserBookmarksInput = {
             userId: mockUserId
         };
         await expect(BookmarkService.getUserBookmarks(input, otherUser)).rejects.toThrow(
@@ -34,7 +34,7 @@ describe('BookmarkService.getUserBookmarks', () => {
     });
 
     it('throws if actor is public', async () => {
-        const input: GetUserBookmarksInput = {
+        const input: BookmarkGetUserBookmarksInput = {
             userId: mockUserId
         };
         await expect(BookmarkService.getUserBookmarks(input, publicUser)).rejects.toThrow(
@@ -43,7 +43,7 @@ describe('BookmarkService.getUserBookmarks', () => {
     });
 
     it('throws on invalid input (Zod)', async () => {
-        const input = { userId: '' as UserId } as GetUserBookmarksInput;
+        const input = { userId: '' as UserId } as BookmarkGetUserBookmarksInput;
         await expect(BookmarkService.getUserBookmarks(input, mockUser)).rejects.toThrow();
     });
 });

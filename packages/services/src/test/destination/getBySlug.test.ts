@@ -12,18 +12,6 @@ import {
 } from '../mockData';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
-vi.mock('@repo/db', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        DestinationModel: {
-            ...((actual as Record<string, unknown>).DestinationModel ?? {}),
-            getBySlug: vi.fn()
-        }
-    };
-});
-
 describe('destination.service.getBySlug', () => {
     const publicUser = { ...getMockPublicUser(), permissions: [] };
     const user = getMockUser({ id: getMockUserId(), role: RoleEnum.ADMIN });
