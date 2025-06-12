@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { canViewAccommodation } from '../../accommodation/accommodation.helper';
 import { logDenied } from '../../utils/permission-logger';
 import { CanViewReasonEnum } from '../../utils/service-helper';
-import { getMockPublicUser, getMockUser } from '../mockData';
+import { getMockPublicUser, getMockUser } from '../factories/userFactory';
 import { mockServiceLogger } from '../setupTest';
 
 /**

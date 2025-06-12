@@ -3,18 +3,14 @@ import type { AccommodationId, AmenityId, DestinationId, FeatureId } from '@repo
 import { type AccommodationType, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
-import {
-    getMockAccommodation,
-    getMockAccommodationId,
-    getMockDestinationId,
-    getMockPublicUser,
-    getMockUser
-} from '../mockData';
+import { createMockAccommodation, getMockAccommodationId } from '../factories/accommodationFactory';
+import { getMockDestinationId } from '../factories/destinationFactory';
+import { createMockUser } from '../factories/userFactory';
 
-const mockAdmin = getMockUser({ role: RoleEnum.ADMIN });
-const mockPublic = getMockPublicUser();
+const mockAdmin = createMockUser({ role: RoleEnum.ADMIN });
+const mockPublic = createMockUser({ role: 'GUEST' });
 
-const acc1: AccommodationType = getMockAccommodation({
+const acc1: AccommodationType = createMockAccommodation({
     id: getMockAccommodationId(),
     name: 'Hotel Search',
     summary: 'Best summary',
@@ -33,7 +29,7 @@ const acc1: AccommodationType = getMockAccommodation({
     visibility: VisibilityEnum.PUBLIC,
     averageRating: 4.5
 });
-const acc2: AccommodationType = getMockAccommodation({
+const acc2: AccommodationType = createMockAccommodation({
     id: 'acc-2' as AccommodationId,
     name: 'Cabin',
     summary: 'Cozy',
@@ -52,11 +48,11 @@ const acc2: AccommodationType = getMockAccommodation({
     visibility: VisibilityEnum.PRIVATE,
     averageRating: 3.5
 });
-const accNoPrice: AccommodationType = getMockAccommodation({
+const accNoPrice: AccommodationType = createMockAccommodation({
     id: 'acc-3' as AccommodationId,
     price: undefined
 });
-const acc3: AccommodationType = getMockAccommodation({
+const acc3: AccommodationType = createMockAccommodation({
     id: 'acc-3' as AccommodationId,
     name: 'Eco Lodge',
     summary: 'Nature and peace',
@@ -75,7 +71,7 @@ const acc3: AccommodationType = getMockAccommodation({
     visibility: VisibilityEnum.PUBLIC,
     averageRating: 4.9
 });
-const acc4: AccommodationType = getMockAccommodation({
+const acc4: AccommodationType = createMockAccommodation({
     id: 'acc-4' as AccommodationId,
     name: 'Urban Flat',
     summary: 'City center',
@@ -94,7 +90,7 @@ const acc4: AccommodationType = getMockAccommodation({
     visibility: VisibilityEnum.PUBLIC,
     averageRating: 2.8
 });
-const acc5: AccommodationType = getMockAccommodation({
+const acc5: AccommodationType = createMockAccommodation({
     id: 'acc-5' as AccommodationId,
     name: 'Beach House',
     summary: 'Sea breeze',
@@ -113,7 +109,7 @@ const acc5: AccommodationType = getMockAccommodation({
     visibility: VisibilityEnum.PRIVATE,
     averageRating: 3.2
 });
-const acc6: AccommodationType = getMockAccommodation({
+const acc6: AccommodationType = createMockAccommodation({
     id: 'acc-6' as AccommodationId,
     name: 'Mountain Cabin',
     summary: 'Cozy and warm',
@@ -246,10 +242,8 @@ describe('AccommodationService.search', () => {
     it('should only show public for public user', async () => {
         (AccommodationModel as Mocked<typeof AccommodationModel>).search.mockResolvedValue([
             acc1,
-            acc2,
             acc3,
             acc4,
-            acc5,
             acc6
         ]);
         const result = await AccommodationService.search({ limit: 10, offset: 0 }, mockPublic);

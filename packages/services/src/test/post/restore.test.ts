@@ -5,7 +5,7 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
-import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockPost, getMockPublicUser, getMockUser } from '../factories';
 import { expectPermissionLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/service-helper', async (importOriginal) => {

@@ -1,9 +1,10 @@
 import { AccommodationModel } from '@repo/db';
 import type { TagId } from '@repo/types';
 import { describe, expect, it, type vi } from 'vitest';
-import type { GetAccommodationsByTagInput } from '../../tag/tag.schemas';
+import type { TagGetAccommodationsByTagInput } from '../../tag/tag.schemas';
 import { TagService } from '../../tag/tag.service';
-import { getMockAccommodation, getMockPublicUser, getMockTagId } from '../mockData';
+import { getMockAccommodation, getMockPublicUser } from '../factories';
+import { getMockTagId } from '../factories/tagFactory';
 
 const mockAccommodation = getMockAccommodation();
 const mockTagId: TagId = getMockTagId();
@@ -15,7 +16,7 @@ describe('TagService.getAccommodationsByTag', () => {
         (AccommodationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockAccommodation
         ]);
-        const input: GetAccommodationsByTagInput = { tagId: mockTagId };
+        const input: TagGetAccommodationsByTagInput = { tagId: mockTagId };
         // Act
         const result = await TagService.getAccommodationsByTag(input, publicUser);
         // Assert
@@ -30,7 +31,7 @@ describe('TagService.getAccommodationsByTag', () => {
         (AccommodationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
             []
         );
-        const input: GetAccommodationsByTagInput = { tagId: mockTagId };
+        const input: TagGetAccommodationsByTagInput = { tagId: mockTagId };
         const result = await TagService.getAccommodationsByTag(input, publicUser);
         expect(result.accommodations).toEqual([]);
     });
@@ -39,7 +40,7 @@ describe('TagService.getAccommodationsByTag', () => {
         (AccommodationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockAccommodation
         ]);
-        const input: GetAccommodationsByTagInput = {
+        const input: TagGetAccommodationsByTagInput = {
             tagId: mockTagId,
             limit: 1,
             offset: 0,
@@ -68,7 +69,7 @@ describe('TagService.getAccommodationsByTag', () => {
         (AccommodationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockAccommodation
         ]);
-        const input: GetAccommodationsByTagInput = { tagId: mockTagId };
+        const input: TagGetAccommodationsByTagInput = { tagId: mockTagId };
         const result = await TagService.getAccommodationsByTag(input, publicUser);
         expect(result.accommodations).toHaveLength(1);
     });

@@ -5,7 +5,8 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
-import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockPost, getMockPostId } from '../factories/postFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 import { expectPermissionLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/service-helper', async (importOriginal) => {
@@ -94,7 +95,7 @@ describe('PostService.hardDelete', () => {
         (PostModel.getById as Mock).mockResolvedValue(post);
         vi.mocked(serviceHelper.isUserDisabled).mockReturnValue(true);
         const disabledUser = getMockUser({
-            id: 'disabled-uuid' as UserId,
+            id: getMockUserId('disabled-uuid'),
             role: RoleEnum.USER
         });
         const input = { id: post.id };
@@ -110,7 +111,7 @@ describe('PostService.hardDelete', () => {
 
     it('should throw if post not found', async () => {
         (PostModel.getById as Mock).mockResolvedValue(null);
-        const input = { id: 'not-found' as PostId };
+        const input = { id: getMockPostId('not-found') as PostId };
         await expect(PostService.hardDelete(input, user)).rejects.toThrow(/Post not found/);
     });
 

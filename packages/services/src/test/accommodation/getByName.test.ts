@@ -11,11 +11,9 @@ import { AccommodationService } from '../../accommodation/accommodation.service'
 import {
     getMockAccommodation,
     getMockAccommodationPrivate,
-    getMockAccommodationPublic,
-    getMockPublicUser,
-    getMockUser,
-    getMockUserId
-} from '../mockData';
+    getMockAccommodationPublic
+} from '../factories';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.getByName', () => {

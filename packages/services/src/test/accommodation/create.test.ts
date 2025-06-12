@@ -6,11 +6,9 @@ import * as permissionManager from '../../utils/permission-manager';
 import {
     getExpectedCreatedAccommodationMatchObject,
     getMockAccommodationCreated,
-    getMockAccommodationInput,
-    getMockPublicUser,
-    getMockUser,
-    getMockUserId
-} from '../mockData';
+    getMockAccommodationInput
+} from '../factories';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 import type { TestAccommodationCreateInput } from '../types/testAccommodation.types';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 

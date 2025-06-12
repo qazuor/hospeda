@@ -4,19 +4,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as destinationHelper from '../../destination/destination.helper';
 import { DestinationService } from '../../destination/destination.service';
 import { CanViewReasonEnum } from '../../utils/service-helper';
-import { getMockDestination, getMockUser } from '../mockData';
-
-// Helper to generate a valid DestinationId (cast string)
-const toDestinationId = (id: string) => id as unknown as import('@repo/types').DestinationId;
+import { getMockDestination, getMockDestinationId } from '../factories/destinationFactory';
+import { getMockUser } from '../factories/userFactory';
 
 // Helper to generate a list of mock destinations
-const makeDestinations = (
+const createMockDestinations = (
     count: number,
     overrides: Partial<ReturnType<typeof getMockDestination>> = {}
 ) =>
     Array.from({ length: count }, (_, i) =>
         getMockDestination({
-            id: toDestinationId(`dest-${i}`),
+            id: getMockDestinationId(`dest-${i}`),
             name: `Destination ${i}`,
             summary: `Summary ${i}`,
             description: `Description ${i}`,
@@ -32,7 +30,7 @@ describe('destination.service.search', () => {
         role: RoleEnum.USER,
         lifecycleState: LifecycleStatusEnum.INACTIVE
     });
-    const baseDestinations = makeDestinations(5);
+    const baseDestinations = createMockDestinations(5);
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -64,8 +62,8 @@ describe('destination.service.search', () => {
     });
 
     it('should filter by averageRatingMin and averageRatingMax', async () => {
-        const rated = makeDestinations(3, { averageRating: 4 });
-        const lowRated = makeDestinations(2, { averageRating: 2 });
+        const rated = createMockDestinations(3, { averageRating: 4 });
+        const lowRated = createMockDestinations(2, { averageRating: 2 });
         vi.spyOn(DestinationModel, 'list').mockResolvedValue([...rated, ...lowRated]);
         vi.spyOn(destinationHelper, 'canViewDestination').mockReturnValue({
             canView: true,
@@ -121,7 +119,7 @@ describe('destination.service.search', () => {
     });
 
     it('should paginate results', async () => {
-        vi.spyOn(DestinationModel, 'list').mockResolvedValue(makeDestinations(10));
+        vi.spyOn(DestinationModel, 'list').mockResolvedValue(createMockDestinations(10));
         vi.spyOn(destinationHelper, 'canViewDestination').mockReturnValue({
             canView: true,
             reason: CanViewReasonEnum.HAS_PERMISSION,

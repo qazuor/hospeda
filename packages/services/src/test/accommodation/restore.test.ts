@@ -8,25 +8,28 @@ import {
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { makeAccommodation, makeArchivedAccommodation } from '../factories/accommodationFactory';
 import {
-    makeAdmin,
-    makeDisabledUser,
-    makeOwner,
-    makePublicUser,
-    makeUserWithoutPermissions
+    createMockAccommodation,
+    createMockArchivedAccommodation
+} from '../factories/accommodationFactory';
+import {
+    createMockAdmin,
+    createMockDisabledUser,
+    createMockOwner,
+    createMockPublicUser,
+    createMockUserWithoutPermissions,
+    getMockUserId
 } from '../factories/userFactory';
-import { getMockUserId } from '../mockData';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.restore', () => {
     it('should restore accommodation when user is the owner and has permission', async () => {
         // Arrange: Create an owner user and an archived accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
+        const user = createMockOwner({ id: ownerId });
         const now = new Date();
         const archivedAccommodation = {
-            ...makeArchivedAccommodation({ ownerId }),
+            ...createMockArchivedAccommodation({ ownerId }),
             deletedAt: now, // Asegura que deletedAt está presente
             lifecycleState: LifecycleStatusEnum.ARCHIVED
         };
@@ -61,10 +64,10 @@ describe('accommodation.service.restore', () => {
     it('should restore accommodation when user is ADMIN and has global permission', async () => {
         // Arrange: Create an admin user and an archived accommodation
         const adminId = getMockUserId();
-        const adminUser = makeAdmin({ id: adminId });
+        const adminUser = createMockAdmin({ id: adminId });
         const now = new Date();
         const archivedAccommodation = {
-            ...makeArchivedAccommodation({ ownerId: getMockUserId() }),
+            ...createMockArchivedAccommodation({ ownerId: getMockUserId() }),
             deletedAt: now,
             lifecycleState: LifecycleStatusEnum.ARCHIVED
         };
@@ -106,10 +109,10 @@ describe('accommodation.service.restore', () => {
         // Arrange: Create a user who is not the owner and has no global permissions
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = makeUserWithoutPermissions({ id: notOwnerId });
+        const user = createMockUserWithoutPermissions({ id: notOwnerId });
         const now = new Date();
         const archivedAccommodation = {
-            ...makeArchivedAccommodation({ ownerId }),
+            ...createMockArchivedAccommodation({ ownerId }),
             deletedAt: now,
             lifecycleState: LifecycleStatusEnum.ARCHIVED
         };
@@ -134,13 +137,13 @@ describe('accommodation.service.restore', () => {
     it('should deny restore if user is disabled', async () => {
         // Arrange: Create a disabled user and an archived accommodation
         const ownerId = getMockUserId();
-        const disabledUser = makeDisabledUser({
+        const disabledUser = createMockDisabledUser({
             id: ownerId,
             lifecycleState: LifecycleStatusEnum.INACTIVE
         });
         const now = new Date();
         const archivedAccommodation = {
-            ...makeArchivedAccommodation({ ownerId }),
+            ...createMockArchivedAccommodation({ ownerId }),
             deletedAt: now,
             lifecycleState: LifecycleStatusEnum.ARCHIVED
         };
@@ -162,10 +165,10 @@ describe('accommodation.service.restore', () => {
     it('should deny restore if user is public (unauthenticated)', async () => {
         // Arrange: Create a public user and an archived accommodation
         const ownerId = getMockUserId();
-        const publicUser = makePublicUser();
+        const publicUser = createMockPublicUser();
         const now = new Date();
         const archivedAccommodation = {
-            ...makeArchivedAccommodation({ ownerId }),
+            ...createMockArchivedAccommodation({ ownerId }),
             deletedAt: now,
             lifecycleState: LifecycleStatusEnum.ARCHIVED
         };
@@ -191,10 +194,10 @@ describe('accommodation.service.restore', () => {
         // Arrange: Create a user who is not the owner and has insufficient permissions
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = makeUserWithoutPermissions({ id: notOwnerId });
+        const user = createMockUserWithoutPermissions({ id: notOwnerId });
         const now = new Date();
         const archivedAccommodation = {
-            ...makeArchivedAccommodation({ ownerId }),
+            ...createMockArchivedAccommodation({ ownerId }),
             deletedAt: now,
             lifecycleState: LifecycleStatusEnum.ARCHIVED
         };
@@ -218,7 +221,7 @@ describe('accommodation.service.restore', () => {
 
     it('should throw if accommodation does not exist', async () => {
         // Arrange: Create a user and mock getById to return undefined
-        const user = makeOwner();
+        const user = createMockOwner();
         (AccommodationModel.getById as Mock).mockResolvedValue(undefined);
 
         // Act & Assert: Attempt to restore and expect not found error
@@ -232,9 +235,9 @@ describe('accommodation.service.restore', () => {
     it('should throw if accommodation is not archived', async () => {
         // Arrange: Create a user and a non-archived accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
+        const user = createMockOwner({ id: ownerId });
         const notArchivedAccommodation = {
-            ...makeAccommodation({ ownerId }),
+            ...createMockAccommodation({ ownerId }),
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             deletedAt: undefined
         };
@@ -251,10 +254,10 @@ describe('accommodation.service.restore', () => {
     it('restore should call serviceLogger.info and serviceLogger.permission at the correct points', async () => {
         // Arrange: test that logs are called correctly on success and permission error
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
+        const user = createMockOwner({ id: ownerId });
         const now = new Date();
         const archivedAccommodation = {
-            ...makeArchivedAccommodation({ ownerId }),
+            ...createMockArchivedAccommodation({ ownerId }),
             deletedAt: now,
             lifecycleState: LifecycleStatusEnum.ARCHIVED
         };
@@ -301,10 +304,10 @@ describe('accommodation.service.restore', () => {
     it('restore should set deletedAt, deletedById to undefined and lifecycleState to ACTIVE', async () => {
         // Arrange: Create an owner user and an archived accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
+        const user = createMockOwner({ id: ownerId });
         const now = new Date();
         const archivedAccommodation = {
-            ...makeArchivedAccommodation({ ownerId }),
+            ...createMockArchivedAccommodation({ ownerId }),
             deletedAt: now,
             deletedById: ownerId,
             lifecycleState: LifecycleStatusEnum.ARCHIVED
@@ -335,8 +338,8 @@ describe('accommodation.service.restore', () => {
     it('should not allow restore if already active (idempotency)', async () => {
         // Arrange: Create an owner user and an already active accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const activeAccommodation = makeAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const activeAccommodation = createMockAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(activeAccommodation);
 
         // Act & Assert: Attempt to restore and expect already active error

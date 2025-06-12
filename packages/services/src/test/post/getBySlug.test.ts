@@ -2,7 +2,8 @@ import { PostModel } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, type UserId, VisibilityEnum } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockPost } from '../factories/postFactory';
+import { getMockPublicUser, getMockUser } from '../factories/userFactory';
 
 const admin = getMockUser({ role: RoleEnum.ADMIN });
 const superAdmin = getMockUser({ role: RoleEnum.SUPER_ADMIN });

@@ -3,7 +3,8 @@ import type { EventId, PostId, UserId } from '@repo/types';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost, getMockUser } from '../mockData';
+import { getMockPost } from '../factories/postFactory';
+import { getMockUser } from '../factories/userFactory';
 import { expectInfoLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/permission-manager', () => ({

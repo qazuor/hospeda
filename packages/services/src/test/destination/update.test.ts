@@ -6,7 +6,8 @@ import * as destinationHelper from '../../destination/destination.helper';
 import { DestinationService } from '../../destination/destination.service';
 import * as permissionManager from '../../utils/permission-manager';
 import { CanViewReasonEnum } from '../../utils/service-helper';
-import { getMockDestination, getMockDestinationId, getMockUser, getMockUserId } from '../mockData';
+import { getMockDestination, getMockDestinationId } from '../factories/destinationFactory';
+import { getMockUser, getMockUserId } from '../factories/userFactory';
 import { expectInfoLog } from '../utils/log-assertions';
 
 describe('destination.service.update', () => {

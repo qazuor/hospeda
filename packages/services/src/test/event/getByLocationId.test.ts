@@ -8,9 +8,10 @@ import {
 } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
-import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
 
 import type { EventId, EventLocationId } from '@repo/types';
+import { getMockEvent } from '../factories/eventFactory';
+import { getMockPublicUser, getMockUser } from '../factories/userFactory';
 
 const locationId = 'loc-1' as EventLocationId;
 const publicEvent = getMockEvent({

@@ -1,9 +1,10 @@
 import { PostModel } from '@repo/db';
 import type { TagId } from '@repo/types';
 import { describe, expect, it, vi } from 'vitest';
-import type { GetPostsByTagInput } from '../../tag/tag.schemas';
+import type { TagGetPostsByTagInput } from '../../tag/tag.schemas';
 import { TagService } from '../../tag/tag.service';
-import { getMockPost, getMockPublicUser, getMockTagId } from '../mockData';
+import { getMockPost, getMockPublicUser } from '../factories';
+import { getMockTagId } from '../factories/tagFactory';
 
 vi.mock('@repo/db', () => ({
     PostModel: {
@@ -20,7 +21,7 @@ describe('TagService.getPostsByTag', () => {
         (PostModel.getByTag as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockPost
         ]);
-        const input: GetPostsByTagInput = { tagId: mockTagId };
+        const input: TagGetPostsByTagInput = { tagId: mockTagId };
         const result = await TagService.getPostsByTag(input, publicUser);
         expect(result.posts).toHaveLength(1);
         expect(result.posts[0]).toEqual(mockPost);
@@ -29,7 +30,7 @@ describe('TagService.getPostsByTag', () => {
 
     it('returns empty array if no posts for tag', async () => {
         (PostModel.getByTag as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
-        const input: GetPostsByTagInput = { tagId: mockTagId };
+        const input: TagGetPostsByTagInput = { tagId: mockTagId };
         const result = await TagService.getPostsByTag(input, publicUser);
         expect(result.posts).toEqual([]);
     });
@@ -38,7 +39,7 @@ describe('TagService.getPostsByTag', () => {
         (PostModel.getByTag as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockPost
         ]);
-        const input: GetPostsByTagInput = {
+        const input: TagGetPostsByTagInput = {
             tagId: mockTagId,
             limit: 1,
             offset: 0,
@@ -67,7 +68,7 @@ describe('TagService.getPostsByTag', () => {
         (PostModel.getByTag as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockPost
         ]);
-        const input: GetPostsByTagInput = { tagId: mockTagId };
+        const input: TagGetPostsByTagInput = { tagId: mockTagId };
         const result = await TagService.getPostsByTag(input, publicUser);
         expect(result.posts).toHaveLength(1);
     });

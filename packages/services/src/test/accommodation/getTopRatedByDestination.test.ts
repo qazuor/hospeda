@@ -9,8 +9,8 @@ import {
 } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
-import { makeDisabledUser } from '../factories/userFactory';
-import { getMockAccommodation, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockAccommodation } from '../factories';
+import { createMockDisabledUser, getMockPublicUser, getMockUser } from '../factories/userFactory';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.getTopRatedByDestination', () => {
@@ -175,7 +175,7 @@ describe('accommodation.service.getTopRatedByDestination', () => {
     it('should return an empty array if the user is disabled and log permission for each accommodation', async () => {
         // Arrange
         vi.clearAllMocks();
-        const disabledUser = makeDisabledUser({
+        const disabledUser = createMockDisabledUser({
             id: 'user-disabled' as UserId,
             role: RoleEnum.USER,
             lifecycleState: LifecycleStatusEnum.INACTIVE

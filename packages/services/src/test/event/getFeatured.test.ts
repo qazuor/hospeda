@@ -10,7 +10,7 @@ import {
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockEvent, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockEvent, getMockPublicUser, getMockUser } from '../factories';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('event.service.getFeatured', () => {

@@ -3,7 +3,8 @@ import { PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockPost, getMockPostInput, getMockPublicUser, getMockUser } from '../mockData';
+import { getMockPost, getMockPostInput } from '../factories/postFactory';
+import { getMockPublicUser, getMockUser } from '../factories/userFactory';
 import { expectPermissionLog } from '../utils/log-assertions';
 
 describe('PostService.create', () => {

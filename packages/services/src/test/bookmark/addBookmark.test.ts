@@ -4,7 +4,8 @@ import { EntityTypeEnum } from '@repo/types';
 import { describe, expect, it, type vi } from 'vitest';
 import type { BookmarkAddInput } from '../../bookmark/bookmark.schemas';
 import { BookmarkService } from '../../bookmark/bookmark.service';
-import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../mockData';
+import { getMockUserBookmark } from '../factories/userBookmarkFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 
 const mockUser = getMockUser();
 const mockUserId: UserId = getMockUserId();

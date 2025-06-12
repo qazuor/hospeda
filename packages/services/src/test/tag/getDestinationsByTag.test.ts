@@ -1,9 +1,10 @@
 import { DestinationModel } from '@repo/db';
 import type { TagId } from '@repo/types';
 import { describe, expect, it, type vi } from 'vitest';
-import type { GetDestinationsByTagInput } from '../../tag/tag.schemas';
+import type { TagGetDestinationsByTagInput } from '../../tag/tag.schemas';
 import { TagService } from '../../tag/tag.service';
-import { getMockDestination, getMockPublicUser, getMockTagId } from '../mockData';
+import { getMockDestination, getMockPublicUser } from '../factories';
+import { getMockTagId } from '../factories/tagFactory';
 
 const mockDestination = getMockDestination();
 const mockTagId: TagId = getMockTagId();
@@ -14,7 +15,7 @@ describe('TagService.getDestinationsByTag', () => {
         (DestinationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockDestination
         ]);
-        const input: GetDestinationsByTagInput = { tagId: mockTagId };
+        const input: TagGetDestinationsByTagInput = { tagId: mockTagId };
         const result = await TagService.getDestinationsByTag(input, publicUser);
         expect(result.destinations).toHaveLength(1);
         expect(result.destinations[0]).toEqual(mockDestination);
@@ -25,7 +26,7 @@ describe('TagService.getDestinationsByTag', () => {
 
     it('returns empty array if no destinations for tag', async () => {
         (DestinationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
-        const input: GetDestinationsByTagInput = { tagId: mockTagId };
+        const input: TagGetDestinationsByTagInput = { tagId: mockTagId };
         const result = await TagService.getDestinationsByTag(input, publicUser);
         expect(result.destinations).toEqual([]);
     });
@@ -34,7 +35,7 @@ describe('TagService.getDestinationsByTag', () => {
         (DestinationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockDestination
         ]);
-        const input: GetDestinationsByTagInput = {
+        const input: TagGetDestinationsByTagInput = {
             tagId: mockTagId,
             limit: 1,
             offset: 0,
@@ -63,7 +64,7 @@ describe('TagService.getDestinationsByTag', () => {
         (DestinationModel.search as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
             mockDestination
         ]);
-        const input: GetDestinationsByTagInput = { tagId: mockTagId };
+        const input: TagGetDestinationsByTagInput = { tagId: mockTagId };
         const result = await TagService.getDestinationsByTag(input, publicUser);
         expect(result.destinations).toHaveLength(1);
     });

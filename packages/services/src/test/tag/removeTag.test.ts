@@ -3,16 +3,12 @@ import type { AccommodationId, TagId } from '@repo/types';
 import { EntityTypeEnum, PermissionEnum } from '@repo/types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TagService } from '../../tag/tag.service';
-import {
-    getMockAccommodationId,
-    getMockDestinationId,
-    getMockEventId,
-    getMockPostId,
-    getMockPublicUser,
-    getMockTagId,
-    getMockUser,
-    getMockUserId
-} from '../mockData';
+import { getMockAccommodationId } from '../factories/accommodationFactory';
+import { getMockDestinationId } from '../factories/destinationFactory';
+import { getMockEventId } from '../factories/eventFactory';
+import { getMockPostId } from '../factories/postFactory';
+import { getMockTagId } from '../factories/tagFactory';
+import { createMockUser, getMockUserId } from '../factories/userFactory';
 import { mockServiceLogger } from '../setupTest';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
@@ -27,7 +23,7 @@ beforeEach(() => {
 });
 
 describe('TagService.removeTag', () => {
-    const user = getMockUser({
+    const user = createMockUser({
         permissions: [
             PermissionEnum.ACCOMMODATION_TAGS_MANAGE,
             PermissionEnum.DESTINATION_TAGS_MANAGE,
@@ -36,30 +32,28 @@ describe('TagService.removeTag', () => {
             PermissionEnum.USER_UPDATE_PROFILE
         ]
     });
-    const publicUser = getMockPublicUser();
-    const tagId = getMockTagId();
-    const accommodationId = getMockAccommodationId();
-    const destinationId = getMockDestinationId();
-    const eventId = getMockEventId();
-    const postId = getMockPostId();
-    const userId = getMockUserId();
+    const publicUser = createMockUser({ role: 'GUEST' });
 
     it('should remove tag from accommodation with correct permission', async () => {
         (EntityTagModel.delete as Mocked<typeof EntityTagModel>['delete']).mockResolvedValue({
-            tagId,
-            entityId: accommodationId,
+            tagId: getMockTagId(),
+            entityId: getMockAccommodationId(),
             entityType: EntityTypeEnum.ACCOMMODATION
         });
         const result = await TagService.removeTag(
-            { tagId, entityId: accommodationId, entityType: EntityTypeEnum.ACCOMMODATION },
+            {
+                tagId: getMockTagId(),
+                entityId: getMockAccommodationId(),
+                entityType: EntityTypeEnum.ACCOMMODATION
+            },
             user
         );
         expect(result.removed).toBe(true);
         expectInfoLog(
             {
                 input: {
-                    tagId,
-                    entityId: accommodationId,
+                    tagId: getMockTagId(),
+                    entityId: getMockAccommodationId(),
                     entityType: EntityTypeEnum.ACCOMMODATION
                 },
                 actor: user
@@ -71,18 +65,26 @@ describe('TagService.removeTag', () => {
 
     it('should remove tag from destination with correct permission', async () => {
         (EntityTagModel.delete as Mocked<typeof EntityTagModel>['delete']).mockResolvedValue({
-            tagId,
-            entityId: destinationId,
+            tagId: getMockTagId(),
+            entityId: getMockDestinationId(),
             entityType: EntityTypeEnum.DESTINATION
         });
         const result = await TagService.removeTag(
-            { tagId, entityId: destinationId, entityType: EntityTypeEnum.DESTINATION },
+            {
+                tagId: getMockTagId(),
+                entityId: getMockDestinationId(),
+                entityType: EntityTypeEnum.DESTINATION
+            },
             user
         );
         expect(result.removed).toBe(true);
         expectInfoLog(
             {
-                input: { tagId, entityId: destinationId, entityType: EntityTypeEnum.DESTINATION },
+                input: {
+                    tagId: getMockTagId(),
+                    entityId: getMockDestinationId(),
+                    entityType: EntityTypeEnum.DESTINATION
+                },
                 actor: user
             },
             'removeTag:start'
@@ -92,17 +94,24 @@ describe('TagService.removeTag', () => {
 
     it('should remove tag from event with correct permission', async () => {
         (EntityTagModel.delete as Mocked<typeof EntityTagModel>['delete']).mockResolvedValue({
-            tagId,
-            entityId: eventId,
+            tagId: getMockTagId(),
+            entityId: getMockEventId(),
             entityType: EntityTypeEnum.EVENT
         });
         const result = await TagService.removeTag(
-            { tagId, entityId: eventId, entityType: EntityTypeEnum.EVENT },
+            { tagId: getMockTagId(), entityId: getMockEventId(), entityType: EntityTypeEnum.EVENT },
             user
         );
         expect(result.removed).toBe(true);
         expectInfoLog(
-            { input: { tagId, entityId: eventId, entityType: EntityTypeEnum.EVENT }, actor: user },
+            {
+                input: {
+                    tagId: getMockTagId(),
+                    entityId: getMockEventId(),
+                    entityType: EntityTypeEnum.EVENT
+                },
+                actor: user
+            },
             'removeTag:start'
         );
         expectInfoLog({ result: { removed: true } }, 'removeTag:end');
@@ -110,17 +119,24 @@ describe('TagService.removeTag', () => {
 
     it('should remove tag from post with correct permission', async () => {
         (EntityTagModel.delete as Mocked<typeof EntityTagModel>['delete']).mockResolvedValue({
-            tagId,
-            entityId: postId,
+            tagId: getMockTagId(),
+            entityId: getMockPostId(),
             entityType: EntityTypeEnum.POST
         });
         const result = await TagService.removeTag(
-            { tagId, entityId: postId, entityType: EntityTypeEnum.POST },
+            { tagId: getMockTagId(), entityId: getMockPostId(), entityType: EntityTypeEnum.POST },
             user
         );
         expect(result.removed).toBe(true);
         expectInfoLog(
-            { input: { tagId, entityId: postId, entityType: EntityTypeEnum.POST }, actor: user },
+            {
+                input: {
+                    tagId: getMockTagId(),
+                    entityId: getMockPostId(),
+                    entityType: EntityTypeEnum.POST
+                },
+                actor: user
+            },
             'removeTag:start'
         );
         expectInfoLog({ result: { removed: true } }, 'removeTag:end');
@@ -128,17 +144,24 @@ describe('TagService.removeTag', () => {
 
     it('should remove tag from user with correct permission', async () => {
         (EntityTagModel.delete as Mocked<typeof EntityTagModel>['delete']).mockResolvedValue({
-            tagId,
-            entityId: userId,
+            tagId: getMockTagId(),
+            entityId: getMockUserId(),
             entityType: EntityTypeEnum.USER
         });
         const result = await TagService.removeTag(
-            { tagId, entityId: userId, entityType: EntityTypeEnum.USER },
+            { tagId: getMockTagId(), entityId: getMockUserId(), entityType: EntityTypeEnum.USER },
             user
         );
         expect(result.removed).toBe(true);
         expectInfoLog(
-            { input: { tagId, entityId: userId, entityType: EntityTypeEnum.USER }, actor: user },
+            {
+                input: {
+                    tagId: getMockTagId(),
+                    entityId: getMockUserId(),
+                    entityType: EntityTypeEnum.USER
+                },
+                actor: user
+            },
             'removeTag:start'
         );
         expectInfoLog({ result: { removed: true } }, 'removeTag:end');
@@ -149,15 +172,19 @@ describe('TagService.removeTag', () => {
             undefined
         );
         const result = await TagService.removeTag(
-            { tagId, entityId: accommodationId, entityType: EntityTypeEnum.ACCOMMODATION },
+            {
+                tagId: getMockTagId(),
+                entityId: getMockAccommodationId(),
+                entityType: EntityTypeEnum.ACCOMMODATION
+            },
             user
         );
         expect(result.removed).toBe(false);
         expectInfoLog(
             {
                 input: {
-                    tagId,
-                    entityId: accommodationId,
+                    tagId: getMockTagId(),
+                    entityId: getMockAccommodationId(),
                     entityType: EntityTypeEnum.ACCOMMODATION
                 },
                 actor: user
@@ -168,10 +195,14 @@ describe('TagService.removeTag', () => {
     });
 
     it('should throw error if user lacks permission', async () => {
-        const noPermUser = getMockUser({ permissions: [] });
+        const noPermUser = createMockUser({ permissions: [] });
         await expect(
             TagService.removeTag(
-                { tagId, entityId: accommodationId, entityType: EntityTypeEnum.ACCOMMODATION },
+                {
+                    tagId: getMockTagId(),
+                    entityId: getMockAccommodationId(),
+                    entityType: EntityTypeEnum.ACCOMMODATION
+                },
                 noPermUser
             )
         ).rejects.toThrow('Forbidden: insufficient permission to remove tag');
@@ -201,8 +232,8 @@ describe('TagService.removeTag', () => {
         await expect(
             TagService.removeTag(
                 {
-                    tagId,
-                    entityId: accommodationId,
+                    tagId: getMockTagId(),
+                    entityId: getMockAccommodationId(),
                     entityType: 'SOMETHING_ELSE' as unknown as EntityTypeEnum
                 },
                 user
@@ -214,7 +245,11 @@ describe('TagService.removeTag', () => {
     it('should throw error if public user tries to remove tag', async () => {
         await expect(
             TagService.removeTag(
-                { tagId, entityId: accommodationId, entityType: EntityTypeEnum.ACCOMMODATION },
+                {
+                    tagId: getMockTagId(),
+                    entityId: getMockAccommodationId(),
+                    entityType: EntityTypeEnum.ACCOMMODATION
+                },
                 publicUser
             )
         ).rejects.toThrow('Forbidden: insufficient permission to remove tag');

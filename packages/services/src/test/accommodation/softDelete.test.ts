@@ -8,32 +8,34 @@ import {
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { makeAccommodation, makeArchivedAccommodation } from '../factories/accommodationFactory';
 import {
-    makeAdmin,
-    makeDisabledUser,
-    makeOwner,
-    makePublicUser,
-    makeUserWithoutPermissions
+    createMockAccommodation,
+    createMockArchivedAccommodation
+} from '../factories/accommodationFactory';
+import {
+    createMockAdmin,
+    createMockDisabledUser,
+    createMockOwner,
+    createMockPublicUser,
+    createMockUserWithoutPermissions,
+    getMockUserId
 } from '../factories/userFactory';
-import { getMockUserId } from '../mockData';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.softDelete', () => {
     it('should soft-delete (archive) accommodation when user is the owner and has permission', async () => {
         // Arrange: Create an owner user and a non-archived accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const accommodation = createMockAccommodation({ ownerId });
         const now = new Date();
-        const archivedAccommodation = {
-            ...accommodation,
-            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        const archivedAccommodation = createMockArchivedAccommodation({
+            ownerId,
             deletedAt: now,
             deletedById: ownerId,
             updatedAt: now,
             updatedById: ownerId
-        };
+        });
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.update as Mock).mockResolvedValue(archivedAccommodation);
@@ -58,17 +60,17 @@ describe('accommodation.service.softDelete', () => {
     it('should soft-delete accommodation when user is ADMIN and has global permission', async () => {
         // Arrange: Create an admin user and a non-archived accommodation
         const adminId = getMockUserId();
-        const adminUser = makeAdmin({ id: adminId });
-        const accommodation = makeAccommodation({ ownerId: getMockUserId() });
+        const adminUser = createMockAdmin({ id: adminId });
+        const ownerId = getMockUserId();
+        const accommodation = createMockAccommodation({ ownerId });
         const now = new Date();
-        const archivedAccommodation = {
-            ...accommodation,
-            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        const archivedAccommodation = createMockArchivedAccommodation({
+            ownerId,
             deletedAt: now,
             deletedById: adminId,
             updatedAt: now,
             updatedById: adminId
-        };
+        });
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.update as Mock).mockResolvedValue(archivedAccommodation);
@@ -94,8 +96,8 @@ describe('accommodation.service.softDelete', () => {
         // Arrange: Create a user who is not the owner and has no global permissions
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = makeUserWithoutPermissions({ id: notOwnerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockUserWithoutPermissions({ id: notOwnerId });
+        const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to delete accommodation');
         });
@@ -117,11 +119,11 @@ describe('accommodation.service.softDelete', () => {
     it('should deny delete if user is disabled', async () => {
         // Arrange: Create a disabled user and a non-archived accommodation
         const ownerId = getMockUserId();
-        const disabledUser = makeDisabledUser({
+        const disabledUser = createMockDisabledUser({
             id: ownerId,
             lifecycleState: LifecycleStatusEnum.INACTIVE
         });
-        const accommodation = makeAccommodation({ ownerId });
+        const accommodation = createMockAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
         // Act & Assert: Attempt to soft-delete and expect forbidden error
@@ -140,8 +142,8 @@ describe('accommodation.service.softDelete', () => {
     it('should deny delete if user is public (unauthenticated)', async () => {
         // Arrange: Create a public user and a non-archived accommodation
         const ownerId = getMockUserId();
-        const publicUser = makePublicUser();
-        const accommodation = makeAccommodation({ ownerId });
+        const publicUser = createMockPublicUser();
+        const accommodation = createMockAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
 
         // Act & Assert: Attempt to soft-delete and expect forbidden error
@@ -164,8 +166,8 @@ describe('accommodation.service.softDelete', () => {
         // Arrange: Create a user who is not the owner and has insufficient permissions
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = makeUserWithoutPermissions({ id: notOwnerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockUserWithoutPermissions({ id: notOwnerId });
+        const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
             throw new Error('Forbidden: User does not have permission to delete accommodation');
         });
@@ -186,7 +188,7 @@ describe('accommodation.service.softDelete', () => {
 
     it('should throw if accommodation does not exist', async () => {
         // Arrange: Create a user and mock getById to return undefined
-        const user = makeOwner();
+        const user = createMockOwner();
         (AccommodationModel.getById as Mock).mockResolvedValue(undefined);
 
         // Act & Assert: Attempt to soft-delete and expect not found error
@@ -200,8 +202,8 @@ describe('accommodation.service.softDelete', () => {
     it('should throw if accommodation is already archived or deleted', async () => {
         // Arrange: Create a user and an already archived accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const archivedAccommodation = makeArchivedAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const archivedAccommodation = createMockArchivedAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(archivedAccommodation);
 
         // Act & Assert: Attempt to soft-delete and expect already archived error
@@ -215,17 +217,16 @@ describe('accommodation.service.softDelete', () => {
     it('softDelete should call serviceLogger.info and serviceLogger.permission at the correct points', async () => {
         // Success case: info logs
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const accommodation = createMockAccommodation({ ownerId });
         const now = new Date();
-        const archivedAccommodation = {
-            ...accommodation,
-            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        const archivedAccommodation = createMockArchivedAccommodation({
+            ownerId,
             deletedAt: now,
             deletedById: ownerId,
             updatedAt: now,
             updatedById: ownerId
-        };
+        });
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.update as Mock).mockResolvedValue(archivedAccommodation);
@@ -254,17 +255,16 @@ describe('accommodation.service.softDelete', () => {
     it('softDelete should set deletedAt, deletedById, updatedAt, updatedById, and lifecycleState to ARCHIVED', async () => {
         // Arrange: Create an owner user and a non-archived accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const accommodation = makeAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const accommodation = createMockAccommodation({ ownerId });
         const now = new Date();
-        const archivedAccommodation = {
-            ...accommodation,
-            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        const archivedAccommodation = createMockArchivedAccommodation({
+            ownerId,
             deletedAt: now,
             deletedById: ownerId,
             updatedAt: now,
             updatedById: ownerId
-        };
+        });
         vi.spyOn(permissionManager, 'hasPermission').mockReturnValue(true);
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodation);
         (AccommodationModel.update as Mock).mockResolvedValue(archivedAccommodation);
@@ -283,8 +283,8 @@ describe('accommodation.service.softDelete', () => {
     it('should not allow double deletion (idempotency)', async () => {
         // Arrange: Create an owner user and an already archived accommodation
         const ownerId = getMockUserId();
-        const user = makeOwner({ id: ownerId });
-        const archivedAccommodation = makeArchivedAccommodation({ ownerId });
+        const user = createMockOwner({ id: ownerId });
+        const archivedAccommodation = createMockArchivedAccommodation({ ownerId });
         (AccommodationModel.getById as Mock).mockResolvedValue(archivedAccommodation);
 
         // Act & Assert: Attempt to soft-delete again and expect already archived error

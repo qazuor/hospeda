@@ -7,22 +7,24 @@ import { AccommodationService } from '../../accommodation/accommodation.service'
 import {
     getMockAccommodation,
     getMockAccommodationPrivate,
-    getMockAccommodationPublic,
+    getMockAccommodationPublic
+} from '../factories';
+import {
     getMockPublicUser,
     getMockUser,
-    getMockUserId
-} from '../mockData';
+    getMockUserId as getMockUserIdFromFactories
+} from '../factories/userFactory';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.getById', () => {
     const publicUser = getMockPublicUser();
     const user = getMockUser({
-        id: getMockUserId(),
+        id: getMockUserIdFromFactories(),
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.ACCOMMODATION_CREATE]
     });
     const disabledUser = getMockUser({
-        id: getMockUserId(),
+        id: getMockUserIdFromFactories(),
         role: RoleEnum.ADMIN,
         settings: {
             notifications: {

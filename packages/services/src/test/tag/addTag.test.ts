@@ -3,18 +3,13 @@ import type { AccommodationId, TagId } from '@repo/types';
 import { EntityTypeEnum, PermissionEnum } from '@repo/types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TagService } from '../../tag/tag.service';
-import {
-    getMockAccommodationId,
-    getMockDestinationId,
-    getMockEntityTag,
-    getMockEventId,
-    getMockPostId,
-    getMockPublicUser,
-    getMockTagId,
-    getMockUser,
-    getMockUserId
-} from '../mockData';
-
+import { createMockEntityTag } from '../factories';
+import { getMockAccommodationId } from '../factories/accommodationFactory';
+import { getMockDestinationId } from '../factories/destinationFactory';
+import { getMockEventId } from '../factories/eventFactory';
+import { getMockPostId } from '../factories/postFactory';
+import { getMockTagId } from '../factories/tagFactory';
+import { createMockUser, getMockUserId } from '../factories/userFactory';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
 vi.mock('@repo/db', () => ({
@@ -24,7 +19,7 @@ vi.mock('@repo/db', () => ({
 }));
 
 describe('TagService.addTag', () => {
-    const user = getMockUser({
+    const user = createMockUser({
         permissions: [
             PermissionEnum.ACCOMMODATION_TAGS_MANAGE,
             PermissionEnum.DESTINATION_TAGS_MANAGE,
@@ -33,7 +28,7 @@ describe('TagService.addTag', () => {
             PermissionEnum.USER_UPDATE_PROFILE
         ]
     });
-    const publicUser = getMockPublicUser();
+    const publicUser = createMockUser({ role: 'GUEST' });
     const tagId = getMockTagId();
     const accommodationId = getMockAccommodationId();
     const destinationId = getMockDestinationId();
@@ -46,7 +41,7 @@ describe('TagService.addTag', () => {
     });
 
     it('should add tag to accommodation with correct permission', async () => {
-        const entityTag = getMockEntityTag({
+        const entityTag = createMockEntityTag({
             tagId,
             entityId: accommodationId,
             entityType: EntityTypeEnum.ACCOMMODATION
@@ -74,7 +69,7 @@ describe('TagService.addTag', () => {
     });
 
     it('should add tag to destination with correct permission', async () => {
-        const entityTag = getMockEntityTag({
+        const entityTag = createMockEntityTag({
             tagId,
             entityId: destinationId,
             entityType: EntityTypeEnum.DESTINATION
@@ -98,7 +93,7 @@ describe('TagService.addTag', () => {
     });
 
     it('should add tag to event with correct permission', async () => {
-        const entityTag = getMockEntityTag({
+        const entityTag = createMockEntityTag({
             tagId,
             entityId: eventId,
             entityType: EntityTypeEnum.EVENT
@@ -119,7 +114,7 @@ describe('TagService.addTag', () => {
     });
 
     it('should add tag to post with correct permission', async () => {
-        const entityTag = getMockEntityTag({
+        const entityTag = createMockEntityTag({
             tagId,
             entityId: postId,
             entityType: EntityTypeEnum.POST
@@ -140,7 +135,7 @@ describe('TagService.addTag', () => {
     });
 
     it('should add tag to user with correct permission', async () => {
-        const entityTag = getMockEntityTag({
+        const entityTag = createMockEntityTag({
             tagId,
             entityId: userId,
             entityType: EntityTypeEnum.USER
@@ -161,7 +156,7 @@ describe('TagService.addTag', () => {
     });
 
     it('should throw error if user lacks permission', async () => {
-        const noPermUser = getMockUser({ permissions: [] });
+        const noPermUser = createMockUser({ permissions: [] });
         await expect(
             TagService.addTag(
                 { tagId, entityId: accommodationId, entityType: EntityTypeEnum.ACCOMMODATION },
