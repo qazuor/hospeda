@@ -27,17 +27,6 @@ export const createMockDbLogger = () => ({
     warn: vi.fn()
 });
 
-/**
- * Creates a new service mockLogger object for use in tests.
- */
-export const createMockServiceLogger = () => ({
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    permission: vi.fn()
-});
-
-export const mockServiceLogger = createMockServiceLogger();
 const mockDb = createMockDb();
 const mockDbLogger = createMockDbLogger();
 
@@ -49,10 +38,6 @@ vi.mock('../client.ts', () => ({
 vi.mock('../utils/logger.ts', () => ({
     dbLogger: globalThis.mockDbLogger
 }));
-vi.mock('../utils/service-logger.ts', () => ({
-    serviceLogger: globalThis.mockServiceLogger
-}));
 
 globalThis.mockDb = mockDb;
 globalThis.mockDbLogger = mockDbLogger;
-globalThis.mockServiceLogger = mockServiceLogger;
