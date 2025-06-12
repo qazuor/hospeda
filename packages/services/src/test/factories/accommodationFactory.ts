@@ -5,6 +5,14 @@ import {
     ModerationStatusEnum,
     VisibilityEnum
 } from '@repo/types';
+import type {
+    AccommodationAmenityType,
+    AmenityType
+} from '@repo/types/entities/accommodation/accommodation.amenity.types';
+import type {
+    AccommodationFeatureType,
+    FeatureType
+} from '@repo/types/entities/accommodation/accommodation.feature.types';
 import { expect } from 'vitest';
 import { getMockDestinationId } from './destinationFactory';
 import { getMockUserId } from './userFactory';
@@ -252,25 +260,46 @@ export const getMockAccommodationMinimal = (
     });
 
 /**
- * Returns a mock AccommodationType object with related entities.
- * @param overrides - Partial fields to override in the mock.
- * @returns AccommodationType with relations
+ * Returns a mock AccommodationType object with features and amenities relations or plain arrays.
+ * @param params - Object with optional features and amenities arrays (either type), and other overrides.
+ * @returns AccommodationType
+ * @example
+ * const acc = getMockAccommodationWithRelations({ features, amenities });
  */
-export const getMockAccommodationWithRelations = (
-    overrides: Partial<AccommodationType> = {}
-): AccommodationType =>
-    getMockAccommodation({
-        id: 'acc-6' as AccommodationId,
-        name: 'Related Hotel',
-        tags: [],
-        media: {
-            featuredImage: {
-                url: 'https://example.com/featured.jpg',
-                moderationState: ModerationStatusEnum.APPROVED
-            }
-        },
+export const getMockAccommodationWithRelations = ({
+    features = [],
+    amenities = [],
+    id = '11111111-1111-1111-1111-111111111111' as AccommodationId,
+    ...overrides
+}: Partial<AccommodationType> & {
+    features?: (FeatureType | AccommodationFeatureType)[];
+    amenities?: (AmenityType | AccommodationAmenityType)[];
+} = {}): AccommodationType => {
+    // Si todos los features son FeatureType, pásalos directo
+    const allFeaturesAreBase = features.every((f) => 'id' in f && 'name' in f);
+    const adaptedFeatures = allFeaturesAreBase
+        ? features
+        : features.map((f) => {
+              if ('featureId' in f && 'feature' in f)
+                  return (f as AccommodationFeatureType).feature;
+              return f;
+          });
+    // Lo mismo para amenities
+    const allAmenitiesAreBase = amenities.every((a) => 'id' in a && 'name' in a);
+    const adaptedAmenities = allAmenitiesAreBase
+        ? amenities
+        : amenities.map((a) => {
+              if ('amenityId' in a && 'amenity' in a)
+                  return (a as AccommodationAmenityType).amenity;
+              return a;
+          });
+    return getMockAccommodation({
+        id,
+        features: adaptedFeatures as AccommodationFeatureType[],
+        amenities: adaptedAmenities as AccommodationAmenityType[],
         ...overrides
     });
+};
 
 export const createMockAccommodationWithMedia = (overrides = {}) =>
     getMockAccommodationWithMedia({ ...overrides });
