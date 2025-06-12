@@ -1,7 +1,7 @@
 import { UserBookmarkModel } from '@repo/db';
 import type { UserId } from '@repo/types';
 import { describe, expect, it, type vi } from 'vitest';
-import type { RemoveBookmarkInput } from '../../bookmark/bookmark.schemas';
+import type { BookmarkRemoveInput } from '../../bookmark/bookmark.schemas';
 import { BookmarkService } from '../../bookmark/bookmark.service';
 import { getMockPublicUser, getMockUser, getMockUserBookmark, getMockUserId } from '../mockData';
 
@@ -18,7 +18,7 @@ describe('BookmarkService.removeBookmark', () => {
         (UserBookmarkModel.delete as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
             id: mockBookmark.id
         });
-        const input: RemoveBookmarkInput = {
+        const input: BookmarkRemoveInput = {
             userId: mockUserId,
             bookmarkId: mockBookmark.id
         };
@@ -30,7 +30,7 @@ describe('BookmarkService.removeBookmark', () => {
 
     it('throws if actor is not the user', async () => {
         const otherUser = getMockUser({ id: 'other-user-id' as UserId });
-        const input: RemoveBookmarkInput = {
+        const input: BookmarkRemoveInput = {
             userId: mockUserId,
             bookmarkId: mockBookmark.id
         };
@@ -38,7 +38,7 @@ describe('BookmarkService.removeBookmark', () => {
     });
 
     it('throws if actor is public', async () => {
-        const input: RemoveBookmarkInput = {
+        const input: BookmarkRemoveInput = {
             userId: mockUserId,
             bookmarkId: mockBookmark.id
         };
@@ -51,7 +51,7 @@ describe('BookmarkService.removeBookmark', () => {
         (UserBookmarkModel.getById as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
             undefined
         );
-        const input: RemoveBookmarkInput = {
+        const input: BookmarkRemoveInput = {
             userId: mockUserId,
             bookmarkId: mockBookmark.id
         };
@@ -65,7 +65,7 @@ describe('BookmarkService.removeBookmark', () => {
         (UserBookmarkModel.getById as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
             otherBookmark
         );
-        const input: RemoveBookmarkInput = {
+        const input: BookmarkRemoveInput = {
             userId: mockUserId,
             bookmarkId: mockBookmark.id
         };
@@ -79,7 +79,7 @@ describe('BookmarkService.removeBookmark', () => {
         (UserBookmarkModel.delete as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
             undefined
         );
-        const input: RemoveBookmarkInput = {
+        const input: BookmarkRemoveInput = {
             userId: mockUserId,
             bookmarkId: mockBookmark.id
         };
@@ -88,7 +88,7 @@ describe('BookmarkService.removeBookmark', () => {
     });
 
     it('throws on invalid input (Zod)', async () => {
-        const input = { userId: '' as UserId, bookmarkId: '' } as RemoveBookmarkInput;
+        const input = { userId: '' as UserId, bookmarkId: '' } as BookmarkRemoveInput;
         await expect(BookmarkService.removeBookmark(input, mockUser)).rejects.toThrow();
     });
 });

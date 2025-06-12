@@ -5,18 +5,6 @@ import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import { getMockPost, getMockPostInput, getMockPublicUser, getMockUser } from '../mockData';
 
-vi.mock('@repo/db', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        PostModel: {
-            ...((actual as Record<string, unknown>).PostModel ?? {}),
-            create: vi.fn()
-        }
-    };
-});
-
 describe('PostService.create', () => {
     const user = getMockUser({
         role: RoleEnum.ADMIN,

@@ -8,22 +8,6 @@ import { CanViewReasonEnum } from '../../utils/service-helper';
 import { getMockDestination, getMockDestinationId, getMockUser, getMockUserId } from '../mockData';
 import { expectInfoLog } from '../utils/log-assertions';
 
-vi.mock('@repo/db', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        DestinationModel: {
-            ...((actual as Record<string, unknown>).DestinationModel ?? {}),
-            getById: vi.fn()
-        },
-        DestinationReviewModel: {
-            ...((actual as Record<string, unknown>).DestinationReviewModel ?? {}),
-            list: vi.fn()
-        }
-    };
-});
-
 describe('destination.service.getReviews', () => {
     const admin = getMockUser({ id: getMockUserId(), role: RoleEnum.ADMIN });
     const user = getMockUser({ id: getMockUserId(), role: RoleEnum.USER });

@@ -2,6 +2,7 @@ import { PostModel } from '@repo/db';
 import type { PostId, UserId } from '@repo/types';
 import { RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
 import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
@@ -16,10 +17,6 @@ vi.mock('../../utils/service-helper', async (importOriginal) => {
         )
     };
 });
-
-vi.mock('@repo/db');
-
-import { PostService } from '../../post/post.service';
 
 const user = getMockUser();
 const admin = getMockUser({

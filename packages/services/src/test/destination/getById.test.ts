@@ -2,6 +2,7 @@ import { DestinationModel } from '@repo/db';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DestinationService } from '../../destination/destination.service';
 import {
     getMockDestination,
     getMockDestinationId,
@@ -10,20 +11,6 @@ import {
     getMockUserId
 } from '../mockData';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
-
-vi.mock('@repo/db', async (importOriginal) => {
-    const actualImport = await importOriginal();
-    const actual = typeof actualImport === 'object' && actualImport !== null ? actualImport : {};
-    return {
-        ...actual,
-        DestinationModel: {
-            ...((actual as Record<string, unknown>).DestinationModel ?? {}),
-            getById: vi.fn()
-        }
-    };
-});
-
-import { DestinationService } from '../../destination/destination.service';
 
 /**
  * Unit tests for destination.service.getById

@@ -5,8 +5,6 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
 import { getMockPost, getMockPublicUser, getMockUser } from '../mockData';
 
-vi.mock('@repo/db');
-
 const mockPosts = [
     getMockPost({
         id: 'post-1' as PostId,

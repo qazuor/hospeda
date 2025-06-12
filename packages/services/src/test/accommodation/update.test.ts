@@ -13,7 +13,7 @@ import {
 } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import * as accommodationHelper from '../../accommodation/accommodation.helper';
-import type { UpdateInput } from '../../accommodation/accommodation.schemas';
+import type { AccommodationUpdateInput } from '../../accommodation/accommodation.schemas';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import * as permissionManager from '../../utils/permission-manager';
 import { CanViewReasonEnum } from '../../utils/service-helper';
@@ -396,7 +396,7 @@ describe('accommodation.service.update', () => {
 
         // Act & Assert
         await expect(
-            AccommodationService.update(invalidInput as unknown as UpdateInput, user)
+            AccommodationService.update(invalidInput as unknown as AccommodationUpdateInput, user)
         ).rejects.toThrow();
         // No update ni log de éxito
         expect(AccommodationModel.update).not.toHaveBeenCalled();

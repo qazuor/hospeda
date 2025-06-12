@@ -11,8 +11,6 @@ import {
     getMockUser
 } from '../mockData';
 
-vi.mock('@repo/db');
-
 const mockAdmin = getMockUser({ role: RoleEnum.ADMIN });
 const mockPublic = getMockPublicUser();
 

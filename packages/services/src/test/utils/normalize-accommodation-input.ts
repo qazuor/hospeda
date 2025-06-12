@@ -12,9 +12,11 @@
  * @returns Plain object compatible with update/create input schema
  */
 import type { AccommodationType } from '@repo/types';
-import type { UpdateInput } from '../../accommodation/accommodation.schemas';
+import type { AccommodationUpdateInput } from '../../accommodation/accommodation.schemas';
 
-export const normalizeAccommodationInput = (input: Partial<AccommodationType>): UpdateInput => {
+export const normalizeAccommodationInput = (
+    input: Partial<AccommodationType>
+): AccommodationUpdateInput => {
     const {
         id,
         slug,
@@ -52,7 +54,7 @@ export const normalizeAccommodationInput = (input: Partial<AccommodationType>): 
         }
     }
     return {
-        id: String(id) as UpdateInput['id'],
+        id: String(id) as AccommodationUpdateInput['id'],
         slug: String(slug),
         name: String(name),
         summary: String(summary),
