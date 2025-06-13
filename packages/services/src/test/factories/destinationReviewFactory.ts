@@ -15,7 +15,7 @@ import type {
 export const getMockDestinationReview = (
     overrides: Partial<DestinationReviewType> = {}
 ): DestinationReviewType => ({
-    id: 'review-uuid' as DestinationReviewId,
+    id: '22222222-2222-2222-2222-222222222222' as DestinationReviewId,
     destinationId: 'dest-uuid' as DestinationId,
     userId: 'user-uuid' as UserId,
     title: 'Hermoso lugar',

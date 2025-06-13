@@ -13,7 +13,7 @@ export const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
     id: '11111111-1111-1111-1111-111111111111' as UserId,
     userName: 'testuser',
     password: 'pw',
-    role: RoleEnum.ADMIN,
+    role: RoleEnum.USER,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: '11111111-1111-1111-1111-111111111111' as UserId,
@@ -32,41 +32,47 @@ export const getMockPublicUser = (): PublicUserType => createPublicUser();
 
 export const createMockUser = (overrides = {}) =>
     getMockUser({
-        id: getMockUserId(),
+        id: getMockUserId('user-1'),
         ...overrides
     });
 
-export const createMockAdmin = (overrides = {}) =>
+export const getMockAdminUser = (overrides = {}) =>
     getMockUser({
-        id: getMockUserId(),
+        id: getMockUserId('admin-1'),
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
         ...overrides
     });
 
-export const createMockOwner = (overrides = {}) =>
+export const getMockSuperAdminUser = (overrides = {}) =>
     getMockUser({
-        id: getMockUserId(),
+        id: getMockUserId('admin-2'),
+        role: RoleEnum.SUPER_ADMIN,
+        permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
+        ...overrides
+    });
+
+export const getMockOwnerUser = (overrides = {}) =>
+    getMockUser({
+        id: getMockUserId('owner-user-1'),
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN],
         ...overrides
     });
 
-export const createMockUserWithoutPermissions = (overrides = {}) =>
+export const getMockUserWithoutPermissions = (overrides = {}) =>
     getMockUser({
-        id: getMockUserId(),
+        id: getMockUserId('user-whitout-permission-1'),
         permissions: [],
         ...overrides
     });
 
-export const createMockDisabledUser = (overrides = {}) =>
+export const getMockDisabledUser = (overrides = {}) =>
     getMockUser({
-        id: getMockUserId(),
+        id: getMockUserId('user-disabled-1'),
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN],
         lifecycleState: LifecycleStatusEnum.INACTIVE,
         ...overrides
     });
-
-export const createMockPublicUser = () => getMockPublicUser();
 
 export const getMockUserId = (id?: string): UserId => {
     if (id && /^[0-9a-fA-F-]{36}$/.test(id)) return id as UserId;

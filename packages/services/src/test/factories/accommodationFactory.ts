@@ -1,4 +1,10 @@
-import type { AccommodationId, AccommodationType, DestinationId, UserId } from '@repo/types';
+import type {
+    AccommodationId,
+    AccommodationReviewId,
+    AccommodationType,
+    DestinationId,
+    UserId
+} from '@repo/types';
 import {
     AccommodationTypeEnum,
     LifecycleStatusEnum,
@@ -13,6 +19,8 @@ import type {
     AccommodationFeatureType,
     FeatureType
 } from '@repo/types/entities/accommodation/accommodation.feature.types';
+import type { AccommodationRatingType } from '@repo/types/entities/accommodation/accommodation.rating.types';
+import type { AccommodationReviewType } from '@repo/types/entities/accommodation/accommodation.review.types';
 import { expect } from 'vitest';
 import { getMockDestinationId } from './destinationFactory';
 import { getMockUserId } from './userFactory';
@@ -315,3 +323,46 @@ export const getMockAccommodationId = (id?: string): AccommodationId =>
     (id && /^[0-9a-fA-F-]{36}$/.test(id)
         ? id
         : '00000000-0000-0000-0000-000000000001') as AccommodationId;
+
+/**
+ * Returns a mock AccommodationReviewType object with default values. You can override any field.
+ * @param overrides - Partial fields to override in the mock.
+ * @returns AccommodationReviewType
+ * @example
+ * const review = getMockAccommodationReview({ id: 'review-2' as AccommodationReviewId });
+ */
+export const getMockAccommodationReview = (
+    overrides: Partial<AccommodationReviewType> = {}
+): AccommodationReviewType => ({
+    id: '11111111-1111-1111-1111-111111111111' as AccommodationReviewId,
+    accommodationId: 'acc-uuid' as AccommodationId,
+    userId: 'user-uuid' as UserId,
+    title: 'Excelente alojamiento',
+    content: 'La estadía fue perfecta.',
+    rating: {
+        cleanliness: 5,
+        hospitality: 5,
+        services: 5,
+        accuracy: 5,
+        communication: 5,
+        location: 5
+    } as AccommodationRatingType,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: undefined,
+    createdById: 'user-uuid' as UserId,
+    updatedById: 'user-uuid' as UserId,
+    deletedById: undefined,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    adminInfo: { favorite: false },
+    ...overrides
+});
+
+export const createMockAccommodationReview = (
+    overrides: Partial<AccommodationReviewType> = {}
+): AccommodationReviewType => getMockAccommodationReview(overrides);
+
+export const getMockAccommodationReviewId = (id?: string): AccommodationReviewId =>
+    (id && /^[0-9a-fA-F-]{36}$/.test(id)
+        ? id
+        : '11111111-1111-1111-1111-111111111111') as AccommodationReviewId;

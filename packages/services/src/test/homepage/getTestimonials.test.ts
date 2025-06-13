@@ -1,74 +1,41 @@
 import { AccommodationReviewModel, DestinationReviewModel } from '@repo/db';
-import type {
-    AccommodationId,
-    AccommodationReviewId,
-    DestinationId,
-    DestinationReviewId,
-    UserId
-} from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types';
+import type { UserId } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { getTestimonialsOutputSchema } from '../../homepage/homepage.schemas';
 import { homepageService } from '../../homepage/homepage.service';
+import { getMockDestinationId, getMockUserId } from '../factories';
+import {
+    getMockAccommodationId,
+    getMockAccommodationReview,
+    getMockAccommodationReviewId
+} from '../factories/accommodationFactory';
+import {
+    getMockDestinationReview,
+    getMockDestinationReviewId
+} from '../factories/destinationReviewFactory';
 
-const accReviewId = '11111111-1111-1111-1111-111111111111';
-const destReviewId = '22222222-2222-2222-2222-222222222222';
-const accId = '33333333-3333-3333-3333-333333333333';
-const destId = '44444444-4444-4444-4444-444444444444';
-const userId = '55555555-5555-5555-5555-555555555555';
+const accReviewId = getMockAccommodationReviewId();
+const destReviewId = getMockDestinationReviewId();
+const userId = getMockUserId();
 const now = new Date();
 
-const mockAccReview = {
-    id: accReviewId as AccommodationReviewId,
-    accommodationId: accId as AccommodationId,
+const mockAccReview = getMockAccommodationReview({
+    id: accReviewId,
+    accommodationId: getMockAccommodationId(),
     userId: userId as UserId,
     content: 'Excelente alojamiento',
-    rating: {
-        cleanliness: 5,
-        hospitality: 5,
-        services: 5,
-        accuracy: 5,
-        communication: 5,
-        location: 5
-    },
     createdAt: now,
-    updatedAt: now,
-    createdById: userId as UserId,
-    updatedById: userId as UserId,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    adminInfo: { favorite: false }
-};
+    updatedAt: now
+});
 
-const mockDestReview = {
-    id: destReviewId as DestinationReviewId,
-    destinationId: destId as DestinationId,
+const mockDestReview = getMockDestinationReview({
+    id: destReviewId,
+    destinationId: getMockDestinationId(),
     userId: userId as UserId,
     content: 'Hermoso destino',
-    rating: {
-        landscape: 5,
-        attractions: 5,
-        accessibility: 5,
-        safety: 5,
-        cleanliness: 5,
-        hospitality: 5,
-        culturalOffer: 5,
-        gastronomy: 5,
-        affordability: 5,
-        nightlife: 5,
-        infrastructure: 5,
-        environmentalCare: 5,
-        wifiAvailability: 5,
-        shopping: 5,
-        beaches: 5,
-        greenSpaces: 5,
-        localEvents: 5,
-        weatherSatisfaction: 5
-    },
     createdAt: now,
-    updatedAt: now,
-    createdById: userId as UserId,
-    updatedById: userId as UserId
-};
+    updatedAt: now
+});
 
 describe('homepageService.getTestimonials', () => {
     beforeAll(() => {
@@ -85,7 +52,7 @@ describe('homepageService.getTestimonials', () => {
         expect(result.testimonials).toEqual(
             expect.arrayContaining([
                 {
-                    id: mockAccReview.id,
+                    id: accReviewId,
                     entityType: 'accommodation',
                     entityId: mockAccReview.accommodationId,
                     author: 'Anonymous',
@@ -94,11 +61,11 @@ describe('homepageService.getTestimonials', () => {
                     createdAt: mockAccReview.createdAt.toISOString()
                 },
                 {
-                    id: mockDestReview.id,
+                    id: destReviewId,
                     entityType: 'destination',
                     entityId: mockDestReview.destinationId,
                     author: 'Anonymous',
-                    rating: 5,
+                    rating: 4.39,
                     comment: mockDestReview.content,
                     createdAt: mockDestReview.createdAt.toISOString()
                 }

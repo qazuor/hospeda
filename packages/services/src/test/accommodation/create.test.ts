@@ -8,17 +8,20 @@ import {
     getMockAccommodationCreated,
     getMockAccommodationInput
 } from '../factories';
-import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
+import {
+    getMockPublicUser,
+    getMockUser,
+    getMockUserWithoutPermissions
+} from '../factories/userFactory';
 import type { TestAccommodationCreateInput } from '../types/testAccommodation.types';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.create', () => {
     const user = getMockUser({
-        id: getMockUserId(),
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.ACCOMMODATION_CREATE]
     });
-    const noPermUser = getMockUser({ id: getMockUserId(), role: RoleEnum.USER });
+    const noPermUser = getMockUserWithoutPermissions();
 
     beforeEach(() => {
         vi.clearAllMocks();

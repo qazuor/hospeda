@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { canViewAccommodation } from '../../accommodation/accommodation.helper';
 import { logDenied } from '../../utils/permission-logger';
 import { CanViewReasonEnum } from '../../utils/service-helper';
-import { getMockPublicUser, getMockUser } from '../factories/userFactory';
+import {
+    getMockAdminUser,
+    getMockOwnerUser,
+    getMockPublicUser,
+    getMockSuperAdminUser,
+    getMockUser
+} from '../factories/userFactory';
 import { mockServiceLogger } from '../setupTest';
 
 /**
@@ -12,10 +18,10 @@ import { mockServiceLogger } from '../setupTest';
  * @see canViewAccommodation
  */
 describe('canViewAccommodation', () => {
-    const owner = getMockUser({ id: 'user-1' as UserId, role: RoleEnum.USER });
-    const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
-    const superAdmin = getMockUser({ id: 'admin-2' as UserId, role: RoleEnum.SUPER_ADMIN });
-    const user = getMockUser({ id: 'user-2' as UserId, role: RoleEnum.USER });
+    const owner = getMockOwnerUser();
+    const admin = getMockAdminUser();
+    const superAdmin = getMockSuperAdminUser();
+    const user = getMockUser();
     const publicUser = getMockPublicUser();
 
     it('allows public access for PUBLIC visibility', () => {
