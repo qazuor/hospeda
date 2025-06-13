@@ -1,5 +1,6 @@
 import type { PostSponsorId, PostSponsorType, UserId } from '@repo/types';
 import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock PostSponsorType object with default values. You can override any field.
@@ -30,7 +31,6 @@ export const getMockPostSponsor = (overrides: Partial<PostSponsorType> = {}): Po
 export const createMockPostSponsor = (overrides: Partial<PostSponsorType> = {}): PostSponsorType =>
     getMockPostSponsor(overrides);
 
-export const getMockPostSponsorId = (id?: string): PostSponsorId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '99999999-9999-9999-9999-999999999999') as PostSponsorId;
+export const getMockPostSponsorId = (id?: string): PostSponsorId => {
+    return getMockId('post-sponsor', id) as PostSponsorId;
+};

@@ -5,6 +5,7 @@ import {
     PostCategoryEnum,
     VisibilityEnum
 } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock PostType object with default values. You can override any field.
@@ -101,5 +102,6 @@ export const createMockPostInput = (
     return { ...input, ...overrides };
 };
 
-export const getMockPostId = (id?: string): PostId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id) ? id : '00000000-0000-0000-0000-000000000003') as PostId;
+export const getMockPostId = (id?: string): PostId => {
+    return getMockId('post', id) as PostId;
+};

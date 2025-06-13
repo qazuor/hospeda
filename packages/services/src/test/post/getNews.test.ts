@@ -1,9 +1,14 @@
 import { PostModel } from '@repo/db';
-import type { PostId, UserId } from '@repo/types';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost, getMockUser } from '../factories';
+import {
+    getMockAdminUser,
+    getMockPost,
+    getMockPostId,
+    getMockUser,
+    getMockUserId
+} from '../factories';
 import { expectInfoLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/permission-manager', () => ({
@@ -12,27 +17,27 @@ vi.mock('../../utils/permission-manager', () => ({
     })
 }));
 
-const user = getMockUser({ id: 'not-author-uuid' as UserId, role: RoleEnum.USER });
-const admin = getMockUser({ role: RoleEnum.ADMIN, id: 'admin-uuid' as UserId });
+const user = getMockUser({ id: getMockUserId('not-author-uuid') });
+const admin = getMockAdminUser();
 const publicUser = { role: RoleEnum.GUEST };
 const posts = [
     getMockPost({
-        id: 'public-news-post-uuid' as PostId,
+        id: getMockPostId('public-news-post-001'),
         isNews: true,
         visibility: VisibilityEnum.PUBLIC,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     }),
     getMockPost({
-        id: 'private-news-post-uuid' as PostId,
+        id: getMockPostId('private-news-post-uuid'),
         isNews: true,
         visibility: VisibilityEnum.PRIVATE,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     }),
     getMockPost({
-        id: 'public-nonnews-post-uuid' as PostId,
+        id: getMockPostId('public-nonnews-post-uuid'),
         isNews: false,
         visibility: VisibilityEnum.PUBLIC,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     })
 ];
 
@@ -96,7 +101,7 @@ describe('PostService.getNews', () => {
         const post = result.posts[0];
         expect(post).toBeDefined();
         if (post) {
-            expect(post.id).toBe('public-news-post-uuid');
+            expect(post.id).toBe(getMockPostId('public-news-post-001'));
             expect(post.visibility).toBe(VisibilityEnum.PUBLIC);
         }
         expectInfoLog(

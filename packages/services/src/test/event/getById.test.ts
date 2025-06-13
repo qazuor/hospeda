@@ -78,7 +78,7 @@ describe('event.service.getById', () => {
 
     it('returns null if event does not exist', async () => {
         vi.spyOn(EventModel, 'getById').mockResolvedValue(undefined);
-        const result = await EventService.getById({ id: 'not-found' }, admin);
+        const result = await EventService.getById({ id: getMockEventId('not-found') }, admin);
         expect(result.event).toBeNull();
     });
 
@@ -99,7 +99,7 @@ describe('event.service.getById', () => {
                         lifecycleState
                     })
                 );
-                const result = await EventService.getById({ id: 'event-1' }, admin);
+                const result = await EventService.getById({ id: getMockEventId('event-1') }, admin);
                 expect(result.event).not.toBeNull();
             }
         }
@@ -113,7 +113,7 @@ describe('event.service.getById', () => {
                 lifecycleState: LifecycleStatusEnum.ARCHIVED
             })
         );
-        const result = await EventService.getById({ id: 'event-1' }, superAdmin);
+        const result = await EventService.getById({ id: getMockEventId('event-1') }, superAdmin);
         expect(result.event).not.toBeNull();
     });
 
@@ -126,7 +126,7 @@ describe('event.service.getById', () => {
                     authorId: author.id as UserId
                 })
             );
-            const result = await EventService.getById({ id: 'event-1' }, author);
+            const result = await EventService.getById({ id: getMockEventId('event-1') }, author);
             expect(result.event).not.toBeNull();
         }
     });
@@ -139,7 +139,7 @@ describe('event.service.getById', () => {
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             })
         );
-        const result = await EventService.getById({ id: 'event-1' }, normalUser);
+        const result = await EventService.getById({ id: getMockEventId('event-1') }, normalUser);
         expect(result.event).not.toBeNull();
 
         // Should not see private/draft/archived
@@ -150,7 +150,7 @@ describe('event.service.getById', () => {
                     visibility
                 })
             );
-            const res = await EventService.getById({ id: 'event-1' }, normalUser);
+            const res = await EventService.getById({ id: getMockEventId('event-1') }, normalUser);
             expect(res.event).toBeNull();
         }
         vi.spyOn(EventModel, 'getById').mockResolvedValue(
@@ -160,7 +160,7 @@ describe('event.service.getById', () => {
                 lifecycleState: LifecycleStatusEnum.ARCHIVED
             })
         );
-        const res2 = await EventService.getById({ id: 'event-1' }, normalUser);
+        const res2 = await EventService.getById({ id: getMockEventId('event-1') }, normalUser);
         expect(res2.event).toBeNull();
     });
 
@@ -179,7 +179,10 @@ describe('event.service.getById', () => {
                 visibility: VisibilityEnum.PRIVATE
             })
         );
-        const result = await EventService.getById({ id: 'event-1' }, privatePermUser);
+        const result = await EventService.getById(
+            { id: getMockEventId('event-1') },
+            privatePermUser
+        );
         expect(result.event).not.toBeNull();
     });
 
@@ -198,13 +201,13 @@ describe('event.service.getById', () => {
                 visibility: VisibilityEnum.DRAFT
             })
         );
-        const result = await EventService.getById({ id: 'event-1' }, draftPermUser);
+        const result = await EventService.getById({ id: getMockEventId('event-1') }, draftPermUser);
         expect(result.event).not.toBeNull();
     });
 
     it('disabled user cannot view any event', async () => {
         vi.spyOn(EventModel, 'getById').mockResolvedValue(getMockEvent({ ...baseEvent }));
-        const result = await EventService.getById({ id: 'event-1' }, disabledUser);
+        const result = await EventService.getById({ id: getMockEventId('event-1') }, disabledUser);
         expect(result.event).toBeNull();
     });
 
@@ -216,7 +219,7 @@ describe('event.service.getById', () => {
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             })
         );
-        const result = await EventService.getById({ id: 'event-1' }, publicActor);
+        const result = await EventService.getById({ id: getMockEventId('event-1') }, publicActor);
         expect(result.event).not.toBeNull();
 
         // Should not see private/draft/archived
@@ -227,7 +230,7 @@ describe('event.service.getById', () => {
                     visibility
                 })
             );
-            const res = await EventService.getById({ id: 'event-1' }, publicActor);
+            const res = await EventService.getById({ id: getMockEventId('event-1') }, publicActor);
             expect(res.event).toBeNull();
         }
         vi.spyOn(EventModel, 'getById').mockResolvedValue(
@@ -237,7 +240,7 @@ describe('event.service.getById', () => {
                 lifecycleState: LifecycleStatusEnum.ARCHIVED
             })
         );
-        const res2 = await EventService.getById({ id: 'event-1' }, publicActor);
+        const res2 = await EventService.getById({ id: getMockEventId('event-1') }, publicActor);
         expect(res2.event).toBeNull();
     });
 });

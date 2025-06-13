@@ -1,5 +1,6 @@
 import type { FeatureId, FeatureType, UserId } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock FeatureType object with default values. You can override any field.
@@ -25,7 +26,6 @@ export const getMockFeature = (overrides: Partial<FeatureType> = {}): FeatureTyp
 export const createMockFeature = (overrides: Partial<FeatureType> = {}): FeatureType =>
     getMockFeature(overrides);
 
-export const getMockFeatureId = (id?: string): FeatureId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '77777777-7777-7777-7777-777777777777') as FeatureId;
+export const getMockFeatureId = (id?: string): FeatureId => {
+    return getMockId('feature', id) as FeatureId;
+};

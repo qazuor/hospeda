@@ -1,34 +1,33 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
 import { LifecycleStatusEnum, PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost, getMockPublicUser, getMockUser } from '../factories';
+import { getMockPost, getMockPostId, getMockPublicUser, getMockUser } from '../factories';
 
 const mockPosts = [
     getMockPost({
-        id: 'post-1' as PostId,
+        id: getMockPostId('post-1'),
         visibility: VisibilityEnum.PUBLIC,
         title: 'A',
         category: PostCategoryEnum.GENERAL,
         lifecycleState: LifecycleStatusEnum.ACTIVE
     }),
     getMockPost({
-        id: 'post-2' as PostId,
+        id: getMockPostId('post-2'),
         visibility: VisibilityEnum.PRIVATE,
         title: 'B',
         category: PostCategoryEnum.EVENTS,
         lifecycleState: LifecycleStatusEnum.ARCHIVED
     }),
     getMockPost({
-        id: 'post-3' as PostId,
+        id: getMockPostId('post-3'),
         visibility: VisibilityEnum.PUBLIC,
         title: 'C',
         category: PostCategoryEnum.GENERAL,
         lifecycleState: LifecycleStatusEnum.ACTIVE
     }),
     getMockPost({
-        id: 'post-4' as PostId,
+        id: getMockPostId('post-4'),
         visibility: VisibilityEnum.DRAFT,
         title: 'D',
         category: PostCategoryEnum.CULTURE,

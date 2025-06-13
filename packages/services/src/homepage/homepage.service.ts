@@ -376,6 +376,7 @@ export const homepageService = {
         }
         // Limit to input.limit
         const limited = testimonials.slice(0, parsedInput.limit);
+
         // Validate and return output
         return HomepageGetTestimonialsOutputSchema.parse({ testimonials: limited });
     },

@@ -7,8 +7,8 @@ import { BookmarkService } from '../../bookmark/bookmark.service';
 import { getMockUserBookmark } from '../factories/userBookmarkFactory';
 import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 
-const mockUser = getMockUser();
 const mockUserId: UserId = getMockUserId();
+const mockUser = getMockUser({ id: mockUserId });
 const mockBookmark = getMockUserBookmark();
 const publicUser = getMockPublicUser();
 
@@ -32,7 +32,7 @@ describe('BookmarkService.addBookmark', () => {
     });
 
     it('throws if actor is not the user', async () => {
-        const otherUser = getMockUser({ id: 'other-user-id' as UserId });
+        const otherUser = getMockUser({ id: getMockUserId('other-user-id') });
         const input: BookmarkAddInput = {
             userId: mockUserId,
             entityId: mockBookmark.entityId,

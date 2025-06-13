@@ -5,6 +5,7 @@ import type {
     UserId
 } from '@repo/types';
 import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock DestinationType object with default values. You can override any field.
@@ -64,7 +65,6 @@ export const createMockDestinationInput = (
     return { ...input, ...overrides } as Omit<DestinationType, 'id' | 'createdAt' | 'updatedAt'>;
 };
 
-export const getMockDestinationId = (id?: string): DestinationId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '22222222-2222-2222-2222-222222222222') as DestinationId;
+export const getMockDestinationId = (id?: string): DestinationId => {
+    return getMockId('destination', id) as DestinationId;
+};

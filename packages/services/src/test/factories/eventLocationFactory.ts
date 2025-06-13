@@ -1,5 +1,6 @@
 import type { EventLocationId, EventLocationType, UserId } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock EventLocationType object with default values. You can override any field.
@@ -38,7 +39,6 @@ export const createMockEventLocation = (
     overrides: Partial<EventLocationType> = {}
 ): EventLocationType => getMockEventLocation(overrides);
 
-export const getMockEventLocationId = (id?: string): EventLocationId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '66666666-6666-6666-6666-666666666666') as EventLocationId;
+export const getMockEventLocationId = (id?: string): EventLocationId => {
+    return getMockId('event-location', id) as EventLocationId;
+};

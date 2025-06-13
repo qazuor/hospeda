@@ -1,5 +1,4 @@
 import { AccommodationReviewModel, DestinationReviewModel } from '@repo/db';
-import type { UserId } from '@repo/types';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { getTestimonialsOutputSchema } from '../../homepage/homepage.schemas';
 import { homepageService } from '../../homepage/homepage.service';
@@ -22,7 +21,7 @@ const now = new Date();
 const mockAccReview = getMockAccommodationReview({
     id: accReviewId,
     accommodationId: getMockAccommodationId(),
-    userId: userId as UserId,
+    userId: userId,
     content: 'Excelente alojamiento',
     createdAt: now,
     updatedAt: now
@@ -31,7 +30,7 @@ const mockAccReview = getMockAccommodationReview({
 const mockDestReview = getMockDestinationReview({
     id: destReviewId,
     destinationId: getMockDestinationId(),
-    userId: userId as UserId,
+    userId: userId,
     content: 'Hermoso destino',
     createdAt: now,
     updatedAt: now

@@ -1,5 +1,6 @@
 import type { AmenityId, AmenityType, UserId } from '@repo/types';
 import { AmenitiesTypeEnum, LifecycleStatusEnum } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock AmenityType object with default values. You can override any field.
@@ -29,7 +30,6 @@ export const getMockAmenity = (overrides: Partial<AmenityType> = {}): AmenityTyp
 export const createMockAmenity = (overrides: Partial<AmenityType> = {}): AmenityType =>
     getMockAmenity(overrides);
 
-export const getMockAmenityId = (id?: string): AmenityId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '99999999-9999-9999-9999-999999999999') as AmenityId;
+export const getMockAmenityId = (id?: string): AmenityId => {
+    return getMockId('amenity', id) as AmenityId;
+};
