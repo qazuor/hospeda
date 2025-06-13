@@ -1,10 +1,5 @@
 import { AccommodationModel } from '@repo/db';
-import {
-    type AccommodationId,
-    LifecycleStatusEnum,
-    PermissionEnum,
-    type UserId
-} from '@repo/types';
+import { type AccommodationId, LifecycleStatusEnum, PermissionEnum } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import * as permissionManager from '../../utils/permission-manager';
@@ -108,7 +103,7 @@ describe('accommodation.service.restore', () => {
     it('should deny restore if user is not the owner and lacks global permissions', async () => {
         // Arrange: Create a user who is not the owner and has no global permissions
         const ownerId = getMockUserId();
-        const notOwnerId = 'not-owner-id' as UserId;
+        const notOwnerId = getMockUserId('not-owner-id');
         const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const now = new Date();
         const archivedAccommodation = {
@@ -193,7 +188,7 @@ describe('accommodation.service.restore', () => {
     it('should deny restore if user has insufficient permissions', async () => {
         // Arrange: Create a user who is not the owner and has insufficient permissions
         const ownerId = getMockUserId();
-        const notOwnerId = 'not-owner-id' as UserId;
+        const notOwnerId = getMockUserId('not-owner-id');
         const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const now = new Date();
         const archivedAccommodation = {

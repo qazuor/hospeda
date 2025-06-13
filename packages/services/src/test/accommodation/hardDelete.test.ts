@@ -1,10 +1,5 @@
 import { AccommodationModel } from '@repo/db';
-import {
-    type AccommodationId,
-    LifecycleStatusEnum,
-    PermissionEnum,
-    type UserId
-} from '@repo/types';
+import { type AccommodationId, LifecycleStatusEnum, PermissionEnum } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import * as permissionManager from '../../utils/permission-manager';
@@ -59,7 +54,7 @@ describe('accommodation.service.hardDelete', () => {
     it('should deny hard-delete if user is not the owner and lacks global permissions', async () => {
         // Arrange: Create a user who is not the owner and has no global permissions
         const ownerId = getMockUserId();
-        const notOwnerId = 'not-owner-id' as UserId;
+        const notOwnerId = getMockUserId('not-owner-id');
         const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
@@ -131,7 +126,7 @@ describe('accommodation.service.hardDelete', () => {
     it('should deny hard-delete if user has insufficient permissions', async () => {
         // Arrange: Create a user who is not the owner and has insufficient permissions
         const ownerId = getMockUserId();
-        const notOwnerId = 'not-owner-id' as UserId;
+        const notOwnerId = getMockUserId('not-owner-id');
         const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {

@@ -8,7 +8,7 @@ import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/user
 
 const mockUserId: UserId = getMockUserId();
 const mockUser = getMockUser({ id: mockUserId });
-const mockBookmark = getMockUserBookmark();
+const mockBookmark = getMockUserBookmark({ userId: mockUserId });
 const publicUser = getMockPublicUser();
 const testBookmarkId = getMockUserId('test-bookmark-id');
 const mockBookmarkWithId = { ...mockBookmark, id: testBookmarkId };

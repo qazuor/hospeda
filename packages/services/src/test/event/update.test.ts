@@ -11,25 +11,32 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockEvent } from '../factories/eventFactory';
-import { getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockEvent, getMockEventId } from '../factories/eventFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 
-const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
-const superAdmin = getMockUser({ id: 'superadmin-1' as UserId, role: RoleEnum.SUPER_ADMIN });
+const admin = getMockUser({ id: getMockUserId('admin-1') as UserId, role: RoleEnum.ADMIN });
+const superAdmin = getMockUser({
+    id: getMockUserId('superadmin-1') as UserId,
+    role: RoleEnum.SUPER_ADMIN
+});
 const userWithPerm = getMockUser({
-    id: 'user-2' as UserId,
+    id: getMockUserId('user-2') as UserId,
     role: RoleEnum.USER,
     permissions: [PermissionEnum.EVENT_UPDATE]
 });
-const userNoPerm = getMockUser({ id: 'user-3' as UserId, role: RoleEnum.USER, permissions: [] });
+const userNoPerm = getMockUser({
+    id: getMockUserId('user-3') as UserId,
+    role: RoleEnum.USER,
+    permissions: []
+});
 const disabledUser = getMockUser({
-    id: 'user-4' as UserId,
+    id: getMockUserId('user-4') as UserId,
     lifecycleState: LifecycleStatusEnum.INACTIVE
 });
 const publicActor = getMockPublicUser();
 
 const baseEvent = getMockEvent({
-    id: 'event-1' as EventId,
+    id: getMockEventId('event-1') as EventId,
     slug: 'original-slug',
     summary: 'Original',
     category: EventCategoryEnum.MUSIC,
@@ -98,7 +105,7 @@ describe('event.service.update', () => {
     it('should not allow duplicate slug', async () => {
         vi.spyOn(EventModel, 'getById').mockResolvedValue(baseEvent);
         vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
-            getMockEvent({ id: 'event-2' as EventId, slug: 'new-slug' })
+            getMockEvent({ id: getMockEventId('event-2') as EventId, slug: 'new-slug' })
         );
         await expect(
             EventService.update({ ...validInput, slug: 'new-slug' }, admin)

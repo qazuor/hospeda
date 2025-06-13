@@ -1,48 +1,43 @@
 import { EventModel } from '@repo/db';
-import {
-    type EventId,
-    LifecycleStatusEnum,
-    PermissionEnum,
-    RoleEnum,
-    type UserId,
-    VisibilityEnum
-} from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
 import { getMockEvent, getMockPublicUser, getMockUser } from '../factories';
+import { getMockEventId } from '../factories/eventFactory';
+import { getMockUserId } from '../factories/userFactory';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('event.service.getUpcoming', () => {
-    const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
+    const admin = getMockUser({ id: getMockUserId('admin-1'), role: RoleEnum.ADMIN });
     const userWithPerm = getMockUser({
-        id: 'user-2' as UserId,
+        id: getMockUserId('user-2'),
         role: RoleEnum.USER,
         permissions: [PermissionEnum.EVENT_VIEW_PRIVATE]
     });
     const userNoPerm = getMockUser({
-        id: 'user-3' as UserId,
+        id: getMockUserId('user-3'),
         role: RoleEnum.USER,
         permissions: []
     });
     const disabledUser = getMockUser({
-        id: 'user-4' as UserId,
+        id: getMockUserId('user-4'),
         lifecycleState: LifecycleStatusEnum.INACTIVE
     });
     const publicActor = getMockPublicUser();
     const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24); // +1 day
     const publicEvent = getMockEvent({
-        id: 'event-1' as EventId,
+        id: getMockEventId('event-1'),
         visibility: VisibilityEnum.PUBLIC,
         date: { start: futureDate }
     });
     const privateEvent = getMockEvent({
-        id: 'event-2' as EventId,
+        id: getMockEventId('event-2'),
         visibility: VisibilityEnum.PRIVATE,
         date: { start: futureDate }
     });
     const archivedEvent = getMockEvent({
-        id: 'event-3' as EventId,
+        id: getMockEventId('event-3'),
         visibility: VisibilityEnum.PUBLIC,
         lifecycleState: LifecycleStatusEnum.ARCHIVED,
         date: { start: futureDate }

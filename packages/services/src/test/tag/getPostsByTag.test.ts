@@ -60,7 +60,7 @@ describe('TagService.getPostsByTag', () => {
 
     it('throws on invalid input (Zod)', async () => {
         await expect(
-            TagService.getPostsByTag({ tagId: '' as TagId }, publicUser)
+            TagService.getPostsByTag({ tagId: getMockTagId('') as TagId }, publicUser)
         ).rejects.toThrow();
     });
 

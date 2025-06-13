@@ -1,5 +1,4 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
@@ -122,7 +121,7 @@ describe('PostService.getByRelatedAccommodation', () => {
     });
 
     it('should throw and log if input is invalid', async () => {
-        const input = { accommodationId: '' as PostId };
+        const input = { accommodationId: '' };
         await expect(PostService.getByRelatedAccommodation(input, user)).rejects.toThrow();
         expectInfoLog(
             { actor: expect.objectContaining({ role: 'USER' }), input: { accommodationId: '' } },

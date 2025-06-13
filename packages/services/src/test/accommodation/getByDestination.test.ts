@@ -1,15 +1,9 @@
 import { AccommodationModel } from '@repo/db';
-import {
-    LifecycleStatusEnum,
-    PermissionEnum,
-    RoleEnum,
-    type UserId,
-    VisibilityEnum
-} from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
-import { getMockDestinationId } from '../factories';
 import { createMockAccommodation, getMockAccommodationId } from '../factories/accommodationFactory';
+import { getMockDestinationId } from '../factories/destinationFactory';
 import { createMockUser, getMockUserId } from '../factories/userFactory';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
@@ -92,7 +86,7 @@ describe('accommodation.service.getByDestination', () => {
             id: getMockAccommodationId('acc-7'),
             destinationId,
             visibility: VisibilityEnum.PRIVATE,
-            ownerId: 'other-user' as UserId
+            ownerId: getMockUserId('other-user')
         });
         (AccommodationModel.search as Mock).mockResolvedValue([
             accommodationPublic,

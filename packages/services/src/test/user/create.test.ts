@@ -1,26 +1,27 @@
 import { UserModel } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, type UserId, type UserType } from '@repo/types';
+import { LifecycleStatusEnum, RoleEnum, type UserType } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../user/user.service';
+import { getMockUserId } from '../factories/userFactory';
 
 const getMockUser = (
     overrides: Partial<UserType & { email?: string }> = {}
 ): UserType & { email?: string } => ({
-    id: 'user-1' as UserId,
+    id: getMockUserId('user-1'),
     userName: 'testuser',
     password: '',
     role: RoleEnum.USER,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     createdAt: new Date(),
     updatedAt: new Date(),
-    createdById: 'user-1' as UserId,
-    updatedById: 'user-1' as UserId,
+    createdById: getMockUserId('user-1'),
+    updatedById: getMockUserId('user-1'),
     ...overrides
 });
-const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
-const user = getMockUser({ id: 'user-2' as UserId, role: RoleEnum.USER });
+const admin = getMockUser({ id: getMockUserId('admin-1'), role: RoleEnum.ADMIN });
+const user = getMockUser({ id: getMockUserId('user-2'), role: RoleEnum.USER });
 const disabledUser = getMockUser({
-    id: 'user-3' as UserId,
+    id: getMockUserId('user-3'),
     role: RoleEnum.ADMIN,
     lifecycleState: LifecycleStatusEnum.INACTIVE
 });
@@ -45,12 +46,12 @@ describe('user.service.create', () => {
         vi.spyOn(UserModel, 'getByEmail').mockResolvedValue(undefined);
         vi.spyOn(UserModel, 'create').mockImplementation(async (input) => ({
             ...input,
-            id: 'user-99' as UserId,
+            id: getMockUserId('user-99'),
             password: 'hashed',
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: 'admin-1' as UserId,
-            updatedById: 'admin-1' as UserId
+            createdById: getMockUserId('admin-1'),
+            updatedById: getMockUserId('admin-1')
         }));
         const result = await UserService.create(validInput, admin);
         expect(result.user.userName).toBe(validInput.userName);

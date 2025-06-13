@@ -8,28 +8,27 @@ import {
 } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
-
-import type { EventId, EventLocationId } from '@repo/types';
-import { getMockEvent } from '../factories/eventFactory';
+import { getMockEventLocationId } from '../factories';
+import { getMockEvent, getMockEventId } from '../factories/eventFactory';
 import { getMockPublicUser, getMockUser } from '../factories/userFactory';
 
-const locationId = 'loc-1' as EventLocationId;
+const locationId = getMockEventLocationId();
 const publicEvent = getMockEvent({
-    id: 'event-public' as EventId,
+    id: getMockEventId('event-public'),
     slug: 'public-event',
     locationId,
     visibility: VisibilityEnum.PUBLIC,
     lifecycleState: LifecycleStatusEnum.ACTIVE
 });
 const privateEvent = getMockEvent({
-    id: 'event-private' as EventId,
+    id: getMockEventId('event-private'),
     slug: 'private-event',
     locationId,
     visibility: VisibilityEnum.PRIVATE,
     lifecycleState: LifecycleStatusEnum.ACTIVE
 });
 const archivedEvent = getMockEvent({
-    id: 'event-archived' as EventId,
+    id: getMockEventId('event-archived'),
     slug: 'archived-event',
     locationId,
     visibility: VisibilityEnum.PUBLIC,

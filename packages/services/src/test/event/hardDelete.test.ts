@@ -1,37 +1,34 @@
 import { EventModel } from '@repo/db';
-import {
-    type EventId,
-    LifecycleStatusEnum,
-    PermissionEnum,
-    RoleEnum,
-    type UserId
-} from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockEvent } from '../factories/eventFactory';
-import { getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockEvent, getMockEventId } from '../factories/eventFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('event.service.hardDelete', () => {
-    const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
-    const superAdmin = getMockUser({ id: 'superadmin-1' as UserId, role: RoleEnum.SUPER_ADMIN });
+    const admin = getMockUser({ id: getMockUserId('admin-1'), role: RoleEnum.ADMIN });
+    const superAdmin = getMockUser({
+        id: getMockUserId('superadmin-1'),
+        role: RoleEnum.SUPER_ADMIN
+    });
     const userWithPerm = getMockUser({
-        id: 'user-2' as UserId,
+        id: getMockUserId('user-2'),
         role: RoleEnum.USER,
         permissions: [PermissionEnum.EVENT_HARD_DELETE]
     });
     const userNoPerm = getMockUser({
-        id: 'user-3' as UserId,
+        id: getMockUserId('user-3'),
         role: RoleEnum.USER,
         permissions: []
     });
     const disabledUser = getMockUser({
-        id: 'user-4' as UserId,
+        id: getMockUserId('user-4'),
         lifecycleState: LifecycleStatusEnum.INACTIVE
     });
     const publicActor = getMockPublicUser();
-    const eventId = 'event-1' as EventId;
+    const eventId = getMockEventId('event-1');
     const event = getMockEvent({ id: eventId });
 
     beforeEach(() => {

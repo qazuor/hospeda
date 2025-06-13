@@ -1,10 +1,16 @@
 import { PostModel } from '@repo/db';
-import type { DestinationId, PostId, UserId } from '@repo/types';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PostId } from '@repo/types';
+import { VisibilityEnum } from '@repo/types';
+import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost } from '../factories/postFactory';
-import { getMockUser } from '../factories/userFactory';
+import { getMockDestinationId } from '../factories/destinationFactory';
+import { getMockPost, getMockPostId } from '../factories/postFactory';
+import {
+    getMockAdminUser,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories/userFactory';
 import { expectInfoLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/permission-manager', () => ({
@@ -13,36 +19,34 @@ vi.mock('../../utils/permission-manager', () => ({
     })
 }));
 
-const user = getMockUser({ id: 'not-author-uuid' as UserId, role: RoleEnum.USER });
-const admin = getMockUser({ role: RoleEnum.ADMIN, id: 'admin-uuid' as UserId });
-const publicUser = { role: RoleEnum.GUEST };
-const destinationId = 'dest-uuid' as DestinationId;
+const user = getMockUser({ id: getMockUserId('not-author-uuid') });
+const admin = getMockAdminUser({ id: getMockUserId('admin-uuid') });
+const publicUser = getMockPublicUser();
+const destinationId = getMockDestinationId('dest-uuid');
+const publicPostId = getMockPostId('public-post-uuid');
 const posts = [
     getMockPost({
-        id: 'public-post-uuid' as PostId,
+        id: publicPostId,
         relatedDestinationId: destinationId,
         visibility: VisibilityEnum.PUBLIC,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     }),
     getMockPost({
-        id: 'private-post-uuid' as PostId,
+        id: getMockPostId('private-post-uuid'),
         relatedDestinationId: destinationId,
         visibility: VisibilityEnum.PRIVATE,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     }),
     getMockPost({
-        id: 'other-public-post-uuid' as PostId,
-        relatedDestinationId: 'other-dest' as DestinationId,
+        id: getMockPostId('other-public-post-uuid'),
+        relatedDestinationId: getMockDestinationId('other-dest'),
         visibility: VisibilityEnum.PUBLIC,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     })
 ];
 
 beforeEach(() => {
     vi.clearAllMocks();
-});
-afterEach(() => {
-    // No redefinir el mock aquí
 });
 
 describe('PostService.getByRelatedDestination', () => {
@@ -59,7 +63,7 @@ describe('PostService.getByRelatedDestination', () => {
         expectInfoLog(
             {
                 actor: expect.objectContaining({ role: 'GUEST' }),
-                input: { destinationId: 'dest-uuid' }
+                input: { destinationId: destinationId }
             },
             'getByRelatedDestination:start'
         );
@@ -86,7 +90,7 @@ describe('PostService.getByRelatedDestination', () => {
         expectInfoLog(
             {
                 actor: expect.objectContaining({ role: 'ADMIN' }),
-                input: { destinationId: 'dest-uuid' }
+                input: { destinationId: destinationId }
             },
             'getByRelatedDestination:start'
         );
@@ -104,13 +108,13 @@ describe('PostService.getByRelatedDestination', () => {
         const post = result.posts[0];
         expect(post).toBeDefined();
         if (post) {
-            expect(post.id).toBe('public-post-uuid');
+            expect(post.id).toBe(publicPostId);
             expect(post.visibility).toBe(VisibilityEnum.PUBLIC);
         }
         expectInfoLog(
             {
                 actor: expect.objectContaining({ role: 'USER' }),
-                input: { destinationId: 'dest-uuid' }
+                input: { destinationId: destinationId }
             },
             'getByRelatedDestination:start'
         );

@@ -1,16 +1,12 @@
 import { AccommodationModel } from '@repo/db';
-import {
-    type AccommodationId,
-    LifecycleStatusEnum,
-    PermissionEnum,
-    type UserId
-} from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import * as permissionManager from '../../utils/permission-manager';
 import {
     createMockAccommodation,
-    createMockArchivedAccommodation
+    createMockArchivedAccommodation,
+    getMockAccommodationId
 } from '../factories/accommodationFactory';
 import {
     getMockAdminUser,
@@ -95,7 +91,7 @@ describe('accommodation.service.softDelete', () => {
     it('should deny delete if user is not the owner and lacks global permissions', async () => {
         // Arrange: Create a user who is not the owner and has no global permissions
         const ownerId = getMockUserId();
-        const notOwnerId = 'not-owner-id' as UserId;
+        const notOwnerId = getMockUserId('not-owner-id');
         const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
@@ -165,7 +161,7 @@ describe('accommodation.service.softDelete', () => {
     it('should deny delete if user has insufficient permissions', async () => {
         // Arrange: Create a user who is not the owner and has insufficient permissions
         const ownerId = getMockUserId();
-        const notOwnerId = 'not-owner-id' as UserId;
+        const notOwnerId = getMockUserId('not-owner-id');
         const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const accommodation = createMockAccommodation({ ownerId });
         vi.spyOn(permissionManager, 'hasPermission').mockImplementation(() => {
@@ -193,7 +189,7 @@ describe('accommodation.service.softDelete', () => {
 
         // Act & Assert: Attempt to soft-delete and expect not found error
         await expect(
-            AccommodationService.softDelete({ id: 'not-exist' as AccommodationId }, user)
+            AccommodationService.softDelete({ id: getMockAccommodationId('not-exist') }, user)
         ).rejects.toThrow('Accommodation not found');
         // Assert info log for result null
         expectInfoLog({ result: { accommodation: null } }, 'delete:end');

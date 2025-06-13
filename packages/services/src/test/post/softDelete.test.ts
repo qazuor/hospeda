@@ -1,11 +1,11 @@
 import { PostModel } from '@repo/db';
-import type { PostId, UserId } from '@repo/types';
-import { RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
 import {
+    getMockAdminUser,
+    getMockDisabledUser,
     getMockPost,
     getMockPostId,
     getMockPublicUser,
@@ -25,16 +25,18 @@ vi.mock('../../utils/service-helper', async (importOriginal) => {
     };
 });
 
-const user = getMockUser();
-const admin = getMockUser({
-    role: RoleEnum.ADMIN,
+const userId = getMockUserId();
+const user = getMockUser({ id: userId });
+const admin = getMockAdminUser({
     id: getMockUserId('admin-uuid')
 });
 const publicUser = getMockPublicUser();
-const post = getMockPost({ authorId: user.id });
+const post = getMockPost({
+    id: getMockPostId('post-uuid'),
+    authorId: userId
+});
 const noPermUser = getMockUser({
-    id: getMockUserId('no-perm-uuid'),
-    role: RoleEnum.USER
+    id: getMockUserId('no-perm-uuid')
 });
 
 beforeEach(() => {
@@ -90,9 +92,9 @@ describe('PostService.softDelete', () => {
     });
 
     it('should throw and log if input is invalid', async () => {
-        const input = { id: '' as PostId };
+        const input = { id: getMockPostId('') };
         await expect(PostService.softDelete(input, user)).rejects.toThrow();
-        expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
+        expect(mockServiceLogger.info).toHaveBeenCalledTimes(2);
     });
 
     it('should throw and log if actor is public user', async () => {
@@ -111,9 +113,8 @@ describe('PostService.softDelete', () => {
     it('should throw and log if actor is disabled', async () => {
         (PostModel.getById as Mock).mockResolvedValue(post);
         vi.mocked(serviceHelper.isUserDisabled).mockReturnValue(true);
-        const disabledUser = getMockUser({
-            id: 'disabled-uuid' as UserId,
-            role: RoleEnum.USER
+        const disabledUser = getMockDisabledUser({
+            id: getMockUserId('disabled-uuid')
         });
         const input = { id: post.id };
         await expect(PostService.softDelete(input, disabledUser)).rejects.toThrow(

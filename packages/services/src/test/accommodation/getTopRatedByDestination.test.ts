@@ -1,37 +1,36 @@
 import { AccommodationModel } from '@repo/db';
-import {
-    type AccommodationId,
-    type DestinationId,
-    LifecycleStatusEnum,
-    RoleEnum,
-    type UserId,
-    VisibilityEnum
-} from '@repo/types';
+import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
-import { getMockAccommodation } from '../factories';
-import { getMockDisabledUser, getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockAccommodation, getMockAccommodationId } from '../factories/accommodationFactory';
+import { getMockDestinationId } from '../factories/destinationFactory';
+import {
+    getMockDisabledUser,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories/userFactory';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.getTopRatedByDestination', () => {
     it('should return the top N PUBLIC accommodations for a destination to a public user, ordered by averageRating desc', async () => {
         // Arrange
         const publicUser = getMockPublicUser();
-        const destinationId = 'dest-1' as DestinationId;
+        const destinationId = getMockDestinationId('dest-1');
         const accommodation1 = getMockAccommodation({
-            id: 'acc-1' as AccommodationId,
+            id: getMockAccommodationId('acc-1'),
             destinationId,
             visibility: VisibilityEnum.PUBLIC,
             averageRating: 4.9
         });
         const accommodation2 = getMockAccommodation({
-            id: 'acc-2' as AccommodationId,
+            id: getMockAccommodationId('acc-2'),
             destinationId,
             visibility: VisibilityEnum.PUBLIC,
             averageRating: 4.7
         });
         const accommodation3 = getMockAccommodation({
-            id: 'acc-3' as AccommodationId,
+            id: getMockAccommodationId('acc-3'),
             destinationId,
             visibility: VisibilityEnum.PUBLIC,
             averageRating: 4.5
@@ -62,21 +61,21 @@ describe('accommodation.service.getTopRatedByDestination', () => {
     it('should return the top N accommodations (PUBLIC and PRIVATE) for a destination to an admin, ordered by averageRating desc', async () => {
         // Arrange
         const adminUser = getMockUser({ role: RoleEnum.ADMIN });
-        const destinationId = 'dest-2' as DestinationId;
+        const destinationId = getMockDestinationId('dest-2');
         const accommodationPublic = getMockAccommodation({
-            id: 'acc-4' as AccommodationId,
+            id: getMockAccommodationId('acc-4'),
             destinationId,
             visibility: VisibilityEnum.PUBLIC,
             averageRating: 4.8
         });
         const accommodationPrivate = getMockAccommodation({
-            id: 'acc-5' as AccommodationId,
+            id: getMockAccommodationId('acc-5'),
             destinationId,
             visibility: VisibilityEnum.PRIVATE,
             averageRating: 4.6
         });
         const accommodationPublic2 = getMockAccommodation({
-            id: 'acc-6' as AccommodationId,
+            id: getMockAccommodationId('acc-6'),
             destinationId,
             visibility: VisibilityEnum.PUBLIC,
             averageRating: 4.4
@@ -106,27 +105,27 @@ describe('accommodation.service.getTopRatedByDestination', () => {
 
     it('should return only accessible accommodations for a destination to a regular user, ordered by averageRating desc', async () => {
         // Arrange
-        const userId = 'user-3' as UserId;
+        const userId = getMockUserId('user-3');
         const user = getMockUser({ id: userId, role: RoleEnum.USER });
-        const destinationId = 'dest-3' as DestinationId;
+        const destinationId = getMockDestinationId('dest-3');
         const accommodationPublic = getMockAccommodation({
-            id: 'acc-7' as AccommodationId,
+            id: getMockAccommodationId('acc-7'),
             destinationId,
             visibility: VisibilityEnum.PUBLIC,
             averageRating: 4.9
         });
         const accommodationPrivateOwned = getMockAccommodation({
-            id: 'acc-8' as AccommodationId,
+            id: getMockAccommodationId('acc-8'),
             destinationId,
             visibility: VisibilityEnum.PRIVATE,
             ownerId: userId,
             averageRating: 4.7
         });
         const accommodationPrivateOther = getMockAccommodation({
-            id: 'acc-9' as AccommodationId,
+            id: getMockAccommodationId('acc-9'),
             destinationId,
             visibility: VisibilityEnum.PRIVATE,
-            ownerId: 'other-user' as UserId,
+            ownerId: getMockUserId('other-user'),
             averageRating: 4.8
         });
         (AccommodationModel.search as Mock).mockResolvedValue([
@@ -155,7 +154,7 @@ describe('accommodation.service.getTopRatedByDestination', () => {
     it('should return an empty array if there are no accommodations for the destination', async () => {
         // Arrange
         const user = getMockUser();
-        const destinationId = 'dest-4' as DestinationId;
+        const destinationId = getMockDestinationId('dest-4');
         (AccommodationModel.search as Mock).mockResolvedValue([]);
         const limit = 3;
         // Act
@@ -176,19 +175,19 @@ describe('accommodation.service.getTopRatedByDestination', () => {
         // Arrange
         vi.clearAllMocks();
         const disabledUser = getMockDisabledUser({
-            id: 'user-disabled' as UserId,
+            id: getMockUserId('user-disabled'),
             role: RoleEnum.USER,
             lifecycleState: LifecycleStatusEnum.INACTIVE
         });
-        const destinationId = 'dest-5' as DestinationId;
+        const destinationId = getMockDestinationId('dest-5');
         const accommodation1 = getMockAccommodation({
-            id: 'acc-10' as AccommodationId,
+            id: getMockAccommodationId('acc-10'),
             destinationId,
             visibility: VisibilityEnum.PUBLIC,
             averageRating: 4.2
         });
         const accommodation2 = getMockAccommodation({
-            id: 'acc-11' as AccommodationId,
+            id: getMockAccommodationId('acc-11'),
             destinationId,
             visibility: VisibilityEnum.PRIVATE,
             averageRating: 4.1
@@ -219,17 +218,17 @@ describe('accommodation.service.getTopRatedByDestination', () => {
     it('should log denied for accommodations with unknown visibility', async () => {
         // Arrange
         vi.clearAllMocks();
-        const user = getMockUser({ id: 'user-6' as UserId, role: RoleEnum.USER });
-        const destinationId = 'dest-6' as DestinationId;
+        const user = getMockUser({ id: getMockUserId('user-6'), role: RoleEnum.USER });
+        const destinationId = getMockDestinationId('dest-6');
         const accommodationUnknown = getMockAccommodation({
-            id: 'acc-12' as AccommodationId,
+            id: getMockAccommodationId('acc-12'),
             destinationId,
             // @ts-expect-error purposely invalid visibility for test
             visibility: 'UNKNOWN_VISIBILITY',
             averageRating: 4.9
         });
         const accommodationPublic = getMockAccommodation({
-            id: 'acc-13' as AccommodationId,
+            id: getMockAccommodationId('acc-13'),
             destinationId,
             visibility: VisibilityEnum.PUBLIC,
             averageRating: 4.7

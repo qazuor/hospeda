@@ -1,5 +1,4 @@
 import { EntityTagModel } from '@repo/db';
-import type { AccommodationId, TagId } from '@repo/types';
 import { EntityTypeEnum, PermissionEnum } from '@repo/types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TagService } from '../../tag/tag.service';
@@ -218,8 +217,8 @@ describe('TagService.removeTag', () => {
         await expect(
             TagService.removeTag(
                 {
-                    tagId: '' as TagId,
-                    entityId: '' as AccommodationId,
+                    tagId: getMockTagId(''),
+                    entityId: getMockAccommodationId(''),
                     entityType: 'INVALID' as EntityTypeEnum
                 },
                 user

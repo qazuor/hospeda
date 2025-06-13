@@ -1,12 +1,16 @@
 import { PostModel } from '@repo/db';
-import type { PostId, UserId } from '@repo/types';
 import { RoleEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
 import { getMockPost, getMockPostId } from '../factories/postFactory';
-import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
+import {
+    getMockAdminUser,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories/userFactory';
 import { expectPermissionLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/service-helper', async (importOriginal) => {
@@ -20,15 +24,13 @@ vi.mock('../../utils/service-helper', async (importOriginal) => {
     };
 });
 
-const user = getMockUser();
-const admin = getMockUser({
-    role: RoleEnum.ADMIN,
-    id: 'admin-uuid' as UserId
-});
+const userId = getMockUserId();
+const user = getMockUser({ id: userId });
+const admin = getMockAdminUser({ id: getMockUserId('admin-uuid') });
 const publicUser = getMockPublicUser();
-const post = getMockPost({ authorId: user.id });
+const post = getMockPost({ authorId: userId });
 const noPermUser = getMockUser({
-    id: 'no-perm-uuid' as UserId,
+    id: getMockUserId('no-perm-uuid'),
     role: RoleEnum.USER
 });
 
@@ -73,7 +75,7 @@ describe('PostService.hardDelete', () => {
     });
 
     it('should throw and log if input is invalid', async () => {
-        const input = { id: '' as PostId };
+        const input = { id: '' };
         await expect(PostService.hardDelete(input, user)).rejects.toThrow();
         expect(mockServiceLogger.info).toHaveBeenCalledTimes(1);
     });
@@ -111,7 +113,7 @@ describe('PostService.hardDelete', () => {
 
     it('should throw if post not found', async () => {
         (PostModel.getById as Mock).mockResolvedValue(null);
-        const input = { id: getMockPostId('not-found') as PostId };
+        const input = { id: getMockPostId('not-found') };
         await expect(PostService.hardDelete(input, user)).rejects.toThrow(/Post not found/);
     });
 

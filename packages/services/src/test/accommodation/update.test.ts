@@ -17,11 +17,13 @@ import type { AccommodationUpdateInput } from '../../accommodation/accommodation
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import * as permissionManager from '../../utils/permission-manager';
 import { CanViewReasonEnum } from '../../utils/service-helper';
+import { getMockFeatureId, getMockTagId } from '../factories';
 import {
     createMockAccommodation,
     createMockAccommodationWithMedia,
     createMockArchivedAccommodation,
     createMockPrivateAccommodation,
+    getMockAccommodationId,
     getMockAccommodationUpdateInput
 } from '../factories/accommodationFactory';
 import {
@@ -106,7 +108,7 @@ describe('accommodation.service.update', () => {
             ...createMockAccommodationWithMedia({ ownerId }),
             tags: [
                 {
-                    id: 'tag-1' as TagId,
+                    id: getMockTagId('tag-1'),
                     name: 'Tag 1',
                     color: 'blue',
                     createdAt: new Date(),
@@ -118,8 +120,8 @@ describe('accommodation.service.update', () => {
             ],
             features: [
                 {
-                    featureId: 'feature-1' as FeatureId,
-                    accommodationId: 'acc-1' as AccommodationId
+                    featureId: getMockFeatureId('feature-1'),
+                    accommodationId: getMockAccommodationId('acc-1')
                 }
             ]
         };
@@ -130,7 +132,7 @@ describe('accommodation.service.update', () => {
             // Simulate update in tags and features (should be normalized out)
             tags: [
                 {
-                    id: 'tag-2' as TagId,
+                    id: getMockTagId('tag-2'),
                     name: 'Tag 2',
                     color: 'red',
                     createdAt: new Date(),
@@ -142,8 +144,8 @@ describe('accommodation.service.update', () => {
             ],
             features: [
                 {
-                    featureId: 'feature-2' as FeatureId,
-                    accommodationId: 'acc-1' as AccommodationId
+                    featureId: getMockFeatureId('feature-2'),
+                    accommodationId: getMockAccommodationId('acc-1')
                 }
             ],
             media: {
@@ -218,7 +220,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const notOwnerId = 'not-owner-id' as UserId;
+        const notOwnerId = getMockUserId('not-owner-id');
         const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const accommodation = createMockAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
@@ -315,7 +317,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const notOwnerId = 'not-owner-id' as UserId;
+        const notOwnerId = getMockUserId('not-owner-id');
         const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const accommodation = createMockAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
@@ -485,7 +487,7 @@ describe('accommodation.service.update', () => {
         const accommodation = {
             ...createMockAccommodation({ ownerId }),
             updatedAt: oldDate,
-            updatedById: 'old-updater-id' as UserId
+            updatedById: getMockUserId('old-updater-id')
         };
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Updated Name for Dates',

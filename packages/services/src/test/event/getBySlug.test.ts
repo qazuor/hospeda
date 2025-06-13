@@ -1,10 +1,10 @@
 import { EventModel } from '@repo/db';
-import type { EventId, UserId } from '@repo/types';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockEvent } from '../factories';
+import { getMockEvent, getMockUserId } from '../factories';
+import { getMockEventId } from '../factories/eventFactory';
 
 /**
  * Unit tests for event.service.getBySlug
@@ -22,47 +22,47 @@ import { getMockEvent } from '../factories';
 describe('event.service.getBySlug', () => {
     const baseEvent = getMockEvent({
         slug: 'event-slug',
-        id: 'event-1' as EventId,
-        authorId: 'user-1' as UserId
+        id: getMockEventId('event-1'),
+        authorId: getMockUserId('user-1')
     });
     const admin = {
-        id: 'admin-1',
+        id: getMockUserId('admin-1'),
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.EVENT_VIEW_PRIVATE, PermissionEnum.EVENT_VIEW_DRAFT],
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
     const superAdmin = {
-        id: 'superadmin-1',
+        id: getMockUserId('superadmin-1'),
         role: RoleEnum.SUPER_ADMIN,
         permissions: [],
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
     const author = {
-        id: 'user-1',
+        id: getMockUserId('user-1'),
         role: RoleEnum.USER,
         permissions: [],
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
     const normalUser = {
-        id: 'user-2',
+        id: getMockUserId('user-2'),
         role: RoleEnum.USER,
         permissions: [],
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
     const privatePermUser = {
-        id: 'user-3',
+        id: getMockUserId('user-3'),
         role: RoleEnum.USER,
         permissions: [PermissionEnum.EVENT_VIEW_PRIVATE],
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
     const draftPermUser = {
-        id: 'user-4',
+        id: getMockUserId('user-4'),
         role: RoleEnum.USER,
         permissions: [PermissionEnum.EVENT_VIEW_DRAFT],
         lifecycleState: LifecycleStatusEnum.ACTIVE
     };
     const disabledUser = {
-        id: 'user-5',
+        id: getMockUserId('user-5'),
         role: RoleEnum.USER,
         permissions: [],
         lifecycleState: LifecycleStatusEnum.INACTIVE
@@ -116,7 +116,7 @@ describe('event.service.getBySlug', () => {
     it('author can view their own private/draft event', async () => {
         for (const visibility of [VisibilityEnum.PRIVATE, VisibilityEnum.DRAFT]) {
             vi.spyOn(EventModel, 'getBySlug').mockResolvedValue(
-                getMockEvent({ ...baseEvent, visibility, authorId: author.id as UserId })
+                getMockEvent({ ...baseEvent, visibility, authorId: author.id })
             );
             const result = await EventService.getBySlug({ slug: baseEvent.slug }, author);
             expect(result.event).not.toBeNull();

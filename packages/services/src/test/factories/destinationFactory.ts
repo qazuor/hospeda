@@ -1,10 +1,6 @@
-import type {
-    DestinationId,
-    DestinationType,
-    DestinationWithRelationsType,
-    UserId
-} from '@repo/types';
+import type { DestinationId, DestinationType, DestinationWithRelationsType } from '@repo/types';
 import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/types';
+import { getMockUserId } from './userFactory';
 import { getMockId } from './utilsFactory';
 
 /**
@@ -13,7 +9,7 @@ import { getMockId } from './utilsFactory';
  * @returns DestinationType
  */
 export const getMockDestination = (overrides: Partial<DestinationType> = {}): DestinationType => ({
-    id: 'destination-1' as DestinationId,
+    id: getMockDestinationId('destination-1'),
     slug: 'test-destination',
     name: 'Test Destination',
     summary: 'A test destination',
@@ -25,8 +21,8 @@ export const getMockDestination = (overrides: Partial<DestinationType> = {}): De
     accommodationsCount: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
-    createdById: 'user-1' as UserId,
-    updatedById: 'user-1' as UserId,
+    createdById: getMockUserId('creator-1'),
+    updatedById: getMockUserId('updater-1'),
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     moderationState: ModerationStatusEnum.PENDING_REVIEW,
     reviewsCount: 0,

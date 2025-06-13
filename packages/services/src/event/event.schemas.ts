@@ -4,7 +4,9 @@ import {
     EventDateSchema,
     EventPriceSchema,
     MediaSchema,
-    VisibilityEnumSchema
+    TagsArraySchema,
+    VisibilityEnumSchema,
+    WithSeoSchema
 } from '@repo/schemas';
 import type { EventType, UserId } from '@repo/types';
 import { EventCategoryEnum, LifecycleStatusEnum, VisibilityEnum } from '@repo/types';
@@ -15,7 +17,13 @@ import { z } from 'zod';
  * @example { id: 'event-123' }
  */
 export const EventGetByIdInputSchema = z.object({
-    id: z.string() // EventId as string
+    id: z
+        .string({
+            required_error: 'serviceInputError.event.id.required',
+            invalid_type_error: 'serviceInputError.event.id.invalidType'
+        })
+        .min(1, 'serviceInputError.event.id.required')
+        .uuid('serviceInputError.event.id.invalidUuid')
 });
 
 /**
@@ -37,7 +45,12 @@ export type EventGetByIdOutput = {
  * @example { slug: 'event-slug' }
  */
 export const EventGetBySlugInputSchema = z.object({
-    slug: z.string().min(1, 'Slug is required')
+    slug: z
+        .string({
+            required_error: 'serviceInputError.event.slug.required',
+            invalid_type_error: 'serviceInputError.event.slug.invalidType'
+        })
+        .min(1, 'serviceInputError.event.slug.required')
 });
 
 /**
@@ -59,21 +72,55 @@ export type EventGetBySlugOutput = {
  * Omits auto-generated fields (id, audit, etc.).
  */
 export const EventCreateInputSchema = z.object({
-    slug: z.string().min(1, 'Slug is required'),
-    summary: z.string().min(1, 'Summary is required'),
-    description: z.string().optional(),
+    slug: z
+        .string({
+            required_error: 'serviceInputError.event.slug.required',
+            invalid_type_error: 'serviceInputError.event.slug.invalidType'
+        })
+        .min(1, 'serviceInputError.event.slug.required'),
+    summary: z
+        .string({
+            required_error: 'serviceInputError.event.summary.required',
+            invalid_type_error: 'serviceInputError.event.summary.invalidType'
+        })
+        .min(1, 'serviceInputError.event.summary.required'),
+    description: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.description.invalidType'
+        })
+        .optional(),
     media: MediaSchema.optional(),
     category: EventCategoryEnumSchema,
     date: EventDateSchema,
-    authorId: z.string().min(1, 'AuthorId is required'),
-    locationId: z.string().optional(),
-    organizerId: z.string().optional(),
+    authorId: z
+        .string({
+            required_error: 'serviceInputError.event.authorId.required',
+            invalid_type_error: 'serviceInputError.event.authorId.invalidType'
+        })
+        .min(1, 'serviceInputError.event.authorId.required')
+        .uuid('serviceInputError.event.authorId.invalidUuid'),
+    locationId: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.locationId.invalidType'
+        })
+        .uuid('serviceInputError.event.locationId.invalidUuid')
+        .optional(),
+    organizerId: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.organizerId.invalidType'
+        })
+        .uuid('serviceInputError.event.organizerId.invalidUuid')
+        .optional(),
     pricing: EventPriceSchema.optional(),
     contact: ContactInfoSchema.optional(),
     visibility: VisibilityEnumSchema,
-    isFeatured: z.boolean().optional(),
-    tags: z.array(z.string()).optional(),
-    seo: z.any().optional()
+    isFeatured: z
+        .boolean({
+            invalid_type_error: 'serviceInputError.event.isFeatured.invalidType'
+        })
+        .optional(),
+    tags: TagsArraySchema.optional(),
+    seo: WithSeoSchema.shape.seo.optional()
 });
 
 /**
@@ -95,24 +142,71 @@ export type EventCreateOutput = {
  * const input = { id: 'event-1', summary: 'Updated summary' };
  */
 export const EventUpdateInputSchema = z.object({
-    id: z.string().min(1, 'Event ID is required'),
-    slug: z.string().min(1).optional(),
-    summary: z.string().min(1).optional(),
-    description: z.string().optional(),
-    media: z.any().optional(),
-    category: z.string().optional(),
-    date: z.any().optional(),
-    authorId: z.string().optional(),
-    locationId: z.string().optional(),
-    organizerId: z.string().optional(),
-    pricing: z.any().optional(),
-    contact: z.any().optional(),
-    visibility: z.string().optional(),
-    isFeatured: z.boolean().optional(),
-    tags: z.array(z.string()).optional(),
-    seo: z.any().optional(),
-    lifecycleState: z.string().optional(),
-    moderationState: z.string().optional()
+    id: z
+        .string({
+            required_error: 'serviceInputError.event.id.required',
+            invalid_type_error: 'serviceInputError.event.id.invalidType'
+        })
+        .min(1, 'serviceInputError.event.id.required')
+        .uuid('serviceInputError.event.id.invalidUuid'),
+    slug: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.slug.invalidType'
+        })
+        .min(1, 'serviceInputError.event.slug.required')
+        .optional(),
+    summary: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.summary.invalidType'
+        })
+        .min(1, 'serviceInputError.event.summary.required')
+        .optional(),
+    description: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.description.invalidType'
+        })
+        .optional(),
+    media: MediaSchema.optional(),
+    category: EventCategoryEnumSchema.optional(),
+    date: EventDateSchema.optional(),
+    authorId: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.authorId.invalidType'
+        })
+        .uuid('serviceInputError.event.authorId.invalidUuid')
+        .optional(),
+    locationId: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.locationId.invalidType'
+        })
+        .uuid('serviceInputError.event.locationId.invalidUuid')
+        .optional(),
+    organizerId: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.organizerId.invalidType'
+        })
+        .uuid('serviceInputError.event.organizerId.invalidUuid')
+        .optional(),
+    pricing: EventPriceSchema.optional(),
+    contact: ContactInfoSchema.optional(),
+    visibility: VisibilityEnumSchema.optional(),
+    isFeatured: z
+        .boolean({
+            invalid_type_error: 'serviceInputError.event.isFeatured.invalidType'
+        })
+        .optional(),
+    tags: TagsArraySchema.optional(),
+    seo: WithSeoSchema.shape.seo.optional(),
+    lifecycleState: z
+        .nativeEnum(LifecycleStatusEnum, {
+            invalid_type_error: 'serviceInputError.event.lifecycleState.invalidType'
+        })
+        .optional(),
+    moderationState: z
+        .string({
+            invalid_type_error: 'serviceInputError.event.moderationState.invalidType'
+        })
+        .optional()
 });
 
 /**
@@ -134,7 +228,13 @@ export type EventUpdateOutput = { event: EventType };
  * @example { locationId: 'location-123' }
  */
 export const EventGetByLocationIdInputSchema = z.object({
-    locationId: z.string().min(1, 'LocationId is required')
+    locationId: z
+        .string({
+            required_error: 'serviceInputError.event.locationId.required',
+            invalid_type_error: 'serviceInputError.event.locationId.invalidType'
+        })
+        .min(1, 'serviceInputError.event.locationId.required')
+        .uuid('serviceInputError.event.locationId.invalidUuid')
 });
 
 /**
@@ -186,23 +286,50 @@ export type EventListOutput = { events: EventType[] };
  * @example { limit: 10, offset: 0, filters: { visibility: 'PUBLIC' } }
  */
 export const EventListInputSchema = z.object({
-    limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional(),
+    limit: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.limit.invalidType'
+        })
+        .int()
+        .min(1, 'serviceInputError.event.limit.min')
+        .max(100, 'serviceInputError.event.limit.max')
+        .optional(),
+    offset: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.offset.invalidType'
+        })
+        .int()
+        .min(0, 'serviceInputError.event.offset.min')
+        .optional(),
     filters: z
         .object({
-            visibility: z.nativeEnum(VisibilityEnum).optional(),
-            lifecycleState: z.nativeEnum(LifecycleStatusEnum).optional(),
-            authorId: z.string().optional()
+            visibility: z
+                .nativeEnum(VisibilityEnum, {
+                    invalid_type_error: 'serviceInputError.event.visibility.invalidType'
+                })
+                .optional(),
+            lifecycleState: z
+                .nativeEnum(LifecycleStatusEnum, {
+                    invalid_type_error: 'serviceInputError.event.lifecycleState.invalidType'
+                })
+                .optional(),
+            authorId: z
+                .string({
+                    invalid_type_error: 'serviceInputError.event.authorId.invalidType'
+                })
+                .optional()
         })
         .optional(),
-    /**
-     * If set, only events whose date.start is greater than or equal to this value will be returned.
-     */
-    minDate: z.coerce.date().optional(),
-    /**
-     * If set, only events whose date.start is less than or equal to this value will be returned.
-     */
-    maxDate: z.coerce.date().optional()
+    minDate: z.coerce
+        .date({
+            invalid_type_error: 'serviceInputError.event.minDate.invalidType'
+        })
+        .optional(),
+    maxDate: z.coerce
+        .date({
+            invalid_type_error: 'serviceInputError.event.maxDate.invalidType'
+        })
+        .optional()
 });
 
 /**
@@ -210,17 +337,38 @@ export const EventListInputSchema = z.object({
  * @example { organizerId: 'org-123', limit: 10, offset: 0 }
  */
 export const getByOrganizerIdInputSchema = z.object({
-    organizerId: z.string().min(1, 'OrganizerId is required'),
-    limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional(),
-    /**
-     * If set, only events whose date.start is greater than or equal to this value will be returned.
-     */
-    minDate: z.coerce.date().optional(),
-    /**
-     * If set, only events whose date.start is less than or equal to this value will be returned.
-     */
-    maxDate: z.coerce.date().optional()
+    organizerId: z
+        .string({
+            required_error: 'serviceInputError.event.organizerId.required',
+            invalid_type_error: 'serviceInputError.event.organizerId.invalidType'
+        })
+        .min(1, 'serviceInputError.event.organizerId.required')
+        .uuid('serviceInputError.event.organizerId.invalidUuid'),
+    limit: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.limit.invalidType'
+        })
+        .int()
+        .min(1, 'serviceInputError.event.limit.min')
+        .max(100, 'serviceInputError.event.limit.max')
+        .optional(),
+    offset: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.offset.invalidType'
+        })
+        .int()
+        .min(0, 'serviceInputError.event.offset.min')
+        .optional(),
+    minDate: z.coerce
+        .date({
+            invalid_type_error: 'serviceInputError.event.minDate.invalidType'
+        })
+        .optional(),
+    maxDate: z.coerce
+        .date({
+            invalid_type_error: 'serviceInputError.event.maxDate.invalidType'
+        })
+        .optional()
 });
 
 /**
@@ -242,17 +390,35 @@ export type GetByOrganizerIdOutput = { events: EventType[] };
  * @example { category: 'FESTIVAL', limit: 10, offset: 0 }
  */
 export const getByCategoryInputSchema = z.object({
-    category: z.nativeEnum(EventCategoryEnum),
-    limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional(),
-    /**
-     * If set, only events whose date.start is greater than or equal to this value will be returned.
-     */
-    minDate: z.coerce.date().optional(),
-    /**
-     * If set, only events whose date.start is less than or equal to this value will be returned.
-     */
-    maxDate: z.coerce.date().optional()
+    category: z.nativeEnum(EventCategoryEnum, {
+        required_error: 'serviceInputError.event.category.required',
+        invalid_type_error: 'serviceInputError.event.category.invalidType'
+    }),
+    limit: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.limit.invalidType'
+        })
+        .int()
+        .min(1, 'serviceInputError.event.limit.min')
+        .max(100, 'serviceInputError.event.limit.max')
+        .optional(),
+    offset: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.offset.invalidType'
+        })
+        .int()
+        .min(0, 'serviceInputError.event.offset.min')
+        .optional(),
+    minDate: z.coerce
+        .date({
+            invalid_type_error: 'serviceInputError.event.minDate.invalidType'
+        })
+        .optional(),
+    maxDate: z.coerce
+        .date({
+            invalid_type_error: 'serviceInputError.event.maxDate.invalidType'
+        })
+        .optional()
 });
 
 /**
@@ -274,8 +440,21 @@ export type GetByCategoryOutput = { events: EventType[] };
  * @example { limit: 10, offset: 0 }
  */
 export const getFeaturedInputSchema = z.object({
-    limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional()
+    limit: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.limit.invalidType'
+        })
+        .int()
+        .min(1, 'serviceInputError.event.limit.min')
+        .max(100, 'serviceInputError.event.limit.max')
+        .optional(),
+    offset: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.offset.invalidType'
+        })
+        .int()
+        .min(0, 'serviceInputError.event.offset.min')
+        .optional()
 });
 
 /**
@@ -296,16 +475,31 @@ export type GetFeaturedOutput = { events: EventType[] };
  * @example { limit: 10, offset: 0 }
  */
 export const getUpcomingInputSchema = z.object({
-    limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional(),
-    /**
-     * If set, only events whose date.start is greater than or equal to this value will be returned.
-     */
-    minDate: z.coerce.date().optional(),
-    /**
-     * If set, only events whose date.start is less than or equal to this value will be returned.
-     */
-    maxDate: z.coerce.date().optional()
+    limit: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.limit.invalidType'
+        })
+        .int()
+        .min(1, 'serviceInputError.event.limit.min')
+        .max(100, 'serviceInputError.event.limit.max')
+        .optional(),
+    offset: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.offset.invalidType'
+        })
+        .int()
+        .min(0, 'serviceInputError.event.offset.min')
+        .optional(),
+    minDate: z.coerce
+        .date({
+            invalid_type_error: 'serviceInputError.event.minDate.invalidType'
+        })
+        .optional(),
+    maxDate: z.coerce
+        .date({
+            invalid_type_error: 'serviceInputError.event.maxDate.invalidType'
+        })
+        .optional()
 });
 
 /**
@@ -328,16 +522,29 @@ export type GetUpcomingOutput = { events: EventType[] };
  * @example { minDate: '2024-07-01', maxDate: '2024-08-01', limit: 10, offset: 0 }
  */
 export const getByDateRangeInputSchema = z.object({
-    /**
-     * Start of the date range (inclusive). Only events whose date.start >= minDate will be returned.
-     */
-    minDate: z.coerce.date(),
-    /**
-     * End of the date range (inclusive). Only events whose date.start <= maxDate will be returned.
-     */
-    maxDate: z.coerce.date(),
-    limit: z.number().int().min(1).max(100).optional(),
-    offset: z.number().int().min(0).optional()
+    minDate: z.coerce.date({
+        required_error: 'serviceInputError.event.minDate.required',
+        invalid_type_error: 'serviceInputError.event.minDate.invalidType'
+    }),
+    maxDate: z.coerce.date({
+        required_error: 'serviceInputError.event.maxDate.required',
+        invalid_type_error: 'serviceInputError.event.maxDate.invalidType'
+    }),
+    limit: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.limit.invalidType'
+        })
+        .int()
+        .min(1, 'serviceInputError.event.limit.min')
+        .max(100, 'serviceInputError.event.limit.max')
+        .optional(),
+    offset: z
+        .number({
+            invalid_type_error: 'serviceInputError.event.offset.invalidType'
+        })
+        .int()
+        .min(0, 'serviceInputError.event.offset.min')
+        .optional()
 });
 
 /**
