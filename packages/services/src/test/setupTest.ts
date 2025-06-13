@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { beforeAll, vi } from 'vitest';
 
 /**
  * Creates a new service mockLogger object for use in tests.
@@ -25,6 +25,12 @@ vi.mock('../utils/service-logger.ts', () => ({
 }));
 
 globalThis.mockServiceLogger = mockServiceLogger;
+
+const FIXED_DATE = new Date('2025-06-13T12:55:14.711Z');
+
+beforeAll(() => {
+    vi.setSystemTime(FIXED_DATE);
+});
 
 // Mock global para todos los modelos y métodos de @repo/db usados en tests de services
 vi.mock('@repo/db', async () => {
