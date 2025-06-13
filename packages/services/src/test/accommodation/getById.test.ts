@@ -6,35 +6,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import {
     getMockAccommodation,
+    getMockAccommodationId,
     getMockAccommodationPrivate,
     getMockAccommodationPublic
 } from '../factories';
-import {
-    getMockPublicUser,
-    getMockUser,
-    getMockUserId as getMockUserIdFromFactories
-} from '../factories/userFactory';
+import { getMockDisabledUser, getMockPublicUser, getMockUser } from '../factories/userFactory';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.getById', () => {
     const publicUser = getMockPublicUser();
     const user = getMockUser({
-        id: getMockUserIdFromFactories(),
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.ACCOMMODATION_CREATE]
     });
-    const disabledUser = getMockUser({
-        id: getMockUserIdFromFactories(),
-        role: RoleEnum.ADMIN,
-        settings: {
-            notifications: {
-                enabled: false,
-                allowEmails: true,
-                allowSms: true,
-                allowPush: true
-            }
-        }
-    });
+    const disabledUser = getMockDisabledUser();
     const accommodationPublic = getMockAccommodationPublic();
     const accommodationPrivate = getMockAccommodationPrivate();
 
@@ -59,7 +44,7 @@ describe('accommodation.service.getById', () => {
     it('should return null and log permission for public user if visibility is PRIVATE', async () => {
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodationPrivate);
         const result = await AccommodationService.getById(
-            { id: 'acc-2' as AccommodationId },
+            { id: getMockAccommodationId() },
             publicUser
         );
         expect(result.accommodation).toBeNull();
@@ -73,9 +58,9 @@ describe('accommodation.service.getById', () => {
 
     it('should return accommodation for logged in user regardless of visibility', async () => {
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodationPrivate);
-        const result = await AccommodationService.getById({ id: 'acc-2' as AccommodationId }, user);
+        const result = await AccommodationService.getById({ id: getMockAccommodationId() }, user);
         expect(result.accommodation).toEqual(accommodationPrivate);
-        expectInfoLog({ input: { id: 'acc-2' as AccommodationId }, actor: user }, 'getById:start');
+        expectInfoLog({ input: { id: getMockAccommodationId() }, actor: user }, 'getById:start');
         expectInfoLog({ result: { accommodation: accommodationPrivate } }, 'getById:end');
     });
 
@@ -92,7 +77,7 @@ describe('accommodation.service.getById', () => {
     it('should return null and log permission if user is disabled', async () => {
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodationPrivate);
         const result = await AccommodationService.getById(
-            { id: 'acc-2' as AccommodationId },
+            { id: getMockAccommodationId() },
             { ...disabledUser, lifecycleState: LifecycleStatusEnum.INACTIVE }
         );
         expect(result.accommodation).toBeNull();
@@ -106,12 +91,12 @@ describe('accommodation.service.getById', () => {
 
     it('should throw and log if accommodation has unknown visibility', async () => {
         const accommodationUnknown = getMockAccommodation({
-            id: 'acc-3' as AccommodationId,
+            id: getMockAccommodationId(),
             visibility: 'UNKNOWN' as unknown as VisibilityEnum
         });
         (AccommodationModel.getById as Mock).mockResolvedValue(accommodationUnknown);
         await expect(
-            AccommodationService.getById({ id: 'acc-3' as AccommodationId }, user)
+            AccommodationService.getById({ id: getMockAccommodationId() }, user)
         ).rejects.toThrow(/Unknown accommodation visibility/);
         expectPermissionLog({
             permission: 'UNKNOWN_PERMISSION',

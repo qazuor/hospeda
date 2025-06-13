@@ -25,12 +25,12 @@ import {
     getMockAccommodationUpdateInput
 } from '../factories/accommodationFactory';
 import {
-    createMockAdmin,
-    createMockDisabledUser,
-    createMockOwner,
-    createMockPublicUser,
-    createMockUserWithoutPermissions,
-    getMockUserId
+    getMockAdminUser,
+    getMockDisabledUser,
+    getMockOwnerUser,
+    getMockPublicUser,
+    getMockUserId,
+    getMockUserWithoutPermissions
 } from '../factories/userFactory';
 import { getMockSeo } from '../factories/utilsFactory';
 import type { TestAccommodationUpdateInput } from '../types/testAccommodation.types';
@@ -42,7 +42,7 @@ describe('accommodation.service.update', () => {
     it('should update accommodation when user is the owner and has permission', async () => {
         // Arrange
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         const accommodation = createMockAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Updated Name',
@@ -70,7 +70,7 @@ describe('accommodation.service.update', () => {
     it('should update accommodation when user is ADMIN and has global permission', async () => {
         // Arrange
         const adminId = getMockUserId();
-        const adminUser = createMockAdmin({ id: adminId });
+        const adminUser = getMockAdminUser({ id: adminId });
         const accommodation = createMockAccommodation({ ownerId: getMockUserId() });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Admin Updated Name',
@@ -101,7 +101,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         const accommodation = {
             ...createMockAccommodationWithMedia({ ownerId }),
             tags: [
@@ -184,7 +184,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         const accommodation = createMockAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Expected Updated Name',
@@ -219,7 +219,7 @@ describe('accommodation.service.update', () => {
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = createMockUserWithoutPermissions({ id: notOwnerId });
+        const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const accommodation = createMockAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Update',
@@ -250,7 +250,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const disabledUser = createMockDisabledUser({
+        const disabledUser = getMockDisabledUser({
             id: ownerId,
             lifecycleState: LifecycleStatusEnum.INACTIVE
         });
@@ -283,7 +283,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const publicUser = createMockPublicUser();
+        const publicUser = getMockPublicUser();
         const accommodation = createMockAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Update (Public User)',
@@ -316,7 +316,7 @@ describe('accommodation.service.update', () => {
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
         const notOwnerId = 'not-owner-id' as UserId;
-        const user = createMockUserWithoutPermissions({ id: notOwnerId });
+        const user = getMockUserWithoutPermissions({ id: notOwnerId });
         const accommodation = createMockAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Should Not Update (No Permission)',
@@ -349,7 +349,7 @@ describe('accommodation.service.update', () => {
         // Arrange: valid input but the accommodation does not exist
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
-        const user = createMockOwner();
+        const user = getMockOwnerUser();
         const nonExistentId = 'acc-not-exist' as AccommodationId;
         const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput({
             id: nonExistentId,
@@ -379,7 +379,7 @@ describe('accommodation.service.update', () => {
         // Arrange
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
-        const user = createMockOwner();
+        const user = getMockOwnerUser();
         // Invalid input: missing 'name'
         const invalidInput = {
             id: 'acc-1' as AccommodationId,
@@ -410,7 +410,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         const accommodation = createMockPrivateAccommodation({ ownerId });
         const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput({
             ...accommodation,
@@ -449,7 +449,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         const accommodation = createMockArchivedAccommodation({ ownerId });
         const updateInput: TestAccommodationUpdateInput = getNormalizedUpdateInput({
             ...accommodation,
@@ -479,7 +479,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         const oldDate = new Date('2023-01-01T00:00:00.000Z');
         const newDate = new Date('2024-01-01T00:00:00.000Z');
         const accommodation = {
@@ -524,7 +524,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         // Mock with nested fields
         const accommodation = {
             ...createMockAccommodationWithMedia({ ownerId }),
@@ -611,7 +611,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         const accommodation = createMockAccommodation({ ownerId });
         const updatedFields = getMockAccommodationUpdateInput({
             name: 'Logger Test Name',
@@ -659,7 +659,7 @@ describe('accommodation.service.update', () => {
         vi.clearAllMocks();
         restoreMock(accommodationHelper.canViewAccommodation);
         const ownerId = getMockUserId();
-        const user = createMockOwner({ id: ownerId });
+        const user = getMockOwnerUser({ id: ownerId });
         const accommodation = createMockAccommodation({ ownerId });
         // The input attempts to change the ownerId to another value
         const forbiddenOwnerId = '22222222-2222-2222-2222-222222222222' as UserId;

@@ -341,7 +341,7 @@ export const homepageService = {
                           entityType: 'accommodation' as const,
                           entityId: r.accommodationId,
                           author: 'Anonymous',
-                          rating: avgRating,
+                          rating: Number.parseFloat(avgRating.toFixed(2)),
                           comment: r.content,
                           createdAt: r.createdAt.toISOString()
                       }
@@ -360,7 +360,7 @@ export const homepageService = {
                           entityType: 'destination' as const,
                           entityId: r.destinationId,
                           author: 'Anonymous',
-                          rating: avgRating,
+                          rating: Number.parseFloat(avgRating.toFixed(2)),
                           comment: r.content,
                           createdAt: r.createdAt.toISOString()
                       }

@@ -272,13 +272,13 @@ describe('accommodation.service.getByDestination', () => {
             id: getMockAccommodationId('acc-16'),
             destinationId,
             visibility: VisibilityEnum.PRIVATE,
-            ownerId: 'other-user' as UserId
+            ownerId: getMockUserId('other-user')
         });
         const accommodationDraft = createMockAccommodation({
             id: getMockAccommodationId('acc-17'),
             destinationId,
             visibility: VisibilityEnum.DRAFT,
-            ownerId: 'other-user' as UserId
+            ownerId: getMockUserId('other-user')
         });
         const accommodationUnknown = createMockAccommodation({
             id: getMockAccommodationId('acc-18'),
