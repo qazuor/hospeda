@@ -1,50 +1,46 @@
 import { EventModel } from '@repo/db';
-import type { EventOrganizerId } from '@repo/types';
-import {
-    type EventId,
-    LifecycleStatusEnum,
-    PermissionEnum,
-    RoleEnum,
-    type UserId,
-    VisibilityEnum
-} from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
-import { getMockEvent } from '../factories/eventFactory';
-import { getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockEventOrganizerId } from '../factories';
+import { getMockEvent, getMockEventId } from '../factories/eventFactory';
+import {
+    getMockAdminUser,
+    getMockDisabledUser,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories/userFactory';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('event.service.getByOrganizerId', () => {
-    const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
+    const admin = getMockAdminUser({ id: getMockUserId('admin-1') });
     const userWithPerm = getMockUser({
-        id: 'user-2' as UserId,
-        role: RoleEnum.USER,
+        id: getMockUserId('user-2'),
         permissions: [PermissionEnum.EVENT_VIEW_PRIVATE]
     });
     const userNoPerm = getMockUser({
-        id: 'user-3' as UserId,
-        role: RoleEnum.USER,
+        id: getMockUserId('user-3'),
         permissions: []
     });
-    const disabledUser = getMockUser({
-        id: 'user-4' as UserId,
-        lifecycleState: LifecycleStatusEnum.INACTIVE
+    const disabledUser = getMockDisabledUser({
+        id: getMockUserId('user-4')
     });
     const publicActor = getMockPublicUser();
-    const organizerId = 'org-1' as EventOrganizerId;
+    const organizerId = getMockEventOrganizerId('org-1');
     const publicEvent = getMockEvent({
-        id: 'event-1' as EventId,
+        id: getMockEventId('event-1'),
         visibility: VisibilityEnum.PUBLIC,
         organizerId
     });
     const privateEvent = getMockEvent({
-        id: 'event-2' as EventId,
+        id: getMockEventId('event-2'),
         visibility: VisibilityEnum.PRIVATE,
         organizerId
     });
     const archivedEvent = getMockEvent({
-        id: 'event-3' as EventId,
+        id: getMockEventId('event-3'),
         visibility: VisibilityEnum.PUBLIC,
         lifecycleState: LifecycleStatusEnum.ARCHIVED,
         organizerId

@@ -1,10 +1,14 @@
 import { PostModel } from '@repo/db';
-import type { PostId, UserId } from '@repo/types';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import { VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost } from '../factories/postFactory';
-import { getMockUser } from '../factories/userFactory';
+import { getMockPost, getMockPostId } from '../factories/postFactory';
+import {
+    getMockAdminUser,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories/userFactory';
 import { expectInfoLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/permission-manager', () => ({
@@ -13,27 +17,27 @@ vi.mock('../../utils/permission-manager', () => ({
     })
 }));
 
-const user = getMockUser({ id: 'not-author-uuid' as UserId, role: RoleEnum.USER });
-const admin = getMockUser({ role: RoleEnum.ADMIN, id: 'admin-uuid' as UserId });
-const publicUser = { role: RoleEnum.GUEST };
+const user = getMockUser({ id: getMockUserId('not-author-uuid') });
+const admin = getMockAdminUser({ id: getMockUserId('admin-uuid') });
+const publicUser = getMockPublicUser();
 const posts = [
     getMockPost({
-        id: 'public-featured-post-uuid' as PostId,
+        id: getMockPostId('public-featured-post-uuid'),
         isFeatured: true,
         visibility: VisibilityEnum.PUBLIC,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     }),
     getMockPost({
-        id: 'private-featured-post-uuid' as PostId,
+        id: getMockPostId('private-featured-post-uuid'),
         isFeatured: true,
         visibility: VisibilityEnum.PRIVATE,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     }),
     getMockPost({
-        id: 'public-nonfeatured-post-uuid' as PostId,
+        id: getMockPostId('public-nonfeatured-post-uuid'),
         isFeatured: false,
         visibility: VisibilityEnum.PUBLIC,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     })
 ];
 
@@ -97,7 +101,7 @@ describe('PostService.getFeatured', () => {
         const post = result.posts[0];
         expect(post).toBeDefined();
         if (post) {
-            expect(post.id).toBe('public-featured-post-uuid');
+            expect(post.id).toBe(getMockPostId('public-featured-post-uuid'));
             expect(post.visibility).toBe(VisibilityEnum.PUBLIC);
         }
         expectInfoLog(

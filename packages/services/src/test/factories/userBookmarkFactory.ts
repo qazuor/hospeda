@@ -1,5 +1,6 @@
-import type { AccommodationId, UserBookmarkId, UserBookmarkType, UserId } from '@repo/types';
+import type { UserBookmarkId, UserBookmarkType } from '@repo/types';
 import { EntityTypeEnum, LifecycleStatusEnum } from '@repo/types';
+import { getMockAccommodationId } from './accommodationFactory';
 import { getMockUserId } from './userFactory';
 import { getMockId } from './utilsFactory';
 
@@ -13,17 +14,17 @@ import { getMockId } from './utilsFactory';
 export const getMockUserBookmark = (
     overrides: Partial<UserBookmarkType> = {}
 ): UserBookmarkType => ({
-    id: 'bookmark-uuid' as UserBookmarkId,
-    userId: getMockUserId(),
-    entityId: 'accommodation-uuid' as AccommodationId,
+    id: getMockUserBookmarkId('bookmark-uuid'),
+    userId: getMockUserId('user-uuid'),
+    entityId: getMockAccommodationId('accommodation-uuid'),
     entityType: EntityTypeEnum.DESTINATION,
     name: 'Mi destino favorito',
     description: 'Un destino que quiero visitar',
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: undefined,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
+    createdById: getMockUserId('creator-uuid'),
+    updatedById: getMockUserId('updater-uuid'),
     deletedById: undefined,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     adminInfo: undefined,

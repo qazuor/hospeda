@@ -4,11 +4,12 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import { getMockPost, getMockPostInput } from '../factories/postFactory';
-import { getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 import { expectPermissionLog } from '../utils/log-assertions';
 
 describe('PostService.create', () => {
     const user = getMockUser({
+        id: getMockUserId('user-uuid'),
         role: RoleEnum.ADMIN,
         permissions: [PermissionEnum.POST_CREATE]
     });
@@ -28,13 +29,12 @@ describe('PostService.create', () => {
         const result = await PostService.create(input, user);
         expect(result.post).toMatchObject(
             expect.objectContaining({
-                id: 'post-uuid',
                 slug: 'post-slug',
                 category: input.category,
                 title: input.title,
                 summary: input.summary,
                 content: input.content,
-                authorId: 'user-uuid',
+                authorId: getMockUserId('user-uuid'),
                 visibility: input.visibility
             })
         );

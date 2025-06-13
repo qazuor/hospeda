@@ -1,10 +1,11 @@
-import type { EventId, EventType, UserId } from '@repo/types';
+import type { EventId, EventType } from '@repo/types';
 import {
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     VisibilityEnum
 } from '@repo/types';
+import { getMockUserId } from './userFactory';
 import { getMockId } from './utilsFactory';
 
 /**
@@ -15,26 +16,29 @@ import { getMockId } from './utilsFactory';
  * const event = getMockEvent({ id: 'event-2' as EventId });
  */
 export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => ({
-    id: 'event-uuid' as EventId,
+    id: getMockEventId(),
     slug: 'fiesta-nacional',
     summary: 'Fiesta Nacional',
     description: 'Una fiesta popular',
     media: undefined,
     category: EventCategoryEnum.FESTIVAL,
-    date: { start: new Date(), end: new Date() },
-    authorId: 'user-uuid' as UserId,
+    date: {
+        start: new Date().toISOString(),
+        end: new Date().toISOString()
+    },
+    authorId: getMockUserId(),
     locationId: undefined,
     organizerId: undefined,
     pricing: undefined,
     contact: undefined,
     visibility: VisibilityEnum.PUBLIC,
     isFeatured: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     moderationState: ModerationStatusEnum.PENDING_REVIEW,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
+    createdById: getMockUserId(),
+    updatedById: getMockUserId(),
     deletedAt: undefined,
     deletedById: undefined,
     adminInfo: undefined,

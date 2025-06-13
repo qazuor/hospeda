@@ -1,11 +1,5 @@
 import { AccommodationModel } from '@repo/db';
-import {
-    type AccommodationId,
-    LifecycleStatusEnum,
-    PermissionEnum,
-    RoleEnum,
-    type VisibilityEnum
-} from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, type VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import {
@@ -13,6 +7,7 @@ import {
     getMockAccommodationPrivate,
     getMockAccommodationPublic
 } from '../factories';
+import { getMockAccommodationId } from '../factories/accommodationFactory';
 import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 import { expectInfoLog, expectNoPermissionLog, expectPermissionLog } from '../utils/log-assertions';
 
@@ -134,7 +129,7 @@ describe('accommodation.service.getByName', () => {
     it('should throw and log if accommodation has unknown visibility', async () => {
         // Arrange: Set up an accommodation with unknown visibility and an admin user.
         const accommodationUnknown = getMockAccommodation({
-            id: 'acc-3' as AccommodationId,
+            id: getMockAccommodationId('acc-3'),
             name: 'Unknown Hotel',
             visibility: 'UNKNOWN' as unknown as VisibilityEnum
         });

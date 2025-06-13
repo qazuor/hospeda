@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum, type UserId } from '@repo/types';
+import { PermissionEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import { canViewAccommodation } from '../../accommodation/accommodation.helper';
 import { logDenied } from '../../utils/permission-logger';
@@ -8,7 +8,8 @@ import {
     getMockOwnerUser,
     getMockPublicUser,
     getMockSuperAdminUser,
-    getMockUser
+    getMockUser,
+    getMockUserId
 } from '../factories/userFactory';
 import { mockServiceLogger } from '../setupTest';
 
@@ -78,7 +79,7 @@ describe('canViewAccommodation', () => {
 describe('logDenied', () => {
     it('calls mockServiceLogger.permission with correct arguments', () => {
         const logger = mockServiceLogger;
-        const actor = getMockUser({ id: 'user-1' as UserId, role: RoleEnum.USER });
+        const actor = getMockUser({ id: getMockUserId() });
         logDenied(
             logger,
             actor,

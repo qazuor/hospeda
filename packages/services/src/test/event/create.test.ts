@@ -5,39 +5,46 @@ import {
     ModerationStatusEnum,
     PermissionEnum,
     RoleEnum,
-    type UserId,
     VisibilityEnum
 } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../event/event.service';
 import * as permissionManager from '../../utils/permission-manager';
 import { getMockEvent } from '../factories/eventFactory';
-import { getMockTag } from '../factories/tagFactory';
-import { getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockTag, getMockTagId } from '../factories/tagFactory';
+import {
+    getMockAdminUser,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories/userFactory';
 
-const admin = getMockUser({ id: 'admin-1' as UserId, role: RoleEnum.ADMIN });
-const superAdmin = getMockUser({ id: 'superadmin-1' as UserId, role: RoleEnum.SUPER_ADMIN });
+const user2Id = getMockUserId('user-2');
+const user3Id = getMockUserId('user-3');
+const user4Id = getMockUserId('user-4');
+const adminId = getMockUserId('admin-1');
+const superAdminId = getMockUserId('superadmin-1');
+const admin = getMockAdminUser({ id: adminId });
+const superAdmin = getMockUser({ id: superAdminId, role: RoleEnum.SUPER_ADMIN });
 const userWithPerm = getMockUser({
-    id: 'user-2' as UserId,
-    role: RoleEnum.USER,
+    id: user2Id,
     permissions: [PermissionEnum.EVENT_CREATE]
 });
-const userNoPerm = getMockUser({ id: 'user-3' as UserId, role: RoleEnum.USER, permissions: [] });
+const userNoPerm = getMockUser({ id: user3Id, permissions: [] });
 const disabledUser = getMockUser({
-    id: 'user-4' as UserId,
+    id: user4Id,
     lifecycleState: LifecycleStatusEnum.INACTIVE
 });
 const publicActor = getMockPublicUser();
 
-const mockTag = getMockTag();
+const mockTagId = getMockTagId();
 
 const validInput = {
     slug: 'event-2024',
     summary: 'Annual Event',
     description: 'A great event',
     category: EventCategoryEnum.MUSIC,
-    date: { start: new Date().toISOString() },
-    authorId: admin.id,
+    authorId: adminId,
     visibility: VisibilityEnum.PUBLIC,
     media: {
         featuredImage: {
@@ -45,7 +52,24 @@ const validInput = {
             moderationState: ModerationStatusEnum.PENDING_REVIEW
         }
     },
-    tags: [mockTag.id]
+    tags: [
+        {
+            ...getMockTag({ id: mockTagId }),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdById: adminId as unknown as string,
+            updatedById: adminId as unknown as string,
+            deletedAt: undefined,
+            deletedById: undefined,
+            lifecycleState: LifecycleStatusEnum.ACTIVE as unknown as string
+        }
+    ],
+    date: {
+        start: new Date().toISOString(),
+        end: new Date().toISOString()
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
 };
 
 describe('event.service.create', () => {

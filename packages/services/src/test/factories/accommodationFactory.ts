@@ -2,7 +2,6 @@ import type {
     AccommodationId,
     AccommodationReviewId,
     AccommodationType,
-    DestinationId,
     UserId
 } from '@repo/types';
 import {
@@ -36,15 +35,15 @@ import { getMockId, getMockSeo } from './utilsFactory';
 export const getMockAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType => ({
-    id: '11111111-1111-1111-1111-111111111111' as AccommodationId,
+    id: getMockAccommodationId('acc-1'),
     slug: 'hotel-uruguay',
     name: 'Hotel Uruguay',
     summary: 'Un hotel en Uruguay',
     type: AccommodationTypeEnum.HOTEL,
     description:
         'Descripción completa y suficientemente larga para pasar la validación de Zod. Debe tener más de 30 caracteres.',
-    ownerId: '11111111-1111-1111-1111-111111111111' as UserId,
-    destinationId: '22222222-2222-2222-2222-222222222222' as DestinationId,
+    ownerId: getMockUserId('owner-1'),
+    destinationId: getMockDestinationId('dest-1'),
     createdAt: new Date(),
     updatedAt: new Date(),
     lifecycleState: LifecycleStatusEnum.ACTIVE,

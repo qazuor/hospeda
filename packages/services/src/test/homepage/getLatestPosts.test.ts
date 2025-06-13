@@ -1,5 +1,4 @@
 import { AccommodationModel, DestinationModel, EventModel, PostModel } from '@repo/db';
-import type { DestinationId, EventLocationId, UserId } from '@repo/types';
 import {
     AccommodationTypeEnum,
     EventCategoryEnum,
@@ -11,6 +10,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { getLatestPostsOutputSchema } from '../../homepage/homepage.schemas';
 import { homepageService } from '../../homepage/homepage.service';
+import { getMockEventLocationId } from '../factories';
 import { getMockAccommodationId } from '../factories/accommodationFactory';
 import { getMockDestinationId } from '../factories/destinationFactory';
 import { getMockEventId } from '../factories/eventFactory';
@@ -20,12 +20,12 @@ import { getMockUserId } from '../factories/userFactory';
 const postId = getMockPostId();
 const accId = getMockAccommodationId();
 const eventId = getMockEventId();
-const destId = getMockDestinationId() as DestinationId;
+const destId = getMockDestinationId();
 const now = new Date();
 
-const userId = getMockUserId() as UserId;
+const userId = getMockUserId();
 const destinationId = destId;
-const eventLocationId = '66666666-6666-6666-6666-666666666666' as EventLocationId;
+const eventLocationId = getMockEventLocationId();
 
 const mockPost = {
     id: postId,

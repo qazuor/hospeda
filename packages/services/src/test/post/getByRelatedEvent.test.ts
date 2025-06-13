@@ -1,10 +1,15 @@
 import { PostModel } from '@repo/db';
-import type { EventId, PostId, UserId } from '@repo/types';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
-import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { VisibilityEnum } from '@repo/types';
+import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost } from '../factories/postFactory';
-import { getMockUser } from '../factories/userFactory';
+import { getMockEventId } from '../factories/eventFactory';
+import { getMockPost, getMockPostId } from '../factories/postFactory';
+import {
+    getMockAdminUser,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories/userFactory';
 import { expectInfoLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/permission-manager', () => ({
@@ -13,36 +18,33 @@ vi.mock('../../utils/permission-manager', () => ({
     })
 }));
 
-const user = getMockUser({ id: 'not-author-uuid' as UserId, role: RoleEnum.USER });
-const admin = getMockUser({ role: RoleEnum.ADMIN, id: 'admin-uuid' as UserId });
-const publicUser = { role: RoleEnum.GUEST };
-const eventId = 'event-uuid' as EventId;
+const user = getMockUser({ id: getMockUserId('not-author-uuid') });
+const admin = getMockAdminUser({ id: getMockUserId('admin-uuid') });
+const publicUser = getMockPublicUser();
+const eventId = getMockEventId('event-uuid');
 const posts = [
     getMockPost({
-        id: 'public-post-uuid' as PostId,
+        id: getMockPostId('public-post-uuid'),
         relatedEventId: eventId,
         visibility: VisibilityEnum.PUBLIC,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     }),
     getMockPost({
-        id: 'private-post-uuid' as PostId,
+        id: getMockPostId('private-post-uuid'),
         relatedEventId: eventId,
         visibility: VisibilityEnum.PRIVATE,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     }),
     getMockPost({
-        id: 'other-public-post-uuid' as PostId,
-        relatedEventId: 'other-event' as EventId,
+        id: getMockPostId('other-public-post-uuid'),
+        relatedEventId: getMockEventId('other-event'),
         visibility: VisibilityEnum.PUBLIC,
-        authorId: 'other-author-uuid' as UserId
+        authorId: getMockUserId('other-author-uuid')
     })
 ];
 
 beforeEach(() => {
     vi.clearAllMocks();
-});
-afterEach(() => {
-    // No redefinir el mock aquí
 });
 
 describe('PostService.getByRelatedEvent', () => {
@@ -57,7 +59,7 @@ describe('PostService.getByRelatedEvent', () => {
             })
         ]);
         expectInfoLog(
-            { actor: expect.objectContaining({ role: 'GUEST' }), input: { eventId: 'event-uuid' } },
+            { actor: expect.objectContaining({ role: 'GUEST' }), input: { eventId: eventId } },
             'getByRelatedEvent:start'
         );
         expectInfoLog(
@@ -81,7 +83,7 @@ describe('PostService.getByRelatedEvent', () => {
             })
         ]);
         expectInfoLog(
-            { actor: expect.objectContaining({ role: 'ADMIN' }), input: { eventId: 'event-uuid' } },
+            { actor: expect.objectContaining({ role: 'ADMIN' }), input: { eventId: eventId } },
             'getByRelatedEvent:start'
         );
         expectInfoLog(
@@ -98,11 +100,11 @@ describe('PostService.getByRelatedEvent', () => {
         const post = result.posts[0];
         expect(post).toBeDefined();
         if (post) {
-            expect(post.id).toBe('public-post-uuid');
+            expect(post.id).toBe(getMockPostId('public-post-uuid'));
             expect(post.visibility).toBe(VisibilityEnum.PUBLIC);
         }
         expectInfoLog(
-            { actor: expect.objectContaining({ role: 'USER' }), input: { eventId: 'event-uuid' } },
+            { actor: expect.objectContaining({ role: 'USER' }), input: { eventId: eventId } },
             'getByRelatedEvent:start'
         );
         expectInfoLog(
@@ -112,7 +114,7 @@ describe('PostService.getByRelatedEvent', () => {
     });
 
     it('should throw and log if input is invalid', async () => {
-        const input = { eventId: '' as PostId };
+        const input = { eventId: '' };
         await expect(PostService.getByRelatedEvent(input, user)).rejects.toThrow();
         expectInfoLog(
             { actor: expect.objectContaining({ role: 'USER' }), input: { eventId: '' } },

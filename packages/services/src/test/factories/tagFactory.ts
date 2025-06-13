@@ -1,5 +1,6 @@
-import type { TagId, TagType, UserId } from '@repo/types';
+import type { TagId, TagType } from '@repo/types';
 import { LifecycleStatusEnum, TagColorEnum } from '@repo/types';
+import { getMockUserId } from './userFactory';
 import { getMockId } from './utilsFactory';
 
 /**
@@ -10,13 +11,17 @@ import { getMockId } from './utilsFactory';
  * const tag = getMockTag({ id: 'tag-2' as TagId });
  */
 export const getMockTag = (overrides: Partial<TagType> = {}): TagType => ({
-    id: '33333333-3333-3333-3333-333333333333' as TagId,
+    id: getMockTagId(),
     name: 'Test Tag',
     color: TagColorEnum.BLUE,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdById: '11111111-1111-1111-1111-111111111111' as UserId,
-    updatedById: '11111111-1111-1111-1111-111111111111' as UserId,
+    icon: 'star',
+    notes: 'Notas de prueba',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    createdById: getMockUserId('creator-uuid'),
+    updatedById: getMockUserId('updater-uuid'),
+    deletedAt: undefined,
+    deletedById: undefined,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     ...overrides
 });

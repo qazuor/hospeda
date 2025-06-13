@@ -102,7 +102,7 @@ describe('PostService.update', () => {
         (PostModel.getById as Mock).mockResolvedValue(post);
         vi.mocked(serviceHelper.isUserDisabled).mockReturnValue(true);
         const disabledUser = getMockUser({
-            id: 'disabled-uuid' as import('@repo/types').UserId,
+            id: getMockUserId('disabled-uuid'),
             role: RoleEnum.USER
         });
         const input = { id: post.id, title: 'Disabled' };

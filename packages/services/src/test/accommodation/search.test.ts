@@ -1,10 +1,11 @@
 import { AccommodationModel } from '@repo/db';
-import type { AccommodationId, AmenityId, DestinationId, FeatureId } from '@repo/types';
 import { type AccommodationType, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import { createMockAccommodation, getMockAccommodationId } from '../factories/accommodationFactory';
+import { getMockAmenityId } from '../factories/amenityFactory';
 import { getMockDestinationId } from '../factories/destinationFactory';
+import { getMockFeatureId } from '../factories/featureFactory';
 import { createMockUser } from '../factories/userFactory';
 
 const mockAdmin = createMockUser({ role: RoleEnum.ADMIN });
@@ -20,40 +21,42 @@ const acc1: AccommodationType = createMockAccommodation({
     isFeatured: true,
     amenities: [
         {
-            amenityId: 'a1' as AmenityId,
+            amenityId: getMockAmenityId('a1'),
             accommodationId: getMockAccommodationId(),
             isOptional: false
         }
     ],
-    features: [{ featureId: 'f1' as FeatureId, accommodationId: getMockAccommodationId() }],
+    features: [{ featureId: getMockFeatureId('f1'), accommodationId: getMockAccommodationId() }],
     visibility: VisibilityEnum.PUBLIC,
     averageRating: 4.5
 });
 const acc2: AccommodationType = createMockAccommodation({
-    id: 'acc-2' as AccommodationId,
+    id: getMockAccommodationId('acc-2'),
     name: 'Cabin',
     summary: 'Cozy',
     description: 'Mountain',
-    destinationId: 'dest-2' as DestinationId,
+    destinationId: getMockDestinationId('dest-2'),
     price: { price: 200 },
     isFeatured: false,
     amenities: [
         {
-            amenityId: 'a2' as AmenityId,
-            accommodationId: 'acc-2' as AccommodationId,
+            amenityId: getMockAmenityId('a2'),
+            accommodationId: getMockAccommodationId('acc-2'),
             isOptional: false
         }
     ],
-    features: [{ featureId: 'f2' as FeatureId, accommodationId: 'acc-2' as AccommodationId }],
+    features: [
+        { featureId: getMockFeatureId('f2'), accommodationId: getMockAccommodationId('acc-2') }
+    ],
     visibility: VisibilityEnum.PRIVATE,
     averageRating: 3.5
 });
 const accNoPrice: AccommodationType = createMockAccommodation({
-    id: 'acc-3' as AccommodationId,
+    id: getMockAccommodationId('acc-3'),
     price: undefined
 });
 const acc3: AccommodationType = createMockAccommodation({
-    id: 'acc-3' as AccommodationId,
+    id: getMockAccommodationId('acc-3'),
     name: 'Eco Lodge',
     summary: 'Nature and peace',
     description: 'A beautiful eco lodge in the forest',
@@ -62,69 +65,77 @@ const acc3: AccommodationType = createMockAccommodation({
     isFeatured: false,
     amenities: [
         {
-            amenityId: 'a3' as AmenityId,
-            accommodationId: 'acc-3' as AccommodationId,
+            amenityId: getMockAmenityId('a3'),
+            accommodationId: getMockAccommodationId('acc-3'),
             isOptional: true
         }
     ],
-    features: [{ featureId: 'f3' as FeatureId, accommodationId: 'acc-3' as AccommodationId }],
+    features: [
+        { featureId: getMockFeatureId('f3'), accommodationId: getMockAccommodationId('acc-3') }
+    ],
     visibility: VisibilityEnum.PUBLIC,
     averageRating: 4.9
 });
 const acc4: AccommodationType = createMockAccommodation({
-    id: 'acc-4' as AccommodationId,
+    id: getMockAccommodationId('acc-4'),
     name: 'Urban Flat',
     summary: 'City center',
     description: 'Modern flat in the heart of the city',
-    destinationId: 'dest-3' as DestinationId,
+    destinationId: getMockDestinationId('dest-3'),
     price: { price: 150 },
     isFeatured: true,
     amenities: [
         {
-            amenityId: 'a4' as AmenityId,
-            accommodationId: 'acc-4' as AccommodationId,
+            amenityId: getMockAmenityId('a4'),
+            accommodationId: getMockAccommodationId('acc-4'),
             isOptional: false
         }
     ],
-    features: [{ featureId: 'f4' as FeatureId, accommodationId: 'acc-4' as AccommodationId }],
+    features: [
+        { featureId: getMockFeatureId('f4'), accommodationId: getMockAccommodationId('acc-4') }
+    ],
     visibility: VisibilityEnum.PUBLIC,
     averageRating: 2.8
 });
 const acc5: AccommodationType = createMockAccommodation({
-    id: 'acc-5' as AccommodationId,
+    id: getMockAccommodationId('acc-5'),
     name: 'Beach House',
     summary: 'Sea breeze',
     description: 'House with direct access to the beach',
-    destinationId: 'dest-2' as DestinationId,
+    destinationId: getMockDestinationId('dest-2'),
     price: undefined,
     isFeatured: false,
     amenities: [
         {
-            amenityId: 'a5' as AmenityId,
-            accommodationId: 'acc-5' as AccommodationId,
+            amenityId: getMockAmenityId('a5'),
+            accommodationId: getMockAccommodationId('acc-5'),
             isOptional: false
         }
     ],
-    features: [{ featureId: 'f5' as FeatureId, accommodationId: 'acc-5' as AccommodationId }],
+    features: [
+        { featureId: getMockFeatureId('f5'), accommodationId: getMockAccommodationId('acc-5') }
+    ],
     visibility: VisibilityEnum.PRIVATE,
     averageRating: 3.2
 });
 const acc6: AccommodationType = createMockAccommodation({
-    id: 'acc-6' as AccommodationId,
+    id: getMockAccommodationId('acc-6'),
     name: 'Mountain Cabin',
     summary: 'Cozy and warm',
     description: 'Cabin with fireplace and mountain view',
-    destinationId: 'dest-4' as DestinationId,
+    destinationId: getMockDestinationId('dest-4'),
     price: { price: 80 },
     isFeatured: true,
     amenities: [
         {
-            amenityId: 'a6' as AmenityId,
-            accommodationId: 'acc-6' as AccommodationId,
+            amenityId: getMockAmenityId('a6'),
+            accommodationId: getMockAccommodationId('acc-6'),
             isOptional: false
         }
     ],
-    features: [{ featureId: 'f6' as FeatureId, accommodationId: 'acc-6' as AccommodationId }],
+    features: [
+        { featureId: getMockFeatureId('f6'), accommodationId: getMockAccommodationId('acc-6') }
+    ],
     visibility: VisibilityEnum.PUBLIC,
     averageRating: 4.0
 });

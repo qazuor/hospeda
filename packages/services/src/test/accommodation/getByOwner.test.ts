@@ -1,29 +1,29 @@
 import { AccommodationModel } from '@repo/db';
-import {
-    type AccommodationId,
-    LifecycleStatusEnum,
-    RoleEnum,
-    type UserId,
-    VisibilityEnum
-} from '@repo/types';
+import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../accommodation/accommodation.service';
 import { getMockAccommodation } from '../factories';
-import { getMockDisabledUser, getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockAccommodationId } from '../factories/accommodationFactory';
+import {
+    getMockDisabledUser,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories/userFactory';
 import { expectInfoLog, expectPermissionLog } from '../utils/log-assertions';
 
 describe('accommodation.service.getByOwner', () => {
     it('should return all PUBLIC accommodations for an owner to a public user', async () => {
         // Arrange
         const publicUser = getMockPublicUser();
-        const ownerId = 'user-1' as UserId;
+        const ownerId = getMockUserId('user-1');
         const accommodationPublic1 = getMockAccommodation({
-            id: 'acc-1' as AccommodationId,
+            id: getMockAccommodationId('acc-1'),
             ownerId,
             visibility: VisibilityEnum.PUBLIC
         });
         const accommodationPublic2 = getMockAccommodation({
-            id: 'acc-2' as AccommodationId,
+            id: getMockAccommodationId('acc-2'),
             ownerId,
             visibility: VisibilityEnum.PUBLIC
         });
@@ -45,14 +45,14 @@ describe('accommodation.service.getByOwner', () => {
     it('should return all accommodations (PUBLIC and PRIVATE) for an owner to an admin', async () => {
         // Arrange
         const adminUser = getMockUser({ role: RoleEnum.ADMIN });
-        const ownerId = 'user-2' as UserId;
+        const ownerId = getMockUserId('user-2');
         const accommodationPublic = getMockAccommodation({
-            id: 'acc-3' as AccommodationId,
+            id: getMockAccommodationId('acc-3'),
             ownerId,
             visibility: VisibilityEnum.PUBLIC
         });
         const accommodationPrivate = getMockAccommodation({
-            id: 'acc-4' as AccommodationId,
+            id: getMockAccommodationId('acc-4'),
             ownerId,
             visibility: VisibilityEnum.PRIVATE
         });
@@ -73,22 +73,22 @@ describe('accommodation.service.getByOwner', () => {
 
     it('should return only accessible accommodations for an owner to a regular user', async () => {
         // Arrange
-        const userId = 'user-3' as UserId;
+        const userId = getMockUserId('user-3');
         const user = getMockUser({ id: userId, role: RoleEnum.USER });
         const ownerId = userId;
         const accommodationPublic = getMockAccommodation({
-            id: 'acc-5' as AccommodationId,
+            id: getMockAccommodationId('acc-5'),
             ownerId,
             visibility: VisibilityEnum.PUBLIC
         });
         const accommodationPrivateOwned = getMockAccommodation({
-            id: 'acc-6' as AccommodationId,
+            id: getMockAccommodationId('acc-6'),
             ownerId,
             visibility: VisibilityEnum.PRIVATE
         });
         const accommodationPrivateOther = getMockAccommodation({
-            id: 'acc-7' as AccommodationId,
-            ownerId: 'other-user' as UserId,
+            id: getMockAccommodationId('acc-7'),
+            ownerId: getMockUserId('other-user'),
             visibility: VisibilityEnum.PRIVATE
         });
         (AccommodationModel.search as Mock).mockResolvedValue([
@@ -110,7 +110,7 @@ describe('accommodation.service.getByOwner', () => {
     it('should return an empty array if there are no accommodations for the owner', async () => {
         // Arrange
         const user = getMockUser();
-        const ownerId = 'user-4' as UserId;
+        const ownerId = getMockUserId('user-4');
         (AccommodationModel.search as Mock).mockResolvedValue([]);
         // Act
         const result = await AccommodationService.getByOwner({ ownerId }, user);
@@ -124,18 +124,17 @@ describe('accommodation.service.getByOwner', () => {
         // Arrange
         vi.clearAllMocks();
         const disabledUser = getMockDisabledUser({
-            id: 'user-disabled' as UserId,
-            role: RoleEnum.USER,
+            id: getMockUserId('user-disabled'),
             lifecycleState: LifecycleStatusEnum.INACTIVE
         });
-        const ownerId = 'user-disabled' as UserId;
+        const ownerId = getMockUserId('user-disabled');
         const accommodation1 = getMockAccommodation({
-            id: 'acc-8' as AccommodationId,
+            id: getMockAccommodationId('acc-8'),
             ownerId,
             visibility: VisibilityEnum.PUBLIC
         });
         const accommodation2 = getMockAccommodation({
-            id: 'acc-9' as AccommodationId,
+            id: getMockAccommodationId('acc-9'),
             ownerId,
             visibility: VisibilityEnum.PRIVATE
         });
@@ -158,16 +157,16 @@ describe('accommodation.service.getByOwner', () => {
     it('should log denied for accommodations with unknown visibility', async () => {
         // Arrange
         vi.clearAllMocks();
-        const user = getMockUser({ id: 'user-5' as UserId, role: RoleEnum.USER });
-        const ownerId = 'user-5' as UserId;
+        const user = getMockUser({ id: getMockUserId('user-5'), role: RoleEnum.USER });
+        const ownerId = getMockUserId('user-5');
         const accommodationUnknown = getMockAccommodation({
-            id: 'acc-10' as AccommodationId,
+            id: getMockAccommodationId('acc-10'),
             ownerId,
             // @ts-expect-error purposely invalid visibility for test
             visibility: 'UNKNOWN_VISIBILITY'
         });
         const accommodationPublic = getMockAccommodation({
-            id: 'acc-11' as AccommodationId,
+            id: getMockAccommodationId('acc-11'),
             ownerId,
             visibility: VisibilityEnum.PUBLIC
         });

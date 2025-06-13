@@ -1,10 +1,11 @@
-import type { PostId, PostType, UserId } from '@repo/types';
+import type { PostId, PostType } from '@repo/types';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PostCategoryEnum,
     VisibilityEnum
 } from '@repo/types';
+import { getMockUserId } from './userFactory';
 import { getMockId } from './utilsFactory';
 
 /**
@@ -15,7 +16,7 @@ import { getMockId } from './utilsFactory';
  * const post = getMockPost({ id: 'post-2' as PostId });
  */
 export const getMockPost = (overrides: Partial<PostType> = {}): PostType => ({
-    id: 'post-uuid' as PostId,
+    id: getMockPostId('post-uuid'),
     slug: 'post-slug',
     category: PostCategoryEnum.GENERAL,
     title: 'Título del post',
@@ -27,7 +28,7 @@ export const getMockPost = (overrides: Partial<PostType> = {}): PostType => ({
             moderationState: ModerationStatusEnum.PENDING_REVIEW
         }
     },
-    authorId: 'user-uuid' as UserId,
+    authorId: getMockUserId('user-uuid'),
     sponsorshipId: undefined,
     relatedDestinationId: undefined,
     relatedAccommodationId: undefined,
@@ -43,8 +44,8 @@ export const getMockPost = (overrides: Partial<PostType> = {}): PostType => ({
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: undefined,
-    createdById: 'user-uuid' as UserId,
-    updatedById: 'user-uuid' as UserId,
+    createdById: getMockUserId('creator-uuid'),
+    updatedById: getMockUserId('updater-uuid'),
     deletedById: undefined,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     adminInfo: undefined,
@@ -67,7 +68,7 @@ export const getMockPostInput = () => ({
     summary: 'Resumen',
     content: 'Contenido',
     media: { url: 'https://example.com/image.jpg' },
-    authorId: 'user-uuid',
+    authorId: getMockUserId(),
     visibility: VisibilityEnum.PUBLIC,
     isFeatured: false,
     isNews: false,

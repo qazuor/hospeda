@@ -41,6 +41,7 @@ type idTypes =
     | 'amenity'
     | 'attraction'
     | 'event-location'
+    | 'event-organizer'
     | 'feature'
     | 'post-sponsor'
     | 'user-bookmark';
@@ -59,6 +60,7 @@ const idTypeStrings = {
     amenity: generateValidUuidFromLabel('amenity'),
     attraction: generateValidUuidFromLabel('attraction'),
     'event-location': generateValidUuidFromLabel('event-location'),
+    'event-organizer': generateValidUuidFromLabel('event-organizer'),
     feature: generateValidUuidFromLabel('feature'),
     'post-sponsor': generateValidUuidFromLabel('post-sponsor'),
     'user-bookmark': generateValidUuidFromLabel('user-bookmark')

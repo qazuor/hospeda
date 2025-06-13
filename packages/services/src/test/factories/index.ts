@@ -6,6 +6,7 @@ export * from './destinationReviewFactory';
 export * from './entityTagFactory';
 export * from './eventFactory';
 export * from './eventLocationFactory';
+export * from './eventOrganizerFactory';
 export * from './featureFactory';
 export * from './postFactory';
 export * from './postSponsorFactory';
