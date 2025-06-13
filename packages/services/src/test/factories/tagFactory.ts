@@ -1,5 +1,6 @@
 import type { TagId, TagType, UserId } from '@repo/types';
 import { LifecycleStatusEnum, TagColorEnum } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock TagType object with default values. You can override any field.
@@ -29,5 +30,6 @@ export const createMockTagInput = (
     return { ...input, ...overrides };
 };
 
-export const getMockTagId = (id?: string): TagId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id) ? id : '33333333-3333-3333-3333-333333333333') as TagId;
+export const getMockTagId = (id?: string): TagId => {
+    return getMockId('tag', id) as TagId;
+};

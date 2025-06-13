@@ -6,13 +6,13 @@ import { BookmarkService } from '../../bookmark/bookmark.service';
 import { getMockUserBookmark } from '../factories/userBookmarkFactory';
 import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 
-const mockUser = getMockUser();
 const mockUserId: UserId = getMockUserId();
+const mockUser = getMockUser({ id: mockUserId });
 const mockBookmark = getMockUserBookmark();
 const publicUser = getMockPublicUser();
-const testBookmarkId = 'test-bookmark-id' as UserId;
+const testBookmarkId = getMockUserId('test-bookmark-id');
 const mockBookmarkWithId = { ...mockBookmark, id: testBookmarkId };
-const notFoundBookmarkId = '00000000-0000-0000-0000-000000000000' as UserId;
+const notFoundBookmarkId = getMockUserId('not-found');
 
 describe('BookmarkService.removeBookmark', () => {
     beforeEach(() => {

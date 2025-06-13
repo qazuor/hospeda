@@ -24,7 +24,7 @@ import type { AccommodationReviewType } from '@repo/types/entities/accommodation
 import { expect } from 'vitest';
 import { getMockDestinationId } from './destinationFactory';
 import { getMockUserId } from './userFactory';
-import { getMockSeo } from './utilsFactory';
+import { getMockId, getMockSeo } from './utilsFactory';
 
 /**
  * Returns a mock AccommodationType object with default values. You can override any field.
@@ -319,10 +319,9 @@ export const createMockAccommodation = (overrides = {}) => getMockAccommodation(
  * @param id - Optional specific ID to use
  * @returns AccommodationId
  */
-export const getMockAccommodationId = (id?: string): AccommodationId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '00000000-0000-0000-0000-000000000001') as AccommodationId;
+export const getMockAccommodationId = (id?: string): AccommodationId => {
+    return getMockId('accommodation', id) as AccommodationId;
+};
 
 /**
  * Returns a mock AccommodationReviewType object with default values. You can override any field.
@@ -362,7 +361,6 @@ export const createMockAccommodationReview = (
     overrides: Partial<AccommodationReviewType> = {}
 ): AccommodationReviewType => getMockAccommodationReview(overrides);
 
-export const getMockAccommodationReviewId = (id?: string): AccommodationReviewId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '11111111-1111-1111-1111-111111111111') as AccommodationReviewId;
+export const getMockAccommodationReviewId = (id?: string): AccommodationReviewId => {
+    return getMockId('accommodation-review', id) as AccommodationReviewId;
+};

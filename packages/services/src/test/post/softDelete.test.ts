@@ -5,7 +5,13 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
-import { getMockPost, getMockPublicUser, getMockUser } from '../factories';
+import {
+    getMockPost,
+    getMockPostId,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories';
 import { expectPermissionLog } from '../utils/log-assertions';
 
 vi.mock('../../utils/service-helper', async (importOriginal) => {
@@ -22,12 +28,12 @@ vi.mock('../../utils/service-helper', async (importOriginal) => {
 const user = getMockUser();
 const admin = getMockUser({
     role: RoleEnum.ADMIN,
-    id: 'admin-uuid' as UserId
+    id: getMockUserId('admin-uuid')
 });
 const publicUser = getMockPublicUser();
 const post = getMockPost({ authorId: user.id });
 const noPermUser = getMockUser({
-    id: 'no-perm-uuid' as UserId,
+    id: getMockUserId('no-perm-uuid'),
     role: RoleEnum.USER
 });
 
@@ -122,7 +128,7 @@ describe('PostService.softDelete', () => {
 
     it('should throw if post not found', async () => {
         (PostModel.getById as Mock).mockResolvedValue(null);
-        const input = { id: 'not-found' as PostId };
+        const input = { id: getMockPostId('not-found') };
         await expect(PostService.softDelete(input, user)).rejects.toThrow(/Post not found/);
     });
 

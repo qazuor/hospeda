@@ -1,39 +1,33 @@
 import { PostModel } from '@repo/db';
-import {
-    LifecycleStatusEnum,
-    type PostId,
-    RoleEnum,
-    type UserId,
-    VisibilityEnum
-} from '@repo/types';
+import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
 import { getMockPost, getMockPostId } from '../factories/postFactory';
-import { getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 
 const admin = getMockUser({ role: RoleEnum.ADMIN });
 const superAdmin = getMockUser({ role: RoleEnum.SUPER_ADMIN });
-const author = getMockUser({ id: 'author-1' as UserId, role: RoleEnum.USER });
-const otherUser = getMockUser({ id: 'user-2' as UserId, role: RoleEnum.USER });
+const author = getMockUser({ id: getMockUserId('author-1'), role: RoleEnum.USER });
+const otherUser = getMockUser({ id: getMockUserId('user-2'), role: RoleEnum.USER });
 const disabledUser = getMockUser({
-    id: 'user-3' as UserId,
+    id: getMockUserId('user-3'),
     role: RoleEnum.USER,
     lifecycleState: LifecycleStatusEnum.INACTIVE
 });
 const publicActor = getMockPublicUser();
 
 const publicPost = getMockPost({
-    id: 'post-1' as PostId,
+    id: getMockPostId('post-1'),
     visibility: VisibilityEnum.PUBLIC,
     authorId: author.id
 });
 const privatePost = getMockPost({
-    id: 'post-2' as PostId,
+    id: getMockPostId('post-2'),
     visibility: VisibilityEnum.PRIVATE,
     authorId: author.id
 });
 const draftPost = getMockPost({
-    id: 'post-3' as PostId,
+    id: getMockPostId('post-3'),
     visibility: VisibilityEnum.DRAFT,
     authorId: author.id
 });

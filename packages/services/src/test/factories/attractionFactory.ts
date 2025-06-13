@@ -1,5 +1,6 @@
 import type { AttractionId, AttractionType, UserId } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock AttractionType object with default values. You can override any field.
@@ -25,7 +26,6 @@ export const getMockAttraction = (overrides: Partial<AttractionType> = {}): Attr
 export const createMockAttraction = (overrides: Partial<AttractionType> = {}): AttractionType =>
     getMockAttraction(overrides);
 
-export const getMockAttractionId = (id?: string): AttractionId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '88888888-8888-8888-8888-888888888888') as AttractionId;
+export const getMockAttractionId = (id?: string): AttractionId => {
+    return getMockId('attraction', id) as AttractionId;
+};

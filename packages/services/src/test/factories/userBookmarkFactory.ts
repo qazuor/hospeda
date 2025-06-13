@@ -1,6 +1,7 @@
 import type { AccommodationId, UserBookmarkId, UserBookmarkType, UserId } from '@repo/types';
 import { EntityTypeEnum, LifecycleStatusEnum } from '@repo/types';
 import { getMockUserId } from './userFactory';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock UserBookmarkType object with default values. You can override any field.
@@ -40,7 +41,6 @@ export const createMockUserBookmarkInput = (
     return { ...input, ...overrides } as Omit<UserBookmarkType, 'id'>;
 };
 
-export const getMockUserBookmarkId = (id?: string): UserBookmarkId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '44444444-4444-4444-4444-444444444444') as UserBookmarkId;
+export const getMockUserBookmarkId = (id?: string): UserBookmarkId => {
+    return getMockId('user-bookmark', id) as UserBookmarkId;
+};

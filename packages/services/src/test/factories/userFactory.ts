@@ -1,6 +1,6 @@
-import crypto from 'node:crypto';
 import type { PublicUserType, UserId, UserType } from '@repo/types';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, createPublicUser } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock UserType object with default values. You can override any field.
@@ -75,16 +75,5 @@ export const getMockDisabledUser = (overrides = {}) =>
     });
 
 export const getMockUserId = (id?: string): UserId => {
-    if (id && /^[0-9a-fA-F-]{36}$/.test(id)) return id as UserId;
-    if (id) {
-        // Genera un UUID determinista basado en el hash del string
-        const hash = crypto.createHash('md5').update(id).digest('hex');
-        // Formatea el hash como UUID v4
-        return (`${hash.substring(0, 8)}-` +
-            `${hash.substring(8, 12)}-` +
-            `${hash.substring(12, 16)}-` +
-            `${hash.substring(16, 20)}-` +
-            `${hash.substring(20, 32)}`) as UserId;
-    }
-    return '11111111-1111-1111-1111-111111111111' as UserId;
+    return getMockId('user', id) as UserId;
 };

@@ -1,15 +1,14 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost, getMockPublicUser, getMockUser } from '../factories';
+import { getMockPost, getMockPostId, getMockPublicUser, getMockUser } from '../factories';
 
 const mockPosts = [
-    getMockPost({ id: 'post-1' as PostId, visibility: VisibilityEnum.PUBLIC, title: 'A' }),
-    getMockPost({ id: 'post-2' as PostId, visibility: VisibilityEnum.PRIVATE, title: 'B' }),
-    getMockPost({ id: 'post-3' as PostId, visibility: VisibilityEnum.PUBLIC, title: 'C' }),
-    getMockPost({ id: 'post-4' as PostId, visibility: VisibilityEnum.DRAFT, title: 'D' })
+    getMockPost({ id: getMockPostId('post-1'), visibility: VisibilityEnum.PUBLIC, title: 'A' }),
+    getMockPost({ id: getMockPostId('post-2'), visibility: VisibilityEnum.PRIVATE, title: 'B' }),
+    getMockPost({ id: getMockPostId('post-3'), visibility: VisibilityEnum.PUBLIC, title: 'C' }),
+    getMockPost({ id: getMockPostId('post-4'), visibility: VisibilityEnum.DRAFT, title: 'D' })
 ];
 
 const admin = getMockUser({ role: RoleEnum.ADMIN });
@@ -41,7 +40,7 @@ describe('PostService.list', () => {
         const result = await PostService.list({ limit: 2, offset: 1 }, admin);
         expect(result.posts).toHaveLength(2);
         if (result.posts?.length && result.posts.length > 0) {
-            expect(result.posts[0]?.id).toBe('post-2');
+            expect(result.posts[0]?.id).toBe(getMockPostId('post-2'));
         }
     });
 

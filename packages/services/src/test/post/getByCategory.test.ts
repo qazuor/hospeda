@@ -1,32 +1,31 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
 import { PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
-import { getMockPost } from '../factories/postFactory';
+import { getMockPost, getMockPostId } from '../factories/postFactory';
 import { getMockPublicUser, getMockUser } from '../factories/userFactory';
 
 const mockPosts = [
     getMockPost({
-        id: 'post-1' as PostId,
+        id: getMockPostId('post-1'),
         visibility: VisibilityEnum.PUBLIC,
         title: 'A',
         category: PostCategoryEnum.GENERAL
     }),
     getMockPost({
-        id: 'post-2' as PostId,
+        id: getMockPostId('post-2'),
         visibility: VisibilityEnum.PRIVATE,
         title: 'B',
         category: PostCategoryEnum.EVENTS
     }),
     getMockPost({
-        id: 'post-3' as PostId,
+        id: getMockPostId('post-3'),
         visibility: VisibilityEnum.PUBLIC,
         title: 'C',
         category: PostCategoryEnum.GENERAL
     }),
     getMockPost({
-        id: 'post-4' as PostId,
+        id: getMockPostId('post-4'),
         visibility: VisibilityEnum.DRAFT,
         title: 'D',
         category: PostCategoryEnum.CULTURE
@@ -78,13 +77,13 @@ describe('PostService.getByCategory', () => {
     it('orders posts by title asc', async () => {
         (PostModel.getByCategory as unknown as Mock).mockResolvedValue([
             getMockPost({
-                id: 'post-2' as PostId,
+                id: getMockPostId('post-2'),
                 visibility: VisibilityEnum.PUBLIC,
                 title: 'B',
                 category: PostCategoryEnum.GENERAL
             }),
             getMockPost({
-                id: 'post-1' as PostId,
+                id: getMockPostId('post-1'),
                 visibility: VisibilityEnum.PUBLIC,
                 title: 'A',
                 category: PostCategoryEnum.GENERAL
@@ -107,13 +106,13 @@ describe('PostService.getByCategory', () => {
     it('orders posts by title desc', async () => {
         (PostModel.getByCategory as unknown as Mock).mockResolvedValue([
             getMockPost({
-                id: 'post-1' as PostId,
+                id: getMockPostId('post-1'),
                 visibility: VisibilityEnum.PUBLIC,
                 title: 'A',
                 category: PostCategoryEnum.GENERAL
             }),
             getMockPost({
-                id: 'post-2' as PostId,
+                id: getMockPostId('post-2'),
                 visibility: VisibilityEnum.PUBLIC,
                 title: 'B',
                 category: PostCategoryEnum.GENERAL

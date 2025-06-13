@@ -4,7 +4,13 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import { PostService } from '../../post/post.service';
 import * as permissionManager from '../../utils/permission-manager';
 import * as serviceHelper from '../../utils/service-helper';
-import { getMockPost, getMockPostId, getMockPublicUser, getMockUser } from '../factories';
+import {
+    getMockPost,
+    getMockPostId,
+    getMockPublicUser,
+    getMockUser,
+    getMockUserId
+} from '../factories';
 
 vi.mock('../../utils/service-helper', async (importOriginal) => {
     const actualImport = await importOriginal();
@@ -20,12 +26,12 @@ vi.mock('../../utils/service-helper', async (importOriginal) => {
 const user = getMockUser();
 const admin = getMockUser({
     role: RoleEnum.ADMIN,
-    id: 'admin-uuid' as import('@repo/types').UserId
+    id: getMockUserId('admin-uuid')
 });
 const publicUser = getMockPublicUser();
 const post = getMockPost({ authorId: user.id });
 const noPermUser = getMockUser({
-    id: 'no-perm-uuid' as import('@repo/types').UserId,
+    id: getMockUserId('no-perm-uuid'),
     role: RoleEnum.USER
 });
 

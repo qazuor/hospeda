@@ -5,6 +5,7 @@ import {
     ModerationStatusEnum,
     VisibilityEnum
 } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock EventType object with default values. You can override any field.
@@ -52,5 +53,6 @@ export const createMockEventInput = (
     return { ...input, ...overrides };
 };
 
-export const getMockEventId = (id?: string): EventId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id) ? id : '00000000-0000-0000-0000-000000000002') as EventId;
+export const getMockEventId = (id?: string): EventId => {
+    return getMockId('event', id) as EventId;
+};

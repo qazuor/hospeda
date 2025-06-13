@@ -4,6 +4,7 @@ import type {
     DestinationReviewType,
     UserId
 } from '@repo/types';
+import { getMockId } from './utilsFactory';
 
 /**
  * Returns a mock DestinationReviewType object with default values. You can override any field.
@@ -60,7 +61,6 @@ export const createMockDestinationReviewInput = (
     return { ...input, ...overrides } as Omit<DestinationReviewType, 'id'>;
 };
 
-export const getMockDestinationReviewId = (id?: string): DestinationReviewId =>
-    (id && /^[0-9a-fA-F-]{36}$/.test(id)
-        ? id
-        : '55555555-5555-5555-5555-555555555555') as DestinationReviewId;
+export const getMockDestinationReviewId = (id?: string): DestinationReviewId => {
+    return getMockId('destination-review', id) as DestinationReviewId;
+};

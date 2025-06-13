@@ -1,16 +1,16 @@
 import { PostModel } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, type UserId, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../post/post.service';
 import { getMockPost } from '../factories/postFactory';
-import { getMockPublicUser, getMockUser } from '../factories/userFactory';
+import { getMockPublicUser, getMockUser, getMockUserId } from '../factories/userFactory';
 
 const admin = getMockUser({ role: RoleEnum.ADMIN });
 const superAdmin = getMockUser({ role: RoleEnum.SUPER_ADMIN });
-const author = getMockUser({ id: 'author-1' as UserId, role: RoleEnum.USER });
-const otherUser = getMockUser({ id: 'user-2' as UserId, role: RoleEnum.USER });
+const author = getMockUser({ id: getMockUserId('author-1'), role: RoleEnum.USER });
+const otherUser = getMockUser({ id: getMockUserId('user-2'), role: RoleEnum.USER });
 const disabledUser = getMockUser({
-    id: 'user-3' as UserId,
+    id: getMockUserId('user-3'),
     role: RoleEnum.USER,
     lifecycleState: LifecycleStatusEnum.INACTIVE
 });
