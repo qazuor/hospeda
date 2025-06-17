@@ -21,7 +21,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
     ): Promise<DestinationType | null> {
         const db = getDb();
         try {
-            // Construir objeto 'with' dinámicamente
+            // Dynamically build the 'with' object
             const withObj: Record<string, boolean> = {};
             for (const key of [
                 'accommodations',
@@ -42,7 +42,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as DestinationType | null;
             }
-            // Fallback a base findOne si no hay relaciones
+            // Fallback to base findOne if there are no relations
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;

@@ -76,7 +76,7 @@ const main = async () => {
         const orderDiffers = tsValues.join(',') !== dbValues.join(',');
 
         if (onlyInDB.length > 0 || orderDiffers) {
-            // Migración compleja: crear nuevo tipo, migrar columnas, borrar viejo, renombrar
+            // Complex migration: create new type, migrate columns, delete old, rename
             // 1. Crear el nuevo tipo
             const createNewEnumSQL = `CREATE TYPE ${dbEnumName}_new AS ENUM (${tsValues.map((v) => `'${v}'`).join(', ')});`;
             // 2. Encontrar columnas que usan el enum
