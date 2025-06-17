@@ -15,7 +15,7 @@ if (!DB_URL) {
 }
 
 const main = async () => {
-    // Buscar el archivo más reciente *_all_enum_diffs.sql
+    // Find the most recent *_all_enum_diffs.sql file
     const files = fs
         .readdirSync(MIGRATIONS_DIR)
         .filter((f) => f.endsWith('_all_enum_diffs.sql'))
