@@ -10,7 +10,7 @@ import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
-import { LifecycleStatusPgEnum, RolePgEnum } from '../enums.dbschema.ts';
+import { LifecycleStatusPgEnum, RolePgEnum, VisibilityPgEnum } from '../enums.dbschema.ts';
 import { events } from '../event/event.dbschema.ts';
 import { eventLocations } from '../event/event_location.dbschema.ts';
 import { eventOrganizers } from '../event/event_organizer.dbschema.ts';
@@ -38,6 +38,7 @@ export const users: ReturnType<typeof pgTable> = pgTable(
         role: RolePgEnum('role').notNull(),
         profile: jsonb('profile').$type<UserProfile>(),
         settings: jsonb('settings').$type<UserSettingsType>().notNull(),
+        visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
