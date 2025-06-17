@@ -4,6 +4,7 @@ import type {
     WithAudit,
     WithLifecycleState,
     WithOptional,
+    WithVisibility,
     Writable
 } from '../../common/helpers.types.js';
 import type { UserId } from '../../common/id.types.js';
@@ -20,7 +21,7 @@ import type { UserSettingsType } from './user.settings.types.js';
  * - `role` is a fixed enum.
  * - `permissions` are direct permissions assigned to the user (by enum).
  */
-export interface UserType extends WithAudit, WithLifecycleState, WithAdminInfo {
+export interface UserType extends WithAudit, WithLifecycleState, WithVisibility, WithAdminInfo {
     id: UserId;
     userName: string;
     password: string;
@@ -124,7 +125,7 @@ export interface PublicUserType {
  * // publicUser.role === 'public' as RoleEnum
  */
 export const createPublicUser = (): PublicUserType => ({
-    id: 'public' as UserId,
+    id: '00000000-0000-4000-y000-000000000000' as UserId,
     userName: 'public',
     role: RoleEnum.GUEST
 });
