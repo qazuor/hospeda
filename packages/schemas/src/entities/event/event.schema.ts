@@ -67,7 +67,7 @@ export const EventFilterInputSchema = z.object({
     isFeatured: z.boolean().optional(),
     minDate: z.string().optional(),
     maxDate: z.string().optional(),
-    q: z.string().optional() // búsqueda libre
+    q: z.string().optional() // free text search
 });
 
 // Input para ordenamiento de resultados

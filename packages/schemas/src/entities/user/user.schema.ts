@@ -7,7 +7,8 @@ import {
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
-    WithLifecycleStateSchema
+    WithLifecycleStateSchema,
+    WithVisibilitySchema
 } from '../../common/index.js';
 import { StrongPasswordRegex } from '../../utils/utils.js';
 import { UserProfileSchema } from './user.profile.schema.js';
@@ -21,6 +22,7 @@ import { UserSettingsSchema } from './user.settings.schema.js';
 export const UserSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithAdminInfoSchema)
+    .merge(WithVisibilitySchema)
     .extend({
         /** Username, 3-50 characters */
         userName: z
@@ -100,7 +102,7 @@ export const UserFilterInputSchema = z.object({
     emailVerified: z.boolean().optional(),
     phoneVerified: z.boolean().optional(),
     role: z.nativeEnum(RoleEnum).optional(),
-    q: z.string().optional() // búsqueda libre
+    q: z.string().optional() // free text search
 });
 
 // Input para ordenamiento de resultados

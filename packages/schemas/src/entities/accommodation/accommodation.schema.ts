@@ -143,7 +143,7 @@ export const AccommodationFilterInputSchema = z.object({
     isFeatured: z.boolean().optional(),
     minRating: z.number().min(0).max(5).optional(),
     maxRating: z.number().min(0).max(5).optional(),
-    q: z.string().optional() // búsqueda libre
+    q: z.string().optional() // free text search
 });
 
 // Input para ordenamiento de resultados

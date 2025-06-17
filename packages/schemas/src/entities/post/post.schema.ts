@@ -54,7 +54,7 @@ export const PostFilterInputSchema = z.object({
     isNews: z.boolean().optional(),
     isFeaturedInWebsite: z.boolean().optional(),
     authorId: z.string().optional(),
-    q: z.string().optional() // búsqueda libre
+    q: z.string().optional() // free text search
 });
 
 // Input para ordenamiento de resultados
