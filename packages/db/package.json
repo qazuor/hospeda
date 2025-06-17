@@ -22,7 +22,7 @@
         "check": "biome check --write .",
         "check-types": "tsc --noEmit",
         "clean": "rm -rf node_modules dist",
-        "db:migrate": "pnpm db:enum-migration && pnpm run drizzle-kit push:pg --config drizzle.config.ts",
+        "db:migrate": "pnpm run drizzle-kit push:pg --config drizzle.config.ts",
         "db:generate": "pnpm run drizzle-kit generate:pg --config drizzle.config.ts",
         "db:studio": "pnpm run drizzle-kit studio --config drizzle.config.ts",
         "db:regenerate": "pnpm run db:migrate -- --force && pnpm run db:seed:required && pnpm run db:seed:example",

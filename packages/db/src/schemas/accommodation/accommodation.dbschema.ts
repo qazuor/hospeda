@@ -66,9 +66,7 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
-        moderationState: ModerationStatusPgEnum('moderation_state')
-            .notNull()
-            .default('PENDING_REVIEW'),
+        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         extraInfo: jsonb('extra_info').$type<ExtraInfoType>(),
         schedule: jsonb('schedule').$type<ScheduleType>()
     },

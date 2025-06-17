@@ -45,9 +45,7 @@ export const destinations: ReturnType<typeof pgTable> = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
-        moderationState: ModerationStatusPgEnum('moderation_state')
-            .notNull()
-            .default('PENDING_REVIEW')
+        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING')
     },
     (table) => ({
         destinations_isFeatured_idx: index('destinations_isFeatured_idx').on(table.isFeatured),

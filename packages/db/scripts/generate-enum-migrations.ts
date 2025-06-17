@@ -77,26 +77,46 @@ const main = async () => {
 
         if (onlyInDB.length > 0 || orderDiffers) {
             // Complex migration: create new type, migrate columns, delete old, rename
-            // 1. Crear el nuevo tipo
+            // 1. Create the new type
             const createNewEnumSQL = `CREATE TYPE ${dbEnumName}_new AS ENUM (${tsValues.map((v) => `'${v}'`).join(', ')});`;
-            // 2. Encontrar columnas que usan el enum
+            // 2. Find columns using the enum and their defaults
             const { rows: columns } = await pool.query(`
-                SELECT table_name, column_name
+                SELECT table_name, column_name, column_default
                 FROM information_schema.columns
                 WHERE udt_name = '${dbEnumName}'
             `);
-            // 3. Generar ALTER TABLE para cada columna
+            // 3. Generate ALTER TABLE for each column (handling default)
             const alterColumnsSQL = columns
-                .map(
-                    ({ table_name, column_name }) =>
-                        `ALTER TABLE "${table_name}" ALTER COLUMN "${column_name}" TYPE ${dbEnumName}_new USING "${column_name}"::text::${dbEnumName}_new;`
-                )
+                .map(({ table_name, column_name, column_default }) => {
+                    const dropDefault = column_default
+                        ? `ALTER TABLE "${table_name}" ALTER COLUMN "${column_name}" DROP DEFAULT;\n`
+                        : '';
+                    const alterType = `ALTER TABLE "${table_name}" ALTER COLUMN "${column_name}" TYPE ${dbEnumName}_new USING "${column_name}"::text::${dbEnumName}_new;`;
+                    return `${dropDefault}${alterType}`;
+                })
                 .join('\n');
-            // 4. Eliminar el tipo viejo
+            // 4. Drop the old type
             const dropOldEnumSQL = `DROP TYPE ${dbEnumName};`;
-            // 5. Renombrar el nuevo tipo
+            // 5. Rename the new type
             const renameEnumSQL = `ALTER TYPE ${dbEnumName}_new RENAME TO ${dbEnumName};`;
-            // 6. Advertencia si hay datos con valores que no existen en el nuevo enum
+            // 6. Restore defaults after the rename
+            const restoreDefaultsSQL = columns
+                .filter(({ column_default }) => column_default)
+                .map(({ table_name, column_name, column_default }) => {
+                    // The default can be e.g. 'ACTIVE'::lifecycle_status_enum
+                    // We rewrite it to point to the new type (now renamed)
+                    // If it's a literal value or a function, we keep it as is
+                    // Example: 'ACTIVE'::lifecycle_status_enum -> 'ACTIVE'::${dbEnumName}
+                    let newDefault = column_default;
+                    // Replace the old type with the new (now renamed)
+                    newDefault = newDefault.replace(
+                        new RegExp(`::${dbEnumName}(_new)?`, 'g'),
+                        `::${dbEnumName}`
+                    );
+                    return `ALTER TABLE "${table_name}" ALTER COLUMN "${column_name}" SET DEFAULT ${newDefault};`;
+                })
+                .join('\n');
+            // 7. Warning if there is data with values not present in the new enum
             const warning =
                 onlyInDB.length > 0
                     ? `-- WARNING: The following values exist in DB but not in TypeScript: ${onlyInDB.join(', ')}\n-- You must ensure no data uses these values before running this migration.\n`
@@ -106,7 +126,8 @@ const main = async () => {
                 createNewEnumSQL,
                 alterColumnsSQL,
                 dropOldEnumSQL,
-                renameEnumSQL
+                renameEnumSQL,
+                restoreDefaultsSQL
             ].join('\n');
             actions.push({ type: 'replace_enum', enumName: dbEnumName, sql: fullMigrationSQL });
             logger.warn(
