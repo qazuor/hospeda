@@ -1,6 +1,5 @@
 export enum ModerationStatusEnum {
-    PENDING_REVIEW = 'PENDING_REVIEW',
+    PENDING = 'PENDING',
     APPROVED = 'APPROVED',
-    REJECTED = 'REJECTED',
-    FLAGGED = 'FLAGGED'
+    REJECTED = 'REJECTED'
 }

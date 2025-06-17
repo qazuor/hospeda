@@ -1,6 +1,5 @@
 export enum LifecycleStatusEnum {
+    DRAFT = 'DRAFT',
     ACTIVE = 'ACTIVE',
-    INACTIVE = 'INACTIVE',
-    ARCHIVED = 'ARCHIVED',
-    SUSPENDED = 'SUSPENDED'
+    ARCHIVED = 'ARCHIVED'
 }
