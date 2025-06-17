@@ -10,7 +10,8 @@ import {
     WithModerationStatusSchema,
     WithReviewStateSchema,
     WithSeoSchema,
-    WithTagsSchema
+    WithTagsSchema,
+    WithVisibilitySchema
 } from '../../common/index.js';
 import { VisibilityEnumSchema } from '../../enums/index.js';
 import { DestinationAttractionSchema } from './destination.attraction.schema.js';
@@ -25,6 +26,7 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithAdminInfoSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithModerationStatusSchema)
+    .merge(WithVisibilitySchema)
     .merge(WithReviewStateSchema)
     .merge(WithTagsSchema)
     .merge(WithSeoSchema)
@@ -55,8 +57,6 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
         media: MediaSchema,
         /** Whether the destination is featured, optional */
         isFeatured: z.boolean().optional(),
-        /** Visibility enum */
-        visibility: VisibilityEnumSchema,
         /** Number of reviews, optional */
         reviewsCount: z.number().optional(),
         /** Average rating, optional */
@@ -82,7 +82,7 @@ export const DestinationFilterInputSchema = z.object({
     isFeatured: z.boolean().optional(),
     minRating: z.number().min(0).max(5).optional(),
     maxRating: z.number().min(0).max(5).optional(),
-    q: z.string().optional() // búsqueda libre
+    q: z.string().optional() // free text search
 });
 
 // Input para ordenamiento de resultados
