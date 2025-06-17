@@ -25,6 +25,6 @@
             "@repo/utils/*": ["../../packages/utils/src/*"]
         }
     },
-    "include": ["src", "../schemas/src", "../types/src"],
+    "include": ["src", "test", "../schemas/src", "../types/src"],
     "exclude": ["dist", "node_modules", "src/seeds"]
 }

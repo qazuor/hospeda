@@ -1,9 +1,9 @@
 import { BuiltinRoleTypeEnum, PreferedContactEnum, StateEnum } from '@repo/types';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
-import { getDb } from '../../client.js';
+import { getDb } from '../../../../db/src/client.js';
+import { dbLogger } from '../../../../db/src/utils/logger.js';
 import { roles, users } from '../../schema';
-import { dbLogger } from '../../utils/logger.js';
 
 /**
  * Seeds example users with different roles and profiles

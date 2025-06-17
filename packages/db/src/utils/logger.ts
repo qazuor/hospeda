@@ -1,26 +1,37 @@
-import logger, { type ILogger, LoggerColors, LogLevel } from '@repo/logger';
+// Standardized logger helpers for DB layer
+import { logger as baseLogger } from '@repo/logger';
 
-const dbLogger = logger.registerCategory('Database', 'DB', {
-    color: LoggerColors.BLUE
-});
-
-interface QueryParams {
-    table: string;
-    action: string;
-    params: Record<string, unknown>;
-    result: unknown;
-}
-
-// Register the query method
-dbLogger.registerLogMethod<QueryParams>('query', LogLevel.INFO, 'SQL');
-
-// Add this type if you have a logger interface, otherwise define it here
-type DbLogger = ILogger & {
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    query: (...args: any[]) => void;
+/**
+ * Logs a successful database query with context.
+ * @param table - The table name
+ * @param action - The action performed (e.g., 'findAll', 'create')
+ * @param params - The query parameters
+ * @param result - The query result
+ */
+export const logQuery = (table: string, action: string, params: unknown, result: unknown) => {
+    baseLogger.info({ table, action, params, result }, `[DB] ${table}.${action} OK`);
 };
 
-// Cast dbLogger to the correct type if needed
-const typedDbLogger = dbLogger as unknown as DbLogger;
+/**
+ * Logs a database action without result (e.g., before/after a mutation).
+ * @param table - The table name
+ * @param action - The action performed
+ * @param params - The action parameters
+ */
+export const logAction = (table: string, action: string, params: unknown) => {
+    baseLogger.info({ table, action, params }, `[DB] ${table}.${action}`);
+};
 
-export { typedDbLogger as dbLogger };
+/**
+ * Logs a database error with full context.
+ * @param table - The table name
+ * @param action - The action performed
+ * @param params - The parameters used in the action
+ * @param error - The error object
+ */
+export const logError = (table: string, action: string, params: unknown, error: Error) => {
+    baseLogger.error(
+        { table, action, params, error: error.message, stack: error.stack },
+        `[DB] ${table}.${action} ERROR`
+    );
+};

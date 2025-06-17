@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
-import * as schema from './dbschemas/index.js';
+import * as schema from './schemas/index.js';
 
 /**
  * Database client instance for runtime connection
