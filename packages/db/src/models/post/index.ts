@@ -1,3 +1,3 @@
 export * from './post.model';
-export * from './post_sponsor.model';
-export * from './post_sponsorship.model';
+export * from './postSponsor.model';
+export * from './postSponsorship.model';

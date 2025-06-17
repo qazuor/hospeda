@@ -1,461 +1,59 @@
-import type {
-    DestinationType,
-    DestinationWithRelationsType,
-    NewDestinationInputType,
-    UpdateDestinationInputType
-} from '@repo/types';
-import { type SQLWrapper, and, asc, count, desc, eq, ilike } from 'drizzle-orm';
-import { getDb } from '../../client.ts';
-import { destinations } from '../../dbschemas/destination/destination.dbschema.ts';
-import { rEntityTag } from '../../dbschemas/tag/r_entity_tag.dbschema';
-import { createOrderableColumnsAndMapping, prepareLikeQuery } from '../../utils';
-import { dbLogger } from '../../utils/logger.ts';
+import type { DestinationType } from '@repo/types';
+import { BaseModel } from '../../base/base.model';
+import { getDb } from '../../client';
+import { destinations } from '../../schemas/destination/destination.dbschema';
+import { DbError } from '../../utils/error';
+import { logError, logQuery } from '../../utils/logger';
 
-const destinationOrderable = createOrderableColumnsAndMapping(
-    ['name', 'slug', 'createdAt', 'updatedAt'] as const,
-    destinations
-);
+export class DestinationModel extends BaseModel<DestinationType> {
+    protected table = destinations;
+    protected entityName = 'destinations';
 
-export type DestinationOrderByColumn = typeof destinationOrderable.type;
-
-export type DestinationPaginationParams = {
-    limit: number;
-    offset: number;
-    order?: 'asc' | 'desc';
-    orderBy?: DestinationOrderByColumn;
-};
-
-export type DestinationSearchParams = DestinationPaginationParams & {
-    q?: string;
-    name?: string;
-    slug?: string;
-    isFeatured?: boolean;
-    visibility?: string;
-    lifecycle?: string;
-};
-
-export const DestinationModel = {
     /**
-     * Retrieve a destination by its unique ID.
+     * Finds a destination with specified relations populated.
+     * @param where - The filter object
+     * @param relations - The relations to include (e.g., { accommodations: true })
+     * @returns Promise resolving to the destination with relations or null if not found
      */
-    async getById(id: string): Promise<DestinationType | undefined> {
+    async findWithRelations(
+        where: Record<string, unknown>,
+        relations: Record<string, boolean>
+    ): Promise<DestinationType | null> {
         const db = getDb();
         try {
-            const result = await db
-                .select()
-                .from(destinations)
-                .where(eq(destinations.id, id))
-                .limit(1);
-            dbLogger.query({ table: 'destinations', action: 'getById', params: { id }, result });
-            return result[0] as DestinationType | undefined;
+            // Construir objeto 'with' dinámicamente
+            const withObj: Record<string, boolean> = {};
+            for (const key of [
+                'accommodations',
+                'reviews',
+                'tags',
+                'attractions',
+                'createdBy',
+                'updatedBy',
+                'deletedBy'
+            ]) {
+                if (relations[key]) withObj[key] = true;
+            }
+            if (Object.keys(withObj).length > 0) {
+                const result = await db.query.destinations.findFirst({
+                    where: (fields, { eq }) => eq(fields.id, where.id as string),
+                    with: withObj
+                });
+                logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                return result as DestinationType | null;
+            }
+            // Fallback a base findOne si no hay relaciones
+            const result = await this.findOne(where);
+            logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+            return result;
         } catch (error) {
-            dbLogger.error(error, 'DestinationModel.getById');
-            throw new Error(`Failed to get destination by id: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Create a new destination.
-     */
-    async create(input: NewDestinationInputType): Promise<DestinationType> {
-        const db = getDb();
-        try {
-            const result = await db.insert(destinations).values(input).returning();
-            const created = Array.isArray(result) ? result[0] : undefined;
-            dbLogger.query({
-                table: 'destinations',
-                action: 'create',
-                params: { input },
-                result: created
-            });
-            if (!created) throw new Error('Insert failed');
-            return created as DestinationType;
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.create');
-            throw new Error(`Failed to create destination: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Update a destination by its ID.
-     */
-    async update(
-        id: string,
-        input: UpdateDestinationInputType
-    ): Promise<DestinationType | undefined> {
-        const db = getDb();
-        try {
-            const result = await db
-                .update(destinations)
-                .set(input)
-                .where(eq(destinations.id, id))
-                .returning();
-            const updated = Array.isArray(result) ? result[0] : undefined;
-            dbLogger.query({
-                table: 'destinations',
-                action: 'update',
-                params: { id, input },
-                result: updated
-            });
-            return updated as DestinationType | undefined;
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.update');
-            throw new Error(`Failed to update destination: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Soft delete a destination by ID (sets deletedAt and deletedById).
-     */
-    async delete(id: string, deletedById: string): Promise<{ id: string } | undefined> {
-        const db = getDb();
-        try {
-            const now = new Date();
-            const result = await db
-                .update(destinations)
-                .set({ deletedAt: now, deletedById })
-                .where(eq(destinations.id, id))
-                .returning({ id: destinations.id });
-            const deleted = Array.isArray(result) ? result[0] : undefined;
-            dbLogger.query({
-                table: 'destinations',
-                action: 'delete',
-                params: { id, deletedById },
-                result: deleted
-            });
-            return deleted as { id: string } | undefined;
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.delete');
-            throw new Error(`Failed to delete destination: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Hard delete a destination by ID (permanently removes from DB).
-     */
-    async hardDelete(id: string): Promise<boolean> {
-        const db = getDb();
-        try {
-            const result = await db.delete(destinations).where(eq(destinations.id, id)).returning();
-            const deleted = Array.isArray(result) ? result.length > 0 : false;
-            dbLogger.query({
-                table: 'destinations',
-                action: 'hardDelete',
-                params: { id },
-                result: deleted
-            });
-            return deleted;
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.hardDelete');
-            throw new Error(`Failed to hard delete destination: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Retrieve a destination by slug.
-     */
-    async findBySlug(slug: string): Promise<DestinationType | undefined> {
-        const db = getDb();
-        try {
-            const result = await db
-                .select()
-                .from(destinations)
-                .where(eq(destinations.slug, slug))
-                .limit(1);
-            dbLogger.query({
-                table: 'destinations',
-                action: 'findBySlug',
-                params: { slug },
-                result
-            });
-            return result[0] as DestinationType | undefined;
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.findBySlug');
-            throw new Error(`Failed to find destination by slug: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Retrieve a destination by slug (alias for findBySlug).
-     */
-    async getBySlug(slug: string): Promise<DestinationType | undefined> {
-        return this.findBySlug(slug);
-    },
-    /**
-     * Retrieve a destination by ID, including specified relations.
-     */
-    async getWithRelations(id: string): Promise<DestinationWithRelationsType | undefined> {
-        const db = getDb();
-        try {
-            const result = await db.query.destinations.findFirst({
-                where: (d, { eq }) => eq(d.id, id),
-                with: {
-                    accommodations: true,
-                    reviews: true,
-                    tags: true,
-                    attractions: true
-                }
-            });
-            dbLogger.query({
-                table: 'destinations',
-                action: 'getWithRelations',
-                params: { id },
-                result
-            });
-            return result as DestinationWithRelationsType | undefined;
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.getWithRelations');
-            throw new Error(
-                `Failed to get destination with relations: ${(error as Error).message}`
+            logError(this.entityName, 'findWithRelations', { where, relations }, error as Error);
+            throw new DbError(
+                this.entityName,
+                'findWithRelations',
+                { where, relations },
+                (error as Error).message
             );
         }
-    },
-    /**
-     * List destinations with filters, pagination, ordering, and optional relations.
-     *
-     * If withRelations.attractions is requested, the field 'attractions' will be present as DestinationAttractionType[] and should be mapped in the service as needed.
-     *
-     * @param params - Filtering, pagination, and ordering parameters
-     * @param withRelations - Optional relations to include (e.g., { attractions: true })
-     * @returns Array of DestinationType (with optional attractions relation)
-     * @throws Error if the query fails
-     */
-    async list(
-        params: {
-            limit: number;
-            offset: number;
-            order?: 'asc' | 'desc';
-            orderBy?:
-                | 'name'
-                | 'slug'
-                | 'createdAt'
-                | 'updatedAt'
-                | 'isFeatured'
-                | 'reviewsCount'
-                | 'averageRating'
-                | 'accommodationsCount';
-            visibility?: string;
-            isFeatured?: boolean;
-            lifecycle?: string;
-            moderationState?: string;
-            deletedAt?: string | null;
-        },
-        withRelations?: { attractions?: boolean }
-    ): Promise<DestinationType[]> {
-        const db = getDb();
-        const {
-            limit,
-            offset,
-            order,
-            orderBy,
-            visibility,
-            isFeatured,
-            lifecycle,
-            moderationState,
-            deletedAt
-        } = params;
-        try {
-            const whereClauses: SQLWrapper[] = [];
-            if (visibility) whereClauses.push(eq(destinations.visibility, visibility));
-            if (isFeatured !== undefined)
-                whereClauses.push(eq(destinations.isFeatured, isFeatured));
-            if (lifecycle) whereClauses.push(eq(destinations.lifecycle, lifecycle));
-            if (moderationState)
-                whereClauses.push(eq(destinations.moderationState, moderationState));
-            if (deletedAt === null) {
-                whereClauses.push(eq(destinations.deletedAt, null));
-            } else if (deletedAt) {
-                whereClauses.push(eq(destinations.deletedAt, deletedAt));
-            }
-            // Ordenamiento
-            let col = destinations.createdAt;
-            switch (orderBy) {
-                case 'name':
-                    col = destinations.name;
-                    break;
-                case 'slug':
-                    col = destinations.slug;
-                    break;
-                case 'createdAt':
-                    col = destinations.createdAt;
-                    break;
-                case 'updatedAt':
-                    col = destinations.updatedAt;
-                    break;
-                case 'isFeatured':
-                    col = destinations.isFeatured;
-                    break;
-                case 'reviewsCount':
-                    col = destinations.reviewsCount;
-                    break;
-                case 'averageRating':
-                    col = destinations.averageRating;
-                    break;
-                case 'accommodationsCount':
-                    col = destinations.accommodationsCount;
-                    break;
-            }
-            const orderExpr = order === 'desc' ? desc(col) : asc(col);
-            if (withRelations?.attractions) {
-                // Usar drizzle query builder para incluir attractions
-                const result = await db.query.destinations.findMany({
-                    where: (_d, { and: _and }) => _and(...whereClauses),
-                    orderBy: orderExpr,
-                    limit,
-                    offset,
-                    with: {
-                        attractions: true
-                    }
-                });
-                dbLogger.query({
-                    table: 'destinations',
-                    action: 'list_with_attractions',
-                    params: { ...params, withRelations },
-                    result
-                });
-                return result as DestinationType[];
-            }
-            const queryBuilder = db.select().from(destinations);
-            const queryWithWhere =
-                whereClauses.length > 0 ? queryBuilder.where(and(...whereClauses)) : queryBuilder;
-            const finalQuery = queryWithWhere.orderBy(orderExpr).limit(limit).offset(offset);
-            const result = await finalQuery;
-            dbLogger.query({ table: 'destinations', action: 'list', params, result });
-            return result as DestinationType[];
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.list');
-            throw new Error(`Failed to list destinations: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Count destinations with optional filters (name, slug, isFeatured, visibility, lifecycle).
-     */
-    async count(params?: DestinationSearchParams): Promise<number> {
-        const db = getDb();
-        try {
-            const { name, slug, isFeatured, visibility, lifecycle } = params || {};
-            const whereClauses: SQLWrapper[] = [];
-            if (name) {
-                whereClauses.push(ilike(destinations.name, prepareLikeQuery(name)));
-            }
-            if (slug) {
-                whereClauses.push(eq(destinations.slug, slug));
-            }
-            if (isFeatured !== undefined) {
-                whereClauses.push(eq(destinations.isFeatured, isFeatured));
-            }
-            if (visibility) {
-                whereClauses.push(eq(destinations.visibility, visibility));
-            }
-            if (lifecycle) {
-                whereClauses.push(eq(destinations.lifecycle, lifecycle));
-            }
-            const query = db.select({ count: count().as('count') }).from(destinations);
-            const finalQuery = whereClauses.length > 0 ? query.where(and(...whereClauses)) : query;
-            const result = await finalQuery;
-            dbLogger.query({ table: 'destinations', action: 'count', params, result });
-            return Number(result[0]?.count ?? 0);
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.count');
-            throw new Error(`Failed to count destinations: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Search destinations by filters, including tagId (with join), paginación y orden.
-     * @param params - Search, paginación y orden
-     * @returns Array de DestinationType
-     */
-    async search(params: DestinationSearchParams & { tagId?: string }): Promise<DestinationType[]> {
-        const db = getDb();
-        const {
-            name,
-            slug,
-            isFeatured,
-            visibility,
-            lifecycle,
-            limit,
-            offset,
-            order,
-            orderBy,
-            tagId
-        } = params;
-        try {
-            const whereClauses: SQLWrapper[] = [];
-            if (name) whereClauses.push(ilike(destinations.name, prepareLikeQuery(name)));
-            if (slug) whereClauses.push(eq(destinations.slug, slug));
-            if (isFeatured !== undefined)
-                whereClauses.push(eq(destinations.isFeatured, isFeatured));
-            if (visibility) whereClauses.push(eq(destinations.visibility, visibility));
-            if (lifecycle) whereClauses.push(eq(destinations.lifecycle, lifecycle));
-            let col = destinations.createdAt;
-            switch (orderBy) {
-                case 'name':
-                    col = destinations.name;
-                    break;
-                case 'slug':
-                    col = destinations.slug;
-                    break;
-                case 'createdAt':
-                    col = destinations.createdAt;
-                    break;
-                case 'updatedAt':
-                    col = destinations.updatedAt;
-                    break;
-            }
-            const orderExpr = order === 'desc' ? desc(col) : asc(col);
-            if (tagId) {
-                // Join con rEntityTag para filtrar por tag y entityType DESTINATION
-                const result = await db
-                    .select({ destinations, rEntityTag })
-                    .from(destinations)
-                    .innerJoin(
-                        rEntityTag,
-                        and(
-                            eq(rEntityTag.entityId, destinations.id),
-                            eq(rEntityTag.tagId, tagId),
-                            eq(rEntityTag.entityType, 'DESTINATION')
-                        )
-                    )
-                    .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
-                    .orderBy(orderExpr)
-                    .limit(limit)
-                    .offset(offset);
-                dbLogger.query({ table: 'destinations', action: 'search_by_tag', params, result });
-                return (result as Array<{ destinations: unknown }>).map((row) => {
-                    if (row && typeof row === 'object' && 'destinations' in row) {
-                        return row.destinations as DestinationType;
-                    }
-                    throw new Error('Unexpected row format in DestinationModel.search');
-                });
-            }
-            // Sin tagId: búsqueda normal
-            const queryBuilder = db.select().from(destinations);
-            const queryWithWhere =
-                whereClauses.length > 0 ? queryBuilder.where(and(...whereClauses)) : queryBuilder;
-            const finalQuery = queryWithWhere.orderBy(orderExpr).limit(limit).offset(offset);
-            const result = await finalQuery;
-            dbLogger.query({ table: 'destinations', action: 'search', params, result });
-            return result as DestinationType[];
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.search');
-            throw new Error(`Failed to search destinations: ${(error as Error).message}`);
-        }
-    },
-    /**
-     * Retrieve a destination by name.
-     */
-    async getByName(name: string): Promise<DestinationType | undefined> {
-        const db = getDb();
-        try {
-            const result = await db
-                .select()
-                .from(destinations)
-                .where(eq(destinations.name, name))
-                .limit(1);
-            dbLogger.query({
-                table: 'destinations',
-                action: 'getByName',
-                params: { name },
-                result
-            });
-            return result[0] as DestinationType | undefined;
-        } catch (error) {
-            dbLogger.error(error, 'DestinationModel.getByName');
-            throw new Error(`Failed to get destination by name: ${(error as Error).message}`);
-        }
     }
-};
+}

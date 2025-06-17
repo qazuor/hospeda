@@ -1,2 +1,2 @@
-export * from './entity_tag.model';
+export * from './rEntityTag.model';
 export * from './tag.model';

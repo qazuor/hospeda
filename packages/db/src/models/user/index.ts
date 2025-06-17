@@ -1,2 +1,4 @@
+export * from './rRolePermission.model';
+export * from './rUserPermission.model';
 export * from './user.model';
-export * from './user_bookmark.model';
+export * from './userBookmark.model';
