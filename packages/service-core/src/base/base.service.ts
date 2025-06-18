@@ -1,4 +1,4 @@
-import { createPublicUser } from '@repo/types';
+import { RoleEnum, createPublicUser } from '@repo/types';
 import type { z } from 'zod';
 import {
     type Actor,
@@ -50,6 +50,11 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
      * The Zod schema for input validation.
      */
     protected abstract inputSchema: z.ZodSchema<CreateInput>;
+
+    /**
+     * Roles allowed to perform hard delete. Can be overridden by each service.
+     */
+    protected hardDeleteRoles: RoleEnum[] = [RoleEnum.SUPER_ADMIN];
 
     // --- Abstract Methods ---
 

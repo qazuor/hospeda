@@ -5,7 +5,7 @@ import type {
     NewAccommodationInputType,
     UpdateAccommodationInputType
 } from '@repo/types';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/types';
 import { toSlug } from '../../../../utils/src/string';
 import { BaseService } from '../../base/base.service';
 import {
@@ -67,6 +67,7 @@ export class AccommodationService extends BaseService<
     protected inputSchema = NewAccommodationInputSchema as unknown as import(
         'zod'
     ).ZodType<NewAccommodationInputType>;
+    protected hardDeleteRoles: RoleEnum[] = [RoleEnum.SUPER_ADMIN];
 
     /**
      * Constructs a new AccommodationService instance.
@@ -375,7 +376,7 @@ export class AccommodationService extends BaseService<
                 checkedPermission: PermissionEnum.ACCOMMODATION_HARD_DELETE
             };
         }
-        if (actor.role !== 'SUPER_ADMIN') {
+        if (!this.hardDeleteRoles.includes(actor.role)) {
             return {
                 canHardDelete: false,
                 reason: EntityPermissionReasonEnum.NOT_SUPER_ADMIN,
