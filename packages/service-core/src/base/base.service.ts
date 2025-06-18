@@ -408,10 +408,10 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
     // --- Public Methods ---
 
     /**
-     * Busca una entidad por cualquier campo único.
-     * @param field - El nombre del campo
-     * @param value - El valor a buscar
-     * @param input - El input original (con actor y la key buscada)
+     * Finds an entity by any unique field.
+     * @param field - The field name
+     * @param value - The value to search for
+     * @param input - The original input (with actor and the searched key)
      */
     protected async getByField(
         field: string,

@@ -6,7 +6,7 @@ import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
 import { EntityPermissionReasonEnum } from '../types';
 
 /**
- * Tipos de acción soportados por la función de permisos genérica.
+ * Action types supported by the generic permission function.
  */
 export type EntityAction =
     | 'view'
@@ -20,7 +20,7 @@ export type EntityAction =
     | 'publish';
 
 /**
- * Tipos mínimos requeridos para la entidad principal.
+ * Minimal required types for the main entity.
  */
 export interface EntityPermissionInput {
     lifecycleState: LifecycleStatusEnum;
@@ -31,7 +31,7 @@ export interface EntityPermissionInput {
 }
 
 /**
- * Actor mínimo requerido para la función de permisos.
+ * Minimal required actor for the permission function.
  */
 export interface EntityPermissionActor {
     id: string;
@@ -40,7 +40,7 @@ export interface EntityPermissionActor {
 }
 
 /**
- * Resultado de la evaluación de permisos.
+ * Result of the permission evaluation.
  */
 export interface EntityPermissionResult {
     allowed: boolean;
@@ -48,9 +48,9 @@ export interface EntityPermissionResult {
 }
 
 /**
- * Chequea si el actor tiene el permiso requerido (directo o por rol).
- * @param actor - Actor con lista de permisos
- * @param required - Permiso a chequear
+ * Checks if the actor has the required permission (direct or by role).
+ * @param actor - Actor with a list of permissions
+ * @param required - Permission to check
  * @returns boolean
  */
 export const hasPermission = (actor: EntityPermissionActor, required: PermissionEnum): boolean => {
@@ -58,10 +58,10 @@ export const hasPermission = (actor: EntityPermissionActor, required: Permission
 };
 
 /**
- * Lógica genérica de permisos para entidades principales.
- * @param actor - El usuario que realiza la acción
- * @param entity - La entidad sobre la que se actúa
- * @param action - La acción a evaluar
+ * Generic permission logic for main entities.
+ * @param actor - The user performing the action
+ * @param entity - The entity being acted upon
+ * @param action - The action to evaluate
  * @returns EntityPermissionResult
  */
 export function getEntityPermission(
@@ -70,22 +70,22 @@ export function getEntityPermission(
     action: EntityAction,
     options?: { hasAny?: boolean; hasOwn?: boolean }
 ): EntityPermissionResult {
-    // Super admin puede todo
+    // Super admin can do everything
     if (actor.role === RoleEnum.SUPER_ADMIN) {
         return { allowed: true, reason: EntityPermissionReasonEnum.SUPER_ADMIN };
     }
 
-    // Hard delete: solo super admin
+    // Hard delete: only super admin
     if (action === 'hardDelete') {
         return { allowed: false, reason: EntityPermissionReasonEnum.NOT_SUPER_ADMIN };
     }
 
-    // Si está eliminado, ninguna acción permitida excepto hardDelete (ya cubierto arriba)
+    // If deleted, no action allowed except hardDelete (already covered above)
     if (entity.deletedAt) {
         return { allowed: false, reason: EntityPermissionReasonEnum.DELETED };
     }
 
-    // Restore sobre archived: solo admin u owner
+    // Restore on archived: only admin or owner
     if (entity.lifecycleState === LifecycleStatusEnum.ARCHIVED && action === 'restore') {
         if (options?.hasAny) {
             return { allowed: true, reason: EntityPermissionReasonEnum.ADMIN };
@@ -96,7 +96,7 @@ export function getEntityPermission(
         return { allowed: false, reason: EntityPermissionReasonEnum.ARCHIVED };
     }
 
-    // Acciones de aprobar/rechazar/feature/publish: solo admin
+    // Actions approve/reject/feature/publish: only admin
     if (['approve', 'reject', 'feature', 'publish'].includes(action)) {
         if (actor.role === RoleEnum.ADMIN) {
             return { allowed: true, reason: EntityPermissionReasonEnum.ADMIN };
@@ -104,7 +104,7 @@ export function getEntityPermission(
         return { allowed: false, reason: EntityPermissionReasonEnum.NOT_ADMIN };
     }
 
-    // update/delete/restore: owner solo sobre su entidad, admin sobre cualquiera
+    // update/delete/restore: owner only on their own entity, admin on any entity
     if (['update', 'delete', 'restore'].includes(action)) {
         if (options?.hasAny) {
             return { allowed: true, reason: EntityPermissionReasonEnum.ADMIN };
@@ -115,7 +115,7 @@ export function getEntityPermission(
         return { allowed: false, reason: EntityPermissionReasonEnum.DENIED };
     }
 
-    // Lógica de visualización (view)
+    // View logic
     if (action === 'view') {
         // ARCHIVED/DRAFT/REJECTED: solo admin/owner
         if (
@@ -183,6 +183,6 @@ export function getEntityPermission(
         }
     }
 
-    // Por defecto, denegar
+    // Deny by default
     return { allowed: false, reason: EntityPermissionReasonEnum.DENIED };
 }

@@ -8,6 +8,7 @@ import { RoleEnum } from '@repo/types';
 import { PermissionEnum } from '@repo/types/enums/permission.enum';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
+import { EntityPermissionReasonEnum } from '../../../src/types';
 import {
     createAccommodation,
     createNewAccommodationInput,
@@ -25,11 +26,12 @@ const mockModel = {
     count: vi.fn()
 };
 
-// Subclase para exponer métodos protegidos
+// Subclase para expose protected methods
 class TestableAccommodationService extends AccommodationService {
     public canViewEntity = super.canViewEntity;
     public canDeleteEntity = super.canDeleteEntity;
     public canRestoreEntity = super.canRestoreEntity;
+    public canHardDeleteEntity = super.canHardDeleteEntity;
 }
 
 describe('AccommodationService', () => {
@@ -51,7 +53,7 @@ describe('AccommodationService', () => {
         }
     });
 
-    it('deniega create si falta permiso', async () => {
+    it('denies create if missing permission', async () => {
         const actor: ActorWithPermissions = createActor({ role: RoleEnum.ADMIN, permissions: [] });
         const result = await service.create({ actor, ...newInput });
         expect(result.error).toBeDefined();
@@ -325,5 +327,51 @@ describe('AccommodationService', () => {
         const actor: ActorWithPermissions = createActor({ permissions: [] });
         const featured = { ...accommodation, isFeatured: true };
         expect((await service.canViewEntity(actor, featured)).canView).toBe(true);
+    });
+});
+
+describe('AccommodationService.canHardDeleteEntity', () => {
+    let service: TestableAccommodationService;
+    const accommodation = createAccommodation();
+    const superAdminActor: ActorWithPermissions = createActor({
+        role: RoleEnum.SUPER_ADMIN,
+        permissions: [PermissionEnum.ACCOMMODATION_HARD_DELETE]
+    });
+    const adminActor: ActorWithPermissions = createActor({
+        role: RoleEnum.ADMIN,
+        permissions: [PermissionEnum.ACCOMMODATION_HARD_DELETE]
+    });
+    const superAdminNoPerm: ActorWithPermissions = createActor({
+        role: RoleEnum.SUPER_ADMIN,
+        permissions: []
+    });
+
+    beforeEach(() => {
+        service = new TestableAccommodationService();
+    });
+
+    it('denies if entity is deleted', () => {
+        const deleted = { ...accommodation, deletedAt: new Date() };
+        const result = service.canHardDeleteEntity(superAdminActor, deleted);
+        expect(result.canHardDelete).toBe(false);
+        expect(result.reason).toBe(EntityPermissionReasonEnum.DELETED);
+    });
+
+    it('denies if actor is not SUPER_ADMIN', () => {
+        const result = service.canHardDeleteEntity(adminActor, accommodation);
+        expect(result.canHardDelete).toBe(false);
+        expect(result.reason).toBe(EntityPermissionReasonEnum.NOT_SUPER_ADMIN);
+    });
+
+    it('denies if SUPER_ADMIN lacks permission', () => {
+        const result = service.canHardDeleteEntity(superAdminNoPerm, accommodation);
+        expect(result.canHardDelete).toBe(false);
+        expect(result.reason).toBe(EntityPermissionReasonEnum.MISSING_PERMISSION);
+    });
+
+    it('allows if SUPER_ADMIN and has permission', () => {
+        const result = service.canHardDeleteEntity(superAdminActor, accommodation);
+        expect(result.canHardDelete).toBe(true);
+        expect(result.reason).toBe(EntityPermissionReasonEnum.SUPER_ADMIN);
     });
 });

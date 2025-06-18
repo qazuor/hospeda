@@ -33,13 +33,13 @@ describe('AccommodationService.create', () => {
         }
     });
 
-    it('deniega create si falta permiso', async () => {
+    it('denies create if missing permission', async () => {
         const actor: ActorWithPermissions = createActor({ role: RoleEnum.ADMIN, permissions: [] });
         const result = await service.create({ actor, ...newInput });
         expect(result.error).toBeDefined();
     });
 
-    it('permite create si tiene permiso', async () => {
+    it('allows create if has permission', async () => {
         const actor: ActorWithPermissions = createActor({
             role: RoleEnum.ADMIN,
             permissions: [PermissionEnum.ACCOMMODATION_CREATE]
