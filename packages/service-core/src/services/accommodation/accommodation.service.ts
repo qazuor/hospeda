@@ -6,6 +6,7 @@ import type {
     UpdateAccommodationInputType
 } from '@repo/types';
 import { PermissionEnum } from '@repo/types';
+import { toSlug } from '../../../../utils/src/string';
 import { BaseService } from '../../base/base.service';
 import {
     type Actor,
@@ -629,5 +630,20 @@ export class AccommodationService extends BaseService<
             this.logGrant(actor, input, accommodation, 'view', canView.reason);
             return accommodation.reviews ?? [];
         });
+    }
+
+    /**
+     * Generates a URL-friendly slug for an accommodation: type + name.
+     * At least one of type or name must be non-empty, otherwise throws an error.
+     * @param type - Accommodation type (enum or string)
+     * @param name - Accommodation name
+     * @returns The generated slug
+     * @throws {Error} If both type and name are empty
+     */
+    public override generateSlug(type: string, name: string): string {
+        if (!type && !name) {
+            throw new Error('At least one of type or name must be provided to generate a slug');
+        }
+        return toSlug(`${type}-${name}`);
     }
 }

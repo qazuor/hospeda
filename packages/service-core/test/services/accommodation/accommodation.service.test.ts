@@ -375,3 +375,28 @@ describe('AccommodationService.canHardDeleteEntity', () => {
         expect(result.reason).toBe(EntityPermissionReasonEnum.SUPER_ADMIN);
     });
 });
+
+describe('AccommodationService.generateSlug', () => {
+    let service: TestableAccommodationService;
+    beforeEach(() => {
+        service = new TestableAccommodationService();
+    });
+
+    it('should generate a slug from type and name', () => {
+        expect(service.generateSlug('hotel', 'My Hotel')).toBe('hotel-my-hotel');
+        expect(service.generateSlug('cabin', 'Cabaña del Lago')).toBe('cabin-cabana-del-lago');
+        expect(service.generateSlug('hostel', 'Hostel! #1')).toBe('hostel-hostel-1');
+        expect(service.generateSlug('apartment', 'Ático & Spa')).toBe('apartment-atico-and-spa');
+    });
+
+    it('should return an empty string if type or name is empty', () => {
+        expect(service.generateSlug('', 'Name')).toBe('name');
+        expect(service.generateSlug('type', '')).toBe('type');
+    });
+
+    it('should throw if both type and name are empty', () => {
+        expect(() => service.generateSlug('', '')).toThrow(
+            'At least one of type or name must be provided to generate a slug'
+        );
+    });
+});
