@@ -327,4 +327,286 @@ export class AccommodationService extends BaseService<
     public async count(params: Record<string, unknown>): Promise<number> {
         return this.model.count(params);
     }
+
+    /**
+     * Filtra entidades por permiso de visibilidad y loggea grants/denegaciones.
+     */
+    private async filterByViewPermission(
+        actor: Actor,
+        entities: AccommodationType[],
+        input: unknown
+    ): Promise<AccommodationType[]> {
+        const visibles: AccommodationType[] = [];
+        for (const entity of entities) {
+            const canView = await this.canViewEntity(actor, entity);
+            if (canView.canView) {
+                this.logGrant(actor, input, entity, 'view', canView.reason);
+                visibles.push(entity);
+            } else {
+                this.logDenied(actor, input, entity, canView.reason, 'view');
+            }
+        }
+        return visibles;
+    }
+
+    public async getWithRelations(
+        input: ServiceInput<{ id: string; relations: Record<string, boolean> }>
+    ): Promise<ServiceOutput<AccommodationType | null>> {
+        if (!input.id || typeof input.id !== 'string') {
+            return {
+                error: { code: 'VALIDATION_ERROR', message: 'id is required and must be a string' }
+            };
+        }
+        if (!input.relations || typeof input.relations !== 'object') {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'relations is required and must be an object'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('getWithRelations', input, async (actor, input) => {
+            const accommodation = await this.model.findWithRelations(
+                { id: input.id },
+                input.relations
+            );
+            if (!accommodation) return null;
+            const canView = await this.canViewEntity(actor, accommodation);
+            if (!canView.canView) {
+                this.logDenied(actor, input, accommodation, canView.reason, 'view');
+                return null;
+            }
+            this.logGrant(actor, input, accommodation, 'view', canView.reason);
+            return accommodation;
+        });
+    }
+
+    public async getByDestinationId(
+        input: ServiceInput<{ destinationId: string }>
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        if (!input.destinationId || typeof input.destinationId !== 'string') {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'destinationId is required and must be a string'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation(
+            'getByDestinationId',
+            input,
+            async (actor, input) => {
+                const accommodations = await this.model.findAll({
+                    destinationId: input.destinationId
+                });
+                return await this.filterByViewPermission(actor, accommodations, input);
+            }
+        );
+    }
+
+    public async getByType(
+        input: ServiceInput<{ type: string }>
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        if (!input.type || typeof input.type !== 'string') {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'type is required and must be a string'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('getByType', input, async (actor, input) => {
+            const accommodations = await this.model.findAll({ type: input.type });
+            return await this.filterByViewPermission(actor, accommodations, input);
+        });
+    }
+
+    public async getByAmenity(
+        input: ServiceInput<{ amenityId?: string; amenitySlug?: string }>
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        if (
+            (!input.amenityId || typeof input.amenityId !== 'string') &&
+            (!input.amenitySlug || typeof input.amenitySlug !== 'string')
+        ) {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'amenityId or amenitySlug is required and must be a string'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('getByAmenity', input, async (actor, input) => {
+            if (input.amenityId) {
+                const accommodations = await this.model.findAll({
+                    'amenities.amenityId': input.amenityId
+                });
+                return await this.filterByViewPermission(actor, accommodations, input);
+            }
+            if (input.amenitySlug) {
+                throw new Error('Not implemented: search by amenitySlug');
+            }
+            return [];
+        });
+    }
+
+    public async getByFeature(
+        input: ServiceInput<{ featureId?: string; featureSlug?: string }>
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        if (
+            (!input.featureId || typeof input.featureId !== 'string') &&
+            (!input.featureSlug || typeof input.featureSlug !== 'string')
+        ) {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'featureId or featureSlug is required and must be a string'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('getByFeature', input, async (actor, input) => {
+            if (input.featureId) {
+                const accommodations = await this.model.findAll({
+                    'features.featureId': input.featureId
+                });
+                return await this.filterByViewPermission(actor, accommodations, input);
+            }
+            if (input.featureSlug) {
+                throw new Error('Not implemented: search by featureSlug');
+            }
+            return [];
+        });
+    }
+
+    public async getSummary(
+        input: ServiceInput<{ id?: string; slug?: string }>
+    ): Promise<ServiceOutput<Partial<AccommodationType> | null>> {
+        if (
+            (!input.id || typeof input.id !== 'string') &&
+            (!input.slug || typeof input.slug !== 'string')
+        ) {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'id or slug is required and must be a string'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('getSummary', input, async (actor, input) => {
+            let accommodation: AccommodationType | null = null;
+            if (input.id) {
+                accommodation = await this.model.findById(input.id);
+            } else if (input.slug) {
+                accommodation = await this.model.findOne({ slug: input.slug });
+            }
+            if (!accommodation) return null;
+            const canView = await this.canViewEntity(actor, accommodation);
+            if (!canView.canView) {
+                this.logDenied(actor, input, accommodation, canView.reason, 'view');
+                return null;
+            }
+            this.logGrant(actor, input, accommodation, 'view', canView.reason);
+            const summary: Partial<AccommodationType> = {
+                id: accommodation.id,
+                name: accommodation.name,
+                slug: accommodation.slug,
+                summary: accommodation.summary,
+                media: accommodation.media,
+                rating: accommodation.rating,
+                reviewsCount: accommodation.reviewsCount
+            };
+            return summary;
+        });
+    }
+
+    public async getSimilar(
+        input: ServiceInput<{ id?: string; slug?: string }>
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        if (
+            (!input.id || typeof input.id !== 'string') &&
+            (!input.slug || typeof input.slug !== 'string')
+        ) {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'id or slug is required and must be a string'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('getSimilar', input, async (actor, input) => {
+            let base: AccommodationType | null = null;
+            if (input.id) {
+                base = await this.model.findById(input.id);
+            } else if (input.slug) {
+                base = await this.model.findOne({ slug: input.slug });
+            }
+            if (!base) return [];
+            const similars = await this.model.findAll({
+                destinationId: base.destinationId,
+                type: base.type
+            });
+            const filtered = similars.filter((a) => a.id !== base?.id).slice(0, 10);
+            return await this.filterByViewPermission(actor, filtered, input);
+        });
+    }
+
+    public async getTopRated(
+        input: ServiceInput<{ destinationId?: string }>
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        if (input.destinationId && typeof input.destinationId !== 'string') {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'destinationId must be a string if provided'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('getTopRated', input, async (actor, input) => {
+            const filter: Record<string, unknown> = {};
+            if (input.destinationId) {
+                filter.destinationId = input.destinationId;
+            }
+            let accommodations = await this.model.findAll(filter);
+            accommodations = accommodations
+                .slice()
+                .sort((a, b) => {
+                    const ra = a.rating?.cleanliness ?? 0;
+                    const rb = b.rating?.cleanliness ?? 0;
+                    return rb - ra;
+                })
+                .slice(0, 10);
+            return await this.filterByViewPermission(actor, accommodations, input);
+        });
+    }
+
+    public async getReviews(
+        input: ServiceInput<{ id?: string; slug?: string }>
+    ): Promise<ServiceOutput<unknown[]>> {
+        if (
+            (!input.id || typeof input.id !== 'string') &&
+            (!input.slug || typeof input.slug !== 'string')
+        ) {
+            return {
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'id or slug is required and must be a string'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('getReviews', input, async (actor, input) => {
+            let accommodation: AccommodationType | null = null;
+            if (input.id) {
+                accommodation = await this.model.findById(input.id);
+            } else if (input.slug) {
+                accommodation = await this.model.findOne({ slug: input.slug });
+            }
+            if (!accommodation) return [];
+            const canView = await this.canViewEntity(actor, accommodation);
+            if (!canView.canView) {
+                this.logDenied(actor, input, accommodation, canView.reason, 'view');
+                return [];
+            }
+            this.logGrant(actor, input, accommodation, 'view', canView.reason);
+            return accommodation.reviews ?? [];
+        });
+    }
 }
