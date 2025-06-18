@@ -45,8 +45,15 @@ export type SearchAccommodationFilters = {
 };
 
 /**
- * Service for managing accommodations.
- * @extends {BaseService<AccommodationType, AccommodationCreateInput, AccommodationUpdateInput, AccommodationListInput, AccommodationListOutput>}
+ * AccommodationService provides all business logic and permission checks for managing accommodations.
+ * Handles creation, update, deletion, restoration, advanced search, and permission filtering.
+ * Extends BaseService to inherit common CRUD and permission logic.
+ *
+ * @remarks
+ * - All methods validate input and actor before performing operations.
+ * - Uses Drizzle ORM for database access via AccommodationModel.
+ * - Applies permission checks for all sensitive operations.
+ * - All errors are returned in ServiceOutput with a ServiceErrorCode.
  */
 export class AccommodationService extends BaseService<
     AccommodationType,
@@ -62,7 +69,8 @@ export class AccommodationService extends BaseService<
     ).ZodType<NewAccommodationInputType>;
 
     /**
-     * Creates a new AccommodationService.
+     * Constructs a new AccommodationService instance.
+     * @constructor
      */
     constructor() {
         super('accommodation');
@@ -70,6 +78,8 @@ export class AccommodationService extends BaseService<
 
     /**
      * Lists accommodations based on input criteria.
+     * @param input - The input containing list criteria and actor
+     * @returns A promise resolving to a ServiceOutput with an array of accommodations or an error
      */
     public async list(input: ServiceInput<unknown>): Promise<ServiceOutput<AccommodationType[]>> {
         return this.runWithLoggingAndValidation('list', input, async (_actor, input) => {
@@ -79,7 +89,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Creates a new accommodation.
+     * Creates a new accommodation after validating permissions and input.
+     * @param input - The input for creating the accommodation, including actor
+     * @returns A promise resolving to a ServiceOutput with the created accommodation or an error
+     * @throws {Error} If the actor does not have permission to create
      */
     public async create(
         input: ServiceInput<NewAccommodationInputType>
@@ -101,7 +114,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Updates an existing accommodation.
+     * Updates an existing accommodation after validating permissions and input.
+     * @param input - The input for updating the accommodation, must include id and actor
+     * @returns A promise resolving to a ServiceOutput with the updated accommodation or an error
+     * @throws {Error} If the accommodation is not found or the actor lacks permission
      */
     public async update(
         input: ServiceInput<UpdateAccommodationInputType>
@@ -138,7 +154,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Checks if an actor can view an accommodation.
+     * Checks if an actor can view a specific accommodation entity.
+     * @param actor - The actor to check
+     * @param entity - The accommodation entity to check
+     * @returns A promise resolving to CanViewResult with permission and reason
      */
     protected async canViewEntity(actor: Actor, entity: AccommodationType): Promise<CanViewResult> {
         if (entity.deletedAt) {
@@ -162,7 +181,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Checks if an actor can update an accommodation.
+     * Checks if an actor can update a specific accommodation entity.
+     * @param actor - The actor to check
+     * @param entity - The accommodation entity to check
+     * @returns A promise resolving to CanUpdateResult with permission and reason
      */
     protected async canUpdateEntity(
         actor: Actor,
@@ -192,7 +214,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Checks if an actor can delete an accommodation.
+     * Checks if an actor can delete a specific accommodation entity.
+     * @param actor - The actor to check
+     * @param entity - The accommodation entity to check
+     * @returns A promise resolving to CanDeleteResult with permission and reason
      */
     protected async canDeleteEntity(
         actor: Actor,
@@ -222,7 +247,9 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Checks if an actor can create an accommodation.
+     * Checks if an actor can create a new accommodation.
+     * @param actor - The actor to check
+     * @returns A promise resolving to CanCreateResult with permission and reason
      */
     protected async canCreateEntity(actor: Actor): Promise<CanCreateResult> {
         if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
@@ -232,7 +259,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Checks if an actor can restore an accommodation.
+     * Checks if an actor can restore a soft-deleted accommodation entity.
+     * @param actor - The actor to check
+     * @param entity - The accommodation entity to check
+     * @returns A promise resolving to CanRestoreResult with permission and reason
      */
     protected async canRestoreEntity(
         actor: Actor,
@@ -262,9 +292,9 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Normalizes the input for creating an accommodation.
-     * @param {ServiceInput<NewAccommodationInputType>} input - The input to normalize
-     * @returns {Promise<ServiceInput<NewAccommodationInputType>>} The normalized input
+     * Normalizes the input for creating an accommodation. Sets default visibility if not provided.
+     * @param input - The input to normalize
+     * @returns A promise resolving to the normalized input
      */
     protected async normalizeCreateInput(
         input: ServiceInput<NewAccommodationInputType>
@@ -276,9 +306,9 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Normalizes the input for updating an accommodation.
-     * @param {ServiceInput<UpdateAccommodationInputType>} input - The input to normalize
-     * @returns {Promise<ServiceInput<UpdateAccommodationInputType>>} The normalized input
+     * Normalizes the input for updating an accommodation. Currently returns input as-is.
+     * @param input - The input to normalize
+     * @returns A promise resolving to the normalized input
      */
     protected async normalizeUpdateInput(
         input: ServiceInput<UpdateAccommodationInputType>
@@ -287,9 +317,9 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Normalizes the input for listing accommodations.
-     * @param {ServiceInput<unknown>} input - The input to normalize
-     * @returns {Promise<ServiceInput<unknown>>} The normalized input
+     * Normalizes the input for listing accommodations. Currently returns input as-is.
+     * @param input - The input to normalize
+     * @returns A promise resolving to the normalized input
      */
     protected async normalizeListInput(
         input: ServiceInput<unknown>
@@ -298,14 +328,21 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Lists accommodations based on input criteria.
-     * @param {ServiceInput<unknown>} input - The input containing list criteria
-     * @returns {Promise<ServiceOutput<AccommodationType[]>>} The list of accommodations
+     * Lists accommodations based on input criteria. (Stub for extension)
+     * @param _input - The input containing list criteria
+     * @returns A promise resolving to an array of accommodations (empty by default)
      */
     protected async listEntities(_input: ServiceInput<unknown>): Promise<AccommodationType[]> {
         return [];
     }
 
+    /**
+     * Checks if an actor can hard delete an accommodation entity.
+     * Only SUPER_ADMIN with the correct permission can hard delete.
+     * @param actor - The actor to check
+     * @param entity - The accommodation entity to check
+     * @returns CanHardDeleteResult with permission, reason, and checked permission
+     */
     protected canHardDeleteEntity(actor: Actor, entity: AccommodationType): CanHardDeleteResult {
         if (entity.deletedAt) {
             return {
@@ -336,14 +373,20 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Wrapper para count que adapta los params a AccommodationSearchParams.
+     * Counts the number of accommodations matching the given parameters.
+     * @param params - Parameters to filter accommodations
+     * @returns A promise resolving to the count
      */
     public async count(params: Record<string, unknown>): Promise<number> {
         return this.model.count(params);
     }
 
     /**
-     * Filtra entidades por permiso de visibilidad y loggea grants/denegaciones.
+     * Filters entities by view permission and logs grants/denials for each entity.
+     * @param actor - The actor to check permissions for
+     * @param entities - The list of entities to filter
+     * @param input - The original input for logging context
+     * @returns A promise resolving to the list of entities the actor can view
      */
     private async filterByViewPermission(
         actor: Actor,
@@ -363,6 +406,12 @@ export class AccommodationService extends BaseService<
         return visibles;
     }
 
+    /**
+     * Retrieves an accommodation with its related entities based on the provided relations object.
+     * Validates permissions before returning the entity.
+     * @param input - Object containing the accommodation id and a relations map
+     * @returns A ServiceOutput with the accommodation and its relations, or an error/null if not found or forbidden
+     */
     public async getWithRelations(
         input: ServiceInput<{ id: string; relations: Record<string, boolean> }>
     ): Promise<ServiceOutput<AccommodationType | null>> {
@@ -398,6 +447,11 @@ export class AccommodationService extends BaseService<
         });
     }
 
+    /**
+     * Retrieves all accommodations for a given destinationId, filtered by view permission.
+     * @param input - Object containing the destinationId and actor
+     * @returns A ServiceOutput with an array of accommodations or an error
+     */
     public async getByDestinationId(
         input: ServiceInput<{ destinationId: string }>
     ): Promise<ServiceOutput<AccommodationType[]>> {
@@ -421,6 +475,11 @@ export class AccommodationService extends BaseService<
         );
     }
 
+    /**
+     * Retrieves all accommodations of a given type, filtered by view permission.
+     * @param input - Object containing the type and actor
+     * @returns A ServiceOutput with an array of accommodations or an error
+     */
     public async getByType(
         input: ServiceInput<{ type: string }>
     ): Promise<ServiceOutput<AccommodationType[]>> {
@@ -438,6 +497,11 @@ export class AccommodationService extends BaseService<
         });
     }
 
+    /**
+     * Retrieves all accommodations with a given amenity, filtered by view permission.
+     * @param input - Object containing amenityId or amenitySlug and actor
+     * @returns A ServiceOutput with an array of accommodations or an error
+     */
     public async getByAmenity(
         input: ServiceInput<{ amenityId?: string; amenitySlug?: string }>
     ): Promise<ServiceOutput<AccommodationType[]>> {
@@ -466,6 +530,11 @@ export class AccommodationService extends BaseService<
         });
     }
 
+    /**
+     * Retrieves all accommodations with a given feature, filtered by view permission.
+     * @param input - Object containing featureId or featureSlug and actor
+     * @returns A ServiceOutput with an array of accommodations or an error
+     */
     public async getByFeature(
         input: ServiceInput<{ featureId?: string; featureSlug?: string }>
     ): Promise<ServiceOutput<AccommodationType[]>> {
@@ -494,6 +563,11 @@ export class AccommodationService extends BaseService<
         });
     }
 
+    /**
+     * Retrieves a summary of an accommodation by id or slug, filtered by view permission.
+     * @param input - Object containing id or slug and actor
+     * @returns A ServiceOutput with a partial accommodation summary or null/error
+     */
     public async getSummary(
         input: ServiceInput<{ id?: string; slug?: string }>
     ): Promise<ServiceOutput<Partial<AccommodationType> | null>> {
@@ -535,6 +609,11 @@ export class AccommodationService extends BaseService<
         });
     }
 
+    /**
+     * Retrieves similar accommodations to the given id or slug, filtered by view permission.
+     * @param input - Object containing id or slug and actor
+     * @returns A ServiceOutput with an array of similar accommodations or an error
+     */
     public async getSimilar(
         input: ServiceInput<{ id?: string; slug?: string }>
     ): Promise<ServiceOutput<AccommodationType[]>> {
@@ -566,6 +645,11 @@ export class AccommodationService extends BaseService<
         });
     }
 
+    /**
+     * Retrieves top-rated accommodations, optionally filtered by destinationId, filtered by view permission.
+     * @param input - Object containing optional destinationId and actor
+     * @returns A ServiceOutput with an array of top-rated accommodations or an error
+     */
     public async getTopRated(
         input: ServiceInput<{ destinationId?: string }>
     ): Promise<ServiceOutput<AccommodationType[]>> {
@@ -595,6 +679,11 @@ export class AccommodationService extends BaseService<
         });
     }
 
+    /**
+     * Retrieves reviews for an accommodation by id or slug.
+     * @param input - Object containing id or slug and actor
+     * @returns A ServiceOutput with an array of reviews or an error
+     */
     public async getReviews(
         input: ServiceInput<{ id?: string; slug?: string }>
     ): Promise<ServiceOutput<unknown[]>> {
@@ -628,11 +717,11 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Generates a URL-friendly slug for an accommodation: type + name.
+     * Generates a URL-friendly slug for an accommodation using type and name.
      * At least one of type or name must be non-empty, otherwise throws an error.
      * @param type - Accommodation type (enum or string)
      * @param name - Accommodation name
-     * @returns The generated slug
+     * @returns The generated slug string
      * @throws {Error} If both type and name are empty
      */
     public override generateSlug(type: string, name: string): string {
@@ -643,9 +732,9 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Helper to build a filter object for AccommodationModel from search filters.
-     * @param filters - SearchAccommodationFilters
-     * @returns Filter object for the model
+     * Builds a filter object for searching accommodations based on provided filters.
+     * @param filters - SearchAccommodationFilters object
+     * @returns A filter object suitable for AccommodationModel.findAll
      */
     private buildAccommodationFilter(filters: SearchAccommodationFilters): Record<string, unknown> {
         const filter: Record<string, unknown> = {};
@@ -663,9 +752,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Searches for accommodations using multiple filters.
-     * @param input - SearchAccommodationFilters
-     * @returns Filtered accommodations with permission filtering
+     * Finds accommodations using multiple filters (type, destinationId, amenityIds, featureIds, name, slug).
+     * Does not apply permission filtering; see public search method for permission checks.
+     * @param input - SearchAccommodationFilters object
+     * @returns A promise resolving to an array of accommodations
      */
     protected async searchEntities(
         input: SearchAccommodationFilters
@@ -677,7 +767,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Public search method supporting multiple filters.
+     * Public search method supporting multiple filters and permission filtering.
+     * Validates input and actor, applies Zod schema validation, and filters results by view permission.
+     * @param input - ServiceInput containing SearchAccommodationFilters and actor
+     * @returns A ServiceOutput with an array of accommodations or an error
      */
     public async search(
         input: ServiceInput<SearchAccommodationFilters>
