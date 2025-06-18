@@ -23,25 +23,71 @@ export abstract class BaseModel<T> {
 
     /**
      * Finds all entities matching the where clause.
+     * Si se pasan page y pageSize, devuelve { items, total } paginado. Si no, devuelve el array completo.
      * @param where - The filter object
-     * @returns Promise resolving to an array of entities
+     * @param options - Opcional: { page, pageSize }
+     * @returns Promise resolving to array o a objeto paginado
      */
-    async findAll(where: Record<string, unknown>): Promise<T[]> {
+    async findAll(
+        where: Record<string, unknown>,
+        options?: { page?: number; pageSize?: number }
+    ): Promise<T[] | { items: T[]; total: number }> {
         const db = getDb();
         const safeWhere = where ?? {};
-        try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
-            const result = await db.select().from(this.table).where(whereClause);
+        if (options?.page && options?.pageSize) {
+            const offset = (options.page - 1) * options.pageSize;
             try {
-                logQuery(this.entityName, 'findAll', safeWhere, result);
-            } catch {}
-            return result as T[];
-        } catch (error) {
-            const err = error instanceof Error ? error : new Error(String(error));
+                const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+                const [items, total] = await Promise.all([
+                    db
+                        .select()
+                        .from(this.table)
+                        .where(whereClause)
+                        .limit(options.pageSize)
+                        .offset(offset),
+                    this.count(safeWhere)
+                ]);
+                try {
+                    logQuery(
+                        this.entityName,
+                        'findAll',
+                        { where: safeWhere, page: options.page, pageSize: options.pageSize },
+                        { items, total }
+                    );
+                } catch {}
+                return { items: items as T[], total };
+            } catch (error) {
+                const err = error instanceof Error ? error : new Error(String(error));
+                try {
+                    logError(
+                        this.entityName,
+                        'findAll',
+                        { where: safeWhere, page: options.page, pageSize: options.pageSize },
+                        err
+                    );
+                } catch {}
+                throw new DbError(
+                    this.entityName,
+                    'findAll',
+                    { where: safeWhere, page: options.page, pageSize: options.pageSize },
+                    err.message
+                );
+            }
+        } else {
             try {
-                logError(this.entityName, 'findAll', safeWhere, err);
-            } catch {}
-            throw new DbError(this.entityName, 'findAll', safeWhere, err.message);
+                const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+                const result = await db.select().from(this.table).where(whereClause);
+                try {
+                    logQuery(this.entityName, 'findAll', safeWhere, result);
+                } catch {}
+                return result as T[];
+            } catch (error) {
+                const err = error instanceof Error ? error : new Error(String(error));
+                try {
+                    logError(this.entityName, 'findAll', safeWhere, err);
+                } catch {}
+                throw new DbError(this.entityName, 'findAll', safeWhere, err.message);
+            }
         }
     }
 
