@@ -124,8 +124,9 @@ export interface PublicUserType {
  * // publicUser.userName === 'public'
  * // publicUser.role === 'public' as RoleEnum
  */
-export const createPublicUser = (): PublicUserType => ({
+export const createPublicUser = (): PublicUserType & { permissions: PermissionEnum[] } => ({
     id: '00000000-0000-4000-y000-000000000000' as UserId,
     userName: 'public',
-    role: RoleEnum.GUEST
+    role: RoleEnum.GUEST,
+    permissions: []
 });
