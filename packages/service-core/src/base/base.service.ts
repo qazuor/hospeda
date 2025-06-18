@@ -155,6 +155,13 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
         return { deletedAt: null, deletedById: null } as unknown as Partial<T>;
     }
 
+    /**
+     * Generates a URL-friendly slug for an entity. Must be implemented by each service.
+     * @param args - Arguments required to generate the slug (domain-specific)
+     * @returns The generated slug
+     */
+    public abstract generateSlug(...args: unknown[]): string;
+
     // --- Protected Methods ---
 
     /**
