@@ -63,6 +63,8 @@ export type ServiceOutput<T> =
               code: string;
               /** Error message */
               message: string;
+              /** Optional additional details for debugging or context */
+              details?: unknown;
           };
       };
 
@@ -155,10 +157,12 @@ export class ServiceError extends Error {
      * Creates a new ServiceError.
      * @param {ServiceErrorCode} code - The error code
      * @param {string} message - The error message
+     * @param {unknown} [details] - Optional additional details for debugging or context
      */
     constructor(
         public code: ServiceErrorCode,
-        message: string
+        message: string,
+        public details?: unknown
     ) {
         super(message);
         this.name = 'ServiceError';
