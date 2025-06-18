@@ -199,7 +199,7 @@ describe('BaseService edge cases and errors', () => {
     });
 
     it('handles empty/nil input gracefully', async () => {
-        // Prueba input sin actor (inválido)
+        // Test input without actor (invalid)
         const result = await service.create({ actor: undefined as unknown as Actor, foo: 'bar' });
         expect(result.error).toBeDefined();
         const upd = await service.update({
