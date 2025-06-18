@@ -16,6 +16,7 @@ import {
     type CanUpdateResult,
     type CanViewResult,
     EntityPermissionReasonEnum,
+    ServiceErrorCode,
     type ServiceInput,
     type ServiceOutput
 } from '../../types';
@@ -309,14 +310,31 @@ export class AccommodationService extends BaseService<
         return [];
     }
 
-    protected canHardDeleteEntity(
-        _actor: unknown,
-        _entity: AccommodationType
-    ): CanHardDeleteResult {
-        // TODO: Implement real logic
+    protected canHardDeleteEntity(actor: Actor, entity: AccommodationType): CanHardDeleteResult {
+        if (entity.deletedAt) {
+            return {
+                canHardDelete: false,
+                reason: EntityPermissionReasonEnum.DELETED,
+                checkedPermission: PermissionEnum.ACCOMMODATION_HARD_DELETE
+            };
+        }
+        if (actor.role !== 'SUPER_ADMIN') {
+            return {
+                canHardDelete: false,
+                reason: EntityPermissionReasonEnum.NOT_SUPER_ADMIN,
+                checkedPermission: PermissionEnum.ACCOMMODATION_HARD_DELETE
+            };
+        }
+        if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_HARD_DELETE)) {
+            return {
+                canHardDelete: false,
+                reason: EntityPermissionReasonEnum.MISSING_PERMISSION,
+                checkedPermission: PermissionEnum.ACCOMMODATION_HARD_DELETE
+            };
+        }
         return {
-            canHardDelete: false,
-            reason: EntityPermissionReasonEnum.MISSING_PERMISSION,
+            canHardDelete: true,
+            reason: EntityPermissionReasonEnum.SUPER_ADMIN,
             checkedPermission: PermissionEnum.ACCOMMODATION_HARD_DELETE
         };
     }
@@ -354,13 +372,16 @@ export class AccommodationService extends BaseService<
     ): Promise<ServiceOutput<AccommodationType | null>> {
         if (!input.id || typeof input.id !== 'string') {
             return {
-                error: { code: 'VALIDATION_ERROR', message: 'id is required and must be a string' }
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'id is required and must be a string'
+                }
             };
         }
         if (!input.relations || typeof input.relations !== 'object') {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'relations is required and must be an object'
                 }
             };
@@ -387,7 +408,7 @@ export class AccommodationService extends BaseService<
         if (!input.destinationId || typeof input.destinationId !== 'string') {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'destinationId is required and must be a string'
                 }
             };
@@ -410,7 +431,7 @@ export class AccommodationService extends BaseService<
         if (!input.type || typeof input.type !== 'string') {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'type is required and must be a string'
                 }
             };
@@ -430,7 +451,7 @@ export class AccommodationService extends BaseService<
         ) {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'amenityId or amenitySlug is required and must be a string'
                 }
             };
@@ -458,7 +479,7 @@ export class AccommodationService extends BaseService<
         ) {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'featureId or featureSlug is required and must be a string'
                 }
             };
@@ -486,7 +507,7 @@ export class AccommodationService extends BaseService<
         ) {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'id or slug is required and must be a string'
                 }
             };
@@ -527,7 +548,7 @@ export class AccommodationService extends BaseService<
         ) {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'id or slug is required and must be a string'
                 }
             };
@@ -555,7 +576,7 @@ export class AccommodationService extends BaseService<
         if (input.destinationId && typeof input.destinationId !== 'string') {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'destinationId must be a string if provided'
                 }
             };
@@ -587,7 +608,7 @@ export class AccommodationService extends BaseService<
         ) {
             return {
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'id or slug is required and must be a string'
                 }
             };
