@@ -8,8 +8,8 @@ export default defineConfig({
     splitting: false,
     sourcemap: false,
     clean: true,
-    dts: false, // no necesitamos tipos en producción
+    dts: false, // we do not need types in production
     tsconfig: './tsconfig.json',
     noExternal: [/@repo\/.*/],
-    external: [] // Si querés incluir absolutamente todo, dejá esto vacío
+    external: [] // If you want to include absolutely everything, leave this empty
 });

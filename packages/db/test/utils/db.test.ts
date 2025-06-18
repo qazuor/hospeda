@@ -10,13 +10,13 @@ vi.mock('drizzle-orm/node-postgres', () => {
 type MockPool = Record<string, unknown>;
 const mockPool = {} as unknown as MockPool;
 
-// Este archivo utiliza '@ts-expect-error' en los mocks de Pool porque no es posible replicar toda la interfaz de Pool en tests. Solo se mockean los métodos usados.
-// Esto está documentado y justificado según las reglas del proyecto.
+// This file uses '@ts-expect-error' in Pool mocks because it's not possible to replicate the entire Pool interface in tests. Only used methods are mocked.
+// This is documented and justified according to project rules.
 
 describe('initializeDb', () => {
     beforeEach(async () => {
         (dbUtils as unknown as { runtimeClient: unknown }).runtimeClient = null;
-        // Limpia el spy usando import dinámico y type assertion
+        // Cleans the spy using dynamic import and type assertion
         const mod = await import('drizzle-orm/node-postgres');
         (mod.drizzle as ReturnType<typeof vi.fn>).mockClear();
     });
@@ -60,8 +60,8 @@ describe('getDb', () => {
     });
 
     it.skip('throws in production if not initialized', () => {
-        // No se puede testear correctamente en Vitest, ya que process.env.VITEST siempre está presente.
-        // Este test solo es relevante en producción real.
+        // Cannot be properly tested in Vitest, since process.env.VITEST is always present.
+        // This test is only relevant in real production.
         process.env.VSCODE_PID = undefined;
         process.env.VITEST = undefined;
         process.env.NODE_ENV = 'production';

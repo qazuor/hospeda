@@ -17,7 +17,7 @@ describe('buildWhereClause', () => {
 
     it('returns eq for single field', () => {
         const clause = buildWhereClause({ id: 1 }, mockTable);
-        // No se puede comparar SQL, pero sí el tipo y que no sea undefined
+        // Cannot compare SQL, but can check type and that it is not undefined
         expect(clause).toBeDefined();
     });
 

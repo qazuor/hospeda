@@ -14,7 +14,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
         .filter(([_, value]) => value !== undefined)
         .map(([key, value]) => {
             if (Object.prototype.hasOwnProperty.call(tableRecord, key)) {
-                // @ts-expect-error: acceso dinámico a columna Drizzle
+                // @ts-expect-error: dynamic access to Drizzle column
                 return eq(tableRecord[key], value);
             }
             return undefined;
