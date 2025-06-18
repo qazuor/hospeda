@@ -29,7 +29,20 @@ import {
     hasPermission
 } from '../../utils/permission';
 import { validateEntity } from '../../utils/validation';
-import { NewAccommodationInputSchema } from './accommodation.schemas';
+import {
+    NewAccommodationInputSchema,
+    SearchAccommodationFiltersSchema
+} from './accommodation.schemas';
+
+// Define the type for search filters (outside the class)
+export type SearchAccommodationFilters = {
+    type?: string;
+    destinationId?: string;
+    amenityIds?: string[];
+    featureIds?: string[];
+    name?: string;
+    slug?: string;
+};
 
 /**
  * Service for managing accommodations.
@@ -122,15 +135,6 @@ export class AccommodationService extends BaseService<
             },
             this.inputSchema
         );
-    }
-
-    /**
-     * Searches for accommodations.
-     */
-    public async search(input: ServiceInput<unknown>): Promise<ServiceOutput<AccommodationType[]>> {
-        return this.runWithLoggingAndValidation('search', input, async (_actor, input) => {
-            return await this.searchEntities(input);
-        });
     }
 
     /**
@@ -299,15 +303,6 @@ export class AccommodationService extends BaseService<
      * @returns {Promise<ServiceOutput<AccommodationType[]>>} The list of accommodations
      */
     protected async listEntities(_input: ServiceInput<unknown>): Promise<AccommodationType[]> {
-        return [];
-    }
-
-    /**
-     * Searches for accommodations.
-     * @param {ServiceInput<unknown>} input - The input containing search criteria
-     * @returns {Promise<ServiceOutput<AccommodationType[]>>} The search results
-     */
-    protected async searchEntities(_input: ServiceInput<unknown>): Promise<AccommodationType[]> {
         return [];
     }
 
@@ -645,5 +640,87 @@ export class AccommodationService extends BaseService<
             throw new Error('At least one of type or name must be provided to generate a slug');
         }
         return toSlug(`${type}-${name}`);
+    }
+
+    /**
+     * Helper to build a filter object for AccommodationModel from search filters.
+     * @param filters - SearchAccommodationFilters
+     * @returns Filter object for the model
+     */
+    private buildAccommodationFilter(filters: SearchAccommodationFilters): Record<string, unknown> {
+        const filter: Record<string, unknown> = {};
+        if (filters.type) filter.type = filters.type;
+        if (filters.destinationId) filter.destinationId = filters.destinationId;
+        if (filters.name) filter.name = filters.name;
+        if (filters.slug) filter.slug = filters.slug;
+        if (filters.amenityIds && filters.amenityIds.length > 0) {
+            filter['amenities.amenityId'] = { $in: filters.amenityIds };
+        }
+        if (filters.featureIds && filters.featureIds.length > 0) {
+            filter['features.featureId'] = { $in: filters.featureIds };
+        }
+        return filter;
+    }
+
+    /**
+     * Searches for accommodations using multiple filters.
+     * @param input - SearchAccommodationFilters
+     * @returns Filtered accommodations with permission filtering
+     */
+    protected async searchEntities(
+        input: SearchAccommodationFilters
+    ): Promise<AccommodationType[]> {
+        const filter = this.buildAccommodationFilter(input);
+        const accommodations = await this.model.findAll(filter);
+        // Permission filtering is handled by filterByViewPermission in the public search method
+        return accommodations;
+    }
+
+    /**
+     * Public search method supporting multiple filters.
+     */
+    public async search(
+        input: ServiceInput<SearchAccommodationFilters>
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        // Validation aligned with the rest of the methods
+        if (!input.actor) {
+            return {
+                error: {
+                    code: ServiceErrorCode.UNAUTHORIZED,
+                    message: 'Actor is required'
+                }
+            };
+        }
+        // Validate filter types with Zod
+        const parseResult = SearchAccommodationFiltersSchema.safeParse(input);
+        if (!parseResult.success) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: parseResult.error.errors.map((e) => e.message).join('; ')
+                }
+            };
+        }
+        const filters = input;
+        if (
+            !filters.type &&
+            !filters.destinationId &&
+            (!filters.amenityIds || filters.amenityIds.length === 0) &&
+            (!filters.featureIds || filters.featureIds.length === 0) &&
+            !filters.name &&
+            !filters.slug
+        ) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message:
+                        'At least one filter (type, destinationId, amenityIds, featureIds, name, slug) is required'
+                }
+            };
+        }
+        return this.runWithLoggingAndValidation('search', input, async (actor, input) => {
+            const accommodations = await this.searchEntities(input);
+            return await this.filterByViewPermission(actor, accommodations, input);
+        });
     }
 }
