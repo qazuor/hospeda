@@ -1,8 +1,6 @@
-import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
+import { AccommodationModel } from '@repo/db';
 import { logger } from '@repo/logger';
 import type {
-    AccommodationRatingType,
-    AccommodationReviewType,
     AccommodationType,
     NewAccommodationInputType,
     UpdateAccommodationInputType
@@ -87,7 +85,13 @@ export class AccommodationService extends BaseService<
     public async list(input: ServiceInput<unknown>): Promise<ServiceOutput<AccommodationType[]>> {
         return this.runWithLoggingAndValidation('list', input, async (_actor, input) => {
             const normalizedInput = await this.normalizeListInput(input);
-            return await this.model.findAll(normalizedInput as Record<string, unknown>);
+            const result = await this.model.findAll(normalizedInput as Record<string, unknown>);
+            const accommodations = Array.isArray(result)
+                ? result
+                : typeof result === 'object' && result !== null && 'items' in result
+                  ? (result as { items: AccommodationType[] }).items
+                  : [];
+            return accommodations;
         });
     }
 
@@ -161,14 +165,14 @@ export class AccommodationService extends BaseService<
                     );
                     normalizedInput = { ...normalizedInput, slug };
                 }
-                const updated = await this.model.update(
+                const result = await this.model.update(
                     { id: input.id },
                     normalizedInput as Partial<AccommodationType>
                 );
-                if (!updated) {
+                if (!result) {
                     throw new Error('Accommodation not found after update');
                 }
-                return updated;
+                return result;
             },
             this.inputSchema
         );
@@ -497,9 +501,14 @@ export class AccommodationService extends BaseService<
             'getByDestinationId',
             input,
             async (actor, input) => {
-                const accommodations = await this.model.findAll({
+                const result = await this.model.findAll({
                     destinationId: input.destinationId
                 });
+                const accommodations = Array.isArray(result)
+                    ? result
+                    : typeof result === 'object' && result !== null && 'items' in result
+                      ? (result as { items: AccommodationType[] }).items
+                      : [];
                 return await this.filterByViewPermission(actor, accommodations, input);
             }
         );
@@ -523,7 +532,12 @@ export class AccommodationService extends BaseService<
             };
         }
         return this.runWithLoggingAndValidation('getByType', input, async (actor, input) => {
-            const accommodations = await this.model.findAll({ type: input.type });
+            const result = await this.model.findAll({ type: input.type });
+            const accommodations = Array.isArray(result)
+                ? result
+                : typeof result === 'object' && result !== null && 'items' in result
+                  ? (result as { items: AccommodationType[] }).items
+                  : [];
             return await this.filterByViewPermission(actor, accommodations, input);
         });
     }
@@ -552,9 +566,14 @@ export class AccommodationService extends BaseService<
         }
         return this.runWithLoggingAndValidation('getByAmenity', input, async (actor, input) => {
             if (input.amenityId) {
-                const accommodations = await this.model.findAll({
+                const result = await this.model.findAll({
                     'amenities.amenityId': input.amenityId
                 });
+                const accommodations = Array.isArray(result)
+                    ? result
+                    : typeof result === 'object' && result !== null && 'items' in result
+                      ? (result as { items: AccommodationType[] }).items
+                      : [];
                 return await this.filterByViewPermission(actor, accommodations, input);
             }
             if (input.amenitySlug) {
@@ -590,9 +609,14 @@ export class AccommodationService extends BaseService<
         }
         return this.runWithLoggingAndValidation('getByFeature', input, async (actor, input) => {
             if (input.featureId) {
-                const accommodations = await this.model.findAll({
+                const result = await this.model.findAll({
                     'features.featureId': input.featureId
                 });
+                const accommodations = Array.isArray(result)
+                    ? result
+                    : typeof result === 'object' && result !== null && 'items' in result
+                      ? (result as { items: AccommodationType[] }).items
+                      : [];
                 return await this.filterByViewPermission(actor, accommodations, input);
             }
             if (input.featureSlug) {
@@ -679,11 +703,16 @@ export class AccommodationService extends BaseService<
                 base = await this.model.findOne({ slug: input.slug });
             }
             if (!base) return [];
-            const similars = await this.model.findAll({
+            const result = await this.model.findAll({
                 destinationId: base.destinationId,
                 type: base.type
             });
-            const filtered = similars.filter((a) => a.id !== base?.id).slice(0, 10);
+            const arr = Array.isArray(result)
+                ? result
+                : typeof result === 'object' && result !== null && 'items' in result
+                  ? (result as { items: AccommodationType[] }).items
+                  : [];
+            const filtered = arr.filter((a) => a.id !== base?.id).slice(0, 10);
             return await this.filterByViewPermission(actor, filtered, input);
         });
     }
@@ -710,7 +739,12 @@ export class AccommodationService extends BaseService<
             if (input.destinationId) {
                 filter.destinationId = input.destinationId;
             }
-            let accommodations = await this.model.findAll(filter);
+            const result = await this.model.findAll(filter);
+            let accommodations = Array.isArray(result)
+                ? result
+                : typeof result === 'object' && result !== null && 'items' in result
+                  ? (result as { items: AccommodationType[] }).items
+                  : [];
             accommodations = accommodations
                 .slice()
                 .sort((a, b) => {
@@ -818,8 +852,12 @@ export class AccommodationService extends BaseService<
         input: SearchAccommodationFilters
     ): Promise<AccommodationType[]> {
         const filter = this.buildAccommodationFilter(input);
-        const accommodations = await this.model.findAll(filter);
-        // Permission filtering is handled by filterByViewPermission in the public search method
+        const result = await this.model.findAll(filter);
+        const accommodations = Array.isArray(result)
+            ? result
+            : typeof result === 'object' && result !== null && 'items' in result
+              ? (result as { items: AccommodationType[] }).items
+              : [];
         return accommodations;
     }
 
@@ -872,71 +910,6 @@ export class AccommodationService extends BaseService<
         return this.runWithLoggingAndValidation('search', input, async (actor, input) => {
             const accommodations = await this.searchEntities(input);
             return await this.filterByViewPermission(actor, accommodations, input);
-        });
-    }
-
-    /**
-     * Adds a review to an accommodation, updates stats, and returns the review and new stats.
-     *
-     * TODO: This logic should be moved to a dedicated ReviewService. AccommodationService should not know review internals or stats calculation.
-     *
-     * @param input - ServiceInput with AccommodationReviewType and actor
-     * @returns ServiceOutput with the created review and new stats
-     */
-    public async addReview(input: ServiceInput<AccommodationReviewType>): Promise<
-        ServiceOutput<{
-            review: AccommodationReviewType;
-            stats: { rating: AccommodationRatingType; reviewsCount: number };
-        }>
-    > {
-        return this.runWithLoggingAndValidation('addReview', input, async (_actor, input) => {
-            const { accommodationId } = input;
-            // 1. Validate that the accommodation exists
-            const accommodation = await this.model.findById(accommodationId);
-            if (!accommodation) {
-                throw new Error('Accommodation not found');
-            }
-            // 2. Create the review
-            const reviewModel = new AccommodationReviewModel();
-            const review = await reviewModel.create(input as Partial<AccommodationReviewType>);
-            // 3. Fetch all reviews for this accommodation
-            const allReviews = await reviewModel.findAll({ accommodationId });
-            // 4. Calculate stats (average rating fields and review count)
-            const reviewsCount = allReviews.length;
-            const sum = allReviews.reduce(
-                (acc, r) => {
-                    acc.cleanliness += r.rating.cleanliness;
-                    acc.hospitality += r.rating.hospitality;
-                    acc.services += r.rating.services;
-                    acc.accuracy += r.rating.accuracy;
-                    acc.communication += r.rating.communication;
-                    acc.location += r.rating.location;
-                    return acc;
-                },
-                {
-                    cleanliness: 0,
-                    hospitality: 0,
-                    services: 0,
-                    accuracy: 0,
-                    communication: 0,
-                    location: 0
-                }
-            );
-            const rating: AccommodationRatingType = {
-                cleanliness: +(sum.cleanliness / reviewsCount).toFixed(2),
-                hospitality: +(sum.hospitality / reviewsCount).toFixed(2),
-                services: +(sum.services / reviewsCount).toFixed(2),
-                accuracy: +(sum.accuracy / reviewsCount).toFixed(2),
-                communication: +(sum.communication / reviewsCount).toFixed(2),
-                location: +(sum.location / reviewsCount).toFixed(2)
-            };
-            // 5. Update the accommodation with new stats
-            await this.model.update({ id: accommodationId }, {
-                rating,
-                reviewsCount
-            } as Partial<AccommodationType>);
-            // 6. Return the created review and stats
-            return { review, stats: { rating, reviewsCount } };
         });
     }
 }
