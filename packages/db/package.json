@@ -20,7 +20,6 @@
         "lint": "biome check .",
         "format": "biome format --write .",
         "check": "biome check --write .",
-        "check-types": "tsc --noEmit",
         "clean": "rm -rf node_modules dist",
         "db:migrate": "pnpm run drizzle-kit push:pg --config drizzle.config.ts",
         "db:generate": "pnpm run drizzle-kit generate:pg --config drizzle.config.ts",
@@ -32,6 +31,7 @@
         "db:seed:required": "tsx ./src/seeds/required.seed.ts",
         "db:seed:example": "tsx ./src/seeds/example.seed.ts",
         "db:enum-migration": "tsx ./scripts/generate-enum-migrations.ts && tsx ./scripts/apply-latest-enum-migration.ts",
+        "typecheck": "tsc --noEmit",
         "test": "vitest",
         "test:file": "vitest run",
         "test:coverage": "vitest run --coverage"
