@@ -37,6 +37,10 @@ describe('AccommodationService', () => {
     const accommodation = createAccommodation();
     const newInput = createNewAccommodationInput();
     const updateInput = { ...createUpdateAccommodationInput(), id: accommodation.id };
+    const _actor: ActorWithPermissions = createActor({
+        role: RoleEnum.ADMIN,
+        permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
+    });
 
     beforeEach(() => {
         service = new TestableAccommodationService();
