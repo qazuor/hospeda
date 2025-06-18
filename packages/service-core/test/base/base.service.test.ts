@@ -70,8 +70,12 @@ class TestService extends BaseService<
     protected async listEntities(_input: unknown): Promise<TestEntity[]> {
         return [exampleOutput];
     }
-    public generateSlug(...args: unknown[]): string {
-        return args.filter(Boolean).join('-');
+    public async generateSlug(
+        type: string,
+        name: string,
+        _checkSlugExists: (slug: string) => Promise<boolean>
+    ): Promise<string> {
+        return [type, name].filter(Boolean).join('-');
     }
 }
 

@@ -1,3 +1,4 @@
+import type { AccommodationModel } from '@repo/db';
 import { RoleEnum } from '@repo/types';
 import { PermissionEnum } from '@repo/types/enums/permission.enum';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,10 +16,13 @@ const mockModel = {
     findById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
-    count: vi.fn()
+    count: vi.fn(),
+    findOne: vi.fn()
 };
 
-class TestableAccommodationService extends AccommodationService {}
+class TestableAccommodationService extends AccommodationService {
+    public model = mockModel as unknown as AccommodationModel;
+}
 
 describe('AccommodationService.update', () => {
     let service: TestableAccommodationService;
@@ -27,11 +31,11 @@ describe('AccommodationService.update', () => {
 
     beforeEach(() => {
         service = new TestableAccommodationService();
-        // @ts-expect-error override for test
-        service.model = mockModel;
+        service.model = mockModel as unknown as AccommodationModel;
         for (const fn of Object.values(mockModel)) {
             fn.mockReset();
         }
+        mockModel.findOne.mockResolvedValue(null);
     });
 
     it('deniega update si falta permiso', async () => {

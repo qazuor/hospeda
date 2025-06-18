@@ -156,11 +156,17 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
     }
 
     /**
-     * Generates a URL-friendly slug for an entity. Must be implemented by each service.
-     * @param args - Arguments required to generate the slug (domain-specific)
-     * @returns The generated slug
+     * Asynchronously generates a unique, URL-friendly slug for an entity. Must be implemented by each service.
+     * @param type - Entity type (domain-specific)
+     * @param name - Entity name
+     * @param checkSlugExists - Async callback to check if a slug exists (returns true if exists)
+     * @returns The generated unique slug string
      */
-    public abstract generateSlug(...args: unknown[]): string;
+    public abstract generateSlug(
+        type: string,
+        name: string,
+        checkSlugExists: (slug: string) => Promise<boolean>
+    ): Promise<string>;
 
     // --- Protected Methods ---
 
