@@ -298,9 +298,13 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 this.getSafeActor({ actor: input.actor })
             );
             if (error instanceof ServiceError) {
-                return this.makeErrorOutput(error.code, error.message);
+                return this.makeErrorOutput(error.code, error.message, error.details);
             }
-            return this.makeErrorOutput(ServiceErrorCode.INTERNAL_ERROR, (error as Error).message);
+            return this.makeErrorOutput(
+                ServiceErrorCode.INTERNAL_ERROR,
+                (error as Error).message,
+                error
+            );
         }
     }
 
@@ -320,13 +324,19 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
      * Creates a ServiceOutput error object.
      * @param code - The error code
      * @param message - The error message
+     * @param details - Additional details about the error
      * @returns ServiceOutput<T> with error
      */
-    protected makeErrorOutput<T>(code: ServiceErrorCode, message: string): ServiceOutput<T> {
+    protected makeErrorOutput<T>(
+        code: ServiceErrorCode,
+        message: string,
+        details?: unknown
+    ): ServiceOutput<T> {
         return {
             error: {
                 code,
-                message
+                message,
+                ...(details !== undefined ? { details } : {})
             }
         };
     }
@@ -444,7 +454,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
             if (!entity) {
                 return this.makeErrorOutput(
                     ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`
+                    `${this.entityName} not found`,
+                    { field, value, input }
                 );
             }
             validateInput(this.inputSchema, input, methodName);
@@ -453,7 +464,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logDenied(input.actor, input, entity, canView.reason, 'view');
                 return this.makeErrorOutput(
                     ServiceErrorCode.FORBIDDEN,
-                    `Cannot view ${this.entityName}`
+                    `Cannot view ${this.entityName}`,
+                    { reason: canView.reason, input }
                 );
             }
             logGrant(input.actor, input, entity, 'view', canView.reason);
@@ -467,9 +479,13 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 this.getSafeActor({ actor: input.actor })
             );
             if (error instanceof ServiceError) {
-                return this.makeErrorOutput(error.code, error.message);
+                return this.makeErrorOutput(error.code, error.message, error.details);
             }
-            return this.makeErrorOutput(ServiceErrorCode.INTERNAL_ERROR, (error as Error).message);
+            return this.makeErrorOutput(
+                ServiceErrorCode.INTERNAL_ERROR,
+                (error as Error).message,
+                error
+            );
         }
     }
 
@@ -502,7 +518,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('list', { entities: [] });
                 return this.makeErrorOutput(
                     ServiceErrorCode.FORBIDDEN,
-                    `Cannot list ${this.entityName}s`
+                    `Cannot list ${this.entityName}s`,
+                    { reason: canCreate.reason, input }
                 );
             }
 
@@ -513,7 +530,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
             logError('list', error as Error, input, this.getSafeActor(input));
             return this.makeErrorOutput(
                 (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message
+                (error as Error).message,
+                error
             );
         }
     }
@@ -533,7 +551,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('create', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.FORBIDDEN,
-                    `Cannot create ${this.entityName}`
+                    `Cannot create ${this.entityName}`,
+                    { reason: canCreate.reason, input }
                 );
             }
             const normalizedInput = await this.normalizeCreateInput(input);
@@ -541,7 +560,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('create', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.VALIDATION_ERROR,
-                    `Invalid input for ${this.entityName}`
+                    `Invalid input for ${this.entityName}`,
+                    { input }
                 );
             }
             const entity = await this.model.create(normalizedInput as Partial<T>);
@@ -549,7 +569,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('create', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.INTERNAL_ERROR,
-                    `Failed to create ${this.entityName}`
+                    `Failed to create ${this.entityName}`,
+                    { input }
                 );
             }
             logGrant(this.getSafeActor(input), input, entity, 'create', canCreate.reason);
@@ -559,7 +580,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
             logError('create', error as Error, input, this.getSafeActor(input));
             return this.makeErrorOutput(
                 (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message
+                (error as Error).message,
+                error
             );
         }
     }
@@ -580,7 +602,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('update', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`
+                    `${this.entityName} not found`,
+                    { id: input.id, input }
                 );
             }
             validateInput(this.inputSchema, input, 'update');
@@ -593,7 +616,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('update', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.FORBIDDEN,
-                    `Cannot update ${this.entityName}`
+                    `Cannot update ${this.entityName}`,
+                    { reason, input }
                 );
             }
             const normalizedInput = await this.normalizeUpdateInput(input);
@@ -601,7 +625,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('update', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.VALIDATION_ERROR,
-                    `Invalid input for ${this.entityName}`
+                    `Invalid input for ${this.entityName}`,
+                    { input }
                 );
             }
             const updatedEntity = await this.model.update(
@@ -612,7 +637,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('update', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found after update`
+                    `${this.entityName} not found after update`,
+                    { id: input.id, input }
                 );
             }
             logGrant(this.getSafeActor(input), input, updatedEntity, 'update', reason);
@@ -622,7 +648,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
             logError('update', error as Error, input, this.getSafeActor(input));
             return this.makeErrorOutput(
                 (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message
+                (error as Error).message,
+                error
             );
         }
     }
@@ -641,7 +668,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('softDelete', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`
+                    `${this.entityName} not found`,
+                    { id: input.id, input }
                 );
             }
             validateInput(this.inputSchema, input, 'softDelete');
@@ -654,7 +682,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('softDelete', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.FORBIDDEN,
-                    `Cannot delete ${this.entityName}`
+                    `Cannot delete ${this.entityName}`,
+                    { reason, input }
                 );
             }
             const updateInput = this.buildSoftDeleteUpdate(this.getSafeActor(input));
@@ -662,7 +691,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('softDelete', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.VALIDATION_ERROR,
-                    `Invalid input for ${this.entityName}`
+                    `Invalid input for ${this.entityName}`,
+                    { input }
                 );
             }
             const deletedEntity = await this.model.update(
@@ -673,7 +703,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('softDelete', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found after delete`
+                    `${this.entityName} not found after delete`,
+                    { id: input.id, input }
                 );
             }
             logGrant(this.getSafeActor(input), input, deletedEntity, 'delete', reason);
@@ -683,7 +714,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
             logError('softDelete', error as Error, input, this.getSafeActor(input));
             return this.makeErrorOutput(
                 (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message
+                (error as Error).message,
+                error
             );
         }
     }
@@ -702,7 +734,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('restore', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`
+                    `${this.entityName} not found`,
+                    { id: input.id, input }
                 );
             }
             validateInput(this.inputSchema, input, 'restore');
@@ -715,7 +748,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('restore', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.FORBIDDEN,
-                    `Cannot restore ${this.entityName}`
+                    `Cannot restore ${this.entityName}`,
+                    { reason, input }
                 );
             }
             const updateInput = this.buildRestoreUpdate(this.getSafeActor(input));
@@ -723,7 +757,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('restore', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.VALIDATION_ERROR,
-                    `Invalid input for ${this.entityName}`
+                    `Invalid input for ${this.entityName}`,
+                    { input }
                 );
             }
             const restoredEntity = await this.model.update(
@@ -734,7 +769,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('restore', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found after restore`
+                    `${this.entityName} not found after restore`,
+                    { id: input.id, input }
                 );
             }
             logGrant(this.getSafeActor(input), input, restoredEntity, 'restore', reason);
@@ -744,7 +780,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
             logError('restore', error as Error, input, this.getSafeActor(input));
             return this.makeErrorOutput(
                 (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message
+                (error as Error).message,
+                error
             );
         }
     }
@@ -763,7 +800,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('hardDelete', { entity: null });
                 return this.makeErrorOutput(
                     ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`
+                    `${this.entityName} not found`,
+                    { id: input.id, input }
                 );
             }
             validateInput(this.inputSchema, input, 'hardDelete');
@@ -776,7 +814,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('hardDelete', { success: false });
                 return this.makeErrorOutput(
                     ServiceErrorCode.FORBIDDEN,
-                    `Cannot delete ${this.entityName}`
+                    `Cannot delete ${this.entityName}`,
+                    { reason, input }
                 );
             }
             const success = await this.model.hardDelete({ id: input.id as string });
@@ -784,7 +823,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
                 logMethodEnd('hardDelete', { success: false });
                 return this.makeErrorOutput(
                     ServiceErrorCode.INTERNAL_ERROR,
-                    `Failed to hard delete ${this.entityName}`
+                    `Failed to hard delete ${this.entityName}`,
+                    { id: input.id, input }
                 );
             }
             logGrant(this.getSafeActor(input), input, entity, 'delete', reason);
@@ -794,7 +834,8 @@ export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOu
             logError('hardDelete', error as Error, input, this.getSafeActor(input));
             return this.makeErrorOutput(
                 (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message
+                (error as Error).message,
+                error
             );
         }
     }

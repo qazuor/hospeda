@@ -6,7 +6,7 @@ import type {
     UpdateAccommodationInputType
 } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types';
-import { toSlug } from '../../../../utils/src/string';
+import { toSlug } from '@repo/utils';
 import { BaseService } from '../../base/base.service';
 import {
     type Actor,
@@ -444,7 +444,8 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'id is required and must be a string'
+                    message: 'id is required and must be a string',
+                    details: { received: input.id }
                 }
             };
         }
@@ -452,7 +453,8 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'relations is required and must be an object'
+                    message: 'relations is required and must be an object',
+                    details: { received: input.relations }
                 }
             };
         }
@@ -484,7 +486,8 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'destinationId is required and must be a string'
+                    message: 'destinationId is required and must be a string',
+                    details: { received: input.destinationId }
                 }
             };
         }
@@ -512,7 +515,8 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'type is required and must be a string'
+                    message: 'type is required and must be a string',
+                    details: { received: input.type }
                 }
             };
         }
@@ -537,7 +541,10 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'amenityId or amenitySlug is required and must be a string'
+                    message: 'amenityId or amenitySlug is required and must be a string',
+                    details: {
+                        received: { amenityId: input.amenityId, amenitySlug: input.amenitySlug }
+                    }
                 }
             };
         }
@@ -549,7 +556,9 @@ export class AccommodationService extends BaseService<
                 return await this.filterByViewPermission(actor, accommodations, input);
             }
             if (input.amenitySlug) {
-                throw new Error('Not implemented: search by amenitySlug');
+                throw Object.assign(new Error('Not implemented: search by amenitySlug'), {
+                    details: { received: input.amenitySlug }
+                });
             }
             return [];
         });
@@ -570,7 +579,10 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'featureId or featureSlug is required and must be a string'
+                    message: 'featureId or featureSlug is required and must be a string',
+                    details: {
+                        received: { featureId: input.featureId, featureSlug: input.featureSlug }
+                    }
                 }
             };
         }
@@ -582,7 +594,9 @@ export class AccommodationService extends BaseService<
                 return await this.filterByViewPermission(actor, accommodations, input);
             }
             if (input.featureSlug) {
-                throw new Error('Not implemented: search by featureSlug');
+                throw Object.assign(new Error('Not implemented: search by featureSlug'), {
+                    details: { received: input.featureSlug }
+                });
             }
             return [];
         });
@@ -603,7 +617,8 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'id or slug is required and must be a string'
+                    message: 'id or slug is required and must be a string',
+                    details: { received: { id: input.id, slug: input.slug } }
                 }
             };
         }
@@ -649,7 +664,8 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'id or slug is required and must be a string'
+                    message: 'id or slug is required and must be a string',
+                    details: { received: { id: input.id, slug: input.slug } }
                 }
             };
         }
@@ -682,7 +698,8 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'destinationId must be a string if provided'
+                    message: 'destinationId must be a string if provided',
+                    details: { received: input.destinationId }
                 }
             };
         }
@@ -719,7 +736,8 @@ export class AccommodationService extends BaseService<
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'id or slug is required and must be a string'
+                    message: 'id or slug is required and must be a string',
+                    details: { received: { id: input.id, slug: input.slug } }
                 }
             };
         }
@@ -812,22 +830,22 @@ export class AccommodationService extends BaseService<
     public async search(
         input: ServiceInput<SearchAccommodationFilters>
     ): Promise<ServiceOutput<AccommodationType[]>> {
-        // Validation aligned with the rest of the methods
         if (!input.actor) {
             return {
                 error: {
                     code: ServiceErrorCode.UNAUTHORIZED,
-                    message: 'Actor is required'
+                    message: 'Actor is required',
+                    details: { received: input.actor }
                 }
             };
         }
-        // Validate filter types with Zod
         const parseResult = SearchAccommodationFiltersSchema.safeParse(input);
         if (!parseResult.success) {
             return {
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: parseResult.error.errors.map((e) => e.message).join('; ')
+                    message: parseResult.error.errors.map((e) => e.message).join('; '),
+                    details: parseResult.error.errors
                 }
             };
         }
@@ -844,7 +862,8 @@ export class AccommodationService extends BaseService<
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
                     message:
-                        'At least one filter (type, destinationId, amenityIds, featureIds, name, slug) is required'
+                        'At least one filter (type, destinationId, amenityIds, featureIds, name, slug) is required',
+                    details: { received: filters }
                 }
             };
         }
