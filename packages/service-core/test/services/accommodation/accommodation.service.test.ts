@@ -4,6 +4,7 @@
  * Tests for AccommodationService.
  */
 
+import type { AccommodationModel } from '@repo/db';
 import { RoleEnum } from '@repo/types';
 import { PermissionEnum } from '@repo/types/enums/permission.enum';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,11 +24,13 @@ const mockModel = {
     findById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
-    count: vi.fn()
+    count: vi.fn(),
+    findOne: vi.fn()
 };
 
 // Subclase para expose protected methods
 class TestableAccommodationService extends AccommodationService {
+    public model = mockModel as unknown as AccommodationModel;
     public canViewEntity = super.canViewEntity;
     public canDeleteEntity = super.canDeleteEntity;
     public canRestoreEntity = super.canRestoreEntity;
@@ -46,11 +49,18 @@ describe('AccommodationService', () => {
 
     beforeEach(() => {
         service = new TestableAccommodationService();
-        // @ts-expect-error override for test
-        service.model = mockModel;
+        service.model = mockModel as unknown as AccommodationModel;
         for (const fn of Object.values(mockModel)) {
             fn.mockReset();
         }
+        // Ensure all methods are present and are functions
+        mockModel.findAll = mockModel.findAll || vi.fn();
+        mockModel.findById = mockModel.findById || vi.fn();
+        mockModel.create = mockModel.create || vi.fn();
+        mockModel.update = mockModel.update || vi.fn();
+        mockModel.count = mockModel.count || vi.fn();
+        mockModel.findOne = mockModel.findOne || vi.fn();
+        mockModel.findOne.mockResolvedValue(null);
     });
 
     it('denies create if missing permission', async () => {
@@ -348,6 +358,7 @@ describe('AccommodationService.canHardDeleteEntity', () => {
 
     beforeEach(() => {
         service = new TestableAccommodationService();
+        service.model = mockModel as unknown as AccommodationModel;
     });
 
     it('denies if entity is deleted', () => {
@@ -378,25 +389,49 @@ describe('AccommodationService.canHardDeleteEntity', () => {
 
 describe('AccommodationService.generateSlug', () => {
     let service: TestableAccommodationService;
+    let checkSlugExists: (slug: string) => Promise<boolean>;
     beforeEach(() => {
         service = new TestableAccommodationService();
+        service.model = mockModel as unknown as AccommodationModel;
+        checkSlugExists = vi.fn().mockResolvedValue(false); // always unique for base tests
     });
 
-    it('should generate a slug from type and name', () => {
-        expect(service.generateSlug('hotel', 'My Hotel')).toBe('hotel-my-hotel');
-        expect(service.generateSlug('cabin', 'Cabaña del Lago')).toBe('cabin-cabana-del-lago');
-        expect(service.generateSlug('hostel', 'Hostel! #1')).toBe('hostel-hostel-1');
-        expect(service.generateSlug('apartment', 'Ático & Spa')).toBe('apartment-atico-and-spa');
+    it('should generate a slug from type and name', async () => {
+        await expect(service.generateSlug('hotel', 'My Hotel', checkSlugExists)).resolves.toBe(
+            'hotel-my-hotel'
+        );
+        await expect(
+            service.generateSlug('cabin', 'Cabaña del Lago', checkSlugExists)
+        ).resolves.toBe('cabin-cabana-del-lago');
+        await expect(service.generateSlug('hostel', 'Hostel! #1', checkSlugExists)).resolves.toBe(
+            'hostel-hostel-1'
+        );
+        await expect(
+            service.generateSlug('apartment', 'Ático & Spa', checkSlugExists)
+        ).resolves.toBe('apartment-atico-and-spa');
     });
 
-    it('should return an empty string if type or name is empty', () => {
-        expect(service.generateSlug('', 'Name')).toBe('name');
-        expect(service.generateSlug('type', '')).toBe('type');
+    it('should return an empty string if type or name is empty', async () => {
+        await expect(service.generateSlug('', 'Name', checkSlugExists)).resolves.toBe('name');
+        await expect(service.generateSlug('type', '', checkSlugExists)).resolves.toBe('type');
     });
 
-    it('should throw if both type and name are empty', () => {
-        expect(() => service.generateSlug('', '')).toThrow(
+    it('should throw if both type and name are empty', async () => {
+        await expect(service.generateSlug('', '', checkSlugExists)).rejects.toThrow(
             'At least one of type or name must be provided to generate a slug'
         );
+    });
+
+    it('should append incrementing number if slug exists', async () => {
+        // Simulate slug already exists for first two attempts
+        const mockCheck = vi
+            .fn()
+            .mockResolvedValueOnce(true)
+            .mockResolvedValueOnce(true)
+            .mockResolvedValue(false);
+        await expect(service.generateSlug('hotel', 'My Hotel', mockCheck)).resolves.toBe(
+            'hotel-my-hotel-3'
+        );
+        expect(mockCheck).toHaveBeenCalledTimes(3);
     });
 });

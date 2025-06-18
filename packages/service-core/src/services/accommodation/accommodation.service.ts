@@ -89,10 +89,9 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Creates a new accommodation after validating permissions and input.
+     * Creates a new accommodation, generating a unique slug before creation.
      * @param input - The input for creating the accommodation, including actor
      * @returns A promise resolving to a ServiceOutput with the created accommodation or an error
-     * @throws {Error} If the actor does not have permission to create
      */
     public async create(
         input: ServiceInput<NewAccommodationInputType>
@@ -106,7 +105,13 @@ export class AccommodationService extends BaseService<
                     logDenied(actor, input, null, canCreate.reason, 'create');
                     throw new Error(`Cannot create ${this.entityName}`);
                 }
-                const normalizedInput = await this.normalizeCreateInput(input);
+                // Generate unique slug
+                const slug = await this.generateSlug(
+                    input.type ?? '',
+                    input.name ?? '',
+                    async (slug: string) => !!(await this.model.findOne({ slug }))
+                );
+                const normalizedInput = await this.normalizeCreateInput({ ...input, slug });
                 return await this.model.create(normalizedInput as Partial<AccommodationType>);
             },
             this.inputSchema
@@ -114,10 +119,9 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Updates an existing accommodation after validating permissions and input.
+     * Updates an existing accommodation, regenerating the slug if type or name changes.
      * @param input - The input for updating the accommodation, must include id and actor
      * @returns A promise resolving to a ServiceOutput with the updated accommodation or an error
-     * @throws {Error} If the accommodation is not found or the actor lacks permission
      */
     public async update(
         input: ServiceInput<UpdateAccommodationInputType>
@@ -139,7 +143,21 @@ export class AccommodationService extends BaseService<
                     logDenied(actor, input, entity, canUpdate.reason, 'update');
                     throw new Error(`Cannot update ${this.entityName}`);
                 }
-                const normalizedInput = await this.normalizeUpdateInput(input);
+                let normalizedInput = await this.normalizeUpdateInput(input);
+                // Regenerate slug if type or name changes
+                const typeChanged =
+                    normalizedInput.type !== undefined && normalizedInput.type !== entity.type;
+                const nameChanged =
+                    normalizedInput.name !== undefined && normalizedInput.name !== entity.name;
+                if (typeChanged || nameChanged) {
+                    const slug = await this.generateSlug(
+                        normalizedInput.type ?? entity.type,
+                        normalizedInput.name ?? entity.name,
+                        async (slug: string) =>
+                            !!(await this.model.findOne({ slug, id: { $ne: entity.id } }))
+                    );
+                    normalizedInput = { ...normalizedInput, slug };
+                }
                 const updated = await this.model.update(
                     { id: input.id },
                     normalizedInput as Partial<AccommodationType>
@@ -717,18 +735,30 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Generates a URL-friendly slug for an accommodation using type and name.
-     * At least one of type or name must be non-empty, otherwise throws an error.
+     * Asynchronously generates a unique, URL-friendly slug for an accommodation using type and name.
+     * If the slug already exists (as determined by the provided callback), appends an incremental suffix (-2, -3, ...).
+     *
      * @param type - Accommodation type (enum or string)
      * @param name - Accommodation name
-     * @returns The generated slug string
+     * @param checkSlugExists - Async callback to check if a slug exists (returns true if exists)
+     * @returns The generated unique slug string
      * @throws {Error} If both type and name are empty
      */
-    public override generateSlug(type: string, name: string): string {
+    public async generateSlug(
+        type: string,
+        name: string,
+        checkSlugExists: (slug: string) => Promise<boolean>
+    ): Promise<string> {
         if (!type && !name) {
             throw new Error('At least one of type or name must be provided to generate a slug');
         }
-        return toSlug(`${type}-${name}`);
+        const baseSlug = toSlug(`${type}-${name}`);
+        let slug = baseSlug;
+        let i = 2;
+        while (await checkSlugExists(slug)) {
+            slug = `${baseSlug}-${i++}`;
+        }
+        return slug;
     }
 
     /**
