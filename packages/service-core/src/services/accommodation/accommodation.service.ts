@@ -21,7 +21,7 @@ import {
     type ServiceInput,
     type ServiceOutput
 } from '../../types';
-import { logDenied } from '../../utils/logging';
+import { logDenied, logPermission } from '../../utils/logging';
 import {
     type EntityPermissionActor,
     type EntityPermissionInput,
@@ -178,6 +178,7 @@ export class AccommodationService extends BaseService<
      * @returns A promise resolving to CanViewResult with permission and reason
      */
     protected async canViewEntity(actor: Actor, entity: AccommodationType): Promise<CanViewResult> {
+        logPermission(PermissionEnum.ACCOMMODATION_VIEW_ALL, actor, entity);
         if (entity.deletedAt) {
             return { canView: false, reason: EntityPermissionReasonEnum.DELETED };
         }
@@ -208,6 +209,7 @@ export class AccommodationService extends BaseService<
         actor: Actor,
         entity: AccommodationType
     ): Promise<CanUpdateResult> {
+        logPermission(PermissionEnum.ACCOMMODATION_UPDATE_ANY, actor, entity);
         if (entity.deletedAt) {
             return { canUpdate: false, reason: EntityPermissionReasonEnum.DELETED };
         }
@@ -241,6 +243,7 @@ export class AccommodationService extends BaseService<
         actor: Actor,
         entity: AccommodationType
     ): Promise<CanDeleteResult> {
+        logPermission(PermissionEnum.ACCOMMODATION_DELETE_ANY, actor, entity);
         if (entity.deletedAt) {
             return { canDelete: false, reason: EntityPermissionReasonEnum.DELETED };
         }
@@ -270,6 +273,7 @@ export class AccommodationService extends BaseService<
      * @returns A promise resolving to CanCreateResult with permission and reason
      */
     protected async canCreateEntity(actor: Actor): Promise<CanCreateResult> {
+        logPermission(PermissionEnum.ACCOMMODATION_CREATE, actor, null);
         if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
             return { canCreate: false, reason: EntityPermissionReasonEnum.MISSING_PERMISSION };
         }
@@ -286,6 +290,7 @@ export class AccommodationService extends BaseService<
         actor: Actor,
         entity: AccommodationType
     ): Promise<CanRestoreResult> {
+        logPermission(PermissionEnum.ACCOMMODATION_RESTORE_ANY, actor, entity);
         if (entity.deletedAt) {
             return { canRestore: false, reason: EntityPermissionReasonEnum.DELETED };
         }
@@ -362,6 +367,7 @@ export class AccommodationService extends BaseService<
      * @returns CanHardDeleteResult with permission, reason, and checked permission
      */
     protected canHardDeleteEntity(actor: Actor, entity: AccommodationType): CanHardDeleteResult {
+        logPermission(PermissionEnum.ACCOMMODATION_HARD_DELETE, actor, entity);
         if (entity.deletedAt) {
             return {
                 canHardDelete: false,
