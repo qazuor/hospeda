@@ -292,4 +292,26 @@ describe('BaseModel', () => {
         const result = await noIdModel.count({});
         expect(result).toBe(7);
     });
+
+    it('findAll with pagination returns paginated items and total', async () => {
+        getDb.mockReturnValue({
+            select: () => ({
+                from: () => ({
+                    where: () => ({
+                        limit: () => ({
+                            offset: () => [{ id: '2' }, { id: '3' }]
+                        })
+                    })
+                })
+            })
+        });
+        model.count = vi.fn().mockResolvedValue(3);
+        // page=2, pageSize=2 => offset=2, should return [{id:'2'}, {id:'3'}]
+        const result = await model.findAll({}, { page: 2, pageSize: 2 });
+        expect((result as { items: DummyType[]; total: number }).items).toEqual([
+            { id: '2' },
+            { id: '3' }
+        ]);
+        expect((result as { items: DummyType[]; total: number }).total).toBe(3);
+    });
 });
