@@ -70,5 +70,30 @@ export function getDb(): NodePgDatabase<typeof schema> {
     return runtimeClient;
 }
 
+/**
+ * Executes a callback function within a database transaction.
+ * If the callback throws an error, the transaction is rolled back.
+ * If the callback completes successfully, the transaction is committed.
+ *
+ * @param callback - Function to execute within the transaction
+ * @returns Result of the callback function
+ * @throws Error if database is not initialized or if transaction fails
+ *
+ * @example
+ * ```typescript
+ * const result = await withTransaction(async (tx) => {
+ *   const user = await userModel.create(tx, userData);
+ *   await profileModel.create(tx, { userId: user.id, ...profileData });
+ *   return user;
+ * });
+ * ```
+ */
+export async function withTransaction<T>(
+    callback: (tx: NodePgDatabase<typeof schema>) => Promise<T>
+): Promise<T> {
+    const db = getDb();
+    return await db.transaction(callback);
+}
+
 // Export schema for reference
 export { schema };
