@@ -28,7 +28,7 @@ describe('REntityTagModel', () => {
         vi.clearAllMocks();
     });
 
-    it('findWithRelations - relación encontrada', async () => {
+    it('findWithRelations - relation found', async () => {
         const rEntityTagMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockResolvedValue({
                 entityId: asEntityId('a'),
@@ -48,8 +48,8 @@ describe('REntityTagModel', () => {
         expect((result as { tag?: unknown }).tag).toBeDefined();
     });
 
-    it('findWithRelations - sin relaciones, fallback a findOne', async () => {
-        // Helper para IDs tipados
+    it('findWithRelations - no relations, fallback to findOne', async () => {
+        // Helper for typed IDs
         const asTagId = (id: string) => id as unknown as import('@repo/types').TagId;
         const asAccommodationId = (id: string) => id as unknown as AccommodationId;
         const dummy: EntityTagType = {
@@ -63,7 +63,7 @@ describe('REntityTagModel', () => {
         expect(result).toBeTruthy();
     });
 
-    it('findWithRelations - no encontrada', async () => {
+    it('findWithRelations - not found', async () => {
         const rEntityTagMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockResolvedValue(null)
         });
@@ -77,7 +77,7 @@ describe('REntityTagModel', () => {
         expect(result).toBeNull();
     });
 
-    it('findWithRelations - error de DB', async () => {
+    it('findWithRelations - DB error', async () => {
         const rEntityTagMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockRejectedValue(new Error('fail'))
         });
@@ -90,5 +90,93 @@ describe('REntityTagModel', () => {
         await expect(model.findWithRelations({ tagId: 'a' }, { tag: true })).rejects.toThrow(
             DbError
         );
+    });
+
+    it('findAllWithTags - returns relations and tags correctly', async () => {
+        const rEntityTagMock = createDrizzleRelationMock({
+            findMany: vi.fn().mockResolvedValue([
+                {
+                    tagId: asTagId('t1'),
+                    entityId: asEntityId('e1'),
+                    entityType: EntityTypeEnum.ACCOMMODATION,
+                    tag: { id: asTagId('t1'), name: 'Tag 1' }
+                },
+                {
+                    tagId: asTagId('t2'),
+                    entityId: asEntityId('e1'),
+                    entityType: EntityTypeEnum.ACCOMMODATION,
+                    tag: { id: asTagId('t2'), name: 'Tag 2' }
+                }
+            ])
+        });
+        vi.mocked(getDb).mockReturnValue({
+            query: {
+                // @ts-ignore: mock Drizzle relation for test
+                rEntityTag: rEntityTagMock
+            }
+        });
+        const result = await model.findAllWithTags('e1', EntityTypeEnum.ACCOMMODATION);
+        expect(result).toBeDefined();
+        expect(result).toHaveLength(2);
+        expect(result[0]?.tag).toBeDefined();
+        expect(result[1]?.tag?.name).toBe('Tag 2');
+    });
+
+    it('findAllWithEntities - returns relations and tags correctly', async () => {
+        const rEntityTagMock = createDrizzleRelationMock({
+            findMany: vi.fn().mockResolvedValue([
+                {
+                    tagId: asTagId('t1'),
+                    entityId: asEntityId('e1'),
+                    entityType: EntityTypeEnum.ACCOMMODATION,
+                    tag: { id: asTagId('t1'), name: 'Tag 1' }
+                },
+                {
+                    tagId: asTagId('t1'),
+                    entityId: asEntityId('e2'),
+                    entityType: EntityTypeEnum.DESTINATION,
+                    tag: { id: asTagId('t1'), name: 'Tag 1' }
+                }
+            ])
+        });
+        vi.mocked(getDb).mockReturnValue({
+            query: {
+                // @ts-ignore: mock Drizzle relation for test
+                rEntityTag: rEntityTagMock
+            }
+        });
+        const result = await model.findAllWithEntities('t1');
+        expect(result).toBeDefined();
+        expect(result).toHaveLength(2);
+        expect(result[0]?.tag).toBeDefined();
+        expect(result[1]?.entityType).toBe(EntityTypeEnum.DESTINATION);
+    });
+
+    it('findAllWithTags - handles DB errors', async () => {
+        const rEntityTagMock = createDrizzleRelationMock({
+            findMany: vi.fn().mockRejectedValue(new Error('fail'))
+        });
+        vi.mocked(getDb).mockReturnValue({
+            query: {
+                // @ts-ignore: mock Drizzle relation for test
+                rEntityTag: rEntityTagMock
+            }
+        });
+        await expect(model.findAllWithTags('e1', EntityTypeEnum.ACCOMMODATION)).rejects.toThrow(
+            DbError
+        );
+    });
+
+    it('findAllWithEntities - handles DB errors', async () => {
+        const rEntityTagMock = createDrizzleRelationMock({
+            findMany: vi.fn().mockRejectedValue(new Error('fail'))
+        });
+        vi.mocked(getDb).mockReturnValue({
+            query: {
+                // @ts-ignore: mock Drizzle relation for test
+                rEntityTag: rEntityTagMock
+            }
+        });
+        await expect(model.findAllWithEntities('t1')).rejects.toThrow(DbError);
     });
 });
