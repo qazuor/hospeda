@@ -1,4 +1,4 @@
-import type { DestinationType } from '@repo/types';
+import type { DestinationSummaryType, DestinationType } from '@repo/types';
 import type { DestinationId, UserId } from '@repo/types/common/id.types';
 import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
 import { PermissionEnum } from '@repo/types/enums/permission.enum';
@@ -6,10 +6,7 @@ import { RoleEnum } from '@repo/types/enums/role.enum';
 import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
 import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    DestinationService,
-    type DestinationSummary
-} from '../../../src/services/destination/destination.service';
+import { DestinationService } from '../../../src/services/destination/destination.service';
 import { EntityPermissionReasonEnum, ServiceErrorCode } from '../../../src/types';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 
@@ -48,16 +45,14 @@ describe('DestinationService.getSummary', () => {
     };
     const id = asDestinationId('dest-1');
     const destination = createDestination({ id });
-    const summary: DestinationSummary = {
+    const summary: DestinationSummaryType = {
         id: destination.id,
-        name: destination.name,
         slug: destination.slug,
+        name: destination.name,
         summary: destination.summary,
-        location: destination.location,
-        media: { featuredImage: destination.media.featuredImage },
-        visibility: destination.visibility,
-        lifecycleState: destination.lifecycleState,
-        moderationState: destination.moderationState
+        media: destination.media,
+        averageRating: destination.averageRating,
+        reviewsCount: destination.reviewsCount
     };
 
     beforeEach(() => {

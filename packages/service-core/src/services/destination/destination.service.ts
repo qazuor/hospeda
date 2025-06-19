@@ -1,12 +1,11 @@
 import { DestinationModel } from '@repo/db';
-import { DestinationSchema } from '@repo/schemas/entities/destination/destination.schema.js';
 import type {
+    DestinationSummaryType,
     DestinationType,
     NewDestinationInputType,
     UpdateDestinationInputType
 } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types';
-import type { z } from 'zod';
 import { BaseService } from '../../base/base.service';
 import type {
     Actor,
@@ -20,6 +19,11 @@ import type {
     ServiceOutput
 } from '../../types';
 import { EntityPermissionReasonEnum, ServiceErrorCode } from '../../types';
+import {
+    DestinationCreateInputSchema,
+    DestinationFilterInputSchema,
+    type SearchDestinationFilters
+} from './destination.schemas';
 
 /**
  * DestinationService provides business logic, validation, and permission management for destinations.
@@ -40,15 +44,7 @@ export class DestinationService extends BaseService<
     /**
      * Zod schema for destination creation input.
      */
-    protected inputSchema = DestinationSchema.omit({
-        id: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        createdById: true,
-        updatedById: true,
-        deletedById: true
-    }) as z.ZodType<NewDestinationInputType>;
+    protected inputSchema = DestinationCreateInputSchema;
     /**
      * Roles allowed to create, update, or delete destinations.
      */
@@ -303,7 +299,7 @@ export class DestinationService extends BaseService<
      */
     public async getSummary(
         input: ServiceInput<{ id: string }>
-    ): Promise<ServiceOutput<DestinationSummary | null>> {
+    ): Promise<ServiceOutput<DestinationSummaryType | null>> {
         if (!input.id || typeof input.id !== 'string') {
             return {
                 error: {
@@ -318,19 +314,14 @@ export class DestinationService extends BaseService<
             if (!destination) return { data: null };
             const canView = await this.canViewEntity(input.actor, destination);
             if (!canView.canView) return { data: null };
-            // Construir el summary solo con los campos clave
-            const summary = {
+            const summary: DestinationSummaryType = {
                 id: destination.id,
-                name: destination.name,
                 slug: destination.slug,
+                name: destination.name,
                 summary: destination.summary,
-                location: destination.location,
-                media: {
-                    featuredImage: destination.media?.featuredImage
-                },
-                visibility: destination.visibility,
-                lifecycleState: destination.lifecycleState,
-                moderationState: destination.moderationState
+                media: destination.media,
+                averageRating: destination.averageRating,
+                reviewsCount: destination.reviewsCount
             };
             return { data: summary };
         } catch (error) {
@@ -432,14 +423,69 @@ export class DestinationService extends BaseService<
 
     /**
      * Searches for destinations using filters and sorting options.
-     * @param _input - Service input containing filter and sort options
+     * @param input - Service input containing search filters and actor
      * @returns A list of destinations matching the search criteria
      */
     public async search(
-        _input: ServiceInput<{ filter?: Record<string, unknown>; sort?: Record<string, unknown> }>
+        input: ServiceInput<SearchDestinationFilters>
     ): Promise<ServiceOutput<DestinationType[]>> {
-        // TODO: Implement search logic
-        throw new Error('Not implemented');
+        if (!input.actor) {
+            return {
+                error: {
+                    code: ServiceErrorCode.UNAUTHORIZED,
+                    message: 'Actor is required',
+                    details: { received: input.actor }
+                }
+            };
+        }
+        // Validate filters with Zod
+        const parseResult = DestinationFilterInputSchema.safeParse(input);
+        if (!parseResult.success) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: parseResult.error.errors.map((e) => e.message).join('; '),
+                    details: parseResult.error.errors
+                }
+            };
+        }
+        // At least one filter must be present
+        const filterKeys = Object.keys(input).filter((k) => k !== 'actor');
+        if (filterKeys.length === 0) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message:
+                        'At least one filter (e.g., state, city, country, tags, visibility, isFeatured, minRating, maxRating, q) is required',
+                    details: { received: input }
+                }
+            };
+        }
+        try {
+            // Construir el filtro solo con las claves válidas (excluyendo actor)
+            const { actor, ...filter } = input;
+            const result = await this.model.findAll(filter);
+            const destinations = Array.isArray(result)
+                ? result
+                : typeof result === 'object' && result !== null && 'items' in result
+                  ? (result as { items: DestinationType[] }).items
+                  : [];
+            // Filter by view permission
+            const filtered: DestinationType[] = [];
+            for (const dest of destinations) {
+                const canView = await this.canViewEntity(input.actor, dest);
+                if (canView.canView) filtered.push(dest);
+            }
+            return { data: filtered };
+        } catch (error) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: error instanceof Error ? error.message : 'Unknown error in search',
+                    details: error
+                }
+            };
+        }
     }
 
     /**
@@ -451,16 +497,3 @@ export class DestinationService extends BaseService<
         return this.model.findAll({}) as Promise<DestinationType[]>;
     }
 }
-
-// Tipado para el summary
-export type DestinationSummary = {
-    id: DestinationType['id'];
-    name: DestinationType['name'];
-    slug: DestinationType['slug'];
-    summary: DestinationType['summary'];
-    location: DestinationType['location'];
-    media: { featuredImage: { url: string; moderationState: DestinationType['moderationState'] } };
-    visibility: DestinationType['visibility'];
-    lifecycleState: DestinationType['lifecycleState'];
-    moderationState: DestinationType['moderationState'];
-};
