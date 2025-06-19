@@ -89,3 +89,62 @@ describe('DestinationModel', () => {
         );
     });
 });
+
+/**
+ * Unit tests for DestinationModel.findAllByAttractionId
+ * - Ensures correct join and filtering by attractionId
+ * - Handles empty results and DB errors
+ */
+describe('DestinationModel.findAllByAttractionId', () => {
+    let model: DestinationModel;
+    let getDbMock: ReturnType<typeof vi.fn>;
+    let logQueryMock: ReturnType<typeof vi.fn>;
+    let logErrorMock: ReturnType<typeof vi.fn>;
+    const mockDb = {
+        query: {
+            destinations: {
+                findMany: vi.fn()
+            }
+        }
+    };
+    const sampleDestinations = [
+        { id: 'dest-1', name: 'Destination 1', attractions: [{ attractionId: 'a1' }] },
+        { id: 'dest-2', name: 'Destination 2', attractions: [{ attractionId: 'a1' }] }
+    ];
+
+    beforeEach(() => {
+        model = new DestinationModel();
+        getDbMock = dbUtils.getDb as ReturnType<typeof vi.fn>;
+        logQueryMock = logger.logQuery as ReturnType<typeof vi.fn>;
+        logErrorMock = logger.logError as ReturnType<typeof vi.fn>;
+        getDbMock.mockReturnValue(mockDb);
+        mockDb.query.destinations.findMany.mockReset();
+        logQueryMock.mockReset();
+        logErrorMock.mockReset();
+    });
+
+    it('returns destinations related to the given attractionId', async () => {
+        mockDb.query.destinations.findMany.mockResolvedValueOnce(sampleDestinations);
+        const result = await model.findAllByAttractionId('a1');
+        expect(result).toEqual(sampleDestinations);
+        expect(mockDb.query.destinations.findMany).toHaveBeenCalledWith({
+            where: expect.any(Function),
+            with: { attractions: true }
+        });
+        expect(logQueryMock).toHaveBeenCalled();
+    });
+
+    it('returns empty array if no destinations found', async () => {
+        mockDb.query.destinations.findMany.mockResolvedValueOnce([]);
+        const result = await model.findAllByAttractionId('a2');
+        expect(result).toEqual([]);
+        expect(logQueryMock).toHaveBeenCalled();
+    });
+
+    it('throws and logs error if DB fails', async () => {
+        const error = new Error('DB failure');
+        mockDb.query.destinations.findMany.mockRejectedValueOnce(error);
+        await expect(model.findAllByAttractionId('a3')).rejects.toThrow('DB failure');
+        expect(logErrorMock).toHaveBeenCalled();
+    });
+});

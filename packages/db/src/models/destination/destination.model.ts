@@ -56,4 +56,32 @@ export class DestinationModel extends BaseModel<DestinationType> {
             );
         }
     }
+
+    /**
+     * Finds all destinations related to a given attraction by attractionId.
+     * Performs a join between destinations and r_destination_attraction.
+     *
+     * @param attractionId - The ID of the attraction to filter by
+     * @returns Promise resolving to an array of DestinationType
+     * @throws DbError if the database query fails
+     */
+    async findAllByAttractionId(attractionId: string): Promise<DestinationType[]> {
+        const db = getDb();
+        try {
+            const results = await db.query.destinations.findMany({
+                where: (fields, { eq }) => eq(fields.attractions.attractionId, attractionId),
+                with: { attractions: true }
+            });
+            logQuery(this.entityName, 'findAllByAttractionId', { attractionId }, results);
+            return results as DestinationType[];
+        } catch (error) {
+            logError(this.entityName, 'findAllByAttractionId', { attractionId }, error as Error);
+            throw new DbError(
+                this.entityName,
+                'findAllByAttractionId',
+                { attractionId },
+                (error as Error).message
+            );
+        }
+    }
 }
