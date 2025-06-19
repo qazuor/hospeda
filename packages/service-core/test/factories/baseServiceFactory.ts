@@ -18,7 +18,8 @@ export const createMockBaseModel = <T>(): BaseModel<T> => ({
     softDelete: vi.fn(),
     restore: vi.fn(),
     hardDelete: vi.fn(),
-    count: vi.fn()
+    count: vi.fn(),
+    findAll: vi.fn()
 });
 
 export const exampleInput = { id: 'entity-1' };

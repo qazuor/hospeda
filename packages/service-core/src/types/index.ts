@@ -180,4 +180,8 @@ export interface BaseModel<T> {
     restore(where: Record<string, unknown>): Promise<number>;
     hardDelete(where: Record<string, unknown>): Promise<number>;
     count(params: Record<string, unknown>): Promise<number>;
+    findAll(
+        where: Record<string, unknown>,
+        options?: { page?: number; pageSize?: number }
+    ): Promise<T[] | { items: T[]; total: number }>;
 }
