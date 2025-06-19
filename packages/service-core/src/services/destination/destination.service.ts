@@ -389,15 +389,45 @@ export class DestinationService extends BaseService<
     }
 
     /**
-     * Retrieves all reviews for a given destination.
-     * @param _input - Service input containing the destinationId
+     * Retrieves all reviews for a given destination by id or slug.
+     * @param input - Service input containing the destinationId or slug
      * @returns A list of reviews for the destination
      */
     public async getReviews(
-        _input: ServiceInput<{ destinationId: string }>
+        input: ServiceInput<{ id?: string; slug?: string }>
     ): Promise<ServiceOutput<unknown[]>> {
-        // TODO: Implement getReviews logic
-        throw new Error('Not implemented');
+        if (
+            (!input.id || typeof input.id !== 'string') &&
+            (!input.slug || typeof input.slug !== 'string')
+        ) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'id or slug is required and must be a string',
+                    details: { received: { id: input.id, slug: input.slug } }
+                }
+            };
+        }
+        try {
+            let destination: DestinationType | null = null;
+            if (input.id) {
+                destination = await this.model.findById(input.id);
+            } else if (input.slug) {
+                destination = await this.model.findOne({ slug: input.slug });
+            }
+            if (!destination) return { data: [] };
+            const canView = await this.canViewEntity(input.actor, destination);
+            if (!canView.canView) return { data: [] };
+            return { data: destination.reviews ?? [] };
+        } catch (error) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: error instanceof Error ? error.message : 'Unknown error in getReviews',
+                    details: error
+                }
+            };
+        }
     }
 
     /**
