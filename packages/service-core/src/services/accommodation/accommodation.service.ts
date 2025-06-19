@@ -1,6 +1,7 @@
 import { AccommodationModel } from '@repo/db';
 import { logger } from '@repo/logger';
 import type {
+    AccommodationSummaryType,
     AccommodationType,
     NewAccommodationInputType,
     UpdateAccommodationInputType
@@ -635,7 +636,7 @@ export class AccommodationService extends BaseService<
      */
     public async getSummary(
         input: ServiceInput<{ id?: string; slug?: string }>
-    ): Promise<ServiceOutput<Partial<AccommodationType> | null>> {
+    ): Promise<ServiceOutput<AccommodationSummaryType | null>> {
         if (
             (!input.id || typeof input.id !== 'string') &&
             (!input.slug || typeof input.slug !== 'string')
@@ -662,14 +663,16 @@ export class AccommodationService extends BaseService<
                 return null;
             }
             this.logGrant(actor, input, accommodation, 'view', canView.reason);
-            const summary: Partial<AccommodationType> = {
+            const summary: AccommodationSummaryType = {
                 id: accommodation.id,
-                name: accommodation.name,
                 slug: accommodation.slug,
-                summary: accommodation.summary,
+                name: accommodation.name,
+                type: accommodation.type,
                 media: accommodation.media,
                 rating: accommodation.rating,
-                reviewsCount: accommodation.reviewsCount
+                reviewsCount: accommodation.reviewsCount,
+                location: accommodation.location,
+                isFeatured: accommodation.isFeatured
             };
             return summary;
         });
