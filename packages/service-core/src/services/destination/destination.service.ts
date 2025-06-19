@@ -346,14 +346,46 @@ export class DestinationService extends BaseService<
 
     /**
      * Retrieves the top-rated destinations, optionally filtered by criteria.
-     * @param _input - Service input containing filter and sort options
+     * @param input - Service input containing optional filter and limit
      * @returns A list of top-rated destinations
      */
     public async getTopRated(
-        _input: ServiceInput<{ limit?: number; filter?: Record<string, unknown> }>
+        input: ServiceInput<{ limit?: number; filter?: Record<string, unknown> }>
     ): Promise<ServiceOutput<DestinationType[]>> {
-        // TODO: Implement getTopRated logic
-        throw new Error('Not implemented');
+        const limit = typeof input.limit === 'number' && input.limit > 0 ? input.limit : 10;
+        const filter: Record<string, unknown> = input.filter ?? {};
+        try {
+            const result = await this.model.findAll(filter);
+            let destinations = Array.isArray(result)
+                ? result
+                : typeof result === 'object' && result !== null && 'items' in result
+                  ? (result as { items: DestinationType[] }).items
+                  : [];
+            destinations = destinations
+                .slice()
+                .sort((a, b) => {
+                    const ra = a.averageRating ?? 0;
+                    const rb = b.averageRating ?? 0;
+                    return rb - ra;
+                })
+                .slice(0, limit);
+            // Filtrar por permisos de visualización
+            const filtered: DestinationType[] = [];
+            for (const dest of destinations) {
+                const canView = await this.canViewEntity(input.actor, dest);
+                if (canView.canView) filtered.push(dest);
+            }
+            return { data: filtered };
+        } catch (error) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message:
+                        error instanceof Error ? error.message : 'Unknown error in getTopRated',
+                    details: error
+                }
+            };
+        }
     }
 
     /**
