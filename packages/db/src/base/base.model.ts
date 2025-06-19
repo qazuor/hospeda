@@ -1,5 +1,7 @@
 import type { SQL, Table } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { getDb } from '../client';
+import type * as schema from '../schemas/index.js';
 import { buildWhereClause } from '../utils/drizzle-helpers';
 import { DbError } from '../utils/error';
 import { logError, logQuery } from '../utils/logger';
@@ -22,17 +24,28 @@ export abstract class BaseModel<T> {
     protected abstract entityName: string;
 
     /**
+     * Gets the database client, either from transaction or global connection.
+     * @param tx - Optional transaction client
+     * @returns Database client
+     */
+    protected getClient(tx?: NodePgDatabase<typeof schema>): NodePgDatabase<typeof schema> {
+        return tx ?? getDb();
+    }
+
+    /**
      * Finds all entities matching the where clause.
      * Si se pasan page y pageSize, devuelve { items, total } paginado. Si no, devuelve el array completo.
      * @param where - The filter object
      * @param options - Opcional: { page, pageSize }
+     * @param tx - Optional transaction client
      * @returns Promise resolving to array o a objeto paginado
      */
     async findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number }
+        options?: { page?: number; pageSize?: number },
+        tx?: NodePgDatabase<typeof schema>
     ): Promise<T[] | { items: T[]; total: number }> {
-        const db = getDb();
+        const db = this.getClient(tx);
         const safeWhere = where ?? {};
         if (options?.page && options?.pageSize) {
             const offset = (options.page - 1) * options.pageSize;
@@ -45,7 +58,7 @@ export abstract class BaseModel<T> {
                         .where(whereClause)
                         .limit(options.pageSize)
                         .offset(offset),
-                    this.count(safeWhere)
+                    this.count(safeWhere, tx)
                 ]);
                 try {
                     logQuery(
@@ -94,10 +107,11 @@ export abstract class BaseModel<T> {
     /**
      * Finds an entity by its unique ID.
      * @param id - The entity ID
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the entity or null if not found
      */
-    async findById(id: string): Promise<T | null> {
-        const db = getDb();
+    async findById(id: string, tx?: NodePgDatabase<typeof schema>): Promise<T | null> {
+        const db = this.getClient(tx);
         try {
             const whereClause = buildWhereClause({ id }, this.table as unknown);
             const result = await db.select().from(this.table).where(whereClause).limit(1);
@@ -117,10 +131,14 @@ export abstract class BaseModel<T> {
     /**
      * Finds a single entity matching the where clause.
      * @param where - The filter object
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the entity or null if not found
      */
-    async findOne(where: Record<string, unknown>): Promise<T | null> {
-        const db = getDb();
+    async findOne(
+        where: Record<string, unknown>,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<T | null> {
+        const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
@@ -141,10 +159,11 @@ export abstract class BaseModel<T> {
     /**
      * Creates a new entity.
      * @param data - The entity data
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the created entity
      */
-    async create(data: Partial<T>): Promise<T> {
-        const db = getDb();
+    async create(data: Partial<T>, tx?: NodePgDatabase<typeof schema>): Promise<T> {
+        const db = this.getClient(tx);
         try {
             const result = await db.insert(this.table).values(data).returning();
             logQuery(this.entityName, 'create', data, result);
@@ -160,10 +179,15 @@ export abstract class BaseModel<T> {
      * Updates entities matching the where clause.
      * @param where - The filter object
      * @param data - The fields to update
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the updated entity or null if not found
      */
-    async update(where: Record<string, unknown>, data: Partial<T>): Promise<T | null> {
-        const db = getDb();
+    async update(
+        where: Record<string, unknown>,
+        data: Partial<T>,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<T | null> {
+        const db = this.getClient(tx);
         const safeWhere = where ?? {};
         const safeData = data ?? {};
         try {
@@ -190,38 +214,34 @@ export abstract class BaseModel<T> {
     /**
      * Counts entities matching the where clause.
      * @param where - The filter object
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the count
      */
-    async count(where: Record<string, unknown>): Promise<number> {
-        const db = getDb();
+    async count(
+        where: Record<string, unknown>,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<number> {
+        const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
             // Buscar la columna id o la primera columna disponible
-            const tableRecord = this.table as unknown as Record<string, unknown>;
-            const column = 'id' in tableRecord ? tableRecord.id : Object.values(tableRecord)[0];
-            // Type guard para asegurar que column tiene count
-            type CountableColumn = { count: () => { as: (name: string) => unknown } };
-            if (!column || typeof (column as CountableColumn).count !== 'function') {
+            type CountableColumn = { count: () => SQL<unknown> };
+            const countableColumn = Object.values(this.table)[0] as CountableColumn;
+
+            if (!countableColumn || typeof countableColumn.count !== 'function') {
                 throw new Error('No countable column found in table schema');
             }
-            const countColumn = column as CountableColumn;
+
             const result = await db
-                .select({
-                    count: countColumn.count().as('count') as unknown as import(
-                        'drizzle-orm'
-                    ).SQL<unknown>
-                })
+                .select({ count: countableColumn.count() })
                 .from(this.table)
-                .where(whereClause)
-                .then((rows) => {
-                    const count = rows?.[0]?.count;
-                    return typeof count === 'number' ? count : Number(count) || 0;
-                });
+                .where(whereClause);
+
             try {
                 logQuery(this.entityName, 'count', safeWhere, result);
             } catch {}
-            return result;
+            return Number(result[0]?.count ?? 0);
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
@@ -234,27 +254,37 @@ export abstract class BaseModel<T> {
     /**
      * Executes a raw SQL query.
      * @param query - The SQL query
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the query result
      */
-    async raw(query: SQL): Promise<unknown> {
-        const db = getDb();
+    async raw(query: SQL, tx?: NodePgDatabase<typeof schema>): Promise<unknown> {
+        const db = this.getClient(tx);
         try {
             const result = await db.execute(query);
-            logQuery(this.entityName, 'raw', { query }, result);
+            try {
+                logQuery(this.entityName, 'raw', query, result);
+            } catch {}
             return result;
         } catch (error) {
-            logError(this.entityName, 'raw', { query }, error as Error);
-            throw new DbError(this.entityName, 'raw', { query }, (error as Error).message);
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'raw', query, err);
+            } catch {}
+            throw new DbError(this.entityName, 'raw', query, err.message);
         }
     }
 
     /**
      * Hard deletes entities matching the where clause.
      * @param where - The filter object
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the number of deleted rows
      */
-    async hardDelete(where: Record<string, unknown>): Promise<number> {
-        const db = getDb();
+    async hardDelete(
+        where: Record<string, unknown>,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<number> {
+        const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
@@ -262,7 +292,7 @@ export abstract class BaseModel<T> {
             try {
                 logQuery(this.entityName, 'hardDelete', safeWhere, result);
             } catch {}
-            return Array.isArray(result) ? result.length : 0;
+            return result.length;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
@@ -275,23 +305,26 @@ export abstract class BaseModel<T> {
     /**
      * Soft deletes entities matching the where clause.
      * @param where - The filter object
-     * @returns Promise resolving to the number of soft-deleted rows
+     * @param tx - Optional transaction client
+     * @returns Promise resolving to the number of deleted rows
      */
-    async softDelete(where: Record<string, unknown>): Promise<number> {
-        const db = getDb();
+    async softDelete(
+        where: Record<string, unknown>,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<number> {
+        const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
-            const now = new Date().toISOString();
             const result = await db
                 .update(this.table)
-                .set({ deletedAt: now })
+                .set({ deletedAt: new Date() })
                 .where(whereClause)
                 .returning();
             try {
                 logQuery(this.entityName, 'softDelete', safeWhere, result);
             } catch {}
-            return Array.isArray(result) ? result.length : 0;
+            return result.length;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
@@ -304,10 +337,14 @@ export abstract class BaseModel<T> {
     /**
      * Restores soft-deleted entities matching the where clause.
      * @param where - The filter object
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the number of restored rows
      */
-    async restore(where: Record<string, unknown>): Promise<number> {
-        const db = getDb();
+    async restore(
+        where: Record<string, unknown>,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<number> {
+        const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
@@ -319,7 +356,7 @@ export abstract class BaseModel<T> {
             try {
                 logQuery(this.entityName, 'restore', safeWhere, result);
             } catch {}
-            return Array.isArray(result) ? result.length : 0;
+            return result.length;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
@@ -330,21 +367,47 @@ export abstract class BaseModel<T> {
     }
 
     /**
-     * Finds an entity with specified relations populated.
+     * Finds an entity with its relations.
      * @param where - The filter object
      * @param relations - The relations to include
-     * @returns Promise resolving to the entity with relations or null if not found
+     * @param tx - Optional transaction client
+     * @returns Promise resolving to the entity or null if not found
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean>,
+        tx?: NodePgDatabase<typeof schema>
     ): Promise<T | null> {
-        // This should be implemented in the concrete model if relations are needed
-        throw new DbError(
-            this.entityName,
-            'findWithRelations',
-            { where, relations },
-            'findWithRelations must be implemented in the concrete model'
-        );
+        const db = this.getClient(tx);
+        const safeWhere = where ?? {};
+        try {
+            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const result = await db.select().from(this.table).where(whereClause).limit(1);
+            try {
+                logQuery(
+                    this.entityName,
+                    'findWithRelations',
+                    { where: safeWhere, relations },
+                    result
+                );
+            } catch {}
+            return (result[0] as T) ?? null;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(
+                    this.entityName,
+                    'findWithRelations',
+                    { where: safeWhere, relations },
+                    err
+                );
+            } catch {}
+            throw new DbError(
+                this.entityName,
+                'findWithRelations',
+                { where: safeWhere, relations },
+                err.message
+            );
+        }
     }
 }

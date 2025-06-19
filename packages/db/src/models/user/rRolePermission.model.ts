@@ -1,6 +1,7 @@
 import type { RolePermissionAssignmentType } from '@repo/types';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
-import { getDb } from '../../client';
+import type * as schema from '../../schemas/index.js';
 import { rolePermission } from '../../schemas/user/r_role_permission.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
@@ -13,13 +14,15 @@ export class RRolePermissionModel extends BaseModel<RolePermissionAssignmentType
      * Finds a RRolePermission with specified relations populated.
      * @param where - The filter object
      * @param relations - The relations to include (e.g., { role: true })
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the entity with relations or null if not found
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean>,
+        tx?: NodePgDatabase<typeof schema>
     ): Promise<RolePermissionAssignmentType | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['role', 'permission']) {
@@ -33,7 +36,7 @@ export class RRolePermissionModel extends BaseModel<RolePermissionAssignmentType
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as RolePermissionAssignmentType | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
