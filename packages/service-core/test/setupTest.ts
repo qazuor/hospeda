@@ -8,7 +8,7 @@
 
 import { vi } from 'vitest';
 
-// Example: Mock logger globally
+// Mock logger globally
 vi.mock('@repo/logger', () => ({
     default: {
         info: vi.fn(),

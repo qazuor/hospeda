@@ -6,6 +6,7 @@ import type {
     PermissionEnum as PermissionEnumType,
     RoleEnum as RoleEnumType,
     UserId,
+    UserPermissionAssignmentType,
     UserType
 } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types';
@@ -172,10 +173,53 @@ export class PermissionService {
 
     /**
      * Returns all users who have a given permission directly assigned.
+     * View: super admin, admin, or user with admin permission.
      */
-    public async listUsersByPermission(_permission: PermissionEnumType): Promise<UserType[]> {
-        // Implementation
-        return [];
+    public async listUsersByPermission(
+        input: ServiceInput<{ permission: PermissionEnumType }>
+    ): Promise<ServiceOutput<UserType[]>> {
+        const { actor, permission } = input;
+
+        if (!this.canEditPermissions(actor)) {
+            return {
+                error: {
+                    code: ServiceErrorCode.FORBIDDEN,
+                    message: 'You do not have permission to list users by permission.'
+                }
+            };
+        }
+
+        try {
+            // Obtener todos los assignments del permiso
+            const result = await this.userPermissionModel.findAll({ permission });
+            const assignments = 'items' in result ? result.items : result;
+
+            if (assignments.length === 0) {
+                return { data: [] };
+            }
+
+            // Extraer los userIds
+            const userIds = assignments.map((a: UserPermissionAssignmentType) => a.userId);
+
+            // Buscar los usuarios correspondientes
+            const users = await Promise.all(
+                userIds.map((userId: string) => this.userModel.findOne({ id: userId }))
+            );
+
+            // Filtrar los nulls y usuarios eliminados
+            const validUsers = users.filter(
+                (user: UserType | null): user is UserType => user !== null && !user.deletedAt
+            );
+
+            return { data: validUsers };
+        } catch (error) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Failed to list users by permission: ${(error as Error).message}`
+                }
+            };
+        }
     }
 
     /**
