@@ -297,15 +297,51 @@ export class DestinationService extends BaseService<
     }
 
     /**
-     * Retrieves a summary of a destination (id, slug, name, summary, media, averageRating, reviewsCount).
-     * @param _input - Service input containing the destinationId
+     * Retrieves a summary of a destination (id, slug, name, summary, media, location, visibility, lifecycleState, moderationState).
+     * @param input - Service input containing the destinationId
      * @returns The destination summary, or null if not found
      */
     public async getSummary(
-        _input: ServiceInput<{ id: string }>
-    ): Promise<ServiceOutput<Partial<DestinationType> | null>> {
-        // TODO: Implement getSummary logic
-        throw new Error('Not implemented');
+        input: ServiceInput<{ id: string }>
+    ): Promise<ServiceOutput<DestinationSummary | null>> {
+        if (!input.id || typeof input.id !== 'string') {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'id is required and must be a string',
+                    details: { received: input.id }
+                }
+            };
+        }
+        try {
+            const destination = await this.model.findOne({ id: input.id });
+            if (!destination) return { data: null };
+            const canView = await this.canViewEntity(input.actor, destination);
+            if (!canView.canView) return { data: null };
+            // Construir el summary solo con los campos clave
+            const summary = {
+                id: destination.id,
+                name: destination.name,
+                slug: destination.slug,
+                summary: destination.summary,
+                location: destination.location,
+                media: {
+                    featuredImage: destination.media?.featuredImage
+                },
+                visibility: destination.visibility,
+                lifecycleState: destination.lifecycleState,
+                moderationState: destination.moderationState
+            };
+            return { data: summary };
+        } catch (error) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: error instanceof Error ? error.message : 'Unknown error in getSummary',
+                    details: error
+                }
+            };
+        }
     }
 
     /**
@@ -353,3 +389,16 @@ export class DestinationService extends BaseService<
         return this.model.findAll({}) as Promise<DestinationType[]>;
     }
 }
+
+// Tipado para el summary
+export type DestinationSummary = {
+    id: DestinationType['id'];
+    name: DestinationType['name'];
+    slug: DestinationType['slug'];
+    summary: DestinationType['summary'];
+    location: DestinationType['location'];
+    media: { featuredImage: { url: string; moderationState: DestinationType['moderationState'] } };
+    visibility: DestinationType['visibility'];
+    lifecycleState: DestinationType['lifecycleState'];
+    moderationState: DestinationType['moderationState'];
+};
