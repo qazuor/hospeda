@@ -145,7 +145,9 @@ export enum ServiceErrorCode {
     /** User is not authorized to perform the action */
     FORBIDDEN = 'FORBIDDEN',
     /** Unexpected internal error */
-    INTERNAL_ERROR = 'INTERNAL_ERROR'
+    INTERNAL_ERROR = 'INTERNAL_ERROR',
+    /** Entity or assignment already exists */
+    ALREADY_EXISTS = 'ALREADY_EXISTS'
 }
 
 /**
