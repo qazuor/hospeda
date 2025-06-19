@@ -145,10 +145,10 @@ export class PermissionService {
 
         try {
             await withTransaction(async (tx) => {
-                // Eliminar permisos existentes
+                // Delete existing permissions
                 await this.userPermissionModel.hardDelete({ userId: brandedUserId }, tx);
 
-                // Crear nuevos permisos
+                // Create new permissions
                 for (const permission of permissions) {
                     await this.userPermissionModel.create(
                         {
@@ -190,7 +190,7 @@ export class PermissionService {
         }
 
         try {
-            // Obtener todos los assignments del permiso
+            // Get all assignments for the permission
             const result = await this.userPermissionModel.findAll({ permission });
             const assignments = 'items' in result ? result.items : result;
 
@@ -198,15 +198,15 @@ export class PermissionService {
                 return { data: [] };
             }
 
-            // Extraer los userIds
+            // Extract userIds
             const userIds = assignments.map((a: UserPermissionAssignmentType) => a.userId);
 
-            // Buscar los usuarios correspondientes
+            // Find corresponding users
             const users = await Promise.all(
                 userIds.map((userId: string) => this.userModel.findOne({ id: userId }))
             );
 
-            // Filtrar los nulls y usuarios eliminados
+            // Filter out nulls and deleted users
             const validUsers = users.filter(
                 (user: UserType | null): user is UserType => user !== null && !user.deletedAt
             );
@@ -282,10 +282,10 @@ export class PermissionService {
         permissions: PermissionEnumType[]
     ): Promise<void> {
         await withTransaction(async (tx) => {
-            // Eliminar permisos existentes
+            // Delete existing permissions
             await this.rolePermissionModel.hardDelete({ role }, tx);
 
-            // Crear nuevos permisos
+            // Create new permissions
             for (const permission of permissions) {
                 await this.rolePermissionModel.create({ role, permission }, tx);
             }
