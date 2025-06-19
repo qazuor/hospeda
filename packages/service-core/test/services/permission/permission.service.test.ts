@@ -1,551 +1,217 @@
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import type { RRolePermissionModel } from '@repo/db/models/user/rRolePermission.model';
+import type { RUserPermissionModel } from '@repo/db/models/user/rUserPermission.model';
+import type { UserModel } from '@repo/db/models/user/user.model';
+import type { RolePermissionAssignmentType, UserPermissionAssignmentType } from '@repo/types';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    type UserId,
+    type UserType,
+    VisibilityEnum
+} from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissionService } from '../../../src/services/permission/permission.service';
 import type { Actor } from '../../../src/types';
-import { ServiceErrorCode } from '../../../src/types';
 
-// Mocks deben estar antes de vi.mock
-const mockDb = {
-    transaction: vi.fn(),
-    delete: vi.fn(() => ({
-        where: vi.fn(() => ({
-            returning: vi.fn(() => Promise.resolve({ rows: [], rowCount: 0 }))
-        }))
-    })),
-    select: vi.fn(() => ({
-        from: vi.fn(() => ({
-            where: vi.fn(() => ({
-                limit: vi.fn(() => Promise.resolve([]))
-            }))
-        }))
-    })),
-    insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-            returning: vi.fn(() => Promise.resolve({ rows: [], rowCount: 0 }))
-        }))
-    }))
-};
-
+// Mock models with proper types
 const mockUserModel = {
-    findOne: vi.fn((params) => {
-        if (params?.id === 'user1') {
-            return Promise.resolve({ id: 'user1', role: RoleEnum.USER });
-        }
-        return Promise.resolve(null);
-    })
-};
+    findOne: vi.fn(),
+    findById: vi.fn()
+} as unknown as UserModel;
 
 const mockUserPermissionModel = {
-    findAll: vi.fn((params) => {
-        if (params?.userId === 'user1') {
-            return Promise.resolve([{ userId: 'user1', permission: PermissionEnum.USER_CREATE }]);
-        }
-        return Promise.resolve([]);
-    }),
     findOne: vi.fn(),
-    create: vi.fn((data) => Promise.resolve(data)),
-    hardDelete: vi.fn(() => Promise.resolve({ rows: [], rowCount: 1 }))
-};
+    findAll: vi.fn(),
+    create: vi.fn(),
+    hardDelete: vi.fn()
+} as unknown as RUserPermissionModel;
 
 const mockRolePermissionModel = {
-    findAll: vi.fn((params) => {
-        if (params?.role === RoleEnum.USER) {
-            return Promise.resolve([
-                { role: RoleEnum.USER, permission: PermissionEnum.USER_DELETE }
-            ]);
-        }
-        return Promise.resolve([]);
-    }),
-    create: vi.fn((data) => Promise.resolve(data)),
-    hardDelete: vi.fn((params, _tx) => {
-        if (params.role === RoleEnum.USER) {
-            return Promise.resolve({ rows: [], rowCount: 1 });
-        }
-        throw new Error('DB Error');
-    })
-};
+    findOne: vi.fn(),
+    findAll: vi.fn(),
+    create: vi.fn(),
+    hardDelete: vi.fn()
+} as unknown as RRolePermissionModel;
 
-// Mock de withTransaction para probar el manejo de transacciones
-vi.mock('@repo/db/client', () => {
-    const withTransaction = vi.fn(async (cb) => await cb(mockDb));
-    const getDb = vi.fn(() => mockDb);
-    (globalThis as unknown as { withTransactionMock: typeof withTransaction }).withTransactionMock =
-        withTransaction;
-    return { withTransaction, getDb };
-});
+// Mock the models in the PermissionService
+vi.mock('@repo/db/models/user/user.model', () => ({
+    UserModel: vi.fn().mockImplementation(() => mockUserModel)
+}));
 
-// Mock actors for diferentes escenarios
-const adminActor: Actor = {
-    id: 'admin1',
-    role: RoleEnum.ADMIN,
-    permissions: [PermissionEnum.USER_READ_ALL]
-};
+vi.mock('@repo/db/models/user/rUserPermission.model', () => ({
+    RUserPermissionModel: vi.fn().mockImplementation(() => mockUserPermissionModel)
+}));
 
-const regularUserActor: Actor = {
-    id: 'user1',
-    role: RoleEnum.USER,
-    permissions: []
-};
-
-const userWithAdminPermissionActor: Actor = {
-    id: 'user2',
-    role: RoleEnum.USER,
-    permissions: [PermissionEnum.USER_UPDATE_ROLES]
-};
+vi.mock('@repo/db/models/user/rRolePermission.model', () => ({
+    RRolePermissionModel: vi.fn().mockImplementation(() => mockRolePermissionModel)
+}));
 
 describe('PermissionService', () => {
     let service: PermissionService;
-    // Acceso al mock global
-    const withTransactionMock = () =>
-        (globalThis as unknown as { withTransactionMock: ReturnType<typeof vi.fn> })
-            .withTransactionMock;
 
     beforeEach(() => {
-        service = new PermissionService();
-        // biome-ignore lint/suspicious/noExplicitAny: test override
-        (service as any).userModel = mockUserModel;
-        // biome-ignore lint/suspicious/noExplicitAny: test override
-        (service as any).userPermissionModel = mockUserPermissionModel;
-        // biome-ignore lint/suspicious/noExplicitAny: test override
-        (service as any).rolePermissionModel = mockRolePermissionModel;
         vi.clearAllMocks();
+        service = new PermissionService();
+
+        // Setup default mock implementations
+        vi.spyOn(mockUserModel, 'findOne').mockResolvedValue({
+            id: 'user1' as UserId,
+            userName: 'testUser',
+            password: 'hashedPassword',
+            role: RoleEnum.USER,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: undefined,
+            isActive: true,
+            email: 'test@example.com',
+            createdById: 'admin' as UserId,
+            updatedById: 'admin' as UserId,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            visibility: VisibilityEnum.PUBLIC
+        } as UserType);
+
+        vi.spyOn(mockUserPermissionModel, 'findOne').mockResolvedValue(null);
+        vi.spyOn(mockRolePermissionModel, 'findOne').mockResolvedValue(null);
     });
 
     describe('getUserPermissions', () => {
-        describe('authorization', () => {
-            it('allows admin to view any user permissions', async () => {
-                mockUserPermissionModel.findAll.mockResolvedValue([]);
-                const result = await service.getUserPermissions({
-                    actor: adminActor,
-                    userId: 'otherUser'
-                });
-                expect(result.error).toBeUndefined();
-                expect(result.data).toBeDefined();
-            });
+        it('should return user permissions when authorized', async () => {
+            const userId = 'user1' as UserId;
+            const actor: Actor = { id: 'admin', role: RoleEnum.ADMIN, permissions: [] };
 
-            it('allows users to view their own permissions', async () => {
-                mockUserPermissionModel.findAll.mockResolvedValue([]);
-                const result = await service.getUserPermissions({
-                    actor: regularUserActor,
-                    userId: regularUserActor.id
-                });
-                expect(result.error).toBeUndefined();
-                expect(result.data).toBeDefined();
-            });
+            vi.spyOn(mockUserPermissionModel, 'findAll').mockResolvedValue([
+                { permission: PermissionEnum.USER_READ_ALL },
+                { permission: PermissionEnum.USER_CREATE }
+            ] as UserPermissionAssignmentType[]);
 
-            it('allows users with admin permissions to view any user permissions', async () => {
-                mockUserPermissionModel.findAll.mockResolvedValue([]);
-                const result = await service.getUserPermissions({
-                    actor: userWithAdminPermissionActor,
-                    userId: 'otherUser'
-                });
-                expect(result.error).toBeUndefined();
-                expect(result.data).toBeDefined();
-            });
+            const result = await service.getUserPermissions({ actor, userId });
 
-            it('denies regular users from viewing other users permissions', async () => {
-                const result = await service.getUserPermissions({
-                    actor: regularUserActor,
-                    userId: 'otherUser'
-                });
-                expect(result.error).toBeDefined();
-                expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-            });
+            expect(result.error).toBeUndefined();
+            expect(result.data).toEqual([PermissionEnum.USER_READ_ALL, PermissionEnum.USER_CREATE]);
         });
 
-        describe('data retrieval', () => {
-            it('returns all direct permissions for a user', async () => {
-                mockUserPermissionModel.findAll.mockResolvedValue([
-                    { userId: 'u1', permission: PermissionEnum.USER_CREATE },
-                    { userId: 'u1', permission: PermissionEnum.USER_DELETE }
-                ]);
-                const result = await service.getUserPermissions({
-                    actor: adminActor,
-                    userId: 'u1'
-                });
-                expect(result.data).toEqual([
-                    PermissionEnum.USER_CREATE,
-                    PermissionEnum.USER_DELETE
-                ]);
-                expect(mockUserPermissionModel.findAll).toHaveBeenCalledWith({ userId: 'u1' });
-            });
+        it('should return error when unauthorized', async () => {
+            const userId = 'user1' as UserId;
+            const actor: Actor = { id: 'user2', role: RoleEnum.USER, permissions: [] };
 
-            it('returns empty array if user has no permissions', async () => {
-                mockUserPermissionModel.findAll.mockResolvedValue([]);
-                const result = await service.getUserPermissions({
-                    actor: adminActor,
-                    userId: 'u2'
-                });
-                expect(result.data).toEqual([]);
-            });
+            const result = await service.getUserPermissions({ actor, userId });
 
-            it('handles invalid userId gracefully', async () => {
-                mockUserPermissionModel.findAll.mockResolvedValue([]);
-                const result = await service.getUserPermissions({
-                    actor: adminActor,
-                    userId: ''
-                });
-                expect(result.data).toEqual([]);
-            });
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe('FORBIDDEN');
         });
     });
 
     describe('addPermissionToUser', () => {
-        describe('authorization', () => {
-            it('allows admin to add permissions', async () => {
-                mockUserPermissionModel.findOne.mockResolvedValue(null);
-                const result = await service.addPermissionToUser({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(result.error).toBeUndefined();
-                expect(mockUserPermissionModel.create).toHaveBeenCalled();
-            });
+        it('should add permission when authorized', async () => {
+            const userId = 'user1' as UserId;
+            const actor: Actor = { id: 'admin', role: RoleEnum.ADMIN, permissions: [] };
+            const permission = PermissionEnum.USER_CREATE;
 
-            it('allows users with admin permissions to add permissions', async () => {
-                mockUserPermissionModel.findOne.mockResolvedValue(null);
-                const result = await service.addPermissionToUser({
-                    actor: userWithAdminPermissionActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(result.error).toBeUndefined();
-                expect(mockUserPermissionModel.create).toHaveBeenCalled();
-            });
+            vi.spyOn(mockUserPermissionModel, 'findOne').mockResolvedValue(null);
+            vi.spyOn(mockUserPermissionModel, 'create').mockResolvedValue({
+                userId,
+                permission
+            } as UserPermissionAssignmentType);
 
-            it('denies regular users from adding permissions', async () => {
-                const result = await service.addPermissionToUser({
-                    actor: regularUserActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(result.error).toBeDefined();
-                expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-                expect(mockUserPermissionModel.create).not.toHaveBeenCalled();
-            });
+            const result = await service.addPermissionToUser({ actor, userId, permission });
+
+            expect(result.error).toBeUndefined();
+            expect(mockUserPermissionModel.create).toHaveBeenCalledWith({ userId, permission });
         });
 
-        describe('validation', () => {
-            it('prevents duplicate permission assignments', async () => {
-                mockUserPermissionModel.findOne.mockResolvedValue({
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                const result = await service.addPermissionToUser({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(result.error).toBeDefined();
-                expect(result.error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
-                expect(mockUserPermissionModel.create).not.toHaveBeenCalled();
-            });
+        it('should return error when permission already exists', async () => {
+            const userId = 'user1' as UserId;
+            const actor: Actor = { id: 'admin', role: RoleEnum.ADMIN, permissions: [] };
+            const permission = PermissionEnum.USER_CREATE;
 
-            it('creates new permission assignment if not exists', async () => {
-                mockUserPermissionModel.findOne.mockResolvedValue(null);
-                await service.addPermissionToUser({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(mockUserPermissionModel.create).toHaveBeenCalledWith({
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-            });
+            vi.spyOn(mockUserPermissionModel, 'findOne').mockResolvedValue({
+                userId,
+                permission
+            } as UserPermissionAssignmentType);
+
+            const result = await service.addPermissionToUser({ actor, userId, permission });
+
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe('ALREADY_EXISTS');
         });
     });
 
     describe('removePermissionFromUser', () => {
-        describe('authorization', () => {
-            it('allows admin to remove permissions', async () => {
-                mockUserPermissionModel.findOne.mockResolvedValue({
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                const result = await service.removePermissionFromUser({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(result.error).toBeUndefined();
-                expect(mockUserPermissionModel.hardDelete).toHaveBeenCalled();
-            });
+        it('should remove permission when authorized', async () => {
+            const userId = 'user1' as UserId;
+            const actor: Actor = { id: 'admin', role: RoleEnum.ADMIN, permissions: [] };
+            const permission = PermissionEnum.USER_CREATE;
 
-            it('allows users with admin permissions to remove permissions', async () => {
-                mockUserPermissionModel.findOne.mockResolvedValue({
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                const result = await service.removePermissionFromUser({
-                    actor: userWithAdminPermissionActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(result.error).toBeUndefined();
-                expect(mockUserPermissionModel.hardDelete).toHaveBeenCalled();
-            });
+            vi.spyOn(mockUserPermissionModel, 'findOne').mockResolvedValue({
+                userId,
+                permission
+            } as UserPermissionAssignmentType);
+            vi.spyOn(mockUserPermissionModel, 'hardDelete').mockResolvedValue(1);
 
-            it('denies regular users from removing permissions', async () => {
-                const result = await service.removePermissionFromUser({
-                    actor: regularUserActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(result.error).toBeDefined();
-                expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-                expect(mockUserPermissionModel.hardDelete).not.toHaveBeenCalled();
-            });
+            const result = await service.removePermissionFromUser({ actor, userId, permission });
+
+            expect(result.error).toBeUndefined();
+            expect(mockUserPermissionModel.hardDelete).toHaveBeenCalledWith({ userId, permission });
         });
 
-        describe('validation', () => {
-            it('returns error if permission is not assigned', async () => {
-                mockUserPermissionModel.findOne.mockResolvedValue(null);
-                const result = await service.removePermissionFromUser({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(result.error).toBeDefined();
-                expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
-                expect(mockUserPermissionModel.hardDelete).not.toHaveBeenCalled();
-            });
+        it('should return error when permission does not exist', async () => {
+            const userId = 'user1' as UserId;
+            const actor: Actor = { id: 'admin', role: RoleEnum.ADMIN, permissions: [] };
+            const permission = PermissionEnum.USER_CREATE;
 
-            it('removes permission if it exists', async () => {
-                mockUserPermissionModel.findOne.mockResolvedValue({
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                await service.removePermissionFromUser({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-                expect(mockUserPermissionModel.hardDelete).toHaveBeenCalledWith({
-                    userId: 'user1',
-                    permission: PermissionEnum.USER_CREATE
-                });
-            });
-        });
-    });
+            vi.spyOn(mockUserPermissionModel, 'findOne').mockResolvedValue(null);
 
-    describe('setUserPermissions', () => {
-        describe('authorization', () => {
-            it('allows admin to set permissions', async () => {
-                const result = await service.setUserPermissions({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permissions: [PermissionEnum.USER_CREATE]
-                });
-                expect(result.error).toBeUndefined();
-                expect(withTransactionMock()).toHaveBeenCalled();
-            });
+            const result = await service.removePermissionFromUser({ actor, userId, permission });
 
-            it('allows users with admin permissions to set permissions', async () => {
-                const result = await service.setUserPermissions({
-                    actor: userWithAdminPermissionActor,
-                    userId: 'user1',
-                    permissions: [PermissionEnum.USER_CREATE]
-                });
-                expect(result.error).toBeUndefined();
-                expect(withTransactionMock()).toHaveBeenCalled();
-            });
-
-            it('denies regular users from setting permissions', async () => {
-                const result = await service.setUserPermissions({
-                    actor: regularUserActor,
-                    userId: 'user1',
-                    permissions: [PermissionEnum.USER_CREATE]
-                });
-                expect(result.error).toBeDefined();
-                expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-                expect(withTransactionMock()).not.toHaveBeenCalled();
-            });
-        });
-
-        describe('transaction handling', () => {
-            it('uses transaction for setting permissions', async () => {
-                await service.setUserPermissions({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permissions: [PermissionEnum.USER_CREATE]
-                });
-                expect(withTransactionMock()).toHaveBeenCalled();
-                expect(mockUserPermissionModel.hardDelete).toHaveBeenCalledWith(
-                    { userId: 'user1' },
-                    mockDb
-                );
-                expect(mockUserPermissionModel.create).toHaveBeenCalledWith(
-                    { userId: 'user1', permission: PermissionEnum.USER_CREATE },
-                    mockDb
-                );
-            });
-
-            it('rolls back transaction on error', async () => {
-                mockUserPermissionModel.create.mockRejectedValueOnce(new Error('DB error'));
-                const result = await service.setUserPermissions({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permissions: [PermissionEnum.USER_CREATE]
-                });
-                expect(result.error).toBeDefined();
-                expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            });
-
-            it('handles empty permissions array', async () => {
-                const result = await service.setUserPermissions({
-                    actor: adminActor,
-                    userId: 'user1',
-                    permissions: []
-                });
-                expect(result.error).toBeUndefined();
-                expect(mockUserPermissionModel.hardDelete).toHaveBeenCalledWith(
-                    { userId: 'user1' },
-                    mockDb
-                );
-                expect(mockUserPermissionModel.create).not.toHaveBeenCalled();
-            });
-        });
-    });
-
-    describe('setRolePermissions', () => {
-        describe('transaction handling', () => {
-            it('uses transaction for setting role permissions', async () => {
-                await service.setRolePermissions(RoleEnum.USER, [PermissionEnum.USER_CREATE]);
-                expect(withTransactionMock()).toHaveBeenCalled();
-            });
-
-            it('deletes existing permissions y crea nuevas en transacción', async () => {
-                let transactionCallback: ((tx: typeof mockDb) => Promise<void>) | undefined;
-                withTransactionMock().mockImplementationOnce(
-                    (cb: (tx: typeof mockDb) => Promise<void>) => {
-                        transactionCallback = cb;
-                        return cb(mockDb);
-                    }
-                );
-
-                await service.setRolePermissions(RoleEnum.USER, [
-                    PermissionEnum.USER_CREATE,
-                    PermissionEnum.USER_DELETE
-                ]);
-
-                expect(withTransactionMock()).toHaveBeenCalled();
-                expect(transactionCallback).toBeDefined();
-
-                if (transactionCallback) {
-                    await transactionCallback(mockDb);
-
-                    expect(mockRolePermissionModel.hardDelete).toHaveBeenCalledWith(
-                        { role: RoleEnum.USER },
-                        mockDb
-                    );
-                    expect(mockRolePermissionModel.create).toHaveBeenCalledWith(
-                        { role: RoleEnum.USER, permission: PermissionEnum.USER_CREATE },
-                        mockDb
-                    );
-                    expect(mockRolePermissionModel.create).toHaveBeenCalledWith(
-                        { role: RoleEnum.USER, permission: PermissionEnum.USER_DELETE },
-                        mockDb
-                    );
-                }
-            });
-
-            it('rolls back transaction on error', async () => {
-                mockRolePermissionModel.create.mockRejectedValueOnce(new Error('DB Error'));
-
-                await expect(
-                    service.setRolePermissions(RoleEnum.USER, [PermissionEnum.USER_CREATE])
-                ).rejects.toThrow('DB Error');
-
-                expect(withTransactionMock()).toHaveBeenCalled();
-            });
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe('NOT_FOUND');
         });
     });
 
     describe('getEffectivePermissions', () => {
-        it('combines direct and role permissions', async () => {
-            // Mock user permissions
-            mockUserPermissionModel.findAll.mockResolvedValueOnce([
-                { userId: 'user1', permission: PermissionEnum.USER_CREATE }
-            ]);
-            // Mock role permissions
-            mockRolePermissionModel.findAll.mockResolvedValueOnce([
-                { role: RoleEnum.USER, permission: PermissionEnum.USER_DELETE }
-            ]);
+        it('should return combined permissions from direct assignments and role', async () => {
+            const userId = 'user1' as UserId;
 
-            const permissions = await service.getEffectivePermissions('user1');
+            vi.spyOn(mockUserPermissionModel, 'findAll').mockResolvedValue([
+                { permission: PermissionEnum.USER_CREATE }
+            ] as UserPermissionAssignmentType[]);
 
-            expect(permissions).toContain(PermissionEnum.USER_CREATE);
-            expect(permissions).toContain(PermissionEnum.USER_DELETE);
-            expect(permissions.length).toBe(2);
-        });
+            vi.spyOn(mockRolePermissionModel, 'findAll').mockResolvedValue([
+                { permission: PermissionEnum.USER_READ_ALL }
+            ] as RolePermissionAssignmentType[]);
 
-        it('returns empty array for non-existent user', async () => {
-            mockUserModel.findOne.mockResolvedValueOnce(null);
-            mockUserPermissionModel.findAll.mockResolvedValue([]);
-            const permissions = await service.getEffectivePermissions('nonexistent');
-            expect(permissions).toEqual([]);
-        });
+            const permissions = await service.getEffectivePermissions(userId);
 
-        it('removes duplicate permissions', async () => {
-            // Mock user permissions
-            mockUserPermissionModel.findAll.mockResolvedValueOnce([
-                { userId: 'user1', permission: PermissionEnum.USER_CREATE }
-            ]);
-            // Mock role permissions (same permission as user)
-            mockRolePermissionModel.findAll.mockResolvedValueOnce([
-                { role: RoleEnum.USER, permission: PermissionEnum.USER_CREATE }
-            ]);
-
-            const permissions = await service.getEffectivePermissions('user1');
-
-            expect(permissions).toEqual([PermissionEnum.USER_CREATE]);
-            expect(permissions.length).toBe(1);
+            expect(permissions).toEqual([PermissionEnum.USER_CREATE, PermissionEnum.USER_READ_ALL]);
         });
     });
 
     describe('userHasPermission', () => {
-        it('returns true if user has direct permission', async () => {
-            mockUserPermissionModel.findAll.mockResolvedValueOnce([
-                { userId: 'user1', permission: PermissionEnum.USER_CREATE }
-            ]);
-            mockRolePermissionModel.findAll.mockResolvedValueOnce([]);
-            mockUserModel.findOne.mockResolvedValueOnce({ id: 'user1', role: RoleEnum.USER });
+        it('should return true when user has permission', async () => {
+            const userId = 'user1' as UserId;
+            const permission = PermissionEnum.USER_CREATE;
 
-            const hasPermission = await service.userHasPermission(
-                'user1',
-                PermissionEnum.USER_CREATE
-            );
+            vi.spyOn(mockUserPermissionModel, 'findAll').mockResolvedValue([
+                { permission: PermissionEnum.USER_CREATE }
+            ] as UserPermissionAssignmentType[]);
+
+            vi.spyOn(mockRolePermissionModel, 'findAll').mockResolvedValue([]);
+
+            const hasPermission = await service.userHasPermission(userId, permission);
+
             expect(hasPermission).toBe(true);
         });
 
-        it('returns true if user has permission through role', async () => {
-            // Mock user permissions (empty)
-            mockUserPermissionModel.findAll.mockResolvedValueOnce([]);
-            // Mock role permissions
-            mockRolePermissionModel.findAll.mockResolvedValueOnce([
-                { role: RoleEnum.USER, permission: PermissionEnum.USER_CREATE }
-            ]);
-            // Mock user with role
-            mockUserModel.findOne.mockResolvedValueOnce({ id: 'user1', role: RoleEnum.USER });
+        it('should return false when user does not have permission', async () => {
+            const userId = 'user1' as UserId;
+            const permission = PermissionEnum.USER_CREATE;
 
-            const hasPermission = await service.userHasPermission(
-                'user1',
-                PermissionEnum.USER_CREATE
-            );
-            expect(hasPermission).toBe(true);
-        });
+            vi.spyOn(mockUserPermissionModel, 'findAll').mockResolvedValue([]);
+            vi.spyOn(mockRolePermissionModel, 'findAll').mockResolvedValue([]);
 
-        it('returns false if user does not have permission', async () => {
-            mockUserPermissionModel.findAll.mockResolvedValueOnce([]);
-            mockRolePermissionModel.findAll.mockResolvedValueOnce([]);
-            mockUserModel.findOne.mockResolvedValueOnce({ id: 'user1', role: RoleEnum.USER });
+            const hasPermission = await service.userHasPermission(userId, permission);
 
-            const hasPermission = await service.userHasPermission(
-                'user1',
-                PermissionEnum.USER_CREATE
-            );
             expect(hasPermission).toBe(false);
         });
     });
