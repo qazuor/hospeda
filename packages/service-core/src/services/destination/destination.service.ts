@@ -243,14 +243,57 @@ export class DestinationService extends BaseService<
 
     /**
      * Retrieves a destination with all specified relations populated.
-     * @param _input - Service input containing the destinationId and relations to include
-     * @returns The destination with the requested relations, or null if not found
+     * Validates input and permissions before returning the entity.
+     *
+     * @param input - Service input containing the destination id and relations to include
+     * @returns ServiceOutput with the destination and its relations, or null/error if not found or forbidden
      */
     public async getWithRelations(
-        _input: ServiceInput<{ id: string; relations: Record<string, boolean> }>
+        input: ServiceInput<{ id: string; relations: Record<string, boolean> }>
     ): Promise<ServiceOutput<DestinationType | null>> {
-        // TODO: Implement getWithRelations logic
-        throw new Error('Not implemented');
+        if (!input.id || typeof input.id !== 'string') {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'id is required and must be a string',
+                    details: { received: input.id }
+                }
+            };
+        }
+        if (!input.relations || typeof input.relations !== 'object') {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'relations is required and must be an object',
+                    details: { received: input.relations }
+                }
+            };
+        }
+        try {
+            const destination = await this.model.findWithRelations(
+                { id: input.id },
+                input.relations
+            );
+            if (!destination) return { data: null };
+            const canView = await this.canViewEntity(input.actor, destination);
+            if (!canView.canView) {
+                // Optionally log denied access here
+                return { data: null };
+            }
+            // Optionally log granted access here
+            return { data: destination };
+        } catch (error) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : 'Unknown error in getWithRelations',
+                    details: error
+                }
+            };
+        }
     }
 
     /**
