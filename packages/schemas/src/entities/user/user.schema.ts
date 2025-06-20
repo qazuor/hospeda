@@ -1,5 +1,6 @@
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { RoleEnum } from '@repo/types';
 import { z } from 'zod';
+import { UserIdSchema } from '../../common/id.schema.js';
 import {
     ContactInfoSchema,
     LocationSchema,
@@ -10,7 +11,9 @@ import {
     WithLifecycleStateSchema,
     WithVisibilitySchema
 } from '../../common/index.js';
+import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { StrongPasswordRegex } from '../../utils/utils.js';
+import { UserBookmarkSchema } from './user.bookmark.schema.js';
 import { UserProfileSchema } from './user.profile.schema.js';
 import { UserSettingsSchema } from './user.settings.schema.js';
 
@@ -24,6 +27,7 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithAdminInfoSchema)
     .merge(WithVisibilitySchema)
     .extend({
+        id: UserIdSchema,
         /** Username, 3-50 characters */
         userName: z
             .string()
@@ -51,7 +55,7 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
             .max(50, { message: 'zodError.user.lastName.max' })
             .optional(),
         /** Birth date as string, optional */
-        birthDate: z.string().optional(),
+        birthDate: z.date().optional(),
         /** Email verification status, optional */
         emailVerified: z.boolean().optional(),
         /** Phone verification status, optional */
@@ -63,23 +67,14 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
         /** Social networks, optional */
         socialNetworks: SocialNetworkSchema.optional(),
         /** User role (required) */
-        role: z.nativeEnum(RoleEnum, {
-            required_error: 'zodError.user.role.required',
-            invalid_type_error: 'zodError.user.role.invalidType'
-        }),
+        role: RoleEnumSchema,
         /** List of permissions, optional */
-        permissions: z
-            .array(
-                z.nativeEnum(PermissionEnum, {
-                    required_error: 'zodError.user.permissions.required',
-                    invalid_type_error: 'zodError.user.permissions.invalidType'
-                })
-            )
-            .optional(),
+        permissions: z.array(PermissionEnumSchema).optional(),
         /** User profile information */
         profile: UserProfileSchema.optional(),
         /** User settings, optional */
-        settings: UserSettingsSchema.optional()
+        settings: UserSettingsSchema.optional(),
+        bookmarks: z.array(UserBookmarkSchema).optional()
     });
 
 // Input para filtros de búsqueda de usuarios

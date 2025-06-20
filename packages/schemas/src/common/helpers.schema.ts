@@ -5,7 +5,7 @@ import {
     VisibilityEnumSchema
 } from '../enums/index.js';
 import { AdminInfoSchema } from './admin.schema.js';
-import { IdSchema } from './id.schema.js';
+import { IdSchema, UserIdSchema } from './id.schema.js';
 import { TagSchema } from './tag.schema.js';
 
 export const WithIdSchema = z.object({
@@ -21,33 +21,19 @@ export const WithAuditSchema = z.object({
         required_error: 'zodError.common.updatedAt.required',
         invalid_type_error: 'zodError.common.updatedAt.invalidType'
     }),
-    createdById: z.string({
-        required_error: 'zodError.common.createdById.required',
-        invalid_type_error: 'zodError.common.createdById.invalidType'
-    }),
-    updatedById: z.string({
-        required_error: 'zodError.common.updatedById.required',
-        invalid_type_error: 'zodError.common.updatedById.invalidType'
-    }),
+    createdById: UserIdSchema,
+    updatedById: UserIdSchema,
     deletedAt: z
         .string({
             required_error: 'zodError.common.deletedAt.required',
             invalid_type_error: 'zodError.common.deletedAt.invalidType'
         })
         .optional(),
-    deletedById: z
-        .string({
-            required_error: 'zodError.common.deletedById.required',
-            invalid_type_error: 'zodError.common.deletedById.invalidType'
-        })
-        .optional()
+    deletedById: UserIdSchema.optional()
 });
 
 export const WithLifecycleStateSchema = z.object({
-    lifecycleState: LifecycleStatusEnumSchema.refine(
-        (val: string) => LifecycleStatusEnumSchema.options.includes(val),
-        { message: 'zodError.common.lifecycleStatus.invalidEnum' }
-    )
+    lifecycleState: LifecycleStatusEnumSchema
 });
 
 export const WithReviewStateSchema = z.object({
@@ -106,10 +92,7 @@ export const WithTagsSchema = z.object({
 });
 
 export const WithVisibilitySchema = z.object({
-    visibility: VisibilityEnumSchema.refine(
-        (val: string) => VisibilityEnumSchema.options.includes(val),
-        { message: 'zodError.common.visibility.invalidEnum' }
-    )
+    visibility: VisibilityEnumSchema
 });
 
 export const WithAdminInfoSchema = z.object({
@@ -117,10 +100,5 @@ export const WithAdminInfoSchema = z.object({
 });
 
 export const WithModerationStatusSchema = z.object({
-    moderationState: ModerationStatusEnumSchema.refine(
-        (val: string) => ModerationStatusEnumSchema.options.includes(val),
-        {
-            message: 'zodError.common.moderationStatus.invalidEnum'
-        }
-    )
+    moderationState: ModerationStatusEnumSchema
 });

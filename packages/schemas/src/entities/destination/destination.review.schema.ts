@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import {
+    DestinationIdSchema,
+    DestinationReviewIdSchema,
+    UserIdSchema
+} from '../../common/id.schema.js';
+import {
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
@@ -15,8 +20,9 @@ export const DestinationReviewSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithAdminInfoSchema)
     .extend({
-        userId: z.string({ message: 'error:destination.review.userId.required' }),
-        destinationId: z.string({ message: 'error:destination.review.destinationId.required' }),
+        id: DestinationReviewIdSchema,
+        userId: UserIdSchema,
+        destinationId: DestinationIdSchema,
         title: z
             .string()
             .min(1, { message: 'error:destination.review.title.min_length' })
