@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DestinationIdSchema } from '../../common/id.schema.js';
 import {
     LocationSchema,
     MediaSchema,
@@ -31,6 +32,7 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithTagsSchema)
     .merge(WithSeoSchema)
     .extend({
+        id: DestinationIdSchema,
         /** Unique slug for the destination */
         slug: z
             .string()
@@ -62,7 +64,7 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
         /** Average rating, optional */
         averageRating: z.number().optional(),
         /** Number of accommodations, optional */
-        accommodationsCount: z.number().optional(),
+        accommodationsCount: z.number().int().optional(),
         /** List of attractions, at least 3 required */
         attractions: z
             .array(DestinationAttractionSchema)
