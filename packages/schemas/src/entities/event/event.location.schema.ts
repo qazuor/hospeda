@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+    EventLocationIdSchema,
     LocationSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
@@ -16,6 +17,7 @@ export const EventLocationSchema = LocationSchema.merge(WithIdSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithAdminInfoSchema)
     .extend({
+        id: EventLocationIdSchema,
         street: z
             .string()
             .min(2, { message: 'zodError.event.location.street.min' })

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
     ContactInfoSchema,
+    EventOrganizerIdSchema,
     SocialNetworkSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
@@ -16,6 +17,7 @@ export const EventOrganizerSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithAdminInfoSchema)
     .extend({
+        id: EventOrganizerIdSchema,
         name: z
             .string()
             .min(3, { message: 'zodError.event.organizer.name.min' })

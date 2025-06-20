@@ -1,6 +1,7 @@
 import { VisibilityEnumSchema } from '@repo/schemas/enums/visibility.enum.schema.js';
 import { z } from 'zod';
 import {
+    AccommodationIdSchema,
     ContactInfoSchema,
     LocationSchema,
     MediaSchema,
@@ -42,6 +43,7 @@ export const AccommodationSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithSeoSchema)
     .merge(WithAdminInfoSchema)
     .extend({
+        id: AccommodationIdSchema,
         /** Unique slug for the accommodation */
         slug: z
             .string({
