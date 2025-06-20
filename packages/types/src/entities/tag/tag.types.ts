@@ -20,6 +20,7 @@ import type { EntityTypeEnum } from '../../enums/entity-type.enum.js';
 export interface TagType extends WithAudit, WithLifecycleState {
     id: TagId;
     name: string;
+    slug: string;
     color: string;
     icon?: string;
     notes?: string;

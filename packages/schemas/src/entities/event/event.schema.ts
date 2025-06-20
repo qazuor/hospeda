@@ -1,12 +1,16 @@
 import { z } from 'zod';
+import { UserIdSchema } from '../../common/id.schema.js';
 import {
+    ContactInfoSchema,
+    MediaSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema,
     WithModerationStatusSchema,
     WithSeoSchema,
-    WithTagsSchema
+    WithTagsSchema,
+    WithVisibilitySchema
 } from '../../common/index.js';
 import { EventCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.js';
 import { EventDateSchema } from './event.date.schema.js';
@@ -22,12 +26,24 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithModerationStatusSchema)
     .merge(WithTagsSchema)
     .merge(WithSeoSchema)
+    .merge(WithVisibilitySchema)
     .extend({
-        /** Event title, 3-100 characters */
-        title: z
+        slug: z
+            .string({
+                required_error: 'zodError.event.slug.required',
+                invalid_type_error: 'zodError.event.slug.invalidType'
+            })
+            .min(1, { message: 'zodError.event.slug.min' }),
+        /** Event name, 3-100 characters */
+        name: z
             .string()
-            .min(3, { message: 'zodError.event.title.min' })
-            .max(100, { message: 'zodError.event.title.max' }),
+            .min(3, { message: 'zodError.event.name.min' })
+            .max(100, { message: 'zodError.event.name.max' }),
+        /** Event summary, 10-200 characters */
+        summary: z
+            .string()
+            .min(10, { message: 'zodError.event.summary.min' })
+            .max(200, { message: 'zodError.event.summary.max' }),
         /** Event description, optional, 10-1000 characters */
         description: z
             .string({
@@ -37,8 +53,11 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
             .min(10, { message: 'zodError.event.description.min' })
             .max(1000, { message: 'zodError.event.description.max' })
             .optional(),
+        media: MediaSchema.optional(),
+        category: EventCategoryEnumSchema,
         /** Event date object */
         date: EventDateSchema,
+        authorId: UserIdSchema,
         /** Event location (ID only) */
         locationId: z
             .string({
@@ -54,7 +73,9 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
             })
             .uuid({ message: 'zodError.event.organizerId.invalidUuid' }),
         /** Event price, optional */
-        price: EventPriceSchema.optional()
+        pricing: EventPriceSchema.optional(),
+        contact: ContactInfoSchema.optional(),
+        isFeatured: z.boolean()
     });
 
 // Input para filtros de búsqueda de eventos

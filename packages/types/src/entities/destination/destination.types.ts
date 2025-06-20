@@ -16,6 +16,7 @@ import type { BaseLocationType } from '../../common/location.types.js';
 import type { MediaType } from '../../common/media.types.js';
 import type { VisibilityEnum } from '../../enums/visibility.enum.js';
 import type { DestinationAttractionType } from './destination.attraction.types.js';
+import type { DestinationRatingType } from './destination.rating.types.js';
 import type { DestinationReviewType } from './destination.review.types.js';
 
 /**
@@ -36,15 +37,16 @@ export interface DestinationType
     description: string;
     location: BaseLocationType;
     media: MediaType;
-    isFeatured?: boolean;
+    isFeatured: boolean;
     visibility: VisibilityEnum;
 
     // Stats
-    accommodationsCount?: number;
+    accommodationsCount: number;
 
     // Related data
     attractions?: DestinationAttractionType[];
     reviews?: DestinationReviewType[];
+    rating?: DestinationRatingType;
 }
 
 /**

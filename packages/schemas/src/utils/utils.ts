@@ -24,10 +24,6 @@ export const isValidLongitude = (val: string) => {
     return !Number.isNaN(n) && n >= -180 && n <= 180;
 };
 
-// Regex for strong password: 8-20 characters, at least one uppercase, one lowercase, one number, and one special character
-export const StrongPasswordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,20}$/;
-
 // Base fields to omit in CRUD actions
 export const omittedBaseEntityFieldsForActions = [
     'id',

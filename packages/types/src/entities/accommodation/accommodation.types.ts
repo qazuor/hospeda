@@ -49,7 +49,7 @@ export interface AccommodationType
     price?: AccommodationPriceType;
     location?: FullLocationType;
     media?: MediaType;
-    isFeatured?: boolean;
+    isFeatured: boolean;
 
     ownerId: UserId;
     owner?: UserType;
@@ -111,7 +111,7 @@ export type AccommodationSummaryType = Pick<
     | 'name'
     | 'type'
     | 'media'
-    | 'rating'
+    | 'averageRating'
     | 'reviewsCount'
     | 'location'
     | 'isFeatured'

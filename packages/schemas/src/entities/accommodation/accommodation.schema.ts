@@ -87,12 +87,10 @@ export const AccommodationSchema = WithIdSchema.merge(WithAuditSchema)
         /** Media assets, optional */
         media: MediaSchema.optional(),
         /** Whether the accommodation is featured, optional */
-        isFeatured: z
-            .boolean({
-                required_error: 'zodError.accommodation.isFeatured.required',
-                invalid_type_error: 'zodError.accommodation.isFeatured.invalidType'
-            })
-            .optional(),
+        isFeatured: z.boolean({
+            required_error: 'zodError.accommodation.isFeatured.required',
+            invalid_type_error: 'zodError.accommodation.isFeatured.invalidType'
+        }),
         /** Owner user ID */
         ownerId: z
             .string({
@@ -112,15 +110,9 @@ export const AccommodationSchema = WithIdSchema.merge(WithAuditSchema)
         /** Destination object, optional */
         destination: DestinationSchema.optional(),
         /** List of features, at least 2 required */
-        features: z
-            .array(AccommodationFeatureSchema)
-            .min(2, { message: 'zodError.accommodation.features.min' })
-            .optional(),
+        features: z.array(AccommodationFeatureSchema).optional(),
         /** List of amenities, at least 2 required */
-        amenities: z
-            .array(AccommodationAmenitySchema)
-            .min(2, { message: 'zodError.accommodation.amenities.min' })
-            .optional(),
+        amenities: z.array(AccommodationAmenitySchema).optional(),
         /** List of reviews, optional */
         reviews: z.array(AccommodationReviewSchema).optional(),
         /** Rating object, optional */

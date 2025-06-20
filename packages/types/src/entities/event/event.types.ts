@@ -29,6 +29,7 @@ export interface EventType
         WithSeo {
     id: EventId;
     slug: string;
+    name: string;
     summary: string;
     description?: string;
     media?: MediaType;
@@ -48,7 +49,7 @@ export interface EventType
     contact?: ContactInfoType;
 
     visibility: VisibilityEnum;
-    isFeatured?: boolean;
+    isFeatured: boolean;
 }
 
 /**
@@ -91,7 +92,7 @@ export type UpdateEventInputType = Partial<Writable<EventType>>;
 
 export type EventSummaryType = Pick<
     EventType,
-    'id' | 'slug' | 'summary' | 'category' | 'date' | 'media' | 'isFeatured'
+    'id' | 'slug' | 'name' | 'category' | 'date' | 'media' | 'isFeatured'
 >;
 
 /**

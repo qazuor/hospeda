@@ -49,14 +49,14 @@ export interface PostType
     relatedEventId?: EventId;
 
     visibility: VisibilityEnum;
-    isFeatured?: boolean;
-    isNews?: boolean;
-    isFeaturedInWebsite?: boolean;
+    isFeatured: boolean;
+    isNews: boolean;
+    isFeaturedInWebsite: boolean;
 
     expiresAt?: Date;
-    likes?: number;
-    comments?: number;
-    shares?: number;
+    likes: number;
+    comments: number;
+    shares: number;
 }
 
 /**

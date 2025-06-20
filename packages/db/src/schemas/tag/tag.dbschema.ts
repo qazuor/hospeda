@@ -10,6 +10,7 @@ export const tags: ReturnType<typeof pgTable> = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
         name: text('name').notNull(),
+        slug: text('slug').notNull().unique(),
         color: TagColorPgEnum('color').notNull(),
         icon: text('icon'),
         notes: text('notes'),

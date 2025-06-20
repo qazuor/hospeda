@@ -23,16 +23,12 @@ import type { UserSettingsType } from './user.settings.types.js';
  */
 export interface UserType extends WithAudit, WithLifecycleState, WithVisibility, WithAdminInfo {
     id: UserId;
-    userName: string;
-    password: string;
+    slug: string;
 
+    displayName?: string;
     firstName?: string;
     lastName?: string;
     birthDate?: Date;
-
-    email?: string;
-    emailVerified?: boolean;
-    phoneVerified?: boolean;
 
     contactInfo?: ContactInfoType;
     location?: FullLocationType;
@@ -59,8 +55,7 @@ export type PartialUserType = Partial<Writable<UserType>>;
  * @example
  * // Creating a new user (id and audit fields are optional)
  * const input: NewUserInputType = {
- *   userName: 'john_doe',
- *   password: 'securePassword',
+ *   slug: 'john-doe',
  *   role: 'role',
  * };
  */
@@ -83,7 +78,7 @@ export type UpdateUserInputType = Partial<Writable<UserType>>;
 
 export type UserProfileSummaryType = Pick<
     UserType,
-    'id' | 'userName' | 'firstName' | 'lastName' | 'profile' | 'socialNetworks'
+    'id' | 'firstName' | 'lastName' | 'profile' | 'socialNetworks'
 >;
 
 /**
@@ -105,12 +100,10 @@ export type UserWithRelationsType = UserType & {
  * @example
  * const publicUser = createPublicUser();
  * // publicUser.id === 'public' as UserId
- * // publicUser.userName === 'public'
  * // publicUser.role === 'public' as RoleEnum
  */
 export interface PublicUserType {
     id: UserId;
-    userName: string;
     role: RoleEnum;
 }
 
@@ -121,12 +114,10 @@ export interface PublicUserType {
  * @example
  * const publicUser = createPublicUser();
  * // publicUser.id === 'public' as UserId
- * // publicUser.userName === 'public'
  * // publicUser.role === 'public' as RoleEnum
  */
 export const createPublicUser = (): PublicUserType & { permissions: PermissionEnum[] } => ({
     id: '00000000-0000-4000-y000-000000000000' as UserId,
-    userName: 'public',
     role: RoleEnum.GUEST,
     permissions: []
 });
