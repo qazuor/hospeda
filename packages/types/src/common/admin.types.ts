@@ -1,6 +1,4 @@
-import type { WithTags } from './helpers.types.js';
-
-export interface AdminInfoType extends WithTags {
+export interface AdminInfoType {
     notes?: string;
     favorite: boolean;
 }
