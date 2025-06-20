@@ -1,16 +1,23 @@
 import { z } from 'zod';
 import {
+    AccommodationIdSchema,
+    DestinationIdSchema,
+    EventIdSchema,
+    PostSponsorshipIdSchema,
+    UserIdSchema
+} from '../../common/id.schema.js';
+import {
+    MediaSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema,
     WithModerationStatusSchema,
     WithSeoSchema,
-    WithTagsSchema
+    WithTagsSchema,
+    WithVisibilitySchema
 } from '../../common/index.js';
 import { PostCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.js';
-import { PostSponsorSchema } from './post.sponsor.schema.js';
-import { PostSponsorshipSchema } from './post.sponsorship.schema.js';
 
 /**
  * Post schema definition using Zod for validation.
@@ -22,28 +29,44 @@ export const PostSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithModerationStatusSchema)
     .merge(WithTagsSchema)
     .merge(WithSeoSchema)
+    .merge(WithVisibilitySchema)
     .extend({
+        slug: z
+            .string({
+                required_error: 'zodError.post.slug.required',
+                invalid_type_error: 'zodError.post.slug.invalidType'
+            })
+            .min(1, { message: 'zodError.post.slug.min' }),
         /** Post title, 3-150 characters */
         title: z
             .string()
             .min(3, { message: 'zodError.post.title.min' })
             .max(150, { message: 'zodError.post.title.max' }),
+        summary: z
+            .string()
+            .min(10, { message: 'zodError.post.summary.min' })
+            .max(200, { message: 'zodError.post.summary.max' }),
         /** Post content, 10-5000 characters */
         content: z
             .string()
             .min(10, { message: 'zodError.post.content.min' })
             .max(5000, { message: 'zodError.post.content.max' }),
+        media: MediaSchema,
         /** Author user ID */
-        authorId: z.string().uuid({ message: 'zodError.post.authorId.invalidUuid' }),
+        authorId: UserIdSchema,
         /** Post category, 3-50 characters */
-        category: z
-            .string()
-            .min(3, { message: 'zodError.post.category.min' })
-            .max(50, { message: 'zodError.post.category.max' }),
-        /** Sponsorship details, optional */
-        sponsorship: PostSponsorshipSchema.optional(),
-        /** Sponsor details, optional */
-        sponsor: PostSponsorSchema.optional()
+        category: PostCategoryEnumSchema,
+        sponsorshipId: PostSponsorshipIdSchema.optional(),
+        relatedDestinationId: DestinationIdSchema.optional(),
+        relatedAccommodationId: AccommodationIdSchema.optional(),
+        relatedEventId: EventIdSchema.optional(),
+        isFeatured: z.boolean(),
+        isNews: z.boolean(),
+        isFeaturedInWebsite: z.boolean(),
+        expiresAt: z.date().optional(),
+        likes: z.number().int(),
+        comments: z.number().int(),
+        shares: z.number().int()
     });
 
 // Input para filtros de búsqueda de posts

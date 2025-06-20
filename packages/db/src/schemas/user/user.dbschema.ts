@@ -7,7 +7,7 @@ import type {
     UserSettingsType
 } from '@repo/types';
 import { relations } from 'drizzle-orm';
-import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
 import { LifecycleStatusPgEnum, RolePgEnum, VisibilityPgEnum } from '../enums.dbschema.ts';
@@ -25,13 +25,11 @@ export const users: ReturnType<typeof pgTable> = pgTable(
     'users',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        userName: text('user_name').notNull().unique(),
-        password: text('password').notNull(),
+        slug: text('slug').notNull().unique(),
+        displayName: text('display_name'),
         firstName: text('first_name'),
         lastName: text('last_name'),
         birthDate: timestamp('birth_date', { withTimezone: true }),
-        emailVerified: boolean('email_verified').default(false).notNull(),
-        phoneVerified: boolean('phone_verified').default(false).notNull(),
         contactInfo: jsonb('contact_info').$type<ContactInfoType>(),
         location: jsonb('location').$type<FullLocationType>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetworkType>(),
@@ -49,7 +47,7 @@ export const users: ReturnType<typeof pgTable> = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table: typeof users) => ({
-        uniqueUserName: uniqueIndex('users_user_name_key').on(table.userName)
+        uniqueSlug: uniqueIndex('users_slug_key').on(table.slug)
     })
 );
 

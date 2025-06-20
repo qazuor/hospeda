@@ -24,14 +24,21 @@ export const events: ReturnType<typeof pgTable> = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
         slug: text('slug').notNull().unique(),
+        name: text('name').notNull(),
         summary: text('summary').notNull(),
         description: text('description'),
         media: jsonb('media').$type<MediaType>(),
         category: EventCategoryPgEnum('category').notNull(),
         date: jsonb('date').$type<EventDateType>().notNull(),
-        authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
-        locationId: uuid('location_id'),
-        organizerId: uuid('organizer_id'),
+        authorId: uuid('author_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'restrict' }),
+        locationId: uuid('location_id').references(() => eventLocations.id, {
+            onDelete: 'set null'
+        }),
+        organizerId: uuid('organizer_id').references(() => eventOrganizers.id, {
+            onDelete: 'set null'
+        }),
         pricing: jsonb('pricing').$type<EventPriceType>(),
         contact: jsonb('contact').$type<ContactInfoType>(),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),

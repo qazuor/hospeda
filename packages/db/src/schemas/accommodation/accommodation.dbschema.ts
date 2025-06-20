@@ -1,5 +1,6 @@
 import type {
     AccommodationPriceType,
+    AccommodationRatingType,
     AdminInfoType,
     ContactInfoType,
     ExtraInfoType,
@@ -50,10 +51,14 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
         location: jsonb('location').$type<FullLocationType>(),
         media: jsonb('media').$type<MediaType>(),
         isFeatured: boolean('is_featured').notNull().default(false),
-        ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'set null' }),
-        destinationId: uuid('destination_id').references(() => destinations.id, {
-            onDelete: 'set null'
-        }),
+        ownerId: uuid('owner_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'restrict' }),
+        destinationId: uuid('destination_id')
+            .notNull()
+            .references(() => destinations.id, {
+                onDelete: 'restrict'
+            }),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
         reviewsCount: integer('reviews_count').notNull().default(0),
@@ -68,7 +73,8 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         extraInfo: jsonb('extra_info').$type<ExtraInfoType>(),
-        schedule: jsonb('schedule').$type<ScheduleType>()
+        schedule: jsonb('schedule').$type<ScheduleType>(),
+        rating: jsonb('rating').$type<AccommodationRatingType>()
     },
     (table) => ({
         accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),

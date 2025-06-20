@@ -1,9 +1,9 @@
+import { TagsArraySchema } from '@repo/schemas/entities/tag/tag.schema.js';
 import { z } from 'zod';
 import { DestinationIdSchema } from '../../common/id.schema.js';
 import {
     LocationSchema,
     MediaSchema,
-    TagsArraySchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
@@ -16,6 +16,7 @@ import {
 } from '../../common/index.js';
 import { VisibilityEnumSchema } from '../../enums/index.js';
 import { DestinationAttractionSchema } from './destination.attraction.schema.js';
+import { DestinationRatingSchema } from './destination.rating.schema.js';
 import { DestinationReviewSchema } from './destination.review.schema.js';
 
 /**
@@ -58,20 +59,15 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
         /** Media object */
         media: MediaSchema,
         /** Whether the destination is featured, optional */
-        isFeatured: z.boolean().optional(),
-        /** Number of reviews, optional */
-        reviewsCount: z.number().optional(),
-        /** Average rating, optional */
-        averageRating: z.number().optional(),
+        isFeatured: z.boolean(),
         /** Number of accommodations, optional */
-        accommodationsCount: z.number().int().optional(),
+        accommodationsCount: z.number().int(),
         /** List of attractions, at least 3 required */
-        attractions: z
-            .array(DestinationAttractionSchema)
-            .min(3, { message: 'zodError.destination.attractions.min' })
-            .optional(),
+        attractions: z.array(DestinationAttractionSchema).optional(),
         /** List of reviews, optional */
-        reviews: z.array(DestinationReviewSchema).optional()
+        reviews: z.array(DestinationReviewSchema).optional(),
+        /** Rating object, optional */
+        rating: DestinationRatingSchema.optional()
     });
 
 // Input para filtros de búsqueda de destinos

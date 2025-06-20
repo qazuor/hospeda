@@ -12,7 +12,6 @@ import {
     WithVisibilitySchema
 } from '../../common/index.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
-import { StrongPasswordRegex } from '../../utils/utils.js';
 import { UserBookmarkSchema } from './user.bookmark.schema.js';
 import { UserProfileSchema } from './user.profile.schema.js';
 import { UserSettingsSchema } from './user.settings.schema.js';
@@ -28,20 +27,13 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithVisibilitySchema)
     .extend({
         id: UserIdSchema,
-        /** Username, 3-50 characters */
-        userName: z
+        slug: z.string().min(1, { message: 'zodError.common.slug.min' }),
+        /** Display name, optional */
+        displayName: z
             .string()
-            .min(3, { message: 'zodError.user.userName.min' })
-            .max(50, { message: 'zodError.user.userName.max' }),
-        /**
-         * User password (input only, not stored as plain text).
-         * Must be 8-20 characters, include uppercase, lowercase, number, and special character.
-         */
-        password: z
-            .string()
-            .min(8, { message: 'zodError.user.password.min' })
-            .max(20, { message: 'zodError.user.password.max' })
-            .regex(StrongPasswordRegex, { message: 'zodError.user.password.strong' }),
+            .min(2, { message: 'zodError.user.displayName.min' })
+            .max(50, { message: 'zodError.user.displayName.max' })
+            .optional(),
         /** First name, optional */
         firstName: z
             .string()
@@ -56,10 +48,6 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
             .optional(),
         /** Birth date as string, optional */
         birthDate: z.date().optional(),
-        /** Email verification status, optional */
-        emailVerified: z.boolean().optional(),
-        /** Phone verification status, optional */
-        phoneVerified: z.boolean().optional(),
         /** Contact info, optional */
         contactInfo: ContactInfoSchema.optional(),
         /** User location, optional */
@@ -79,11 +67,6 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
 
 // Input para filtros de búsqueda de usuarios
 export const UserFilterInputSchema = z.object({
-    userName: z
-        .string()
-        .min(3, { message: 'zodError.user.userName.min' })
-        .max(50, { message: 'zodError.user.userName.max' })
-        .optional(),
     firstName: z
         .string()
         .min(2, { message: 'zodError.user.firstName.min' })
@@ -94,14 +77,12 @@ export const UserFilterInputSchema = z.object({
         .min(2, { message: 'zodError.user.lastName.min' })
         .max(50, { message: 'zodError.user.lastName.max' })
         .optional(),
-    emailVerified: z.boolean().optional(),
-    phoneVerified: z.boolean().optional(),
     role: z.nativeEnum(RoleEnum).optional(),
     q: z.string().optional() // free text search
 });
 
 // Input para ordenamiento de resultados
 export const UserSortInputSchema = z.object({
-    sortBy: z.enum(['userName', 'createdAt', 'firstName', 'lastName']).optional(),
+    sortBy: z.enum(['createdAt', 'firstName', 'lastName']).optional(),
     order: z.enum(['asc', 'desc']).optional()
 });

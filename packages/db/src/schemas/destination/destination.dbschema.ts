@@ -1,4 +1,10 @@
-import type { AdminInfoType, BaseLocationType, MediaType, SeoType } from '@repo/types';
+import type {
+    AdminInfoType,
+    BaseLocationType,
+    DestinationRatingType,
+    MediaType,
+    SeoType
+} from '@repo/types';
 import { relations } from 'drizzle-orm';
 import {
     boolean,
@@ -45,7 +51,8 @@ export const destinations: ReturnType<typeof pgTable> = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
-        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING')
+        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
+        rating: jsonb('rating').$type<DestinationRatingType>()
     },
     (table) => ({
         destinations_isFeatured_idx: index('destinations_isFeatured_idx').on(table.isFeatured),

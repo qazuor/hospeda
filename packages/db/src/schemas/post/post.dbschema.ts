@@ -32,9 +32,13 @@ export const posts: ReturnType<typeof pgTable> = pgTable(
         title: text('title').notNull(),
         summary: text('summary').notNull(),
         content: text('content').notNull(),
-        media: jsonb('media').$type<MediaType>(),
-        authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
-        sponsorshipId: uuid('sponsorship_id'),
+        media: jsonb('media').$type<MediaType>().notNull(),
+        authorId: uuid('author_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'restrict' }),
+        sponsorshipId: uuid('sponsorship_id').references(() => postSponsorships.id, {
+            onDelete: 'set null'
+        }),
         relatedAccommodationId: uuid('related_accommodation_id').references(
             () => accommodations.id,
             {

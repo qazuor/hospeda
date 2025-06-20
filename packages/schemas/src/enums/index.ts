@@ -10,6 +10,6 @@ export * from './permission.enum.schema.js';
 export * from './post-category.enum.schema.js';
 export * from './recurrence.enum.schema.js';
 export * from './role.enum.schema.js';
-export * from './state.enum.schema.js';
+export * from './moderation-status.enum.schema.js';
 export * from './tag-color.enum.schema.js';
 export * from './visibility.enum.schema.js';
