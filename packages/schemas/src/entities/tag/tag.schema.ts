@@ -5,6 +5,7 @@ import {
     WithModerationStatusSchema,
     WithSeoSchema
 } from '@repo/schemas/common/helpers.schema.js';
+import { TagColorEnumSchema } from '@repo/schemas/enums/tag-color.enum.schema.js';
 import { z } from 'zod';
 
 export const TagSchema = WithIdSchema.merge(WithAuditSchema)
@@ -25,13 +26,7 @@ export const TagSchema = WithIdSchema.merge(WithAuditSchema)
                 invalid_type_error: 'zodError.tag.slug.invalidType'
             })
             .min(1, { message: 'zodError.tag.slug.min' }),
-        color: z
-            .string({
-                required_error: 'zodError.tag.color.required',
-                invalid_type_error: 'zodError.tag.color.invalidType'
-            })
-            .min(3, { message: 'zodError.tag.color.min' })
-            .max(20, { message: 'zodError.tag.color.max' }),
+        color: TagColorEnumSchema,
         icon: z
             .string({
                 required_error: 'zodError.tag.icon.required',

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UserIdSchema } from '../../common/id.schema.js';
+import { EventIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import {
     ContactInfoSchema,
     MediaSchema,
@@ -28,6 +28,7 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithSeoSchema)
     .merge(WithVisibilitySchema)
     .extend({
+        id: EventIdSchema,
         slug: z
             .string({
                 required_error: 'zodError.event.slug.required',
