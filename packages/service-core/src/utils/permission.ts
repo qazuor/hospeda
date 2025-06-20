@@ -1,9 +1,7 @@
+import { EntityPermissionReasonEnum, type PermissionEnum, RoleEnum } from '@repo/types';
 import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import type { PermissionEnum } from '@repo/types/enums/permission.enum';
-import { RoleEnum } from '@repo/types/enums/role.enum';
 import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
 import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
-import { EntityPermissionReasonEnum } from '../types';
 
 /**
  * Action types supported by the generic permission function.

@@ -1,5 +1,6 @@
+import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
-import { ServiceError, ServiceErrorCode } from '../types';
+import { ServiceError } from '../types';
 
 /**
  * Validates input data against a Zod schema.

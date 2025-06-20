@@ -1,25 +1,9 @@
-import type { PermissionEnum, RoleEnum } from '@repo/types';
-
-export enum EntityPermissionReasonEnum {
-    SUPER_ADMIN = 'SUPER_ADMIN',
-    ADMIN = 'ADMIN',
-    OWNER = 'OWNER',
-    PUBLIC_ACCESS = 'PUBLIC_ACCESS',
-    NOT_OWNER = 'NOT_OWNER',
-    NOT_ADMIN = 'NOT_ADMIN',
-    NOT_SUPER_ADMIN = 'NOT_SUPER_ADMIN',
-    NOT_PUBLIC = 'NOT_PUBLIC',
-    DELETED = 'DELETED',
-    ARCHIVED = 'ARCHIVED',
-    DRAFT = 'DRAFT',
-    REJECTED = 'REJECTED',
-    PENDING = 'PENDING',
-    APPROVED = 'APPROVED',
-    PRIVATE = 'PRIVATE',
-    RESTRICTED = 'RESTRICTED',
-    DENIED = 'DENIED',
-    MISSING_PERMISSION = 'MISSING_PERMISSION'
-}
+import type {
+    EntityPermissionReasonEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/types';
 
 /**
  * Represents an actor in the system (user or service) that can perform actions.
@@ -129,27 +113,6 @@ export type CanHardDeleteResult = {
     checkedPermission: PermissionEnum;
 };
 
-// --- Service Error Types ---
-
-/**
- * Error codes that can be returned by services.
- * @enum {string}
- */
-export enum ServiceErrorCode {
-    /** Input validation failed */
-    VALIDATION_ERROR = 'VALIDATION_ERROR',
-    /** Entity not found */
-    NOT_FOUND = 'NOT_FOUND',
-    /** User is not authenticated */
-    UNAUTHORIZED = 'UNAUTHORIZED',
-    /** User is not authorized to perform the action */
-    FORBIDDEN = 'FORBIDDEN',
-    /** Unexpected internal error */
-    INTERNAL_ERROR = 'INTERNAL_ERROR',
-    /** Entity or assignment already exists */
-    ALREADY_EXISTS = 'ALREADY_EXISTS'
-}
-
 /**
  * Custom error class for service errors.
  * @extends {Error}
@@ -171,6 +134,11 @@ export class ServiceError extends Error {
     }
 }
 
+export type PaginatedListOutput<T> = {
+    items: T[];
+    total: number;
+};
+
 // --- Model Interface ---
 
 export interface BaseModel<T> {
@@ -185,5 +153,5 @@ export interface BaseModel<T> {
     findAll(
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number }
-    ): Promise<T[] | { items: T[]; total: number }>;
+    ): Promise<PaginatedListOutput<T>>;
 }
