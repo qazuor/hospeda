@@ -73,6 +73,39 @@ export function toSlug(str: string, options?: SlugifyOptions): string {
 }
 
 /**
+ * Generates a unique slug from a string by checking for its existence.
+ * If the initial slug exists, it appends a numeric suffix until a unique slug is found.
+ *
+ * @param initialString - The string to be converted into a slug.
+ * @param checkExists - An async function that takes a slug string and returns `true` if it exists, `false` otherwise.
+ * @returns A promise that resolves to a unique slug string.
+ * @example
+ * const uniqueSlug = await createUniqueSlug('My Post', async (slug) => {
+ *   return !!(await db.post.findUnique({ where: { slug } }));
+ * });
+ */
+export async function createUniqueSlug(
+    initialString: string,
+    checkExists: (slug: string) => Promise<boolean>
+): Promise<string> {
+    if (!initialString) {
+        // Return a random string or handle as an error, depending on requirements
+        return randomString(12);
+    }
+
+    const baseSlug = toSlug(initialString);
+    let potentialSlug = baseSlug;
+    let counter = 2;
+
+    while (await checkExists(potentialSlug)) {
+        potentialSlug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+
+    return potentialSlug;
+}
+
+/**
  * Remove HTML tags from a string
  * @param html - HTML string
  * @returns Plain text string
