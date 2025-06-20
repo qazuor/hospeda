@@ -33,74 +33,58 @@ export abstract class BaseModel<T> {
     }
 
     /**
-     * Finds all entities matching the where clause.
-     * Si se pasan page y pageSize, devuelve { items, total } paginado. Si no, devuelve el array completo.
-     * @param where - The filter object
-     * @param options - Opcional: { page, pageSize }
-     * @param tx - Optional transaction client
-     * @returns Promise resolving to array o a objeto paginado
+     * Finds entities matching a where clause.
+     *
+     * If pagination options (`page`, `pageSize`) are provided, it returns a paginated result,
+     * including a total count of all matching records.
+     * If no pagination is provided, it returns all matching entities, and `total` will be the
+     * length of the returned `items` array.
+     *
+     * @param where - The filter object to apply.
+     * @param options - Optional pagination parameters: `{ page, pageSize }`.
+     * @param tx - Optional transaction client.
+     * @returns A promise resolving to an object containing the `items` array and `total` count.
      */
     async findAll(
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number },
         tx?: NodePgDatabase<typeof schema>
-    ): Promise<T[] | { items: T[]; total: number }> {
+    ): Promise<{ items: T[]; total: number }> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
-        if (options?.page && options?.pageSize) {
-            const offset = (options.page - 1) * options.pageSize;
-            try {
-                const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+        const page = options?.page;
+        const pageSize = options?.pageSize;
+        const isPaginated = page !== undefined && pageSize !== undefined;
+        const logContext = { where: safeWhere, page, pageSize };
+
+        try {
+            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+
+            if (isPaginated) {
+                const offset = (page - 1) * pageSize;
                 const [items, total] = await Promise.all([
-                    db
-                        .select()
-                        .from(this.table)
-                        .where(whereClause)
-                        .limit(options.pageSize)
-                        .offset(offset),
+                    db.select().from(this.table).where(whereClause).limit(pageSize).offset(offset),
                     this.count(safeWhere, tx)
                 ]);
+
+                const result = { items: items as T[], total };
                 try {
-                    logQuery(
-                        this.entityName,
-                        'findAll',
-                        { where: safeWhere, page: options.page, pageSize: options.pageSize },
-                        { items, total }
-                    );
+                    logQuery(this.entityName, 'findAll', logContext, result);
                 } catch {}
-                return { items: items as T[], total };
-            } catch (error) {
-                const err = error instanceof Error ? error : new Error(String(error));
-                try {
-                    logError(
-                        this.entityName,
-                        'findAll',
-                        { where: safeWhere, page: options.page, pageSize: options.pageSize },
-                        err
-                    );
-                } catch {}
-                throw new DbError(
-                    this.entityName,
-                    'findAll',
-                    { where: safeWhere, page: options.page, pageSize: options.pageSize },
-                    err.message
-                );
+                return result;
             }
-        } else {
+            const items = await db.select().from(this.table).where(whereClause);
+            const result = { items: items as T[], total: items.length };
             try {
-                const whereClause = buildWhereClause(safeWhere, this.table as unknown);
-                const result = await db.select().from(this.table).where(whereClause);
-                try {
-                    logQuery(this.entityName, 'findAll', safeWhere, result);
-                } catch {}
-                return result as T[];
-            } catch (error) {
-                const err = error instanceof Error ? error : new Error(String(error));
-                try {
-                    logError(this.entityName, 'findAll', safeWhere, err);
-                } catch {}
-                throw new DbError(this.entityName, 'findAll', safeWhere, err.message);
-            }
+                logQuery(this.entityName, 'findAll', { where: safeWhere }, result);
+            } catch {}
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findAll', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findAll', logContext, err.message);
         }
     }
 
