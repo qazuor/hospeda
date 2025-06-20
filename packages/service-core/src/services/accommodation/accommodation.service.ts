@@ -7,7 +7,7 @@ import type {
     UpdateAccommodationInputType
 } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types';
-import { toSlug } from '@repo/utils';
+import { createUniqueSlug } from '@repo/utils';
 import { BaseService } from '../../base/base.service';
 import {
     type Actor,
@@ -813,16 +813,9 @@ export class AccommodationService extends BaseService<
         name: string,
         checkSlugExists: (slug: string) => Promise<boolean>
     ): Promise<string> {
-        if (!type && !name) {
-            throw new Error('At least one of type or name must be provided to generate a slug');
-        }
-        const baseSlug = toSlug(`${type}-${name}`);
-        let slug = baseSlug;
-        let i = 2;
-        while (await checkSlugExists(slug)) {
-            slug = `${baseSlug}-${i++}`;
-        }
-        return slug;
+        // The combination of type and name creates the base for the slug.
+        const baseString = `${type} ${name}`;
+        return createUniqueSlug(baseString, checkSlugExists);
     }
 
     /**
@@ -831,18 +824,18 @@ export class AccommodationService extends BaseService<
      * @returns A filter object suitable for AccommodationModel.findAll
      */
     private buildAccommodationFilter(filters: SearchAccommodationFilters): Record<string, unknown> {
-        const filter: Record<string, unknown> = {};
-        if (filters.type) filter.type = filters.type;
-        if (filters.destinationId) filter.destinationId = filters.destinationId;
-        if (filters.name) filter.name = filters.name;
-        if (filters.slug) filter.slug = filters.slug;
+        const query: Record<string, unknown> = {};
+        if (filters.type) query.type = filters.type;
+        if (filters.destinationId) query.destinationId = filters.destinationId;
+        if (filters.name) query.name = filters.name;
+        if (filters.slug) query.slug = filters.slug;
         if (filters.amenityIds && filters.amenityIds.length > 0) {
-            filter['amenities.amenityId'] = { $in: filters.amenityIds };
+            query['amenities.amenityId'] = { $in: filters.amenityIds };
         }
         if (filters.featureIds && filters.featureIds.length > 0) {
-            filter['features.featureId'] = { $in: filters.featureIds };
+            query['features.featureId'] = { $in: filters.featureIds };
         }
-        return filter;
+        return query;
     }
 
     /**
