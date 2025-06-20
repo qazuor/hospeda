@@ -1,3 +1,4 @@
+import { TagSchema } from '@repo/schemas/entities/index.js';
 import { z } from 'zod';
 import {
     LifecycleStatusEnumSchema,
@@ -6,7 +7,6 @@ import {
 } from '../enums/index.js';
 import { AdminInfoSchema } from './admin.schema.js';
 import { IdSchema, UserIdSchema } from './id.schema.js';
-import { TagSchema } from './tag.schema.js';
 
 export const WithIdSchema = z.object({
     id: IdSchema
