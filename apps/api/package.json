@@ -10,7 +10,7 @@
         "clean": "rm -rf node_modules dist",
         "lint": "biome check .",
         "format": "biome format --write .",
-        "check-types": "tsc --noEmit"
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
         "@clerk/backend": "^1.32.3",
