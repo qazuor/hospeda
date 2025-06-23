@@ -11,7 +11,7 @@
     "scripts": {
         "build:styles": "tailwindcss -i ./src/styles.css -o ./dist/index.css",
         "build:components": "tsc",
-        "check-types": "tsc --noEmit",
+        "typecheck": "tsc --noEmit",
         "dev:styles": "tailwindcss -i ./src/styles.css -o ./dist/index.css --watch",
         "dev:components": "tsc --watch",
         "lint": "biome check .",

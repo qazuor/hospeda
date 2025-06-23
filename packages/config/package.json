@@ -23,7 +23,7 @@
     "scripts": {
         "build": "tsup src/index.ts src/client.ts src/server.ts --format esm --dts",
         "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
-        "check-types": "tsc --noEmit",
+        "typecheck": "tsc --noEmit",
         "lint": "biome check .",
         "format": "biome format --write .",
         "check": "biome check --write .",

@@ -17,11 +17,13 @@
         "build": "turbo run build",
         "dev": "turbo run dev",
         "lint": "turbo run lint",
-        "format": "biome format --write .",
+        "format": "turbo run format",
+        "clean": "turbo run clean",
+        "test": "turbo run test",
+        "test:watch": "turbo run test:watch",
+        "test:coverage": "turbo run test:coverage",
         "check": "biome check --write .",
-        "clean": "turbo clean && rm -rf node_modules",
-        "check-types": "turbo run check-types",
-        "test": "turbo test",
+        "typecheck": "turbo run check-types",
         "prepare": "husky install",
         "build:api": "pnpm --filter hospeda-api build",
         "prepare:api:prod": "pnpm exec tsx scripts/generate-api-prod-package.ts",
@@ -43,5 +45,6 @@
     },
     "dependencies": {
         "zod": "^3.24.4"
-    }
+    },
+    "workspaces": ["apps/*", "packages/*"]
 }
