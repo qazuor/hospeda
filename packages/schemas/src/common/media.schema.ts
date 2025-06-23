@@ -1,7 +1,9 @@
 import { z } from 'zod';
-import { WithModerationStatusSchema, WithTagsSchema } from './helpers.schema.js';
+import { ModerationStatusEnumSchema } from '../enums/index.js';
+declare const TagSchema: z.ZodTypeAny;
 
-export const ImageSchema = WithModerationStatusSchema.merge(WithTagsSchema).extend({
+export const ImageSchema = z.object({
+    moderationState: ModerationStatusEnumSchema,
     url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
     caption: z
         .string({
@@ -18,10 +20,12 @@ export const ImageSchema = WithModerationStatusSchema.merge(WithTagsSchema).exte
         })
         .min(10, { message: 'zodError.common.media.image.description.min' })
         .max(300, { message: 'zodError.common.media.image.description.max' })
-        .optional()
+        .optional(),
+    tags: z.array(z.lazy(() => TagSchema)).optional()
 });
 
-export const VideoSchema = WithModerationStatusSchema.merge(WithTagsSchema).extend({
+export const VideoSchema = z.object({
+    moderationState: ModerationStatusEnumSchema,
     url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
     caption: z
         .string({
@@ -38,7 +42,8 @@ export const VideoSchema = WithModerationStatusSchema.merge(WithTagsSchema).exte
         })
         .min(10, { message: 'zodError.common.media.video.description.min' })
         .max(300, { message: 'zodError.common.media.video.description.max' })
-        .optional()
+        .optional(),
+    tags: z.array(z.lazy(() => TagSchema)).optional()
 });
 
 export const MediaSchema = z.object({

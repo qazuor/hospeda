@@ -1,12 +1,21 @@
 import { z } from 'zod';
-import { PriceSchema, WithAdminInfoSchema } from '../../common/index.js';
+import { AdminInfoSchema } from '../../common/admin.schema.js';
+import { PriceSchema } from '../../common/price.schema.js';
+import { ModerationStatusEnumSchema } from '../../enums/index.js';
 import { AmenitySchema } from './amenity.schema.js';
 
 /**
- * Accommodation Amenity schema definition using Zod for validation.
- * Represents an amenity associated with an accommodation, including cost and optionality.
+ * Note: This schema is defined by explicitly listing all properties instead of merging
+ * helper schemas. This approach is a deliberate architectural choice to prevent
+ * circular dependency issues that can arise in testing frameworks like Vitest.
  */
-export const AccommodationAmenitySchema = WithAdminInfoSchema.extend({
+export const AccommodationAmenitySchema = z.object({
+    // From WithModerationStatusSchema
+    moderationState: ModerationStatusEnumSchema,
+    // From WithAdminInfoSchema
+    adminInfo: AdminInfoSchema.optional(),
+
+    // Own Properties
     /** Accommodation ID this amenity belongs to */
     accommodationId: z.string({
         required_error: 'zodError.accommodation.amenity.accommodationId.required',
