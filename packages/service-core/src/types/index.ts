@@ -1,9 +1,27 @@
 import type {
+    BaseSearchSchema,
+    PaginationSchema,
+    SortDirectionSchema,
+    SortSchema
+} from '@repo/schemas';
+import type {
     EntityPermissionReasonEnum,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/types';
+import type { z } from 'zod';
+import type { ServiceLogger } from '../utils/service-logger';
+
+export type { ServiceLogger };
+
+/**
+ * Represents the shared context for all services.
+ * @property {ServiceLogger} logger - The logger instance.
+ */
+export type ServiceContext = {
+    logger: ServiceLogger;
+};
 
 /**
  * Represents an actor in the system (user or service) that can perform actions.
@@ -44,7 +62,7 @@ export type ServiceOutput<T> =
           /** The error information */
           error: {
               /** Error code */
-              code: string;
+              code: ServiceErrorCode;
               /** Error message */
               message: string;
               /** Optional additional details for debugging or context */
@@ -155,3 +173,9 @@ export interface BaseModel<T> {
         options?: { page?: number; pageSize?: number }
     ): Promise<PaginatedListOutput<T>>;
 }
+
+// --- Search Types ---
+export type SortDirectionType = z.infer<typeof SortDirectionSchema>;
+export type SortType = z.infer<typeof SortSchema>;
+export type PaginationType = z.infer<typeof PaginationSchema>;
+export type BaseSearchType = z.infer<typeof BaseSearchSchema>;

@@ -2,15 +2,21 @@ import type { Actor } from '../types';
 import { serviceLogger as defaultLogger } from './service-logger';
 
 let _logger = defaultLogger;
+
+/**
+ * Overrides the default logger instance with a custom one.
+ * Useful for testing or integrating with a different logging system.
+ * @param logger The new logger instance to use. It must conform to the `serviceLogger` interface.
+ */
 export const setLogger = (logger: typeof defaultLogger) => {
     _logger = logger;
 };
 
 /**
- * Logs the start of a method execution.
- * @param {string} methodName - The name of the method being executed
- * @param {unknown} input - The input data for the method
- * @param {Actor} actor - The actor executing the method
+ * Logs the start of a service method execution, including input and actor details.
+ * @param methodName - The full name of the method being executed (e.g., 'accommodation.create').
+ * @param input - The input data or parameters for the method.
+ * @param actor - The actor (user or system) executing the method.
  */
 export const logMethodStart = (methodName: string, input: unknown, actor: Actor): void => {
     _logger.info(
@@ -19,20 +25,20 @@ export const logMethodStart = (methodName: string, input: unknown, actor: Actor)
 };
 
 /**
- * Logs the successful completion of a method execution.
- * @param {string} methodName - The name of the method that completed
- * @param {unknown} output - The output data from the method
+ * Logs the successful completion of a service method execution, including the output.
+ * @param methodName - The full name of the method that completed.
+ * @param output - The output data or result from the method.
  */
 export const logMethodEnd = (methodName: string, output: unknown): void => {
     _logger.info(`Completed ${methodName} | output: ${JSON.stringify(output)}`);
 };
 
 /**
- * Logs an error that occurred during method execution.
- * @param {string} methodName - The name of the method where the error occurred
- * @param {Error} error - The error that occurred
- * @param {unknown} input - The input data that caused the error
- * @param {Actor} actor - The actor that was executing the method
+ * Logs an error that occurred during a service method execution.
+ * @param methodName - The name of the method where the error occurred.
+ * @param error - The error object that was caught.
+ * @param input - The input data that may have caused the error.
+ * @param actor - The actor that was executing the method.
  */
 export const logError = (methodName: string, error: Error, input: unknown, actor: Actor): void => {
     _logger.error(
@@ -41,11 +47,12 @@ export const logError = (methodName: string, error: Error, input: unknown, actor
 };
 
 /**
- * Logs a permission check.
- * @param {string} permission - The permission being checked
- * @param {Actor} actor - The actor being checked
- * @param {unknown} input - The input data for the check
- * @param {string} [error] - Optional error message if permission was denied
+ * Logs a specific permission check event.
+ * This is useful for auditing and debugging access control.
+ * @param permission - The permission being checked (e.g., 'ACCOMMODATION_UPDATE_ANY').
+ * @param actor - The actor whose permissions are being checked.
+ * @param input - The input data related to the permission check.
+ * @param error - Optional error message if the permission was denied.
  */
 export const logPermission = (
     permission: string,
@@ -62,12 +69,12 @@ export const logPermission = (
 };
 
 /**
- * Logs when access is denied.
- * @param {Actor} actor - The actor that was denied access
- * @param {unknown} input - The input data for the denied action
- * @param {unknown} entity - The entity that was accessed
- * @param {string} reason - The reason for denial
- * @param {string} permission - The permission that was denied
+ * Logs an event where access was explicitly denied.
+ * @param actor - The actor that was denied access.
+ * @param input - The input data for the action that was denied.
+ * @param entity - The entity being accessed.
+ * @param reason - The reason why access was denied.
+ * @param permission - The permission that was required but not met.
  */
 export const logDenied = (
     actor: Actor,
@@ -82,12 +89,12 @@ export const logDenied = (
 };
 
 /**
- * Logs when access is granted.
- * @param {Actor} actor - The actor that was granted access
- * @param {unknown} input - The input data for the granted action
- * @param {unknown} entity - The entity that was accessed
- * @param {string} permission - The permission that was granted
- * @param {string} reason - The reason for granting access
+ * Logs an event where access was explicitly granted.
+ * @param actor - The actor that was granted access.
+ * @param input - The input data for the action that was granted.
+ * @param entity - The entity being accessed.
+ * @param permission - The permission that was successfully met.
+ * @param reason - The reason why access was granted.
  */
 export const logGrant = (
     actor: Actor,

@@ -1,836 +1,1039 @@
-import { RoleEnum, createPublicUser } from '@repo/types';
-import type { z } from 'zod';
+import type { UserId } from '@repo/types';
+import { ServiceErrorCode, VisibilityEnum } from '@repo/types';
+import type { ZodTypeAny } from 'zod';
+import { type AnyZodObject, z } from 'zod';
 import {
     type Actor,
     type BaseModel,
-    type CanCreateResult,
-    type CanDeleteResult,
-    type CanHardDeleteResult,
-    type CanRestoreResult,
-    type CanUpdateResult,
-    type CanViewResult,
-    EntityPermissionReasonEnum,
+    type PaginatedListOutput,
     ServiceError,
-    ServiceErrorCode,
     type ServiceInput,
+    type ServiceLogger,
     type ServiceOutput
 } from '../types';
-import {
-    logDenied,
-    logError,
-    logGrant,
-    logMethodEnd,
-    logMethodStart,
-    logPermission
-} from '../utils/logging';
-import { validateActor, validateInput } from '../utils/validation';
+import { logError, logMethodEnd, logMethodStart, validateActor, validateEntity } from '../utils';
+
+type ListOptions = { page?: number; pageSize?: number };
+
+interface NormalizerSet<TCreate, TUpdate> {
+    create?: (data: TCreate, actor: Actor) => TCreate | Promise<TCreate>;
+    update?: (data: TUpdate, actor: Actor) => TUpdate | Promise<TUpdate>;
+    list?: (params: ListOptions, actor: Actor) => ListOptions | Promise<ListOptions>;
+    view?: (
+        field: string,
+        value: unknown,
+        actor: Actor
+    ) => { field: string; value: unknown } | Promise<{ field: string; value: unknown }>;
+}
 
 /**
  * Abstract base class for all services.
- * Provides common functionality for CRUD operations, permission checks, normalization, and error handling.
+ * It provides a standardized structure for request processing, including logging,
+ * validation, normalization, permission checks, and error handling. Each concrete
+ * service must extend this class and implement its abstract properties and methods.
  *
- * @template T - The type of the entity
- * @template CreateInput - The type of the create input
- * @template UpdateInput - The type of the update input
- * @template ListInput - The type of the list input
- * @template ListOutput - The type of the list output
+ * @template TEntity The primary entity type this service manages (e.g., `AccommodationType`).
+ * @template TModel The Drizzle ORM model type for the entity (e.g., `AccommodationModel`).
+ * @template TCreateSchema The Zod schema for validating entity creation input.
+ * @template TUpdateSchema The Zod schema for validating entity update input.
+ * @template TSearchSchema The Zod schema for validating entity search input.
  */
-export abstract class BaseService<T, CreateInput, UpdateInput, ListInput, ListOutput> {
+export abstract class BaseService<
+    TEntity extends { id: string; deletedAt?: Date | null },
+    TModel extends BaseModel<TEntity>,
+    TCreateSchema extends AnyZodObject,
+    TUpdateSchema extends AnyZodObject,
+    TSearchSchema extends AnyZodObject
+> {
     /**
-     * Creates a new BaseService.
-     * @param entityName - The name of the entity for logging and error messages
+     * The name of the entity, used for logging and error messages.
+     * Must be defined by the concrete service class.
+     * @example 'accommodation'
      */
-    constructor(protected readonly entityName: string) {}
+    protected abstract readonly entityName: string;
 
     /**
-     * The model instance for database operations.
+     * The Drizzle ORM model instance for database operations.
+     * It must be initialized in the constructor of the concrete service class.
      */
-    protected abstract model: BaseModel<T>;
-    /**
-     * The Zod schema for input validation.
-     */
-    protected abstract inputSchema: z.ZodSchema<CreateInput>;
+    protected abstract readonly model: TModel;
 
     /**
-     * Roles allowed to perform hard delete. Can be overridden by each service.
+     * The logger instance for this service.
+     * It must be initialized in the constructor of the concrete service class.
      */
-    protected hardDeleteRoles: RoleEnum[] = [RoleEnum.SUPER_ADMIN];
-
-    // --- Abstract Methods ---
+    protected abstract readonly logger: ServiceLogger;
 
     /**
-     * Checks if an actor can view an entity.
-     * @param actor - The actor to check
-     * @param entity - The entity to check
-     * @returns The result of the permission check
+     * Zod schema for validating the input of the `create` method.
+     * Must be defined by the concrete service class.
      */
-    protected abstract canViewEntity(actor: Actor, entity: T): Promise<CanViewResult>;
+    protected abstract readonly createSchema: TCreateSchema;
 
     /**
-     * Checks if an actor can update an entity.
-     * @param actor - The actor to check
-     * @param entity - The entity to check
-     * @returns The result of the permission check
+     * Zod schema for validating the input of the `update` method.
+     * Must be defined by the concrete service class.
      */
-    protected abstract canUpdateEntity(actor: Actor, entity: T): Promise<CanUpdateResult>;
+    protected abstract readonly updateSchema: TUpdateSchema;
 
     /**
-     * Checks if an actor can delete an entity.
-     * @param actor - The actor to check
-     * @param entity - The entity to check
-     * @returns The result of the permission check
+     * Zod schema for validating the input of the `search` method.
+     * Must be defined by the concrete service class.
      */
-    protected abstract canDeleteEntity(actor: Actor, entity: T): Promise<CanDeleteResult>;
+    protected abstract readonly searchSchema: TSearchSchema;
 
     /**
-     * Checks if an actor can create an entity.
-     * @param actor - The actor to check
-     * @returns The result of the permission check
+     * An optional object containing normalization functions that are automatically
+     * applied by the BaseService before the lifecycle hooks (`_before...`) are called.
+     * @example
+     * protected normalizers = {
+     *   create: normalizeCreateInput,
+     *   update: normalizeUpdateInput,
+     * };
      */
-    protected abstract canCreateEntity(actor: Actor): Promise<CanCreateResult>;
+    protected normalizers?: NormalizerSet<z.infer<TCreateSchema>, z.infer<TUpdateSchema>>;
+
+    // --- Permissions Hooks ---
 
     /**
-     * Checks if an actor can restore an entity.
-     * @param actor - The actor to check
-     * @param entity - The entity to check
-     * @returns The result of the permission check
+     * Checks if the actor has permission to create an entity with the given data.
+     * This hook is the first step in the `create` method's execution pipeline.
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @param data The validated input data for the new entity.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected abstract canRestoreEntity(actor: Actor, entity: T): Promise<CanRestoreResult>;
+    protected abstract _canCreate(actor: Actor, data: z.infer<TCreateSchema>): Promise<void> | void;
 
     /**
-     * Checks if an actor can hard delete an entity.
-     * @param actor - The actor to check
-     * @param entity - The entity to check
-     * @returns The result of the permission check
+     * Checks if the actor has permission to update a given entity.
+     * This hook is called after the entity is fetched but before any update is applied.
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @param entity The entity that is about to be updated.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected abstract canHardDeleteEntity(actor: unknown, entity: T): CanHardDeleteResult;
+    protected abstract _canUpdate(actor: Actor, entity: TEntity): Promise<void> | void;
 
     /**
-     * Normalizes the input for creating an entity. Override if you need to transform or enrich the input.
-     * @param input - The input to normalize
-     * @returns The normalized input
+     * Checks if the actor has permission to soft-delete an entity.
+     * This hook is called after the entity is fetched but before it is marked as deleted.
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @param entity The entity that is about to be soft-deleted.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected async normalizeCreateInput(input: CreateInput): Promise<CreateInput> {
-        return input;
-    }
+    protected abstract _canSoftDelete(actor: Actor, entity: TEntity): Promise<void> | void;
 
     /**
-     * Normalizes the input for updating an entity. Override if you need to transform or enrich the input.
-     * @param input - The input to normalize
-     * @returns The normalized input
+     * Checks if the actor has permission to permanently delete an entity.
+     * This is a sensitive operation and should be protected accordingly.
+     * This hook is called after the entity is fetched but before it is hard-deleted.
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @param entity The entity that is about to be hard-deleted.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected async normalizeUpdateInput(input: UpdateInput): Promise<UpdateInput> {
-        return input;
-    }
+    protected abstract _canHardDelete(actor: Actor, entity: TEntity): Promise<void> | void;
 
     /**
-     * Normalizes the input for listing entities. Override if you need to transform or enrich the input.
-     * @param input - The input to normalize
-     * @returns The normalized input
+     * Checks if the actor has permission to restore a soft-deleted entity.
+     * This hook is called after the entity is fetched but before it is restored.
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @param entity The entity that is about to be restored.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected async normalizeListInput(input: ListInput): Promise<ListInput> {
-        return input;
-    }
+    protected abstract _canRestore(actor: Actor, entity: TEntity): Promise<void> | void;
 
     /**
-     * Default implementation for soft delete update.
-     *
-     * This cast is safe because all domain models are expected to have 'deletedAt' and 'deletedById' fields for soft deletion.
-     * If your model does not have these fields, override this method in your service.
-     *
-     * @param actor - The actor performing the soft delete
-     * @returns Partial<T> with soft delete fields set
+     * Checks if the actor has permission to view a specific entity.
+     * This hook is called after an entity is fetched from the database, allowing for
+     * checks based on entity properties (e.g., ownership, visibility).
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @param entity The entity that has been fetched.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected buildSoftDeleteUpdate(actor: { id: string }): Partial<T> {
-        // Safe cast: all domain models are expected to have deletedAt and deletedById for soft deletion
-        return { deletedAt: new Date(), deletedById: actor.id } as unknown as Partial<T>;
-    }
+    protected abstract _canView(actor: Actor, entity: TEntity): Promise<void> | void;
 
     /**
-     * Default implementation for restore update.
-     *
-     * This cast is safe because all domain models are expected to have 'deletedAt' and 'deletedById' fields for restoration.
-     * If your model does not have these fields, override this method in your service.
-     *
-     * @param _actor - The actor performing the restore
-     * @returns Partial<T> with restore fields set
+     * Checks if the actor has permission to list entities.
+     * This hook is called before any database query is made for a list operation.
+     * It typically checks for general permissions (e.g., `CAN_LIST_USERS`).
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected buildRestoreUpdate(_actor: { id: string }): Partial<T> {
-        // Safe cast: all domain models are expected to have deletedAt and deletedById for restoration
-        return { deletedAt: null, deletedById: null } as unknown as Partial<T>;
-    }
-
-    // --- Protected Methods ---
+    protected abstract _canList(actor: Actor): Promise<void> | void;
 
     /**
-     * Validates the actor object. Throws if invalid.
-     * @param actor - The actor to validate
+     * Checks if the actor has permission to search for entities.
+     * This hook is called before any database query is made for a search operation.
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected async validateActor(actor: unknown): Promise<void> {
-        validateActor(actor);
-    }
+    protected abstract _canSearch(actor: Actor): Promise<void> | void;
 
     /**
-     * Logs the start of a method execution.
-     * @param method - The method name
-     * @param input - The input data
-     * @param actor - The actor
+     * Checks if the actor has permission to count entities.
+     * This hook is called before any database query is made for a count operation.
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected logMethodStart(method: string, input: unknown, actor: Actor): void {
-        logMethodStart(method, input, actor);
-    }
+    protected abstract _canCount(actor: Actor): Promise<void> | void;
 
     /**
-     * Logs the end of a method execution.
-     * @param method - The method name
-     * @param output - The output data
+     * Checks if an actor can update the visibility of a specific entity.
+     * This hook is called after the entity is fetched, allowing for fine-grained control.
+     * It should throw a `ServiceError` with a `FORBIDDEN` code if permission is denied.
+     * @param actor The user or system performing the action.
+     * @param entity The entity being updated.
+     * @param newVisibility The new visibility state being applied.
+     * @throws {ServiceError} If the permission check fails.
      */
-    protected logMethodEnd(method: string, output: unknown): void {
-        logMethodEnd(method, output);
-    }
-
-    /**
-     * Logs an error during method execution.
-     * @param method - The method name
-     * @param error - The error
-     * @param input - The input data
-     * @param actor - The actor
-     */
-    protected logError(method: string, error: Error, input: unknown, actor: Actor): void {
-        logError(method, error, input, actor);
-    }
-
-    /**
-     * Logs a permission check.
-     * @param permission - The permission name
-     * @param actor - The actor
-     * @param input - The input data
-     * @param error - The error message (if any)
-     */
-    protected logPermission(
-        permission: string,
+    protected abstract _canUpdateVisibility(
         actor: Actor,
-        input?: unknown,
-        error?: string
-    ): void {
-        logPermission(permission, actor, input, error);
-    }
+        entity: TEntity,
+        newVisibility: VisibilityEnum
+    ): Promise<void> | void;
+
+    // --- Lifecycle Hooks ---
 
     /**
-     * Logs a denied permission.
-     * @param actor - The actor
-     * @param input - The input data
-     * @param entity - The entity
-     * @param reason - The reason for denial
-     * @param permission - The permission name (optional)
+     * This hook is executed after data normalization but before the `create` operation.
+     * Override this method in subclasses to add custom logic, such as hashing a password or generating a slug.
+     * The returned object will be merged with the input data.
+     * @param data The normalized data for the new entity.
+     * @param _actor The user or system performing the action.
+     * @returns A promise resolving to a partial entity object with the processed data.
      */
-    protected logDenied(
-        actor: Actor,
-        input: unknown,
-        entity: unknown,
-        reason: string,
-        permission?: string
-    ): void {
-        logDenied(actor, input, entity, reason, permission ?? '');
+    protected async _beforeCreate(
+        data: z.infer<TCreateSchema>,
+        _actor: Actor
+    ): Promise<Partial<TEntity>> {
+        return data as Partial<TEntity>;
     }
 
     /**
-     * Logs a granted permission.
-     * @param actor - The actor
-     * @param input - The input data
-     * @param entity - The entity
-     * @param permission - The permission name
-     * @param reason - The reason for grant
+     * This hook is executed after an entity has been successfully created and fetched from the database.
+     * Override this method to perform side effects, like sending a notification or logging an audit trail.
+     * @param entity The newly created entity.
+     * @param _actor The user or system performing the action.
+     * @returns A promise resolving to the created entity, allowing for final modifications if needed.
      */
-    protected logGrant(
-        actor: Actor,
-        input: unknown,
-        entity: unknown,
-        permission: string,
-        reason: string
-    ): void {
-        logGrant(actor, input, entity, permission, reason);
+    protected async _afterCreate(entity: TEntity, _actor: Actor): Promise<TEntity> {
+        return entity;
     }
 
     /**
-     * Executes a handler with logging, actor validation, and input validation (optional).
-     * Centralizes try/catch/log/validate pattern for public methods.
+     * This hook is executed after data normalization but before the `update` operation.
+     * Override this method to add custom logic, such as handling special fields or logging pre-update state.
+     * @param data The normalized update data.
+     * @param _actor The user or system performing the action.
+     * @returns A promise resolving to a partial entity object with the processed data.
+     */
+    protected async _beforeUpdate(
+        data: z.infer<TUpdateSchema>,
+        _actor: Actor
+    ): Promise<Partial<TEntity>> {
+        return data as Partial<TEntity>;
+    }
+
+    /**
+     * This hook is executed after an entity has been successfully updated.
+     * Override this method to perform side effects, such as cache invalidation or sending notifications.
+     * @param entity The updated entity.
+     * @param _actor The user or system performing the action.
+     * @returns A promise resolving to the updated entity.
+     */
+    protected async _afterUpdate(entity: TEntity, _actor: Actor): Promise<TEntity> {
+        return entity;
+    }
+
+    /**
+     * This hook is executed after data normalization but before fetching an entity.
+     * Useful for modifying the query parameters before the database is hit.
+     * @param field The field to query by.
+     * @param value The value to match.
+     * @param _actor The user or system performing the action.
+     * @returns A promise resolving to an object with the (potentially modified) field and value.
+     */
+    protected async _beforeGetByField(
+        field: string,
+        value: unknown,
+        _actor: Actor
+    ): Promise<{ field: string; value: unknown }> {
+        return { field, value };
+    }
+
+    /**
+     * Lifecycle hook executed after an entity has been fetched.
+     * @param entity The fetched entity, or null if not found.
+     * @param _actor The user or system performing the action.
+     * @returns The fetched entity or null.
+     */
+    protected async _afterGetByField(
+        entity: TEntity | null,
+        _actor: Actor
+    ): Promise<TEntity | null> {
+        return entity;
+    }
+
+    /**
+     * Lifecycle hook executed after normalization but before listing entities.
+     * @param options The pagination options for the query.
+     * @param _actor The user or system performing the action.
+     * @returns The processed pagination options.
+     */
+    protected async _beforeList(
+        options: { page?: number; pageSize?: number },
+        _actor: Actor
+    ): Promise<{ page?: number; pageSize?: number }> {
+        return options;
+    }
+
+    /**
+     * Lifecycle hook executed after a list of entities has been fetched.
+     * @param result The paginated list of entities.
+     * @param _actor The user or system performing the action.
+     * @returns The paginated list of entities.
+     */
+    protected async _afterList(
+        result: PaginatedListOutput<TEntity>,
+        _actor: Actor
+    ): Promise<PaginatedListOutput<TEntity>> {
+        return result;
+    }
+
+    /**
+     * Lifecycle hook executed before an entity is soft-deleted.
+     * @param id The ID of the entity to soft-delete.
+     * @param _actor The user or system performing the action.
+     * @returns The ID of the entity.
+     */
+    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+        return id;
+    }
+
+    /**
+     * Lifecycle hook executed after an entity is soft-deleted.
+     * @param result An object containing the count of affected rows.
+     * @param _actor The user or system performing the action.
+     * @returns The result object.
+     */
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        return result;
+    }
+
+    /**
+     * Lifecycle hook executed before an entity is permanently deleted.
+     * @param id The ID of the entity to hard-delete.
+     * @param _actor The user or system performing the action.
+     * @returns The ID of the entity.
+     */
+    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+        return id;
+    }
+
+    /**
+     * Lifecycle hook executed after an entity is permanently deleted.
+     * @param result An object containing the count of affected rows.
+     * @param _actor The user or system performing the action.
+     * @returns The result object.
+     */
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        return result;
+    }
+
+    /**
+     * Lifecycle hook executed before an entity is restored.
+     * @param id The ID of the entity to restore.
+     * @param _actor The user or system performing the action.
+     * @returns The ID of the entity.
+     */
+    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+        return id;
+    }
+
+    /**
+     * Lifecycle hook executed after an entity is restored.
+     * @param result An object containing the count of affected rows.
+     * @param _actor The user or system performing the action.
+     * @returns The result object.
+     */
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        return result;
+    }
+
+    /**
+     * Lifecycle hook executed before searching for entities.
+     * @param params The search parameters.
+     * @param _actor The user or system performing the action.
+     * @returns The processed search parameters.
+     */
+    protected async _beforeSearch(
+        params: z.infer<TSearchSchema>,
+        _actor: Actor
+    ): Promise<z.infer<TSearchSchema>> {
+        return params;
+    }
+
+    /**
+     * Lifecycle hook executed after a search has been performed.
+     * @param result The paginated list of found entities.
+     * @param _actor The user or system performing the action.
+     * @returns The paginated list of entities.
+     */
+    protected async _afterSearch(
+        result: PaginatedListOutput<TEntity>,
+        _actor: Actor
+    ): Promise<PaginatedListOutput<TEntity>> {
+        return result;
+    }
+
+    /**
+     * Lifecycle hook executed before counting entities.
+     * @param params The search parameters, only filters are typically used.
+     * @param _actor The user or system performing the action.
+     * @returns The processed parameters.
+     */
+    protected async _beforeCount(
+        params: z.infer<TSearchSchema>,
+        _actor: Actor
+    ): Promise<z.infer<TSearchSchema>> {
+        return params;
+    }
+
+    /**
+     * Lifecycle hook executed after a count has been performed.
+     * @param result The count result.
+     * @param _actor The user or system performing the action.
+     * @returns The count result.
+     */
+    protected async _afterCount(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        return result;
+    }
+
+    /**
+     * Lifecycle hook executed before updating an entity's visibility.
+     * @param entity The entity being updated.
+     * @param newVisibility The new visibility state.
+     * @param _actor The user or system performing the action.
+     * @returns The new visibility state.
+     */
+    protected async _beforeUpdateVisibility(
+        _entity: TEntity,
+        newVisibility: VisibilityEnum,
+        _actor: Actor
+    ): Promise<VisibilityEnum> {
+        return newVisibility;
+    }
+
+    /**
+     * Lifecycle hook executed after updating an entity's visibility.
+     * @param entity The updated entity.
+     * @param _actor The user or system performing the action.
+     * @returns The updated entity.
+     */
+    protected async _afterUpdateVisibility(entity: TEntity, _actor: Actor): Promise<TEntity> {
+        return entity;
+    }
+
+    // --- Core Logic ---
+
+    /**
+     * Abstract method to be implemented by child services to execute the actual search query.
+     * This method is responsible for translating the validated search parameters into a database query.
+     * @param params The validated and processed search parameters.
+     * @param actor The user or system performing the action.
+     * @returns A paginated list of entities matching the search criteria.
+     * @protected
+     */
+    protected abstract _executeSearch(
+        params: z.infer<TSearchSchema>,
+        actor: Actor
+    ): Promise<PaginatedListOutput<TEntity>>;
+
+    /**
+     * Abstract method to be implemented by child services to execute the count query.
+     * @param params The validated search parameters (filters).
+     * @param actor The user or system performing the action.
+     * @returns The total count of entities matching the criteria.
+     * @protected
+     */
+    protected abstract _executeCount(
+        params: z.infer<TSearchSchema>,
+        actor: Actor
+    ): Promise<{ count: number }>;
+
+    // --- Public API ---
+
+    /**
+     * Creates a new entity following a full lifecycle pipeline.
+     * This method orchestrates the following steps:
+     * 1. **Validation**: Validates the input data against `createSchema`.
+     * 2. **Permissions**: Calls the `_canCreate` hook to check actor permissions.
+     * 3. **Normalization**: Applies the `create` normalizer, if defined.
+     * 4. **beforeCreate Hook**: Calls the `_beforeCreate` lifecycle hook for pre-processing.
+     * 5. **Database Operation**: Inserts the final payload into the database.
+     * 6. **afterCreate Hook**: Calls the `_afterCreate` lifecycle hook for post-processing.
      *
-     * @param methodName - The name of the method
-     * @param input - The input data
-     * @param handler - The handler function
-     * @param schema - Optional Zod schema for input validation
-     * @returns ServiceOutput<R> with data or error
+     * @param actor The user or system performing the action.
+     * @param data The input data for the new entity, matching `TCreateSchema`.
+     * @returns A `ServiceOutput` object containing the created entity or a `ServiceError`.
      */
-    protected async runWithLoggingAndValidation<I, R>(
-        methodName: string,
-        input: ServiceInput<I>,
-        handler: (actor: Actor, input: ServiceInput<I>) => Promise<R>,
-        schema?: z.ZodType
-    ): Promise<ServiceOutput<R>> {
-        this.logMethodStart(methodName, input, input.actor);
-        try {
-            this.validateActor(input.actor);
-            if (schema) {
-                validateInput(schema, input, methodName);
+    public async create(
+        actor: Actor,
+        data: z.infer<TCreateSchema>
+    ): Promise<ServiceOutput<TEntity>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'create',
+            input: { actor, ...data },
+            schema: this.createSchema,
+            execute: async (validatedData, validatedActor) => {
+                await this._canCreate(validatedActor, validatedData);
+
+                const normalizedData =
+                    (await this.normalizers?.create?.(validatedData, validatedActor)) ??
+                    validatedData;
+
+                const processedData = await this._beforeCreate(normalizedData, validatedActor);
+
+                const payload: Record<string, unknown> = { ...processedData };
+                payload.createdById = validatedActor.id as UserId;
+                payload.updatedById = validatedActor.id as UserId;
+
+                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
+                const entity = await this.model.create(payload as any);
+                return this._afterCreate(entity, validatedActor);
             }
-            const result = await handler(input.actor, input);
+        });
+    }
+
+    /**
+     * Updates an existing entity by its ID, following a full lifecycle pipeline.
+     * This method orchestrates the following steps:
+     * 1. **Validation**: Validates the input data against `updateSchema`.
+     * 2. **Fetch & Permissions**: Retrieves the entity and calls `_canUpdate` to check permissions.
+     * 3. **Normalization**: Applies the `update` normalizer, if defined.
+     * 4. **beforeUpdate Hook**: Calls the `_beforeUpdate` lifecycle hook.
+     * 5. **Database Operation**: Updates the entity in the database.
+     * 6. **afterUpdate Hook**: Calls the `_afterUpdate` lifecycle hook.
+     *
+     * @param actor The user or system performing the action.
+     * @param id The ID of the entity to update.
+     * @param data The update data, matching `TUpdateSchema`.
+     * @returns A `ServiceOutput` object containing the updated entity or a `ServiceError`.
+     */
+    public async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<TUpdateSchema>
+    ): Promise<ServiceOutput<TEntity>> {
+        const methodName = `update(id=${id})`;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, ...data },
+            schema: this.updateSchema,
+            execute: async (validData, validActor) => {
+                // 1. Fetch, validate entity and check permissions
+                await this._getAndValidateEntity(id, validActor, this._canUpdate.bind(this));
+
+                // 2. Normalization
+                const normalizedData = this.normalizers?.update
+                    ? await this.normalizers.update(validData, validActor)
+                    : validData;
+
+                // 3. Lifecycle Hook: Before
+                const processedData = await this._beforeUpdate(normalizedData, validActor);
+
+                // 4. Main logic
+                const payload = {
+                    ...processedData,
+                    updatedById: validActor.id as UserId
+                } as unknown as Partial<TEntity>;
+                const where = { id };
+                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
+                const updatedEntity = await this.model.update(where as any, payload);
+
+                if (!updatedEntity) {
+                    // This is more specific. The entity existed, but the update operation failed.
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        `Failed to update ${this.entityName} with id ${id}. The operation returned no result.`
+                    );
+                }
+
+                // 5. Lifecycle Hook: After
+                return this._afterUpdate(updatedEntity, validActor);
+            }
+        });
+    }
+
+    /**
+     * Fetches a single entity by a specific field and value.
+     * This is a generic finder that orchestrates the following steps:
+     * 1. **Normalization**: Applies `view` normalizer to the field/value pair.
+     * 2. **beforeGetByField Hook**: Allows pre-processing of query parameters.
+     * 3. **Database Operation**: Fetches the entity from the database.
+     * 4. **Permissions**: Calls `_canView` hook if an entity is found.
+     * 5. **afterGetByField Hook**: Allows post-processing of the fetched entity.
+     *
+     * @param actor The user or system performing the action.
+     * @param field The database field to search by (e.g., 'id', 'slug').
+     * @param value The value to match for the given field.
+     * @returns A `ServiceOutput` object containing the found entity, `null`, or a `ServiceError`.
+     */
+    public async getByField(
+        actor: Actor,
+        field: string,
+        value: unknown
+    ): Promise<ServiceOutput<TEntity | null>> {
+        const methodName = `getByField(field=${field}, value=${value})`;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, field, value },
+            schema: z.object({ field: z.string(), value: z.unknown() }),
+            execute: async ({ field: validatedField, value: validatedValue }, validatedActor) => {
+                const normalized = (await this.normalizers?.view?.(
+                    validatedField,
+                    validatedValue,
+                    validatedActor
+                )) ?? { field: validatedField, value: validatedValue };
+
+                const processed = await this._beforeGetByField(
+                    normalized.field,
+                    normalized.value,
+                    validatedActor
+                );
+
+                const where = { [processed.field]: processed.value };
+                // biome-ignore lint/suspicious/noExplicitAny: The computed property is not fully recognized by TypeScript
+                const entity = await this.model.findOne(where as any);
+
+                if (entity) {
+                    await this._canView(validatedActor, entity as TEntity);
+                }
+
+                return this._afterGetByField(entity as TEntity | null, validatedActor);
+            }
+        });
+    }
+
+    /**
+     * Retrieves an entity by its unique ID. A convenience wrapper around `getByField`.
+     * @param actor The user performing the action.
+     * @param id The ID of the entity.
+     * @returns A `ServiceOutput` object containing the entity, `null` if not found, or a `ServiceError`.
+     */
+    public async getById(actor: Actor, id: string): Promise<ServiceOutput<TEntity | null>> {
+        return this.getByField(actor, 'id', id);
+    }
+
+    /**
+     * Retrieves an entity by its unique slug. A convenience wrapper around `getByField`.
+     * @param actor The user performing the action.
+     * @param slug The slug of the entity.
+     * @returns A `ServiceOutput` object containing the entity, `null` if not found, or a `ServiceError`.
+     */
+    public async getBySlug(actor: Actor, slug: string): Promise<ServiceOutput<TEntity | null>> {
+        return this.getByField(actor, 'slug', slug);
+    }
+
+    /**
+     * Retrieves an entity by its name. A convenience wrapper around `getByField`.
+     * @param actor The user performing the action.
+     * @param name The name of the entity.
+     * @returns A `ServiceOutput` object containing the entity, `null` if not found, or a `ServiceError`.
+     */
+    public async getByName(actor: Actor, name: string): Promise<ServiceOutput<TEntity | null>> {
+        return this.getByField(actor, 'name', name);
+    }
+
+    /**
+     * Fetches a paginated list of all entities.
+     * The lifecycle includes permission checks (`_canList`), normalization, and lifecycle hooks.
+     * @param actor The user or system performing the action.
+     * @param options Pagination options (`{ page, pageSize }`).
+     * @returns A `ServiceOutput` object containing the paginated list or a `ServiceError`.
+     */
+    public async list(
+        actor: Actor,
+        options: { page?: number; pageSize?: number } = {}
+    ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'list',
+            input: { actor, ...options },
+            schema: z.object({ page: z.number().optional(), pageSize: z.number().optional() }),
+            execute: async (validatedOptions, validatedActor) => {
+                await this._canList(validatedActor);
+
+                const normalized =
+                    (await this.normalizers?.list?.(validatedOptions, validatedActor)) ??
+                    validatedOptions;
+                const processedOptions = await this._beforeList(normalized, validatedActor);
+
+                const result = await this.model.findAll({}, processedOptions);
+                return this._afterList(result, validatedActor);
+            }
+        });
+    }
+
+    /**
+     * Soft-deletes an entity by its ID.
+     * This marks the entity as deleted by setting `deletedAt` without physically removing it.
+     * @param actor The user or system performing the action.
+     * @param id The ID of the entity to soft-delete.
+     * @returns A `ServiceOutput` object with the count of affected rows or a `ServiceError`.
+     */
+    public async softDelete(actor: Actor, id: string): Promise<ServiceOutput<{ count: number }>> {
+        const methodName = `softDelete(id=${id})`;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor },
+            schema: z.object({}), // No input data to validate
+            execute: async (_, validActor) => {
+                // 1. Fetch, validate entity and check permissions
+                const entity = await this._getAndValidateEntity(
+                    id,
+                    validActor,
+                    this._canSoftDelete.bind(this)
+                );
+
+                // If entity is already deleted, do nothing.
+                if (entity.deletedAt) {
+                    return { count: 0 };
+                }
+
+                // 2. Lifecycle Hook: Before
+                const processedId = await this._beforeSoftDelete(id, validActor);
+
+                // 3. Main logic
+                const where = { id: processedId };
+                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
+                const result = { count: await this.model.softDelete(where as any) };
+
+                // 4. Lifecycle Hook: After
+                return this._afterSoftDelete(result, validActor);
+            }
+        });
+    }
+
+    /**
+     * Permanently deletes an entity by its ID from the database.
+     * This is an irreversible, destructive operation.
+     * It follows the standard service lifecycle, including permission checks and hooks.
+     * @param actor The user or system performing the action.
+     * @param id The ID of the entity to hard-delete.
+     * @returns A `ServiceOutput` object with the count of affected rows or a `ServiceError`.
+     */
+    public async hardDelete(actor: Actor, id: string): Promise<ServiceOutput<{ count: number }>> {
+        const methodName = `hardDelete(id=${id})`;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor },
+            schema: z.object({}),
+            execute: async (_, validActor) => {
+                // 1. Fetch, validate entity and check permissions
+                await this._getAndValidateEntity(id, validActor, this._canHardDelete.bind(this));
+
+                // 2. Lifecycle Hook: Before
+                const processedId = await this._beforeHardDelete(id, validActor);
+
+                // 3. Main logic
+                const where = { id: processedId };
+                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
+                const result = { count: await this.model.hardDelete(where as any) };
+
+                // 4. Lifecycle Hook: After
+                return this._afterHardDelete(result, validActor);
+            }
+        });
+    }
+
+    /**
+     * Restores a soft-deleted entity by its ID.
+     * This effectively reverses a soft-delete by clearing the `deletedAt` timestamp.
+     * @param actor The user or system performing the action.
+     * @param id The ID of the entity to restore.
+     * @returns A `ServiceOutput` object with the count of affected rows or a `ServiceError`.
+     */
+    public async restore(actor: Actor, id: string): Promise<ServiceOutput<{ count: number }>> {
+        const methodName = `restore(id=${id})`;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor },
+            schema: z.object({}),
+            execute: async (_, validActor) => {
+                // 1. Fetch, validate entity and check permissions
+                await this._getAndValidateEntity(id, validActor, this._canRestore.bind(this));
+
+                // 2. Lifecycle Hook: Before
+                const processedId = await this._beforeRestore(id, validActor);
+
+                // 3. Main logic
+                const where = { id: processedId };
+                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
+                const result = { count: await this.model.restore(where as any) };
+
+                // 4. Lifecycle Hook: After
+                return this._afterRestore(result, validActor);
+            }
+        });
+    }
+
+    /**
+     * Counts entities based on a set of criteria.
+     * This method orchestrates validation, permission checks, and lifecycle hooks,
+     * delegating the final database query to the `_executeCount` method.
+     *
+     * @param actor The user or system performing the action.
+     * @param params The search parameters (only filters are used).
+     * @returns A `ServiceOutput` containing the total count or a `ServiceError`.
+     */
+    public async count(
+        actor: Actor,
+        params: z.infer<TSearchSchema>
+    ): Promise<ServiceOutput<{ count: number }>> {
+        const methodName = 'count';
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, ...params },
+            schema: this.searchSchema,
+            execute: async (validParams, validActor) => {
+                // 1. Permission Check
+                await this._canCount(validActor);
+
+                // 2. Lifecycle Hook: Before
+                const processedParams = await this._beforeCount(validParams, validActor);
+
+                // 3. Main logic (delegated)
+                const result = await this._executeCount(processedParams, validActor);
+
+                // 4. Lifecycle Hook: After
+                return this._afterCount(result, validActor);
+            }
+        });
+    }
+
+    /**
+     * Performs a search for entities based on a set of criteria.
+     * This method orchestrates validation, permission checks, and lifecycle hooks,
+     * delegating the final database query to the `_executeSearch` method implemented
+     * by the concrete service.
+     *
+     * @param actor The user or system performing the action.
+     * @param params The search parameters, including filters, sorting, and pagination.
+     * @returns A `ServiceOutput` containing a paginated list of found entities or a `ServiceError`.
+     */
+    public async search(
+        actor: Actor,
+        params: z.infer<TSearchSchema>
+    ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
+        const methodName = 'search';
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, ...params },
+            schema: this.searchSchema,
+            execute: async (validParams, validActor) => {
+                // 1. Permission Check
+                await this._canSearch(validActor);
+
+                // 2. Lifecycle Hook: Before
+                const processedParams = await this._beforeSearch(validParams, validActor);
+
+                // 3. Main logic (delegated to child service)
+                const result = await this._executeSearch(processedParams, validActor);
+
+                // 4. Lifecycle Hook: After
+                return this._afterSearch(result, validActor);
+            }
+        });
+    }
+
+    /**
+     * Updates the visibility of a specific entity.
+     * This provides a dedicated endpoint for a common, often sensitive, operation.
+     * @param actor The user or system performing the action.
+     * @param id The ID of the entity to update.
+     * @param visibility The new visibility state.
+     * @returns A `ServiceOutput` containing the updated entity or a `ServiceError`.
+     */
+    public async updateVisibility(
+        actor: Actor,
+        id: string,
+        visibility: VisibilityEnum
+    ): Promise<ServiceOutput<TEntity>> {
+        const methodName = `updateVisibility(id=${id}, visibility=${visibility})`;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, visibility },
+            schema: z.object({ visibility: z.nativeEnum(VisibilityEnum) }),
+            execute: async (validData, validActor) => {
+                // 1. Fetch entity
+                const entity = await this._getAndValidateEntity(id, validActor, (act, ent) =>
+                    this._canUpdateVisibility(act, ent, validData.visibility)
+                );
+
+                // 2. Lifecycle Hook: Before
+                const processedVisibility = await this._beforeUpdateVisibility(
+                    entity,
+                    validData.visibility,
+                    validActor
+                );
+
+                // 3. Main logic
+                const payload = {
+                    visibility: processedVisibility,
+                    updatedById: validActor.id as UserId
+                } as unknown as Partial<TEntity>;
+                const where = { id };
+                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
+                const updatedEntity = await this.model.update(where as any, payload);
+                const nonNullEntity = validateEntity(updatedEntity, this.entityName);
+
+                // 4. Lifecycle Hook: After
+                return this._afterUpdateVisibility(nonNullEntity, validActor);
+            }
+        });
+    }
+
+    // --- PROTECTED ---
+
+    /**
+     * A protected wrapper that orchestrates the execution of a service operation.
+     * It standardizes top-level logging, actor validation, input schema validation,
+     * and centralized error handling, ensuring that all public methods have a
+     * consistent behavior and output.
+     *
+     * @template TInput The Zod schema for input validation.
+     * @template TOutput The expected output type of the `execute` function.
+     * @param options An object containing the `methodName`, `input`, `schema`, and the `execute` function.
+     * @param options.methodName The name of the public method being executed, for logging.
+     * @param options.input The raw input object, including the actor.
+     * @param options.schema The Zod schema to validate the input against.
+     * @param options.execute The core logic of the operation to be executed after validation.
+     * @returns A `ServiceOutput` object containing the result or a captured `ServiceError`.
+     */
+    protected async runWithLoggingAndValidation<TInput extends ZodTypeAny, TOutput>({
+        methodName,
+        input,
+        schema,
+        execute
+    }: {
+        methodName: string;
+        input: ServiceInput<z.infer<TInput>>;
+        schema: TInput;
+        execute: (data: z.infer<TInput>, actor: Actor) => Promise<TOutput>;
+    }): Promise<ServiceOutput<TOutput>> {
+        const { actor, ...data } = input;
+        this.logMethodStart(methodName, data, actor);
+
+        try {
+            // 1. Actor Validation
+            validateActor(actor);
+
+            // 2. Input Validation
+            const validationResult = await schema.safeParseAsync(data);
+            if (!validationResult.success) {
+                const error = new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid input data provided.',
+                    validationResult.error.flatten()
+                );
+                this.logError(methodName, error, data, actor);
+                return { error };
+            }
+
+            const validData = validationResult.data;
+
+            // 3. Execute Core Logic
+            const result = await execute(validData, actor);
             this.logMethodEnd(methodName, result);
             return { data: result };
         } catch (error) {
-            this.logError(
-                methodName,
-                error as Error,
-                input,
-                this.getSafeActor({ actor: input.actor })
-            );
             if (error instanceof ServiceError) {
-                return this.makeErrorOutput(error.code, error.message, error.details);
+                this.logError(methodName, error, data, actor);
+                return { error };
             }
-            return this.makeErrorOutput(
+
+            const serviceError = new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message,
+                'An unexpected error occurred.',
                 error
             );
+
+            this.logError(methodName, serviceError, data, actor);
+            return { error: serviceError };
         }
     }
 
     /**
-     * Returns a safe actor object, defaulting to a public user if missing or invalid.
-     * @param input - The input containing the actor
-     * @returns The safe actor
+     * Fetches an entity by ID, validates its existence, and checks permissions.
+     * This is a utility method to reduce boilerplate in update/delete/restore operations.
+     * It ensures that an entity exists and the actor has permission before proceeding.
+     * @param id The ID of the entity to fetch.
+     * @param actor The actor performing the action.
+     * @param permissionCheck A function that performs the required permission check. It should throw a `ServiceError` if the check fails.
+     * @returns The validated, non-null entity.
+     * @throws {ServiceError} if the entity is not found or if the permission check fails.
+     * @protected
      */
-    protected getSafeActor(input: { actor?: Actor }): Actor {
-        const actor = input.actor ?? createPublicUser();
-        // Type guard: if the actor does not have id or role, return a public user
-        if (!actor || !actor.id || !actor.role) return createPublicUser();
-        return actor;
-    }
-
-    /**
-     * Creates a ServiceOutput error object.
-     * @param code - The error code
-     * @param message - The error message
-     * @param details - Additional details about the error
-     * @returns ServiceOutput<T> with error
-     */
-    protected makeErrorOutput<T>(
-        code: ServiceErrorCode,
-        message: string,
-        details?: unknown
-    ): ServiceOutput<T> {
-        return {
-            error: {
-                code,
-                message,
-                ...(details !== undefined ? { details } : {})
-            }
-        };
-    }
-
-    // --- Permission Helpers ---
-
-    /**
-     * Checks if the actor is an admin.
-     * @param actor - The actor to check
-     * @returns True if admin
-     */
-    protected isAdmin(actor: Actor): boolean {
-        return actor.role === 'ADMIN';
-    }
-
-    /**
-     * Checks if the actor is the owner of the entity.
-     * @param actor - The actor to check
-     * @param entity - The entity to check
-     * @returns True if owner
-     */
-    protected isOwner(actor: Actor, entity: { ownerId?: string }): boolean {
-        return !!entity.ownerId && entity.ownerId === actor.id;
-    }
-
-    /**
-     * Default permission check for view.
-     * @param actor - The actor
-     * @param entity - The entity
-     * @returns CanViewResult
-     */
-    protected defaultCanView(
+    protected async _getAndValidateEntity(
+        id: string,
         actor: Actor,
-        entity: { ownerId?: string; isFeatured?: boolean }
-    ): CanViewResult {
-        if (this.isAdmin(actor)) return { canView: true, reason: EntityPermissionReasonEnum.ADMIN };
-        if (this.isOwner(actor, entity))
-            return { canView: true, reason: EntityPermissionReasonEnum.ADMIN };
-        if ('isFeatured' in entity && entity.isFeatured)
-            return { canView: true, reason: EntityPermissionReasonEnum.ADMIN };
-        return { canView: false, reason: EntityPermissionReasonEnum.DENIED };
+        permissionCheck: (actor: Actor, entity: TEntity) => Promise<void> | void
+    ): Promise<TEntity> {
+        const entityOrNull = await this.model.findById(id);
+        const entity = validateEntity(entityOrNull, this.entityName);
+        await permissionCheck(actor, entity);
+        return entity;
     }
 
     /**
-     * Default permission check for update.
-     * @param actor - The actor
-     * @param entity - The entity
-     * @returns CanUpdateResult
+     * Logs the start of a service method execution.
+     * @param method The full method name (e.g., 'accommodation.create').
+     * @param input The input data for the method.
+     * @param actor The actor performing the action.
      */
-    protected defaultCanUpdate(actor: Actor, entity: { ownerId?: string }): CanUpdateResult {
-        if (this.isAdmin(actor))
-            return { canUpdate: true, reason: EntityPermissionReasonEnum.ADMIN };
-        if (this.isOwner(actor, entity))
-            return { canUpdate: true, reason: EntityPermissionReasonEnum.ADMIN };
-        return { canUpdate: false, reason: EntityPermissionReasonEnum.DENIED };
+    private logMethodStart(method: string, input: unknown, actor: Actor): void {
+        logMethodStart(`${this.entityName}.${method}`, input, actor);
     }
 
     /**
-     * Default permission check for delete.
-     * @param actor - The actor
-     * @param entity - The entity
-     * @returns CanDeleteResult
+     * Logs the successful end of a service method execution.
+     * @param method The full method name.
+     * @param output The data being returned by the method.
      */
-    protected defaultCanDelete(actor: Actor, entity: { ownerId?: string }): CanDeleteResult {
-        if (this.isAdmin(actor))
-            return { canDelete: true, reason: EntityPermissionReasonEnum.ADMIN };
-        if (this.isOwner(actor, entity))
-            return { canDelete: true, reason: EntityPermissionReasonEnum.ADMIN };
-        return { canDelete: false, reason: EntityPermissionReasonEnum.DENIED };
+    private logMethodEnd(method: string, output: unknown): void {
+        logMethodEnd(`${this.entityName}.${method}`, output);
     }
 
     /**
-     * Default permission check for create.
-     * @param actor - The actor
-     * @returns CanCreateResult
+     * Logs an error that occurred during a service method execution.
+     * @param method The full method name.
+     * @param error The error object that was caught.
+     * @param input The original input data for the method.
+     * @param actor The actor who performed the action.
      */
-    protected defaultCanCreate(actor: Actor): CanCreateResult {
-        if (this.isAdmin(actor))
-            return { canCreate: true, reason: EntityPermissionReasonEnum.ADMIN };
-        return { canCreate: false, reason: EntityPermissionReasonEnum.DENIED };
+    private logError(method: string, error: Error, input: unknown, actor: Actor): void {
+        logError(`${this.entityName}.${method}`, error, input, actor);
     }
-
-    /**
-     * Default permission check for restore.
-     * @param actor - The actor
-     * @param entity - The entity
-     * @returns CanRestoreResult
-     */
-    protected defaultCanRestore(actor: Actor, entity: { ownerId?: string }): CanRestoreResult {
-        if (this.isAdmin(actor))
-            return { canRestore: true, reason: EntityPermissionReasonEnum.ADMIN };
-        if (this.isOwner(actor, entity))
-            return { canRestore: true, reason: EntityPermissionReasonEnum.ADMIN };
-        return { canRestore: false, reason: EntityPermissionReasonEnum.DENIED };
-    }
-
-    // --- Public Methods ---
-
-    /**
-     * Finds an entity by any unique field.
-     * @param field - The field name
-     * @param value - The value to search for
-     * @param input - The original input (with actor and the searched key)
-     */
-    protected async getByField(
-        field: string,
-        value: unknown,
-        input: ServiceInput<Record<string, unknown>>
-    ): Promise<ServiceOutput<T>> {
-        const methodName = `getBy${field.charAt(0).toUpperCase() + field.slice(1)}`;
-        try {
-            this.logMethodStart(methodName, input, input.actor);
-            this.validateActor(input.actor);
-            const entity = (await this.model.findOne({ [field]: value })) ?? null;
-            if (!entity) {
-                return this.makeErrorOutput(
-                    ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`,
-                    { field, value, input }
-                );
-            }
-            validateInput(this.inputSchema, input, methodName);
-            const canView = await this.canViewEntity(input.actor, entity);
-            if (!canView.canView) {
-                logDenied(input.actor, input, entity, canView.reason, 'view');
-                return this.makeErrorOutput(
-                    ServiceErrorCode.FORBIDDEN,
-                    `Cannot view ${this.entityName}`,
-                    { reason: canView.reason, input }
-                );
-            }
-            logGrant(input.actor, input, entity, 'view', canView.reason);
-            this.logMethodEnd(methodName, entity);
-            return { data: entity };
-        } catch (error) {
-            this.logError(
-                methodName,
-                error as Error,
-                input,
-                this.getSafeActor({ actor: input.actor })
-            );
-            if (error instanceof ServiceError) {
-                return this.makeErrorOutput(error.code, error.message, error.details);
-            }
-            return this.makeErrorOutput(
-                ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message,
-                error
-            );
-        }
-    }
-
-    public async getById(input: ServiceInput<{ id: string }>): Promise<ServiceOutput<T>> {
-        return this.getByField('id', input.id, { actor: input.actor, id: input.id });
-    }
-
-    public async getBySlug(input: ServiceInput<{ slug: string }>): Promise<ServiceOutput<T>> {
-        return this.getByField('slug', input.slug, { actor: input.actor, slug: input.slug });
-    }
-
-    public async getByName(input: ServiceInput<{ name: string }>): Promise<ServiceOutput<T>> {
-        return this.getByField('name', input.name, { actor: input.actor, name: input.name });
-    }
-
-    /**
-     * Lists entities based on input criteria.
-     * @param {ServiceInput<ListInput>} input - The input containing list criteria
-     * @returns {Promise<ServiceOutput<ListOutput>>} The list of entities or an error
-     */
-    public async list(input: ServiceInput<ListInput>): Promise<ServiceOutput<ListOutput>> {
-        try {
-            logMethodStart('list', input, this.getSafeActor(input));
-            validateActor(this.getSafeActor(input));
-
-            const normalizedInput = await this.normalizeListInput(input);
-            const canCreate = await this.canCreateEntity(this.getSafeActor(input));
-            if (!canCreate.canCreate) {
-                logDenied(this.getSafeActor(input), input, null, canCreate.reason, 'list');
-                logMethodEnd('list', { entities: [] });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.FORBIDDEN,
-                    `Cannot list ${this.entityName}s`,
-                    { reason: canCreate.reason, input }
-                );
-            }
-
-            const result = await this.listEntities(normalizedInput);
-            logMethodEnd('list', { entities: result });
-            return { data: result };
-        } catch (error) {
-            logError('list', error as Error, input, this.getSafeActor(input));
-            return this.makeErrorOutput(
-                (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message,
-                error
-            );
-        }
-    }
-
-    /**
-     * Creates a new entity.
-     * @param {ServiceInput<CreateInput>} input - The input for creating the entity
-     * @returns {Promise<ServiceOutput<T>>} The created entity or an error
-     */
-    public async create(input: ServiceInput<CreateInput>): Promise<ServiceOutput<T>> {
-        try {
-            logMethodStart('create', input, this.getSafeActor(input));
-            validateActor(this.getSafeActor(input));
-            const canCreate = await this.canCreateEntity(this.getSafeActor(input));
-            if (!canCreate.canCreate) {
-                logDenied(this.getSafeActor(input), input, null, canCreate.reason, 'create');
-                logMethodEnd('create', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.FORBIDDEN,
-                    `Cannot create ${this.entityName}`,
-                    { reason: canCreate.reason, input }
-                );
-            }
-            const normalizedInput = await this.normalizeCreateInput(input);
-            if (!normalizedInput) {
-                logMethodEnd('create', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.VALIDATION_ERROR,
-                    `Invalid input for ${this.entityName}`,
-                    { input }
-                );
-            }
-            const entity = await this.model.create(normalizedInput as Partial<T>);
-            if (!entity) {
-                logMethodEnd('create', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.INTERNAL_ERROR,
-                    `Failed to create ${this.entityName}`,
-                    { input }
-                );
-            }
-            logGrant(this.getSafeActor(input), input, entity, 'create', canCreate.reason);
-            logMethodEnd('create', { entity });
-            return { data: entity };
-        } catch (error) {
-            logError('create', error as Error, input, this.getSafeActor(input));
-            return this.makeErrorOutput(
-                (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message,
-                error
-            );
-        }
-    }
-
-    /**
-     * Updates an existing entity.
-     * @param {ServiceInput<UpdateInput & { id: string }>} input - The input for updating the entity
-     * @returns {Promise<ServiceOutput<T>>} The updated entity or an error
-     */
-    public async update(
-        input: ServiceInput<UpdateInput & { id: string }>
-    ): Promise<ServiceOutput<T>> {
-        try {
-            logMethodStart('update', input, this.getSafeActor(input));
-            validateActor(this.getSafeActor(input));
-            const entity = await this.model.findById(input.id);
-            if (!entity) {
-                logMethodEnd('update', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`,
-                    { id: input.id, input }
-                );
-            }
-            validateInput(this.inputSchema, input, 'update');
-            const { canUpdate, reason } = await this.canUpdateEntity(
-                this.getSafeActor(input),
-                entity
-            );
-            if (!canUpdate) {
-                logDenied(this.getSafeActor(input), input, entity, reason, 'update');
-                logMethodEnd('update', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.FORBIDDEN,
-                    `Cannot update ${this.entityName}`,
-                    { reason, input }
-                );
-            }
-            const normalizedInput = await this.normalizeUpdateInput(input);
-            if (!normalizedInput || typeof normalizedInput !== 'object') {
-                logMethodEnd('update', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.VALIDATION_ERROR,
-                    `Invalid input for ${this.entityName}`,
-                    { input }
-                );
-            }
-            const updatedEntity = await this.model.update(
-                { id: input.id },
-                normalizedInput as Partial<T>
-            );
-            if (!updatedEntity) {
-                logMethodEnd('update', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found after update`,
-                    { id: input.id, input }
-                );
-            }
-            logGrant(this.getSafeActor(input), input, updatedEntity, 'update', reason);
-            logMethodEnd('update', { entity: updatedEntity });
-            return { data: updatedEntity };
-        } catch (error) {
-            logError('update', error as Error, input, this.getSafeActor(input));
-            return this.makeErrorOutput(
-                (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message,
-                error
-            );
-        }
-    }
-
-    /**
-     * Soft deletes an entity.
-     * @param {ServiceInput<{ id: string }>} input - The input containing the ID
-     * @returns {Promise<ServiceOutput<T>>} The deleted entity or an error
-     */
-    public async softDelete(input: ServiceInput<{ id: string }>): Promise<ServiceOutput<T>> {
-        try {
-            logMethodStart('softDelete', input, this.getSafeActor(input));
-            validateActor(this.getSafeActor(input));
-            const entity = await this.model.findById(input.id);
-            if (!entity) {
-                logMethodEnd('softDelete', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`,
-                    { id: input.id, input }
-                );
-            }
-            validateInput(this.inputSchema, input, 'softDelete');
-            const { canDelete, reason } = await this.canDeleteEntity(
-                this.getSafeActor(input),
-                entity
-            );
-            if (!canDelete) {
-                logDenied(this.getSafeActor(input), input, entity, reason, 'delete');
-                logMethodEnd('softDelete', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.FORBIDDEN,
-                    `Cannot delete ${this.entityName}`,
-                    { reason, input }
-                );
-            }
-            const updateInput = this.buildSoftDeleteUpdate(this.getSafeActor(input));
-            if (!updateInput || typeof updateInput !== 'object') {
-                logMethodEnd('softDelete', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.VALIDATION_ERROR,
-                    `Invalid input for ${this.entityName}`,
-                    { input }
-                );
-            }
-            const deletedEntity = await this.model.update(
-                { id: input.id },
-                updateInput as Partial<T>
-            );
-            if (!deletedEntity) {
-                logMethodEnd('softDelete', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found after delete`,
-                    { id: input.id, input }
-                );
-            }
-            logGrant(this.getSafeActor(input), input, deletedEntity, 'delete', reason);
-            logMethodEnd('softDelete', { entity: deletedEntity });
-            return { data: deletedEntity };
-        } catch (error) {
-            logError('softDelete', error as Error, input, this.getSafeActor(input));
-            return this.makeErrorOutput(
-                (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message,
-                error
-            );
-        }
-    }
-
-    /**
-     * Restores a soft-deleted entity.
-     * @param {ServiceInput<{ id: string }>} input - The input containing the ID
-     * @returns {Promise<ServiceOutput<T>>} The restored entity or an error
-     */
-    public async restore(input: ServiceInput<{ id: string }>): Promise<ServiceOutput<T>> {
-        try {
-            logMethodStart('restore', input, this.getSafeActor(input));
-            validateActor(this.getSafeActor(input));
-            const entity = await this.model.findById(input.id);
-            if (!entity) {
-                logMethodEnd('restore', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`,
-                    { id: input.id, input }
-                );
-            }
-            validateInput(this.inputSchema, input, 'restore');
-            const { canRestore, reason } = await this.canRestoreEntity(
-                this.getSafeActor(input),
-                entity
-            );
-            if (!canRestore) {
-                logDenied(this.getSafeActor(input), input, entity, reason, 'restore');
-                logMethodEnd('restore', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.FORBIDDEN,
-                    `Cannot restore ${this.entityName}`,
-                    { reason, input }
-                );
-            }
-            const updateInput = this.buildRestoreUpdate(this.getSafeActor(input));
-            if (!updateInput || typeof updateInput !== 'object') {
-                logMethodEnd('restore', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.VALIDATION_ERROR,
-                    `Invalid input for ${this.entityName}`,
-                    { input }
-                );
-            }
-            const restoredEntity = await this.model.update(
-                { id: input.id },
-                updateInput as Partial<T>
-            );
-            if (!restoredEntity) {
-                logMethodEnd('restore', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found after restore`,
-                    { id: input.id, input }
-                );
-            }
-            logGrant(this.getSafeActor(input), input, restoredEntity, 'restore', reason);
-            logMethodEnd('restore', { entity: restoredEntity });
-            return { data: restoredEntity };
-        } catch (error) {
-            logError('restore', error as Error, input, this.getSafeActor(input));
-            return this.makeErrorOutput(
-                (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message,
-                error
-            );
-        }
-    }
-
-    /**
-     * Hard deletes an entity.
-     * @param {ServiceInput<{ id: string }>} input - The input containing the ID
-     * @returns {Promise<ServiceOutput<T>>} The deleted entity or an error
-     */
-    public async hardDelete(input: ServiceInput<{ id: string }>): Promise<ServiceOutput<T>> {
-        try {
-            logMethodStart('hardDelete', input, this.getSafeActor(input));
-            validateActor(this.getSafeActor(input));
-            const entity = await this.model.findById(input.id);
-            if (!entity) {
-                logMethodEnd('hardDelete', { entity: null });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.NOT_FOUND,
-                    `${this.entityName} not found`,
-                    { id: input.id, input }
-                );
-            }
-            validateInput(this.inputSchema, input, 'hardDelete');
-            const { canHardDelete, reason } = this.canHardDeleteEntity(
-                this.getSafeActor(input),
-                entity
-            );
-            if (!canHardDelete) {
-                logDenied(this.getSafeActor(input), input, entity, reason, 'delete');
-                logMethodEnd('hardDelete', { success: false });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.FORBIDDEN,
-                    `Cannot delete ${this.entityName}`,
-                    { reason, input }
-                );
-            }
-            const success = await this.model.hardDelete({ id: input.id as string });
-            if (!success) {
-                logMethodEnd('hardDelete', { success: false });
-                return this.makeErrorOutput(
-                    ServiceErrorCode.INTERNAL_ERROR,
-                    `Failed to hard delete ${this.entityName}`,
-                    { id: input.id, input }
-                );
-            }
-            logGrant(this.getSafeActor(input), input, entity, 'delete', reason);
-            logMethodEnd('hardDelete', { success });
-            return { data: entity };
-        } catch (error) {
-            logError('hardDelete', error as Error, input, this.getSafeActor(input));
-            return this.makeErrorOutput(
-                (error as ServiceError).code ?? ServiceErrorCode.INTERNAL_ERROR,
-                (error as Error).message,
-                error
-            );
-        }
-    }
-
-    /**
-     * Lists entities based on input criteria.
-     * @param {ListInput} input - The input containing list criteria
-     * @returns {Promise<ListOutput>} The list of entities
-     */
-    protected abstract listEntities(input: ListInput): Promise<ListOutput>;
 }
+
+export type { ServiceOutput };

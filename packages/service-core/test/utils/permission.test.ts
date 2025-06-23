@@ -1,9 +1,12 @@
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { RoleEnum } from '@repo/types/enums/role.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
+import {
+    EntityPermissionReasonEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    RoleEnum,
+    VisibilityEnum
+} from '@repo/types';
 import { describe, expect, it } from 'vitest';
-import { type Actor, EntityPermissionReasonEnum } from '../../src/types';
+import type { Actor } from '../../src/types';
 import {
     type EntityAction,
     type EntityPermissionInput,
@@ -334,5 +337,22 @@ describe('getEntityPermission', () => {
         expect(getEntityPermission(guest, baseEntity, 'delete').reason).toBe(
             EntityPermissionReasonEnum.DENIED
         );
+    });
+
+    it('should return true for an admin who is not the owner', () => {
+        const nonOwnerAdmin: Actor = {
+            id: 'admin-not-owner',
+            role: RoleEnum.ADMIN,
+            permissions: []
+        };
+        expect(getEntityPermission(nonOwnerAdmin, baseEntity, 'view').allowed).toBe(true);
+    });
+
+    it('should handle an invalid actor gracefully and return false', () => {
+        // biome-ignore lint/suspicious/noExplicitAny: Testing invalid actor type
+        expect(getEntityPermission({} as any, baseEntity, 'view').allowed).toBe(false);
+        // biome-ignore lint/suspicious/noExplicitAny: Testing invalid actor type
+        const invalidActor = { role: RoleEnum.USER } as any; // Missing id and permissions
+        expect(getEntityPermission(invalidActor, baseEntity, 'view').allowed).toBe(false);
     });
 });

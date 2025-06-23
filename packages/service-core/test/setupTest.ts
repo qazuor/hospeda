@@ -24,4 +24,35 @@ vi.mock('@repo/logger', () => ({
     }
 }));
 
+export const mockDb = {
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    offset: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockReturnThis()
+};
+
+export const mockModel = {
+    findById: vi.fn(),
+    findOne: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    softDelete: vi.fn(),
+    restore: vi.fn(),
+    hardDelete: vi.fn(),
+    count: vi.fn(),
+    findAll: vi.fn()
+};
+
+vi.mock('../src/utils/service-logger', () => ({
+    serviceLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+        permission: vi.fn()
+    }
+}));
+
 // Add more global mocks as needed

@@ -1,437 +1,198 @@
-/**
- * accommodation.service.test.ts
- *
- * Tests for AccommodationService.
- */
+import { ServiceErrorCode } from '@repo/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { z } from 'zod';
+import { type Actor, ServiceError } from '../../../src';
+// import { createAccommodationScenario } from '../../factories/accommodationScenarioFactory';
+import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
+import { ActorFactoryBuilder } from '../../factories/actorFactory';
+
+// Mock dependencies BEFORE importing the service
+vi.mock('../../../src/services/accommodation/accommodation.permissions');
+vi.mock('../../../src/services/accommodation/accommodation.helpers');
 
 import type { AccommodationModel } from '@repo/db';
-import { RoleEnum } from '@repo/types';
-import { PermissionEnum } from '@repo/types/enums/permission.enum';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CreateAccommodationSchema } from '../../../src/services/accommodation';
+import * as accommodationHelpers from '../../../src/services/accommodation/accommodation.helpers';
+import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
-import { EntityPermissionReasonEnum } from '../../../src/types';
-import {
-    createAccommodation,
-    createNewAccommodationInput,
-    createUpdateAccommodationInput
-} from '../../factories/accommodationFactory';
-import { type ActorWithPermissions, createActor } from '../../factories/actorFactory';
-import { getMockId } from '../../factories/utilsFactory';
-import '../../setupTest';
+import type { ServiceLogger } from '../../../src/utils';
 
+// Simplified mock model, similar to base tests
 const mockModel = {
-    findAll: vi.fn(),
-    findById: vi.fn(),
+    findOne: vi.fn(),
     create: vi.fn(),
-    update: vi.fn(),
-    count: vi.fn(),
-    findOne: vi.fn()
+    getById: vi.fn(),
+    getByName: vi.fn()
 };
 
-// Subclase para expose protected methods
-class TestableAccommodationService extends AccommodationService {
-    public model = mockModel as unknown as AccommodationModel;
-    public canViewEntity = super.canViewEntity;
-    public canDeleteEntity = super.canDeleteEntity;
-    public canRestoreEntity = super.canRestoreEntity;
-    public canHardDeleteEntity = super.canHardDeleteEntity;
-}
-
 describe('AccommodationService', () => {
-    let service: TestableAccommodationService;
-    const accommodation = createAccommodation();
-    const newInput = createNewAccommodationInput();
-    const updateInput = { ...createUpdateAccommodationInput(), id: accommodation.id };
-    const _actor: ActorWithPermissions = createActor({
-        role: RoleEnum.ADMIN,
-        permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
-    });
+    let service: AccommodationService;
+    let actor: Actor;
+    let entity: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
+    let createInput: z.infer<typeof CreateAccommodationSchema>;
+
+    // Simplified logger mock
+    const mockLogger: ServiceLogger = {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    } as unknown as ServiceLogger;
 
     beforeEach(() => {
-        service = new TestableAccommodationService();
-        service.model = mockModel as unknown as AccommodationModel;
-        for (const fn of Object.values(mockModel)) {
-            fn.mockReset();
-        }
-        // Ensure all methods are present and are functions
-        mockModel.findAll = mockModel.findAll || vi.fn();
-        mockModel.findById = mockModel.findById || vi.fn();
-        mockModel.create = mockModel.create || vi.fn();
-        mockModel.update = mockModel.update || vi.fn();
-        mockModel.count = mockModel.count || vi.fn();
-        mockModel.findOne = mockModel.findOne || vi.fn();
-        mockModel.findOne.mockResolvedValue(null);
-    });
+        vi.clearAllMocks();
+        service = new AccommodationService(
+            { logger: mockLogger },
+            mockModel as unknown as AccommodationModel
+        );
 
-    it('denies create if missing permission', async () => {
-        const actor: ActorWithPermissions = createActor({ role: RoleEnum.ADMIN, permissions: [] });
-        const result = await service.create({ actor, ...newInput });
-        expect(result.error).toBeDefined();
-    });
-
-    it('permite create si tiene permiso', async () => {
-        const actor: ActorWithPermissions = createActor({
-            role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE]
-        });
-        mockModel.create.mockResolvedValue(accommodation);
-        const result = await service.create({ actor, ...newInput });
-        expect(result.data).toEqual(accommodation);
-        expect(mockModel.create).toHaveBeenCalled();
-    });
-
-    it('deniega update si falta permiso', async () => {
-        const actor: ActorWithPermissions = createActor({ permissions: [] });
-        mockModel.findById.mockResolvedValue(accommodation);
-        const result = await service.update({ actor, ...updateInput });
-        expect(result.error).toBeDefined();
-    });
-
-    it('permite update si tiene permiso any', async () => {
-        const actor: ActorWithPermissions = createActor({
-            role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        mockModel.update.mockResolvedValue({ ...accommodation, name: 'Updated' });
-        const result = await service.update({ actor, ...updateInput });
-        expect(result.data?.name).toBe('Updated');
-        expect(mockModel.update).toHaveBeenCalled();
-    });
-
-    it('permite update si es owner y tiene permiso own', async () => {
-        const actor: ActorWithPermissions = createActor({
-            id: accommodation.ownerId,
-            role: RoleEnum.HOST,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        mockModel.update.mockResolvedValue({ ...accommodation, name: 'Updated' });
-        const result = await service.update({ actor, ...updateInput });
-        expect(result.data?.name).toBe('Updated');
-    });
-
-    it('deniega view si falta permiso (excepto featured)', async () => {
-        const actor: ActorWithPermissions = createActor({ permissions: [] });
-        const nonFeatured = { ...accommodation, isFeatured: false };
-        const result = await service.canViewEntity(actor, nonFeatured);
-        expect(result.canView).toBe(false);
-    });
-
-    it('permite view si tiene permiso', async () => {
-        const actor: ActorWithPermissions = createActor({
-            permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
-        });
-        const nonFeatured = { ...accommodation, isFeatured: false };
-        const result = await service.canViewEntity(actor, nonFeatured);
-        expect(result.canView).toBe(true);
-    });
-
-    it('permite view a cualquiera si es featured', async () => {
-        const actor: ActorWithPermissions = createActor({ permissions: [] });
-        const featured = { ...accommodation, isFeatured: true };
-        const result = await service.canViewEntity(actor, featured);
-        expect(result.canView).toBe(true);
-    });
-
-    it('deniega delete si falta permiso', async () => {
-        const actor: ActorWithPermissions = createActor({ permissions: [] });
-        mockModel.findById.mockResolvedValue(accommodation);
-        const result = await service.canDeleteEntity(actor, accommodation);
-        expect(result.canDelete).toBe(false);
-    });
-
-    it('permite delete si tiene permiso any', async () => {
-        const actor: ActorWithPermissions = createActor({
-            role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.ACCOMMODATION_DELETE_ANY]
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        const result = await service.canDeleteEntity(actor, accommodation);
-        expect(result.canDelete).toBe(true);
-    });
-
-    it('permite delete si es owner y tiene permiso own', async () => {
-        const actor: ActorWithPermissions = createActor({
-            id: accommodation.ownerId,
-            role: RoleEnum.HOST,
-            permissions: [PermissionEnum.ACCOMMODATION_DELETE_OWN]
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        const result = await service.canDeleteEntity(actor, accommodation);
-        expect(result.canDelete).toBe(true);
-    });
-
-    it('deniega restore si falta permiso', async () => {
-        const actor: ActorWithPermissions = createActor({ permissions: [] });
-        mockModel.findById.mockResolvedValue(accommodation);
-        const result = await service.canRestoreEntity(actor, accommodation);
-        expect(result.canRestore).toBe(false);
-    });
-
-    it('permite restore si tiene permiso any', async () => {
-        const actor: ActorWithPermissions = createActor({
-            role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.ACCOMMODATION_RESTORE_ANY]
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        const result = await service.canRestoreEntity(actor, accommodation);
-        expect(result.canRestore).toBe(true);
-    });
-
-    it('permite restore si es owner y tiene permiso own', async () => {
-        const actor: ActorWithPermissions = createActor({
-            id: accommodation.ownerId,
-            role: RoleEnum.HOST,
-            permissions: [PermissionEnum.ACCOMMODATION_RESTORE_OWN]
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        const result = await service.canRestoreEntity(actor, accommodation);
-        expect(result.canRestore).toBe(true);
-    });
-
-    it('handles not found on update', async () => {
-        const actor: ActorWithPermissions = createActor();
-        mockModel.findById.mockResolvedValue(null);
-        const result = await service.update({ actor, ...updateInput });
-        expect(result.error).toBeDefined();
-    });
-
-    it('admin con permiso own pero no any no puede update/delete/restore alojamientos ajenos', async () => {
-        const actor: ActorWithPermissions = createActor({
-            id: getMockId('user', 'admin') as typeof accommodation.ownerId,
-            role: RoleEnum.ADMIN,
-            permissions: [
-                PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-                PermissionEnum.ACCOMMODATION_DELETE_OWN,
-                PermissionEnum.ACCOMMODATION_RESTORE_OWN
-            ]
-        });
-        const otherAccommodation = {
-            ...accommodation,
-            ownerId: getMockId('user', 'owner') as typeof accommodation.ownerId
+        // Setup common test data using builders
+        actor = new ActorFactoryBuilder().host().build();
+        entity = new AccommodationFactoryBuilder()
+            .public()
+            .withOwner(actor.id as import('@repo/types').UserId)
+            .build();
+        createInput = {
+            name: entity.name,
+            slug: entity.slug,
+            summary: entity.summary,
+            description: entity.description,
+            type: entity.type,
+            visibility: entity.visibility,
+            lifecycleState: entity.lifecycleState,
+            moderationState: entity.moderationState,
+            isFeatured: entity.isFeatured,
+            ownerId: entity.ownerId,
+            destinationId: entity.destinationId,
+            reviewsCount: entity.reviewsCount ?? 0,
+            averageRating: entity.averageRating ?? 0
         };
-        mockModel.findById.mockResolvedValue(otherAccommodation);
-        expect(
-            (await service.update({ actor, ...updateInput, id: otherAccommodation.id })).error
-        ).toBeDefined();
-        expect((await service.canDeleteEntity(actor, otherAccommodation)).canDelete).toBe(false);
-        expect((await service.canRestoreEntity(actor, otherAccommodation)).canRestore).toBe(false);
     });
 
-    it('host con permiso any no puede update/delete/restore alojamientos ajenos', async () => {
-        const actor: ActorWithPermissions = createActor({
-            role: RoleEnum.HOST,
-            permissions: [
-                PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-                PermissionEnum.ACCOMMODATION_DELETE_ANY,
-                PermissionEnum.ACCOMMODATION_RESTORE_ANY
-            ]
-        });
-        const otherAccommodation = {
-            ...accommodation,
-            ownerId: getMockId('user') as typeof accommodation.ownerId
-        };
-        mockModel.findById.mockResolvedValue(otherAccommodation);
-        expect(
-            (await service.update({ actor, ...updateInput, id: otherAccommodation.id })).error
-        ).toBeDefined();
-        expect((await service.canDeleteEntity(actor, otherAccommodation)).canDelete).toBe(false);
-        expect((await service.canRestoreEntity(actor, otherAccommodation)).canRestore).toBe(false);
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
-    it('user con permisos pero sin rol adecuado no puede update/delete/restore', async () => {
-        const actor: ActorWithPermissions = createActor({
-            role: RoleEnum.USER,
-            permissions: [
-                PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-                PermissionEnum.ACCOMMODATION_DELETE_ANY,
-                PermissionEnum.ACCOMMODATION_RESTORE_ANY
-            ]
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        expect((await service.update({ actor, ...updateInput })).error).toBeDefined();
-        expect((await service.canDeleteEntity(actor, accommodation)).canDelete).toBe(false);
-        expect((await service.canRestoreEntity(actor, accommodation)).canRestore).toBe(false);
-    });
+    // --- CREATE ---
 
-    it('owner con permiso own pero sobre otro alojamiento no puede update/delete/restore', async () => {
-        const actor: ActorWithPermissions = createActor({
-            id: getMockId('user', 'not-owner') as typeof accommodation.ownerId,
-            role: RoleEnum.HOST,
-            permissions: [
-                PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-                PermissionEnum.ACCOMMODATION_DELETE_OWN,
-                PermissionEnum.ACCOMMODATION_RESTORE_OWN
-            ]
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        expect((await service.update({ actor, ...updateInput })).error).toBeDefined();
-        expect((await service.canDeleteEntity(actor, accommodation)).canDelete).toBe(false);
-        expect((await service.canRestoreEntity(actor, accommodation)).canRestore).toBe(false);
-    });
+    it('should create an accommodation when permissions are granted', async () => {
+        // Arrange
+        vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
+        vi.mocked(accommodationHelpers.generateSlug).mockResolvedValue(entity.slug);
+        mockModel.create.mockResolvedValue(entity);
 
-    it('no se puede update/delete/restore/view si deletedAt está presente', async () => {
-        const actor: ActorWithPermissions = createActor({
-            role: RoleEnum.ADMIN,
-            permissions: [
-                PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-                PermissionEnum.ACCOMMODATION_DELETE_ANY,
-                PermissionEnum.ACCOMMODATION_RESTORE_ANY,
-                PermissionEnum.ACCOMMODATION_VIEW_ALL
-            ]
-        });
-        const deletedAccommodation = { ...accommodation, deletedAt: new Date() };
-        mockModel.findById.mockResolvedValue(deletedAccommodation);
-        expect(
-            (await service.update({ actor, ...updateInput, id: deletedAccommodation.id })).error
-        ).toBeDefined();
-        expect((await service.canDeleteEntity(actor, deletedAccommodation)).canDelete).toBe(false);
-        expect((await service.canRestoreEntity(actor, deletedAccommodation)).canRestore).toBe(
-            false
+        // Act
+        const result = await service.create(actor, createInput);
+
+        // Assert
+        expect(permissionHelpers.checkCanCreate).toHaveBeenCalledWith(actor, expect.any(Object));
+        expect(mockModel.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                slug: entity.slug,
+                name: entity.name,
+                ownerId: entity.ownerId,
+                createdById: actor.id,
+                updatedById: actor.id
+            })
         );
-        expect((await service.canViewEntity(actor, deletedAccommodation)).canView).toBe(false);
+        expect(result.error).toBeUndefined();
+        expect(result.data).toEqual(entity);
     });
 
-    it('actor con ambos permisos (any y own) puede update/delete/restore según corresponda', async () => {
-        const actor: ActorWithPermissions = createActor({
-            id: accommodation.ownerId,
-            role: RoleEnum.ADMIN,
-            permissions: [
-                PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-                PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-                PermissionEnum.ACCOMMODATION_DELETE_ANY,
-                PermissionEnum.ACCOMMODATION_DELETE_OWN,
-                PermissionEnum.ACCOMMODATION_RESTORE_ANY,
-                PermissionEnum.ACCOMMODATION_RESTORE_OWN
-            ]
+    it('should return FORBIDDEN error if actor lacks permission', async () => {
+        // Arrange
+        vi.mocked(permissionHelpers.checkCanCreate).mockImplementation(() => {
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');
         });
-        mockModel.findById.mockResolvedValue(accommodation);
-        mockModel.update.mockResolvedValue({ ...accommodation, name: 'Updated' });
-        expect((await service.update({ actor, ...updateInput })).data?.name).toBe('Updated');
-        expect((await service.canDeleteEntity(actor, accommodation)).canDelete).toBe(true);
-        expect((await service.canRestoreEntity(actor, accommodation)).canRestore).toBe(true);
+
+        // Act
+        const result = await service.create(actor, createInput);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(mockModel.create).not.toHaveBeenCalled();
     });
 
-    it('admin sin permisos no puede hacer nada', async () => {
-        const actor: ActorWithPermissions = createActor({ role: RoleEnum.ADMIN, permissions: [] });
-        mockModel.findById.mockResolvedValue(accommodation);
-        expect((await service.update({ actor, ...updateInput })).error).toBeDefined();
-        expect((await service.canDeleteEntity(actor, accommodation)).canDelete).toBe(false);
-        expect((await service.canRestoreEntity(actor, accommodation)).canRestore).toBe(false);
+    it('should return INTERNAL_ERROR if slug generation fails', async () => {
+        // Arrange
+        const slugError = new Error('Slug generation failed');
+        vi.mocked(accommodationHelpers.generateSlug).mockRejectedValue(slugError);
+        vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
+
+        // Act
+        const result = await service.create(actor, createInput);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expect(mockModel.create).not.toHaveBeenCalled();
     });
 
-    it('host sin permisos no puede hacer nada', async () => {
-        const actor: ActorWithPermissions = createActor({
-            id: accommodation.ownerId,
-            role: RoleEnum.HOST,
-            permissions: []
-        });
-        mockModel.findById.mockResolvedValue(accommodation);
-        expect((await service.update({ actor, ...updateInput })).error).toBeDefined();
-        expect((await service.canDeleteEntity(actor, accommodation)).canDelete).toBe(false);
-        expect((await service.canRestoreEntity(actor, accommodation)).canRestore).toBe(false);
+    it('should return INTERNAL_ERROR if database creation fails', async () => {
+        // Arrange
+        const dbError = new Error('DB connection failed');
+        mockModel.create.mockRejectedValue(dbError);
+        vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
+        vi.mocked(accommodationHelpers.generateSlug).mockResolvedValue(entity.slug);
+
+        // Act
+        const result = await service.create(actor, createInput);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
-    it('cualquiera puede ver featured aunque no tenga permisos', async () => {
-        const actor: ActorWithPermissions = createActor({ permissions: [] });
-        const featured = { ...accommodation, isFeatured: true };
-        expect((await service.canViewEntity(actor, featured)).canView).toBe(true);
-    });
-});
+    it('should return VALIDATION_ERROR for invalid input', async () => {
+        // Arrange: Falta un campo requerido (por ejemplo, name)
+        const { name, ...invalidInput } = createInput;
+        vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
 
-describe('AccommodationService.canHardDeleteEntity', () => {
-    let service: TestableAccommodationService;
-    const accommodation = createAccommodation();
-    const superAdminActor: ActorWithPermissions = createActor({
-        role: RoleEnum.SUPER_ADMIN,
-        permissions: [PermissionEnum.ACCOMMODATION_HARD_DELETE]
-    });
-    const adminActor: ActorWithPermissions = createActor({
-        role: RoleEnum.ADMIN,
-        permissions: [PermissionEnum.ACCOMMODATION_HARD_DELETE]
-    });
-    const superAdminNoPerm: ActorWithPermissions = createActor({
-        role: RoleEnum.SUPER_ADMIN,
-        permissions: []
+        // Act
+        // @ts-expect-error: purposely invalid input
+        const result = await service.create(actor, invalidInput);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(mockModel.create).not.toHaveBeenCalled();
     });
 
-    beforeEach(() => {
-        service = new TestableAccommodationService();
-        service.model = mockModel as unknown as AccommodationModel;
-    });
-
-    it('denies if entity is deleted', () => {
-        const deleted = { ...accommodation, deletedAt: new Date() };
-        const result = service.canHardDeleteEntity(superAdminActor, deleted);
-        expect(result.canHardDelete).toBe(false);
-        expect(result.reason).toBe(EntityPermissionReasonEnum.DELETED);
-    });
-
-    it('denies if actor is not SUPER_ADMIN', () => {
-        const result = service.canHardDeleteEntity(adminActor, accommodation);
-        expect(result.canHardDelete).toBe(false);
-        expect(result.reason).toBe(EntityPermissionReasonEnum.NOT_SUPER_ADMIN);
-    });
-
-    it('denies if SUPER_ADMIN lacks permission', () => {
-        const result = service.canHardDeleteEntity(superAdminNoPerm, accommodation);
-        expect(result.canHardDelete).toBe(false);
-        expect(result.reason).toBe(EntityPermissionReasonEnum.MISSING_PERMISSION);
-    });
-
-    it('allows if SUPER_ADMIN and has permission', () => {
-        const result = service.canHardDeleteEntity(superAdminActor, accommodation);
-        expect(result.canHardDelete).toBe(true);
-        expect(result.reason).toBe(EntityPermissionReasonEnum.SUPER_ADMIN);
-    });
-});
-
-describe('AccommodationService.generateSlug', () => {
-    let service: TestableAccommodationService;
-    let checkSlugExists: (slug: string) => Promise<boolean>;
-    beforeEach(() => {
-        service = new TestableAccommodationService();
-        service.model = mockModel as unknown as AccommodationModel;
-        checkSlugExists = vi.fn().mockResolvedValue(false); // always unique for base tests
-    });
-
-    it('should generate a slug from type and name', async () => {
-        await expect(service.generateSlug('hotel', 'My Hotel', checkSlugExists)).resolves.toBe(
-            'hotel-my-hotel'
+    it('should use the create normalizer if provided', async () => {
+        // Arrange
+        const normalizer = vi.fn((data) => ({ ...data, normalized: true }));
+        const serviceWithNormalizer = new AccommodationService(
+            { logger: mockLogger },
+            mockModel as unknown as AccommodationModel
         );
-        await expect(
-            service.generateSlug('cabin', 'Cabaña del Lago', checkSlugExists)
-        ).resolves.toBe('cabin-cabana-del-lago');
-        await expect(service.generateSlug('hostel', 'Hostel! #1', checkSlugExists)).resolves.toBe(
-            'hostel-hostel-1'
-        );
-        await expect(
-            service.generateSlug('apartment', 'Ático & Spa', checkSlugExists)
-        ).resolves.toBe('apartment-atico-and-spa');
-    });
+        // @ts-ignore
+        serviceWithNormalizer.normalizers = { create: normalizer };
+        vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
+        vi.mocked(accommodationHelpers.generateSlug).mockResolvedValue(entity.slug);
+        mockModel.create.mockResolvedValue(entity);
 
-    it('should return an empty string if type or name is empty', async () => {
-        await expect(service.generateSlug('', 'Name', checkSlugExists)).resolves.toBe('name');
-        await expect(service.generateSlug('type', '', checkSlugExists)).resolves.toBe('type');
-    });
+        // Act
+        await serviceWithNormalizer.create(actor, createInput);
 
-    it('should throw if both type and name are empty', async () => {
-        await expect(service.generateSlug('', '', checkSlugExists)).rejects.toThrow(
-            'At least one of type or name must be provided to generate a slug'
+        // Assert
+        expect(normalizer).toHaveBeenCalledWith(createInput, actor);
+        expect(mockModel.create).toHaveBeenCalledWith(
+            expect.objectContaining({ normalized: true })
         );
     });
 
-    it('should append incrementing number if slug exists', async () => {
-        // Simulate slug already exists for first two attempts
-        const mockCheck = vi
-            .fn()
-            .mockResolvedValueOnce(true)
-            .mockResolvedValueOnce(true)
-            .mockResolvedValue(false);
-        await expect(service.generateSlug('hotel', 'My Hotel', mockCheck)).resolves.toBe(
-            'hotel-my-hotel-3'
+    it('should call the _afterCreate hook with the created entity', async () => {
+        // Arrange
+        vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
+        vi.mocked(accommodationHelpers.generateSlug).mockResolvedValue(entity.slug);
+        mockModel.create.mockResolvedValue(entity);
+        // Cast seguro para acceder a métodos protegidos en tests
+        const afterCreateSpy = vi.spyOn(
+            service as unknown as { _afterCreate: (...args: unknown[]) => unknown },
+            '_afterCreate'
         );
-        expect(mockCheck).toHaveBeenCalledTimes(3);
+
+        // Act
+        await service.create(actor, createInput);
+
+        // Assert
+        expect(afterCreateSpy).toHaveBeenCalledWith(entity, actor);
     });
 });

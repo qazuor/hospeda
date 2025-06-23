@@ -1,12 +1,35 @@
-// Base
+/**
+ * --- BASE ---
+ * Exports the foundational abstract `BaseService` class.
+ */
 export * from './base/base.service';
 
-// Types
+/**
+ * --- TYPES ---
+ * Exports all shared types for the service layer, including `Actor`, `ServiceError`,
+ * `ServiceOutput`, and permission-related types.
+ */
 export * from './types';
 
-// Utils
-export * from './utils/logging';
-export * from './utils/validation';
+/**
+ * --- UTILS ---
+ * Exports utility functions for logging and validation.
+ */
+export * from './utils';
 
-// Services
+/**
+ * --- SERVICES ---
+ * Exports all concrete service implementations.
+ */
 export * from './services/accommodation/accommodation.service';
+
+/**
+ * --- ENUMS (re-exported to prevent warnings and expose them to consumers) ---
+ */
+export {
+    EntityPermissionReasonEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    RoleEnum,
+    VisibilityEnum
+} from '@repo/types';
