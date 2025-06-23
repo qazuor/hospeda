@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
     plugins: [tsconfigPaths()],
     test: {
-        globals: true,
+        globals: false,
         environment: 'node',
         include: ['test/**/*.test.ts'],
         coverage: {

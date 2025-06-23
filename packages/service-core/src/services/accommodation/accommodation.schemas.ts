@@ -1,46 +1,192 @@
-import { AccommodationSchema } from '@repo/schemas';
+import { AccommodationSchema, BaseSearchSchema, UserIdSchema } from '@repo/schemas';
+import { AccommodationTypeEnum, AmenitiesTypeEnum, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 
 /**
- * Zod schema for creating a new accommodation.
- * Omits system fields (id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById).
- * Used for validating input when creating a new accommodation.
+ * Schema for creating a new accommodation.
+ * Derived from the base `AccommodationSchema` by omitting server-generated fields.
  */
-export const NewAccommodationInputSchema = AccommodationSchema.omit({
+export const CreateAccommodationSchema = AccommodationSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true,
     deletedAt: true,
     createdById: true,
     updatedById: true,
-    deletedById: true
+    deletedById: true,
+    owner: true,
+    destination: true,
+    features: true,
+    amenities: true,
+    reviews: true,
+    rating: true,
+    schedule: true,
+    extraInfo: true,
+    faqs: true,
+    iaData: true
 });
 
 /**
- * Zod schema for updating an accommodation.
- * All fields are optional, based on NewAccommodationInputSchema.
- * Used for validating input when updating an accommodation.
+ * Schema for updating an existing accommodation.
+ * It takes the creation schema and makes all fields optional, allowing for partial updates.
  */
-export const UpdateAccommodationInputSchema = NewAccommodationInputSchema.partial();
+export const UpdateAccommodationSchema = CreateAccommodationSchema.deepPartial();
 
 /**
- * Zod schema for validating search filters for accommodations.
- * All fields are optional and type-checked.
- * Used for validating input in advanced search and filtering operations.
- *
- * Fields:
- * - type: string (optional)
- * - destinationId: string (optional)
- * - amenityIds: string[] (optional)
- * - featureIds: string[] (optional)
- * - name: string (optional)
- * - slug: string (optional)
+ * Defines the filters available when searching for accommodations.
  */
 export const SearchAccommodationFiltersSchema = z.object({
-    type: z.string().optional(),
     destinationId: z.string().optional(),
-    amenityIds: z.array(z.string()).optional(),
-    featureIds: z.array(z.string()).optional(),
-    name: z.string().optional(),
-    slug: z.string().optional()
+    type: z.string().optional(),
+    amenities: z.array(z.string()).optional(),
+    features: z.array(z.string()).optional(),
+    minPrice: z.number().optional(),
+    maxPrice: z.number().optional(),
+    minRating: z.number().optional()
 });
+
+/**
+ * Schema for fetching an accommodation along with its specified relations.
+ */
+export const GetWithRelationsInputSchema = z.object({
+    id: z.string().uuid(),
+    relations: z.record(z.boolean())
+});
+
+/**
+ * Schema for fetching accommodations belonging to a specific destination.
+ */
+export const GetByDestinationIdInputSchema = z.object({
+    destinationId: z.string().uuid()
+});
+
+/**
+ * Schema for fetching accommodations of a specific type.
+ */
+export const GetByTypeInputSchema = z.object({
+    type: z.string()
+});
+
+/**
+ * Schema for fetching accommodations that have a specific amenity.
+ * Requires either the amenity's ID or its slug.
+ */
+export const GetByAmenityInputSchema = z
+    .object({
+        amenityId: z.string().uuid().optional(),
+        amenitySlug: z.string().optional()
+    })
+    .superRefine((data, ctx) => {
+        if (!data.amenityId && !data.amenitySlug) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Either amenityId or amenitySlug must be provided'
+            });
+        }
+    });
+
+/**
+ * Schema for fetching accommodations that have a specific feature.
+ * Requires either the feature's ID or its slug.
+ */
+export const GetByFeatureInputSchema = z
+    .object({
+        featureId: z.string().uuid().optional(),
+        featureSlug: z.string().optional()
+    })
+    .superRefine((data, ctx) => {
+        if (!data.featureId && !data.featureSlug) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Either featureId or featureSlug must be provided'
+            });
+        }
+    });
+
+/**
+ * Schema for fetching a single accommodation, typically for a detail view.
+ * Requires either the accommodation's ID or its slug.
+ */
+export const GetAccommodationSchema = z
+    .object({
+        id: z.string().uuid().optional(),
+        slug: z.string().optional()
+    })
+    .superRefine((data, ctx) => {
+        if (!data.id && !data.slug) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Either id or slug must be provided'
+            });
+        }
+    });
+
+/**
+ * Schema for finding accommodations similar to a given one.
+ * Reuses `GetAccommodationSchema` as it requires the same ID/slug input.
+ */
+export const GetSimilarInputSchema = GetAccommodationSchema;
+
+/**
+ * Schema for fetching the top-rated accommodations, optionally filtered by destination.
+ */
+export const GetTopRatedInputSchema = z.object({
+    destinationId: z.string().uuid().optional()
+});
+
+/**
+ * Schema for fetching the reviews of a specific accommodation.
+ * Reuses `GetAccommodationSchema` as it requires the same ID/slug input.
+ */
+export const GetReviewsInputSchema = GetAccommodationSchema;
+
+/**
+ * Schema for searching accommodations.
+ * Extends the base search schema with accommodation-specific filters.
+ */
+export const SearchAccommodationSchema = BaseSearchSchema.extend({
+    filters: z
+        .object({
+            types: z.array(z.nativeEnum(AccommodationTypeEnum)).optional(),
+            priceMin: z.number().min(0).optional(),
+            priceMax: z.number().min(0).optional(),
+            amenities: z.array(z.nativeEnum(AmenitiesTypeEnum)).optional(),
+            visibility: z.array(z.nativeEnum(VisibilityEnum)).optional(),
+            ownerId: UserIdSchema.optional()
+        })
+        .optional()
+});
+
+/**
+ * Schema for updating an accommodation's visibility.
+ */
+export const UpdateVisibilitySchema = z.object({
+    visibility: z.nativeEnum(VisibilityEnum)
+});
+
+// --- Inferred Types ---
+
+/** @see SearchAccommodationFiltersSchema */
+export type SearchAccommodationFilters = z.infer<typeof SearchAccommodationFiltersSchema>;
+/** @see CreateAccommodationSchema */
+export type NewAccommodationInput = z.infer<typeof CreateAccommodationSchema>;
+/** @see UpdateAccommodationSchema */
+export type UpdateAccommodationInput = z.infer<typeof UpdateAccommodationSchema>;
+/** @see GetWithRelationsInputSchema */
+export type GetWithRelationsInput = z.infer<typeof GetWithRelationsInputSchema>;
+/** @see GetByDestinationIdInputSchema */
+export type GetByDestinationIdInput = z.infer<typeof GetByDestinationIdInputSchema>;
+/** @see GetByTypeInputSchema */
+export type GetByTypeInput = z.infer<typeof GetByTypeInputSchema>;
+/** @see GetByAmenityInputSchema */
+export type GetByAmenityInput = z.infer<typeof GetByAmenityInputSchema>;
+/** @see GetByFeatureInputSchema */
+export type GetByFeatureInput = z.infer<typeof GetByFeatureInputSchema>;
+/** @see GetAccommodationSchema */
+export type GetSummaryInput = z.infer<typeof GetAccommodationSchema>;
+/** @see GetSimilarInputSchema */
+export type GetSimilarInput = z.infer<typeof GetSimilarInputSchema>;
+/** @see GetTopRatedInputSchema */
+export type GetTopRatedInput = z.infer<typeof GetTopRatedInputSchema>;
+/** @see GetReviewsInputSchema */
+export type GetReviewsInput = z.infer<typeof GetReviewsInputSchema>;
