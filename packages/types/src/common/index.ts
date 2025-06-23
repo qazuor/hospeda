@@ -6,5 +6,6 @@ export * from './location.types.js';
 export * from './media.types.js';
 export * from './pagination.types.js';
 export * from './price.types.js';
+export * from './search.types.js';
 export * from './seo.types.js';
 export * from './social.types.js';
