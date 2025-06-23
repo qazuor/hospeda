@@ -73,7 +73,7 @@ export abstract class BaseModel<T> {
                 } catch {}
                 return result;
             }
-            const items = await db.select().from(this.table).where(whereClause);
+            const items = (await db.select().from(this.table).where(whereClause)) || [];
             const result = { items: items as T[], total: items.length };
             try {
                 logQuery(this.entityName, 'findAll', { where: safeWhere }, result);
