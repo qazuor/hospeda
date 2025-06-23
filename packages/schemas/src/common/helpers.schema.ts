@@ -1,4 +1,3 @@
-import { TagSchema } from '@repo/schemas/entities/index.js';
 import { z } from 'zod';
 import {
     LifecycleStatusEnumSchema,
@@ -8,23 +7,25 @@ import {
 import { AdminInfoSchema } from './admin.schema.js';
 import { IdSchema, UserIdSchema } from './id.schema.js';
 
+declare const TagSchema: z.ZodTypeAny;
+
 export const WithIdSchema = z.object({
     id: IdSchema
 });
 
 export const WithAuditSchema = z.object({
-    createdAt: z.string({
+    createdAt: z.coerce.date({
         required_error: 'zodError.common.createdAt.required',
         invalid_type_error: 'zodError.common.createdAt.invalidType'
     }),
-    updatedAt: z.string({
+    updatedAt: z.coerce.date({
         required_error: 'zodError.common.updatedAt.required',
         invalid_type_error: 'zodError.common.updatedAt.invalidType'
     }),
     createdById: UserIdSchema,
     updatedById: UserIdSchema,
-    deletedAt: z
-        .string({
+    deletedAt: z.coerce
+        .date({
             required_error: 'zodError.common.deletedAt.required',
             invalid_type_error: 'zodError.common.deletedAt.invalidType'
         })
@@ -80,10 +81,13 @@ export const WithSeoSchema = z.object({
 
 export const WithTagsSchema = z.object({
     tags: z
-        .array(TagSchema, {
-            required_error: 'zodError.common.tags.required',
-            invalid_type_error: 'zodError.common.tags.invalidType'
-        })
+        .array(
+            z.lazy(() => TagSchema),
+            {
+                required_error: 'zodError.common.tags.required',
+                invalid_type_error: 'zodError.common.tags.invalidType'
+            }
+        )
         .optional()
 });
 

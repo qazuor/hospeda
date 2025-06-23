@@ -1,23 +1,22 @@
-import { VisibilityEnumSchema } from '@repo/schemas/enums/visibility.enum.schema.js';
 import { z } from 'zod';
+import { AdminInfoSchema } from '../../common/admin.schema.js';
 import {
     AccommodationIdSchema,
     ContactInfoSchema,
+    DestinationIdSchema,
     LocationSchema,
     MediaSchema,
     SocialNetworkSchema,
-    WithAdminInfoSchema,
-    WithAuditSchema,
-    WithIdSchema,
-    WithLifecycleStateSchema,
-    WithModerationStatusSchema,
-    WithReviewStateSchema,
-    WithSeoSchema,
-    WithTagsSchema,
-    WithVisibilitySchema
+    UserIdSchema
 } from '../../common/index.js';
-import { AccommodationTypeEnumSchema } from '../../enums/index.js';
+import {
+    AccommodationTypeEnumSchema,
+    LifecycleStatusEnumSchema,
+    ModerationStatusEnumSchema,
+    VisibilityEnumSchema
+} from '../../enums/index.js';
 import { DestinationSchema } from '../destination/destination.schema.js';
+import { TagSchema } from '../tag/tag.schema.js';
 import { UserSchema } from '../user/user.schema.js';
 import { AccommodationAmenitySchema } from './accommodation.amenity.schema.js';
 import { ExtraInfoSchema } from './accommodation.extrainfo.schema.js';
@@ -30,109 +29,82 @@ import { AccommodationReviewSchema } from './accommodation.review.schema.js';
 import { ScheduleSchema } from './accommodation.schedule.schema.js';
 
 /**
- * Accommodation schema definition using Zod for validation.
- * Includes references to user (owner) and destination schemas.
- * Arrays like features and amenities require at least 2 elements.
+ * Note: The AccommodationSchema is defined by explicitly listing all properties instead of merging
+ * helper schemas (e.g., WithIdSchema, WithAuditSchema). This approach is a deliberate
+ * architectural choice to prevent circular dependency issues that can arise in testing
+ * frameworks like Vitest. By flattening the structure, we ensure stable and
+ * predictable module resolution during tests.
  */
-export const AccommodationSchema = WithIdSchema.merge(WithAuditSchema)
-    .merge(WithLifecycleStateSchema)
-    .merge(WithVisibilitySchema)
-    .merge(WithReviewStateSchema)
-    .merge(WithModerationStatusSchema)
-    .merge(WithTagsSchema)
-    .merge(WithSeoSchema)
-    .merge(WithAdminInfoSchema)
-    .extend({
-        id: AccommodationIdSchema,
-        /** Unique slug for the accommodation */
-        slug: z
-            .string({
-                required_error: 'zodError.accommodation.slug.required',
-                invalid_type_error: 'zodError.accommodation.slug.invalidType'
-            })
-            .min(3, { message: 'zodError.accommodation.slug.min' })
-            .max(50, { message: 'zodError.accommodation.slug.max' }),
-        /** Name of the accommodation */
-        name: z
-            .string({
-                required_error: 'zodError.accommodation.name.required',
-                invalid_type_error: 'zodError.accommodation.name.invalidType'
-            })
-            .min(3, { message: 'zodError.accommodation.name.min' })
-            .max(100, { message: 'zodError.accommodation.name.max' }),
-        /** Short summary, 10-300 characters */
-        summary: z
-            .string({
-                required_error: 'zodError.accommodation.summary.required',
-                invalid_type_error: 'zodError.accommodation.summary.invalidType'
-            })
-            .min(10, { message: 'zodError.accommodation.summary.min' })
-            .max(300, { message: 'zodError.accommodation.summary.max' }),
-        /** Accommodation type (enum) */
-        type: AccommodationTypeEnumSchema,
-        /** Detailed description, 30-2000 characters */
-        description: z
-            .string({
-                required_error: 'zodError.accommodation.description.required',
-                invalid_type_error: 'zodError.accommodation.description.invalidType'
-            })
-            .min(30, { message: 'zodError.accommodation.description.min' })
-            .max(2000, { message: 'zodError.accommodation.description.max' }),
-        /** Contact information, optional */
-        contactInfo: ContactInfoSchema.optional(),
-        /** Social networks, optional */
-        socialNetworks: SocialNetworkSchema.optional(),
-        /** Price information, optional */
-        price: AccommodationPriceSchema.optional(),
-        /** Location information, optional */
-        location: LocationSchema.optional(),
-        /** Media assets, optional */
-        media: MediaSchema.optional(),
-        /** Whether the accommodation is featured, optional */
-        isFeatured: z.boolean({
-            required_error: 'zodError.accommodation.isFeatured.required',
-            invalid_type_error: 'zodError.accommodation.isFeatured.invalidType'
-        }),
-        /** Owner user ID */
-        ownerId: z
-            .string({
-                required_error: 'zodError.accommodation.ownerId.required',
-                invalid_type_error: 'zodError.accommodation.ownerId.invalidType'
-            })
-            .uuid({ message: 'zodError.accommodation.ownerId.invalidUuid' }),
-        /** Owner user object, optional */
-        owner: UserSchema.optional(),
-        /** Destination ID */
-        destinationId: z
-            .string({
-                required_error: 'zodError.accommodation.destinationId.required',
-                invalid_type_error: 'zodError.accommodation.destinationId.invalidType'
-            })
-            .uuid({ message: 'zodError.accommodation.destinationId.invalidUuid' }),
-        /** Destination object, optional */
-        destination: DestinationSchema.optional(),
-        /** List of features, at least 2 required */
-        features: z.array(AccommodationFeatureSchema).optional(),
-        /** List of amenities, at least 2 required */
-        amenities: z.array(AccommodationAmenitySchema).optional(),
-        /** List of reviews, optional */
-        reviews: z.array(AccommodationReviewSchema).optional(),
-        /** Rating object, optional */
-        rating: AccommodationRatingSchema.optional(),
-        /** Schedule object, optional */
-        schedule: ScheduleSchema.optional(),
-        /** Extra information, optional */
-        extraInfo: ExtraInfoSchema.optional(),
-        /** List of FAQs, optional */
-        faqs: z.array(AccommodationFaqSchema).optional(),
-        /** List of AI data objects, optional */
-        iaData: z.array(AccommodationIaDataSchema).optional()
-    });
+export const AccommodationSchema = z.object({
+    // From WithIdSchema
+    id: AccommodationIdSchema,
+
+    // From WithAuditSchema
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
+    createdById: UserIdSchema,
+    updatedById: UserIdSchema,
+    deletedAt: z.coerce.date().optional(),
+    deletedById: UserIdSchema.optional(),
+
+    // From WithLifecycleStateSchema
+    lifecycleState: LifecycleStatusEnumSchema,
+
+    // From WithVisibilitySchema
+    visibility: VisibilityEnumSchema,
+
+    // From WithReviewStateSchema
+    reviewsCount: z.number(),
+    averageRating: z.number(),
+
+    // From WithModerationStatusSchema
+    moderationState: ModerationStatusEnumSchema,
+
+    // From WithTagsSchema
+    tags: z.array(TagSchema).optional(),
+
+    // From WithSeoSchema
+    seo: z
+        .object({
+            title: z.string().min(30).max(60).optional(),
+            description: z.string().min(70).max(160).optional(),
+            keywords: z.array(z.string()).optional()
+        })
+        .optional(),
+
+    // From WithAdminInfoSchema
+    adminInfo: AdminInfoSchema.optional(),
+
+    // Own Properties
+    slug: z.string().min(3).max(50),
+    name: z.string().min(3).max(100),
+    summary: z.string().min(10).max(300),
+    type: AccommodationTypeEnumSchema,
+    description: z.string().min(30).max(2000),
+    contactInfo: ContactInfoSchema.optional(),
+    socialNetworks: SocialNetworkSchema.optional(),
+    price: AccommodationPriceSchema.optional(),
+    location: LocationSchema.optional(),
+    media: MediaSchema.optional(),
+    isFeatured: z.boolean(),
+    ownerId: UserIdSchema,
+    owner: UserSchema.optional(),
+    destinationId: DestinationIdSchema,
+    destination: DestinationSchema.optional(),
+    features: z.array(AccommodationFeatureSchema).optional(),
+    amenities: z.array(AccommodationAmenitySchema).optional(),
+    reviews: z.array(AccommodationReviewSchema).optional(),
+    rating: AccommodationRatingSchema.optional(),
+    schedule: ScheduleSchema.optional(),
+    extraInfo: ExtraInfoSchema.optional(),
+    faqs: z.array(AccommodationFaqSchema).optional(),
+    iaData: z.array(AccommodationIaDataSchema).optional()
+});
 
 export const AccommodationFilterInputSchema = z.object({
     city: z.string().optional(),
     country: z.string().optional(),
-    tags: WithTagsSchema.shape.tags.optional(),
+    tags: z.array(TagSchema).optional(),
     visibility: VisibilityEnumSchema.optional(),
     isFeatured: z.boolean().optional(),
     minRating: z.number().min(0).max(5).optional(),
