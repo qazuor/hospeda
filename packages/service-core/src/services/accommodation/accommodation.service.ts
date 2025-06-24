@@ -1,6 +1,7 @@
-import { AccommodationModel } from '@repo/db';
+import { AccommodationFaqModel, AccommodationModel } from '@repo/db';
 import type { AccommodationSummaryType, AccommodationType } from '@repo/types';
-import type { z } from 'zod';
+import { ServiceErrorCode } from '@repo/types';
+import { z } from 'zod';
 import { BaseService } from '../../base';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -24,6 +25,16 @@ import {
     checkCanUpdate,
     checkCanView
 } from './accommodation.permissions';
+import {
+    type AddFaqInput,
+    AddFaqInputSchema,
+    type GetFaqsInput,
+    GetFaqsInputSchema,
+    type RemoveFaqInput,
+    RemoveFaqInputSchema,
+    type UpdateFaqInput,
+    UpdateFaqInputSchema
+} from './accommodation.schemas';
 
 /**
  * Provides accommodation-specific business logic, including creation, updates,
@@ -271,5 +282,276 @@ export class AccommodationService extends BaseService<
                 };
             }
         });
+    }
+
+    /**
+     * Gets statistics for accommodations.
+     * @param actor - The actor performing the action.
+     * @param data - Input object for stats query.
+     * @returns Output object (to be defined)
+     */
+    public async getStats(
+        actor: Actor,
+        data: z.infer<typeof GetAccommodationSchema>
+    ): Promise<
+        ServiceOutput<{
+            reviewsCount: number;
+            averageRating: number;
+            rating: AccommodationType['rating'];
+        } | null>
+    > {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getStats',
+            input: { actor, ...data },
+            schema: GetAccommodationSchema,
+            execute: async (validatedData, validatedActor) => {
+                const { id, slug } = validatedData;
+                const field = id ? 'id' : 'slug';
+                const value = id ?? slug;
+                const entityResult = await this.getByField(validatedActor, field, value as string);
+                if (entityResult.error) {
+                    throw new ServiceError(
+                        entityResult.error.code,
+                        entityResult.error.message,
+                        entityResult.error.details
+                    );
+                }
+                if (!entityResult.data) {
+                    return null;
+                }
+                const entity = entityResult.data;
+                return {
+                    reviewsCount: entity.reviewsCount ?? 0,
+                    averageRating: entity.averageRating ?? 0,
+                    rating: entity.rating
+                };
+            }
+        });
+    }
+
+    /**
+     * Gets accommodations by destination.
+     * @param input - Input object for destination query.
+     * @param actor - The actor performing the action.
+     * @returns Output object (to be defined)
+     */
+    public async getByDestination(
+        actor: Actor,
+        data: { destinationId: string }
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getByDestination',
+            input: { actor, ...data },
+            schema: z.object({ destinationId: z.string().uuid(), actor: z.any() }),
+            execute: async (validatedData, validatedActor) => {
+                this._canList(validatedActor);
+                const result = await this.model.findAll({
+                    destinationId: validatedData.destinationId
+                });
+                return Array.isArray(result.items) ? result.items : [];
+            }
+        });
+    }
+
+    /**
+     * Gets top-rated accommodations by destination.
+     * @param input - Input object for top-rated query.
+     * @param actor - The actor performing the action.
+     * @returns Output object (to be defined)
+     */
+    public async getTopRatedByDestination(_input: object, _actor: Actor): Promise<object> {
+        // FUTURE: This method is a stub for future implementation.
+        throw new Error('Not implemented');
+    }
+
+    /**
+     * Adds a FAQ to an accommodation.
+     * @param input - Input object for adding FAQ.
+     * @param actor - The actor performing the action.
+     * @returns Output object (to be defined)
+     */
+    public async addFaq(
+        actor: Actor,
+        data: AddFaqInput
+    ): Promise<ServiceOutput<{ faq: import('@repo/types').AccommodationFaqType }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addFaq',
+            input: { actor, ...data },
+            schema: AddFaqInputSchema,
+            execute: async (validatedData, validatedActor) => {
+                const accommodation = await this.model.findById(validatedData.accommodationId);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                this._canUpdate(validatedActor, accommodation);
+                const faqModel = new AccommodationFaqModel();
+                const faqToCreate = {
+                    ...validatedData.faq,
+                    accommodationId: validatedData.accommodationId as import(
+                        '@repo/types'
+                    ).AccommodationId
+                };
+                const createdFaq = await faqModel.create(faqToCreate);
+                return { faq: createdFaq };
+            }
+        });
+    }
+
+    /**
+     * Removes a FAQ from an accommodation.
+     * @param actor - The actor performing the action.
+     * @param data - Input object for removing FAQ.
+     * @returns Output object (to be defined)
+     */
+    public async removeFaq(
+        actor: Actor,
+        data: RemoveFaqInput
+    ): Promise<ServiceOutput<{ success: boolean }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'removeFaq',
+            input: { actor, ...data },
+            schema: RemoveFaqInputSchema,
+            execute: async (validatedData, validatedActor) => {
+                const accommodation = await this.model.findById(validatedData.accommodationId);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                this._canUpdate(validatedActor, accommodation);
+                const faqModel = new AccommodationFaqModel();
+                const faq = await faqModel.findById(validatedData.faqId);
+                if (!faq || faq.accommodationId !== validatedData.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'FAQ not found for this accommodation'
+                    );
+                }
+                await faqModel.hardDelete({ id: validatedData.faqId });
+                return { success: true };
+            }
+        });
+    }
+
+    /**
+     * Updates a FAQ for an accommodation.
+     * @param actor - The actor performing the action.
+     * @param data - Input object for updating FAQ.
+     * @returns Output object (to be defined)
+     */
+    public async updateFaq(
+        actor: Actor,
+        data: UpdateFaqInput
+    ): Promise<ServiceOutput<{ faq: import('@repo/types').AccommodationFaqType }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateFaq',
+            input: { actor, ...data },
+            schema: UpdateFaqInputSchema,
+            execute: async (validatedData, validatedActor) => {
+                const accommodation = await this.model.findById(validatedData.accommodationId);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                this._canUpdate(validatedActor, accommodation);
+                const faqModel = new AccommodationFaqModel();
+                const faq = await faqModel.findById(validatedData.faqId);
+                if (!faq || faq.accommodationId !== validatedData.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'FAQ not found for this accommodation'
+                    );
+                }
+                const updatedFaq = await faqModel.update(
+                    { id: validatedData.faqId },
+                    validatedData.faq
+                );
+                if (!updatedFaq) {
+                    throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update FAQ');
+                }
+                return { faq: updatedFaq };
+            }
+        });
+    }
+
+    /**
+     * Gets FAQs for an accommodation.
+     * @param actor - The actor performing the action.
+     * @param data - Input object for getting FAQs.
+     * @returns Output object (to be defined)
+     */
+    public async getFaqs(
+        actor: Actor,
+        data: GetFaqsInput
+    ): Promise<ServiceOutput<{ faqs: import('@repo/types').AccommodationFaqType[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getFaqs',
+            input: { actor, ...data },
+            schema: GetFaqsInputSchema,
+            execute: async (validatedData, validatedActor) => {
+                const accommodation = await this.model.findById(validatedData.accommodationId);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                this._canView(validatedActor, accommodation);
+                const faqModel = new AccommodationFaqModel();
+                const { items: faqs } = await faqModel.findAll({
+                    accommodationId: validatedData.accommodationId
+                });
+                return { faqs };
+            }
+        });
+    }
+
+    /**
+     * Adds IA data to an accommodation.
+     * @param input - Input object for adding IA data.
+     * @param actor - The actor performing the action.
+     * @returns Output object (to be defined)
+     */
+    public async addIAData(_input: object, _actor: Actor): Promise<object> {
+        // FUTURE: This method is a stub for future implementation.
+        throw new Error('Not implemented');
+    }
+
+    /**
+     * Removes IA data from an accommodation.
+     * @param input - Input object for removing IA data.
+     * @param actor - The actor performing the action.
+     * @returns Output object (to be defined)
+     */
+    public async removeIAData(_input: object, _actor: Actor): Promise<object> {
+        // FUTURE: This method is a stub for future implementation.
+        throw new Error('Not implemented');
+    }
+
+    /**
+     * Updates IA data for an accommodation.
+     * @param input - Input object for updating IA data.
+     * @param actor - The actor performing the action.
+     * @returns Output object (to be defined)
+     */
+    public async updateIAData(_input: object, _actor: Actor): Promise<object> {
+        // FUTURE: This method is a stub for future implementation.
+        throw new Error('Not implemented');
+    }
+
+    /**
+     * Gets all IA data for an accommodation.
+     * @param input - Input object for getting all IA data.
+     * @param actor - The actor performing the action.
+     * @returns Output object (to be defined)
+     */
+    public async getAllIAData(_input: object, _actor: Actor): Promise<object> {
+        // FUTURE: This method is a stub for future implementation.
+        throw new Error('Not implemented');
+    }
+
+    /**
+     * Gets accommodations by owner.
+     * @param input - Input object for owner query.
+     * @param actor - The actor performing the action.
+     * @returns Output object (to be defined)
+     */
+    public async getByOwner(_input: object, _actor: Actor): Promise<object> {
+        // FUTURE: This method is a stub for future implementation.
+        throw new Error('Not implemented');
     }
 }

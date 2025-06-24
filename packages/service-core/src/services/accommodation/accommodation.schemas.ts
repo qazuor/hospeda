@@ -1,4 +1,9 @@
-import { AccommodationSchema, BaseSearchSchema, UserIdSchema } from '@repo/schemas';
+import {
+    AccommodationFaqSchema,
+    AccommodationSchema,
+    BaseSearchSchema,
+    UserIdSchema
+} from '@repo/schemas';
 import { AccommodationTypeEnum, AmenitiesTypeEnum, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 
@@ -164,6 +169,55 @@ export const UpdateVisibilitySchema = z.object({
     visibility: z.nativeEnum(VisibilityEnum)
 });
 
+/**
+ * Schema for adding a FAQ to an accommodation.
+ */
+export const AddFaqInputSchema = z.object({
+    accommodationId: z.string().uuid(),
+    faq: AccommodationFaqSchema.omit({
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+        createdById: true,
+        updatedById: true,
+        lifecycleState: true,
+        adminInfo: true
+    })
+});
+
+/**
+ * Schema for removing a FAQ from an accommodation.
+ */
+export const RemoveFaqInputSchema = z.object({
+    accommodationId: z.string().uuid(),
+    faqId: z.string().uuid()
+});
+
+/**
+ * Schema for updating a FAQ for an accommodation.
+ */
+export const UpdateFaqInputSchema = z.object({
+    accommodationId: z.string().uuid(),
+    faqId: z.string().uuid(),
+    faq: AccommodationFaqSchema.omit({
+        id: true,
+        accommodationId: true,
+        createdAt: true,
+        updatedAt: true,
+        createdById: true,
+        updatedById: true,
+        lifecycleState: true,
+        adminInfo: true
+    })
+});
+
+/**
+ * Schema for getting FAQs for an accommodation.
+ */
+export const GetFaqsInputSchema = z.object({
+    accommodationId: z.string().uuid()
+});
+
 // --- Inferred Types ---
 
 /** @see SearchAccommodationFiltersSchema */
@@ -190,3 +244,11 @@ export type GetSimilarInput = z.infer<typeof GetSimilarInputSchema>;
 export type GetTopRatedInput = z.infer<typeof GetTopRatedInputSchema>;
 /** @see GetReviewsInputSchema */
 export type GetReviewsInput = z.infer<typeof GetReviewsInputSchema>;
+/** @see AddFaqInputSchema */
+export type AddFaqInput = z.infer<typeof AddFaqInputSchema>;
+/** @see RemoveFaqInputSchema */
+export type RemoveFaqInput = z.infer<typeof RemoveFaqInputSchema>;
+/** @see UpdateFaqInputSchema */
+export type UpdateFaqInput = z.infer<typeof UpdateFaqInputSchema>;
+/** @see GetFaqsInputSchema */
+export type GetFaqsInput = z.infer<typeof GetFaqsInputSchema>;

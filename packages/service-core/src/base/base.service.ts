@@ -913,6 +913,37 @@ export abstract class BaseService<
         });
     }
 
+    /**
+     * Sets the featured status of the entity.
+     * @param input - ServiceInput with id and isFeatured.
+     * @returns {Promise<ServiceOutput<{ updated: boolean }>>}
+     */
+    public async setFeaturedStatus(
+        input: ServiceInput<{ id: string; isFeatured: boolean }>
+    ): Promise<ServiceOutput<{ updated: boolean }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: `setFeaturedStatus(id=${input.id}, isFeatured=${input.isFeatured})`,
+            input,
+            schema: z.object({ id: z.string(), isFeatured: z.boolean(), actor: z.any() }),
+            execute: async (validData, actor) => {
+                const entity = await this._getAndValidateEntity(
+                    validData.id,
+                    actor,
+                    this._canUpdate.bind(this)
+                );
+                if (!('isFeatured' in entity)) {
+                    throw new Error('Entity does not have isFeatured property');
+                }
+                const isFeatured = (entity as { isFeatured: boolean }).isFeatured;
+                if (isFeatured === validData.isFeatured) return { updated: false };
+                await this.model.update({ id: validData.id }, {
+                    isFeatured: validData.isFeatured
+                } as unknown as Partial<TEntity>);
+                return { updated: true };
+            }
+        });
+    }
+
     // --- PROTECTED ---
 
     /**
