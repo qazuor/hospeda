@@ -13,8 +13,8 @@
 import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../src/types';
-import { type ModelMock, createModelMock } from '../helpers/modelMockFactory';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
+import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
 import { mockActor } from './base.service.mockData';
 import { TestService } from './base.service.test.setup';
 
@@ -30,7 +30,7 @@ import { TestService } from './base.service.test.setup';
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: count', () => {
-    let modelMock: ModelMock;
+    let modelMock: StandardModelMock;
     let service: TestService;
 
     beforeEach(() => {

@@ -23,8 +23,8 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createModelMock } from '../../helpers/modelMockFactory';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { createModelMock } from '../../utils/modelMockFactory';
 
 /**
  * Test suite for the AccommodationService.getSummary method.

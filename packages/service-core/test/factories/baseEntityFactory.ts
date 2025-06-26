@@ -1,17 +1,16 @@
 /**
- * BaseEntityFactory<T>
+ * BaseFactoryBuilder<T>
  *
- * Generic base factory for creating entity mocks in a fluent and DRY way.
- *
- * Allows you to start from a base entity and apply overrides in a chainable manner.
+ * Generic, composable builder for test entities.
+ * Provides fluent .with()/.withOverrides() and .build() methods for robust, DRY, and type-safe test data creation.
  *
  * @template T - The entity type to mock.
  *
  * @example
- * const factory = new BaseEntityFactory(baseUser).with({ name: 'Alice' });
- * const user = factory.build();
+ * const builder = new BaseFactoryBuilder(baseUser).with({ name: 'Alice' });
+ * const user = builder.build();
  */
-export class BaseEntityFactory<T> {
+export class BaseFactoryBuilder<T> {
     protected base: T;
     protected data: Partial<T> = {};
     constructor(base: T) {
@@ -20,11 +19,19 @@ export class BaseEntityFactory<T> {
     /**
      * Applies overrides to the base entity in a chainable way.
      * @param overrides - Partial fields to override in the base entity.
-     * @returns {BaseEntityFactory<T>} The factory instance for chaining.
+     * @returns {BaseFactoryBuilder<T>} The builder instance for chaining.
      */
     with(overrides: Partial<T>) {
         Object.assign(this.data, overrides);
         return this;
+    }
+    /**
+     * Alias for .with().
+     * @param overrides - Partial fields to override in the base entity.
+     * @returns {BaseFactoryBuilder<T>} The builder instance for chaining.
+     */
+    withOverrides(overrides: Partial<T>) {
+        return this.with(overrides);
     }
     /**
      * Builds and returns the final mocked entity with all overrides applied.
