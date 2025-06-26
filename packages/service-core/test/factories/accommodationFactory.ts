@@ -244,15 +244,13 @@ export class AccommodationFactoryBuilder extends BaseFactoryBuilder<Accommodatio
 }
 
 /**
- * Creates a mock Accommodation entity, applying any provided overrides to the base object.
+ * Creates a mock Accommodation entity using the builder pattern, allowing for overrides.
  * @param overrides - Partial fields to override in the base accommodation.
  * @returns {AccommodationType} The resulting mock accommodation entity.
  */
 export const createAccommodation = (
     overrides: Partial<AccommodationType> = {}
-): AccommodationType => {
-    return { ...baseAccommodation, ...overrides };
-};
+): AccommodationType => new AccommodationFactoryBuilder().with(overrides).build();
 
 /**
  * Creates an array of mock Accommodation entities, each with unique IDs and names.
@@ -274,97 +272,46 @@ export const createAccommodations = (
     );
 
 /**
- * Creates a mock Accommodation entity in the public/active/approved state.
- * @param overrides - Partial fields to override in the base accommodation.
- * @returns {AccommodationType} The resulting mock accommodation entity.
+ * Creates a mock Accommodation entity in the public/active/approved state using the builder.
  */
 export const createPublicAccommodation = (
     overrides: Partial<AccommodationType> = {}
-): AccommodationType =>
-    createAccommodation({
-        visibility: VisibilityEnum.PUBLIC,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        deletedAt: undefined,
-        ...overrides
-    });
+): AccommodationType => new AccommodationFactoryBuilder().public().with(overrides).build();
 
 /**
- * Creates a mock Accommodation entity in the draft/private/pending state.
- * @param overrides - Partial fields to override in the base accommodation.
- * @returns {AccommodationType} The resulting mock accommodation entity.
+ * Creates a mock Accommodation entity in the draft/private/pending state using the builder.
  */
 export const createDraftAccommodation = (
     overrides: Partial<AccommodationType> = {}
-): AccommodationType =>
-    createAccommodation({
-        visibility: VisibilityEnum.PRIVATE,
-        lifecycleState: LifecycleStatusEnum.DRAFT,
-        moderationState: ModerationStatusEnum.PENDING,
-        deletedAt: undefined,
-        ...overrides
-    });
+): AccommodationType => new AccommodationFactoryBuilder().draft().with(overrides).build();
 
 /**
- * Creates a mock Accommodation entity in the pending/private/active state.
- * @param overrides - Partial fields to override in the base accommodation.
- * @returns {AccommodationType} The resulting mock accommodation entity.
+ * Creates a mock Accommodation entity in the pending/private/active state using the builder.
  */
 export const createPendingAccommodation = (
     overrides: Partial<AccommodationType> = {}
-): AccommodationType =>
-    createAccommodation({
-        visibility: VisibilityEnum.PRIVATE,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.PENDING,
-        deletedAt: undefined,
-        ...overrides
-    });
+): AccommodationType => new AccommodationFactoryBuilder().pending().with(overrides).build();
 
 /**
- * Creates a mock Accommodation entity in the rejected/private/active state.
- * @param overrides - Partial fields to override in the base accommodation.
- * @returns {AccommodationType} The resulting mock accommodation entity.
+ * Creates a mock Accommodation entity in the rejected/private/active state using the builder.
  */
 export const createRejectedAccommodation = (
     overrides: Partial<AccommodationType> = {}
-): AccommodationType =>
-    createAccommodation({
-        visibility: VisibilityEnum.PRIVATE,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.REJECTED,
-        deletedAt: undefined,
-        ...overrides
-    });
+): AccommodationType => new AccommodationFactoryBuilder().rejected().with(overrides).build();
 
 /**
- * Creates a mock Accommodation entity in the archived/private/approved state.
- * @param overrides - Partial fields to override in the base accommodation.
- * @returns {AccommodationType} The resulting mock accommodation entity.
+ * Creates a mock Accommodation entity in the archived/private/approved state using the builder.
  */
 export const createArchivedAccommodation = (
     overrides: Partial<AccommodationType> = {}
-): AccommodationType =>
-    createAccommodation({
-        visibility: VisibilityEnum.PRIVATE,
-        lifecycleState: LifecycleStatusEnum.ARCHIVED,
-        moderationState: ModerationStatusEnum.APPROVED,
-        deletedAt: undefined,
-        ...overrides
-    });
+): AccommodationType => new AccommodationFactoryBuilder().archived().with(overrides).build();
 
 /**
- * Creates a mock Accommodation entity marked as deleted (deletedAt set).
- * @param overrides - Partial fields to override in the base accommodation.
- * @returns {AccommodationType} The resulting mock accommodation entity.
+ * Creates a mock Accommodation entity marked as deleted (deletedAt set) using the builder.
  */
 export const createDeletedAccommodation = (
     overrides: Partial<AccommodationType> = {}
-): AccommodationType =>
-    createAccommodation({
-        deletedAt: new Date(),
-        ...overrides
-    });
+): AccommodationType => new AccommodationFactoryBuilder().deleted().with(overrides).build();
 
 /**
  * Generates a mock NewAccommodationInputType for use in tests.
