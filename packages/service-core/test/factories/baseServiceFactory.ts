@@ -8,7 +8,13 @@ import { vi } from 'vitest';
 import type { BaseModel } from '../../src/types';
 
 /**
- * Creates a mock BaseModel que implementa todos los métodos requeridos por la interfaz.
+ * Creates a mock implementation of BaseModel with all required CRUD methods mocked using Vitest.
+ *
+ * This utility is intended for use in BaseService-related tests, providing a fully mocked model
+ * that can be injected into service instances for isolated and controlled testing.
+ *
+ * @template T - The entity type for the BaseModel.
+ * @returns {BaseModel<T>} A mock BaseModel with all required methods mocked.
  */
 export const createMockBaseModel = <T>(): BaseModel<T> => ({
     findById: vi.fn(),
@@ -22,5 +28,12 @@ export const createMockBaseModel = <T>(): BaseModel<T> => ({
     findAll: vi.fn()
 });
 
+/**
+ * Example input object for use in BaseService tests.
+ */
 export const exampleInput = { id: 'entity-1' };
+
+/**
+ * Example output object for use in BaseService tests.
+ */
 export const exampleOutput = { id: 'entity-1', name: 'Entity' };

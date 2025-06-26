@@ -27,10 +27,28 @@ import {
 } from '@repo/types';
 import { getMockId } from '../factories/utilsFactory';
 
-// Helpers para IDs tipados
+/**
+ * Returns a mock AccommodationId for use in tests.
+ * @param id - Optional custom string to generate a deterministic ID.
+ * @returns AccommodationId
+ */
 export const getMockAccommodationId = (id?: string): AccommodationId =>
     getMockId('accommodation', id) as AccommodationId;
+
+/**
+ * Returns a mock AmenityId for use in tests.
+ * @param id - Optional custom string to generate a deterministic ID.
+ * @returns AmenityId
+ */
 export const getMockAmenityId = (id?: string): AmenityId => getMockId('feature', id) as AmenityId;
+
+/**
+ * Returns a mock DestinationId for use in tests.
+ * @param id - Optional custom string to generate a deterministic ID.
+ * @returns DestinationId
+ */
+export const getMockDestinationId = (id?: string): DestinationId =>
+    getMockId('destination', id) as DestinationId;
 
 const basePrice: AccommodationPriceType = {
     price: 100,
@@ -116,28 +134,44 @@ const baseAccommodation: AccommodationType = {
 };
 
 /**
- * EntityFactory<T>
  * Base generic factory for any entity type.
+ *
+ * Provides a simple way to create entity mocks with base data and overrides.
+ *
+ * @template T - The entity type.
  */
 export class EntityFactory<T> {
     protected base: T;
     constructor(base: T) {
         this.base = base;
     }
+    /**
+     * Builds a new entity instance, applying any provided overrides.
+     * @param overrides - Partial fields to override in the base entity.
+     * @returns {T} The resulting entity instance.
+     */
     build(overrides: Partial<T> = {}): T {
         return { ...this.base, ...overrides };
     }
 }
 
 /**
- * AccommodationFactoryBuilder
- * Builder pattern for AccommodationType
+ * Builder pattern for generating AccommodationType mocks for tests.
+ *
+ * Allows fluent, type-safe creation of Accommodation objects with various states and overrides.
+ *
+ * @example
+ * const accommodation = new AccommodationFactoryBuilder().public().withOwner('user-1').build();
  */
 export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType> {
     private data: Partial<AccommodationType> = {};
     constructor() {
         super(baseAccommodation);
     }
+    /**
+     * Sets the accommodation as public, active, and approved.
+     * @returns {AccommodationFactoryBuilder}
+     */
     public public() {
         this.data.visibility = VisibilityEnum.PUBLIC;
         this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
@@ -145,6 +179,10 @@ export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType
         this.data.deletedAt = undefined;
         return this;
     }
+    /**
+     * Sets the accommodation as draft, private, and pending moderation.
+     * @returns {AccommodationFactoryBuilder}
+     */
     public draft() {
         this.data.visibility = VisibilityEnum.PRIVATE;
         this.data.lifecycleState = LifecycleStatusEnum.DRAFT;
@@ -152,6 +190,10 @@ export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType
         this.data.deletedAt = undefined;
         return this;
     }
+    /**
+     * Sets the accommodation as pending moderation, private, and active.
+     * @returns {AccommodationFactoryBuilder}
+     */
     public pending() {
         this.data.visibility = VisibilityEnum.PRIVATE;
         this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
@@ -159,6 +201,10 @@ export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType
         this.data.deletedAt = undefined;
         return this;
     }
+    /**
+     * Sets the accommodation as rejected, private, and active.
+     * @returns {AccommodationFactoryBuilder}
+     */
     public rejected() {
         this.data.visibility = VisibilityEnum.PRIVATE;
         this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
@@ -166,6 +212,10 @@ export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType
         this.data.deletedAt = undefined;
         return this;
     }
+    /**
+     * Sets the accommodation as archived, private, and approved.
+     * @returns {AccommodationFactoryBuilder}
+     */
     public archived() {
         this.data.visibility = VisibilityEnum.PRIVATE;
         this.data.lifecycleState = LifecycleStatusEnum.ARCHIVED;
@@ -173,28 +223,51 @@ export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType
         this.data.deletedAt = undefined;
         return this;
     }
+    /**
+     * Marks the accommodation as deleted (sets deletedAt).
+     * @returns {AccommodationFactoryBuilder}
+     */
     public deleted() {
         this.data.deletedAt = new Date();
         return this;
     }
+    /**
+     * Sets the ownerId of the accommodation.
+     * @param ownerId - The user ID to set as owner.
+     * @returns {AccommodationFactoryBuilder}
+     */
     public withOwner(ownerId: UserId) {
         this.data.ownerId = ownerId;
         return this;
     }
+    /**
+     * Sets the amenities array for the accommodation.
+     * @param amenities - The amenities to assign.
+     * @returns {AccommodationFactoryBuilder}
+     */
     public withAmenities(amenities: AccommodationType['amenities']) {
         this.data.amenities = amenities;
         return this;
     }
+    /**
+     * Applies arbitrary overrides to the accommodation object.
+     * @param overrides - Partial fields to override.
+     * @returns {AccommodationFactoryBuilder}
+     */
     public withOverrides(overrides: Partial<AccommodationType>) {
         Object.assign(this.data, overrides);
         return this;
     }
+    /**
+     * Builds and returns the AccommodationType object.
+     * @returns {AccommodationType}
+     */
     public build(): AccommodationType {
         return { ...this.base, ...this.data };
     }
     /**
      * Adds a given number of mock amenities to the accommodation.
-     * @param {number} count - Number of amenities to generate.
+     * @param count - Number of amenities to generate.
      * @returns {AccommodationFactoryBuilder}
      */
     public withAmenitiesCount(count: number): this {
@@ -217,7 +290,7 @@ export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType
     /**
      * Adds a given number of random mock tags to the accommodation.
      * Each tag will have all required TagType fields populated with mock values.
-     * @param {number} count - Number of tags to generate.
+     * @param count - Number of tags to generate.
      * @returns {AccommodationFactoryBuilder}
      */
     public withRandomTags(count: number): this {
@@ -262,14 +335,23 @@ export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType
     }
 }
 
-// Unificación de métodos duplicados:
-// Exportar solo la versión flexible y centralizada
+/**
+ * Creates a mock Accommodation entity, applying any provided overrides to the base object.
+ * @param overrides - Partial fields to override in the base accommodation.
+ * @returns {AccommodationType} The resulting mock accommodation entity.
+ */
 export const createAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType => {
     return { ...baseAccommodation, ...overrides };
 };
 
+/**
+ * Creates an array of mock Accommodation entities, each with unique IDs and names.
+ * @param count - Number of accommodations to generate. Default: 3.
+ * @param overrides - Partial fields to override in each accommodation.
+ * @returns {AccommodationType[]} Array of mock accommodation entities.
+ */
 export const createAccommodations = (
     count = 3,
     overrides: Partial<AccommodationType> = {}
@@ -283,7 +365,11 @@ export const createAccommodations = (
         })
     );
 
-// Métodos de estado usando la nueva API centralizada
+/**
+ * Creates a mock Accommodation entity in the public/active/approved state.
+ * @param overrides - Partial fields to override in the base accommodation.
+ * @returns {AccommodationType} The resulting mock accommodation entity.
+ */
 export const createPublicAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType =>
@@ -295,6 +381,11 @@ export const createPublicAccommodation = (
         ...overrides
     });
 
+/**
+ * Creates a mock Accommodation entity in the draft/private/pending state.
+ * @param overrides - Partial fields to override in the base accommodation.
+ * @returns {AccommodationType} The resulting mock accommodation entity.
+ */
 export const createDraftAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType =>
@@ -306,6 +397,11 @@ export const createDraftAccommodation = (
         ...overrides
     });
 
+/**
+ * Creates a mock Accommodation entity in the pending/private/active state.
+ * @param overrides - Partial fields to override in the base accommodation.
+ * @returns {AccommodationType} The resulting mock accommodation entity.
+ */
 export const createPendingAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType =>
@@ -317,6 +413,11 @@ export const createPendingAccommodation = (
         ...overrides
     });
 
+/**
+ * Creates a mock Accommodation entity in the rejected/private/active state.
+ * @param overrides - Partial fields to override in the base accommodation.
+ * @returns {AccommodationType} The resulting mock accommodation entity.
+ */
 export const createRejectedAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType =>
@@ -328,6 +429,11 @@ export const createRejectedAccommodation = (
         ...overrides
     });
 
+/**
+ * Creates a mock Accommodation entity in the archived/private/approved state.
+ * @param overrides - Partial fields to override in the base accommodation.
+ * @returns {AccommodationType} The resulting mock accommodation entity.
+ */
 export const createArchivedAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType =>
@@ -339,6 +445,11 @@ export const createArchivedAccommodation = (
         ...overrides
     });
 
+/**
+ * Creates a mock Accommodation entity marked as deleted (deletedAt set).
+ * @param overrides - Partial fields to override in the base accommodation.
+ * @returns {AccommodationType} The resulting mock accommodation entity.
+ */
 export const createDeletedAccommodation = (
     overrides: Partial<AccommodationType> = {}
 ): AccommodationType =>
@@ -348,9 +459,9 @@ export const createDeletedAccommodation = (
     });
 
 /**
- * Generates a mock NewAccommodationInputType.
- * @param overrides - Partial fields to override defaults
- * @returns NewAccommodationInputType
+ * Generates a mock NewAccommodationInputType for use in tests.
+ * @param overrides - Partial fields to override defaults.
+ * @returns {NewAccommodationInputType} The resulting mock input object.
  */
 export const createNewAccommodationInput = (
     overrides: Partial<NewAccommodationInputType> = {}
@@ -375,9 +486,9 @@ export const createNewAccommodationInput = (
 });
 
 /**
- * Generates a mock UpdateAccommodationInputType.
- * @param overrides - Partial fields to override defaults
- * @returns UpdateAccommodationInputType
+ * Generates a mock UpdateAccommodationInputType for use in tests.
+ * @param overrides - Partial fields to override defaults.
+ * @returns {UpdateAccommodationInputType} The resulting mock input object.
  */
 export const createUpdateAccommodationInput = (
     overrides: Partial<UpdateAccommodationInputType> = {}
@@ -507,9 +618,9 @@ const baseAccommodationWithMockIds: Omit<
 };
 
 /**
- * Generates a mock Accommodation entity with mock IDs.
- * @param overrides - Partial fields to override defaults
- * @returns AccommodationType
+ * Generates a mock Accommodation entity with mock IDs for use in tests.
+ * @param overrides - Partial fields to override defaults.
+ * @returns {AccommodationType} The resulting mock accommodation entity.
  */
 export const createAccommodationWithMockIds = (
     overrides: Partial<AccommodationType> = {}
@@ -532,9 +643,9 @@ export const createAccommodationWithMockIds = (
 });
 
 /**
- * Generates an array of mock Accommodation entities with mock IDs.
- * @param count - Number of accommodations to generate
- * @returns AccommodationType[]
+ * Generates an array of mock Accommodation entities with mock IDs for use in tests.
+ * @param count - Number of accommodations to generate. Default: 3.
+ * @returns {AccommodationType[]} Array of mock accommodation entities.
  */
 export const createAccommodationsWithMockIds = (count = 3): AccommodationType[] =>
     Array.from({ length: count }, (_, i) =>
@@ -546,9 +657,9 @@ export const createAccommodationsWithMockIds = (count = 3): AccommodationType[] 
     );
 
 /**
- * Generates a mock NewAccommodationInputType with mock IDs.
- * @param overrides - Partial fields to override defaults
- * @returns NewAccommodationInputType
+ * Generates a mock NewAccommodationInputType with mock IDs for use in tests.
+ * @param overrides - Partial fields to override defaults.
+ * @returns {NewAccommodationInputType} The resulting mock input object.
  */
 export const createNewAccommodationInputWithMockIds = (
     overrides: Partial<NewAccommodationInputType> = {}
@@ -573,9 +684,9 @@ export const createNewAccommodationInputWithMockIds = (
 });
 
 /**
- * Generates a mock UpdateAccommodationInputType with mock IDs.
- * @param overrides - Partial fields to override defaults
- * @returns UpdateAccommodationInputType
+ * Generates a mock UpdateAccommodationInputType with mock IDs for use in tests.
+ * @param overrides - Partial fields to override defaults.
+ * @returns {UpdateAccommodationInputType} The resulting mock input object.
  */
 export const createUpdateAccommodationInputWithMockIds = (
     overrides: Partial<UpdateAccommodationInputType> = {}

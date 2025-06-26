@@ -1,7 +1,12 @@
 /**
- * logging.test.ts
+ * @fileoverview
+ * Test suite for logging utility functions (logMethodStart, logMethodEnd, logError, logPermission, logDenied, logGrant).
+ * Ensures robust, type-safe, and comprehensive coverage of logging logic for service methods, permissions, and error handling, including:
+ * - Logging of method start/end, errors, permission checks, access grants/denials
+ * - Use of a fully mocked logger for assertions
+ * - Edge cases and correct log message formatting
  *
- * Tests for logging util functions.
+ * All test data, comments, and documentation are in English, following project guidelines.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -45,6 +50,16 @@ afterEach(() => {
     (loggerMock.permission as unknown as { mockRestore: () => void }).mockRestore();
 });
 
+/**
+ * Test suite for logging utility functions.
+ *
+ * Esta suite verifica:
+ * - Correct logging for method lifecycle, errors, permissions, grants, and denials
+ * - Use of a fully mocked logger for assertions
+ * - Robustness against edge cases and log message formatting
+ *
+ * The tests use a mocked logger and various scenarios to ensure all logging logic is covered.
+ */
 describe('logging util', () => {
     it('logs method start', () => {
         logging.logMethodStart(mockMethodName, mockInput, mockActor);

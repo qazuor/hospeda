@@ -41,35 +41,52 @@ const entityFactoryMap = {
 type ActorType = keyof typeof actorFactoryMap;
 type EntityType = keyof typeof entityFactoryMap;
 
+/**
+ * Options for configuring a test scenario for AccommodationService.
+ *
+ * @property actorType - The type of actor to use (guest, host, admin, superAdmin). Default: 'guest'.
+ * @property entityType - The type of accommodation entity to use (public, draft, pending, rejected, archived, deleted). Default: 'public'.
+ * @property isOwner - Whether the actor should be set as the owner of the entity. Default: false.
+ * @property actorOverrides - Partial overrides for the actor object.
+ * @property entityOverrides - Partial overrides for the accommodation entity.
+ * @property actor - (Advanced) A pre-built actor instance to use instead of building one.
+ * @property entity - (Advanced) A pre-built accommodation entity to use instead of building one.
+ */
 interface ScenarioOptions {
     actorType?: ActorType;
     entityType?: EntityType;
     isOwner?: boolean;
     actorOverrides?: Partial<Actor>;
     entityOverrides?: Partial<AccommodationType>;
+    actor?: Actor;
+    entity?: AccommodationType;
 }
 
 /**
- * Creates a complete test scenario for the AccommodationService.
+ * Creates a complete, robust test scenario for the AccommodationService.
  *
  * This factory orchestrates other factories/builders to set up:
- * 1. The Actor performing the action (using ActorFactoryBuilder).
- * 2. The Accommodation entity being acted upon (using AccommodationFactoryBuilder).
+ * 1. The Actor performing the action (using ActorFactoryBuilder or a provided actor).
+ * 2. The Accommodation entity being acted upon (using AccommodationFactoryBuilder or a provided entity).
  * 3. Mocks for the AccommodationModel to return the entity.
  *
- * This allows for clean, declarative, and robust test setups.
+ * This allows for clean, declarative, and robust test setups for all service methods.
  *
- * @param options - Configuration for the scenario.
- * @returns An object containing the service, actor, entity, and mocked model.
+ * @param options - Configuration for the scenario (see ScenarioOptions).
+ * @returns An object containing:
+ *   - service: The AccommodationService class (not an instance).
+ *   - actor: The actor performing the action.
+ *   - entity: The accommodation entity being acted upon.
+ *   - mockModel: The mocked AccommodationModel.
  *
  * @example
- * // Creates a scenario with a host who owns a public accommodation using builders
+ * // Using builders for full control
  * const { service, actor, entity } = createAccommodationScenario({
  *   actor: new ActorFactoryBuilder().host().withId('user-123').build(),
  *   entity: new AccommodationFactoryBuilder().public().withOwner('user-123').build()
  * });
  *
- * // Or using legacy options
+ * // Using legacy options for quick setup
  * const { service, actor, entity } = createAccommodationScenario({
  *   actorType: 'host',
  *   entityType: 'public',
@@ -83,8 +100,8 @@ export const createAccommodationScenario = (options: ScenarioOptions = {}) => {
         isOwner = false,
         actorOverrides = {},
         entityOverrides = {},
-        actor, // Nuevo: permite pasar un actor ya construido
-        entity // Nuevo: permite pasar una entidad ya construida
+        actor, // New: allows passing a pre-built actor
+        entity // New: allows passing a pre-built entity
     } = options as ScenarioOptions & { actor?: Actor; entity?: AccommodationType };
 
     // 1. Create the actor using the builder or legacy factory

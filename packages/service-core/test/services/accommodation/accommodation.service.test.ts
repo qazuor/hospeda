@@ -1,52 +1,72 @@
+/**
+ * @fileoverview
+ * Test suite for the AccommodationService covering all core service methods.
+ * Ensures robust, type-safe, and homogeneous handling of creation, validation, permission, normalization, and error propagation logic.
+ *
+ * All test data, comments, and documentation are in English, following project guidelines.
+ */
 import { ServiceErrorCode } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import { type Actor, ServiceError } from '../../../src';
-// import { createAccommodationScenario } from '../../factories/accommodationScenarioFactory';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
+import { createModelMock } from '../../helpers/modelMockFactory';
+import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+// import { expectSuccess, expectForbiddenError, expectInternalError, expectValidationError } from '../../helpers/assertions';
 
-// Mock dependencies BEFORE importing the service
 vi.mock('../../../src/services/accommodation/accommodation.permissions');
 vi.mock('../../../src/services/accommodation/accommodation.helpers');
 
 import type { AccommodationModel } from '@repo/db';
+import type { Mocked } from 'vitest';
 import type { CreateAccommodationSchema } from '../../../src/services/accommodation';
 import * as accommodationHelpers from '../../../src/services/accommodation/accommodation.helpers';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { ServiceLogger } from '../../../src/utils';
 
-// Simplified mock model, similar to base tests
-const mockModel = {
-    findOne: vi.fn(),
-    create: vi.fn(),
-    getById: vi.fn(),
-    getByName: vi.fn()
-};
+// Centralized logger mock
+const mockLogger: ServiceLogger = {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn()
+} as unknown as ServiceLogger;
 
+/**
+ * Test suite for the AccommodationService.
+ *
+ * This suite verifies:
+ * - Correct entity creation and input validation
+ * - Permission checks and error codes for forbidden, validation, and internal errors
+ * - Use of normalizers and hooks
+ * - Robustness against errors in helpers, hooks, and database operations
+ *
+ * The tests use mocks and spies to simulate model and service behavior, ensuring
+ * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
+ */
 describe('AccommodationService', () => {
+    /**
+     * AccommodationModel mock, strongly typed as vi.Mocked<AccommodationModel> to allow vi.fn() methods (mockResolvedValue, etc.)
+     */
+    let modelMock: Mocked<AccommodationModel>;
     let service: AccommodationService;
     let actor: Actor;
     let entity: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
     let createInput: z.infer<typeof CreateAccommodationSchema>;
 
-    // Simplified logger mock
-    const mockLogger: ServiceLogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn()
-    } as unknown as ServiceLogger;
-
     beforeEach(() => {
         vi.clearAllMocks();
-        service = new AccommodationService(
-            { logger: mockLogger },
-            mockModel as unknown as AccommodationModel
-        );
-
-        // Setup common test data using builders
+        modelMock = {
+            ...createModelMock(['countByFilters', 'search', 'getById', 'getByName', 'create']),
+            table: 'accommodation',
+            entityName: 'accommodation',
+            countByFilters: vi.fn(),
+            search: vi.fn(),
+            create: vi.fn()
+        } as unknown as Mocked<AccommodationModel>;
+        service = createServiceTestInstance(AccommodationService, modelMock, mockLogger);
         actor = new ActorFactoryBuilder().host().build();
         entity = new AccommodationFactoryBuilder()
             .public()
@@ -79,14 +99,14 @@ describe('AccommodationService', () => {
         // Arrange
         vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
         vi.mocked(accommodationHelpers.generateSlug).mockResolvedValue(entity.slug);
-        mockModel.create.mockResolvedValue(entity);
+        modelMock.create.mockResolvedValue(entity);
 
         // Act
         const result = await service.create(actor, createInput);
 
         // Assert
         expect(permissionHelpers.checkCanCreate).toHaveBeenCalledWith(actor, expect.any(Object));
-        expect(mockModel.create).toHaveBeenCalledWith(
+        expect(modelMock.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 slug: entity.slug,
                 name: entity.name,
@@ -110,7 +130,7 @@ describe('AccommodationService', () => {
 
         // Assert
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-        expect(mockModel.create).not.toHaveBeenCalled();
+        expect(modelMock.create).not.toHaveBeenCalled();
     });
 
     it('should return INTERNAL_ERROR if slug generation fails', async () => {
@@ -124,13 +144,13 @@ describe('AccommodationService', () => {
 
         // Assert
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-        expect(mockModel.create).not.toHaveBeenCalled();
+        expect(modelMock.create).not.toHaveBeenCalled();
     });
 
     it('should return INTERNAL_ERROR if database creation fails', async () => {
         // Arrange
         const dbError = new Error('DB connection failed');
-        mockModel.create.mockRejectedValue(dbError);
+        modelMock.create.mockRejectedValue(dbError);
         vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
         vi.mocked(accommodationHelpers.generateSlug).mockResolvedValue(entity.slug);
 
@@ -142,7 +162,7 @@ describe('AccommodationService', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // Arrange: Falta un campo requerido (por ejemplo, name)
+        // Arrange: A required field is missing (for example, name)
         const { name, ...invalidInput } = createInput;
         vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
 
@@ -152,28 +172,29 @@ describe('AccommodationService', () => {
 
         // Assert
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
-        expect(mockModel.create).not.toHaveBeenCalled();
+        expect(modelMock.create).not.toHaveBeenCalled();
     });
 
     it('should use the create normalizer if provided', async () => {
         // Arrange
         const normalizer = vi.fn((data) => ({ ...data, normalized: true }));
-        const serviceWithNormalizer = new AccommodationService(
-            { logger: mockLogger },
-            mockModel as unknown as AccommodationModel
+        const serviceWithNormalizer = createServiceTestInstance(
+            AccommodationService,
+            modelMock,
+            mockLogger
         );
         // @ts-ignore
         serviceWithNormalizer.normalizers = { create: normalizer };
         vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
         vi.mocked(accommodationHelpers.generateSlug).mockResolvedValue(entity.slug);
-        mockModel.create.mockResolvedValue(entity);
+        modelMock.create.mockResolvedValue(entity);
 
         // Act
         await serviceWithNormalizer.create(actor, createInput);
 
         // Assert
         expect(normalizer).toHaveBeenCalledWith(createInput, actor);
-        expect(mockModel.create).toHaveBeenCalledWith(
+        expect(modelMock.create).toHaveBeenCalledWith(
             expect.objectContaining({ normalized: true })
         );
     });
@@ -182,8 +203,7 @@ describe('AccommodationService', () => {
         // Arrange
         vi.mocked(permissionHelpers.checkCanCreate).mockReturnValue();
         vi.mocked(accommodationHelpers.generateSlug).mockResolvedValue(entity.slug);
-        mockModel.create.mockResolvedValue(entity);
-        // Cast seguro para acceder a métodos protegidos en tests
+        modelMock.create.mockResolvedValue(entity);
         const afterCreateSpy = vi.spyOn(
             service as unknown as { _afterCreate: (...args: unknown[]) => unknown },
             '_afterCreate'

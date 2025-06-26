@@ -1,18 +1,44 @@
+/**
+ * @fileoverview
+ * Test suite for the `updateVisibility` method of BaseService and its derivatives.
+ * Ensures robust, type-safe, and homogeneous handling of updateVisibility logic, including:
+ * - Successful entity visibility update
+ * - Input validation and error handling
+ * - Permission checks and forbidden access
+ * - Database/internal errors
+ * - Lifecycle hook error propagation
+ *
+ * All test data, comments, and documentation are in English, following project guidelines.
+ */
 import { RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Actor } from '../../src/types';
-import { mockModel } from '../setupTest';
+import { type ModelMock, createModelMock } from '../helpers/modelMockFactory';
+import { createServiceTestInstance } from '../helpers/serviceTestFactory';
 import { MOCK_ENTITY_ID, mockAdminActor, mockEntity } from './base.service.mockData';
 import { TestService } from './base.service.test.setup';
 
+/**
+ * Test suite for the `updateVisibility` method of BaseService.
+ *
+ * This suite verifies:
+ * - Correct entity visibility update on valid input and permissions
+ * - Validation and error codes for not found, forbidden, and internal errors
+ * - Robustness against errors in hooks and database operations
+ *
+ * The tests use mocks and spies to simulate model and service behavior, ensuring
+ * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
+ */
 describe('BaseService: updateVisibility', () => {
+    let modelMock: ModelMock;
     let service: TestService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        service = new TestService();
-        mockModel.findById.mockResolvedValue(mockEntity);
-        mockModel.update.mockResolvedValue({ ...mockEntity, visibility: VisibilityEnum.PRIVATE });
+        modelMock = createModelMock();
+        service = createServiceTestInstance(TestService, modelMock);
+        modelMock.findById.mockResolvedValue(mockEntity);
+        modelMock.update.mockResolvedValue({ ...mockEntity, visibility: VisibilityEnum.PRIVATE });
     });
 
     it('should update entity visibility and return the updated entity', async () => {
@@ -22,14 +48,14 @@ describe('BaseService: updateVisibility', () => {
             VisibilityEnum.PRIVATE
         );
         expect(result.data?.visibility).toBe(VisibilityEnum.PRIVATE);
-        expect(mockModel.update).toHaveBeenCalledWith(
+        expect(modelMock.update).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
             expect.objectContaining({ visibility: VisibilityEnum.PRIVATE })
         );
     });
 
     it('should return a "not found" error if the entity does not exist', async () => {
-        mockModel.findById.mockResolvedValue(null);
+        modelMock.findById.mockResolvedValue(null);
         const result = await service.updateVisibility(
             mockAdminActor,
             MOCK_ENTITY_ID,
@@ -49,7 +75,7 @@ describe('BaseService: updateVisibility', () => {
     });
 
     it('should return an internal error if database update fails', async () => {
-        mockModel.update.mockRejectedValue(new Error('DB Error'));
+        modelMock.update.mockRejectedValue(new Error('DB Error'));
         const result = await service.updateVisibility(
             mockAdminActor,
             MOCK_ENTITY_ID,

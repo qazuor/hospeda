@@ -4,7 +4,6 @@ import { BaseService } from '../../src/base/base.service';
 import type { Actor, BaseModel } from '../../src/types';
 import { ServiceError } from '../../src/types';
 import { serviceLogger } from '../../src/utils/service-logger';
-import { mockModel } from '../setupTest';
 
 // Schemas and Types for testing
 export const TestEntitySchema = z.object({
@@ -42,11 +41,17 @@ export class TestService extends BaseService<
     typeof SearchTestEntitySchema
 > {
     protected entityName = 'testEntity';
-    protected model = mockModel;
+    protected model!: BaseModel<TestEntity>;
     protected createSchema = CreateTestEntitySchema;
     protected updateSchema = UpdateTestEntitySchema;
     protected searchSchema = SearchTestEntitySchema;
     protected logger = serviceLogger;
+
+    constructor(deps: { logger: typeof serviceLogger }, model: BaseModel<TestEntity>) {
+        super();
+        this.logger = deps.logger;
+        this.model = model;
+    }
 
     protected _canCreate(actor: Actor, _data: z.infer<typeof CreateTestEntitySchema>): void {
         if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_CREATE)) {
