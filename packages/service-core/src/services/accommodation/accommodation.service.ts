@@ -260,7 +260,7 @@ export class AccommodationService extends BaseService<
                     );
                 }
                 if (!entityResult.data) {
-                    return null;
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 const entity = entityResult.data;
 
@@ -317,7 +317,7 @@ export class AccommodationService extends BaseService<
                     );
                 }
                 if (!entityResult.data) {
-                    return null;
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 const entity = entityResult.data;
                 return {
