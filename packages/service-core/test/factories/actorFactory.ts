@@ -1,7 +1,7 @@
 /**
  * actorFactory.ts
  *
- * Factory functions for generating Actor mock data for tests.
+ * Factory functions and builder for generating Actor mock data for tests.
  * All mock data for service-core tests should be created here.
  */
 
@@ -20,9 +20,13 @@ const baseActor: Actor = {
 
 /**
  * Creates a mock Actor object, allowing for overrides.
- * This is the base factory function.
+ * This is the base factory function for all actor types.
+ *
  * @param overrides - Partial actor object to override default values.
- * @returns A complete mock Actor object.
+ * @returns {Actor} A complete mock Actor object.
+ *
+ * @example
+ * const actor = createActor({ id: 'user-1', role: RoleEnum.ADMIN });
  */
 export const createActor = (overrides: Partial<Actor> = {}): Actor => ({
     ...baseActor,
@@ -30,10 +34,10 @@ export const createActor = (overrides: Partial<Actor> = {}): Actor => ({
 });
 
 /**
- * Creates a mock GUEST actor.
- * Guests have no ID, the GUEST role, and no permissions.
+ * Creates a mock GUEST actor (anonymous, no permissions).
+ *
  * @param overrides - Partial actor object to override default guest values.
- * @returns A mock guest Actor object.
+ * @returns {Actor} A mock guest Actor object.
  */
 export const createGuestActor = (overrides: Partial<Actor> = {}): Actor =>
     createActor({
@@ -44,10 +48,10 @@ export const createGuestActor = (overrides: Partial<Actor> = {}): Actor =>
     });
 
 /**
- * Creates a mock HOST actor.
- * Hosts have the HOST role and default permissions to manage their own accommodations.
+ * Creates a mock HOST actor (can manage own accommodations).
+ *
  * @param overrides - Partial actor object to override default host values.
- * @returns A mock host Actor object.
+ * @returns {Actor} A mock host Actor object.
  */
 export const createHostActor = (overrides: Partial<Actor> = {}): Actor =>
     createActor({
@@ -62,10 +66,10 @@ export const createHostActor = (overrides: Partial<Actor> = {}): Actor =>
     });
 
 /**
- * Creates a mock ADMIN actor.
- * Admins have the ADMIN role and permissions to manage any accommodation.
+ * Creates a mock ADMIN actor (can manage any accommodation).
+ *
  * @param overrides - Partial actor object to override default admin values.
- * @returns A mock admin Actor object.
+ * @returns {Actor} A mock admin Actor object.
  */
 export const createAdminActor = (overrides: Partial<Actor> = {}): Actor =>
     createActor({
@@ -81,10 +85,10 @@ export const createAdminActor = (overrides: Partial<Actor> = {}): Actor =>
     });
 
 /**
- * Creates a mock SUPER_ADMIN actor.
- * Super admins have the SUPER_ADMIN role and all permissions.
+ * Creates a mock SUPER_ADMIN actor (all permissions).
+ *
  * @param overrides - Partial actor object to override default super admin values.
- * @returns A mock super admin Actor object.
+ * @returns {Actor} A mock super admin Actor object.
  */
 export const createSuperAdminActor = (overrides: Partial<Actor> = {}): Actor =>
     createActor({
@@ -95,8 +99,7 @@ export const createSuperAdminActor = (overrides: Partial<Actor> = {}): Actor =>
     });
 
 /**
- * ActorFactoryBuilder
- * Builder pattern for Actor mocks in tests.
+ * Builder pattern for generating Actor mocks in tests.
  *
  * Allows fluent, type-safe creation of Actor objects for different roles and permissions.
  *
@@ -107,7 +110,7 @@ export class ActorFactoryBuilder {
     private data: Partial<Actor> = {};
     /**
      * Sets the actor as a guest (anonymous, no permissions).
-     * @returns {ActorFactoryBuilder}
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public guest(): this {
         this.data.id = '';
@@ -117,7 +120,7 @@ export class ActorFactoryBuilder {
     }
     /**
      * Sets the actor as a host (can manage own accommodations).
-     * @returns {ActorFactoryBuilder}
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public host(): this {
         this.data.id = getMockId('user', 'host');
@@ -131,7 +134,7 @@ export class ActorFactoryBuilder {
     }
     /**
      * Sets the actor as an admin (can manage any accommodation).
-     * @returns {ActorFactoryBuilder}
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public admin(): this {
         this.data.id = getMockId('user', 'admin');
@@ -146,7 +149,7 @@ export class ActorFactoryBuilder {
     }
     /**
      * Sets the actor as a super admin (all permissions).
-     * @returns {ActorFactoryBuilder}
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public superAdmin(): this {
         this.data.id = getMockId('user', 'super-admin');
@@ -156,8 +159,8 @@ export class ActorFactoryBuilder {
     }
     /**
      * Sets a custom ID for the actor.
-     * @param {string} id - The user ID.
-     * @returns {ActorFactoryBuilder}
+     * @param id - The user ID to assign.
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public withId(id: string): this {
         this.data.id = id;
@@ -165,8 +168,8 @@ export class ActorFactoryBuilder {
     }
     /**
      * Sets custom permissions for the actor.
-     * @param {PermissionEnum[]} permissions - Array of permissions.
-     * @returns {ActorFactoryBuilder}
+     * @param permissions - Array of permissions to assign.
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public withPermissions(permissions: Actor['permissions']): this {
         this.data.permissions = permissions;
@@ -174,8 +177,8 @@ export class ActorFactoryBuilder {
     }
     /**
      * Sets a custom role for the actor.
-     * @param {RoleEnum} role - The role to assign.
-     * @returns {ActorFactoryBuilder}
+     * @param role - The role to assign.
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public withRole(role: RoleEnum): this {
         this.data.role = role;
@@ -183,16 +186,16 @@ export class ActorFactoryBuilder {
     }
     /**
      * Applies arbitrary overrides to the actor object.
-     * @param {Partial<Actor>} overrides - Partial actor fields.
-     * @returns {ActorFactoryBuilder}
+     * @param overrides - Partial actor fields to override.
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public withOverrides(overrides: Partial<Actor>): this {
         Object.assign(this.data, overrides);
         return this;
     }
     /**
-     * Builds and returns the Actor object.
-     * @returns {Actor}
+     * Builds and returns the Actor object with all applied overrides.
+     * @returns {Actor} The resulting mock Actor object.
      */
     public build(): Actor {
         return { ...baseActor, ...this.data };

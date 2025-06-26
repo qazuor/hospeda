@@ -1,7 +1,12 @@
 /**
- * validation.test.ts
+ * @fileoverview
+ * Test suite for validation utility functions (validateInput, validateActor, validateEntity).
+ * Ensures robust, type-safe, and comprehensive coverage of input, actor, and entity validation logic, including:
+ * - Success and failure cases for all validation utilities
+ * - Error handling and custom context messages
+ * - Edge cases and non-Zod error propagation
  *
- * Tests for validation util functions.
+ * All test data, comments, and documentation are in English, following project guidelines.
  */
 
 import { ServiceErrorCode } from '@repo/types';
@@ -21,6 +26,15 @@ import {
     validSchema
 } from './validation.mockData';
 
+/**
+ * Test suite for validation utility functions.
+ *
+ * Esta suite verifica:
+ * - Correct validation and error handling for input, actor, and entity
+ * - Custom context messages and edge case propagation
+ *
+ * The tests use valid and invalid data to ensure all validation logic is covered.
+ */
 describe('validation util', () => {
     it('validates input with valid schema', () => {
         const result = validateInput(validSchema, validInput, context);

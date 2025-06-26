@@ -1,3 +1,14 @@
+/**
+ * @fileoverview
+ * Test suite for the getEntityPermission utility function.
+ * Ensures robust, type-safe, and comprehensive coverage of all permission scenarios for entities, including:
+ * - Super admin, admin, owner, user, and guest roles
+ * - All entity states (public, private, restricted, draft, pending, archived, rejected)
+ * - All actions (view, update, delete, restore, hardDelete, approve, reject, feature, publish)
+ * - All edge cases and error reasons
+ *
+ * All test data, comments, and documentation are in English, following project guidelines.
+ */
 import {
     EntityPermissionReasonEnum,
     LifecycleStatusEnum,
@@ -13,6 +24,16 @@ import {
     getEntityPermission
 } from '../../src/utils/permission';
 
+/**
+ * Test suite for the getEntityPermission utility function.
+ *
+ * This suite verifies:
+ * - Correct permission evaluation for all roles and entity states
+ * - All possible actions and permission reasons
+ * - Robustness against edge cases and invalid scenarios
+ *
+ * The tests use a variety of actors and entity states to ensure full coverage of the permission logic.
+ */
 const ownerId = 'user-1';
 const otherId = 'user-2';
 
@@ -188,7 +209,7 @@ describe('getEntityPermission', () => {
         ).toBe(true);
     });
 
-    it('deniega view si no es público o no está aprobado', () => {
+    it('denies view if not public or not approved', () => {
         expect(
             getEntityPermission(user, entity({ visibility: VisibilityEnum.PRIVATE }), 'view')
                 .allowed
@@ -220,7 +241,7 @@ describe('getEntityPermission', () => {
         ).toBe(EntityPermissionReasonEnum.DRAFT);
     });
 
-    it('permite update/delete/restore a admin y owner, deniega a user/guest', () => {
+    it('allows update/delete/restore to admin and owner, denies to user/guest', () => {
         for (const action of ['update', 'delete', 'restore'] as EntityAction[]) {
             expect(getEntityPermission(admin, baseEntity, action, { hasAny: true }).allowed).toBe(
                 true
@@ -245,7 +266,7 @@ describe('getEntityPermission', () => {
         }
     });
 
-    it('permite approve/reject/feature/publish solo a admin', () => {
+    it('allows approve/reject/feature/publish only to admin', () => {
         for (const action of ['approve', 'reject', 'feature', 'publish'] as EntityAction[]) {
             expect(getEntityPermission(admin, baseEntity, action).allowed).toBe(true);
             expect(getEntityPermission(admin, baseEntity, action).reason).toBe(

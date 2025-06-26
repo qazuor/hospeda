@@ -2,8 +2,8 @@ import { type PermissionEnum, RoleEnum } from '@repo/types';
 import type { Actor } from '../../src/types';
 
 /**
- * Utilidad para crear un actor seguro y configurable para tests.
- * @param options - Opciones para id, role y permissions
+ * Utility to create a safe and configurable actor for tests.
+ * @param options - Options for id, role, and permissions
  * @returns Actor
  */
 export const getSafeActor = ({

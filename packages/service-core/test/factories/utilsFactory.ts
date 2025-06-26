@@ -7,6 +7,9 @@
 
 import crypto from 'node:crypto';
 
+/**
+ * Supported entity types for generating mock IDs.
+ */
 export type IdTypes =
     | 'user'
     | 'accommodation'
@@ -33,10 +36,18 @@ const idTypeStrings: Record<IdTypes, string> = {
 };
 
 /**
- * Returns a valid UUID for the given entity type.
- * @param type - The entity type
- * @param id - Optional custom string to hash into a UUID
- * @returns string (UUID)
+ * Returns a valid UUID for the given entity type, optionally using a custom string for deterministic output.
+ *
+ * If an explicit UUID is provided as id, it is returned as-is. Otherwise, a deterministic UUID is generated
+ * based on the provided id string, or a random UUID for the entity type if no id is given.
+ *
+ * @param type - The entity type for which to generate a mock ID.
+ * @param id - Optional custom string to hash into a UUID, or an explicit UUID.
+ * @returns {string} A valid UUID string for the entity type.
+ *
+ * @example
+ * const userId = getMockId('user');
+ * const customId = getMockId('accommodation', 'my-custom-key');
  */
 export const getMockId = (type: IdTypes, id?: string): string => {
     if (id && /^[0-9a-fA-F-]{36}$/.test(id)) return id;
@@ -52,3 +63,14 @@ export const getMockId = (type: IdTypes, id?: string): string => {
     }
     return idTypeStrings[type];
 };
+
+/**
+ * Returns a mock FAQ ID for use in tests, using the 'feature' entity type.
+ * @param id - Optional custom string to hash into a UUID, or an explicit UUID.
+ * @returns {string} A valid UUID string for a FAQ entity.
+ *
+ * @example
+ * const faqId = getMockFaqId();
+ * const customFaqId = getMockFaqId('faq-123');
+ */
+export const getMockFaqId = (id?: string): string => getMockId('feature', id);

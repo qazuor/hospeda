@@ -1,3 +1,13 @@
+/**
+ * @fileoverview
+ * Test suite for permission helper functions (checkPermission, checkGenericPermission, getPermissionDescription).
+ * Ensures robust, type-safe, and comprehensive coverage of permission checking and error handling logic, including:
+ * - Permission checks for actors with various roles and permissions
+ * - Description generation for known and unknown permissions
+ * - Edge cases and error scenarios for generic permission checks
+ *
+ * All test data, comments, and documentation are in English, following project guidelines.
+ */
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import { ServiceError } from '../../src/types';
@@ -8,6 +18,16 @@ import {
 } from '../../src/utils/permission';
 import { mockActor, mockAdminActor } from '../base/base.service.mockData';
 
+/**
+ * Test suite for permission helper functions.
+ *
+ * Esta suite verifica:
+ * - Correct permission checks for all relevant scenarios
+ * - Description generation for permissions
+ * - Robustness against edge cases and error propagation
+ *
+ * The tests use various actors and permissions to ensure all logic is covered.
+ */
 describe('Permission Helper Functions', () => {
     describe('checkPermission', () => {
         it('should return true if actor has the permission', async () => {

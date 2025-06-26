@@ -1,21 +1,50 @@
+/**
+ * @fileoverview
+ * Test suite for the `update` method of BaseService and its derivatives.
+ * Ensures robust, type-safe, and homogeneous handling of update logic, including:
+ * - Successful entity update
+ * - Input validation and error handling
+ * - Permission checks and forbidden access
+ * - Database/internal errors
+ * - Lifecycle hook error propagation
+ * - Normalizer usage
+ *
+ * All test data, comments, and documentation are in English, following project guidelines.
+ */
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Actor } from '../../src/types';
-import { mockModel } from '../setupTest';
+import { type ModelMock, createModelMock } from '../helpers/modelMockFactory';
+import { createServiceTestInstance } from '../helpers/serviceTestFactory';
 import { MOCK_ENTITY_ID, mockAdminActor, mockEntity } from './base.service.mockData';
 import { TestService } from './base.service.test.setup';
 
+/**
+ * Test suite for the `update` method of BaseService.
+ *
+ * This suite verifies:
+ * - Correct entity update on valid input and permissions
+ * - Validation and error codes for not found, forbidden, and internal errors
+ * - Handling of empty payloads and edge cases
+ * - Robustness against errors in hooks and database operations
+ * - Use of custom normalizers for update data
+ *
+ * The tests use mocks and spies to simulate model and service behavior, ensuring
+ * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
+ */
 describe('BaseService: update', () => {
+    let modelMock: ModelMock;
     let service: TestService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        service = new TestService();
-        mockModel.findById.mockResolvedValue(mockEntity);
+        modelMock = createModelMock();
+        service = createServiceTestInstance(TestService, modelMock);
+        modelMock.findById.mockResolvedValue(mockEntity);
     });
 
     it('should update an entity if actor has permission', async () => {
-        mockModel.update.mockResolvedValue({ ...mockEntity, name: 'Updated Name' });
+        modelMock.update.mockResolvedValue({ ...mockEntity, name: 'Updated Name' });
         const result = await service.update(mockAdminActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
@@ -23,7 +52,7 @@ describe('BaseService: update', () => {
     });
 
     it('should return a "not found" error if the entity to update does not exist', async () => {
-        mockModel.findById.mockResolvedValue(null);
+        modelMock.findById.mockResolvedValue(null);
         const result = await service.update(mockAdminActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
@@ -43,7 +72,7 @@ describe('BaseService: update', () => {
     });
 
     it('should return an internal error if database returns null after update', async () => {
-        mockModel.update.mockResolvedValue(null);
+        modelMock.update.mockResolvedValue(null);
         const result = await service.update(mockAdminActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
@@ -52,7 +81,7 @@ describe('BaseService: update', () => {
 
     it('should return an internal error if database update fails', async () => {
         const dbError = new Error('DB connection failed');
-        mockModel.update.mockRejectedValue(dbError);
+        modelMock.update.mockRejectedValue(dbError);
         const result = await service.update(mockAdminActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
@@ -73,7 +102,7 @@ describe('BaseService: update', () => {
 
     it('should handle empty payload without error', async () => {
         await service.update(mockAdminActor, MOCK_ENTITY_ID, {});
-        expect(mockModel.update).toHaveBeenCalledWith(
+        expect(modelMock.update).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
             expect.objectContaining({ updatedById: mockAdminActor.id })
         );
@@ -94,12 +123,19 @@ describe('BaseService: update', () => {
     it('should use the update normalizer if provided', async () => {
         // Arrange
         const normalizer = vi.fn((data) => ({ ...data, normalized: true }));
+        const localModelMock: ModelMock = createModelMock();
+        localModelMock.findById.mockResolvedValue(mockEntity);
+        localModelMock.update.mockResolvedValue({
+            ...mockEntity,
+            name: 'Updated Name',
+            normalized: true
+        });
         class ServiceWithNormalizer extends TestService {
             protected override normalizers = {
                 update: normalizer
             };
         }
-        const normalizedService = new ServiceWithNormalizer();
+        const normalizedService = createServiceTestInstance(ServiceWithNormalizer, localModelMock);
         const updateData = { name: 'Updated Name' };
 
         // Act
@@ -107,7 +143,7 @@ describe('BaseService: update', () => {
 
         // Assert
         expect(normalizer).toHaveBeenCalledWith(updateData, mockAdminActor);
-        expect(mockModel.update).toHaveBeenCalledWith(
+        expect(localModelMock.update).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
             expect.objectContaining({ normalized: true })
         );
