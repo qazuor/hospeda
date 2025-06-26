@@ -8,6 +8,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import type { Actor } from '../../src/types';
 import { getMockId } from '../factories/utilsFactory';
+import { BaseFactoryBuilder } from './baseEntityFactory';
 
 /**
  * Base actor object with default values for a standard user.
@@ -19,84 +20,46 @@ const baseActor: Actor = {
 };
 
 /**
- * Creates a mock Actor object, allowing for overrides.
- * This is the base factory function for all actor types.
- *
+ * Creates a mock Actor object using the builder pattern, allowing for overrides.
  * @param overrides - Partial actor object to override default values.
  * @returns {Actor} A complete mock Actor object.
- *
  * @example
  * const actor = createActor({ id: 'user-1', role: RoleEnum.ADMIN });
  */
-export const createActor = (overrides: Partial<Actor> = {}): Actor => ({
-    ...baseActor,
-    ...overrides
-});
+export const createActor = (overrides: Partial<Actor> = {}): Actor =>
+    new ActorFactoryBuilder().with(overrides).build();
 
 /**
- * Creates a mock GUEST actor (anonymous, no permissions).
- *
+ * Creates a mock GUEST actor (anonymous, no permissions) using the builder.
  * @param overrides - Partial actor object to override default guest values.
  * @returns {Actor} A mock guest Actor object.
  */
 export const createGuestActor = (overrides: Partial<Actor> = {}): Actor =>
-    createActor({
-        id: '', // Guests are anonymous
-        role: RoleEnum.GUEST,
-        permissions: [],
-        ...overrides
-    });
+    new ActorFactoryBuilder().guest().with(overrides).build();
 
 /**
- * Creates a mock HOST actor (can manage own accommodations).
- *
+ * Creates a mock HOST actor (can manage own accommodations) using the builder.
  * @param overrides - Partial actor object to override default host values.
  * @returns {Actor} A mock host Actor object.
  */
 export const createHostActor = (overrides: Partial<Actor> = {}): Actor =>
-    createActor({
-        id: getMockId('user', 'host'),
-        role: RoleEnum.HOST,
-        permissions: [
-            PermissionEnum.ACCOMMODATION_CREATE,
-            PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-            PermissionEnum.ACCOMMODATION_DELETE_OWN
-        ],
-        ...overrides
-    });
+    new ActorFactoryBuilder().host().with(overrides).build();
 
 /**
- * Creates a mock ADMIN actor (can manage any accommodation).
- *
+ * Creates a mock ADMIN actor (can manage any accommodation) using the builder.
  * @param overrides - Partial actor object to override default admin values.
  * @returns {Actor} A mock admin Actor object.
  */
 export const createAdminActor = (overrides: Partial<Actor> = {}): Actor =>
-    createActor({
-        id: getMockId('user', 'admin'),
-        role: RoleEnum.ADMIN,
-        permissions: [
-            PermissionEnum.ACCOMMODATION_CREATE,
-            PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-            PermissionEnum.ACCOMMODATION_DELETE_ANY,
-            PermissionEnum.ACCOMMODATION_VIEW_ALL
-        ],
-        ...overrides
-    });
+    new ActorFactoryBuilder().admin().with(overrides).build();
 
 /**
- * Creates a mock SUPER_ADMIN actor (all permissions).
- *
+ * Creates a mock SUPER_ADMIN actor (all permissions) using the builder.
  * @param overrides - Partial actor object to override default super admin values.
  * @returns {Actor} A mock super admin Actor object.
  */
 export const createSuperAdminActor = (overrides: Partial<Actor> = {}): Actor =>
-    createActor({
-        id: getMockId('user', 'super-admin'),
-        role: RoleEnum.SUPER_ADMIN,
-        permissions: Object.values(PermissionEnum), // All permissions
-        ...overrides
-    });
+    new ActorFactoryBuilder().superAdmin().with(overrides).build();
 
 /**
  * Builder pattern for generating Actor mocks in tests.
@@ -106,56 +69,62 @@ export const createSuperAdminActor = (overrides: Partial<Actor> = {}): Actor =>
  * @example
  * const actor = new ActorFactoryBuilder().host().withId('user-123').withPermissions([PermissionEnum.ACCOMMODATION_CREATE]).build();
  */
-export class ActorFactoryBuilder {
-    private data: Partial<Actor> = {};
+export class ActorFactoryBuilder extends BaseFactoryBuilder<Actor> {
+    constructor() {
+        super(baseActor);
+    }
     /**
      * Sets the actor as a guest (anonymous, no permissions).
      * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public guest(): this {
-        this.data.id = '';
-        this.data.role = RoleEnum.GUEST;
-        this.data.permissions = [];
-        return this;
+        return this.with({
+            id: '',
+            role: RoleEnum.GUEST,
+            permissions: []
+        });
     }
     /**
      * Sets the actor as a host (can manage own accommodations).
      * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public host(): this {
-        this.data.id = getMockId('user', 'host');
-        this.data.role = RoleEnum.HOST;
-        this.data.permissions = [
-            PermissionEnum.ACCOMMODATION_CREATE,
-            PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-            PermissionEnum.ACCOMMODATION_DELETE_OWN
-        ];
-        return this;
+        return this.with({
+            id: getMockId('user', 'host'),
+            role: RoleEnum.HOST,
+            permissions: [
+                PermissionEnum.ACCOMMODATION_CREATE,
+                PermissionEnum.ACCOMMODATION_UPDATE_OWN,
+                PermissionEnum.ACCOMMODATION_DELETE_OWN
+            ]
+        });
     }
     /**
      * Sets the actor as an admin (can manage any accommodation).
      * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public admin(): this {
-        this.data.id = getMockId('user', 'admin');
-        this.data.role = RoleEnum.ADMIN;
-        this.data.permissions = [
-            PermissionEnum.ACCOMMODATION_CREATE,
-            PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-            PermissionEnum.ACCOMMODATION_DELETE_ANY,
-            PermissionEnum.ACCOMMODATION_VIEW_ALL
-        ];
-        return this;
+        return this.with({
+            id: getMockId('user', 'admin'),
+            role: RoleEnum.ADMIN,
+            permissions: [
+                PermissionEnum.ACCOMMODATION_CREATE,
+                PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+                PermissionEnum.ACCOMMODATION_DELETE_ANY,
+                PermissionEnum.ACCOMMODATION_VIEW_ALL
+            ]
+        });
     }
     /**
      * Sets the actor as a super admin (all permissions).
      * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public superAdmin(): this {
-        this.data.id = getMockId('user', 'super-admin');
-        this.data.role = RoleEnum.SUPER_ADMIN;
-        this.data.permissions = Object.values(PermissionEnum);
-        return this;
+        return this.with({
+            id: getMockId('user', 'super-admin'),
+            role: RoleEnum.SUPER_ADMIN,
+            permissions: Object.values(PermissionEnum)
+        });
     }
     /**
      * Sets a custom ID for the actor.
@@ -163,8 +132,7 @@ export class ActorFactoryBuilder {
      * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public withId(id: string): this {
-        this.data.id = id;
-        return this;
+        return this.with({ id });
     }
     /**
      * Sets custom permissions for the actor.
@@ -172,8 +140,7 @@ export class ActorFactoryBuilder {
      * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public withPermissions(permissions: Actor['permissions']): this {
-        this.data.permissions = permissions;
-        return this;
+        return this.with({ permissions });
     }
     /**
      * Sets a custom role for the actor.
@@ -181,23 +148,6 @@ export class ActorFactoryBuilder {
      * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public withRole(role: RoleEnum): this {
-        this.data.role = role;
-        return this;
-    }
-    /**
-     * Applies arbitrary overrides to the actor object.
-     * @param overrides - Partial actor fields to override.
-     * @returns {ActorFactoryBuilder} The builder instance for chaining.
-     */
-    public withOverrides(overrides: Partial<Actor>): this {
-        Object.assign(this.data, overrides);
-        return this;
-    }
-    /**
-     * Builds and returns the Actor object with all applied overrides.
-     * @returns {Actor} The resulting mock Actor object.
-     */
-    public build(): Actor {
-        return { ...baseActor, ...this.data };
+        return this.with({ role });
     }
 }
