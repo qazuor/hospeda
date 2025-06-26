@@ -24,8 +24,8 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createFaqModelMock, createModelMock } from '../../helpers/modelMockFactory';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { createModelMock } from '../../utils/modelMockFactory';
 
 /**
  * Test suite for the AccommodationService.getFaqs method.
@@ -41,7 +41,7 @@ import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 describe('AccommodationService.getFaqs', () => {
     let service: AccommodationService;
     let modelMock: Mocked<AccommodationModel>;
-    let faqModelMock: ReturnType<typeof createFaqModelMock>;
+    let faqModelMock: ReturnType<typeof createModelMock>;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
     let input: z.infer<typeof GetFaqsInputSchema>;
@@ -57,7 +57,7 @@ describe('AccommodationService.getFaqs', () => {
             search: vi.fn(),
             create: vi.fn()
         } as unknown as Mocked<AccommodationModel>;
-        faqModelMock = createFaqModelMock();
+        faqModelMock = createModelMock(['create', 'findById', 'update', 'findAll', 'hardDelete']);
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();

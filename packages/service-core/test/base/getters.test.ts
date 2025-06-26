@@ -6,8 +6,8 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ModelMock, createModelMock } from '../helpers/modelMockFactory';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
+import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
 import { mockActor, mockEntity } from './base.service.mockData';
 import { TestService } from './base.service.test.setup';
 
@@ -21,7 +21,7 @@ import { TestService } from './base.service.test.setup';
  * The tests use mocks and spies to ensure correct method calls and argument passing.
  */
 describe('BaseService: getBySlug / getByName', () => {
-    let modelMock: ModelMock;
+    let modelMock: StandardModelMock;
     let service: TestService;
 
     beforeEach(() => {

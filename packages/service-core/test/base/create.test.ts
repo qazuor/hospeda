@@ -20,8 +20,8 @@ import {
     expectSuccess,
     expectValidationError
 } from '../helpers/assertions';
-import { type ModelMock, createModelMock } from '../helpers/modelMockFactory';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
+import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
 import { mockActor, mockAdminActor, mockEntity } from './base.service.mockData';
 import { type CreateTestEntitySchema, TestService } from './base.service.test.setup';
 
@@ -39,7 +39,7 @@ import { type CreateTestEntitySchema, TestService } from './base.service.test.se
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: create', () => {
-    let modelMock: ModelMock;
+    let modelMock: StandardModelMock;
     let service: TestService;
     const mockCreateData: z.infer<typeof CreateTestEntitySchema> = {
         name: 'New Entity',
@@ -151,7 +151,7 @@ describe('BaseService: create', () => {
     it('should use the create normalizer if provided', async () => {
         // Arrange
         const normalizer = vi.fn((data) => ({ ...data, normalized: true }));
-        const localModelMock: ModelMock = createModelMock();
+        const localModelMock: StandardModelMock = createModelMock();
         localModelMock.create.mockResolvedValue(mockEntity);
         class ServiceWithNormalizer extends TestService {
             protected override normalizers = {

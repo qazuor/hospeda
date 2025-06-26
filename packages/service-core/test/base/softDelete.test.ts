@@ -14,8 +14,8 @@
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Actor } from '../../src/types';
-import { type ModelMock, createModelMock } from '../helpers/modelMockFactory';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
+import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
 import { MOCK_ENTITY_ID, mockAdminActor, mockEntity } from './base.service.mockData';
 import { TestService } from './base.service.test.setup';
 
@@ -32,7 +32,7 @@ import { TestService } from './base.service.test.setup';
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: softDelete', () => {
-    let modelMock: ModelMock;
+    let modelMock: StandardModelMock;
     let service: TestService;
 
     beforeEach(() => {

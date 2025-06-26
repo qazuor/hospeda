@@ -11,8 +11,8 @@ import type { z } from 'zod';
 import { type Actor, ServiceError } from '../../../src';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
-import { createModelMock } from '../../helpers/modelMockFactory';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { createModelMock } from '../../utils/modelMockFactory';
 // import { expectSuccess, expectForbiddenError, expectInternalError, expectValidationError } from '../../helpers/assertions';
 
 vi.mock('../../../src/services/accommodation/accommodation.permissions');

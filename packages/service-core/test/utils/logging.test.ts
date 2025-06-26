@@ -14,6 +14,7 @@ import * as logging from '../../src/utils/logging';
 import { setLogger } from '../../src/utils/logging';
 import type { ServiceLogger } from '../../src/utils/service-logger';
 import '../setupTest';
+import { createLoggerMock } from '../utils/modelMockFactory';
 import {
     mockActor,
     mockEntity,
@@ -27,19 +28,7 @@ import {
 
 let loggerMock: ServiceLogger;
 beforeEach(() => {
-    loggerMock = {
-        log: vi.fn(),
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerCategory: vi.fn(() => loggerMock),
-        configure: vi.fn(),
-        resetConfig: vi.fn(),
-        createLogger: vi.fn(() => loggerMock),
-        registerLogMethod: vi.fn(() => loggerMock),
-        permission: vi.fn() as (...args: unknown[]) => void
-    } as unknown as ServiceLogger;
+    loggerMock = createLoggerMock();
     setLogger(loggerMock);
     vi.clearAllMocks();
 });

@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { createModelMock } from './modelMockFactory';
+import { createModelMock } from '../utils/modelMockFactory';
 
 /**
  * Instantiates a service class for testing, injecting mocked logger and model dependencies.

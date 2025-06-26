@@ -26,6 +26,7 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { getMockId } from '../factories/utilsFactory';
+import { BaseFactoryBuilder } from './baseEntityFactory';
 
 /**
  * Returns a mock AccommodationId for use in tests.
@@ -134,28 +135,6 @@ const baseAccommodation: AccommodationType = {
 };
 
 /**
- * Base generic factory for any entity type.
- *
- * Provides a simple way to create entity mocks with base data and overrides.
- *
- * @template T - The entity type.
- */
-export class EntityFactory<T> {
-    protected base: T;
-    constructor(base: T) {
-        this.base = base;
-    }
-    /**
-     * Builds a new entity instance, applying any provided overrides.
-     * @param overrides - Partial fields to override in the base entity.
-     * @returns {T} The resulting entity instance.
-     */
-    build(overrides: Partial<T> = {}): T {
-        return { ...this.base, ...overrides };
-    }
-}
-
-/**
  * Builder pattern for generating AccommodationType mocks for tests.
  *
  * Allows fluent, type-safe creation of Accommodation objects with various states and overrides.
@@ -163,175 +142,104 @@ export class EntityFactory<T> {
  * @example
  * const accommodation = new AccommodationFactoryBuilder().public().withOwner('user-1').build();
  */
-export class AccommodationFactoryBuilder extends EntityFactory<AccommodationType> {
-    private data: Partial<AccommodationType> = {};
+export class AccommodationFactoryBuilder extends BaseFactoryBuilder<AccommodationType> {
     constructor() {
         super(baseAccommodation);
     }
-    /**
-     * Sets the accommodation as public, active, and approved.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public public() {
-        this.data.visibility = VisibilityEnum.PUBLIC;
-        this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
-        this.data.moderationState = ModerationStatusEnum.APPROVED;
-        this.data.deletedAt = undefined;
-        return this;
+        return this.with({
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: undefined
+        });
     }
-    /**
-     * Sets the accommodation as draft, private, and pending moderation.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public draft() {
-        this.data.visibility = VisibilityEnum.PRIVATE;
-        this.data.lifecycleState = LifecycleStatusEnum.DRAFT;
-        this.data.moderationState = ModerationStatusEnum.PENDING;
-        this.data.deletedAt = undefined;
-        return this;
+        return this.with({
+            visibility: VisibilityEnum.PRIVATE,
+            lifecycleState: LifecycleStatusEnum.DRAFT,
+            moderationState: ModerationStatusEnum.PENDING,
+            deletedAt: undefined
+        });
     }
-    /**
-     * Sets the accommodation as pending moderation, private, and active.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public pending() {
-        this.data.visibility = VisibilityEnum.PRIVATE;
-        this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
-        this.data.moderationState = ModerationStatusEnum.PENDING;
-        this.data.deletedAt = undefined;
-        return this;
+        return this.with({
+            visibility: VisibilityEnum.PRIVATE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.PENDING,
+            deletedAt: undefined
+        });
     }
-    /**
-     * Sets the accommodation as rejected, private, and active.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public rejected() {
-        this.data.visibility = VisibilityEnum.PRIVATE;
-        this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
-        this.data.moderationState = ModerationStatusEnum.REJECTED;
-        this.data.deletedAt = undefined;
-        return this;
+        return this.with({
+            visibility: VisibilityEnum.PRIVATE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.REJECTED,
+            deletedAt: undefined
+        });
     }
-    /**
-     * Sets the accommodation as archived, private, and approved.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public archived() {
-        this.data.visibility = VisibilityEnum.PRIVATE;
-        this.data.lifecycleState = LifecycleStatusEnum.ARCHIVED;
-        this.data.moderationState = ModerationStatusEnum.APPROVED;
-        this.data.deletedAt = undefined;
-        return this;
+        return this.with({
+            visibility: VisibilityEnum.PRIVATE,
+            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: undefined
+        });
     }
-    /**
-     * Marks the accommodation as deleted (sets deletedAt).
-     * @returns {AccommodationFactoryBuilder}
-     */
     public deleted() {
-        this.data.deletedAt = new Date();
-        return this;
+        return this.with({ deletedAt: new Date() });
     }
-    /**
-     * Sets the ownerId of the accommodation.
-     * @param ownerId - The user ID to set as owner.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public withOwner(ownerId: UserId) {
-        this.data.ownerId = ownerId;
-        return this;
+        return this.with({ ownerId });
     }
-    /**
-     * Sets the amenities array for the accommodation.
-     * @param amenities - The amenities to assign.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public withAmenities(amenities: AccommodationType['amenities']) {
-        this.data.amenities = amenities;
-        return this;
+        return this.with({ amenities });
     }
-    /**
-     * Applies arbitrary overrides to the accommodation object.
-     * @param overrides - Partial fields to override.
-     * @returns {AccommodationFactoryBuilder}
-     */
-    public withOverrides(overrides: Partial<AccommodationType>) {
-        Object.assign(this.data, overrides);
-        return this;
-    }
-    /**
-     * Builds and returns the AccommodationType object.
-     * @returns {AccommodationType}
-     */
-    public build(): AccommodationType {
-        return { ...this.base, ...this.data };
-    }
-    /**
-     * Adds a given number of mock amenities to the accommodation.
-     * @param count - Number of amenities to generate.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public withAmenitiesCount(count: number): this {
         const amenities = Array.from({ length: count }, (_, i) => ({
             accommodationId: getMockAccommodationId(),
             amenityId: getMockAmenityId(`${i + 1}`),
             isOptional: i % 2 !== 0
         }));
-        this.data.amenities = amenities;
-        return this;
+        return this.with({ amenities });
     }
-    /**
-     * Assigns a mock host as the owner of the accommodation.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public withOwnerHost(): this {
-        this.data.ownerId = getMockId('user', 'host') as UserId;
-        return this;
+        return this.with({ ownerId: getMockId('user', 'host') as UserId });
     }
-    /**
-     * Adds a given number of random mock tags to the accommodation.
-     * Each tag will have all required TagType fields populated with mock values.
-     * @param count - Number of tags to generate.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public withRandomTags(count: number): this {
-        this.data.tags = Array.from({ length: count }, (_, i) => ({
-            id: `tag-${i + 1}` as TagId,
-            name: `Tag ${i + 1}`,
-            slug: `tag-${i + 1}`,
-            color: 'BLUE',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            createdById: getMockId('user') as UserId,
-            updatedById: getMockId('user') as UserId,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
-        }));
-        return this;
+        return this.with({
+            tags: Array.from({ length: count }, (_, i) => ({
+                id: `tag-${i + 1}` as TagId,
+                name: `Tag ${i + 1}`,
+                slug: `tag-${i + 1}`,
+                color: 'BLUE',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                createdById: getMockId('user') as UserId,
+                updatedById: getMockId('user') as UserId,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            }))
+        });
     }
-    /**
-     * Assigns a default mock media object to the accommodation.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public withDefaultMedia(): this {
-        this.data.media = {
-            featuredImage: {
-                url: 'https://example.com/featured.jpg',
-                moderationState: ModerationStatusEnum.APPROVED,
-                tags: []
+        return this.with({
+            media: {
+                featuredImage: {
+                    url: 'https://example.com/featured.jpg',
+                    moderationState: ModerationStatusEnum.APPROVED,
+                    tags: []
+                }
             }
-        };
-        return this;
+        });
     }
-    /**
-     * Assigns a default SEO object to the accommodation.
-     * @returns {AccommodationFactoryBuilder}
-     */
     public withDefaultSeo(): this {
-        this.data.seo = {
-            title: 'SEO Title',
-            description: 'SEO Description for test accommodation.',
-            keywords: ['test', 'accommodation']
-        };
-        return this;
+        return this.with({
+            seo: {
+                title: 'SEO Title',
+                description: 'SEO Description for test accommodation.',
+                keywords: ['test', 'accommodation']
+            }
+        });
     }
 }
 
