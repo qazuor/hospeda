@@ -4,6 +4,76 @@
 
 ---
 
+## 🗺️ Service & Dependency Roadmap
+
+**Legend:**
+- ✅ Implemented
+- ⏳ Pending
+
+> Update this roadmap by marking each service as ✅ when it is implemented and tested. Keep the diagram and the list in sync.
+
+```mermaid
+flowchart TD
+  %% Root
+  A["UserService ⏳"]
+  B["DestinationService ⏳"]
+  C["AccommodationService ✅"]
+  D["EventService ⏳"]
+  E["PostService ⏳"]
+  F["TagService ⏳"]
+
+  %% Sub-entities and pivots
+  B --> B1["AttractionService ⏳"]
+  B --> B2["DestinationReviewService ⏳"]
+  B --> B3["DestinationAttractionService (pivot) ⏳"]
+  C --> C1["AccommodationReviewService ⏳"]
+  C --> C2["AccommodationFaqService ⏳"]
+  C --> C3["AccommodationIaDataService ⏳"]
+  C --> C4["AmenityService ⏳"]
+  C --> C5["FeatureService ⏳"]
+  C --> C6["AccommodationAmenityService (pivot) ⏳"]
+  C --> C7["AccommodationFeatureService (pivot) ⏳"]
+  D --> D1["EventLocationService ⏳"]
+  D --> D2["EventOrganizerService ⏳"]
+  E --> E1["PostSponsorService ⏳"]
+  E --> E2["PostSponsorshipService (pivot) ⏳"]
+  F --> F1["EntityTagService (pivot, polymorphic) ⏳"]
+  A --> A1["UserBookmarkService ⏳"]
+  A --> A2["UserPermissionService (pivot) ⏳"]
+  A --> A3["RolePermissionService (pivot) ⏳"]
+
+  %% Cross-domain relationships
+  B -- "has many" --> C
+  C -- "taggable" --> F1
+  B -- "taggable" --> F1
+  D -- "taggable" --> F1
+  E -- "taggable" --> F1
+  C -- "reviewed by" --> C1
+  B -- "reviewed by" --> B2
+  A -- "bookmarks" --> A1
+  A -- "permissions" --> A2
+  A -- "roles" --> A3
+  E -- "sponsored by" --> E1
+  E -- "sponsorships" --> E2
+  B -- "attractions" --> B1
+  B -- "attraction links" --> B3
+  C -- "amenities" --> C4
+  C -- "features" --> C5
+  C -- "amenity links" --> C6
+  C -- "feature links" --> C7
+  D -- "locations" --> D1
+  D -- "organizers" --> D2
+```
+
+---
+
+## How to update the roadmap?
+- When you implement and test a service, change its status to ✅ in the diagram and the list.
+- Keep homogeneity and follow the recommended order to facilitate dependencies and cross-testing.
+- If you add new domains or relationships, update the diagram and the legend accordingly.
+
+---
+
 ## 🚀 What is `@repo/service-core`?
 
 This package provides a standardized, type-safe, and extensible foundation for implementing all domain services (e.g., `AccommodationService`, `DestinationService`) in the monorepo. It enforces best practices for:
