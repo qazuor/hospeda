@@ -514,7 +514,8 @@ export abstract class BaseService<
 
                 const processedData = await this._beforeCreate(normalizedData, validatedActor);
 
-                const payload: Record<string, unknown> = { ...processedData };
+                // Remove 'bookmarks' if present to avoid type errors in model.create
+                const { bookmarks, ...payload } = processedData as Record<string, unknown>;
                 payload.createdById = validatedActor.id as UserId;
                 payload.updatedById = validatedActor.id as UserId;
 
