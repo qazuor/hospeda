@@ -71,3 +71,50 @@ export function createLoggerMock(): ServiceLogger {
         permission: vi.fn()
     } as unknown as ServiceLogger;
 }
+
+/**
+ * Creates a strongly-typed mock instance of a model class, with all methods replaced by vi.fn().
+ *
+ * @template M - The model class to mock (e.g., DestinationModel, AccommodationModel)
+ * @param ModelClass - The model class constructor
+ * @param methods - Additional method names to mock (optional)
+ * @returns {M} An instance of the model class with all methods mocked
+ *
+ * @example
+ * const mock = createTypedModelMock(DestinationModel, ['findWithRelations']);
+ * // Para acceder a métodos de Vitest como .mockResolvedValue():
+ * const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
+ * asMock(mock.findById).mockResolvedValue(...);
+ */
+export function createTypedModelMock<M extends new (...args: unknown[]) => unknown>(
+    ModelClass: M,
+    methods: string[] = []
+): InstanceType<M> {
+    const instance = new ModelClass({}) as unknown as Record<string, unknown>;
+
+    // Mock all prototype methods
+    let proto = ModelClass.prototype;
+    while (proto && proto !== Object.prototype) {
+        for (const key of Object.getOwnPropertyNames(proto)) {
+            if (key === 'constructor') continue;
+            const desc = Object.getOwnPropertyDescriptor(proto, key);
+            if (desc && typeof desc.value === 'function') {
+                instance[key] = vi.fn();
+            }
+        }
+        proto = Object.getPrototypeOf(proto);
+    }
+
+    // Mock all own methods (instance properties)
+    for (const key of Object.keys(instance)) {
+        if (typeof instance[key] === 'function') {
+            instance[key] = vi.fn();
+        }
+    }
+
+    // Mock additional methods if needed
+    for (const m of methods) {
+        if (!(m in instance)) instance[m] = vi.fn();
+    }
+    return instance as unknown as InstanceType<M>;
+}
