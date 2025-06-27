@@ -7,6 +7,7 @@
 ## 1. Overview
 
 All service tests must:
+
 - Use the unified builders and helpers for mocks and test data
 - Cover all cases: success, forbidden, not found, validation, internal error, edge cases
 - Be fully type-safe (no `any`)
@@ -49,17 +50,51 @@ flowchart TD
 ## 3. Builders, Helpers & Mocks
 
 ### Builders (Factories)
+
 - Use `AccommodationFactoryBuilder`, `ActorFactoryBuilder`, etc., for test data
 - All builders extend `BaseFactoryBuilder<T>` and support `.with()` and `.withOverrides()`
 - Never hand-roll test data—always use builders
 
 ### Mocks
-- Use `createModelMock` and `createLoggerMock` for mocks
-- All mocks are centralized in `test/helpers/modelMockFactory.ts` (or equivalent)
+
+- **All model mocks MUST be created using `createTypedModelMock`** (see `../utils/modelMockFactory.ts`). This ensures all model methods are Vitest mocks (`vi.fn()`) and can be used with `.mockResolvedValue`, `.mockRejectedValue`, etc.
+- To access Vitest methods on a model method, use the helper:
+
+```ts
+const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
+asMock(modelMock.findById).mockResolvedValue(...);
+```
+
+- All test data and mocks MUST be created using the provided factories and builders (e.g., `AccommodationFactoryBuilder`, `DestinationFactoryBuilder`).
+- If a factory or builder does not exist or lacks a needed feature, it must be created or extended. No hand-rolled or ad-hoc mocks are allowed.
+
+**Example:**
+
+```ts
+import { createTypedModelMock } from '../utils/modelMockFactory';
+import { AccommodationModel } from '@repo/db';
+const modelMock = createTypedModelMock(AccommodationModel, ['findOne']);
+asMock(modelMock.findOne).mockResolvedValue(...);
+```
+
+- See [`README.md`](../README.md) and [`README.ia.md`](../README.ia.md) for full patterns, troubleshooting, and coverage checklist.
+
+#### Troubleshooting
+
+- If you get `asMock(...).mockResolvedValue is not a function`, ensure you are using `createTypedModelMock` and not a manual mock or the old `createModelMock`.
+- All model methods must be replaced by `vi.fn()`; the factory guarantees this.
 
 ### Assertion Helpers
+
 - Use assertion helpers: `expectSuccess`, `expectForbiddenError`, `expectNotFoundError`, `expectValidationError`, `expectInternalError`
 - All assertion helpers are in `test/helpers/assertions.ts`
+
+### 3.1. Testing Input Normalizers and Slug Generation
+
+- For services that use input normalizers (e.g., DestinationService), create a dedicated test file (e.g., `normalizers.test.ts`).
+- Test all normalizer functions for correct defaults, pass-through, and edge cases.
+- For slug generation logic, mock the model to simulate slug collisions and ensure uniqueness logic is robust.
+- See `test/services/destination/normalizers.test.ts` for a full example covering normalizers and slug edge cases.
 
 ---
 
@@ -92,6 +127,7 @@ testCrudMethod({
 ---
 
 ## 5. Anti-Patterns & Common Mistakes
+
 - Hand-rolling test data or mocks (always use builders/helpers)
 - Using `any` or implicit types in tests
 - Skipping edge/error/forbidden/validation/internal cases
@@ -106,6 +142,7 @@ testCrudMethod({
 ---
 
 ## 6. Security & Validation in Tests
+
 - Always use valid and invalid data to test validation logic
 - Never leak sensitive data in test logs or error messages
 - Test permission/authorization boundaries (forbidden, allowed)
@@ -116,6 +153,7 @@ testCrudMethod({
 ---
 
 ## 7. Performance & Scalability of Tests
+
 - Use batch tests for bulk operations
 - Avoid unnecessary setup/teardown in each test (use beforeEach wisely)
 - Keep tests fast and focused (avoid slow DB/network calls)
@@ -126,6 +164,7 @@ testCrudMethod({
 ---
 
 ## 8. Migrating & Refactoring Tests
+
 - Refactor in phases: helpers/builders, test logic, docs
 - Update all tests after any breaking service change
 - Use test templates to DRY up repeated logic
@@ -223,6 +262,7 @@ describe('AccommodationService.create', () => {
 ## 12. Advanced Test Examples
 
 ### Batch Operation Test
+
 ```ts
 describe('batchUpdateVisibility', () => {
   it('should update visibility for multiple entities', async () => {
@@ -237,6 +277,7 @@ describe('batchUpdateVisibility', () => {
 ```
 
 ### Hook Test
+
 ```ts
 describe('_beforeCreate', () => {
   it('should enrich data with slug', async () => {
@@ -249,6 +290,7 @@ describe('_beforeCreate', () => {
 ```
 
 ### Integration Test (with another service)
+
 ```ts
 describe('createWithRelated', () => {
   it('should create entity and link related', async () => {
@@ -263,6 +305,7 @@ describe('createWithRelated', () => {
 ```
 
 ### Edge Case Test
+
 ```ts
 describe('create', () => {
   it('should return validation error for empty input', async () => {
@@ -278,6 +321,7 @@ describe('create', () => {
 ---
 
 ## 13. Coverage Checklist
+
 - [ ] Success (happy path)
 - [ ] Forbidden (permission denied)
 - [ ] Not found (entity does not exist)
@@ -291,6 +335,7 @@ describe('create', () => {
 ---
 
 ## 14. Best Practices
+
 - Use only the provided builders and helpers—never hand-roll mocks or test data
 - Always use type inference from Zod schemas for test inputs
 - Keep tests short, focused, and readable
@@ -304,6 +349,7 @@ describe('create', () => {
 ---
 
 ## 15. Troubleshooting & FAQ
+
 **Q: My test fails with a type error.**
 A: Ensure all test data is built with factories and types are inferred from Zod schemas.
 
@@ -322,6 +368,7 @@ A: Extract setup into `beforeEach` or use test templates/helpers.
 ---
 
 ## 16. Quality Checklist
+
 - [ ] All test data is built with factories/builders
 - [ ] All mocks use centralized helpers
 - [ ] All assertion helpers are used for error/success cases
@@ -333,6 +380,7 @@ A: Extract setup into `beforeEach` or use test templates/helpers.
 ---
 
 ## 17. Resources & References
+
 - [Service Implementation Guide](../../src/services/README.service.md)
 - [BaseService API](../../src/base/base.service.ts)
 - [Vitest Docs](https://vitest.dev/)
@@ -341,6 +389,7 @@ A: Extract setup into `beforeEach` or use test templates/helpers.
 ---
 
 ## 18. Glossary
+
 - **Builder/Factory:** Utility for generating test data or mocks in a DRY, type-safe way
 - **AAA:** Arrange, Act, Assert—testing pattern
 - **Mock:** Fake implementation of a dependency (e.g., model, logger)
@@ -354,4 +403,22 @@ A: Extract setup into `beforeEach` or use test templates/helpers.
 - **Idempotent Test:** A test that can be run multiple times with the same result
 - **Stateless Test:** A test that does not depend on or modify global state
 - **Migration:** The process of updating or refactoring tests to match new service logic
-- **Type Inference:** Automatically deriving types from schemas or data 
+- **Type Inference:** Automatically deriving types from schemas or data
+
+---
+
+## 🛑 Error Handling in Tests
+
+- Always expect errors to be thrown using `ServiceError` and a `ServiceErrorCode` (never `throw new Error`).
+- This applies to all service methods, helpers, and especially permission helpers.
+- Example:
+
+```ts
+import { ServiceError } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/types';
+
+if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+```
+
+- In tests, always assert for `ServiceError` and the correct code (e.g., `FORBIDDEN`).
+- See permission helpers and service methods for usage patterns.
