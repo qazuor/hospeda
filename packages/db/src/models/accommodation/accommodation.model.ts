@@ -12,6 +12,7 @@ type AccommodationSearchType = BaseSearchType & {
         amenities?: string[];
         visibility?: string[];
         ownerId?: string;
+        destinationId?: string;
     };
 };
 
@@ -35,6 +36,9 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
         }
         if (filters?.priceMax !== undefined) {
             whereClauses.push(lte(this.table.price, filters.priceMax));
+        }
+        if (filters?.destinationId) {
+            whereClauses.push(eq(this.table.destinationId, filters.destinationId));
         }
 
         const where = and(...whereClauses);
@@ -62,6 +66,9 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
         }
         if (filters?.priceMax !== undefined) {
             whereClauses.push(lte(this.table.price, filters.priceMax));
+        }
+        if (filters?.destinationId) {
+            whereClauses.push(eq(this.table.destinationId, filters.destinationId));
         }
         // Note: Filtering by amenities would require a join and is more complex.
         // This is a simplified example.
