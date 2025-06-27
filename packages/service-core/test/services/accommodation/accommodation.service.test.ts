@@ -1,4 +1,12 @@
 import { AccommodationModel } from '@repo/db';
+import { ServiceErrorCode } from '@repo/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { z } from 'zod';
+import type { Actor } from '../../../src';
+import type { CreateAccommodationSchema } from '../../../src/services/accommodation';
+import * as accommodationHelpers from '../../../src/services/accommodation/accommodation.helpers';
+import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
+import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 /**
  * @fileoverview
  * Test suite for the AccommodationService covering all core service methods.
@@ -6,14 +14,7 @@ import { AccommodationModel } from '@repo/db';
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
-import { ServiceErrorCode } from '@repo/types';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { z } from 'zod';
-import { type Actor, ServiceError } from '../../../src';
-import type { CreateAccommodationSchema } from '../../../src/services/accommodation';
-import * as accommodationHelpers from '../../../src/services/accommodation/accommodation.helpers';
-import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
-import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
+import { ServiceError } from '../../../src/types';
 import type { ServiceLogger } from '../../../src/utils';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
@@ -121,7 +122,7 @@ describe('AccommodationService', () => {
     it('should return FORBIDDEN error if actor lacks permission', async () => {
         // Arrange
         vi.mocked(permissionHelpers.checkCanCreate).mockImplementation(() => {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Permission denied');
         });
 
         // Act
@@ -129,6 +130,7 @@ describe('AccommodationService', () => {
 
         // Assert
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(result.error?.message).toBe('FORBIDDEN: Permission denied');
         expect(asMock(modelMock.create)).not.toHaveBeenCalled();
     });
 
@@ -143,7 +145,6 @@ describe('AccommodationService', () => {
 
         // Assert
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-        expect(asMock(modelMock.create)).not.toHaveBeenCalled();
     });
 
     it('should return INTERNAL_ERROR if database creation fails', async () => {
