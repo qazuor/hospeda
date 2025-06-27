@@ -76,15 +76,8 @@ describe('AccommodationService.getStats', () => {
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
         modelMock.findOne.mockResolvedValue(null);
-        let result: unknown;
-        try {
-            result = await service.getStats(actor, input);
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            expect((err as ServiceError).code).toBe(ServiceErrorCode.NOT_FOUND);
-            return;
-        }
-        expectNotFoundError(result as { error?: { code?: string } });
+        const result = await service.getStats(actor, input);
+        expectNotFoundError(result);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
     });
 
@@ -93,30 +86,16 @@ describe('AccommodationService.getStats', () => {
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
-        let result: unknown;
-        try {
-            result = await service.getStats(actor, input);
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            expect((err as ServiceError).code).toBe(ServiceErrorCode.FORBIDDEN);
-            return;
-        }
-        expectForbiddenError(result as { error?: { code?: string } });
+        const result = await service.getStats(actor, input);
+        expectForbiddenError(result);
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         modelMock.findOne.mockRejectedValue(new Error('DB error'));
-        let result: unknown;
-        try {
-            result = await service.getStats(actor, input);
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            expect((err as ServiceError).code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            return;
-        }
-        expectInternalError(result as { error?: { code?: string } });
+        const result = await service.getStats(actor, input);
+        expectInternalError(result);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
     });
 
