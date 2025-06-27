@@ -1,4 +1,5 @@
 import type { DestinationType } from '@repo/types';
+import { type SQL, and, asc, count, desc, eq } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { destinations } from '../../schemas/destination/destination.dbschema';
@@ -82,6 +83,75 @@ export class DestinationModel extends BaseModel<DestinationType> {
                 { attractionId },
                 (error as Error).message
             );
+        }
+    }
+
+    /**
+     * Searches for destinations with optional filters, sorting, and pagination.
+     * @param params - Search parameters (filters, sort, pagination)
+     * @returns Promise resolving to an object with items and total count
+     */
+    async search(params: {
+        filters?: Record<string, unknown>;
+        orderBy?: Record<string, 'asc' | 'desc'>;
+        page?: number;
+        pageSize?: number;
+    }): Promise<{ items: DestinationType[]; total: number }> {
+        const db = getDb();
+        const { filters = {}, orderBy = { name: 'asc' }, page = 1, pageSize = 20 } = params;
+        try {
+            // Build Drizzle where clause from filters (simple equality only)
+            const whereClauses: SQL<unknown>[] = Object.entries(filters)
+                .map(([key, value]) =>
+                    value !== undefined && value !== null ? eq(destinations[key], value) : undefined
+                )
+                .filter((clause): clause is SQL<unknown> => clause !== undefined);
+            const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
+
+            // Build order array using Drizzle's asc/desc
+            const orderArr = Object.entries(orderBy).map(([field, dir]) =>
+                dir === 'asc' ? asc(destinations[field]) : desc(destinations[field])
+            );
+
+            const offset = (page - 1) * pageSize;
+            const items = await db
+                .select()
+                .from(destinations)
+                .where(where)
+                .orderBy(...orderArr)
+                .limit(pageSize)
+                .offset(offset);
+            const totalResult = await db.select({ count: count() }).from(destinations).where(where);
+            return { items: items as DestinationType[], total: totalResult[0]?.count ?? 0 };
+        } catch (error) {
+            logError(this.entityName, 'search', params, error as Error);
+            throw new DbError(this.entityName, 'search', params, (error as Error).message);
+        }
+    }
+
+    /**
+     * Counts destinations matching the provided filters.
+     * @param params - Object with filters
+     * @returns Promise resolving to an object with the count
+     */
+    async countByFilters(params: { filters?: Record<string, unknown> }): Promise<{
+        count: number;
+    }> {
+        const db = getDb();
+        const { filters = {} } = params;
+        try {
+            // Build Drizzle where clause from filters (simple equality only)
+            const whereClauses: SQL<unknown>[] = Object.entries(filters)
+                .map(([key, value]) =>
+                    value !== undefined && value !== null ? eq(destinations[key], value) : undefined
+                )
+                .filter((clause): clause is SQL<unknown> => clause !== undefined);
+            const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
+            const totalResult = await db.select({ count: count() }).from(destinations).where(where);
+            return { count: totalResult[0]?.count ?? 0 };
+        } catch (error) {
+            logError(this.entityName, 'countByFilters', params, error as Error);
+            throw new DbError(this.entityName, 'countByFilters', params, (error as Error).message);
         }
     }
 }
