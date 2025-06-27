@@ -1,5 +1,11 @@
 import type { PublicUserType, UserId, UserType } from '@repo/types';
-import { LifecycleStatusEnum, PermissionEnum, RoleEnum, createPublicUser } from '@repo/types';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    VisibilityEnum,
+    createPublicUser
+} from '@repo/types';
 import { getMockId } from './utilsFactory';
 
 /**
@@ -11,14 +17,16 @@ import { getMockId } from './utilsFactory';
  */
 export const getMockUser = (overrides: Partial<UserType> = {}): UserType => ({
     id: '11111111-1111-1111-1111-111111111111' as UserId,
-    userName: 'testuser',
-    password: 'pw',
+    slug: 'test-user',
     role: RoleEnum.USER,
+    permissions: [],
+    visibility: VisibilityEnum.PUBLIC,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: '11111111-1111-1111-1111-111111111111' as UserId,
     updatedById: '11111111-1111-1111-1111-111111111111' as UserId,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
+    adminInfo: { favorite: false },
     ...overrides
 });
 
@@ -70,7 +78,7 @@ export const getMockDisabledUser = (overrides = {}) =>
     getMockUser({
         id: getMockUserId('user-disabled-1'),
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN],
-        lifecycleState: LifecycleStatusEnum.INACTIVE,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
         ...overrides
     });
 
