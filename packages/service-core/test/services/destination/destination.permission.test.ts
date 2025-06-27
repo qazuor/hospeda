@@ -1,10 +1,11 @@
-import { PermissionEnum, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCreateDestination,
     checkCanUpdateDestination,
     checkCanViewDestination
 } from '../../../src/services/destination/destination.permission';
+import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { createDestination } from '../../factories/destinationFactory';
 
@@ -21,9 +22,16 @@ describe('Destination Permission Helpers', () => {
         it('denies viewing a private destination without permission', () => {
             const actor = createActor({ permissions: [] });
             const destination = createDestination({ visibility: VisibilityEnum.PRIVATE });
-            expect(() => checkCanViewDestination(actor, destination)).toThrowError(
-                /Permission denied/
-            );
+            try {
+                checkCanViewDestination(actor, destination);
+                throw new Error('Should have thrown');
+            } catch (err: unknown) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(err.message).toBe('FORBIDDEN: Permission denied to view destination');
+                }
+            }
         });
         it('allows viewing a private destination with DESTINATION_VIEW_PRIVATE', () => {
             const actor = createActor({ permissions: [PermissionEnum.DESTINATION_VIEW_PRIVATE] });
@@ -39,7 +47,16 @@ describe('Destination Permission Helpers', () => {
         });
         it('denies creation if actor lacks DESTINATION_CREATE', () => {
             const actor = createActor({ permissions: [] });
-            expect(() => checkCanCreateDestination(actor, {})).toThrowError(/Permission denied/);
+            try {
+                checkCanCreateDestination(actor, {});
+                throw new Error('Should have thrown');
+            } catch (err: unknown) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(err.message).toBe('FORBIDDEN: Permission denied to create destination');
+                }
+            }
         });
     });
 
@@ -52,9 +69,16 @@ describe('Destination Permission Helpers', () => {
         it('denies update if actor lacks DESTINATION_UPDATE', () => {
             const actor = createActor({ permissions: [] });
             const destination = createDestination();
-            expect(() => checkCanUpdateDestination(actor, destination)).toThrowError(
-                /Permission denied/
-            );
+            try {
+                checkCanUpdateDestination(actor, destination);
+                throw new Error('Should have thrown');
+            } catch (err: unknown) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(err.message).toBe('FORBIDDEN: Permission denied to update destination');
+                }
+            }
         });
     });
 });
