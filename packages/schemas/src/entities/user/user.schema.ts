@@ -56,8 +56,8 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
         socialNetworks: SocialNetworkSchema.optional(),
         /** User role (required) */
         role: RoleEnumSchema,
-        /** List of permissions, optional */
-        permissions: z.array(PermissionEnumSchema).optional(),
+        /** List of permissions, required (default: empty array) */
+        permissions: z.array(PermissionEnumSchema).default([]),
         /** User profile information */
         profile: UserProfileSchema.optional(),
         /** User settings, optional */
