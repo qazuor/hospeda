@@ -359,9 +359,18 @@ export class AccommodationService extends BaseService<
      * @param actor - The actor performing the action.
      * @returns Output object (to be defined)
      */
-    public async getTopRatedByDestination(_input: object, _actor: Actor): Promise<object> {
-        // FUTURE: This method is a stub for future implementation.
-        throw new Error('Not implemented');
+    public async getTopRatedByDestination(
+        _input: object,
+        _actor: Actor
+    ): Promise<ServiceOutput<never>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getTopRatedByDestination',
+            input: { actor: _actor, ..._input },
+            schema: z.any(),
+            execute: async () => {
+                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            }
+        });
     }
 
     /**
@@ -506,9 +515,15 @@ export class AccommodationService extends BaseService<
      * @param actor - The actor performing the action.
      * @returns Output object (to be defined)
      */
-    public async addIAData(_input: object, _actor: Actor): Promise<object> {
-        // FUTURE: This method is a stub for future implementation.
-        throw new Error('Not implemented');
+    public async addIAData(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addIAData',
+            input: { actor: _actor, ..._input },
+            schema: z.any(),
+            execute: async () => {
+                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            }
+        });
     }
 
     /**
@@ -517,9 +532,15 @@ export class AccommodationService extends BaseService<
      * @param actor - The actor performing the action.
      * @returns Output object (to be defined)
      */
-    public async removeIAData(_input: object, _actor: Actor): Promise<object> {
-        // FUTURE: This method is a stub for future implementation.
-        throw new Error('Not implemented');
+    public async removeIAData(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'removeIAData',
+            input: { actor: _actor, ..._input },
+            schema: z.any(),
+            execute: async () => {
+                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            }
+        });
     }
 
     /**
@@ -528,9 +549,15 @@ export class AccommodationService extends BaseService<
      * @param actor - The actor performing the action.
      * @returns Output object (to be defined)
      */
-    public async updateIAData(_input: object, _actor: Actor): Promise<object> {
-        // FUTURE: This method is a stub for future implementation.
-        throw new Error('Not implemented');
+    public async updateIAData(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateIAData',
+            input: { actor: _actor, ..._input },
+            schema: z.any(),
+            execute: async () => {
+                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            }
+        });
     }
 
     /**
@@ -539,9 +566,15 @@ export class AccommodationService extends BaseService<
      * @param actor - The actor performing the action.
      * @returns Output object (to be defined)
      */
-    public async getAllIAData(_input: object, _actor: Actor): Promise<object> {
-        // FUTURE: This method is a stub for future implementation.
-        throw new Error('Not implemented');
+    public async getAllIAData(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAllIAData',
+            input: { actor: _actor, ..._input },
+            schema: z.any(),
+            execute: async () => {
+                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            }
+        });
     }
 
     /**
@@ -550,8 +583,14 @@ export class AccommodationService extends BaseService<
      * @param actor - The actor performing the action.
      * @returns Output object (to be defined)
      */
-    public async getByOwner(_input: object, _actor: Actor): Promise<object> {
-        // FUTURE: This method is a stub for future implementation.
-        throw new Error('Not implemented');
+    public async getByOwner(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getByOwner',
+            input: { actor: _actor, ..._input },
+            schema: z.any(),
+            execute: async () => {
+                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            }
+        });
     }
 }

@@ -5,9 +5,8 @@
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
-import type { AccommodationModel } from '@repo/db';
+import { AccommodationModel } from '@repo/db';
 import { ServiceErrorCode } from '@repo/types';
-import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import type { GetAccommodationSchema } from '../../../src/services/accommodation/accommodation.schemas';
@@ -24,7 +23,9 @@ import {
     expectValidationError
 } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock } from '../../utils/modelMockFactory';
+
+const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
 
 /**
  * Test suite for the AccommodationService.getSummary method.
@@ -39,41 +40,22 @@ import { createModelMock } from '../../utils/modelMockFactory';
  */
 describe('AccommodationService.getSummary', () => {
     let service: AccommodationService;
-    let modelMock: Mocked<AccommodationModel>;
+    let modelMock: AccommodationModel;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
     let input: z.infer<typeof GetAccommodationSchema>;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = {
-            ...createModelMock(['findById', 'findOne']),
-            table: 'accommodation',
-            entityName: 'accommodation',
-            countByFilters: vi.fn(),
-            search: vi.fn(),
-            create: vi.fn()
-        } as unknown as Mocked<AccommodationModel>;
+        modelMock = createTypedModelMock(AccommodationModel, ['findOne']);
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
-        accommodation = new AccommodationFactoryBuilder()
-            .public()
-            .withOverrides({
-                location: {
-                    state: 'Test State',
-                    zipCode: '12345',
-                    country: 'Test Country',
-                    street: 'Test Street',
-                    number: '123',
-                    city: 'Test City'
-                }
-            })
-            .build();
+        accommodation = new AccommodationFactoryBuilder().public().build();
         input = { id: accommodation.id };
     });
 
     it('should return summary for an accommodation', async () => {
-        modelMock.findOne.mockResolvedValue(accommodation);
+        asMock(modelMock.findOne).mockResolvedValue(accommodation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getSummary(actor, input);
         expectSuccess(result);
@@ -93,22 +75,15 @@ describe('AccommodationService.getSummary', () => {
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
-        modelMock.findOne.mockResolvedValue(null);
-        let result: unknown;
-        try {
-            result = await service.getSummary(actor, input);
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            expect((err as ServiceError).code).toBe(ServiceErrorCode.NOT_FOUND);
-            return;
-        }
-        expectNotFoundError(result as { error?: { code?: string } });
+        asMock(modelMock.findOne).mockResolvedValue(null);
+        const result = await service.getSummary(actor, input);
+        expectNotFoundError(result);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
     });
 
     it('should return NOT_FOUND if accommodation has no location', async () => {
         const noLocation = { ...accommodation, location: undefined };
-        modelMock.findOne.mockResolvedValue(noLocation);
+        asMock(modelMock.findOne).mockResolvedValue(noLocation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getSummary(actor, input);
         // The method returns null, so the test expects data === null
@@ -118,34 +93,20 @@ describe('AccommodationService.getSummary', () => {
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
-        modelMock.findOne.mockResolvedValue(accommodation);
+        asMock(modelMock.findOne).mockResolvedValue(accommodation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
-        let result: unknown;
-        try {
-            result = await service.getSummary(actor, input);
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            expect((err as ServiceError).code).toBe(ServiceErrorCode.FORBIDDEN);
-            return;
-        }
-        expectForbiddenError(result as { error?: { code?: string } });
+        const result = await service.getSummary(actor, input);
+        expectForbiddenError(result);
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        modelMock.findOne.mockRejectedValue(new Error('DB error'));
-        let result: unknown;
-        try {
-            result = await service.getSummary(actor, input);
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            expect((err as ServiceError).code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            return;
-        }
-        expectInternalError(result as { error?: { code?: string } });
+        asMock(modelMock.findOne).mockRejectedValue(new Error('DB error'));
+        const result = await service.getSummary(actor, input);
+        expectInternalError(result);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
     });
 
