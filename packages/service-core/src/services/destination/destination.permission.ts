@@ -12,7 +12,7 @@ import { hasPermission } from '../../utils/permission';
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanViewDestination(actor: Actor, entity: DestinationType): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (
         entity.visibility === VisibilityEnum.PUBLIC ||
         hasPermission(actor, PermissionEnum.DESTINATION_VIEW_PRIVATE) ||
@@ -20,7 +20,10 @@ export function checkCanViewDestination(actor: Actor, entity: DestinationType): 
     ) {
         return;
     }
-    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to view destination');
+    throw new ServiceError(
+        ServiceErrorCode.FORBIDDEN,
+        'FORBIDDEN: Permission denied to view destination'
+    );
 }
 
 /**
@@ -30,7 +33,7 @@ export function checkCanViewDestination(actor: Actor, entity: DestinationType): 
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanListDestinations(actor: Actor): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     // Listing is allowed for any actor; results are filtered elsewhere.
     return;
 }
@@ -41,7 +44,7 @@ export function checkCanListDestinations(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanSearchDestinations(actor: Actor): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     // Searching is allowed for any actor; results are filtered elsewhere.
     return;
 }
@@ -52,7 +55,7 @@ export function checkCanSearchDestinations(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanCountDestinations(actor: Actor): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     // Counting is allowed for any actor; results are filtered elsewhere.
     return;
 }
@@ -65,11 +68,11 @@ export function checkCanCountDestinations(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanCreateDestination(actor: Actor, _data: unknown): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_CREATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied to create destination'
+            'FORBIDDEN: Permission denied to create destination'
         );
     }
 }
@@ -82,11 +85,11 @@ export function checkCanCreateDestination(actor: Actor, _data: unknown): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanUpdateDestination(actor: Actor, _entity: DestinationType): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_UPDATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied to update destination'
+            'FORBIDDEN: Permission denied to update destination'
         );
     }
 }
@@ -99,11 +102,11 @@ export function checkCanUpdateDestination(actor: Actor, _entity: DestinationType
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanSoftDeleteDestination(actor: Actor, _entity: DestinationType): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_DELETE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied to delete destination'
+            'FORBIDDEN: Permission denied to delete destination'
         );
     }
 }
@@ -116,11 +119,11 @@ export function checkCanSoftDeleteDestination(actor: Actor, _entity: Destination
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanHardDeleteDestination(actor: Actor, _entity: DestinationType): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_HARD_DELETE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied to permanently delete destination'
+            'FORBIDDEN: Permission denied to permanently delete destination'
         );
     }
 }
@@ -133,11 +136,11 @@ export function checkCanHardDeleteDestination(actor: Actor, _entity: Destination
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanRestoreDestination(actor: Actor, _entity: DestinationType): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_RESTORE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied to restore destination'
+            'FORBIDDEN: Permission denied to restore destination'
         );
     }
 }
@@ -150,7 +153,7 @@ export function checkCanRestoreDestination(actor: Actor, _entity: DestinationTyp
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanUpdateDestinationVisibility(actor: Actor, _entity: DestinationType): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_VISIBILITY_TOGGLE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
