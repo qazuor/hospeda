@@ -7,6 +7,7 @@
 ## 🗺️ Service & Dependency Roadmap
 
 **Legend:**
+
 - ✅ Implemented
 - ⏳ Pending
 
@@ -68,6 +69,7 @@ flowchart TD
 ---
 
 ## How to update the roadmap?
+
 - When you implement and test a service, change its status to ✅ in the diagram and the list.
 - Keep homogeneity and follow the recommended order to facilitate dependencies and cross-testing.
 - If you add new domains or relationships, update the diagram and the legend accordingly.
@@ -162,6 +164,30 @@ See [`test/README.testing.md`](./test/README.testing.md) for full patterns, help
 - **Error Handling**: All errors are structured, typed, and predictable
 - **Unified Test Factories**: Builders for all entities, actors, and mocks
 - **Extensible Patterns**: Easily add new services, methods, or helpers
+- **Input Normalization (DestinationService):**
+  - All input data for create, update, list, and view operations is normalized using dedicated functions (`normalizeCreateInput`, `normalizeUpdateInput`, etc.).
+  - Ensures defaults (e.g., `visibility: 'PRIVATE'` if not provided) and future extensibility for data cleaning or transformation.
+  - Example:
+
+    ```ts
+    import { normalizeCreateInput } from './src/services/destination/destination.normalizers';
+    const normalized = normalizeCreateInput(input, actor);
+    ```
+
+- **Automatic Slug Generation:**
+  - When creating a new destination, a unique slug is generated from the name using `generateDestinationSlug` in the `_beforeCreate` lifecycle hook.
+  - Guarantees uniqueness by checking existing slugs in the database and appending a suffix if needed.
+  - Example:
+
+    ```ts
+    // In DestinationService
+    protected async _beforeCreate(data, actor) {
+      const slug = await generateDestinationSlug(data.name);
+      return { slug };
+    }
+    ```
+
+  - See tests in `test/services/destination/normalizers.test.ts` for full coverage and edge cases.
 
 ---
 
@@ -190,59 +216,132 @@ logMethodStart('methodName', input, actor);
 logMethodEnd('methodName', output);
 ```
 
+### Service Method Implementation Convention
+
+All public service methods **must** be implemented using `runWithLoggingAndValidation`. This ensures:
+
+- Centralized logging for every method call
+- Consistent error handling and result structure
+- Automatic input validation and permission checks
+- Extensibility for future cross-cutting concerns (e.g., tracing, auditing)
+
+**Example:**
+
+```ts
+import type { ServiceInput, ServiceOutput } from '@repo/service-core';
+import type { GetSummaryInput, DestinationSummary } from './destination.schemas';
+
+public async getSummary(
+  input: ServiceInput<GetSummaryInput>
+): Promise<ServiceOutput<{ summary: DestinationSummary }>> {
+  return this.runWithLoggingAndValidation('getSummary', input, async ({ actor, ...rest }) => {
+    // ...main logic here
+    return { summary: /* ... */ };
+  });
+}
+```
+
+**Never** implement public methods with direct try/catch, raw returns, or without logging/validation. Always use this pattern for homogeneity and maintainability.
+
+### Service Method Signature Convention
+
+All public service methods **must** adhere to the following signature:
+
+- **Input:** A single parameter of type `ServiceInput<T>`
+- **Output:** A `Promise<ServiceOutput<T>>`
+
+This convention ensures:
+
+- Homogeneous error handling and result structure
+- Centralized and consistent logging
+- Strong type safety and predictability
+- Easy integration with permission and validation pipelines
+- Seamless extensibility for future features (e.g., tracing, auditing)
+
+**Example:**
+
+```ts
+import type { ServiceInput, ServiceOutput } from '@repo/service-core';
+import type { GetSummaryInput, DestinationSummary } from './destination.schemas';
+
+public async getSummary(
+  input: ServiceInput<GetSummaryInput>
+): Promise<ServiceOutput<{ summary: DestinationSummary }>> {
+  // ...implementation
+}
+```
+
+**Never** accept primitives or tuples as input, and never return raw values or throw errors. Always use the RO-RO (Receive Object / Return Object) pattern with these types.
+
 ---
 
 ## 🧪 Testing Philosophy
 
-- All tests use unified builders and helpers
-- Each method has its own test file, covering all cases (success, forbidden, not found, validation, internal error, edge)
-- No hand-rolled mocks or test data—always use factories
-- See [`test/README.testing.md`](./test/README.testing.md) for full details
+- **All model mocks MUST be created using `createTypedModelMock`** (see `test/utils/modelMockFactory.ts`). This ensures all model methods are Vitest mocks (`vi.fn()`) and can be used with `.mockResolvedValue`, `.mockRejectedValue`, etc.
+- To access Vitest methods on a model method, use the helper:
+
+```ts
+const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
+asMock(modelMock.findById).mockResolvedValue(...);
+```
+
+- All test data and mocks MUST be created using the provided factories and builders (e.g., `AccommodationFactoryBuilder`, `DestinationFactoryBuilder`).
+- If a factory or builder does not exist or lacks a needed feature, it must be created or extended. No hand-rolled or ad-hoc mocks are allowed.
+- See [`README.ia.md`](./README.ia.md) and [`test/README.testing.md`](./test/README.testing.md) for full patterns, troubleshooting, and coverage checklist.
+
+**Example:**
+
+```ts
+import { createTypedModelMock } from '../utils/modelMockFactory';
+import { AccommodationModel } from '@repo/db';
+const modelMock = createTypedModelMock(AccommodationModel, ['findOne']);
+asMock(modelMock.findOne).mockResolvedValue(...);
+```
 
 ---
 
 ## 📝 Conventions & Best Practices
 
 - **Naming:**
-  - PascalCase for classes/components
-  - camelCase for variables/functions
-  - kebab-case for filenames
+  - PascalCase para clases/componentes
+  - camelCase para variables/funciones
+  - kebab-case para nombres de archivo
 - **Typing:**
-  - Never use `any`
-  - Always infer types from Zod schemas
-  - All public methods and types are documented with JSDoc
+  - Nunca use `any`
+  - Siempre infiera tipos de esquemas Zod
+  - Todos los métodos públicos y tipos son documentados con JSDoc
 - **Error Handling:**
-  - Use `ServiceError` and codes for all errors
-  - Never throw raw errors
+  - Use `ServiceError` y códigos para todos los errores
+  - Nunca lance errores sin procesar
 - **Testing:**
   - Use AAA (Arrange, Act, Assert)
-  - One file per method
-  - Use only provided helpers/factories
+  - Un archivo por método
+  - Use solo ayudantes/fábricas proporcionadas
 - **Extensibility:**
-  - Favor composition and utility functions
-  - Override base methods only when necessary
+  - Favorezca la composición y funciones de utilidad
+  - Sobrescriba métodos base solo cuando sea necesario
 
 ---
 
 ## 🧠 FAQ
 
 **Q: How do I add a new service?**
-A: See [`src/services/README.service.md`](./src/services/README.service.md) for a step-by-step guide.
+A: Ver [`src/services/README.service.md`](./src/services/README.service.md) para una guía paso a paso.
 
 **Q: How do I write tests for a new method?**
-A: See [`test/README.testing.md`](./test/README.testing.md) for patterns, helpers, and coverage checklist.
+A: Ver [`test/README.testing.md`](./test/README.testing.md) para patrones, ayudantes y checklist de cobertura.
 
 **Q: How do I ensure my service is robust and type-safe?**
-A: Use Zod schemas, infer all types, use the provided permission and validation helpers, and follow the checklist in the guides.
+A: Use esquemas Zod, infiera todos los tipos, use los ayudantes de permiso y validación proporcionados, y siga la checklist en las guías.
 
 **Q: What if I need a custom permission or lifecycle hook?**
-A: Override the relevant method in your service, and document why.
+A: Sobrescriba el método relevante en su servicio, y documente por qué.
 
 **Q: How do I handle errors?**
-A: Always throw `ServiceError` with the correct code. Never throw raw errors.
+A: Siempre lance `ServiceError` con el código correcto. Nunca lance errores sin procesar.
 
 **Q: How do I keep Zod schemas and TypeScript types in sync?**
-A: Always infer types from Zod schemas (`z.infer<typeof MySchema>`).
+A: Siempre infiera tipos de esquemas Zod (`z.infer<typeof MySchema>`).
 
 ---
 
@@ -281,4 +380,41 @@ A: Always infer types from Zod schemas (`z.infer<typeof MySchema>`).
 ---
 
 ## 💬 Questions or Improvements?
+
 If you have questions or want to propose improvements, open an issue or contact the maintainers.
+
+---
+
+## 🛑 Error Handling
+
+- Always throw errors using `ServiceError` and a `ServiceErrorCode` (never `throw new Error`).
+- Example:
+
+```ts
+import { ServiceError } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/types';
+
+if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+```
+
+- All errors must be structured, typed, and predictable.
+- See permission helpers and service methods for usage patterns.
+
+## 🛡️ Permission Helpers for Services
+
+- Each service **must** have a dedicated permission helpers file (e.g., `accommodation.permissions.ts`, `destination.permission.ts`).
+- All permission helpers **must** throw a `ServiceError` with `ServiceErrorCode.FORBIDDEN` if the actor does not have permission.
+- Always use the entity-specific `PermissionEnum` values (e.g., `PermissionEnum.DESTINATION_CREATE`).
+- Follow the homogeneous pattern established in `accommodation.permissions.ts` for all permission checks.
+- All permission helpers **must** be fully tested.
+
+**Example:**
+
+```ts
+export function checkCanCreateDestination(actor: Actor, _data: unknown): void {
+  if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+  if (!hasPermission(actor, PermissionEnum.DESTINATION_CREATE)) {
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to create destination');
+  }
+}
+```

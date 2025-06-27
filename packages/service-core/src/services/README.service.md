@@ -7,6 +7,7 @@
 ## 1. Overview
 
 All services must:
+
 - Extend `BaseService<TEntity, TModel, TCreateSchema, TUpdateSchema, TSearchSchema>`
 - Use Zod schemas for all input validation, and infer TypeScript types from them
 - Implement permission hooks, lifecycle hooks, and error handling as described below
@@ -17,6 +18,7 @@ All services must:
 ## 2. Step-by-Step: Creating a New Service
 
 ### 2.1. Define Zod Schemas and Types
+
 - Place schemas in `@repo/schemas` or a local `schemas.ts` file.
 - Always use Zod for validation.
 - Infer TypeScript types from schemas.
@@ -47,6 +49,7 @@ export type SearchDestinationInput = z.infer<typeof SearchDestinationSchema>;
 ---
 
 ### 2.2. Implement the Service Class
+
 - Extend `BaseService`.
 - Implement all required abstract properties and hooks.
 - Use the correct Zod schemas and types.
@@ -99,6 +102,29 @@ export class DestinationService extends BaseService<
   protected async _afterCreate(entity, actor) { /* ... */ }
   // ...other hooks as needed
 
+  /**
+   * --- Input Normalization and Slug Generation (DestinationService Example) ---
+   *
+   * DestinationService uses dedicated normalizer functions for create, update, list, and view inputs.
+   * This ensures defaults (e.g., visibility) and future extensibility for data cleaning.
+   *
+   * The _beforeCreate hook generates a unique slug from the name using generateDestinationSlug,
+   * guaranteeing uniqueness in the database.
+   *
+   * Example:
+   * ```ts
+   * import { normalizeCreateInput } from './destination.normalizers';
+   * const normalized = normalizeCreateInput(input, actor);
+   *
+   * protected async _beforeCreate(data, actor) {
+   *   const slug = await generateDestinationSlug(data.name);
+   *   return { slug };
+   * }
+   * ```
+   *
+   * See tests in test/services/destination/normalizers.test.ts for full coverage.
+   */
+
   // --- Custom Methods (optional) ---
   public async getSummary(actor, data) { /* ... */ }
   // ...other custom methods
@@ -108,6 +134,7 @@ export class DestinationService extends BaseService<
 ---
 
 ### 2.3. Implement Permissions and Error Handling
+
 - Use the provided `ServiceError` and `ServiceErrorCode` for all errors.
 - Throw `ServiceError` in permission hooks if access is denied.
 - Always validate input with the correct Zod schema.
@@ -134,6 +161,7 @@ flowchart TD
 ---
 
 ### 2.4. Ensure Strong Typing and Extensibility
+
 - Never use `any`.
 - Always infer types from Zod schemas.
 - Use the RO-RO pattern (Receive Object / Return Object).
@@ -142,6 +170,7 @@ flowchart TD
 ---
 
 ### 2.5. Checklist Before Committing
+
 - [ ] All Zod schemas and types are defined and in sync.
 - [ ] All required hooks and properties are implemented.
 - [ ] All errors use `ServiceError` and codes.
@@ -151,15 +180,149 @@ flowchart TD
 
 ---
 
+### 2.6. Service Method Signature Convention
+
+All public service methods **must**:
+
+- Receive a single parameter of type `ServiceInput<T>`
+- Return a `Promise<ServiceOutput<T>>`
+
+**Why?**
+
+- Guarantees homogeneous error handling and result structure
+- Enables centralized logging and permission checks
+- Ensures strong typing and predictability
+- Facilitates future extensibility (e.g., tracing, auditing)
+
+**Example:**
+
+```ts
+import type { ServiceInput, ServiceOutput } from '../../types';
+import type { GetSummaryInput, DestinationSummary } from './destination.schemas';
+
+public async getSummary(
+  input: ServiceInput<GetSummaryInput>
+): Promise<ServiceOutput<{ summary: DestinationSummary }>> {
+  // ...implementation
+}
+```
+
+**Checklist addition:**
+
+- [ ] All public methods use `ServiceInput<T>` and return `ServiceOutput<T>`
+
+---
+
+### 2.7. Service Method Implementation Convention
+
+All public service methods **must** be implemented using `runWithLoggingAndValidation`. This ensures:
+
+- Centralized logging for every method call
+- Consistent error handling and result structure
+- Automatic input validation and permission checks
+- Extensibility for future cross-cutting concerns (e.g., tracing, auditing)
+
+**Example:**
+
+```ts
+import type { ServiceInput, ServiceOutput } from '../../types';
+import type { GetSummaryInput, DestinationSummary } from './destination.schemas';
+
+public async getSummary(
+  input: ServiceInput<GetSummaryInput>
+): Promise<ServiceOutput<{ summary: DestinationSummary }>> {
+  return this.runWithLoggingAndValidation('getSummary', input, async ({ actor, ...rest }) => {
+    // ...main logic here
+    return { summary: /* ... */ };
+  });
+}
+```
+
+**Checklist addition:**
+
+- [ ] All public methods use `runWithLoggingAndValidation` for their implementation
+
+---
+
+### 2.8. Permission Helpers Pattern
+
+- Every service **must** have a dedicated permission helpers file (e.g., `accommodation.permissions.ts`, `destination.permission.ts`).
+- All permission helpers **must** throw a `ServiceError` with `ServiceErrorCode.FORBIDDEN` if the actor does not have permission.
+- Always use the entity-specific `PermissionEnum` values (e.g., `PermissionEnum.DESTINATION_CREATE`).
+- Follow the homogeneous pattern established in `accommodation.permissions.ts` for all permission checks.
+- All permission helpers **must** be fully tested.
+
+**Example:**
+
+```ts
+export function checkCanCreateDestination(actor: Actor, _data: unknown): void {
+  if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+  if (!hasPermission(actor, PermissionEnum.DESTINATION_CREATE)) {
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to create destination');
+  }
+}
+```
+
+---
+
+### 2.9. Stub Methods Must Use the Homogeneous Pipeline
+
+- All public methods, **including stubs or not-yet-implemented methods**, must use `runWithLoggingAndValidation` and return a homogeneous error structure.
+- Never throw raw errors or return unstructured errors, even for stubs.
+- Use `ServiceErrorCode.NOT_IMPLEMENTED` for methods that are not yet implemented.
+
+**Example:**
+
+```ts
+public async myStubMethod(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+  return this.runWithLoggingAndValidation({
+    methodName: 'myStubMethod',
+    input: { actor: _actor, ..._input },
+    schema: z.any(),
+    execute: async () => {
+      throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+    }
+  });
+}
+```
+
+**Checklist addition:**
+
+- [ ] All public methods, including stubs, use `runWithLoggingAndValidation` and return a structured error with `ServiceErrorCode.NOT_IMPLEMENTED` if not implemented.
+
+---
+
+### 2.10. Testing Stubs and Permission Errors
+
+- Do **not** write tests for stub methods (methods that only return NOT_IMPLEMENTED). Only test real, implemented logic.
+- For permission errors, always assert on the returned error object (`result.error?.code`), never expect a thrown exception.
+- All permission checks must be performed before any business logic, and errors must be returned in the homogeneous structure.
+
+**Example (testing permission error):**
+
+```ts
+const result = await service.getSummary(input);
+expect(result.error?.code).toBe('FORBIDDEN');
+```
+
+**Checklist addition:**
+
+- [ ] No tests for stub methods.
+- [ ] All permission errors are asserted on the returned error object, not via thrown exceptions.
+
+---
+
 ## 3. Advanced Patterns & Anti-Patterns
 
 ### Patterns
+
 - Use base permission helpers (`defaultCanView`, etc.) unless you need custom logic.
 - Use `runWithLoggingAndValidation` for all public methods.
 - Use composition for cross-cutting logic (e.g., hooks, utilities).
 - Keep services thin—domain logic only.
 
 ### Anti-Patterns & Common Mistakes
+
 - Duplicating logic already in `BaseService` or helpers.
 - Using `any` or implicit types.
 - Throwing raw errors (always use `ServiceError`).
@@ -173,6 +336,7 @@ flowchart TD
 ---
 
 ## 4. Security & Validation
+
 - Always validate all input with Zod schemas before any logic or DB call.
 - Never trust client input—validate and sanitize.
 - Use permission hooks for every action (create, update, delete, view, etc.).
@@ -183,6 +347,7 @@ flowchart TD
 ---
 
 ## 5. Performance & Scalability
+
 - Use batch operations for bulk updates/deletes.
 - Avoid N+1 queries—fetch related data efficiently.
 - Use hooks for async side effects (e.g., notifications) to keep main flow fast.
@@ -193,6 +358,7 @@ flowchart TD
 ---
 
 ## 6. Large Refactors & Migrations
+
 - Plan refactors in phases: types/schemas, logic, tests, docs.
 - Use feature flags or toggles for risky changes.
 - Update all tests and docs after any breaking change.
@@ -284,6 +450,7 @@ export class AccommodationService extends BaseService<
 ## 9. Advanced Examples
 
 ### Batch Operations
+
 ```ts
 public async batchUpdateVisibility(actor: Actor, ids: string[], visibility: VisibilityEnum) {
   this._canUpdateVisibility(actor, null, visibility);
@@ -294,6 +461,7 @@ public async batchUpdateVisibility(actor: Actor, ids: string[], visibility: Visi
 ```
 
 ### Custom Queries
+
 ```ts
 public async findByCustomCriteria(actor: Actor, criteria: CustomCriteria) {
   this._canSearch(actor);
@@ -303,6 +471,7 @@ public async findByCustomCriteria(actor: Actor, criteria: CustomCriteria) {
 ```
 
 ### Advanced Hooks
+
 ```ts
 protected async _beforeCreate(data, actor) {
   // Enrich data, audit, or trigger side effects
@@ -317,6 +486,7 @@ protected async _afterCreate(entity, actor) {
 ```
 
 ### Composing Permissions
+
 ```ts
 protected _canUpdate(actor, entity) {
   if (this.isAdmin(actor)) return true;
@@ -327,6 +497,7 @@ protected _canUpdate(actor, entity) {
 ```
 
 ### Integrating with Other Services
+
 ```ts
 public async createWithRelated(actor, input) {
   this._canCreate(actor, input);
@@ -358,6 +529,7 @@ A: Add new helpers to `BaseService` or utility modules, and document them.
 ---
 
 ## 11. Extending & Scaling
+
 - For advanced use cases (batch ops, custom queries), add helpers to `BaseService` or utility modules.
 - Compose permission helpers for complex logic.
 - Document all customizations and deviations from the base pattern.
@@ -365,6 +537,7 @@ A: Add new helpers to `BaseService` or utility modules, and document them.
 ---
 
 ## 12. Resources & References
+
 - [Testing Guide](../../test/README.testing.md)
 - [BaseService API](../base/base.service.ts)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/)
@@ -373,6 +546,7 @@ A: Add new helpers to `BaseService` or utility modules, and document them.
 ---
 
 ## 13. Quality Checklist
+
 - [ ] All Zod schemas and types are defined and in sync
 - [ ] All required hooks and properties are implemented
 - [ ] All errors use `ServiceError` and codes
@@ -385,6 +559,7 @@ A: Add new helpers to `BaseService` or utility modules, and document them.
 ---
 
 ## 14. Glossary
+
 - **Service:** Class encapsulating business logic for a domain entity
 - **BaseService:** Abstract class all services extend, providing common logic
 - **Factory/Builder:** Utility for generating test data or mocks in a DRY, type-safe way
@@ -393,11 +568,11 @@ A: Add new helpers to `BaseService` or utility modules, and document them.
 - **SOLID:** Set of design principles for maintainable, extensible code
 - **Batch Operation:** Performing an action on multiple entities in a single call (e.g., updateMany)
 - **Custom Query:** Querying the model with non-standard or dynamic criteria
-- **Lifecycle Hook:** Method called before/after a main action (e.g., _beforeCreate, _afterUpdate)
+- **Lifecycle Hook:** Method called before/after a main action (e.g., _beforeCreate,_afterUpdate)
 - **Permission Composition:** Combining multiple permission checks for flexible access control
 - **Integration:** Calling or coordinating with other services or modules
 - **Audit Trail:** Recording actions or changes for traceability
 - **Side Effect:** An action triggered as a result of a service method (e.g., sending notifications)
 - **Feature Flag:** Mechanism to enable/disable features or code paths at runtime
 - **Idempotent:** An operation that can be performed multiple times without changing the result
-- **Stateless:** Service methods that do not rely on internal state between calls 
+- **Stateless:** Service methods that do not rely on internal state between calls
