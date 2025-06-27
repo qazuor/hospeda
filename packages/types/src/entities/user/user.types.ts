@@ -35,7 +35,7 @@ export interface UserType extends WithAudit, WithLifecycleState, WithVisibility,
     socialNetworks?: SocialNetworkType;
 
     role: RoleEnum;
-    permissions?: PermissionEnum[];
+    permissions: PermissionEnum[];
 
     profile?: UserProfile;
     settings?: UserSettingsType;
@@ -88,7 +88,7 @@ export type UserProfileSummaryType = Pick<
  * - bookmarks: Array of related UserBookmarkType (if loaded)
  */
 export type UserWithRelationsType = UserType & {
-    permissions?: PermissionEnum[];
+    permissions: PermissionEnum[];
     role: RoleEnum;
     bookmarks?: UserBookmarkType[];
 };
