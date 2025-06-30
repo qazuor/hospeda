@@ -9,9 +9,6 @@ import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { createDestination } from '../../factories/destinationFactory';
 
-/**
- * Unit tests for Destination permission helpers.
- */
 describe('Destination Permission Helpers', () => {
     describe('checkCanViewDestination', () => {
         it('allows viewing a public destination for any actor', () => {

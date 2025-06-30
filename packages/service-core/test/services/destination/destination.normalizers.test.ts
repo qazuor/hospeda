@@ -10,11 +10,6 @@ import {
 } from '../../../src/services/destination/destination.normalizers';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
 
-/**
- * @fileoverview
- * Unit tests for destination normalizers and slug generation logic.
- * Ensures robust, type-safe, and homogeneous handling of input normalization and slug uniqueness.
- */
 const testActor = { id: 'test', role: RoleEnum.ADMIN, permissions: [] };
 
 const validLocation = {
