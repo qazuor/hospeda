@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateSlug } from '../../../src/services/accommodation/accommodation.helpers';
 
 /**
- * @fileoverview
- * Exhaustive unit tests for generateSlug helper in AccommodationService.
+ * Test suite for generateSlug helper in AccommodationService.
  * Ensures robust, unique, and predictable slug generation for accommodations.
  */
 describe('generateSlug (AccommodationService)', () => {
