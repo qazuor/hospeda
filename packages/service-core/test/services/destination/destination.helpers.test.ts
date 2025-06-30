@@ -2,11 +2,6 @@ import { DestinationModel } from '@repo/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateDestinationSlug } from '../../../src/services/destination/destination.helpers';
 
-/**
- * @fileoverview
- * Exhaustive unit tests for generateDestinationSlug helper.
- * Ensures robust, unique, and predictable slug generation for destinations.
- */
 describe('generateDestinationSlug', () => {
     let findOneMock: ReturnType<typeof vi.fn>;
     beforeEach(() => {
