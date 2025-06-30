@@ -52,8 +52,8 @@ describe('BaseService: getById', () => {
     it('should return null data when entity is not found', async () => {
         modelMock.findOne.mockResolvedValue(null);
         const result = await service.getById(mockActor, MOCK_ENTITY_ID);
-        expect(result.data).toBeNull();
-        expect(result.error).toBeUndefined();
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should return a forbidden error if actor lacks view permission', async () => {

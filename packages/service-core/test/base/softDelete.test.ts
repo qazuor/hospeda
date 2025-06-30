@@ -43,9 +43,11 @@ describe('BaseService: softDelete', () => {
     });
 
     it('should soft delete an entity and return count', async () => {
+        modelMock.findById.mockResolvedValue({ ...mockEntity, deletedAt: null });
         modelMock.softDelete.mockResolvedValue(1);
         const result = await service.softDelete(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.data?.count).toBe(1);
+        expect(modelMock.softDelete).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
     });
 
     it('should return a count of 0 if no rows were affected', async () => {
@@ -61,6 +63,7 @@ describe('BaseService: softDelete', () => {
     });
 
     it('should handle errors from the _beforeSoftDelete lifecycle hook', async () => {
+        modelMock.findById.mockResolvedValue({ ...mockEntity, deletedAt: null });
         const hookError = new Error('Error in beforeSoftDelete hook');
         vi.spyOn(
             service as unknown as { _beforeSoftDelete: () => void },
@@ -71,6 +74,7 @@ describe('BaseService: softDelete', () => {
     });
 
     it('should return an internal error if database fails', async () => {
+        modelMock.findById.mockResolvedValue({ ...mockEntity, deletedAt: null });
         const dbError = new Error('DB connection failed');
         modelMock.softDelete.mockRejectedValue(dbError);
         const result = await service.softDelete(mockAdminActor, MOCK_ENTITY_ID);
@@ -96,6 +100,7 @@ describe('BaseService: softDelete', () => {
     });
 
     it('should handle errors from the _afterSoftDelete hook', async () => {
+        modelMock.findById.mockResolvedValue({ ...mockEntity, deletedAt: null });
         const hookError = new Error('Error in afterSoftDelete hook');
         vi.spyOn(
             service as unknown as { _afterSoftDelete: () => void },
