@@ -1,7 +1,9 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
 import {
+    CreateDestinationSchema,
     DestinationFilterInputSchema,
-    DestinationSchema
+    type DestinationSchema,
+    UpdateDestinationSchema
 } from '@repo/schemas/entities/destination/destination.schema';
 import type { AccommodationType, DestinationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
@@ -54,15 +56,15 @@ import {
 export class DestinationService extends BaseService<
     DestinationType,
     DestinationModel,
-    typeof DestinationSchema,
-    typeof DestinationSchema,
+    typeof CreateDestinationSchema,
+    typeof UpdateDestinationSchema,
     typeof DestinationFilterInputSchema
 > {
     protected readonly entityName = 'destination';
     protected readonly model: DestinationModel;
     protected readonly logger: ServiceLogger;
-    protected readonly createSchema = DestinationSchema;
-    protected readonly updateSchema = DestinationSchema;
+    protected readonly createSchema = CreateDestinationSchema;
+    protected readonly updateSchema = UpdateDestinationSchema;
     protected readonly searchSchema = DestinationFilterInputSchema;
     protected normalizers = {
         create: normalizeCreateInput,
