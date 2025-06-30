@@ -1,6 +1,10 @@
 import { UserModel } from '@repo/db';
-import { UserFilterInputSchema, UserSchema } from '@repo/schemas/entities/user/user.schema';
-import type { UserType } from '@repo/types';
+import {
+    UpdateUserSchema,
+    UserFilterInputSchema,
+    UserSchema
+} from '@repo/schemas/entities/user/user.schema';
+import type { PermissionEnum, UserType } from '@repo/types';
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseService } from '../../base/base.service';
@@ -14,7 +18,12 @@ import {
     normalizeViewInput
 } from './user.normalizers';
 import { canAssignRole } from './user.permissions';
-import { AssignRoleSchema } from './user.schemas';
+import {
+    AddPermissionSchema,
+    AssignRoleSchema,
+    RemovePermissionSchema,
+    SetPermissionsSchema
+} from './user.schemas';
 
 /**
  * Service for managing users, roles, and permissions.
@@ -28,7 +37,7 @@ export class UserService extends BaseService<
     UserType,
     UserModel,
     typeof UserSchema,
-    typeof UserSchema,
+    typeof UpdateUserSchema,
     typeof UserFilterInputSchema
 > {
     protected readonly model: UserModel;
@@ -39,11 +48,11 @@ export class UserService extends BaseService<
         update: normalizeUpdateInput,
         list: normalizeListInput,
         view: normalizeViewInput
-    };
+    } as const;
     protected readonly logger: ServiceLogger;
     protected readonly entityName = 'user';
     protected readonly createSchema = UserSchema;
-    protected readonly updateSchema = UserSchema;
+    protected readonly updateSchema = UpdateUserSchema;
     protected readonly searchSchema = UserFilterInputSchema;
 
     constructor(ctx: { logger: ServiceLogger }, model?: UserModel) {
@@ -243,45 +252,134 @@ export class UserService extends BaseService<
 
     /**
      * Adds a permission to a user. Only super admin.
-     * @TODO: Implement logic
+     * @param input - The input object containing userId and permission
+     * @returns The updated user object
+     * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
-    public async addPermission(/* params */): Promise<void> {
-        // TODO: Implement addPermission logic
-        throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'addPermission not implemented');
-    }
-
-    /**
-     * Sets permissions for a user. Only super admin.
-     * @TODO: Implement logic
-     */
-    public async setPermissions(/* params */): Promise<void> {
-        // TODO: Implement setPermissions logic
-        throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'setPermissions not implemented');
+    public async addPermission(
+        input: ServiceInput<{ userId: string; permission: PermissionEnum }>
+    ): Promise<ServiceOutput<{ user: UserType }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addPermission',
+            input,
+            schema: AddPermissionSchema,
+            execute: async ({ userId, permission }, actor) => {
+                this._canManagePermissions(actor);
+                const user = await this.model.findById(userId);
+                if (!user) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+                if (user.permissions.includes(permission)) {
+                    return { user };
+                }
+                const updated = await this.model.update(
+                    { id: userId },
+                    { permissions: [...user.permissions, permission] }
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to add permission'
+                    );
+                }
+                return { user: updated };
+            }
+        });
     }
 
     /**
      * Removes a permission from a user. Only super admin.
-     * @TODO: Implement logic
+     * @param input - The input object containing userId and permission
+     * @returns The updated user object
+     * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
-    public async removePermission(/* params */): Promise<void> {
-        // TODO: Implement removePermission logic
-        throw new ServiceError(
-            ServiceErrorCode.NOT_IMPLEMENTED,
-            'removePermission not implemented'
-        );
+    public async removePermission(
+        input: ServiceInput<{ userId: string; permission: PermissionEnum }>
+    ): Promise<ServiceOutput<{ user: UserType }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'removePermission',
+            input,
+            schema: RemovePermissionSchema,
+            execute: async ({ userId, permission }, actor) => {
+                this._canManagePermissions(actor);
+                const user = await this.model.findById(userId);
+                if (!user) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+                if (!user.permissions.includes(permission)) {
+                    return { user };
+                }
+                const updated = await this.model.update(
+                    { id: userId },
+                    { permissions: user.permissions.filter((p) => p !== permission) }
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to remove permission'
+                    );
+                }
+                return { user: updated };
+            }
+        });
     }
 
     /**
-     * Executes a search for users. Not implemented yet.
+     * Sets the permissions array for a user. Only super admin.
+     * @param input - The input object containing userId and permissions
+     * @returns The updated user object
+     * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
-    protected async _executeSearch(): Promise<never> {
-        throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, '_executeSearch not implemented');
+    public async setPermissions(
+        input: ServiceInput<{ userId: string; permissions: PermissionEnum[] }>
+    ): Promise<ServiceOutput<{ user: UserType }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'setPermissions',
+            input,
+            schema: SetPermissionsSchema,
+            execute: async ({ userId, permissions }, actor) => {
+                this._canManagePermissions(actor);
+                const user = await this.model.findById(userId);
+                if (!user) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+                const updated = await this.model.update({ id: userId }, { permissions });
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to set permissions'
+                    );
+                }
+                return { user: updated };
+            }
+        });
     }
 
     /**
-     * Executes a count for users. Not implemented yet.
+     * Executes a search for users.
+     * @param params - The validated and processed search parameters (filters, pagination, etc.)
+     * @returns Paginated list of users matching the criteria
      */
-    protected async _executeCount(): Promise<never> {
-        throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, '_executeCount not implemented');
+    protected async _executeSearch(params: z.infer<typeof UserFilterInputSchema>) {
+        // Separate filters and pagination, ensuring types
+        const { page, pageSize, ...filters } = params as Record<string, unknown>;
+        const safePage = typeof page === 'number' ? page : undefined;
+        const safePageSize = typeof pageSize === 'number' ? pageSize : undefined;
+        return this.model.findAll(filters, { page: safePage, pageSize: safePageSize });
+    }
+
+    /**
+     * Executes the user count according to the received filters.
+     * @param params - Validated search filters
+     * @param _actor - Authenticated actor (already validated by permissions)
+     * @returns An object with the number of users matching the filters
+     */
+    protected async _executeCount(
+        params: z.infer<typeof UserFilterInputSchema>
+    ): Promise<{ count: number }> {
+        // Omit pagination if present in filters
+        const { page, pageSize, ...filters } = params as Record<string, unknown>;
+        const count = await this.model.count(filters);
+        return { count };
     }
 }

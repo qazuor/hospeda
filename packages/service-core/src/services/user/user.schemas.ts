@@ -13,7 +13,7 @@ export const AddPermissionSchema = z.object({
 
 export const SetPermissionsSchema = z.object({
     userId: z.string().min(1),
-    permissions: z.array(z.nativeEnum(PermissionEnum))
+    permissions: z.array(z.nativeEnum(PermissionEnum)).min(1, 'At least one permission is required')
 });
 
 export const RemovePermissionSchema = z.object({
