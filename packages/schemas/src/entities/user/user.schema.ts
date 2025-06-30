@@ -86,3 +86,12 @@ export const UserSortInputSchema = z.object({
     sortBy: z.enum(['createdAt', 'firstName', 'lastName']).optional(),
     order: z.enum(['asc', 'desc']).optional()
 });
+
+/**
+ * UpdateUserSchema: all fields optional except id (required for update).
+ */
+export const UpdateUserSchema = UserSchema.partial().extend({
+    id: UserIdSchema
+});
+
+export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;

@@ -15,7 +15,7 @@ import { logError, logMethodEnd, logMethodStart, validateActor, validateEntity }
 
 type ListOptions = { page?: number; pageSize?: number };
 
-interface NormalizerSet<TCreate, TUpdate> {
+interface NormalizerSet<TCreate, TUpdate, TSearch> {
     create?: (data: TCreate, actor: Actor) => TCreate | Promise<TCreate>;
     update?: (data: TUpdate, actor: Actor) => TUpdate | Promise<TUpdate>;
     list?: (params: ListOptions, actor: Actor) => ListOptions | Promise<ListOptions>;
@@ -24,6 +24,7 @@ interface NormalizerSet<TCreate, TUpdate> {
         value: unknown,
         actor: Actor
     ) => { field: string; value: unknown } | Promise<{ field: string; value: unknown }>;
+    search?: (params: TSearch, actor: Actor) => TSearch | Promise<TSearch>;
 }
 
 /**
@@ -91,7 +92,11 @@ export abstract class BaseService<
      *   update: normalizeUpdateInput,
      * };
      */
-    protected normalizers?: NormalizerSet<z.infer<TCreateSchema>, z.infer<TUpdateSchema>>;
+    protected normalizers?: NormalizerSet<
+        z.infer<TCreateSchema>,
+        z.infer<TUpdateSchema>,
+        z.infer<TSearchSchema>
+    >;
 
     // --- Permissions Hooks ---
 
@@ -521,6 +526,12 @@ export abstract class BaseService<
 
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
                 const entity = await this.model.create(payload as any);
+                if (!entity) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        `Failed to create ${this.entityName}. The operation returned no result.`
+                    );
+                }
                 return this._afterCreate(entity, validatedActor);
             }
         });
@@ -605,6 +616,10 @@ export abstract class BaseService<
         field: string,
         value: unknown
     ): Promise<ServiceOutput<TEntity | null>> {
+        /**
+         * @note [2024-06-27] BREAKING: Now throws a NOT_FOUND ServiceError if the entity is not found, instead of returning { data: null, error }.
+         * This matches the contract of other service methods and ensures consistent error handling.
+         */
         const methodName = `getByField(field=${field}, value=${value})`;
         return this.runWithLoggingAndValidation({
             methodName,
@@ -627,11 +642,16 @@ export abstract class BaseService<
                 // biome-ignore lint/suspicious/noExplicitAny: The computed property is not fully recognized by TypeScript
                 const entity = await this.model.findOne(where as any);
 
-                if (entity) {
-                    await this._canView(validatedActor, entity as TEntity);
+                if (!entity) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} not found`
+                    );
                 }
 
-                return this._afterGetByField(entity as TEntity | null, validatedActor);
+                await this._canView(validatedActor, entity as TEntity);
+
+                return await this._afterGetByField(entity as TEntity, validatedActor);
             }
         });
     }
@@ -715,22 +735,19 @@ export abstract class BaseService<
                     validActor,
                     this._canSoftDelete.bind(this)
                 );
-
                 // If entity is already deleted, do nothing.
                 if (entity.deletedAt) {
                     return { count: 0 };
                 }
-
                 // 2. Lifecycle Hook: Before
                 const processedId = await this._beforeSoftDelete(id, validActor);
-
                 // 3. Main logic
                 const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
                 const result = { count: await this.model.softDelete(where as any) };
-
                 // 4. Lifecycle Hook: After
-                return this._afterSoftDelete(result, validActor);
+                const after = await this._afterSoftDelete(result, validActor);
+                return after;
             }
         });
     }
@@ -782,18 +799,24 @@ export abstract class BaseService<
             schema: z.object({}),
             execute: async (_, validActor) => {
                 // 1. Fetch, validate entity and check permissions
-                await this._getAndValidateEntity(id, validActor, this._canRestore.bind(this));
-
+                const entity = await this._getAndValidateEntity(
+                    id,
+                    validActor,
+                    this._canRestore.bind(this)
+                );
+                // Early return if already restored
+                if (!entity.deletedAt) {
+                    return { count: 0 };
+                }
                 // 2. Lifecycle Hook: Before
                 const processedId = await this._beforeRestore(id, validActor);
-
                 // 3. Main logic
-                const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const result = { count: await this.model.restore(where as any) };
-
+                const count = await this.model.restore({ id: processedId } as any);
+                const result = { count };
                 // 4. Lifecycle Hook: After
-                return this._afterRestore(result, validActor);
+                const after = await this._afterRestore(result, validActor);
+                return after;
             }
         });
     }
@@ -855,13 +878,18 @@ export abstract class BaseService<
                 // 1. Permission Check
                 await this._canSearch(validActor);
 
-                // 2. Lifecycle Hook: Before
-                const processedParams = await this._beforeSearch(validParams, validActor);
+                // 2. Normalization (nuevo)
+                const normalizedParams = this.normalizers?.search
+                    ? await this.normalizers.search(validParams, validActor)
+                    : validParams;
 
-                // 3. Main logic (delegated to child service)
+                // 3. Lifecycle Hook: Before
+                const processedParams = await this._beforeSearch(normalizedParams, validActor);
+
+                // 4. Main logic (delegated to child service)
                 const result = await this._executeSearch(processedParams, validActor);
 
-                // 4. Lifecycle Hook: After
+                // 5. Lifecycle Hook: After
                 return this._afterSearch(result, validActor);
             }
         });
@@ -880,36 +908,98 @@ export abstract class BaseService<
         id: string,
         visibility: VisibilityEnum
     ): Promise<ServiceOutput<TEntity>> {
-        const methodName = `updateVisibility(id=${id}, visibility=${visibility})`;
         return this.runWithLoggingAndValidation({
-            methodName,
+            methodName: 'updateVisibility',
             input: { actor, visibility },
             schema: z.object({ visibility: z.nativeEnum(VisibilityEnum) }),
             execute: async (validData, validActor) => {
                 // 1. Fetch entity
-                const entity = await this._getAndValidateEntity(id, validActor, (act, ent) =>
-                    this._canUpdateVisibility(act, ent, validData.visibility)
-                );
+                const entity = await this._getAndValidateEntity(id, validActor, async () => {});
+                if (!entity) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} not found`
+                    );
+                }
+                validateEntity(entity, this.entityName);
 
-                // 2. Lifecycle Hook: Before
-                const processedVisibility = await this._beforeUpdateVisibility(
-                    entity,
-                    validData.visibility,
-                    validActor
-                );
+                // 2. Permission check (solo esta línea en try/catch)
+                try {
+                    await this._canUpdateVisibility(validActor, entity, validData.visibility);
+                } catch (err) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied to update visibility',
+                        err
+                    );
+                }
 
-                // 3. Main logic
-                const payload = {
-                    visibility: processedVisibility,
-                    updatedById: validActor.id as UserId
-                } as unknown as Partial<TEntity>;
-                const where = { id };
-                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const updatedEntity = await this.model.update(where as any, payload);
-                const nonNullEntity = validateEntity(updatedEntity, this.entityName);
+                // 3. Lifecycle Hook: Before
+                let processedVisibility: VisibilityEnum;
+                try {
+                    processedVisibility = await this._beforeUpdateVisibility(
+                        entity,
+                        validData.visibility,
+                        validActor
+                    );
+                } catch (err) {
+                    if (
+                        err instanceof ServiceError &&
+                        err.code === ServiceErrorCode.INTERNAL_ERROR
+                    ) {
+                        throw err;
+                    }
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Error in _beforeUpdateVisibility hook',
+                        err
+                    );
+                }
 
-                // 4. Lifecycle Hook: After
-                return this._afterUpdateVisibility(nonNullEntity, validActor);
+                // 4. Update
+                let updatedEntity: TEntity | null;
+                try {
+                    updatedEntity = await this.model.update({ id }, {
+                        visibility: processedVisibility
+                    } as unknown as Partial<TEntity>);
+                    if (!updatedEntity) {
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            `Failed to update ${this.entityName} with id ${id}. The operation returned no result.`
+                        );
+                    }
+                } catch (err) {
+                    if (
+                        err instanceof ServiceError &&
+                        err.code === ServiceErrorCode.INTERNAL_ERROR
+                    ) {
+                        throw err;
+                    }
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Error in model.update',
+                        err
+                    );
+                }
+
+                // 5. Lifecycle Hook: After
+                try {
+                    await this._afterUpdateVisibility(updatedEntity, validActor);
+                } catch (err) {
+                    if (
+                        err instanceof ServiceError &&
+                        err.code === ServiceErrorCode.INTERNAL_ERROR
+                    ) {
+                        throw err;
+                    }
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Error in _afterUpdateVisibility hook',
+                        err
+                    );
+                }
+
+                return updatedEntity;
             }
         });
     }
@@ -975,12 +1065,8 @@ export abstract class BaseService<
     }): Promise<ServiceOutput<TOutput>> {
         const { actor, ...data } = input;
         this.logMethodStart(methodName, data, actor);
-
         try {
-            // 1. Actor Validation
             validateActor(actor);
-
-            // 2. Input Validation
             const validationResult = await schema.safeParseAsync(data);
             if (!validationResult.success) {
                 const error = new ServiceError(
@@ -993,8 +1079,6 @@ export abstract class BaseService<
             }
 
             const validData = validationResult.data;
-
-            // 3. Execute Core Logic
             const result = await execute(validData, actor);
             this.logMethodEnd(methodName, result);
             return { data: result };
@@ -1009,7 +1093,6 @@ export abstract class BaseService<
                 'An unexpected error occurred.',
                 error
             );
-
             this.logError(methodName, serviceError, data, actor);
             return { error: serviceError };
         }
@@ -1029,11 +1112,13 @@ export abstract class BaseService<
     protected async _getAndValidateEntity(
         id: string,
         actor: Actor,
-        permissionCheck: (actor: Actor, entity: TEntity) => Promise<void> | void
+        permissionCheck: (actor: Actor, entity: TEntity) => Promise<void> | void = async () =>
+            Promise.resolve()
     ): Promise<TEntity> {
         const entityOrNull = await this.model.findById(id);
+        // validateEntity lanza si no existe, así que entity nunca es null
         const entity = validateEntity(entityOrNull, this.entityName);
-        await permissionCheck(actor, entity);
+        await Promise.resolve(permissionCheck(actor, entity));
         return entity;
     }
 
