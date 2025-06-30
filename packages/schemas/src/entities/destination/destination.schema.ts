@@ -90,3 +90,34 @@ export const DestinationSortInputSchema = z.object({
         .optional(),
     order: z.enum(['asc', 'desc']).optional()
 });
+
+/**
+ * Schema for creating a new destination.
+ * Derived from the base `DestinationSchema` by omitting server-generated fields and relations.
+ */
+export const CreateDestinationSchema = DestinationSchema.omit({
+    id: true,
+    slug: true,
+    createdAt: true,
+    updatedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedAt: true,
+    deletedById: true,
+    reviews: true,
+    rating: true,
+    accommodationsCount: true,
+    averageRating: true
+});
+
+/**
+ * Type for new destination input (creation).
+ */
+export type NewDestinationInput = z.infer<typeof CreateDestinationSchema>;
+
+/**
+ * Schema for updating an existing destination.
+ * All fields son opcionales para permitir updates parciales.
+ */
+export const UpdateDestinationSchema = CreateDestinationSchema.deepPartial();
+export type UpdateDestinationInput = z.infer<typeof UpdateDestinationSchema>;
