@@ -1,4 +1,7 @@
-import type { DestinationSchema } from '@repo/schemas/entities/destination/destination.schema';
+import type {
+    CreateDestinationSchema,
+    UpdateDestinationSchema
+} from '@repo/schemas/entities/destination/destination.schema';
 import { VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
 import type { Actor } from '../../types';
@@ -12,9 +15,9 @@ import type { Actor } from '../../types';
  * @returns The normalized data with default visibility set if needed.
  */
 export const normalizeCreateInput = (
-    data: z.infer<typeof DestinationSchema>,
+    data: z.infer<typeof CreateDestinationSchema>,
     _actor: Actor
-): z.infer<typeof DestinationSchema> => {
+): z.infer<typeof CreateDestinationSchema> => {
     return {
         ...data,
         visibility: data.visibility ?? VisibilityEnum.PRIVATE
@@ -30,9 +33,9 @@ export const normalizeCreateInput = (
  * @returns The (currently unmodified) data.
  */
 export const normalizeUpdateInput = (
-    data: z.infer<typeof DestinationSchema>,
+    data: z.infer<typeof UpdateDestinationSchema>,
     _actor: Actor
-): z.infer<typeof DestinationSchema> => {
+): z.infer<typeof UpdateDestinationSchema> => {
     return data;
 };
 
