@@ -1,4 +1,4 @@
-import type { UserSchema } from '@repo/schemas/entities/user/user.schema';
+import type { UpdateUserSchema, UserSchema } from '@repo/schemas/entities/user/user.schema';
 import type { UserType } from '@repo/types';
 import type { z } from 'zod';
 import type { Actor } from '../../types';
@@ -30,9 +30,9 @@ export const normalizeCreateInput = (
  * @returns The normalized data.
  */
 export const normalizeUpdateInput = (
-    data: z.infer<typeof UserSchema>,
+    data: z.infer<typeof UpdateUserSchema>,
     _actor: Actor
-): z.infer<typeof UserSchema> => {
+): z.infer<typeof UpdateUserSchema> => {
     return {
         ...data,
         displayName: data.displayName?.trim()
