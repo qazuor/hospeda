@@ -44,5 +44,6 @@ export const mockEntity = {
     createdById: MOCK_USER_ID,
     updatedById: MOCK_USER_ID,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    deletedAt: new Date()
 };
