@@ -82,7 +82,8 @@ export class AccommodationService extends BaseService<
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
         list: normalizeListInput,
-        view: normalizeViewInput
+        view: normalizeViewInput,
+        search: (params: z.infer<typeof SearchAccommodationSchema>) => params // identity by default, can be overridden in tests
     };
 
     /**
