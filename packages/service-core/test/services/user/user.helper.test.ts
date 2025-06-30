@@ -1,230 +1,75 @@
-import { RoleEnum, ServiceErrorCode, type UserId } from '@repo/types';
-import { describe, expect, it } from 'vitest';
-import {
-    canAddPermission,
-    canAssignRole,
-    canRemovePermission,
-    canSetPermissions,
-    canUpdateUser,
-    canViewUser
-} from '../../../src/services/user/user.permissions';
-import { ServiceError } from '../../../src/types';
-import { createUser } from '../../factories/userFactory';
-import { getMockId } from '../../factories/utilsFactory';
+// TODO: Move all permission-related tests to user.permissions.test.ts. Move normalizer tests to user.normalizers.test.ts. Keep only non-permission, non-normalizer helpers here.
 
-describe('user permission helpers', () => {
-    const self = createUser({ id: getMockId('user') as UserId, role: RoleEnum.USER });
-    const superAdmin = createUser({ id: getMockId('user') as UserId, role: RoleEnum.SUPER_ADMIN });
-    const adminOther = createUser({
-        id: getMockId('user', 'admin-other') as UserId,
-        role: RoleEnum.ADMIN
-    });
-    const guestOther = createUser({
-        id: getMockId('user', 'guest-other') as UserId,
-        role: RoleEnum.GUEST
+// TODO: Add generateUserSlug tests here, moved from generateSlug.test.ts. Keep only non-permission, non-normalizer helpers.
+
+import { UserModel } from '@repo/db';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { generateUserSlug } from '../../../src/services/user/user.helpers';
+
+/**
+ * Test suite for generateUserSlug helper in UserService.
+ * Ensures robust, unique, and predictable slug generation for users.
+ */
+describe('generateUserSlug (UserService)', () => {
+    let findOneMock: ReturnType<typeof vi.fn>;
+    beforeEach(() => {
+        findOneMock = vi.fn();
+        vi.spyOn(UserModel.prototype, 'findOne').mockImplementation(findOneMock);
     });
 
-    describe('canViewUser', () => {
-        it('allows self', () => {
-            expect(() => canViewUser(self, self)).not.toThrow();
+    it('generates a slug from displayName if not taken', async () => {
+        findOneMock.mockResolvedValue(null);
+        const slug = await generateUserSlug({
+            displayName: 'John Doe',
+            firstName: '',
+            lastName: ''
         });
-        it('allows super admin', () => {
-            expect(() => canViewUser(superAdmin, self)).not.toThrow();
-        });
-        it('forbids admin viewing other', () => {
-            try {
-                canViewUser(adminOther, self);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only self or super admin can view user');
-                }
-            }
-        });
-        it('forbids guest viewing other', () => {
-            try {
-                canViewUser(guestOther, self);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only self or super admin can view user');
-                }
-            }
-        });
-        it('forbids undefined actor', () => {
-            expect(() => canViewUser(undefined, self)).toThrowError(/Missing actor/);
-        });
+        expect(typeof slug).toBe('string');
+        expect(slug).toMatch(/^john-doe/);
     });
 
-    describe('canUpdateUser', () => {
-        it('allows self', () => {
-            expect(() => canUpdateUser(self, self)).not.toThrow();
+    it('generates a slug from firstName + lastName if displayName is missing', async () => {
+        findOneMock.mockResolvedValue(null);
+        const slug = await generateUserSlug({
+            displayName: '',
+            firstName: 'Jane',
+            lastName: 'Smith'
         });
-        it('allows super admin', () => {
-            expect(() => canUpdateUser(superAdmin, self)).not.toThrow();
-        });
-        it('forbids admin updating other', () => {
-            try {
-                canUpdateUser(adminOther, self);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only self or super admin can update user');
-                }
-            }
-        });
-        it('forbids guest updating other', () => {
-            try {
-                canUpdateUser(guestOther, self);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only self or super admin can update user');
-                }
-            }
-        });
-        it('forbids undefined actor', () => {
-            expect(() => canUpdateUser(undefined, self)).toThrowError(/Missing actor/);
-        });
+        expect(slug).toMatch(/^jane-smith/);
     });
 
-    describe('canAssignRole', () => {
-        it('allows super admin', () => {
-            expect(() => canAssignRole(superAdmin)).not.toThrow();
+    it('appends a suffix if slug is already taken', async () => {
+        findOneMock.mockResolvedValueOnce({}).mockResolvedValueOnce(null);
+        const slug = await generateUserSlug({
+            displayName: 'John Doe',
+            firstName: '',
+            lastName: ''
         });
-        it('forbids admin', () => {
-            try {
-                canAssignRole(adminOther);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can assign roles');
-                }
-            }
-        });
-        it('forbids guest', () => {
-            try {
-                canAssignRole(guestOther);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can assign roles');
-                }
-            }
-        });
-        it('forbids undefined actor', () => {
-            expect(() => canAssignRole(undefined)).toThrowError(/Missing actor/);
-        });
+        expect(slug).toMatch(/^john-doe-[a-z0-9]+$/);
     });
 
-    describe('canAddPermission', () => {
-        it('allows super admin', () => {
-            expect(() => canAddPermission(superAdmin)).not.toThrow();
-        });
-        it('forbids admin', () => {
-            try {
-                canAddPermission(adminOther);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can add permissions');
-                }
-            }
-        });
-        it('forbids guest', () => {
-            try {
-                canAddPermission(guestOther);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can add permissions');
-                }
-            }
-        });
-        it('forbids undefined actor', () => {
-            expect(() => canAddPermission(undefined)).toThrowError(/Missing actor/);
-        });
+    it('is idempotent for the same input if slug is available', async () => {
+        findOneMock.mockResolvedValue(null);
+        const input = { displayName: 'Unique User', firstName: '', lastName: '' };
+        const slug1 = await generateUserSlug(input);
+        const slug2 = await generateUserSlug(input);
+        expect(slug1).toBe(slug2);
     });
 
-    describe('canSetPermissions', () => {
-        it('allows super admin', () => {
-            expect(() => canSetPermissions(superAdmin)).not.toThrow();
+    it('handles names with special characters and spaces', async () => {
+        findOneMock.mockResolvedValue(null);
+        const slug = await generateUserSlug({
+            displayName: 'José & María! 2024',
+            firstName: '',
+            lastName: ''
         });
-        it('forbids admin', () => {
-            try {
-                canSetPermissions(adminOther);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can set permissions');
-                }
-            }
-        });
-        it('forbids guest', () => {
-            try {
-                canSetPermissions(guestOther);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can set permissions');
-                }
-            }
-        });
-        it('forbids undefined actor', () => {
-            expect(() => canSetPermissions(undefined)).toThrowError(/Missing actor/);
-        });
+        expect(slug).toBe('jose-and-maria-2024');
     });
 
-    describe('canRemovePermission', () => {
-        it('allows super admin', () => {
-            expect(() => canRemovePermission(superAdmin)).not.toThrow();
-        });
-        it('forbids admin', () => {
-            try {
-                canRemovePermission(adminOther);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can remove permissions');
-                }
-            }
-        });
-        it('forbids guest', () => {
-            try {
-                canRemovePermission(guestOther);
-                throw new Error('Should have thrown');
-            } catch (err: unknown) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can remove permissions');
-                }
-            }
-        });
-        it('forbids undefined actor', () => {
-            expect(() => canRemovePermission(undefined)).toThrowError(/Missing actor/);
-        });
+    it('throws if model throws', async () => {
+        findOneMock.mockRejectedValue(new Error('DB error'));
+        await expect(
+            generateUserSlug({ displayName: 'Error Name', firstName: '', lastName: '' })
+        ).rejects.toThrow('DB error');
     });
 });
