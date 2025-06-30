@@ -111,7 +111,8 @@ export class ActorFactoryBuilder extends BaseFactoryBuilder<Actor> {
                 PermissionEnum.ACCOMMODATION_CREATE,
                 PermissionEnum.ACCOMMODATION_UPDATE_ANY,
                 PermissionEnum.ACCOMMODATION_DELETE_ANY,
-                PermissionEnum.ACCOMMODATION_VIEW_ALL
+                PermissionEnum.ACCOMMODATION_VIEW_ALL,
+                PermissionEnum.DESTINATION_CREATE
             ]
         });
     }
