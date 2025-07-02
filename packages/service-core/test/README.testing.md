@@ -18,10 +18,13 @@ All service tests must:
 ## 2. Test Structure & Organization
 
 - Place all service tests in `test/services/<service>/`
-- Use one file per method (e.g., `create.test.ts`, `getById.test.ts`, `addFaq.test.ts`)
+- Use **one file per method** (e.g., `create.test.ts`, `getById.test.ts`, `addFaq.test.ts`)
+- For each public method (including inherited CRUD and custom methods), create a dedicated test file named after the method (e.g., `getByAuthor.test.ts`, `getUpcoming.test.ts`).
 - Use AAA (Arrange, Act, Assert) pattern in all tests
 - Use the provided builders and helpers for all test data
 - All test files and helpers must be documented with JSDoc
+- Tests for normalizers, permissions, and helpers must go in their own files: `entityName.normalizers.test.ts`, `entityName.permissions.test.ts`, `entityName.helpers.test.ts`, etc.
+- **Do not create a single `<entity>.service.test.ts` file for all methods.**
 
 ---
 
@@ -44,6 +47,35 @@ flowchart TD
   H -- No --> L["Add missing cases: success, forbidden, not found, validation, internal, edge, batch, integration, hooks"]
   L --> F
 ```
+
+---
+
+## 2.2. Test File Organization Convention
+
+**All service tests must follow this file structure for homogeneity and maintainability:**
+
+- `create.test.ts`, `update.test.ts`, `delete.test.ts`, `restore.test.ts`, `getById.test.ts`, `list.test.ts`, `search.test.ts`, `count.test.ts` (one per CRUD method, even if inherited)
+- `entityName.permissions.test.ts` → Permission helpers (e.g., canView, canUpdate, checkCanCreate...)
+- `entityName.helpers.test.ts` → Service helpers (e.g., slug generation, utility functions)
+- `entityName.normalizers.test.ts` → Input/output normalizers
+- `getByAuthor.test.ts`, `getUpcoming.test.ts`, etc. → One file per public/special method
+
+**Rules:**
+
+- No test file should contain unrelated logic (e.g., helpers in permissions, CRUD in helpers, etc.)
+- All imports must be clean and only import what is needed for that file's focus
+- If a file is not needed (no helpers/normalizers/permissions), it can be omitted
+- All test files must be fully type-safe and pass lint/typecheck
+
+**Example for `UserService` and `EventService`:**
+
+- `create.test.ts`, `update.test.ts`, ... (CRUD)
+- `user.permissions.test.ts` (permission helpers)
+- `user.helpers.test.ts` (helpers)
+- `user.normalizers.test.ts` (normalizers)
+- `getByAuthor.test.ts`, `getUpcoming.test.ts` (public/special methods)
+
+**This convention must be followed for all services: User, Accommodation, Destination, Event, etc.**
 
 ---
 
@@ -91,10 +123,10 @@ asMock(modelMock.findOne).mockResolvedValue(...);
 
 ### 3.1. Testing Input Normalizers and Slug Generation
 
-- For services that use input normalizers (e.g., DestinationService), create a dedicated test file (e.g., `normalizers.test.ts`).
+- For services that use input normalizers (e.g., DestinationService), create a dedicated test file (e.g., `destination.normalizers.test.ts`).
 - Test all normalizer functions for correct defaults, pass-through, and edge cases.
 - For slug generation logic, mock the model to simulate slug collisions and ensure uniqueness logic is robust.
-- See `test/services/destination/normalizers.test.ts` for a full example covering normalizers and slug edge cases.
+- See `test/services/destination/destination.normalizers.test.ts` for a full example covering normalizers and slug edge cases.
 
 ---
 
