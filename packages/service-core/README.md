@@ -418,3 +418,17 @@ export function checkCanCreateDestination(actor: Actor, _data: unknown): void {
   }
 }
 ```
+
+---
+
+## 🧪 Test Organization Convention
+
+All service tests must follow a strict, homogeneous file structure for maintainability and clarity. See [`test/README.testing.md`](./test/README.testing.md#22-test-file-organization-convention) for the full convention and examples.
+
+- `entityName.permissions.test.ts` → Permission helpers
+- `entityName.helpers.test.ts` → Service helpers
+- `entityName.normalizers.test.ts` → Input/output normalizers
+- `methodName.test.ts` → CRUD tests (BaseService) Example: `create.test.ts`, `update.test.ts`, `getById.test.ts`, `search.test.ts`, `count.test.ts`, `softDelete.test.ts`, `restore.test.ts`, `list.test.ts`, etc.
+- `methodName.test.ts` → One file per public/special method. Example: `getStats.test.ts`, `getByCategory.test.ts`, `getByAuthor.test.ts`, etc.
+
+**No test file should contain unrelated logic. All test files must be type-safe and pass lint/typecheck.**
