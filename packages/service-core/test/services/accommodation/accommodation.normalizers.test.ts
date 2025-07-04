@@ -37,7 +37,7 @@ describe('Accommodation Normalizers', () => {
             typeof UpdateAccommodationSchema
         >;
         const result = normalizeUpdateInput(input, testActor);
-        expect(result).toBe(input);
+        expect(result).toStrictEqual(input);
     });
 
     it('normalizeListInput returns the same object', () => {
