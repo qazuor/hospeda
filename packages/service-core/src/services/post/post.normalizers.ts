@@ -1,7 +1,8 @@
 import type { ImageType, MediaType, VideoType } from '@repo/types';
 import { ModerationStatusEnum as ModerationStatusEnumType } from '@repo/types';
 import type { z } from 'zod';
-import type { PostCreateInput, PostUpdateSchema } from './post.schemas';
+import { normalizeAdminInfo } from '../../utils';
+import type { PostCreateInput, PostUpdateInput, PostUpdateSchema } from './post.schemas';
 
 const DEFAULT_MODERATION_STATE: ModerationStatusEnumType = ModerationStatusEnumType.PENDING;
 
@@ -59,13 +60,19 @@ export function normalizeCreateInput(data: PostCreateInput): PostCreateInput {
         }
     }
     const media = normalizeMedia(data.media);
+    const { adminInfo: _adminInfo, ...rest } = data as { adminInfo?: unknown } & Omit<
+        PostCreateInput,
+        'adminInfo'
+    >;
+    const adminInfo = normalizeAdminInfo(_adminInfo);
     return {
-        ...data,
+        ...rest,
         title,
         summary,
         content,
-        ...(media ? { media } : {})
-    };
+        ...(media !== undefined ? { media } : {}),
+        ...(adminInfo ? { adminInfo } : {})
+    } as PostCreateInput;
 }
 
 /**
@@ -95,11 +102,17 @@ export function normalizeUpdateInput(
         }
     }
     const media = normalizeMedia(data.media);
+    const { adminInfo: _adminInfo, ...rest } = data as { adminInfo?: unknown } & Omit<
+        PostUpdateInput,
+        'adminInfo'
+    >;
+    const adminInfo = normalizeAdminInfo(_adminInfo);
     return {
-        ...data,
+        ...rest,
         ...(title !== undefined ? { title } : {}),
         ...(summary !== undefined ? { summary } : {}),
         ...(content !== undefined ? { content } : {}),
-        ...(media ? { media } : {})
-    };
+        ...(media !== undefined ? { media } : {}),
+        ...(adminInfo ? { adminInfo } : {})
+    } as z.infer<typeof PostUpdateSchema>;
 }

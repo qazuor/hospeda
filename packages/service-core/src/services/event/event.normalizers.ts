@@ -1,6 +1,7 @@
 import type { EventSchema } from '@repo/schemas';
 import type { EventType } from '@repo/types';
 import type { z } from 'zod';
+import { normalizeAdminInfo } from '../../utils';
 
 /**
  * Normalizes input data for creating an event.
@@ -9,8 +10,11 @@ import type { z } from 'zod';
  * @returns The normalized input as Partial<EventType>
  */
 export const normalizeCreateInput = (input: z.infer<typeof EventSchema>): Partial<EventType> => {
+    const adminInfo = normalizeAdminInfo(input.adminInfo);
+    const { adminInfo: _adminInfo, ...rest } = input;
     return {
-        ...input,
+        ...rest,
+        ...(adminInfo ? { adminInfo } : {}),
         date: {
             ...input.date,
             start: new Date(input.date.start),
@@ -28,8 +32,11 @@ export const normalizeCreateInput = (input: z.infer<typeof EventSchema>): Partia
  * @returns The normalized input as Partial<EventType>
  */
 export const normalizeUpdateInput = (input: z.infer<typeof EventSchema>): Partial<EventType> => {
+    const adminInfo = normalizeAdminInfo(input.adminInfo);
+    const { adminInfo: _adminInfo, ...rest } = input;
     return {
-        ...input,
+        ...rest,
+        ...(adminInfo ? { adminInfo } : {}),
         date: input.date
             ? {
                   ...input.date,
