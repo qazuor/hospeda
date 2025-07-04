@@ -5,6 +5,7 @@ import type {
 import { VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
 import type { Actor } from '../../types';
+import { normalizeAdminInfo } from '../../utils';
 
 /**
  * Normalizes the input data for creating a destination.
@@ -18,8 +19,11 @@ export const normalizeCreateInput = (
     data: z.infer<typeof CreateDestinationSchema>,
     _actor: Actor
 ): z.infer<typeof CreateDestinationSchema> => {
+    const adminInfo = normalizeAdminInfo(data.adminInfo);
+    const { adminInfo: _adminInfo, ...rest } = data;
     return {
-        ...data,
+        ...rest,
+        ...(adminInfo ? { adminInfo } : {}),
         visibility: data.visibility ?? VisibilityEnum.PRIVATE
     };
 };
@@ -36,7 +40,12 @@ export const normalizeUpdateInput = (
     data: z.infer<typeof UpdateDestinationSchema>,
     _actor: Actor
 ): z.infer<typeof UpdateDestinationSchema> => {
-    return data;
+    const adminInfo = normalizeAdminInfo(data.adminInfo);
+    const { adminInfo: _adminInfo, ...rest } = data;
+    return {
+        ...rest,
+        ...(adminInfo ? { adminInfo } : {})
+    };
 };
 
 /**

@@ -2,6 +2,7 @@ import type { UpdateUserSchema, UserSchema } from '@repo/schemas/entities/user/u
 import type { UserType } from '@repo/types';
 import type { z } from 'zod';
 import type { Actor } from '../../types';
+import { normalizeAdminInfo } from '../../utils';
 import { generateUserSlug } from './user.helpers';
 
 /**
@@ -15,8 +16,11 @@ export const normalizeCreateInput = (
     data: z.infer<typeof UserSchema>,
     _actor: Actor
 ): z.infer<typeof UserSchema> => {
+    const adminInfo = normalizeAdminInfo(data.adminInfo);
+    const { adminInfo: _adminInfo, ...rest } = data;
     return {
-        ...data,
+        ...rest,
+        ...(adminInfo ? { adminInfo } : {}),
         displayName: data.displayName?.trim()
         // email: data.email?.toLowerCase(), // Uncomment if email is added in future
     };
@@ -33,8 +37,11 @@ export const normalizeUpdateInput = (
     data: z.infer<typeof UpdateUserSchema>,
     _actor: Actor
 ): z.infer<typeof UpdateUserSchema> => {
+    const adminInfo = normalizeAdminInfo(data.adminInfo);
+    const { adminInfo: _adminInfo, ...rest } = data;
     return {
-        ...data,
+        ...rest,
+        ...(adminInfo ? { adminInfo } : {}),
         displayName: data.displayName?.trim()
     };
 };

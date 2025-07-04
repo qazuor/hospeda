@@ -1067,7 +1067,7 @@ export abstract class BaseService<
         this.logMethodStart(methodName, data, actor);
         try {
             validateActor(actor);
-            const validationResult = await schema.safeParseAsync(data);
+            const validationResult = await schema.safeParseAsync(input);
             if (!validationResult.success) {
                 const error = new ServiceError(
                     ServiceErrorCode.VALIDATION_ERROR,
