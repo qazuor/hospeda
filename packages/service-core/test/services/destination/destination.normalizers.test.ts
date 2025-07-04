@@ -49,7 +49,7 @@ describe('Destination Normalizers', () => {
         const input = new DestinationFactoryBuilder().with({ location: validLocation }).build();
         // Cast for test compatibility
         const result = normalizeUpdateInput(input as z.infer<typeof DestinationSchema>, testActor);
-        expect(result).toBe(input);
+        expect(result).toStrictEqual(input);
     });
 
     it('normalizeListInput returns the same object', () => {
