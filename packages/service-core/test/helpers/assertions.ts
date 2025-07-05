@@ -50,3 +50,13 @@ export function expectSuccess<T extends { data?: unknown; error?: unknown }>(res
     expect(result.error).toBeUndefined();
     expect(result.data).toBeDefined();
 }
+
+/**
+ * Asserts that the result contains an UNAUTHORIZED error code.
+ * @template T - The result type, must have an optional error.code property.
+ * @param result - The result object to check.
+ * @returns void
+ */
+export function expectUnauthorizedError<T extends { error?: { code?: string } }>(result: T): void {
+    expect(result.error?.code).toBe('UNAUTHORIZED');
+}

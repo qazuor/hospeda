@@ -5,6 +5,7 @@ import * as permissionHelpers from '../../../src/services/accommodation/accommod
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
+import { expectInternalError } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
@@ -68,8 +69,7 @@ describe('AccommodationService.count', () => {
             filters: {},
             pagination: { page: 1, pageSize: 10 }
         });
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 
     it('should handle errors from the _beforeCount hook', async () => {
@@ -82,8 +82,7 @@ describe('AccommodationService.count', () => {
             filters: {},
             pagination: { page: 1, pageSize: 10 }
         });
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 
     it('should handle errors from the _afterCount hook', async () => {
@@ -96,7 +95,6 @@ describe('AccommodationService.count', () => {
             filters: {},
             pagination: { page: 1, pageSize: 10 }
         });
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 });

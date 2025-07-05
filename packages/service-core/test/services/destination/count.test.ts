@@ -5,6 +5,7 @@ import * as permissionHelpers from '../../../src/services/destination/destinatio
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
+import { expectInternalError } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
@@ -61,8 +62,7 @@ describe('DestinationService.count', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         (model.countByFilters as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.count(actor, { country: 'AR' });
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 
     it('should handle errors from the _beforeCount hook', async () => {
@@ -72,8 +72,7 @@ describe('DestinationService.count', () => {
             '_beforeCount'
         ).mockRejectedValue(new Error('before error'));
         const result = await service.count(actor, { country: 'AR' });
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 
     it('should handle errors from the _afterCount hook', async () => {
@@ -83,7 +82,6 @@ describe('DestinationService.count', () => {
             '_afterCount'
         ).mockRejectedValue(new Error('after error'));
         const result = await service.count(actor, { country: 'AR' });
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 });

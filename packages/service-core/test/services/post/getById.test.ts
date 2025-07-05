@@ -6,6 +6,11 @@ import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import * as assertions from '../../helpers/assertions';
+import {
+    expectForbiddenError,
+    expectInternalError,
+    expectNotFoundError
+} from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -52,18 +57,18 @@ describe('PostService.getById', () => {
             String(where.id) === String(privatePost.id) ? privatePost : null
         );
         const result = await service.getById(forbiddenActor, privatePost.id);
-        assertions.expectForbiddenError(result);
+        expectForbiddenError(result);
     });
 
     it('should return NOT_FOUND if post does not exist', async () => {
         (modelMock.findOne as Mock).mockResolvedValue(null);
         const result = await service.getById(actor, getMockId('post'));
-        assertions.expectNotFoundError(result);
+        expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         (modelMock.findOne as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, post.id);
-        assertions.expectInternalError(result);
+        expectInternalError(result);
     });
 });

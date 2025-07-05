@@ -1,17 +1,16 @@
 import { EventModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
-import { expectInternalError, expectSuccess } from '../../helpers/assertions';
+import {
+    expectInternalError,
+    expectSuccess,
+    expectUnauthorizedError
+} from '../../helpers/assertions';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
-
-// Helper para error unauthorized
-const expectUnauthorizedError = (result: { error?: { code?: string } }) => {
-    expect(result.error?.code).toBe(ServiceErrorCode.UNAUTHORIZED);
-};
 
 describe('EventService.getFreeEvents', () => {
     let service: EventService;
@@ -82,5 +81,17 @@ describe('EventService.getFreeEvents', () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.getFreeEvents(actorWithPerm, {});
         expectInternalError(result);
+    });
+
+    it('should return INTERNAL_ERROR if model throws', async () => {
+        (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
+        const result = await service.getFreeEvents(actorWithPerm, {});
+        expectInternalError(result);
+    });
+
+    it('should return UNAUTHORIZED if actor is missing', async () => {
+        // @ts-expect-error purposely invalid
+        const result = await service.getFreeEvents(undefined, {});
+        expectUnauthorizedError(result);
     });
 });
