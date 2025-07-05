@@ -637,21 +637,6 @@ export class PostService extends BaseService<
     }
 
     /**
-     * Updates admin info for a post (notes, favorite, etc).
-     * @param actor - The admin performing the action.
-     * @param postId - The post ID.
-     * @param adminInfo - The admin info to set.
-     * @returns The updated admin info or error.
-     */
-    public async setAdminInfo(
-        _actor: Actor,
-        _postId: string,
-        _adminInfo: { notes?: string; favorite?: boolean }
-    ): Promise<ServiceOutput<{ adminInfo: { notes?: string; favorite?: boolean } }>> {
-        return { data: { adminInfo: {} } };
-    }
-
-    /**
      * Returns a summarized, public-facing version of a post (for cards/lists).
      * @param actor - The user or system performing the action.
      * @param data - Object with id or slug.
