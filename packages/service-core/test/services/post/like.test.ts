@@ -9,7 +9,9 @@ import { createMockPost } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
     expectInternalError,
+    expectNotFoundError,
     expectSuccess,
+    expectUnauthorizedError,
     expectValidationError
 } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
@@ -42,13 +44,13 @@ describe('PostService.like', () => {
         (modelMock.findOne as Mock).mockResolvedValue(null);
         const input = { actor, postId };
         const result = await service.like(input);
-        expect(result.error?.code).toBe('NOT_FOUND');
+        expectNotFoundError(result);
     });
 
     it('should return forbidden if actor is missing', async () => {
         // @ts-expect-error purposely invalid
         const result = await service.like({ postId });
-        expect(result.error?.code).toBe('UNAUTHORIZED');
+        expectUnauthorizedError(result);
     });
 
     it('should return validation error if input is invalid', async () => {

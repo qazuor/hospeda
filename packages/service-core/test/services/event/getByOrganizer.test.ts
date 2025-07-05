@@ -11,17 +11,12 @@ import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
-import { expectSuccess } from '../../helpers/assertions';
+import {
+    expectInternalError,
+    expectSuccess,
+    expectUnauthorizedError
+} from '../../helpers/assertions';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
-
-// Helper para error interno
-const expectInternalError = (result: { error?: { code?: string } }) => {
-    expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-};
-// Helper para error unauthorized
-const expectUnauthorizedError = (result: { error?: { code?: string } }) => {
-    expect(result.error?.code).toBe(ServiceErrorCode.UNAUTHORIZED);
-};
 
 /**
  * Tests for EventService.getByOrganizer
@@ -96,9 +91,15 @@ describe('EventService.getByOrganizer', () => {
         expect(data.items).toHaveLength(0);
     });
 
-    it('should throw internal error if model fails', async () => {
+    it('should return INTERNAL_ERROR if model throws', async () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.getByOrganizer(actorWithPerm, { organizerId });
         expectInternalError(result);
+    });
+
+    it('should return UNAUTHORIZED if actor is missing', async () => {
+        // @ts-expect-error purposely invalid
+        const result = await service.getByOrganizer(undefined, { organizerId });
+        expectUnauthorizedError(result);
     });
 });

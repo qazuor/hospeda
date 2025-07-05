@@ -13,6 +13,7 @@ import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import * as assertions from '../../helpers/assertions';
+import { expectInternalError, expectValidationError } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -66,13 +67,13 @@ describe('PostService.getStats', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.findOne).mockRejectedValue(new Error('DB error'));
         const result = await service.getStats(actor, input);
-        assertions.expectInternalError(result);
+        expectInternalError(result);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: post.id });
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // purposely invalid input
         const result = await service.getStats(actor, {});
-        assertions.expectValidationError(result);
+        expectValidationError(result);
     });
 });

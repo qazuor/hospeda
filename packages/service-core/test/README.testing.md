@@ -118,8 +118,8 @@ asMock(modelMock.findOne).mockResolvedValue(...);
 
 ### Assertion Helpers
 
-- Use assertion helpers: `expectSuccess`, `expectForbiddenError`, `expectNotFoundError`, `expectValidationError`, `expectInternalError`
-- All assertion helpers are in `test/helpers/assertions.ts`
+- **Always use the helpers from `test/helpers/assertions.ts`** (e.g., `expectSuccess`, `expectForbiddenError`, `expectNotFoundError`, `expectInternalError`, `expectValidationError`, etc.) to assert the results of service methods.
+- Do **not** assert error codes or result shapes directly; use the provided helpers for consistency and maintainability.
 
 ### 3.1. Testing Input Normalizers and Slug Generation
 

@@ -6,6 +6,7 @@ import { AccommodationService } from '../../../src/services/accommodation/accomm
 import { ServiceError } from '../../../src/types';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
+import { expectInternalError } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
@@ -61,8 +62,7 @@ describe('AccommodationService.getByName', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         (model.findOne as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.getByName(actor, entity.name);
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 
     it('should handle errors from the _beforeGetByField hook', async () => {
@@ -72,8 +72,7 @@ describe('AccommodationService.getByName', () => {
             '_beforeGetByField'
         ).mockRejectedValue(new Error('before error'));
         const result = await service.getByName(actor, entity.name);
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 
     it('should handle errors from the _afterGetByField hook', async () => {
@@ -83,7 +82,6 @@ describe('AccommodationService.getByName', () => {
             '_afterGetByField'
         ).mockRejectedValue(new Error('after error'));
         const result = await service.getByName(actor, entity.name);
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expectInternalError(result);
     });
 });

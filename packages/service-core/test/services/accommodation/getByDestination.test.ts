@@ -26,8 +26,6 @@ import {
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createModelMock } from '../../utils/modelMockFactory';
 
-const getInput = (destinationId: ReturnType<typeof getMockDestinationId>) => ({ destinationId });
-
 /**
  * Test suite for the AccommodationService.getByDestination method.
  *
@@ -71,7 +69,7 @@ describe('AccommodationService.getByDestination', () => {
             items: accommodations,
             total: accommodations.length
         });
-        const result = await service.getByDestination(actor, getInput(destinationId));
+        const result = await service.getByDestination(actor, { destinationId });
         expectSuccess(result);
         expect(result.data).toEqual(accommodations);
         expect(modelMock.findAll).toHaveBeenCalledWith({ destinationId });
@@ -82,7 +80,7 @@ describe('AccommodationService.getByDestination', () => {
         vi.spyOn(permissionHelpers, 'checkCanList').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
         });
-        const result = await service.getByDestination(actor, getInput(destinationId));
+        const result = await service.getByDestination(actor, { destinationId });
         expectForbiddenError(result);
         expect(permissionHelpers.checkCanList).toHaveBeenCalledWith(actor);
     });
@@ -90,7 +88,7 @@ describe('AccommodationService.getByDestination', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
         modelMock.findAll.mockRejectedValue(new Error('DB error'));
-        const result = await service.getByDestination(actor, getInput(destinationId));
+        const result = await service.getByDestination(actor, { destinationId });
         expectInternalError(result);
         expect(modelMock.findAll).toHaveBeenCalledWith({ destinationId });
     });
@@ -99,5 +97,15 @@ describe('AccommodationService.getByDestination', () => {
         // @ts-expect-error purposely invalid
         const result = await service.getByDestination(actor, {});
         expectValidationError(result);
+    });
+
+    it('should return empty array if destination does not exist', async () => {
+        vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
+        modelMock.findAll.mockResolvedValue({ items: [], total: 0 });
+        const result = await service.getByDestination(actor, {
+            destinationId: '00000000-0000-0000-0000-000000000000'
+        });
+        expectSuccess(result);
+        expect(result.data).toEqual([]);
     });
 });
