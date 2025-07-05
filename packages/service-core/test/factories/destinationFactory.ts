@@ -165,3 +165,5 @@ export const createDestination = (
         .with(safeOverrides)
         .build();
 };
+
+export const getMockDestinationId = (id?: string) => getMockId('destination', id) as DestinationId;

@@ -1,4 +1,4 @@
-import type { UserId } from '@repo/types';
+import type { AdminInfoType, UserId } from '@repo/types';
 import { ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import type { ZodTypeAny } from 'zod';
 import { type AnyZodObject, z } from 'zod';
@@ -11,7 +11,14 @@ import {
     type ServiceLogger,
     type ServiceOutput
 } from '../types';
-import { logError, logMethodEnd, logMethodStart, validateActor, validateEntity } from '../utils';
+import {
+    logError,
+    logMethodEnd,
+    logMethodStart,
+    normalizeAdminInfo,
+    validateActor,
+    validateEntity
+} from '../utils';
 
 type ListOptions = { page?: number; pageSize?: number };
 
@@ -40,7 +47,7 @@ interface NormalizerSet<TCreate, TUpdate, TSearch> {
  * @template TSearchSchema The Zod schema for validating entity search input.
  */
 export abstract class BaseService<
-    TEntity extends { id: string; deletedAt?: Date | null },
+    TEntity extends { id: string; adminInfo?: AdminInfoType; deletedAt?: Date | null },
     TModel extends BaseModel<TEntity>,
     TCreateSchema extends AnyZodObject,
     TUpdateSchema extends AnyZodObject,
@@ -1006,7 +1013,7 @@ export abstract class BaseService<
 
     /**
      * Sets the featured status of the entity.
-     * @param input - ServiceInput with id and isFeatured.
+     * @param input - ServiceInput<{ id: string; isFeatured: boolean }>
      * @returns {Promise<ServiceOutput<{ updated: boolean }>>}
      */
     public async setFeaturedStatus(
@@ -1031,6 +1038,65 @@ export abstract class BaseService<
                     isFeatured: validData.isFeatured
                 } as unknown as Partial<TEntity>);
                 return { updated: true };
+            }
+        });
+    }
+
+    /**
+     * Gets the admin info for an entity by ID.
+     * Only users with update permission can access.
+     * @param input - ServiceInput<{ id: string }>
+     * @returns ServiceOutput<{ adminInfo: AdminInfoType | undefined }>
+     */
+    public async getAdminInfo(
+        input: ServiceInput<{ id: string }>
+    ): Promise<ServiceOutput<{ adminInfo: AdminInfoType | undefined }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAdminInfo',
+            input,
+            schema: z.object({ id: z.string(), actor: z.any() }),
+            execute: async ({ id }, actor) => {
+                const entity = await this.model.findById(id);
+                if (!entity) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} not found`
+                    );
+                }
+                this._canUpdate(actor, entity);
+                return { adminInfo: entity.adminInfo };
+            }
+        });
+    }
+
+    /**
+     * Sets the admin info for an entity by ID.
+     * Only users with update permission can set.
+     * @param input - ServiceInput<{ id: string; adminInfo: AdminInfoType }>
+     * @returns ServiceOutput<{ adminInfo: AdminInfoType }>
+     */
+    public async setAdminInfo(
+        input: ServiceInput<{ id: string; adminInfo: AdminInfoType }>
+    ): Promise<ServiceOutput<{ adminInfo: AdminInfoType }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'setAdminInfo',
+            input,
+            schema: z.object({ id: z.string(), adminInfo: z.any(), actor: z.any() }),
+            execute: async ({ id, adminInfo }, actor) => {
+                const entity = await this.model.findById(id);
+                if (!entity) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} not found`
+                    );
+                }
+                this._canUpdate(actor, entity);
+                const normalized = normalizeAdminInfo(adminInfo);
+                if (!normalized) {
+                    throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid adminInfo');
+                }
+                await this.model.update({ id }, { adminInfo: normalized } as Partial<TEntity>);
+                return { adminInfo: normalized };
             }
         });
     }
@@ -1074,17 +1140,17 @@ export abstract class BaseService<
                     'Invalid input data provided.',
                     validationResult.error.flatten()
                 );
-                this.logError(methodName, error, data, actor);
+                logError(`${this.entityName}.${methodName}`, error, data, actor);
                 return { error };
             }
 
             const validData = validationResult.data;
             const result = await execute(validData, actor);
-            this.logMethodEnd(methodName, result);
+            logMethodEnd(`${this.entityName}.${methodName}`, result);
             return { data: result };
         } catch (error) {
             if (error instanceof ServiceError) {
-                this.logError(methodName, error, data, actor);
+                logError(`${this.entityName}.${methodName}`, error, data, actor);
                 return { error };
             }
 
@@ -1093,7 +1159,7 @@ export abstract class BaseService<
                 'An unexpected error occurred.',
                 error
             );
-            this.logError(methodName, serviceError, data, actor);
+            logError(`${this.entityName}.${methodName}`, serviceError, data, actor);
             return { error: serviceError };
         }
     }
@@ -1131,26 +1197,4 @@ export abstract class BaseService<
     private logMethodStart(method: string, input: unknown, actor: Actor): void {
         logMethodStart(`${this.entityName}.${method}`, input, actor);
     }
-
-    /**
-     * Logs the successful end of a service method execution.
-     * @param method The full method name.
-     * @param output The data being returned by the method.
-     */
-    private logMethodEnd(method: string, output: unknown): void {
-        logMethodEnd(`${this.entityName}.${method}`, output);
-    }
-
-    /**
-     * Logs an error that occurred during a service method execution.
-     * @param method The full method name.
-     * @param error The error object that was caught.
-     * @param input The original input data for the method.
-     * @param actor The actor who performed the action.
-     */
-    private logError(method: string, error: Error, input: unknown, actor: Actor): void {
-        logError(`${this.entityName}.${method}`, error, input, actor);
-    }
 }
-
-export type { ServiceOutput };

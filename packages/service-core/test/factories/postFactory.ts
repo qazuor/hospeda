@@ -79,3 +79,5 @@ export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): Po
         ...overrides
     };
 };
+
+export const getMockPostId = (id?: string): PostId => getMockId('post', id) as PostId;
