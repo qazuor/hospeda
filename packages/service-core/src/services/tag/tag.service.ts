@@ -1,5 +1,16 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import type { EntityTypeEnum, TagType } from '@repo/types';
+import type {
+    AccommodationId,
+    DestinationId,
+    EntityTagType,
+    EntityTypeEnum,
+    EventId,
+    PostId,
+    TagId,
+    TagType,
+    UserId
+} from '@repo/types';
+import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseRelatedService } from '../../base/base.related-service';
 import type {
@@ -9,6 +20,7 @@ import type {
     ServiceLogger,
     ServiceOutput
 } from '../../types';
+import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
 import {
     checkCanCountTags,
@@ -26,6 +38,10 @@ import {
 import {
     type CreateTagInput,
     CreateTagSchema,
+    type GetEntitiesByTagInput,
+    GetEntitiesByTagSchema,
+    GetTagsForEntitySchema,
+    RemoveTagFromEntitySchema,
     SearchTagSchema,
     UpdateTagSchema
 } from './tag.schemas';
@@ -193,14 +209,53 @@ export class TagService extends BaseRelatedService<
      * @returns ServiceOutput<void>
      */
     public async addTagToEntity(
-        input: ServiceInput<{ tagId: string; entityId: string; entityType: EntityTypeEnum }>
+        input: ServiceInput<{ tagId: string; entityId: string; entityType: string }>
     ): Promise<ServiceOutput<void>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addTagToEntity',
             input,
-            schema: z.any(),
-            execute: async (_validated, _actor) => {
-                // TODO: Implement logic to add tag to entity
+            schema: z.object({
+                tagId: z.string().min(1),
+                entityId: z.string().min(1),
+                entityType: z.string().min(1)
+            }),
+            execute: async (validated, actor) => {
+                // 1. Permiso
+                checkCanUpdateTag(actor, { id: validated.tagId as TagId } as TagType);
+                // 2. Validar existencia de tag
+                const tag = await this.model.findById(validated.tagId as TagId);
+                if (!tag) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');
+                }
+                // 3. Validar que no exista ya la relación
+                const existing = await this.relatedModel.findOne({
+                    tagId: validated.tagId as TagId,
+                    entityId: validated.entityId as
+                        | AccommodationId
+                        | DestinationId
+                        | UserId
+                        | PostId
+                        | EventId,
+                    entityType: validated.entityType as EntityTypeEnum
+                });
+                if (existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Tag already associated with entity'
+                    );
+                }
+                // 4. Crear la relación
+                await this.relatedModel.create({
+                    tagId: validated.tagId as TagId,
+                    entityId: validated.entityId as
+                        | AccommodationId
+                        | DestinationId
+                        | UserId
+                        | PostId
+                        | EventId,
+                    entityType: validated.entityType as EntityTypeEnum
+                });
+                // 5. Retornar éxito
                 return;
             }
         });
@@ -208,18 +263,49 @@ export class TagService extends BaseRelatedService<
 
     /**
      * Removes a tag from an entity (polymorphic).
+     * Requires TAG_UPDATE permission.
      * @param input - ServiceInput with tagId, entityId, entityType.
      * @returns ServiceOutput<void>
      */
     public async removeTagFromEntity(
-        input: ServiceInput<{ tagId: string; entityId: string; entityType: EntityTypeEnum }>
+        input: ServiceInput<{ tagId: string; entityId: string; entityType: string }>
     ): Promise<ServiceOutput<void>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeTagFromEntity',
             input,
-            schema: z.any(),
-            execute: async (_validated, _actor) => {
-                // TODO: Implement logic to remove tag from entity
+            schema: RemoveTagFromEntitySchema,
+            execute: async (validated, actor) => {
+                // 1. Permission check
+                checkCanUpdateTag(actor, { id: validated.tagId as TagId } as TagType);
+                // 2. Check if the relation exists
+                const existing = await this.relatedModel.findOne({
+                    tagId: validated.tagId as TagId,
+                    entityId: validated.entityId as
+                        | AccommodationId
+                        | DestinationId
+                        | UserId
+                        | PostId
+                        | EventId,
+                    entityType: validated.entityType as EntityTypeEnum
+                });
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Tag-entity relation not found'
+                    );
+                }
+                // 3. Remove the relation (hard delete)
+                await this.relatedModel.hardDelete({
+                    tagId: validated.tagId as TagId,
+                    entityId: validated.entityId as
+                        | AccommodationId
+                        | DestinationId
+                        | UserId
+                        | PostId
+                        | EventId,
+                    entityType: validated.entityType as EntityTypeEnum
+                });
+                // 4. Return success
                 return;
             }
         });
@@ -227,19 +313,66 @@ export class TagService extends BaseRelatedService<
 
     /**
      * Gets all tags for a given entity (polymorphic).
+     * Requires TAG_UPDATE permission.
      * @param input - ServiceInput with entityId, entityType.
-     * @returns ServiceOutput with an array of TagType.
+     * @returns ServiceOutput<{ tags: TagType[] }>
      */
     public async getTagsForEntity(
-        input: ServiceInput<{ entityId: string; entityType: EntityTypeEnum }>
+        input: ServiceInput<{ entityId: string; entityType: string }>
     ): Promise<ServiceOutput<{ tags: TagType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTagsForEntity',
             input,
-            schema: z.any(),
-            execute: async (_validated, _actor) => {
-                // TODO: Implement logic to fetch tags for entity
-                return { tags: [] };
+            schema: GetTagsForEntitySchema,
+            execute: async (validated, actor) => {
+                // 1. Permission check
+                checkCanUpdateTag(actor, {} as TagType); // Only permission required
+                // 2. Find all tag relations for the entity
+                const relations = await this.relatedModel.findAllWithTags(
+                    validated.entityId,
+                    validated.entityType
+                );
+                // 3. Map to tags
+                const tags = relations.map((rel) => rel.tag).filter(Boolean);
+                // 4. Return tags array
+                return { tags };
+            }
+        });
+    }
+
+    /**
+     * Returns all entities associated with a given tag.
+     * Optionally filters by entity type.
+     * Requires TAG_UPDATE permission.
+     *
+     * @param input - ServiceInput with tagId (required) and entityType (optional).
+     * @returns ServiceOutput with an array of { entityId, entityType }.
+     */
+    public async getEntitiesByTag(
+        input: ServiceInput<GetEntitiesByTagInput>
+    ): Promise<ServiceOutput<{ entities: Array<{ entityId: string; entityType: string }> }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getEntitiesByTag',
+            input,
+            schema: GetEntitiesByTagSchema,
+            execute: async (validated, actor) => {
+                // Permission: require TAG_UPDATE (same as add/remove relation)
+                checkCanUpdateTag(actor, { id: validated.tagId } as TagType);
+                // Check tag exists
+                const tag = await this.model.findById(validated.tagId as TagId);
+                if (!tag) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');
+                }
+                // Query relations (array plano)
+                const relations = await this.relatedModel.findAllWithEntities(
+                    validated.tagId,
+                    validated.entityType
+                );
+                const entities = (relations as EntityTagType[]).map((rel) => ({
+                    entityId: rel.entityId as string,
+                    entityType: rel.entityType as string
+                }));
+                return { entities };
             }
         });
     }

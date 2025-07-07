@@ -48,7 +48,7 @@ export function expectNotFoundError<T extends { error?: { code?: string } }>(res
  */
 export function expectSuccess<T extends { data?: unknown; error?: unknown }>(result: T): void {
     expect(result.error).toBeUndefined();
-    expect(result.data).toBeDefined();
+    expect(result).toHaveProperty('data');
 }
 
 /**
