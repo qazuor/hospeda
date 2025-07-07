@@ -1,10 +1,11 @@
 import { EventModel } from '@repo/db';
 import { PermissionEnum, VisibilityEnum } from '@repo/types';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createUser } from '../../factories/userFactory';
 import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 /**
  * Test suite for EventService.count
@@ -21,11 +22,11 @@ describe('EventService.count', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['count']);
         loggerMock = createLoggerMock();
-        service = new EventService(modelMock, loggerMock);
+        service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
     it('should return count of events (success)', async () => {
-        (modelMock.count as Mock).mockResolvedValue(countResult.count);
+        asMock(modelMock.count).mockResolvedValue(countResult.count);
         const result = await service.count(actorWithPerm, filters);
         expectSuccess(result);
         expect(result.data?.count).toBe(countResult.count);
@@ -37,20 +38,20 @@ describe('EventService.count', () => {
     });
 
     it('should return count 0 if no events found', async () => {
-        (modelMock.count as Mock).mockResolvedValue(0);
+        asMock(modelMock.count).mockResolvedValue(0);
         const result = await service.count(actorWithPerm, filters);
         expectSuccess(result);
         expect(result.data?.count).toBe(0);
     });
 
     it('should return INTERNAL_ERROR if model.count throws', async () => {
-        (modelMock.count as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.count).mockRejectedValue(new Error('DB error'));
         const result = await service.count(actorWithPerm, filters);
         expectInternalError(result);
     });
 
     it('should return INTERNAL_ERROR if _afterCount throws', async () => {
-        (modelMock.count as Mock).mockResolvedValue(countResult.count);
+        asMock(modelMock.count).mockResolvedValue(countResult.count);
         vi.spyOn(
             service as unknown as { _afterCount: () => void },
             '_afterCount'

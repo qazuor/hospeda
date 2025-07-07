@@ -1,3 +1,4 @@
+import type { BaseModel } from '@repo/db';
 /**
  * @fileoverview
  * Test suite for the `update` method of BaseService and its derivatives.
@@ -12,12 +13,15 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
+import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Actor } from '../../src/types';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
+import { createBaseModelMock } from '../utils/modelMockFactory';
 import { MOCK_ENTITY_ID, mockAdminActor, mockEntity } from './base.service.mockData';
-import { TestService } from './base.service.test.setup';
+import { type TestEntity, TestService } from './base.service.test.setup';
+
+const asMock = <T>(fn: T) => fn as unknown as Mock;
 
 /**
  * Test suite for the `update` method of BaseService.
@@ -33,18 +37,18 @@ import { TestService } from './base.service.test.setup';
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: update', () => {
-    let modelMock: StandardModelMock;
+    let modelMock: BaseModel<TestEntity>;
     let service: TestService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = createModelMock();
+        modelMock = createBaseModelMock<TestEntity>();
         service = createServiceTestInstance(TestService, modelMock);
-        modelMock.findById.mockResolvedValue(mockEntity);
+        asMock(modelMock.findById).mockResolvedValue(mockEntity);
     });
 
     it('should update an entity if actor has permission', async () => {
-        modelMock.update.mockResolvedValue({ ...mockEntity, name: 'Updated Name' });
+        asMock(modelMock.update).mockResolvedValue({ ...mockEntity, name: 'Updated Name' });
         const result = await service.update(mockAdminActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
@@ -52,7 +56,7 @@ describe('BaseService: update', () => {
     });
 
     it('should return a "not found" error if the entity to update does not exist', async () => {
-        modelMock.findById.mockResolvedValue(null);
+        asMock(modelMock.findById).mockResolvedValue(null);
         const result = await service.update(mockAdminActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
@@ -72,7 +76,7 @@ describe('BaseService: update', () => {
     });
 
     it('should return an internal error if database returns null after update', async () => {
-        modelMock.update.mockResolvedValue(null);
+        asMock(modelMock.update).mockResolvedValue(null);
         const result = await service.update(mockAdminActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
@@ -81,7 +85,7 @@ describe('BaseService: update', () => {
 
     it('should return an internal error if database update fails', async () => {
         const dbError = new Error('DB connection failed');
-        modelMock.update.mockRejectedValue(dbError);
+        asMock(modelMock.update).mockRejectedValue(dbError);
         const result = await service.update(mockAdminActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
@@ -102,7 +106,7 @@ describe('BaseService: update', () => {
 
     it('should handle empty payload without error', async () => {
         await service.update(mockAdminActor, MOCK_ENTITY_ID, {});
-        expect(modelMock.update).toHaveBeenCalledWith(
+        expect(asMock(modelMock.update)).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
             expect.objectContaining({ updatedById: mockAdminActor.id })
         );
@@ -123,9 +127,9 @@ describe('BaseService: update', () => {
     it('should use the update normalizer if provided', async () => {
         // Arrange
         const normalizer = vi.fn((data) => ({ ...data, normalized: true }));
-        const localModelMock: StandardModelMock = createModelMock();
-        localModelMock.findById.mockResolvedValue(mockEntity);
-        localModelMock.update.mockResolvedValue({
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        asMock(localModelMock.findById).mockResolvedValue(mockEntity);
+        asMock(localModelMock.update).mockResolvedValue({
             ...mockEntity,
             name: 'Updated Name',
             normalized: true
@@ -143,7 +147,7 @@ describe('BaseService: update', () => {
 
         // Assert
         expect(normalizer).toHaveBeenCalledWith(updateData, mockAdminActor);
-        expect(localModelMock.update).toHaveBeenCalledWith(
+        expect(asMock(localModelMock.update)).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
             expect.objectContaining({ normalized: true })
         );

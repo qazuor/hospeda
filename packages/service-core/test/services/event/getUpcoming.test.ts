@@ -12,6 +12,7 @@ import {
     expectValidationError
 } from '../../helpers/assertions';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 describe('EventService.getUpcoming', () => {
     let service: EventService;
@@ -25,7 +26,7 @@ describe('EventService.getUpcoming', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService(modelMock, loggerMock);
+        service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
     it('should return public and private events if actor has EVENT_SOFT_DELETE_VIEW', async () => {
@@ -120,7 +121,7 @@ describe('EventService.getUpcoming', () => {
     });
 
     it('should throw internal error if model fails', async () => {
-        (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
         const result = await service.getUpcoming(actorWithPerm, { fromDate, toDate });
         expectInternalError(result);
     });

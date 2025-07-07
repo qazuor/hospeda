@@ -1,11 +1,12 @@
 import type { DestinationModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { createActor } from '../../factories/actorFactory';
 import { createDestination } from '../../factories/destinationFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 const mockLogger = createLoggerMock();
 
@@ -26,8 +27,8 @@ describe('DestinationService.restore', () => {
         const actor = createActor({ permissions: [PermissionEnum.DESTINATION_RESTORE] });
         const id = getMockId('destination');
         const existing = { ...createDestination(), id, deletedAt: new Date() };
-        (model.findById as Mock).mockResolvedValue(existing);
-        (model.restore as Mock).mockResolvedValue(1);
+        asMock(model.findById).mockResolvedValue(existing);
+        asMock(model.restore).mockResolvedValue(1);
         // Act
         const result = await service.restore(actor, id);
         // Assert
@@ -43,7 +44,7 @@ describe('DestinationService.restore', () => {
         const actor = createActor({ permissions: [] });
         const id = getMockId('destination');
         const existing = { ...createDestination(), id, deletedAt: new Date() };
-        (model.findById as Mock).mockResolvedValue(existing);
+        asMock(model.findById).mockResolvedValue(existing);
         // Act
         const result = await service.restore(actor, id);
         // Assert
@@ -56,7 +57,7 @@ describe('DestinationService.restore', () => {
         // Arrange
         const actor = createActor({ permissions: [PermissionEnum.DESTINATION_RESTORE] });
         const id = getMockId('destination');
-        (model.findById as Mock).mockResolvedValue(null);
+        asMock(model.findById).mockResolvedValue(null);
         // Act
         const result = await service.restore(actor, id);
         // Assert
@@ -70,7 +71,7 @@ describe('DestinationService.restore', () => {
         const actor = createActor({ permissions: [PermissionEnum.DESTINATION_RESTORE] });
         const id = getMockId('destination');
         const existing = { ...createDestination(), id, deletedAt: null };
-        (model.findById as Mock).mockResolvedValue(existing);
+        asMock(model.findById).mockResolvedValue(existing);
         // Act
         const result = await service.restore(actor, id);
         // Assert
@@ -85,8 +86,8 @@ describe('DestinationService.restore', () => {
         const actor = createActor({ permissions: [PermissionEnum.DESTINATION_RESTORE] });
         const id = getMockId('destination');
         const existing = { ...createDestination(), id, deletedAt: new Date() };
-        (model.findById as Mock).mockResolvedValue(existing);
-        (model.restore as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(model.findById).mockResolvedValue(existing);
+        asMock(model.restore).mockRejectedValue(new Error('DB error'));
         // Act
         const result = await service.restore(actor, id);
         // Assert

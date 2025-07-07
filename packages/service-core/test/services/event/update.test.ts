@@ -39,7 +39,7 @@ describe('EventService.update', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'update']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService(modelMock, loggerMock);
+        service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
     afterEach(() => {

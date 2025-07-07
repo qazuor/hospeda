@@ -6,6 +6,7 @@ import { createActor } from '../../factories/actorFactory';
 import { createDestination } from '../../factories/destinationFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 const mockLogger = createLoggerMock();
 
@@ -36,7 +37,7 @@ describe('DestinationService.hardDelete', () => {
     });
 
     it('should hard delete a destination and return count', async () => {
-        (model.hardDelete as Mock).mockResolvedValue(1);
+        asMock(model.hardDelete).mockResolvedValue(1);
         const result = await service.hardDelete(actor, entity.id);
         expect(result.data?.count).toBe(1);
         expect(result.error).toBeUndefined();
@@ -70,7 +71,7 @@ describe('DestinationService.hardDelete', () => {
     });
 
     it('should return an internal error if model fails', async () => {
-        (model.hardDelete as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(model.hardDelete).mockRejectedValue(new Error('DB error'));
         const result = await service.hardDelete(actor, entity.id);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();
@@ -82,7 +83,7 @@ describe('DestinationService.hardDelete', () => {
             service as unknown as { _afterHardDelete: () => void },
             '_afterHardDelete'
         ).mockRejectedValue(hookError);
-        (model.hardDelete as Mock).mockResolvedValue(1);
+        asMock(model.hardDelete).mockResolvedValue(1);
         const result = await service.hardDelete(actor, entity.id);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();

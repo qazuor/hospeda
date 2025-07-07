@@ -25,6 +25,7 @@ import {
     mockPermission,
     mockReason
 } from './logging.mockData';
+import { asMock } from './test-utils';
 
 let loggerMock: ServiceLogger;
 beforeEach(() => {
@@ -33,10 +34,10 @@ beforeEach(() => {
     vi.clearAllMocks();
 });
 afterEach(() => {
-    (loggerMock.info as unknown as { mockRestore: () => void }).mockRestore();
-    (loggerMock.error as unknown as { mockRestore: () => void }).mockRestore();
-    (loggerMock.warn as unknown as { mockRestore: () => void }).mockRestore();
-    (loggerMock.permission as unknown as { mockRestore: () => void }).mockRestore();
+    asMock(loggerMock.info).mockRestore();
+    asMock(loggerMock.error).mockRestore();
+    asMock(loggerMock.warn).mockRestore();
+    asMock(loggerMock.permission).mockRestore();
 });
 
 /**

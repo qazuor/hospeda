@@ -5,6 +5,7 @@
  * All mocks are strongly typed, extensible, and DRY.
  */
 
+import { BaseModel } from '@repo/db';
 import { type Mock, vi } from 'vitest';
 import type { ServiceLogger } from '../../src/utils/service-logger';
 
@@ -21,7 +22,12 @@ export type StandardModelMock = {
     hardDelete: Mock;
     count: Mock;
     findAll: Mock;
-    [key: string]: Mock;
+    findWithRelations: Mock;
+    table: string;
+    entityName: string;
+    getClient: () => unknown;
+    raw: unknown;
+    [key: string]: Mock | string | unknown | (() => unknown);
 };
 
 /**
@@ -44,7 +50,12 @@ export function createModelMock(methods: string[] = []): StandardModelMock {
         restore: vi.fn(),
         hardDelete: vi.fn(),
         count: vi.fn(),
-        findAll: vi.fn()
+        findAll: vi.fn(),
+        findWithRelations: vi.fn(),
+        table: 'mock_table',
+        entityName: 'mock_entity',
+        getClient: () => ({}),
+        raw: {}
     };
     for (const m of methods) {
         if (!(m in base)) base[m] = vi.fn();
@@ -117,4 +128,33 @@ export function createTypedModelMock<M extends new (...args: unknown[]) => unkno
         if (!(m in instance)) instance[m] = vi.fn();
     }
     return instance as unknown as InstanceType<M>;
+}
+
+/**
+ * Mock class that extends BaseModel<T> and mocks all required methods/properties for strict type compatibility.
+ */
+export class MockBaseModel<T> extends BaseModel<T> {
+    // biome-ignore lint/suspicious/noExplicitAny: test mock, not a real Drizzle Table. This is required because the real Table type is not available in the test environment, and BaseModel<T> requires a protected property of that type. This is a standard and safe workaround for mocking abstract classes with protected properties from external libraries.
+    protected table = {} as any;
+    protected entityName = 'mock_entity';
+    findById = vi.fn();
+    findOne = vi.fn();
+    create = vi.fn();
+    update = vi.fn();
+    softDelete = vi.fn();
+    restore = vi.fn();
+    hardDelete = vi.fn();
+    count = vi.fn();
+    findAll = vi.fn();
+    findWithRelations = vi.fn();
+    raw = vi.fn();
+    protected override getClient = vi.fn();
+}
+
+/**
+ * Creates a strict BaseModel mock instance for use in tests.
+ * @returns {MockBaseModel<T>} A mock model instance compatible with BaseModel<T>.
+ */
+export function createBaseModelMock<T>(): BaseModel<T> {
+    return new MockBaseModel<T>();
 }

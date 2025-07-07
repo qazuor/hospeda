@@ -14,13 +14,14 @@
  */
 import type { AccommodationModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 const mockLogger = createLoggerMock();
 
@@ -38,6 +39,7 @@ const paginated = (items: unknown[], page = 1, pageSize = 10) => ({
 // biome-ignore lint/suspicious/noExplicitAny: test-only access to protected property
 const getNormalizers = (svc: unknown) => (svc as any).normalizers;
 
+// Helper for type-safe mocking
 describe('AccommodationService.search', () => {
     let service: AccommodationService;
     let model: ReturnType<typeof createModelMock>;
@@ -58,7 +60,7 @@ describe('AccommodationService.search', () => {
     });
 
     it('should return a paginated list of accommodations matching filters', async () => {
-        (model.search as Mock).mockResolvedValue(paginated(entities, 1, 2));
+        asMock(model.search).mockResolvedValue(paginated(entities, 1, 2));
         if (!entities[0]) {
             throw new Error('Expected at least one entity in entities');
         }
@@ -105,7 +107,7 @@ describe('AccommodationService.search', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        (model.search as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(model.search).mockRejectedValue(new Error('DB error'));
         const result = await service.search(actor, {
             filters: {},
             pagination: { page: 1, pageSize: 2 }
@@ -115,7 +117,7 @@ describe('AccommodationService.search', () => {
     });
 
     it('should handle errors from the _beforeSearch hook', async () => {
-        (model.search as Mock).mockResolvedValue(paginated(entities));
+        asMock(model.search).mockResolvedValue(paginated(entities));
         vi.spyOn(
             service as unknown as { _beforeSearch: () => void },
             '_beforeSearch'
@@ -129,7 +131,7 @@ describe('AccommodationService.search', () => {
     });
 
     it('should handle errors from the _afterSearch hook', async () => {
-        (model.search as Mock).mockResolvedValue(paginated(entities));
+        asMock(model.search).mockResolvedValue(paginated(entities));
         vi.spyOn(
             service as unknown as { _afterSearch: () => void },
             '_afterSearch'
@@ -154,7 +156,7 @@ describe('AccommodationService.search', () => {
             { logger: mockLogger },
             model as unknown as AccommodationModel
         );
-        (model.search as Mock).mockResolvedValue(paginated(entities, 99, 10));
+        asMock(model.search).mockResolvedValue(paginated(entities, 99, 10));
         await serviceWithNorm.search(actor, { filters: {}, pagination: { page: 1, pageSize: 10 } });
         expect(normalizer).toHaveBeenCalledWith(
             { filters: {}, pagination: { page: 1, pageSize: 10 } },

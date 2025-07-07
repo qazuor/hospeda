@@ -75,7 +75,7 @@ export class PostService extends BaseService<
      * @param model - Optional PostModel instance (for testing/mocking).
      */
     constructor(ctx: ServiceContext, model?: PostModel) {
-        super();
+        super(ctx);
         this.logger = ctx.logger;
         this.model = model ?? new PostModel();
     }

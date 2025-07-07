@@ -1,4 +1,4 @@
-import type { EventModel } from '@repo/db';
+import { EventModel } from '@repo/db';
 import { EventIdSchema as EventIdSchemaFromSchemas } from '@repo/schemas';
 import type {
     EventCategoryEnum,
@@ -11,7 +11,7 @@ import type {
 import { type EventType, PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
 import { BaseService } from '../../base/base.service';
-import type { PaginatedListOutput, ServiceOutput } from '../../types';
+import type { PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { type Actor, ServiceError, type ServiceLogger } from '../../types';
 import { generateEventSlug } from './event.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './event.normalizers';
@@ -57,10 +57,10 @@ export class EventService extends BaseService<
     protected readonly updateSchema = EventUpdateSchema;
     protected readonly searchSchema = EventFilterInputSchema;
 
-    constructor(model: EventModel, logger: ServiceLogger) {
-        super();
-        this.model = model;
-        this.logger = logger;
+    constructor(ctx: ServiceContext & { model?: EventModel }) {
+        super(ctx);
+        this.logger = ctx.logger;
+        this.model = ctx.model ?? new EventModel();
     }
 
     /**

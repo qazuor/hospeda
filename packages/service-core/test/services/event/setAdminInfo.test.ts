@@ -27,7 +27,7 @@ describe('EventService - setAdminInfo', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'update']);
         loggerMock = createLoggerMock();
-        service = new EventService(modelMock, loggerMock);
+        service = new EventService({ model: modelMock, logger: loggerMock });
         superAdmin = createActor({
             role: RoleEnum.SUPER_ADMIN,
             permissions: [PermissionEnum.EVENT_UPDATE]

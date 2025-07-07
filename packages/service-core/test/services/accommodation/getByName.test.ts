@@ -1,6 +1,6 @@
 import type { AccommodationModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
@@ -8,6 +8,7 @@ import { createAccommodationWithMockIds } from '../../factories/accommodationFac
 import { createActor } from '../../factories/actorFactory';
 import { expectInternalError } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 const mockLogger = createLoggerMock();
 
@@ -34,7 +35,7 @@ describe('AccommodationService.getByName', () => {
     });
 
     it('should return the entity if found and actor has permission', async () => {
-        (model.findOne as Mock).mockResolvedValue(entity);
+        asMock(model.findOne).mockResolvedValue(entity);
         const result = await service.getByName(actor, entity.name);
         expect(result.data).toBeDefined();
         expect(result.data?.id).toBe(entity.id);
@@ -43,14 +44,14 @@ describe('AccommodationService.getByName', () => {
     });
 
     it('should return NOT_FOUND if entity does not exist', async () => {
-        (model.findOne as Mock).mockResolvedValue(null);
+        asMock(model.findOne).mockResolvedValue(null);
         const result = await service.getByName(actor, 'nonexistent');
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
-        (model.findOne as Mock).mockResolvedValue(entity);
+        asMock(model.findOne).mockResolvedValue(entity);
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
@@ -60,13 +61,13 @@ describe('AccommodationService.getByName', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        (model.findOne as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(model.findOne).mockRejectedValue(new Error('DB error'));
         const result = await service.getByName(actor, entity.name);
         expectInternalError(result);
     });
 
     it('should handle errors from the _beforeGetByField hook', async () => {
-        (model.findOne as Mock).mockResolvedValue(entity);
+        asMock(model.findOne).mockResolvedValue(entity);
         vi.spyOn(
             service as unknown as { _beforeGetByField: () => void },
             '_beforeGetByField'
@@ -76,7 +77,7 @@ describe('AccommodationService.getByName', () => {
     });
 
     it('should handle errors from the _afterGetByField hook', async () => {
-        (model.findOne as Mock).mockResolvedValue(entity);
+        asMock(model.findOne).mockResolvedValue(entity);
         vi.spyOn(
             service as unknown as { _afterGetByField: () => void },
             '_afterGetByField'

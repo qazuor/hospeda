@@ -75,7 +75,7 @@ export class DestinationService extends BaseService<
     private readonly accommodationModel: AccommodationModel = new AccommodationModel();
 
     constructor(ctx: ServiceContext, model?: DestinationModel) {
-        super();
+        super(ctx);
         this.logger = ctx.logger;
         this.model = model ?? new DestinationModel();
     }

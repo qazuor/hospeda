@@ -7,6 +7,7 @@ import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { expectInternalError } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 const mockLogger = createLoggerMock();
 
@@ -64,7 +65,7 @@ describe('AccommodationService.count', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        (model.countByFilters as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(model.countByFilters).mockRejectedValue(new Error('DB error'));
         const result = await service.count(actor, {
             filters: {},
             pagination: { page: 1, pageSize: 10 }
@@ -73,7 +74,7 @@ describe('AccommodationService.count', () => {
     });
 
     it('should handle errors from the _beforeCount hook', async () => {
-        (model.countByFilters as Mock).mockResolvedValue({ count: 1 });
+        asMock(model.countByFilters).mockResolvedValue({ count: 1 });
         vi.spyOn(
             service as unknown as { _beforeCount: () => void },
             '_beforeCount'
@@ -86,7 +87,7 @@ describe('AccommodationService.count', () => {
     });
 
     it('should handle errors from the _afterCount hook', async () => {
-        (model.countByFilters as Mock).mockResolvedValue({ count: 1 });
+        asMock(model.countByFilters).mockResolvedValue({ count: 1 });
         vi.spyOn(
             service as unknown as { _afterCount: () => void },
             '_afterCount'

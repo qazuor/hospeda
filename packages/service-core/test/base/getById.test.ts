@@ -1,3 +1,4 @@
+import type { BaseModel } from '@repo/db';
 /**
  * @fileoverview
  * Test suite for the `getById` method of BaseService and its derivatives.
@@ -12,12 +13,15 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { ServiceErrorCode } from '@repo/types';
+import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../src/types';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
+import { createBaseModelMock } from '../utils/modelMockFactory';
 import { MOCK_ENTITY_ID, mockActor, mockEntity } from './base.service.mockData';
-import { TestService } from './base.service.test.setup';
+import { type TestEntity, TestService } from './base.service.test.setup';
+
+const asMock = <T>(fn: T) => fn as unknown as Mock;
 
 /**
  * Test suite for the `getById` method of BaseService.
@@ -32,25 +36,26 @@ import { TestService } from './base.service.test.setup';
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: getById', () => {
-    let modelMock: StandardModelMock;
+    let modelMock: BaseModel<TestEntity>;
     let service: TestService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = createModelMock();
+        modelMock = createBaseModelMock<TestEntity>();
         service = createServiceTestInstance(TestService, modelMock);
+        asMock(modelMock.findById).mockResolvedValue(mockEntity);
     });
 
     it('should return an entity when found', async () => {
-        modelMock.findOne.mockResolvedValue(mockEntity);
+        asMock(modelMock.findOne).mockResolvedValue(mockEntity);
         const result = await service.getById(mockActor, MOCK_ENTITY_ID);
-        expect(modelMock.findOne).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
+        expect(asMock(modelMock.findOne)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
         expect(result.data).toEqual(mockEntity);
         expect(result.error).toBeUndefined();
     });
 
     it('should return null data when entity is not found', async () => {
-        modelMock.findOne.mockResolvedValue(null);
+        asMock(modelMock.findOne).mockResolvedValue(null);
         const result = await service.getById(mockActor, MOCK_ENTITY_ID);
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
@@ -58,7 +63,7 @@ describe('BaseService: getById', () => {
 
     it('should return a forbidden error if actor lacks view permission', async () => {
         // Arrange
-        modelMock.findOne.mockResolvedValue(mockEntity);
+        asMock(modelMock.findOne).mockResolvedValue(mockEntity);
         const service = createServiceTestInstance(TestService, modelMock);
         const canViewSpy = vi.spyOn(service as unknown as { _canView: () => void }, '_canView');
         canViewSpy.mockImplementationOnce(() => {
@@ -78,7 +83,7 @@ describe('BaseService: getById', () => {
     it('should return an internal error if the database lookup fails', async () => {
         // Arrange
         const dbError = new Error('Database connection lost');
-        modelMock.findOne.mockRejectedValue(dbError);
+        asMock(modelMock.findOne).mockRejectedValue(dbError);
         const service = createServiceTestInstance(TestService, modelMock);
 
         // Act
@@ -92,7 +97,7 @@ describe('BaseService: getById', () => {
     });
 
     it('should return FORBIDDEN if _canView hook throws an error', async () => {
-        modelMock.findOne.mockResolvedValue(mockEntity);
+        asMock(modelMock.findOne).mockResolvedValue(mockEntity);
         vi.spyOn(service as unknown as { _canView: () => void }, '_canView').mockImplementation(
             () => {
                 throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden by hook');
@@ -107,7 +112,7 @@ describe('BaseService: getById', () => {
 
     it('should handle errors from the _afterGetByField hook', async () => {
         // Arrange
-        modelMock.findOne.mockResolvedValue(mockEntity);
+        asMock(modelMock.findOne).mockResolvedValue(mockEntity);
         const hookError = new Error('Error in afterGetByField hook');
         vi.spyOn(
             service as unknown as { _afterGetByField: () => void },
@@ -124,8 +129,8 @@ describe('BaseService: getById', () => {
     it('should use the view normalizer if provided', async () => {
         // Arrange
         const normalizer = vi.fn((field, value) => ({ field: `${field}-normalized`, value }));
-        const localModelMock: StandardModelMock = createModelMock();
-        localModelMock.findOne.mockResolvedValue(mockEntity);
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        asMock(localModelMock.findOne).mockResolvedValue(mockEntity);
         class ServiceWithNormalizer extends TestService {
             protected override normalizers = {
                 view: normalizer
@@ -138,6 +143,8 @@ describe('BaseService: getById', () => {
 
         // Assert
         expect(normalizer).toHaveBeenCalledWith('id', MOCK_ENTITY_ID, mockActor);
-        expect(localModelMock.findOne).toHaveBeenCalledWith({ 'id-normalized': MOCK_ENTITY_ID });
+        expect(asMock(localModelMock.findOne)).toHaveBeenCalledWith({
+            'id-normalized': MOCK_ENTITY_ID
+        });
     });
 });

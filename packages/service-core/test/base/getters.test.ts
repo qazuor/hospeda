@@ -1,3 +1,4 @@
+import type { BaseModel } from '@repo/db';
 /**
  * @fileoverview
  * Test suite for BaseService getter methods: getBySlug and getByName.
@@ -5,11 +6,14 @@
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
+import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
+import { createBaseModelMock } from '../utils/modelMockFactory';
 import { mockActor, mockEntity } from './base.service.mockData';
-import { TestService } from './base.service.test.setup';
+import { type TestEntity, TestService } from './base.service.test.setup';
+
+const asMock = <T>(fn: T) => fn as unknown as Mock;
 
 /**
  * Tests for BaseService: getBySlug and getByName methods.
@@ -21,18 +25,18 @@ import { TestService } from './base.service.test.setup';
  * The tests use mocks and spies to ensure correct method calls and argument passing.
  */
 describe('BaseService: getBySlug / getByName', () => {
-    let modelMock: StandardModelMock;
+    let modelMock: BaseModel<TestEntity>;
     let service: TestService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = createModelMock();
+        modelMock = createBaseModelMock<TestEntity>();
         service = createServiceTestInstance(TestService, modelMock);
     });
 
     it('getByName should call getByField with "name"', async () => {
         // Arrange
-        modelMock.findOne.mockResolvedValue(mockEntity);
+        asMock(modelMock.findOne).mockResolvedValue(mockEntity);
         const getByFieldSpy = vi.spyOn(service, 'getByField');
         const name = 'test-entity-name';
 
@@ -45,7 +49,7 @@ describe('BaseService: getBySlug / getByName', () => {
 
     it('getBySlug should call getByField with "slug"', async () => {
         // Arrange
-        modelMock.findOne.mockResolvedValue(mockEntity);
+        asMock(modelMock.findOne).mockResolvedValue(mockEntity);
         const getByFieldSpy = vi.spyOn(service, 'getByField');
         const slug = 'test-entity-slug';
 

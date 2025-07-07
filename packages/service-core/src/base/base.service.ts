@@ -6,6 +6,7 @@ import {
     type Actor,
     type BaseModel,
     type PaginatedListOutput,
+    type ServiceContext,
     ServiceError,
     type ServiceInput,
     type ServiceLogger,
@@ -104,6 +105,16 @@ export abstract class BaseService<
         z.infer<TUpdateSchema>,
         z.infer<TSearchSchema>
     >;
+
+    /**
+     * Initializes a new instance of the BaseService.
+     * @param ctx - The service context, containing the logger.
+     */
+
+    // biome-ignore lint/complexity/noUselessConstructor: <explanation>
+    constructor(_ctx: ServiceContext) {
+        // No-op: concrete services assign properties.
+    }
 
     // --- Permissions Hooks ---
 

@@ -1,3 +1,4 @@
+import type { BaseModel } from '@repo/db';
 /**
  * @fileoverview
  * Test suite for the `list` method of BaseService and its derivatives.
@@ -15,9 +16,10 @@ import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../src/types';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
+import { createBaseModelMock } from '../utils/modelMockFactory';
+import { asMock } from '../utils/test-utils';
 import { mockActor, mockEntity } from './base.service.mockData';
-import { TestService } from './base.service.test.setup';
+import { type TestEntity, TestService } from './base.service.test.setup';
 
 /**
  * Test suite for the `list` method of BaseService.
@@ -32,19 +34,20 @@ import { TestService } from './base.service.test.setup';
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: list', () => {
-    let modelMock: StandardModelMock;
+    let modelMock: BaseModel<TestEntity>;
     let service: TestService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = createModelMock();
+        modelMock = createBaseModelMock<TestEntity>();
         service = createServiceTestInstance(TestService, modelMock);
+        asMock(modelMock.findAll).mockResolvedValue([mockEntity]);
     });
 
     it('should return a paginated list of entities on success', async () => {
         // Arrange
         const mockPaginatedResult = { items: [mockEntity], total: 1 };
-        modelMock.findAll.mockResolvedValue(mockPaginatedResult);
+        asMock(modelMock.findAll).mockResolvedValue(mockPaginatedResult);
         const canListSpy = vi.spyOn(service as unknown as { _canList: () => void }, '_canList');
         const beforeListSpy = vi.spyOn(
             service as unknown as { _beforeList: () => void },
@@ -71,7 +74,8 @@ describe('BaseService: list', () => {
     it('should return a FORBIDDEN error if actor lacks permission', async () => {
         // Arrange
         const forbiddenError = new ServiceError(ServiceErrorCode.FORBIDDEN, 'Cannot list entities');
-        vi.spyOn(service as unknown as { _canList: () => void }, '_canList').mockRejectedValue(
+        (service as unknown as { _canList: () => void })._canList = vi.fn();
+        asMock((service as unknown as { _canList: () => void })._canList).mockRejectedValue(
             forbiddenError
         );
 
@@ -87,7 +91,7 @@ describe('BaseService: list', () => {
     it('should return an INTERNAL_ERROR if the database lookup fails', async () => {
         // Arrange
         const dbError = new Error('Database connection lost');
-        modelMock.findAll.mockRejectedValue(dbError);
+        asMock(modelMock.findAll).mockRejectedValue(dbError);
 
         // Act
         const result = await service.list(mockActor);
@@ -102,10 +106,10 @@ describe('BaseService: list', () => {
     it('should return an INTERNAL_ERROR if _beforeList hook fails', async () => {
         // Arrange
         const hookError = new Error('Something went wrong in _beforeList');
-        vi.spyOn(
-            service as unknown as { _beforeList: () => void },
-            '_beforeList'
-        ).mockRejectedValue(hookError);
+        (service as unknown as { _beforeList: () => void })._beforeList = vi.fn();
+        asMock((service as unknown as { _beforeList: () => void })._beforeList).mockRejectedValue(
+            hookError
+        );
 
         // Act
         const result = await service.list(mockActor);
@@ -120,9 +124,10 @@ describe('BaseService: list', () => {
     it('should return an INTERNAL_ERROR if _afterList hook fails', async () => {
         // Arrange
         const mockPaginatedResult = { items: [mockEntity], total: 1 };
-        modelMock.findAll.mockResolvedValue(mockPaginatedResult);
+        asMock(modelMock.findAll).mockResolvedValue(mockPaginatedResult);
         const hookError = new Error('Something went wrong in _afterList');
-        vi.spyOn(service as unknown as { _afterList: () => void }, '_afterList').mockRejectedValue(
+        (service as unknown as { _afterList: () => void })._afterList = vi.fn();
+        asMock((service as unknown as { _afterList: () => void })._afterList).mockRejectedValue(
             hookError
         );
 
@@ -138,8 +143,8 @@ describe('BaseService: list', () => {
     it('should use the list normalizer if provided', async () => {
         // Arrange
         const normalizer = vi.fn((data) => ({ ...data, normalized: true }));
-        const localModelMock: StandardModelMock = createModelMock();
-        localModelMock.findAll.mockResolvedValue({ items: [mockEntity], total: 1 });
+        const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
+        asMock(localModelMock.findAll).mockResolvedValue({ items: [mockEntity], total: 1 });
         class ServiceWithNormalizer extends TestService {
             protected override normalizers = {
                 list: normalizer

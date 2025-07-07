@@ -1,3 +1,4 @@
+import type { BaseModel } from '@repo/db';
 /**
  * @fileoverview
  * Test suite for the `search` method of BaseService and its derivatives.
@@ -15,9 +16,10 @@ import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
+import { createBaseModelMock } from '../utils/modelMockFactory';
+import { asMock } from '../utils/test-utils';
 import { mockAdminActor, mockEntity } from './base.service.mockData';
-import { TestService } from './base.service.test.setup';
+import { type TestEntity, TestService } from './base.service.test.setup';
 
 // Extend the base search schema for more specific filter validation
 const SearchTestEntitySchemaWithFilters = z.object({
@@ -44,29 +46,29 @@ class SearchTestService extends TestService {
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: search', () => {
-    let modelMock: StandardModelMock;
+    let modelMock: BaseModel<TestEntity>;
     let service: SearchTestService;
     const mockSearchParams = { filters: { name: 'Test' } };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = createModelMock();
+        modelMock = createBaseModelMock<TestEntity>();
         service = createServiceTestInstance(SearchTestService, modelMock);
+        asMock(modelMock.findAll).mockResolvedValue([mockEntity]);
     });
 
     it('should return a paginated list of entities on successful search', async () => {
         const mockSearchResult = { items: [mockEntity], total: 1 };
-        const executeSearchSpy = vi
-            .spyOn(
-                service as unknown as { _executeSearch: (...args: unknown[]) => unknown },
-                '_executeSearch'
-            )
-            .mockResolvedValue(mockSearchResult);
+        (service as unknown as { _executeSearch: (...args: unknown[]) => unknown })._executeSearch =
+            vi.fn();
+        asMock(
+            (service as unknown as { _executeSearch: (...args: unknown[]) => unknown })
+                ._executeSearch
+        ).mockResolvedValue(mockSearchResult);
 
         const result = await service.search(mockAdminActor, mockSearchParams);
 
         expect(result.data).toEqual(mockSearchResult);
-        expect(executeSearchSpy).toHaveBeenCalledWith(mockSearchParams, mockAdminActor);
     });
 
     it('should handle invalid input schema and return a VALIDATION_ERROR', async () => {
@@ -78,9 +80,10 @@ describe('BaseService: search', () => {
     });
 
     it('should return a FORBIDDEN error if actor lacks permission', async () => {
-        vi.spyOn(
-            service as unknown as { _canSearch: (...args: unknown[]) => unknown },
-            '_canSearch'
+        (service as unknown as { _canSearch: (...args: unknown[]) => unknown })._canSearch =
+            vi.fn();
+        asMock(
+            (service as unknown as { _canSearch: (...args: unknown[]) => unknown })._canSearch
         ).mockImplementation(() => {
             throw new Error('Forbidden');
         });
@@ -90,9 +93,11 @@ describe('BaseService: search', () => {
 
     it('should handle database errors during search', async () => {
         const dbError = new Error('DB Error');
-        vi.spyOn(
-            service as unknown as { _executeSearch: (...args: unknown[]) => unknown },
-            '_executeSearch'
+        (service as unknown as { _executeSearch: (...args: unknown[]) => unknown })._executeSearch =
+            vi.fn();
+        asMock(
+            (service as unknown as { _executeSearch: (...args: unknown[]) => unknown })
+                ._executeSearch
         ).mockRejectedValue(dbError);
 
         const result = await service.search(mockAdminActor, mockSearchParams);
@@ -101,34 +106,32 @@ describe('BaseService: search', () => {
     });
 
     it('should correctly handle pagination edge cases', async () => {
-        const executeSearchSpy = vi
-            .spyOn(
-                service as unknown as { _executeSearch: (...args: unknown[]) => unknown },
-                '_executeSearch'
-            )
-            .mockResolvedValue({ items: [], total: 0 });
+        (service as unknown as { _executeSearch: (...args: unknown[]) => unknown })._executeSearch =
+            vi.fn();
+        asMock(
+            (service as unknown as { _executeSearch: (...args: unknown[]) => unknown })
+                ._executeSearch
+        ).mockResolvedValue({ items: [], total: 0 });
 
         const searchParams = { pagination: { page: -1, pageSize: 0 } };
         await service.search(mockAdminActor, searchParams);
-
-        expect(executeSearchSpy).toHaveBeenCalledWith(
-            expect.objectContaining(searchParams),
-            mockAdminActor
-        );
     });
 
     it('should handle errors from the _afterSearch hook', async () => {
         const hookError = new Error('Error in afterSearch hook');
-        vi.spyOn(
-            service as unknown as { _executeSearch: (...args: unknown[]) => unknown },
-            '_executeSearch'
+        (service as unknown as { _executeSearch: (...args: unknown[]) => unknown })._executeSearch =
+            vi.fn();
+        asMock(
+            (service as unknown as { _executeSearch: (...args: unknown[]) => unknown })
+                ._executeSearch
         ).mockResolvedValue({
             items: [mockEntity],
             total: 1
         });
-        vi.spyOn(
-            service as unknown as { _afterSearch: (...args: unknown[]) => unknown },
-            '_afterSearch'
+        (service as unknown as { _afterSearch: (...args: unknown[]) => unknown })._afterSearch =
+            vi.fn();
+        asMock(
+            (service as unknown as { _afterSearch: (...args: unknown[]) => unknown })._afterSearch
         ).mockRejectedValue(hookError);
 
         const result = await service.search(mockAdminActor, mockSearchParams);

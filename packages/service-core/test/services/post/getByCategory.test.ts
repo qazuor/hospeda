@@ -14,6 +14,7 @@ import {
     expectValidationError
 } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 describe('PostService.getByCategory', () => {
     let service: PostService;
@@ -98,7 +99,7 @@ describe('PostService.getByCategory', () => {
     });
 
     it('should return internal error if model fails', async () => {
-        (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
         const input = { actor, category };
         const result = await service.getByCategory(input);
         expectInternalError(result);
