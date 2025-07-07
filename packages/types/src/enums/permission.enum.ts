@@ -148,5 +148,10 @@ export enum PermissionEnum {
 
     // UI / CUSTOMIZATION: Permissions for UI and layout configuration
     THEME_EDIT = 'ui.theme.edit', // Allows editing the UI theme.
-    HOMEPAGE_LAYOUT_CONFIGURE = 'ui.homepageLayout.configure' // Allows configuring the homepage layout.
+    HOMEPAGE_LAYOUT_CONFIGURE = 'ui.homepageLayout.configure', // Allows configuring the homepage layout.
+
+    // TAG: Permissions related to tags (categorization, filtering, etc.)
+    TAG_CREATE = 'tag.create', // Allows creating a new tag.
+    TAG_UPDATE = 'tag.update', // Allows updating a tag.
+    TAG_DELETE = 'tag.delete' // Allows deleting a tag.
 }
