@@ -91,7 +91,7 @@ export class AccommodationService extends BaseService<
      * @param ctx - The service context, containing the logger.
      */
     constructor(ctx: ServiceContext, model?: AccommodationModel) {
-        super();
+        super(ctx);
         this.logger = ctx.logger;
         this.model = model ?? new AccommodationModel();
     }

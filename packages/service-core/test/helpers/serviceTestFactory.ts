@@ -4,8 +4,7 @@ import { createModelMock } from '../utils/modelMockFactory';
 /**
  * Instantiates a service class for testing, injecting mocked logger and model dependencies.
  *
- * This utility is intended for unit/integration tests to ensure that the service under test
- * receives fully mocked dependencies, allowing for isolated and controlled test scenarios.
+ * Esta versión soporta constructores de la forma (ctx, model?)
  *
  * @template S - The service class type to instantiate.
  * @template M - The model type to inject (default: unknown).
@@ -16,7 +15,7 @@ import { createModelMock } from '../utils/modelMockFactory';
  * @returns {S} An instance of the service class with mocked dependencies injected.
  */
 export function createServiceTestInstance<S, M = unknown, L = unknown>(
-    ServiceClass: new (deps: { logger: L }, model: M) => S,
+    ServiceClass: new (ctx: { logger: L }, model?: M) => S,
     modelMock?: M,
     loggerMock?: L
 ): S {

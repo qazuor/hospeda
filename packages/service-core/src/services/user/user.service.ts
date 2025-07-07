@@ -8,7 +8,13 @@ import type { PermissionEnum, UserType } from '@repo/types';
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseService } from '../../base/base.service';
-import type { Actor, ServiceInput, ServiceLogger, ServiceOutput } from '../../types';
+import type {
+    Actor,
+    ServiceContext,
+    ServiceInput,
+    ServiceLogger,
+    ServiceOutput
+} from '../../types';
 import { ServiceError } from '../../types';
 import {
     normalizeCreateInput,
@@ -55,8 +61,8 @@ export class UserService extends BaseService<
     protected readonly updateSchema = UpdateUserSchema;
     protected readonly searchSchema = UserFilterInputSchema;
 
-    constructor(ctx: { logger: ServiceLogger }, model?: UserModel) {
-        super();
+    constructor(ctx: ServiceContext, model?: UserModel) {
+        super(ctx);
         this.logger = ctx.logger;
         this.model = model ?? new UserModel();
     }

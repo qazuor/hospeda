@@ -13,6 +13,7 @@ import {
 } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 describe('PostService.getById', () => {
     let service: PostService;
@@ -67,7 +68,7 @@ describe('PostService.getById', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        (modelMock.findOne as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findOne).mockRejectedValue(new Error('DB error'));
         const result = await service.getById(actor, post.id);
         expectInternalError(result);
     });

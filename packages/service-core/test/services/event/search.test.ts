@@ -29,7 +29,7 @@ describe('EventService.search', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll']);
         loggerMock = createLoggerMock();
-        service = new EventService(modelMock, loggerMock);
+        service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
     it('should return paginated events (success)', async () => {

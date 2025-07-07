@@ -1,7 +1,8 @@
+import type { BaseModel as BaseModelDB } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 import { BaseService } from '../../src/base/base.service';
-import type { Actor, BaseModel } from '../../src/types';
+import type { Actor, ServiceContext } from '../../src/types';
 import { ServiceError } from '../../src/types';
 import { serviceLogger } from '../../src/utils/service-logger';
 
@@ -35,22 +36,31 @@ export const SearchTestEntitySchema = z.object({
 // The TestService class to be used in all tests
 export class TestService extends BaseService<
     TestEntity,
-    BaseModel<TestEntity>,
+    BaseModelDB<TestEntity>,
     typeof CreateTestEntitySchema,
     typeof UpdateTestEntitySchema,
     typeof SearchTestEntitySchema
 > {
     protected entityName = 'testEntity';
-    protected model!: BaseModel<TestEntity>;
+    protected model!: BaseModelDB<TestEntity>;
     protected createSchema = CreateTestEntitySchema;
     protected updateSchema = UpdateTestEntitySchema;
     protected searchSchema = SearchTestEntitySchema;
     protected logger = serviceLogger;
 
-    constructor(deps: { logger: typeof serviceLogger }, model: BaseModel<TestEntity>) {
-        super();
-        this.logger = deps.logger;
-        this.model = model;
+    /**
+     * Homogeneous constructor: receives ctx and model (optional), like all services.
+     * @param ctx - Service context (must include logger)
+     * @param model - Model instance (mock or real)
+     */
+    constructor(ctx: ServiceContext, model?: BaseModelDB<TestEntity>) {
+        super(ctx);
+        this.logger = ctx.logger;
+        if (model) {
+            this.model = model;
+        } else {
+            throw new Error('A concrete model implementation must be provided for TestService.');
+        }
     }
 
     protected _canCreate(actor: Actor, _data: z.infer<typeof CreateTestEntitySchema>): void {

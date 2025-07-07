@@ -1,3 +1,4 @@
+import type { BaseModel } from '@repo/db';
 /**
  * @fileoverview
  * Test suite for the `hardDelete` method of BaseService and its derivatives.
@@ -14,9 +15,10 @@ import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Actor } from '../../src/types';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
+import { createBaseModelMock } from '../utils/modelMockFactory';
+import { asMock } from '../utils/test-utils';
 import { MOCK_ENTITY_ID, mockAdminActor, mockEntity } from './base.service.mockData';
-import { TestService } from './base.service.test.setup';
+import { type TestEntity, TestService } from './base.service.test.setup';
 
 /**
  * Test suite for the `hardDelete` method of BaseService.
@@ -30,25 +32,25 @@ import { TestService } from './base.service.test.setup';
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: hardDelete', () => {
-    let modelMock: StandardModelMock;
+    let modelMock: BaseModel<TestEntity>;
     let service: TestService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = createModelMock();
+        modelMock = createBaseModelMock<TestEntity>();
         service = createServiceTestInstance(TestService, modelMock);
-        modelMock.findById.mockResolvedValue(mockEntity);
+        asMock(modelMock.findById).mockResolvedValue(mockEntity);
     });
 
     it('should hard delete an entity and return count', async () => {
-        modelMock.hardDelete.mockResolvedValue(1);
+        asMock(modelMock.hardDelete).mockResolvedValue(1);
         const result = await service.hardDelete(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.data?.count).toBe(1);
-        expect(modelMock.hardDelete).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
+        expect(asMock(modelMock.hardDelete)).toHaveBeenCalledWith({ id: MOCK_ENTITY_ID });
     });
 
     it('should return a "not found" error if the entity does not exist', async () => {
-        modelMock.findById.mockResolvedValue(null);
+        asMock(modelMock.findById).mockResolvedValue(null);
         const result = await service.hardDelete(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
@@ -65,7 +67,7 @@ describe('BaseService: hardDelete', () => {
 
     it('should return an internal error if database fails', async () => {
         const dbError = new Error('DB connection failed');
-        modelMock.hardDelete.mockRejectedValue(dbError);
+        asMock(modelMock.hardDelete).mockRejectedValue(dbError);
         const result = await service.hardDelete(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });

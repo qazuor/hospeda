@@ -26,7 +26,7 @@ describe('EventService.getBySlug', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findOne']);
         loggerMock = createLoggerMock();
-        service = new EventService(modelMock, loggerMock);
+        service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
     it('should return a public event (success)', async () => {

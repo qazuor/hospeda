@@ -17,6 +17,7 @@ import {
     expectUnauthorizedError
 } from '../../helpers/assertions';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 /**
  * Tests for EventService.getByLocation
@@ -33,7 +34,7 @@ describe('EventService.getByLocation', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService(modelMock, loggerMock);
+        service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
     it('should return public and private events if actor has EVENT_SOFT_DELETE_VIEW', async () => {
@@ -92,7 +93,7 @@ describe('EventService.getByLocation', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
         const result = await service.getByLocation(actorWithPerm, { locationId });
         expectInternalError(result);
     });

@@ -27,7 +27,7 @@ describe('EventService.hardDelete', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'hardDelete']);
         loggerMock = createLoggerMock();
-        service = new EventService(modelMock, loggerMock);
+        service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
     it('should hard delete an event (success)', async () => {

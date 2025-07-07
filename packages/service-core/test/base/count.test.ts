@@ -1,3 +1,7 @@
+import type { BaseModel } from '@repo/db';
+import type { Mock } from 'vitest';
+import { createBaseModelMock } from '../utils/modelMockFactory';
+const asMock = <T>(fn: T) => fn as unknown as Mock;
 /**
  * @fileoverview
  * Test suite for the `count` method of BaseService and its derivatives.
@@ -14,9 +18,8 @@ import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../src/types';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { type StandardModelMock, createModelMock } from '../utils/modelMockFactory';
 import { mockActor } from './base.service.mockData';
-import { TestService } from './base.service.test.setup';
+import { type TestEntity, TestService } from './base.service.test.setup';
 
 /**
  * Test suite for the `count` method of BaseService.
@@ -30,13 +33,14 @@ import { TestService } from './base.service.test.setup';
  * all error paths and edge cases are covered in a type-safe, DRY, and robust manner.
  */
 describe('BaseService: count', () => {
-    let modelMock: StandardModelMock;
+    let modelMock: BaseModel<TestEntity>;
     let service: TestService;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        modelMock = createModelMock();
+        modelMock = createBaseModelMock<TestEntity>();
         service = createServiceTestInstance(TestService, modelMock);
+        asMock(modelMock.count).mockResolvedValue(1);
     });
 
     it('should return the total count of entities on success', async () => {

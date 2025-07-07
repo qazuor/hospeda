@@ -1,12 +1,13 @@
 import type { AccommodationModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
-import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createNewAccommodationInput } from '../../factories/accommodationFactory';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
 
 const mockLogger = createLoggerMock();
 
@@ -25,8 +26,8 @@ describe('AccommodationService.restore', () => {
         const actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_RESTORE_ANY] });
         const id = 'mock-id';
         const existing = { ...createNewAccommodationInput(), id, deletedAt: new Date() };
-        (model.findById as Mock).mockResolvedValue(existing);
-        (model.restore as Mock).mockResolvedValue(1);
+        asMock(model.findById).mockResolvedValue(existing);
+        asMock(model.restore).mockResolvedValue(1);
         // Act
         const result = await service.restore(actor, id);
         // Assert
@@ -42,7 +43,7 @@ describe('AccommodationService.restore', () => {
         const actor = createActor({ permissions: [] });
         const id = 'mock-id';
         const existing = { ...createNewAccommodationInput(), id, deletedAt: new Date() };
-        (model.findById as Mock).mockResolvedValue(existing);
+        asMock(model.findById).mockResolvedValue(existing);
         // Act
         const result = await service.restore(actor, id);
         // Assert
@@ -55,7 +56,7 @@ describe('AccommodationService.restore', () => {
         // Arrange
         const actor = createAdminActor();
         const id = 'not-found-id';
-        (model.findById as Mock).mockResolvedValue(null);
+        asMock(model.findById).mockResolvedValue(null);
         // Act
         const result = await service.restore(actor, id);
         // Assert
@@ -69,7 +70,7 @@ describe('AccommodationService.restore', () => {
         const actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_RESTORE_ANY] });
         const id = 'mock-id';
         const existing = { ...createNewAccommodationInput(), id, deletedAt: null };
-        (model.findById as Mock).mockResolvedValue(existing);
+        asMock(model.findById).mockResolvedValue(existing);
         // Act
         const result = await service.restore(actor, id);
         // Assert
@@ -84,8 +85,8 @@ describe('AccommodationService.restore', () => {
         const actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_RESTORE_ANY] });
         const id = 'mock-id';
         const existing = { ...createNewAccommodationInput(), id, deletedAt: new Date() };
-        (model.findById as Mock).mockResolvedValue(existing);
-        (model.restore as Mock).mockRejectedValue(new Error('DB error'));
+        asMock(model.findById).mockResolvedValue(existing);
+        asMock(model.restore).mockRejectedValue(new Error('DB error'));
         // Act
         const result = await service.restore(actor, id);
         // Assert
