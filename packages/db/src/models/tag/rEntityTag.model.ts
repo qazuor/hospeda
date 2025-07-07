@@ -1,5 +1,5 @@
 import type { EntityTagType } from '@repo/types';
-import type { and, eq } from 'drizzle-orm';
+import { type and, count, desc, eq } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { rEntityTag } from '../../schemas/tag/r_entity_tag.dbschema';
@@ -111,5 +111,26 @@ export class REntityTagModel extends BaseModel<EntityTagType> {
                 (error as Error).message
             );
         }
+    }
+
+    /**
+     * Finds the most popular tags by usage count, ordered descending.
+     * @param limit - Maximum number of tags to return (default: 10)
+     * @returns Array of { tag, usageCount }
+     */
+    async findPopularTags(limit = 10): Promise<Array<{ tag: unknown; usageCount: number }>> {
+        const db = getDb();
+        const { rEntityTag, tags } = require('../../schemas/tag');
+        const results = await db
+            .select({
+                tag: tags,
+                usageCount: count(rEntityTag.tagId).as('usageCount')
+            })
+            .from(rEntityTag)
+            .innerJoin(tags, eq(rEntityTag.tagId, tags.id))
+            .groupBy(tags.id)
+            .orderBy(desc(count(rEntityTag.tagId)))
+            .limit(limit);
+        return results;
     }
 }
