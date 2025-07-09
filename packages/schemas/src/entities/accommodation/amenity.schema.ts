@@ -40,6 +40,12 @@ export const AmenitySchema = z.object({
     adminInfo: AdminInfoSchema.optional(),
 
     // Own Properties
+    slug: z
+        .string()
+        .min(3, { message: 'zodError.amenity.slug.min' })
+        .max(100, { message: 'zodError.amenity.slug.max' })
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: 'zodError.amenity.slug.format' })
+        .optional(),
     name: z
         .string()
         .min(3, { message: 'zodError.amenity.name.min' })
@@ -55,5 +61,6 @@ export const AmenitySchema = z.object({
         .max(100, { message: 'zodError.amenity.icon.max' })
         .optional(),
     isBuiltin: z.boolean({ required_error: 'zodError.amenity.isBuiltin.required' }),
+    isFeatured: z.boolean().optional().default(false),
     type: AmenitiesTypeEnumSchema
 });

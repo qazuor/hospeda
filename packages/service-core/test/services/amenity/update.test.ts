@@ -66,4 +66,36 @@ describe('AmenityService.update', () => {
         const result = await service.update(actor, amenity.id, updateInput);
         expectInternalError(result);
     });
+
+    it('should allow partial update (only description)', async () => {
+        asMock(amenityModelMock.findById).mockResolvedValue(amenity);
+        asMock(amenityModelMock.update).mockResolvedValue({ ...amenity, description: 'New desc' });
+        const result = await service.update(actor, amenity.id, { description: 'New desc' });
+        expectSuccess(result);
+        expect(result.data?.description).toBe('New desc');
+        expect(result.data?.name).toBe(amenity.name);
+    });
+
+    it('should reject null for required fields', async () => {
+        asMock(amenityModelMock.findById).mockResolvedValue(amenity);
+        // @ts-expect-error
+        const result = await service.update(actor, amenity.id, { name: null });
+        expectValidationError(result);
+    });
+
+    it('should allow omitting optional fields in update', async () => {
+        asMock(amenityModelMock.findById).mockResolvedValue(amenity);
+        asMock(amenityModelMock.update).mockResolvedValue({ ...amenity });
+        const result = await service.update(actor, amenity.id, {});
+        expectSuccess(result);
+        expect(result.data?.name).toBe(amenity.name);
+    });
+
+    it('should update isFeatured only', async () => {
+        asMock(amenityModelMock.findById).mockResolvedValue(amenity);
+        asMock(amenityModelMock.update).mockResolvedValue({ ...amenity, isFeatured: true });
+        const result = await service.update(actor, amenity.id, { isFeatured: true });
+        expectSuccess(result);
+        expect(result.data?.isFeatured).toBe(true);
+    });
 });

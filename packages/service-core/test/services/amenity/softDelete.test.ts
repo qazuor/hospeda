@@ -53,4 +53,22 @@ describe('AmenityService.softDelete', () => {
         const result = await service.softDelete(actor, amenity.id);
         expectInternalError(result);
     });
+
+    it('should not restore an amenity that is not soft-deleted', async () => {
+        const notDeletedAmenity = AmenityFactoryBuilder.create({ deletedAt: undefined });
+        asMock(amenityModelMock.findById).mockResolvedValue(notDeletedAmenity);
+        asMock(amenityModelMock.restore).mockResolvedValue(0);
+        const result = await service.restore(actor, notDeletedAmenity.id);
+        expectSuccess(result);
+        expect(result.data?.count).toBe(0);
+    });
+
+    it('should not soft delete an amenity that is already deleted', async () => {
+        const alreadyDeletedAmenity = AmenityFactoryBuilder.create({ deletedAt: new Date() });
+        asMock(amenityModelMock.findById).mockResolvedValue(alreadyDeletedAmenity);
+        asMock(amenityModelMock.softDelete).mockResolvedValue(0);
+        const result = await service.softDelete(actor, alreadyDeletedAmenity.id);
+        expectSuccess(result);
+        expect(result.data?.count).toBe(0);
+    });
 });

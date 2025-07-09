@@ -7,10 +7,12 @@ import type {
     AmenityType
 } from '@repo/types';
 import { ServiceErrorCode, type VisibilityEnum } from '@repo/types';
+import type { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum';
 import type { z } from 'zod';
 import { BaseRelatedService } from '../../base/base.related-service';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceContext, ServiceError, type ServiceLogger } from '../../types';
+import { generateAmenitySlug } from './amenity.helpers';
 import {
     checkCanAddAmenityToAccommodation,
     checkCanCountAmenities,
@@ -319,5 +321,46 @@ export class AmenityService extends BaseRelatedService<
         const { filters = {} } = params;
         const count = await this.model.count(filters);
         return { count };
+    }
+
+    /**
+     * Lifecycle hook: normalizes input and generates slug before creating an amenity.
+     * If slug is not provided, generates a unique slug from the name.
+     */
+    protected async _beforeCreate(
+        data: z.infer<typeof CreateAmenitySchema>,
+        _actor: Actor
+    ): Promise<Partial<AmenityType>> {
+        let slug = data.slug;
+        if (!slug && data.name) {
+            slug = await generateAmenitySlug(data.name, this.model);
+        }
+        // Cast type to AmenitiesTypeEnum
+        const type = data.type as AmenitiesTypeEnum;
+        return { ...data, slug, type };
+    }
+
+    /**
+     * Lifecycle hook: normalizes input and updates slug if name changes.
+     * If name is updated and slug is not provided, regenerates slug from new name.
+     */
+    protected async _beforeUpdate(
+        data: z.infer<typeof UpdateAmenitySchema>,
+        _actor: Actor
+    ): Promise<Partial<AmenityType>> {
+        let slug = data.slug;
+        const type = data.type ? (data.type as AmenitiesTypeEnum) : undefined;
+        // If name is being updated and slug is not provided, fetch entity to compare
+        if (!slug && data.name) {
+            let entity: AmenityType | undefined = undefined;
+            if ('id' in data && data.id) {
+                const found = await this.model.findById(data.id as AmenityId);
+                entity = found ?? undefined;
+            }
+            if (!entity || (entity && data.name !== entity.name)) {
+                slug = await generateAmenitySlug(data.name, this.model);
+            }
+        }
+        return { ...data, slug, type };
     }
 }

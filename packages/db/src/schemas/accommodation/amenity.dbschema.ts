@@ -9,10 +9,12 @@ export const amenities: ReturnType<typeof pgTable> = pgTable(
     'amenities',
     {
         id: uuid('id').primaryKey().defaultRandom(),
+        slug: text('slug').notNull().unique(),
         name: text('name').notNull(),
         description: text('description'),
         icon: text('icon'),
         isBuiltin: boolean('is_builtin').notNull().default(false),
+        isFeatured: boolean('is_featured').notNull().default(false),
         type: AmenitiesTypePgEnum('type').notNull(),
         lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
@@ -24,7 +26,8 @@ export const amenities: ReturnType<typeof pgTable> = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        type_idx: index('type_idx').on(table.type)
+        type_idx: index('type_idx').on(table.type),
+        slug_idx: index('slug_idx').on(table.slug)
     })
 );
 

@@ -14,12 +14,38 @@ import type { AmenitiesTypeEnum } from '../../enums/amenity-type.enum.js';
  */
 
 export interface AmenityType extends WithAudit, WithLifecycleState, WithAdminInfo {
+    /**
+     * Unique identifier for the amenity.
+     */
     id: AmenityId;
+    /**
+     * Unique, URL-friendly identifier for the amenity. Auto-generated from name if not provided.
+     */
+    slug: string;
+    /**
+     * Name of the amenity.
+     */
     name: string;
+    /**
+     * Optional description of the amenity.
+     */
     description?: string;
+    /**
+     * Optional icon for the amenity.
+     */
     icon?: string;
+    /**
+     * Whether this amenity is built-in (system default).
+     */
     isBuiltin: boolean;
+    /**
+     * Type/category of the amenity.
+     */
     type: AmenitiesTypeEnum;
+    /**
+     * Whether this amenity is featured (highlighted in UI).
+     */
+    isFeatured: boolean;
 }
 
 /**
