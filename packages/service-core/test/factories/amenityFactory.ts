@@ -13,11 +13,13 @@ export class AmenityFactoryBuilder {
     constructor() {
         this.amenity = {
             id: getMockId('feature') as AmenityId,
+            slug: 'test-amenity',
             name: 'Test Amenity',
             type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
             icon: '🛏️',
             description: 'A test amenity',
             isBuiltin: false,
+            isFeatured: false,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: getMockId('user') as UserId,

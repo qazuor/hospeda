@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 /**
  * Zod schema for creating a new amenity. Omits server-generated and audit fields.
- * Fields: name (min 3 chars), type, optional icon, optional description, optional isBuiltin.
+ * Fields: name (min 3 chars), type, optional icon, optional description, optional isBuiltin, optional slug, optional isFeatured.
  */
 // TODO: If a shared AmenitySchema exists, import it from the correct path and use it here.
 export const CreateAmenitySchema = z
@@ -12,7 +12,14 @@ export const CreateAmenitySchema = z
         type: z.string(),
         icon: z.string().optional(),
         description: z.string().optional(),
-        isBuiltin: z.boolean().optional()
+        isBuiltin: z.boolean().optional(),
+        slug: z
+            .string()
+            .min(3)
+            .max(100)
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+            .optional(),
+        isFeatured: z.boolean().optional().default(false)
     })
     .strict();
 /**
