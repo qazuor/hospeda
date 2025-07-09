@@ -2,7 +2,7 @@ import type { ImageType, MediaType, VideoType } from '@repo/types';
 import { ModerationStatusEnum as ModerationStatusEnumType } from '@repo/types';
 import type { z } from 'zod';
 import { normalizeAdminInfo } from '../../utils';
-import type { PostCreateInput, PostUpdateInput, PostUpdateSchema } from './post.schemas';
+import type { PostCreateInput, PostUpdateSchema } from './post.schemas';
 
 const DEFAULT_MODERATION_STATE: ModerationStatusEnumType = ModerationStatusEnumType.PENDING;
 
@@ -85,8 +85,14 @@ export function normalizeCreateInput(data: PostCreateInput): PostCreateInput {
  * @returns Normalized data
  */
 export function normalizeUpdateInput(
-    data: z.infer<typeof PostUpdateSchema>
+    data: { id: string } & Partial<Omit<z.infer<typeof PostUpdateSchema>, 'id'>>
 ): z.infer<typeof PostUpdateSchema> {
+    // If no updatable fields are present, return an empty object (homogeneous with other services)
+    const { id, ...fields } = data;
+    const hasUpdatableFields = Object.keys(fields).length > 0;
+    if (!hasUpdatableFields) {
+        return {} as z.infer<typeof PostUpdateSchema>;
+    }
     const title = data.title?.trim();
     let summary = data.summary?.trim();
     const content = data.content?.trim();
@@ -103,7 +109,7 @@ export function normalizeUpdateInput(
     }
     const media = normalizeMedia(data.media);
     const { adminInfo: _adminInfo, ...rest } = data as { adminInfo?: unknown } & Omit<
-        PostUpdateInput,
+        z.infer<typeof PostUpdateSchema>,
         'adminInfo'
     >;
     const adminInfo = normalizeAdminInfo(_adminInfo);

@@ -13,13 +13,7 @@ import type {
 import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseRelatedService } from '../../base/base.related-service';
-import type {
-    Actor,
-    ServiceContext,
-    ServiceInput,
-    ServiceLogger,
-    ServiceOutput
-} from '../../types';
+import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
 import {
@@ -158,44 +152,45 @@ export class TagService extends BaseRelatedService<
 
     /**
      * Executes the database search for tags.
-     * @param params The validated and processed search parameters.
+     * @param params The validated and processed search parameters (filters, pagination, sorting).
      * @param _actor The actor performing the search.
      * @returns A paginated list of tags matching the criteria.
      */
-    protected async _executeSearch(params: Record<string, unknown>, _actor: Actor) {
-        // Use findAll for search (with optional pagination)
-        return this.model.findAll(params);
+    protected async _executeSearch(params: z.infer<typeof SearchTagSchema>, _actor: Actor) {
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+        return this.model.findAll(filters, { page, pageSize });
     }
 
     /**
      * Executes the database count for tags.
-     * @param params The validated and processed search parameters.
+     * @param params The validated and processed search parameters (filters, pagination, sorting).
      * @param _actor The actor performing the count.
      * @returns An object containing the total count of tags matching the criteria.
      */
-    protected async _executeCount(
-        params: Record<string, unknown>,
-        _actor: Actor
-    ): Promise<{ count: number }> {
-        // Use count for counting
-        const count = await this.model.count(params);
+    protected async _executeCount(params: z.infer<typeof SearchTagSchema>, _actor: Actor) {
+        const { filters = {} } = params;
+        const count = await this.model.count(filters);
         return { count };
     }
 
     /**
      * Returns the most popular tags (by usage count).
-     * @param input - ServiceInput with optional limit.
+     * @param actor - The actor performing the action.
+     * @param params - Optional limit for the number of tags.
      * @returns ServiceOutput with an array of TagType.
      */
     public async getPopularTags(
-        input: ServiceInput<{ limit?: number }>
+        actor: Actor,
+        params: { limit?: number }
     ): Promise<ServiceOutput<{ tags: TagType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getPopularTags',
-            input,
-            schema: z.object({ limit: z.number().int().positive().max(100).optional() }),
-            execute: async (validated, _actor) => {
-                this._canList(_actor);
+            input: { actor, ...params },
+            schema: z.object({ limit: z.number().int().positive().max(100).optional() }).strict(),
+            execute: async (validated) => {
+                this._canList(actor);
                 const results = await this.relatedModel.findPopularTags(validated.limit ?? 10);
                 const tagsList: TagType[] = results.map((row) => row.tag as TagType);
                 return { tags: tagsList };
@@ -205,29 +200,30 @@ export class TagService extends BaseRelatedService<
 
     /**
      * Adds a tag to an entity (polymorphic).
-     * @param input - ServiceInput with tagId, entityId, entityType.
+     * @param actor - The actor performing the action.
+     * @param params - tagId, entityId, entityType.
      * @returns ServiceOutput<void>
      */
     public async addTagToEntity(
-        input: ServiceInput<{ tagId: string; entityId: string; entityType: string }>
+        actor: Actor,
+        params: { tagId: string; entityId: string; entityType: string }
     ): Promise<ServiceOutput<void>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addTagToEntity',
-            input,
-            schema: z.object({
-                tagId: z.string().min(1),
-                entityId: z.string().min(1),
-                entityType: z.string().min(1)
-            }),
-            execute: async (validated, actor) => {
-                // 1. Permiso
-                checkCanUpdateTag(actor, { id: validated.tagId as TagId } as TagType);
-                // 2. Validar existencia de tag
+            input: { actor, ...params },
+            schema: z
+                .object({
+                    tagId: z.string().min(1),
+                    entityId: z.string().min(1),
+                    entityType: z.string().min(1)
+                })
+                .strict(),
+            execute: async (validated) => {
+                this._canUpdate(actor, { id: validated.tagId } as TagType);
                 const tag = await this.model.findById(validated.tagId as TagId);
                 if (!tag) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');
                 }
-                // 3. Validar que no exista ya la relación
                 const existing = await this.relatedModel.findOne({
                     tagId: validated.tagId as TagId,
                     entityId: validated.entityId as
@@ -244,7 +240,6 @@ export class TagService extends BaseRelatedService<
                         'Tag already associated with entity'
                     );
                 }
-                // 4. Crear la relación
                 await this.relatedModel.create({
                     tagId: validated.tagId as TagId,
                     entityId: validated.entityId as
@@ -255,7 +250,6 @@ export class TagService extends BaseRelatedService<
                         | EventId,
                     entityType: validated.entityType as EntityTypeEnum
                 });
-                // 5. Retornar éxito
                 return;
             }
         });
@@ -264,20 +258,20 @@ export class TagService extends BaseRelatedService<
     /**
      * Removes a tag from an entity (polymorphic).
      * Requires TAG_UPDATE permission.
-     * @param input - ServiceInput with tagId, entityId, entityType.
+     * @param actor - The actor performing the action.
+     * @param params - tagId, entityId, entityType.
      * @returns ServiceOutput<void>
      */
     public async removeTagFromEntity(
-        input: ServiceInput<{ tagId: string; entityId: string; entityType: string }>
+        actor: Actor,
+        params: { tagId: string; entityId: string; entityType: string }
     ): Promise<ServiceOutput<void>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeTagFromEntity',
-            input,
-            schema: RemoveTagFromEntitySchema,
-            execute: async (validated, actor) => {
-                // 1. Permission check
-                checkCanUpdateTag(actor, { id: validated.tagId as TagId } as TagType);
-                // 2. Check if the relation exists
+            input: { actor, ...params },
+            schema: RemoveTagFromEntitySchema.strict(),
+            execute: async (validated) => {
+                this._canUpdate(actor, { id: validated.tagId } as TagType);
                 const existing = await this.relatedModel.findOne({
                     tagId: validated.tagId as TagId,
                     entityId: validated.entityId as
@@ -294,7 +288,6 @@ export class TagService extends BaseRelatedService<
                         'Tag-entity relation not found'
                     );
                 }
-                // 3. Remove the relation (hard delete)
                 await this.relatedModel.hardDelete({
                     tagId: validated.tagId as TagId,
                     entityId: validated.entityId as
@@ -305,7 +298,6 @@ export class TagService extends BaseRelatedService<
                         | EventId,
                     entityType: validated.entityType as EntityTypeEnum
                 });
-                // 4. Return success
                 return;
             }
         });
@@ -314,27 +306,25 @@ export class TagService extends BaseRelatedService<
     /**
      * Gets all tags for a given entity (polymorphic).
      * Requires TAG_UPDATE permission.
-     * @param input - ServiceInput with entityId, entityType.
+     * @param actor - The actor performing the action.
+     * @param params - entityId, entityType.
      * @returns ServiceOutput<{ tags: TagType[] }>
      */
     public async getTagsForEntity(
-        input: ServiceInput<{ entityId: string; entityType: string }>
+        actor: Actor,
+        params: { entityId: string; entityType: string }
     ): Promise<ServiceOutput<{ tags: TagType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTagsForEntity',
-            input,
-            schema: GetTagsForEntitySchema,
-            execute: async (validated, actor) => {
-                // 1. Permission check
-                checkCanUpdateTag(actor, {} as TagType); // Only permission required
-                // 2. Find all tag relations for the entity
+            input: { actor, ...params },
+            schema: GetTagsForEntitySchema.strict(),
+            execute: async (validated) => {
+                this._canUpdate(actor, {} as TagType);
                 const relations = await this.relatedModel.findAllWithTags(
                     validated.entityId,
                     validated.entityType
                 );
-                // 3. Map to tags
                 const tags = relations.map((rel) => rel.tag).filter(Boolean);
-                // 4. Return tags array
                 return { tags };
             }
         });
@@ -345,25 +335,24 @@ export class TagService extends BaseRelatedService<
      * Optionally filters by entity type.
      * Requires TAG_UPDATE permission.
      *
-     * @param input - ServiceInput with tagId (required) and entityType (optional).
+     * @param actor - The actor performing the action.
+     * @param params - tagId (required) and entityType (optional).
      * @returns ServiceOutput with an array of { entityId, entityType }.
      */
     public async getEntitiesByTag(
-        input: ServiceInput<GetEntitiesByTagInput>
+        actor: Actor,
+        params: GetEntitiesByTagInput
     ): Promise<ServiceOutput<{ entities: Array<{ entityId: string; entityType: string }> }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getEntitiesByTag',
-            input,
-            schema: GetEntitiesByTagSchema,
-            execute: async (validated, actor) => {
-                // Permission: require TAG_UPDATE (same as add/remove relation)
-                checkCanUpdateTag(actor, { id: validated.tagId } as TagType);
-                // Check tag exists
+            input: { actor, ...params },
+            schema: GetEntitiesByTagSchema.strict(),
+            execute: async (validated) => {
+                this._canUpdate(actor, { id: validated.tagId } as TagType);
                 const tag = await this.model.findById(validated.tagId as TagId);
                 if (!tag) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');
                 }
-                // Query relations (array plano)
                 const relations = await this.relatedModel.findAllWithEntities(
                     validated.tagId,
                     validated.entityType

@@ -35,36 +35,35 @@ describe('TagService.removeTagFromEntity', () => {
     it('should remove a tag from an entity (success)', async () => {
         asMock(relModelMock.findOne).mockResolvedValue(relation);
         asMock(relModelMock.hardDelete).mockResolvedValue(1);
-        const result = await service.removeTagFromEntity({ actor, ...input });
+        const result = await service.removeTagFromEntity(actor, input);
         expectSuccess(result);
     });
 
     it('should return FORBIDDEN if actor lacks TAG_UPDATE permission', async () => {
         actor = createActor({ permissions: [] });
-        const result = await service.removeTagFromEntity({ actor, ...input });
+        const result = await service.removeTagFromEntity(actor, input);
         expectForbiddenError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // tagId empty
-        const result = await service.removeTagFromEntity({
-            actor,
+        const result = await service.removeTagFromEntity(actor, {
             tagId: '',
             entityId: 'e',
             entityType: 'POST'
-        });
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        } as any);
         expectValidationError(result);
     });
 
     it('should return NOT_FOUND if relation does not exist', async () => {
         asMock(relModelMock.findOne).mockResolvedValue(null);
-        const result = await service.removeTagFromEntity({ actor, ...input });
+        const result = await service.removeTagFromEntity(actor, input);
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(relModelMock.findOne).mockRejectedValue(new Error('DB error'));
-        const result = await service.removeTagFromEntity({ actor, ...input });
+        const result = await service.removeTagFromEntity(actor, input);
         expectInternalError(result);
     });
 });

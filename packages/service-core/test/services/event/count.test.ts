@@ -27,26 +27,26 @@ describe('EventService.count', () => {
 
     it('should return count of events (success)', async () => {
         asMock(modelMock.count).mockResolvedValue(countResult.count);
-        const result = await service.count(actorWithPerm, filters);
+        const result = await service.count(actorWithPerm, { filters });
         expectSuccess(result);
         expect(result.data?.count).toBe(countResult.count);
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
-        const result = await service.count(actorNoPerm, filters);
+        const result = await service.count(actorNoPerm, { filters });
         expectForbiddenError(result);
     });
 
     it('should return count 0 if no events found', async () => {
         asMock(modelMock.count).mockResolvedValue(0);
-        const result = await service.count(actorWithPerm, filters);
+        const result = await service.count(actorWithPerm, { filters });
         expectSuccess(result);
         expect(result.data?.count).toBe(0);
     });
 
     it('should return INTERNAL_ERROR if model.count throws', async () => {
         asMock(modelMock.count).mockRejectedValue(new Error('DB error'));
-        const result = await service.count(actorWithPerm, filters);
+        const result = await service.count(actorWithPerm, { filters });
         expectInternalError(result);
     });
 
@@ -56,7 +56,7 @@ describe('EventService.count', () => {
             service as unknown as { _afterCount: () => void },
             '_afterCount'
         ).mockRejectedValue(new Error('hook error'));
-        const result = await service.count(actorWithPerm, filters);
+        const result = await service.count(actorWithPerm, { filters });
         expectInternalError(result);
     });
 });

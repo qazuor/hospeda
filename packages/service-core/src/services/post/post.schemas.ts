@@ -9,38 +9,39 @@ import { z } from 'zod';
 export const PostCreateSchema = PostSchema;
 
 /**
- * Schema for updating a post (deep partial of PostSchema)
+ * Schema for updating a post (all fields optional, no id required)
  */
-export const PostUpdateSchema = PostSchema.deepPartial();
+export const PostUpdateSchema = PostSchema.deepPartial().strict();
 
 /**
  * Schema for filtering posts
  */
-export const PostFilterInputSchema = _PostFilterInputSchema;
+export const PostFilterInputSchema = _PostFilterInputSchema.strict();
 
 /**
  * Schema for creating a post (only user-provided fields)
  */
-export const PostCreateInputSchema = z.object({
-    title: z.string().min(3).max(150),
-    summary: z.string().min(10).max(200),
-    content: z.string().min(10).max(5000),
-    media: PostSchema.shape.media,
-    category: PostSchema.shape.category,
-    sponsorshipId: PostSchema.shape.sponsorshipId.optional(),
-    relatedDestinationId: PostSchema.shape.relatedDestinationId.optional(),
-    relatedAccommodationId: PostSchema.shape.relatedAccommodationId.optional(),
-    relatedEventId: PostSchema.shape.relatedEventId.optional(),
-    isNews: PostSchema.shape.isNews.optional(),
-    expiresAt: PostSchema.shape.expiresAt.optional()
-});
+export const PostCreateInputSchema = z
+    .object({
+        title: z.string().min(3).max(150),
+        summary: z.string().min(10).max(200),
+        content: z.string().min(10).max(5000),
+        media: PostSchema.shape.media,
+        category: PostSchema.shape.category,
+        sponsorshipId: PostSchema.shape.sponsorshipId.optional(),
+        relatedDestinationId: PostSchema.shape.relatedDestinationId.optional(),
+        relatedAccommodationId: PostSchema.shape.relatedAccommodationId.optional(),
+        relatedEventId: PostSchema.shape.relatedEventId.optional(),
+        isNews: PostSchema.shape.isNews.optional(),
+        expiresAt: PostSchema.shape.expiresAt.optional()
+    })
+    .strict();
 
 export type PostCreateInput = z.infer<typeof PostCreateInputSchema>;
 export type PostUpdateInput = z.infer<typeof PostUpdateSchema>;
 export type PostFilterInput = z.infer<typeof PostFilterInputSchema>;
 
 export const GetNewsInputSchema = z.object({
-    actor: z.object({ id: z.string() }).passthrough(),
     fromDate: z.coerce.date().optional(),
     toDate: z.coerce.date().optional(),
     visibility: z.nativeEnum(VisibilityEnum).optional()
@@ -49,7 +50,6 @@ export const GetNewsInputSchema = z.object({
 export type GetNewsInput = z.infer<typeof GetNewsInputSchema>;
 
 export const GetFeaturedInputSchema = z.object({
-    actor: z.object({ id: z.string() }).passthrough(),
     fromDate: z.coerce.date().optional(),
     toDate: z.coerce.date().optional(),
     visibility: z.nativeEnum(VisibilityEnum).optional()
@@ -58,7 +58,6 @@ export const GetFeaturedInputSchema = z.object({
 export type GetFeaturedInput = z.infer<typeof GetFeaturedInputSchema>;
 
 export const GetByCategoryInputSchema = z.object({
-    actor: z.object({ id: z.string() }).passthrough(),
     category: z.string().min(1, 'Category is required'),
     fromDate: z.coerce.date().optional(),
     toDate: z.coerce.date().optional(),
@@ -68,7 +67,6 @@ export const GetByCategoryInputSchema = z.object({
 export type GetByCategoryInput = z.infer<typeof GetByCategoryInputSchema>;
 
 export const GetByRelatedDestinationInputSchema = z.object({
-    actor: z.object({ id: z.string() }).passthrough(),
     destinationId: z.string().uuid('Invalid destinationId'),
     fromDate: z.coerce.date().optional(),
     toDate: z.coerce.date().optional(),
@@ -78,7 +76,6 @@ export const GetByRelatedDestinationInputSchema = z.object({
 export type GetByRelatedDestinationInput = z.infer<typeof GetByRelatedDestinationInputSchema>;
 
 export const GetByRelatedAccommodationInputSchema = z.object({
-    actor: z.object({ id: z.string() }).passthrough(),
     accommodationId: z.string().uuid('Invalid accommodationId'),
     fromDate: z.coerce.date().optional(),
     toDate: z.coerce.date().optional(),
@@ -88,7 +85,6 @@ export const GetByRelatedAccommodationInputSchema = z.object({
 export type GetByRelatedAccommodationInput = z.infer<typeof GetByRelatedAccommodationInputSchema>;
 
 export const GetByRelatedEventInputSchema = z.object({
-    actor: z.object({ id: z.string() }).passthrough(),
     eventId: z.string().uuid('Invalid eventId'),
     fromDate: z.coerce.date().optional(),
     toDate: z.coerce.date().optional(),
@@ -97,10 +93,11 @@ export const GetByRelatedEventInputSchema = z.object({
 
 export type GetByRelatedEventInput = z.infer<typeof GetByRelatedEventInputSchema>;
 
-export const LikePostInputSchema = z.object({
-    actor: z.object({ id: z.string() }).passthrough(),
-    postId: z.string().uuid('Invalid postId')
-});
+export const LikePostInputSchema = z
+    .object({
+        postId: z.string().uuid('Invalid postId')
+    })
+    .strict();
 
 export type LikePostInput = z.infer<typeof LikePostInputSchema>;
 

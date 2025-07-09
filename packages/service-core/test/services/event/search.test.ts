@@ -34,26 +34,26 @@ describe('EventService.search', () => {
 
     it('should return paginated events (success)', async () => {
         (modelMock.findAll as Mock).mockResolvedValue(paginatedResult);
-        const result = await service.search(actorWithPerm, filters);
+        const result = await service.search(actorWithPerm, { filters });
         expectSuccess(result);
         expect(result.data).toMatchObject(paginatedResult);
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
-        const result = await service.search(actorNoPerm, filters);
+        const result = await service.search(actorNoPerm, { filters });
         expectForbiddenError(result);
     });
 
     it('should return empty result if no events found', async () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: [], page, pageSize, total: 0 });
-        const result = await service.search(actorWithPerm, filters);
+        const result = await service.search(actorWithPerm, { filters });
         expectSuccess(result);
         expect(result.data?.items).toHaveLength(0);
     });
 
     it('should return INTERNAL_ERROR if model.findAll throws', async () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.search(actorWithPerm, filters);
+        const result = await service.search(actorWithPerm, { filters });
         expectInternalError(result);
     });
 
@@ -63,7 +63,7 @@ describe('EventService.search', () => {
             service as unknown as { _afterSearch: () => void },
             '_afterSearch'
         ).mockRejectedValue(new Error('hook error'));
-        const result = await service.search(actorWithPerm, filters);
+        const result = await service.search(actorWithPerm, { filters });
         expectInternalError(result);
     });
 });

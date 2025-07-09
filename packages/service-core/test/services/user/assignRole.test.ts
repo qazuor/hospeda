@@ -16,6 +16,7 @@ import {
     expectInternalError,
     expectNotFoundError,
     expectSuccess,
+    expectUnauthorizedError,
     expectValidationError
 } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
@@ -47,7 +48,7 @@ describe('UserService.assignRole', () => {
             id: userId,
             role: RoleEnum.ADMIN
         });
-        const result = await service.assignRole({ actor, ...input });
+        const result = await service.assignRole(actor, input);
         expectSuccess(result);
         expect(result.data?.user.role).toBe(RoleEnum.ADMIN);
         expect(result.data?.user.id).toBe(userId);
@@ -60,7 +61,7 @@ describe('UserService.assignRole', () => {
 
     it('should return NOT_FOUND if user does not exist', async () => {
         asMock(userModelMock.findById).mockResolvedValue(null);
-        const result = await service.assignRole({ actor, ...input });
+        const result = await service.assignRole(actor, input);
         expectNotFoundError(result);
     });
 
@@ -68,14 +69,14 @@ describe('UserService.assignRole', () => {
         const user = getUser({ id: userId, role: RoleEnum.USER });
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
         const forbiddenActor = getActor(RoleEnum.ADMIN);
-        const result = await service.assignRole({ actor: forbiddenActor, ...input });
+        const result = await service.assignRole(forbiddenActor, input);
         expectForbiddenError(result);
     });
 
     it('should return the user unchanged if role is already assigned', async () => {
         const user = getUser({ id: userId, role: RoleEnum.ADMIN });
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
-        const result = await service.assignRole({ actor, ...input });
+        const result = await service.assignRole(actor, input);
         expectSuccess(result);
         expect(result.data?.user.role).toBe(RoleEnum.ADMIN);
         expect(result.data?.user.id).toBe(userId);
@@ -86,42 +87,40 @@ describe('UserService.assignRole', () => {
         const user = getUser({ id: userId, role: RoleEnum.USER });
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
         asMock(userModelMock.update).mockResolvedValue(null);
-        const result = await service.assignRole({ actor, ...input });
+        const result = await service.assignRole(actor, input);
         expectInternalError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid userId', async () => {
-        const result = await service.assignRole({ actor, userId: '', role: RoleEnum.ADMIN });
+        const result = await service.assignRole(actor, { userId: '', role: RoleEnum.ADMIN });
         expectValidationError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid role', async () => {
         const invalidRole = undefined as unknown as RoleEnum;
-        const result = await service.assignRole({ actor, userId, role: invalidRole });
+        const result = await service.assignRole(actor, { userId, role: invalidRole });
         expectValidationError(result);
     });
 
     it('should return VALIDATION_ERROR if userId is empty', async () => {
-        const result = await service.assignRole({ actor: actor, userId: '', role: RoleEnum.USER });
+        const result = await service.assignRole(actor, { userId: '', role: RoleEnum.USER });
         expectValidationError(result);
     });
 
     it('should return VALIDATION_ERROR if role is invalid', async () => {
-        const result = await service.assignRole({
-            actor: actor,
+        const result = await service.assignRole(actor, {
             userId: 'some-id',
             role: 'INVALID' as RoleEnum
         });
         expectValidationError(result);
     });
 
-    it('should return FORBIDDEN if actor is undefined', async () => {
-        const result = await service.assignRole({
-            actor: {} as Actor,
+    it('should return UNAUTHORIZED if actor is undefined', async () => {
+        const result = await service.assignRole(undefined as unknown as Actor, {
             userId: 'some-id',
             role: RoleEnum.USER
         });
-        expectForbiddenError(result);
+        expectUnauthorizedError(result);
     });
 
     it('should return FORBIDDEN if actor has no role', async () => {
@@ -130,8 +129,7 @@ describe('UserService.assignRole', () => {
             permissions: [],
             role: undefined as unknown as RoleEnum
         } as Actor;
-        const result = await service.assignRole({
-            actor: fakeActor,
+        const result = await service.assignRole(fakeActor, {
             userId: 'some-id',
             role: RoleEnum.USER
         });

@@ -49,25 +49,31 @@ describe('UserService.search', () => {
     it('should return a paginated list of users matching filters (admin)', async () => {
         asMock(userModelMock.findAll).mockResolvedValue(paginated(entities, 1, 2));
         const filters = { role: RoleEnum.USER };
-        const result = await service.search(admin, filters);
+        const result = await service.search(admin, { filters });
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(filters, {});
+        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(filters, {
+            page: 1,
+            pageSize: 10
+        });
     });
 
     it('should return a paginated list of users matching filters (super admin)', async () => {
         asMock(userModelMock.findAll).mockResolvedValue(paginated(entities, 1, 2));
         const filters = { role: RoleEnum.USER };
-        const result = await service.search(superAdmin, filters);
+        const result = await service.search(superAdmin, { filters });
         expectSuccess(result);
         expect(result.data?.items?.length).toBe(2);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(filters, {});
+        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith(filters, {
+            page: 1,
+            pageSize: 10
+        });
     });
 
     it('should return FORBIDDEN if actor is not admin or super admin', async () => {
         asMock(userModelMock.findAll).mockResolvedValue(paginated(entities, 1, 2));
         const filters = { role: RoleEnum.USER };
-        const result = await service.search(user, filters);
+        const result = await service.search(user, { filters });
         expectForbiddenError(result);
     });
 
@@ -80,7 +86,7 @@ describe('UserService.search', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(userModelMock.findAll).mockRejectedValue(new Error('DB error'));
         const filters = { role: RoleEnum.USER };
-        const result = await service.search(admin, filters);
+        const result = await service.search(admin, { filters });
         expectInternalError(result);
     });
 
@@ -91,7 +97,7 @@ describe('UserService.search', () => {
             '_beforeSearch'
         ).mockRejectedValue(new Error('beforeSearch error'));
         const filters = { role: RoleEnum.USER };
-        const result = await service.search(admin, filters);
+        const result = await service.search(admin, { filters });
         expectInternalError(result);
     });
 
@@ -102,7 +108,7 @@ describe('UserService.search', () => {
             '_afterSearch'
         ).mockRejectedValue(new Error('afterSearch error'));
         const filters = { role: RoleEnum.USER };
-        const result = await service.search(admin, filters);
+        const result = await service.search(admin, { filters });
         expectInternalError(result);
     });
 
@@ -116,8 +122,8 @@ describe('UserService.search', () => {
         }
         const serviceWithNorm = new ServiceWithNormalizer({ logger: loggerMock }, userModelMock);
         asMock(userModelMock.findAll).mockResolvedValue(paginated(entities, 99, 10));
-        await serviceWithNorm.search(admin, {});
-        expect(normalizer).toHaveBeenCalledWith({}, admin);
-        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith({}, {});
+        await serviceWithNorm.search(admin, { filters: {} });
+        expect(normalizer).toHaveBeenCalledWith({ filters: {} }, admin);
+        expect(asMock(userModelMock.findAll)).toHaveBeenCalledWith({}, { page: 1, pageSize: 10 });
     });
 });

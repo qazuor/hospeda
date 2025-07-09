@@ -53,24 +53,30 @@ export const SearchAccommodationFiltersSchema = z.object({
 /**
  * Schema for fetching an accommodation along with its specified relations.
  */
-export const GetWithRelationsInputSchema = z.object({
-    id: z.string().uuid(),
-    relations: z.record(z.boolean())
-});
+export const GetWithRelationsInputSchema = z
+    .object({
+        id: z.string().uuid(),
+        relations: z.record(z.boolean())
+    })
+    .strict();
 
 /**
  * Schema for fetching accommodations belonging to a specific destination.
  */
-export const GetByDestinationIdInputSchema = z.object({
-    destinationId: z.string().uuid()
-});
+export const GetByDestinationIdInputSchema = z
+    .object({
+        destinationId: z.string().uuid()
+    })
+    .strict();
 
 /**
  * Schema for fetching accommodations of a specific type.
  */
-export const GetByTypeInputSchema = z.object({
-    type: z.string()
-});
+export const GetByTypeInputSchema = z
+    .object({
+        type: z.string()
+    })
+    .strict();
 
 /**
  * Schema for fetching accommodations that have a specific amenity.
@@ -81,6 +87,7 @@ export const GetByAmenityInputSchema = z
         amenityId: z.string().uuid().optional(),
         amenitySlug: z.string().optional()
     })
+    .strict()
     .superRefine((data, ctx) => {
         if (!data.amenityId && !data.amenitySlug) {
             ctx.addIssue({
@@ -99,6 +106,7 @@ export const GetByFeatureInputSchema = z
         featureId: z.string().uuid().optional(),
         featureSlug: z.string().optional()
     })
+    .strict()
     .superRefine((data, ctx) => {
         if (!data.featureId && !data.featureSlug) {
             ctx.addIssue({
@@ -117,6 +125,7 @@ export const GetAccommodationSchema = z
         id: z.string().uuid().optional(),
         slug: z.string().optional()
     })
+    .strict()
     .superRefine((data, ctx) => {
         if (!data.id && !data.slug) {
             ctx.addIssue({
@@ -135,9 +144,11 @@ export const GetSimilarInputSchema = GetAccommodationSchema;
 /**
  * Schema for fetching the top-rated accommodations, optionally filtered by destination.
  */
-export const GetTopRatedInputSchema = z.object({
-    destinationId: z.string().uuid().optional()
-});
+export const GetTopRatedInputSchema = z
+    .object({
+        destinationId: z.string().uuid().optional()
+    })
+    .strict();
 
 /**
  * Schema for fetching the reviews of a specific accommodation.
@@ -160,63 +171,72 @@ export const SearchAccommodationSchema = BaseSearchSchema.extend({
             ownerId: UserIdSchema.optional()
         })
         .optional()
-});
+}).strict();
 
 /**
  * Schema for updating an accommodation's visibility.
  */
-export const UpdateVisibilitySchema = z.object({
-    visibility: z.nativeEnum(VisibilityEnum)
-});
+export const UpdateVisibilitySchema = z
+    .object({
+        visibility: z.nativeEnum(VisibilityEnum)
+    })
+    .strict();
 
 /**
  * Schema for adding a FAQ to an accommodation.
  */
-export const AddFaqInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    faq: AccommodationFaqSchema.omit({
-        id: true,
-        createdAt: true,
-        updatedAt: true,
-        createdById: true,
-        updatedById: true,
-        lifecycleState: true,
-        adminInfo: true
+export const AddFaqInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        faq: AccommodationFaqSchema.omit({
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            createdById: true,
+            updatedById: true,
+            lifecycleState: true,
+            adminInfo: true
+        })
     })
-});
+    .strict();
 
 /**
  * Schema for removing a FAQ from an accommodation.
  */
-export const RemoveFaqInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    faqId: z.string().uuid()
-});
+export const RemoveFaqInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        faqId: z.string().uuid()
+    })
+    .strict();
 
 /**
  * Schema for updating a FAQ for an accommodation.
  */
-export const UpdateFaqInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    faqId: z.string().uuid(),
-    faq: AccommodationFaqSchema.omit({
-        id: true,
-        accommodationId: true,
-        createdAt: true,
-        updatedAt: true,
-        createdById: true,
-        updatedById: true,
-        lifecycleState: true,
-        adminInfo: true
+export const UpdateFaqInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        faqId: z.string().uuid(),
+        faq: AccommodationFaqSchema.omit({
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            createdById: true,
+            updatedById: true,
+            lifecycleState: true,
+            adminInfo: true
+        })
     })
-});
+    .strict();
 
 /**
  * Schema for getting FAQs for an accommodation.
  */
-export const GetFaqsInputSchema = z.object({
-    accommodationId: z.string().uuid()
-});
+export const GetFaqsInputSchema = z
+    .object({
+        accommodationId: z.string().uuid()
+    })
+    .strict();
 
 // --- Inferred Types ---
 

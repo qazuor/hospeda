@@ -7,7 +7,6 @@ import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { GetAccommodationsInput } from '../../../src/services/destination/destination.schemas';
 import { DestinationService } from '../../../src/services/destination/destination.service';
-import type { ServiceInput } from '../../../src/types';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
@@ -48,13 +47,11 @@ describe('DestinationService.getAccommodations', () => {
         ];
         asMock(destinationModelMock.findById).mockResolvedValue(destination);
         asMock(accommodationModelMock.search).mockResolvedValue({ items: accommodations });
-        const input: ServiceInput<GetAccommodationsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetAccommodationsInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getAccommodations(input);
+        const result = await service.getAccommodations(actor, params);
 
         // Assert
         expectSuccess(result);
@@ -64,13 +61,11 @@ describe('DestinationService.getAccommodations', () => {
     it('should return NOT_FOUND if destination does not exist', async () => {
         // Arrange
         asMock(destinationModelMock.findById).mockResolvedValue(null);
-        const input: ServiceInput<GetAccommodationsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: 'nonexistent'
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetAccommodationsInput = { destinationId: 'nonexistent' };
 
         // Act
-        const result = await service.getAccommodations(input);
+        const result = await service.getAccommodations(actor, params);
 
         // Assert
         expectNotFoundError(result);
@@ -79,13 +74,11 @@ describe('DestinationService.getAccommodations', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         // Arrange
         asMock(destinationModelMock.findById).mockRejectedValue(new Error('DB error'));
-        const input: ServiceInput<GetAccommodationsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: 'dest-1'
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetAccommodationsInput = { destinationId: 'dest-1' };
 
         // Act
-        const result = await service.getAccommodations(input);
+        const result = await service.getAccommodations(actor, params);
 
         // Assert
         expectInternalError(result);
@@ -96,13 +89,11 @@ describe('DestinationService.getAccommodations', () => {
         const destination = new DestinationFactoryBuilder().build();
         asMock(destinationModelMock.findById).mockResolvedValue(destination);
         asMock(accommodationModelMock.search).mockResolvedValue({ items: [] });
-        const input: ServiceInput<GetAccommodationsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetAccommodationsInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getAccommodations(input);
+        const result = await service.getAccommodations(actor, params);
 
         // Assert
         expectSuccess(result);
@@ -111,13 +102,11 @@ describe('DestinationService.getAccommodations', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // Arrange
-        // @ts-expect-error purposely invalid
-        const input: ServiceInput<GetAccommodationsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] }
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params = { destinationId: '' };
 
         // Act
-        const result = await service.getAccommodations(input);
+        const result = await service.getAccommodations(actor, params);
 
         // Assert
         expectValidationError(result);
@@ -129,13 +118,11 @@ describe('DestinationService.getAccommodations', () => {
             .with({ visibility: VisibilityEnum.PRIVATE })
             .build();
         asMock(destinationModelMock.findById).mockResolvedValue(destination);
-        const input: ServiceInput<GetAccommodationsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.USER, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const params: GetAccommodationsInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getAccommodations(input);
+        const result = await service.getAccommodations(actor, params);
 
         // Assert
         expectForbiddenError(result);

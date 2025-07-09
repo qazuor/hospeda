@@ -51,39 +51,50 @@ describe('EventService.update', () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockResolvedValue({
             ...existingEvent,
+            id: eventId,
             slug: 'festival-fiesta-nacional-2025-07-01'
         });
-        const result = await service.update(actorWithPerm, eventId, updateInput);
+        const result = await service.update(actorWithPerm, eventId, {
+            id: eventId,
+            ...updateInput
+        });
         expectSuccess(result);
         expect(result.data).toMatchObject({
             ...existingEvent,
+            id: eventId,
             slug: 'festival-fiesta-nacional-2025-07-01'
         });
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
-        const result = await service.update(actorNoPerm, eventId, updateInput);
+        const result = await service.update(actorNoPerm, eventId, { id: eventId, ...updateInput });
         expectForbiddenError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // id inválido para forzar VALIDATION_ERROR
-        const invalidId = 'invalid-id';
-        const result = await service.update(actorWithPerm, invalidId, {});
+        const invalidId = 'invalid-id' as typeof eventId;
+        const result = await service.update(actorWithPerm, invalidId, { id: invalidId });
         expectValidationError(result);
     });
 
     it('should return NOT_FOUND if event does not exist', async () => {
         (modelMock.findById as Mock).mockResolvedValue(null);
-        const result = await service.update(actorWithPerm, eventId, updateInput);
+        const result = await service.update(actorWithPerm, eventId, {
+            id: eventId,
+            ...updateInput
+        });
         expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.update(actorWithPerm, eventId, updateInput);
+        const result = await service.update(actorWithPerm, eventId, {
+            id: eventId,
+            ...updateInput
+        });
         expectInternalError(result);
     });
 
@@ -93,6 +104,7 @@ describe('EventService.update', () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockResolvedValue({
             ...existingEvent,
+            id: eventId,
             slug: 'new-cat-name-date'
         });
         const input = {
@@ -102,7 +114,7 @@ describe('EventService.update', () => {
             locationId: String(createMockEventInput().locationId),
             organizerId: String(createMockEventInput().organizerId)
         };
-        const result = await service.update(actorWithPerm, eventId, input);
+        const result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('new-cat-name-date');
     });
@@ -113,6 +125,7 @@ describe('EventService.update', () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockResolvedValue({
             ...existingEvent,
+            id: eventId,
             slug: 'cat-newname-date'
         });
         const input = {
@@ -122,7 +135,7 @@ describe('EventService.update', () => {
             locationId: String(createMockEventInput().locationId),
             organizerId: String(createMockEventInput().organizerId)
         };
-        const result = await service.update(actorWithPerm, eventId, input);
+        const result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('cat-newname-date');
     });
@@ -133,6 +146,7 @@ describe('EventService.update', () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockResolvedValue({
             ...existingEvent,
+            id: eventId,
             slug: 'cat-name-newdate'
         });
         const input = {
@@ -141,7 +155,7 @@ describe('EventService.update', () => {
             locationId: String(createMockEventInput().locationId),
             organizerId: String(createMockEventInput().organizerId)
         };
-        const result = await service.update(actorWithPerm, eventId, input);
+        const result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('cat-name-newdate');
     });
@@ -150,13 +164,13 @@ describe('EventService.update', () => {
         vi.spyOn(EventModel.prototype, 'findOne').mockResolvedValue(null);
         vi.spyOn(helpers, 'generateEventSlug');
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
-        (modelMock.update as Mock).mockResolvedValue(existingEvent);
+        (modelMock.update as Mock).mockResolvedValue({ ...existingEvent, id: eventId });
         const input = {
             isFeatured: true,
             locationId: String(createMockEventInput().locationId),
             organizerId: String(createMockEventInput().organizerId)
         };
-        const _result = await service.update(actorWithPerm, eventId, input);
+        const _result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
         expect(helpers.generateEventSlug).not.toHaveBeenCalled();
         // ...assert slug remains unchanged or as expected...
     });
@@ -177,7 +191,7 @@ describe('EventService.update', () => {
             locationId: String(createMockEventInput().locationId),
             organizerId: String(createMockEventInput().organizerId)
         };
-        const result = await service.update(actorWithPerm, eventId, input);
+        const result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
         expectValidationError(result);
     });
 });

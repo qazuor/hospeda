@@ -1,11 +1,9 @@
 import { PostModel } from '@repo/db';
 import type { AccommodationId, PostId } from '@repo/types';
-import { VisibilityEnum } from '@repo/types';
+import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
-import type { ServiceInput } from '../../../src/types';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -19,7 +17,11 @@ describe('PostService.getByRelatedAccommodation', () => {
     let service: PostService;
     let modelMock: PostModel;
     let loggerMock: ServiceLogger;
-    const actor = createActor({ id: getMockId('user') });
+    const actor = {
+        id: 'ee11cbb1-7080-4727-9ed2-fa4cd82060da',
+        role: RoleEnum.USER,
+        permissions: []
+    };
     const accommodationId = getMockId('accommodation') as AccommodationId;
 
     beforeEach(() => {
@@ -37,8 +39,8 @@ describe('PostService.getByRelatedAccommodation', () => {
             })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 2 });
-        const input = { actor, accommodationId };
-        const result = await service.getByRelatedAccommodation(input);
+        const params = { accommodationId };
+        const result = await service.getByRelatedAccommodation(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith({ relatedAccommodationId: accommodationId });
@@ -52,8 +54,8 @@ describe('PostService.getByRelatedAccommodation', () => {
             })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
-        const input = { actor, accommodationId, visibility: VisibilityEnum.PRIVATE };
-        const result = await service.getByRelatedAccommodation(input);
+        const params = { accommodationId, visibility: VisibilityEnum.PRIVATE };
+        const result = await service.getByRelatedAccommodation(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
@@ -70,52 +72,52 @@ describe('PostService.getByRelatedAccommodation', () => {
             })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
-        const input = {
-            actor,
+        const params = {
             accommodationId,
             fromDate: new Date('2024-07-01'),
             toDate: new Date('2024-07-31')
         };
-        const result = await service.getByRelatedAccommodation(input);
+        const result = await service.getByRelatedAccommodation(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedAccommodationId: accommodationId,
-            createdAt: { gte: input.fromDate, lte: input.toDate }
+            createdAt: { gte: params.fromDate, lte: params.toDate }
         });
     });
 
     it('should return empty list if no posts found', async () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-        const input = { actor, accommodationId };
-        const result = await service.getByRelatedAccommodation(input);
+        const params = { accommodationId };
+        const result = await service.getByRelatedAccommodation(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(0);
     });
 
     it('should return forbidden if actor is missing', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getByRelatedAccommodation({ accommodationId });
+        // purposely invalid
+        const result = await service.getByRelatedAccommodation(
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            null as any,
+            { accommodationId } as { accommodationId: string }
+        );
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
 
     it('should return validation error if input is invalid', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getByRelatedAccommodation({ actor: 123, accommodationId });
+        // purposely invalid
+        const result = await service.getByRelatedAccommodation(
+            actor,
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            { actor: 123 } as any
+        );
         expectValidationError(result);
-        // missing accommodationId
-        const result2 = await service.getByRelatedAccommodation({
-            actor
-        } as unknown as ServiceInput<
-            import('../../../src/services/post/post.schemas').GetByRelatedAccommodationInput
-        >);
-        expectValidationError(result2);
     });
 
     it('should return internal error if model fails', async () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
-        const input = { actor, accommodationId };
-        const result = await service.getByRelatedAccommodation(input);
+        const params = { accommodationId };
+        const result = await service.getByRelatedAccommodation(actor, params);
         expectInternalError(result);
     });
 });
