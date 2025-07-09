@@ -312,6 +312,59 @@ expect(result.error?.code).toBe('FORBIDDEN');
 
 ---
 
+## 3. Handling Related Entities: `BaseRelatedService`
+
+For services that manage a primary entity and also a relation (or "pivot") table, such as `TagService` which handles `Tag` and `REntityTag`, you must use `BaseRelatedService`.
+
+### 3.1. What is it and why use it?
+
+`BaseRelatedService` is an abstract class that extends `BaseService` and adds a `relatedModel` property. Its purpose is to standardize how services interact with relation models, making the code more predictable and maintainable.
+
+**When to use it:**
+
+- When a service needs to manage a pivot table for many-to-many relationships (e.g., `AccommodationAmenityService`).
+- When a service handles polymorphic relationships (e.g., `TagService` which can tag `Posts`, `Events`, etc.).
+
+### 3.2. How to implement it?
+
+1. **Extend `BaseRelatedService`**: Instead of `BaseService`.
+2. **Provide the `TRelatedModel` type**: Add the relation model type to the generics.
+3. **Update the constructor**: It must call `super(ctx, relatedModel)` to inject the relation model.
+4. **Implement `createDefaultRelatedModel`**: This abstract method must return a new instance of the relation model.
+
+**Example (`TagService`):**
+
+```ts
+import { BaseRelatedService } from '../../base/base.related-service';
+import { TagModel, REntityTagModel } from '@repo/db';
+import type { TagType } from '@repo/types';
+import type { ServiceContext } from '../../types';
+
+export class TagService extends BaseRelatedService<
+  TagType,
+  TagModel,
+  REntityTagModel, // The relation model
+  typeof CreateTagSchema,
+  typeof UpdateTagSchema,
+  typeof SearchTagSchema
+> {
+  // ... other properties
+
+  constructor(ctx: ServiceContext, model?: TagModel, relatedModel?: REntityTagModel) {
+    super(ctx, relatedModel); // Pass relatedModel to the parent constructor
+    this.model = model ?? new TagModel();
+  }
+
+  protected createDefaultRelatedModel(): REntityTagModel {
+    return new REntityTagModel();
+  }
+
+  // ... other service methods
+}
+```
+
+---
+
 ## 3. Advanced Patterns & Anti-Patterns
 
 ### Patterns

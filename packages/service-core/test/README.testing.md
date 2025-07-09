@@ -454,3 +454,12 @@ if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no ac
 
 - In tests, always assert for `ServiceError` and the correct code (e.g., `FORBIDDEN`).
 - See permission helpers and service methods for usage patterns.
+
+---
+
+## 🆕 Public Method Interface for Tests (2024)
+
+- All service methods are now called as `service.method(actor, params)`.
+- The actor is always passed as the first argument, and params is a plain object validated by a strict Zod schema.
+- The legacy ServiceInput type is no longer used in tests or service calls.
+- Update all test templates and examples to follow this pattern.

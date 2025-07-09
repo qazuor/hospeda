@@ -133,9 +133,15 @@ export class MyEntityService extends BaseService<
   // ...other permission hooks
 
   // Public methods: use runWithLoggingAndValidation for all
-  public async getById(input) {
-    return this.runWithLoggingAndValidation('getById', input, async (_actor, input) => {
-      return (await this.getByField('id', input.id, input)).data!;
+  public async getById(actor: Actor, params: { id: string }): Promise<ServiceOutput<MyEntityType>> {
+    return this.runWithLoggingAndValidation({
+      methodName: 'getById',
+      actor,
+      params,
+      schema: GetByIdSchema.strict(),
+      execute: async (validated, actor) => {
+        return (await this.getByField('id', validated.id, validated)).data!;
+      }
     });
   }
 }
@@ -164,6 +170,7 @@ See [`test/README.testing.md`](./test/README.testing.md) for full patterns, help
 - **Error Handling**: All errors are structured, typed, and predictable
 - **Unified Test Factories**: Builders for all entities, actors, and mocks
 - **Extensible Patterns**: Easily add new services, methods, or helpers
+- **BaseRelatedService**: An abstraction for services that manage relations (e.g., polymorphic tags), providing a standardized `relatedModel`.
 - **Input Normalization (DestinationService):**
   - All input data for create, update, list, and view operations is normalized using dedicated functions (`normalizeCreateInput`, `normalizeUpdateInput`, etc.).
   - Ensures defaults (e.g., `visibility: 'PRIVATE'` if not provided) and future extensibility for data cleaning or transformation.
@@ -247,8 +254,8 @@ public async getSummary(
 
 All public service methods **must** adhere to the following signature:
 
-- **Input:** A single parameter of type `ServiceInput<T>`
-- **Output:** A `Promise<ServiceOutput<T>>`
+- **Input:** `(actor, params)` — the actor (user/context) is always the first argument, and params is a plain object validated by a strict Zod schema.
+- **Output:** `Promise<ServiceOutput<T>>` — always returns a result object, never throws raw errors.
 
 This convention ensures:
 
@@ -432,3 +439,38 @@ All service tests must follow a strict, homogeneous file structure for maintaina
 - `methodName.test.ts` → One file per public/special method. Example: `getStats.test.ts`, `getByCategory.test.ts`, `getByAuthor.test.ts`, etc.
 
 **No test file should contain unrelated logic. All test files must be type-safe and pass lint/typecheck.**
+
+## Testing Best Practices
+
+- **Always use the helpers from `test/helpers/assertions.ts`** (e.g., `expectSuccess`, `expectForbiddenError`, `expectNotFoundError`, `expectInternalError`, `expectValidationError`, etc.) to assert the results of service methods.
+- Do **not** assert error codes or result shapes directly; use the provided helpers for consistency and maintainability.
+
+---
+
+## 🆕 Public Method Interface (2024)
+
+All public service methods now use the following signature:
+
+- **Input:** `(actor, params)` — the actor (user/context) is always the first argument, and params is a plain object validated by a strict Zod schema.
+- **Output:** `Promise<ServiceOutput<T>>` — always returns a result object, never throws raw errors.
+
+**Example:**
+
+```ts
+public async getById(actor: Actor, params: { id: string }): Promise<ServiceOutput<MyEntityType>> {
+  return this.runWithLoggingAndValidation({
+    methodName: 'getById',
+    actor,
+    params,
+    schema: GetByIdSchema.strict(),
+    execute: async (validated, actor) => {
+      // ...main logic
+      return { ... };
+    }
+  });
+}
+```
+
+- The `actor` is always passed separately and must not be present in `params`.
+- All params are validated with `.strict()` Zod schemas.
+- The legacy `ServiceInput` type is no longer used.
