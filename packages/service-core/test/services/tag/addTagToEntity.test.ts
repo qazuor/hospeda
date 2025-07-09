@@ -35,43 +35,42 @@ describe('TagService.addTagToEntity', () => {
         asMock(tagModelMock.findById).mockResolvedValue(tag);
         asMock(relModelMock.findOne).mockResolvedValue(null);
         asMock(relModelMock.create).mockResolvedValue({});
-        const result = await service.addTagToEntity({ actor, ...input });
+        const result = await service.addTagToEntity(actor, input);
         expectSuccess(result);
     });
 
     it('should return FORBIDDEN if actor lacks TAG_UPDATE permission', async () => {
         actor = createActor({ permissions: [] });
-        const result = await service.addTagToEntity({ actor, ...input });
+        const result = await service.addTagToEntity(actor, input);
         expectForbiddenError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // tagId vacío
-        const result = await service.addTagToEntity({
-            actor,
+        const result = await service.addTagToEntity(actor, {
             tagId: '',
             entityId: 'e',
             entityType: 'POST'
-        });
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        } as any);
         expectValidationError(result);
     });
 
     it('should return NOT_FOUND if tag does not exist', async () => {
         asMock(tagModelMock.findById).mockResolvedValue(null);
-        const result = await service.addTagToEntity({ actor, ...input });
+        const result = await service.addTagToEntity(actor, input);
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should return VALIDATION_ERROR if tag is already associated', async () => {
         asMock(tagModelMock.findById).mockResolvedValue(tag);
         asMock(relModelMock.findOne).mockResolvedValue({ id: 'rel-1' });
-        const result = await service.addTagToEntity({ actor, ...input });
+        const result = await service.addTagToEntity(actor, input);
         expectValidationError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(tagModelMock.findById).mockRejectedValue(new Error('DB error'));
-        const result = await service.addTagToEntity({ actor, ...input });
+        const result = await service.addTagToEntity(actor, input);
         expectInternalError(result);
     });
 });

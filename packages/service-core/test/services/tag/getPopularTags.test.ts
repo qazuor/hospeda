@@ -40,7 +40,7 @@ describe('TagService.getPopularTags', () => {
             { tag: tagC, usageCount: 1 }
         ]);
         // Act
-        const result = await service.getPopularTags({ actor, limit: 10 });
+        const result = await service.getPopularTags(actor, { limit: 10 });
         // Assert
         expectSuccess(result);
         expect(result.data?.tags).toEqual([tagA, tagB, tagC]);
@@ -55,7 +55,7 @@ describe('TagService.getPopularTags', () => {
             { tag: tagB, usageCount: 2 }
         ]);
         // Act
-        const result = await service.getPopularTags({ actor, limit: 2 });
+        const result = await service.getPopularTags(actor, { limit: 2 });
         // Assert
         expectSuccess(result);
         expect(result.data?.tags).toEqual([tagA, tagB]);
@@ -65,7 +65,7 @@ describe('TagService.getPopularTags', () => {
         // Arrange
         asMock(modelMock.findPopularTags).mockResolvedValue([]);
         // Act
-        const result = await service.getPopularTags({ actor, limit: 10 });
+        const result = await service.getPopularTags(actor, { limit: 10 });
         // Assert
         expectSuccess(result);
         expect(result.data?.tags).toEqual([]);
@@ -77,15 +77,17 @@ describe('TagService.getPopularTags', () => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         };
         // Act
-        const result = await service.getPopularTags({ actor, limit: 10 });
+        const result = await service.getPopularTags(actor, { limit: 10 });
         // Assert
         expectForbiddenError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // Act
-        const result = await service.getPopularTags({ actor, limit: -1 });
-        // Assert
+        const result = await service.getPopularTags(
+            actor,
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            { limit: -1 } as any
+        );
         expectValidationError(result);
     });
 
@@ -93,7 +95,7 @@ describe('TagService.getPopularTags', () => {
         // Arrange
         asMock(modelMock.findPopularTags).mockRejectedValue(new Error('DB error'));
         // Act
-        const result = await service.getPopularTags({ actor, limit: 10 });
+        const result = await service.getPopularTags(actor, { limit: 10 });
         // Assert
         expectInternalError(result);
     });

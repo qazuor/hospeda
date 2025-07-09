@@ -9,7 +9,7 @@ import { PostModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
-import { createActor, type createAdminActor } from '../../factories/actorFactory';
+import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import * as assertions from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
@@ -27,10 +27,13 @@ describe('PostService.update', () => {
         modelMock = createTypedModelMock(PostModel, ['findById', 'update']);
         service = createServiceTestInstance(PostService, modelMock);
         post = createMockPost();
-        admin = createActor({
+        // Make admin the author and give all permissions
+        admin = {
+            ...createAdminActor(),
+            id: post.authorId,
             permissions: [PermissionEnum.POST_UPDATE],
             role: RoleEnum.ADMIN
-        });
+        };
         updateInput = { title: 'Updated Title' };
     });
 
@@ -59,24 +62,41 @@ describe('PostService.update', () => {
         expect(modelMock.update).not.toHaveBeenCalled();
     });
 
-    it('should return VALIDATION_ERROR for invalid input', async () => {
-        (modelMock.findById as Mock).mockResolvedValue(post);
-        // invalid input: empty title
-        const invalidInput = { title: '' };
-        const result = await service.update(admin, post.id, invalidInput);
-        assertions.expectValidationError(result);
-    });
-
     it('should return NOT_FOUND if post does not exist', async () => {
+        // Arrange
+        const actor = { ...admin };
+        const id = '42b90196-3d7a-4d1f-87c8-76d336194c19'; // valid UUID
         (modelMock.findById as Mock).mockResolvedValue(null);
-        const result = await service.update(admin, 'not-found-id', updateInput);
+        // valid input
+        const validInput = { title: 'Updated Title' };
+        // Act
+        const result = await service.update(actor, id, validInput);
+        // Assert
         assertions.expectNotFoundError(result);
     });
 
+    it('should return VALIDATION_ERROR for invalid input', async () => {
+        // Arrange
+        const actor = { ...admin };
+        const id = 'mock-id';
+        const existing = { ...createMockPost(), id };
+        (modelMock.findById as Mock).mockResolvedValue(existing);
+        // purposely invalid input: missing required fields
+        const result = await service.update(
+            actor,
+            id,
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            {} as any
+        );
+        assertions.expectValidationError(result);
+    });
+
     it('should return INTERNAL_ERROR if model throws', async () => {
+        const actor = { ...admin };
+        const id = post.id;
         (modelMock.findById as Mock).mockResolvedValue(post);
         (modelMock.update as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.update(admin, post.id, updateInput);
+        const result = await service.update(actor, id, updateInput);
         assertions.expectInternalError(result);
     });
 });

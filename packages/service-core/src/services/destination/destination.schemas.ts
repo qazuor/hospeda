@@ -1,19 +1,25 @@
 import type { AccommodationType, DestinationType } from '@repo/types';
 import { z } from 'zod';
 
-export const GetAccommodationsInputSchema = z.object({
-    destinationId: z.string().min(1)
-});
+export const GetAccommodationsInputSchema = z
+    .object({
+        destinationId: z.string().min(1)
+    })
+    .strict();
 export type GetAccommodationsInput = z.infer<typeof GetAccommodationsInputSchema>;
 
-export const GetStatsInputSchema = z.object({
-    destinationId: z.string().min(1)
-});
+export const GetStatsInputSchema = z
+    .object({
+        destinationId: z.string().min(1)
+    })
+    .strict();
 export type GetStatsInput = z.infer<typeof GetStatsInputSchema>;
 
-export const GetSummaryInputSchema = z.object({
-    destinationId: z.string().min(1)
-});
+export const GetSummaryInputSchema = z
+    .object({
+        destinationId: z.string().min(1)
+    })
+    .strict();
 export type GetSummaryInput = z.infer<typeof GetSummaryInputSchema>;
 
 export type DestinationStats = {

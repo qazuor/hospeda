@@ -8,13 +8,7 @@ import type { PermissionEnum, UserType } from '@repo/types';
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseService } from '../../base/base.service';
-import type {
-    Actor,
-    ServiceContext,
-    ServiceInput,
-    ServiceLogger,
-    ServiceOutput
-} from '../../types';
+import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import {
     normalizeCreateInput,
@@ -223,17 +217,18 @@ export class UserService extends BaseService<
 
     /**
      * Assigns a role to a user. Only super admin can assign roles.
-     *
-     * @param input - The input object containing userId and role
+     * @param actor - The actor performing the action
+     * @param params - The input object containing userId and role
      * @returns The updated user object
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async assignRole(
-        input: ServiceInput<{ userId: string; role: RoleEnum }>
+        actor: Actor,
+        params: { userId: string; role: RoleEnum }
     ): Promise<ServiceOutput<{ user: UserType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'assignRole',
-            input,
+            input: { ...params, actor },
             schema: AssignRoleSchema,
             execute: async ({ userId, role }, actor) => {
                 canAssignRole(actor);
@@ -248,7 +243,7 @@ export class UserService extends BaseService<
                 if (!updated) {
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
-                        'Failed to update user role'
+                        'Failed to assign role'
                     );
                 }
                 return { user: updated };
@@ -258,16 +253,18 @@ export class UserService extends BaseService<
 
     /**
      * Adds a permission to a user. Only super admin.
-     * @param input - The input object containing userId and permission
+     * @param actor - The actor performing the action
+     * @param params - The input object containing userId and permission
      * @returns The updated user object
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async addPermission(
-        input: ServiceInput<{ userId: string; permission: PermissionEnum }>
+        actor: Actor,
+        params: { userId: string; permission: PermissionEnum }
     ): Promise<ServiceOutput<{ user: UserType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addPermission',
-            input,
+            input: { ...params, actor },
             schema: AddPermissionSchema,
             execute: async ({ userId, permission }, actor) => {
                 this._canManagePermissions(actor);
@@ -295,16 +292,18 @@ export class UserService extends BaseService<
 
     /**
      * Removes a permission from a user. Only super admin.
-     * @param input - The input object containing userId and permission
+     * @param actor - The actor performing the action
+     * @param params - The input object containing userId and permission
      * @returns The updated user object
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async removePermission(
-        input: ServiceInput<{ userId: string; permission: PermissionEnum }>
+        actor: Actor,
+        params: { userId: string; permission: PermissionEnum }
     ): Promise<ServiceOutput<{ user: UserType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removePermission',
-            input,
+            input: { ...params, actor },
             schema: RemovePermissionSchema,
             execute: async ({ userId, permission }, actor) => {
                 this._canManagePermissions(actor);
@@ -332,16 +331,18 @@ export class UserService extends BaseService<
 
     /**
      * Sets the permissions array for a user. Only super admin.
-     * @param input - The input object containing userId and permissions
+     * @param actor - The actor performing the action
+     * @param params - The input object containing userId and permissions
      * @returns The updated user object
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async setPermissions(
-        input: ServiceInput<{ userId: string; permissions: PermissionEnum[] }>
+        actor: Actor,
+        params: { userId: string; permissions: PermissionEnum[] }
     ): Promise<ServiceOutput<{ user: UserType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'setPermissions',
-            input,
+            input: { ...params, actor },
             schema: SetPermissionsSchema,
             execute: async ({ userId, permissions }, actor) => {
                 this._canManagePermissions(actor);
@@ -366,25 +367,20 @@ export class UserService extends BaseService<
      * @param params - The validated and processed search parameters (filters, pagination, etc.)
      * @returns Paginated list of users matching the criteria
      */
-    protected async _executeSearch(params: z.infer<typeof UserFilterInputSchema>) {
-        // Separate filters and pagination, ensuring types
-        const { page, pageSize, ...filters } = params as Record<string, unknown>;
-        const safePage = typeof page === 'number' ? page : undefined;
-        const safePageSize = typeof pageSize === 'number' ? pageSize : undefined;
-        return this.model.findAll(filters, { page: safePage, pageSize: safePageSize });
+    protected async _executeSearch(params: z.infer<typeof UserFilterInputSchema>, _actor: Actor) {
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+        return this.model.findAll(filters, { page, pageSize });
     }
 
     /**
-     * Executes the user count according to the received filters.
-     * @param params - Validated search filters
-     * @param _actor - Authenticated actor (already validated by permissions)
-     * @returns An object with the number of users matching the filters
+     * Executes a count for users.
+     * @param params - The validated and processed search parameters (filters, pagination, etc.)
+     * @returns Count of users matching the criteria
      */
-    protected async _executeCount(
-        params: z.infer<typeof UserFilterInputSchema>
-    ): Promise<{ count: number }> {
-        // Omit pagination if present in filters
-        const { page, pageSize, ...filters } = params as Record<string, unknown>;
+    protected async _executeCount(params: z.infer<typeof UserFilterInputSchema>, _actor: Actor) {
+        const { filters = {} } = params;
         const count = await this.model.count(filters);
         return { count };
     }

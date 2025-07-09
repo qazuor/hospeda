@@ -1,11 +1,9 @@
 import { PostModel } from '@repo/db';
 import type { EventId, PostId } from '@repo/types';
-import { VisibilityEnum } from '@repo/types';
+import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
-import type { ServiceInput } from '../../../src/types';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -20,7 +18,11 @@ describe('PostService.getByRelatedEvent', () => {
     let service: PostService;
     let modelMock: PostModel;
     let loggerMock: ServiceLogger;
-    const actor = createActor({ id: getMockId('user') });
+    const actor = {
+        id: 'ee11cbb1-7080-4727-9ed2-fa4cd82060da',
+        role: RoleEnum.USER,
+        permissions: []
+    };
     const eventId = getMockId('event') as EventId;
 
     beforeEach(() => {
@@ -35,8 +37,8 @@ describe('PostService.getByRelatedEvent', () => {
             createMockPost({ id: getMockId('post', '2') as PostId, relatedEventId: eventId })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 2 });
-        const input = { actor, eventId };
-        const result = await service.getByRelatedEvent(input);
+        const params = { eventId };
+        const result = await service.getByRelatedEvent(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith({ relatedEventId: eventId });
@@ -47,8 +49,8 @@ describe('PostService.getByRelatedEvent', () => {
             createMockPost({ relatedEventId: eventId, visibility: VisibilityEnum.PRIVATE })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
-        const input = { actor, eventId, visibility: VisibilityEnum.PRIVATE };
-        const result = await service.getByRelatedEvent(input);
+        const params = { eventId, visibility: VisibilityEnum.PRIVATE };
+        const result = await service.getByRelatedEvent(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
@@ -62,50 +64,52 @@ describe('PostService.getByRelatedEvent', () => {
             createMockPost({ relatedEventId: eventId, createdAt: new Date('2024-07-01') })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
-        const input = {
-            actor,
+        const params = {
             eventId,
             fromDate: new Date('2024-07-01'),
             toDate: new Date('2024-07-31')
         };
-        const result = await service.getByRelatedEvent(input);
+        const result = await service.getByRelatedEvent(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedEventId: eventId,
-            createdAt: { gte: input.fromDate, lte: input.toDate }
+            createdAt: { gte: params.fromDate, lte: params.toDate }
         });
     });
 
     it('should return empty list if no posts found', async () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-        const input = { actor, eventId };
-        const result = await service.getByRelatedEvent(input);
+        const params = { eventId };
+        const result = await service.getByRelatedEvent(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(0);
     });
 
     it('should return forbidden if actor is missing', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getByRelatedEvent({ eventId });
+        // purposely invalid
+        const result = await service.getByRelatedEvent(
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            null as any,
+            { eventId } as { eventId: string }
+        );
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
 
     it('should return validation error if input is invalid', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getByRelatedEvent({ actor: 123, eventId });
+        // purposely invalid
+        const result = await service.getByRelatedEvent(
+            actor,
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            { actor: 123 } as any
+        );
         expectValidationError(result);
-        // missing eventId
-        const result2 = await service.getByRelatedEvent({ actor } as unknown as ServiceInput<
-            import('../../../src/services/post/post.schemas').GetByRelatedEventInput
-        >);
-        expectValidationError(result2);
     });
 
     it('should return internal error if model fails', async () => {
         asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
-        const input = { actor, eventId };
-        const result = await service.getByRelatedEvent(input);
+        const params = { eventId };
+        const result = await service.getByRelatedEvent(actor, params);
         expectInternalError(result);
     });
 });

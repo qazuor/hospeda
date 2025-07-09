@@ -7,7 +7,6 @@ import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { GetStatsInput } from '../../../src/services/destination/destination.schemas';
 import { DestinationService } from '../../../src/services/destination/destination.service';
-import type { ServiceInput } from '../../../src/types';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
 import {
@@ -38,13 +37,11 @@ describe('DestinationService.getStats', () => {
             .with({ accommodationsCount: 5, reviewsCount: 10, averageRating: 4.2 })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const input: ServiceInput<GetStatsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetStatsInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getStats(input);
+        const result = await service.getStats(actor, params);
 
         // Assert
         expectSuccess(result);
@@ -58,13 +55,11 @@ describe('DestinationService.getStats', () => {
     it('should return NOT_FOUND if destination does not exist', async () => {
         // Arrange
         asMock(modelMock.findById).mockResolvedValue(null);
-        const input: ServiceInput<GetStatsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: 'nonexistent'
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetStatsInput = { destinationId: 'nonexistent' };
 
         // Act
-        const result = await service.getStats(input);
+        const result = await service.getStats(actor, params);
 
         // Assert
         expectNotFoundError(result);
@@ -73,13 +68,11 @@ describe('DestinationService.getStats', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         // Arrange
         asMock(modelMock.findById).mockRejectedValue(new Error('DB error'));
-        const input: ServiceInput<GetStatsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: 'dest-1'
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetStatsInput = { destinationId: 'dest-1' };
 
         // Act
-        const result = await service.getStats(input);
+        const result = await service.getStats(actor, params);
 
         // Assert
         expectInternalError(result);
@@ -95,13 +88,11 @@ describe('DestinationService.getStats', () => {
             })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const input: ServiceInput<GetStatsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetStatsInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getStats(input);
+        const result = await service.getStats(actor, params);
 
         // Assert
         expectSuccess(result);
@@ -118,13 +109,11 @@ describe('DestinationService.getStats', () => {
             .with({ visibility: VisibilityEnum.PRIVATE })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const input: ServiceInput<GetStatsInput> = {
-            actor: { id: 'user-1', role: RoleEnum.USER, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const params: GetStatsInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getStats(input);
+        const result = await service.getStats(actor, params);
 
         // Assert
         expectForbiddenError(result);

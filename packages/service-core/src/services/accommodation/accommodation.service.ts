@@ -1,15 +1,11 @@
 import { AccommodationFaqModel, AccommodationModel } from '@repo/db';
-import type { AccommodationSummaryType, AccommodationType } from '@repo/types';
+import type { AccommodationId, AccommodationSummaryType, AccommodationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseService } from '../../base';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import {
-    CreateAccommodationSchema,
-    GetAccommodationSchema,
-    SearchAccommodationSchema,
-    UpdateAccommodationSchema,
     generateSlug,
     normalizeCreateInput,
     normalizeListInput,
@@ -28,10 +24,18 @@ import {
 import {
     type AddFaqInput,
     AddFaqInputSchema,
+    CreateAccommodationSchema,
+    GetAccommodationSchema,
+    type GetByDestinationIdInput,
+    GetByDestinationIdInputSchema,
     type GetFaqsInput,
     GetFaqsInputSchema,
+    type GetTopRatedInput,
+    GetTopRatedInputSchema,
     type RemoveFaqInput,
     RemoveFaqInputSchema,
+    SearchAccommodationSchema,
+    UpdateAccommodationSchema,
     type UpdateFaqInput,
     UpdateFaqInputSchema
 } from './accommodation.schemas';
@@ -228,15 +232,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Fetches a summarized, public-facing version of an accommodation.
-     * This method is designed to provide a lightweight DTO (Data Transfer Object)
-     * for use in lists or cards, excluding sensitive or detailed information.
-     * It reuses the base `getByField` method to ensure consistent validation,
-     * logging, and permission checks.
-     *
-     * @param actor The user or system performing the action.
-     * @param data An object containing either the `id` or the `slug` of the accommodation.
-     * @returns A `ServiceOutput` object containing the summary, `null` if not found, or a `ServiceError`.
+     * Gets a summary for a specific accommodation.
+     * @param actor - The actor performing the action
+     * @param data - The input object containing id or slug
+     * @returns The accommodation summary or null
      */
     public async getSummary(
         actor: Actor,
@@ -244,15 +243,13 @@ export class AccommodationService extends BaseService<
     ): Promise<ServiceOutput<AccommodationSummaryType | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
-            input: { actor, ...data },
+            input: { ...data, actor },
             schema: GetAccommodationSchema,
-            execute: async (validatedData, validatedActor) => {
-                const { id, slug } = validatedData;
+            execute: async (validated, actor) => {
+                const { id, slug } = validated;
                 const field = id ? 'id' : 'slug';
                 const value = id ?? slug;
-
-                const entityResult = await this.getByField(validatedActor, field, value as string);
-
+                const entityResult = await this.getByField(actor, field, value as string);
                 if (entityResult.error) {
                     throw new ServiceError(
                         entityResult.error.code,
@@ -264,12 +261,11 @@ export class AccommodationService extends BaseService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 const entity = entityResult.data;
-
+                this._canView(actor, entity);
                 if (!entity.location) {
                     this.logger.warn(`Accommodation ${entity.id} has no location for summary.`);
                     return null;
                 }
-
                 return {
                     id: entity.id,
                     slug: entity.slug,
@@ -286,10 +282,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Gets statistics for accommodations.
-     * @param actor - The actor performing the action.
-     * @param data - Input object for stats query.
-     * @returns Output object (to be defined)
+     * Gets stats for a specific accommodation.
+     * @param actor - The actor performing the action
+     * @param data - The input object containing id or slug
+     * @returns The stats object or null
      */
     public async getStats(
         actor: Actor,
@@ -303,13 +299,13 @@ export class AccommodationService extends BaseService<
     > {
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
-            input: { actor, ...data },
+            input: { ...data, actor },
             schema: GetAccommodationSchema,
-            execute: async (validatedData, validatedActor) => {
-                const { id, slug } = validatedData;
+            execute: async (validated, actor) => {
+                const { id, slug } = validated;
                 const field = id ? 'id' : 'slug';
                 const value = id ?? slug;
-                const entityResult = await this.getByField(validatedActor, field, value as string);
+                const entityResult = await this.getByField(actor, field, value as string);
                 if (entityResult.error) {
                     throw new ServiceError(
                         entityResult.error.code,
@@ -321,6 +317,7 @@ export class AccommodationService extends BaseService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 const entity = entityResult.data;
+                this._canView(actor, entity);
                 return {
                     reviewsCount: entity.reviewsCount ?? 0,
                     averageRating: entity.averageRating ?? 0,
@@ -332,22 +329,22 @@ export class AccommodationService extends BaseService<
 
     /**
      * Gets accommodations by destination.
-     * @param input - Input object for destination query.
-     * @param actor - The actor performing the action.
-     * @returns Output object (to be defined)
+     * @param actor - The actor performing the action
+     * @param data - The input object containing destinationId
+     * @returns The list of accommodations
      */
     public async getByDestination(
         actor: Actor,
-        data: { destinationId: string }
+        data: GetByDestinationIdInput
     ): Promise<ServiceOutput<AccommodationType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByDestination',
-            input: { actor, ...data },
-            schema: z.object({ destinationId: z.string().uuid(), actor: z.any() }),
-            execute: async (validatedData, validatedActor) => {
-                this._canList(validatedActor);
+            input: { ...data, actor },
+            schema: GetByDestinationIdInputSchema,
+            execute: async (validated, actor) => {
+                this._canList(actor);
                 const result = await this.model.findAll({
-                    destinationId: validatedData.destinationId
+                    destinationId: validated.destinationId
                 });
                 return Array.isArray(result.items) ? result.items : [];
             }
@@ -356,19 +353,20 @@ export class AccommodationService extends BaseService<
 
     /**
      * Gets top-rated accommodations by destination.
-     * @param input - Input object for top-rated query.
-     * @param actor - The actor performing the action.
-     * @returns Output object (to be defined)
+     * @param actor - The actor performing the action
+     * @param data - The input object containing destinationId (optional)
+     * @returns The list of top-rated accommodations
      */
     public async getTopRatedByDestination(
-        _input: object,
-        _actor: Actor
+        actor: Actor,
+        data: GetTopRatedInput
     ): Promise<ServiceOutput<never>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRatedByDestination',
-            input: { actor: _actor, ..._input },
-            schema: z.any(),
-            execute: async () => {
+            input: { ...data, actor },
+            schema: GetTopRatedInputSchema,
+            execute: async (_validated, actor) => {
+                this._canList(actor);
                 throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
             }
         });
@@ -376,9 +374,9 @@ export class AccommodationService extends BaseService<
 
     /**
      * Adds a FAQ to an accommodation.
-     * @param input - Input object for adding FAQ.
-     * @param actor - The actor performing the action.
-     * @returns Output object (to be defined)
+     * @param actor - The actor performing the action
+     * @param data - The input object containing accommodationId and faq
+     * @returns The created FAQ
      */
     public async addFaq(
         actor: Actor,
@@ -386,20 +384,18 @@ export class AccommodationService extends BaseService<
     ): Promise<ServiceOutput<{ faq: import('@repo/types').AccommodationFaqType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addFaq',
-            input: { actor, ...data },
+            input: { ...data, actor },
             schema: AddFaqInputSchema,
-            execute: async (validatedData, validatedActor) => {
-                const accommodation = await this.model.findById(validatedData.accommodationId);
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(validatedActor, accommodation);
+                this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
                 const faqToCreate = {
-                    ...validatedData.faq,
-                    accommodationId: validatedData.accommodationId as import(
-                        '@repo/types'
-                    ).AccommodationId
+                    ...validated.faq,
+                    accommodationId: validated.accommodationId as AccommodationId
                 };
                 const createdFaq = await faqModel.create(faqToCreate);
                 return { faq: createdFaq };
@@ -409,9 +405,9 @@ export class AccommodationService extends BaseService<
 
     /**
      * Removes a FAQ from an accommodation.
-     * @param actor - The actor performing the action.
-     * @param data - Input object for removing FAQ.
-     * @returns Output object (to be defined)
+     * @param actor - The actor performing the action
+     * @param data - The input object containing accommodationId and faqId
+     * @returns Success boolean
      */
     public async removeFaq(
         actor: Actor,
@@ -419,23 +415,23 @@ export class AccommodationService extends BaseService<
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeFaq',
-            input: { actor, ...data },
+            input: { ...data, actor },
             schema: RemoveFaqInputSchema,
-            execute: async (validatedData, validatedActor) => {
-                const accommodation = await this.model.findById(validatedData.accommodationId);
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(validatedActor, accommodation);
+                this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
-                const faq = await faqModel.findById(validatedData.faqId);
-                if (!faq || faq.accommodationId !== validatedData.accommodationId) {
+                const faq = await faqModel.findById(validated.faqId);
+                if (!faq || faq.accommodationId !== validated.accommodationId) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'FAQ not found for this accommodation'
                     );
                 }
-                await faqModel.hardDelete({ id: validatedData.faqId });
+                await faqModel.hardDelete({ id: validated.faqId });
                 return { success: true };
             }
         });
@@ -443,9 +439,9 @@ export class AccommodationService extends BaseService<
 
     /**
      * Updates a FAQ for an accommodation.
-     * @param actor - The actor performing the action.
-     * @param data - Input object for updating FAQ.
-     * @returns Output object (to be defined)
+     * @param actor - The actor performing the action
+     * @param data - The input object containing accommodationId, faqId, and faq
+     * @returns The updated FAQ
      */
     public async updateFaq(
         actor: Actor,
@@ -453,25 +449,28 @@ export class AccommodationService extends BaseService<
     ): Promise<ServiceOutput<{ faq: import('@repo/types').AccommodationFaqType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'updateFaq',
-            input: { actor, ...data },
+            input: { ...data, actor },
             schema: UpdateFaqInputSchema,
-            execute: async (validatedData, validatedActor) => {
-                const accommodation = await this.model.findById(validatedData.accommodationId);
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(validatedActor, accommodation);
+                this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
-                const faq = await faqModel.findById(validatedData.faqId);
-                if (!faq || faq.accommodationId !== validatedData.accommodationId) {
+                const faq = await faqModel.findById(validated.faqId);
+                if (!faq || faq.accommodationId !== validated.accommodationId) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'FAQ not found for this accommodation'
                     );
                 }
                 const updatedFaq = await faqModel.update(
-                    { id: validatedData.faqId },
-                    validatedData.faq
+                    { id: validated.faqId },
+                    {
+                        ...validated.faq,
+                        accommodationId: validated.accommodationId as AccommodationId
+                    }
                 );
                 if (!updatedFaq) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update FAQ');
@@ -482,10 +481,10 @@ export class AccommodationService extends BaseService<
     }
 
     /**
-     * Gets FAQs for an accommodation.
-     * @param actor - The actor performing the action.
-     * @param data - Input object for getting FAQs.
-     * @returns Output object (to be defined)
+     * Gets all FAQs for an accommodation.
+     * @param actor - The actor performing the action
+     * @param data - The input object containing accommodationId
+     * @returns The list of FAQs
      */
     public async getFaqs(
         actor: Actor,
@@ -493,17 +492,17 @@ export class AccommodationService extends BaseService<
     ): Promise<ServiceOutput<{ faqs: import('@repo/types').AccommodationFaqType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFaqs',
-            input: { actor, ...data },
+            input: { ...data, actor },
             schema: GetFaqsInputSchema,
-            execute: async (validatedData, validatedActor) => {
-                const accommodation = await this.model.findById(validatedData.accommodationId);
+            execute: async (validated, actor) => {
+                const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canView(validatedActor, accommodation);
+                this._canView(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
                 const { items: faqs } = await faqModel.findAll({
-                    accommodationId: validatedData.accommodationId
+                    accommodationId: validated.accommodationId
                 });
                 return { faqs };
             }

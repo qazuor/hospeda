@@ -18,10 +18,12 @@ import { z } from 'zod';
 /**
  * Pagination schema for list endpoints.
  */
-export const PaginationSchema = z.object({
-    page: z.number().int().min(1).optional(),
-    pageSize: z.number().int().min(1).max(100).optional()
-});
+export const PaginationSchema = z
+    .object({
+        page: z.number().int().min(1).optional(),
+        pageSize: z.number().int().min(1).max(100).optional()
+    })
+    .strict();
 
 /**
  * Input: Get events by author
@@ -48,7 +50,8 @@ export const GetByOrganizerInputSchema = z
     .object({
         organizerId: EventOrganizerIdSchema
     })
-    .merge(PaginationSchema);
+    .merge(PaginationSchema)
+    .strict();
 
 /**
  * Input: Get upcoming events (by date range)
@@ -58,14 +61,17 @@ export const GetUpcomingInputSchema = z
         fromDate: z.coerce.date(),
         toDate: z.coerce.date().optional()
     })
-    .merge(PaginationSchema);
+    .merge(PaginationSchema)
+    .strict();
 
 /**
  * Input: Get event summary by ID
  */
-export const GetSummaryInputSchema = z.object({
-    id: EventIdSchema
-});
+export const GetSummaryInputSchema = z
+    .object({
+        id: EventIdSchema
+    })
+    .strict();
 
 /**
  * Input: Get events by category
@@ -74,7 +80,8 @@ export const GetByCategoryInputSchema = z
     .object({
         category: EventCategoryEnumSchema
     })
-    .merge(PaginationSchema);
+    .merge(PaginationSchema)
+    .strict();
 
 /**
  * Input: Get free events (isFree)
@@ -88,12 +95,16 @@ export const EventCreateSchema = EventSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true
-});
+}).strict();
 
 /**
- * Input: Update event (all fields optional, omit id, createdAt, updatedAt)
+ * Input: Update event (all fields optional except id, which is required)
  */
-export const EventUpdateSchema = EventCreateSchema.partial();
+export const EventUpdateSchema = z
+    .object({
+        id: EventIdSchema
+    })
+    .merge(EventCreateSchema.deepPartial().strict());
 
 // Re-export base schemas
 export { EventFilterInputSchema, EventSchema };

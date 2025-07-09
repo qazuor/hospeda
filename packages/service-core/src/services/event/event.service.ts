@@ -1,5 +1,4 @@
 import { EventModel } from '@repo/db';
-import { EventIdSchema as EventIdSchemaFromSchemas } from '@repo/schemas';
 import type {
     EventCategoryEnum,
     EventId,
@@ -198,25 +197,20 @@ export class EventService extends BaseService<
      * @returns Paginated list of events matching the criteria
      */
     protected async _executeSearch(params: z.infer<typeof EventFilterInputSchema>, _actor: Actor) {
-        // Separate filters and pagination, ensuring types
-        const { page, pageSize, ...filters } = params as Record<string, unknown>;
-        const safePage = typeof page === 'number' ? page : undefined;
-        const safePageSize = typeof pageSize === 'number' ? pageSize : undefined;
-        return this.model.findAll(filters, { page: safePage, pageSize: safePageSize });
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+        return this.model.findAll(filters, { page, pageSize });
     }
 
     /**
      * Executes the count for events.
-     * @param params - The validated count parameters
+     * @param params - The validated search parameters
      * @param _actor - The actor performing the count
-     * @returns An object with the number of events matching the filters
+     * @returns Count of events matching the criteria
      */
-    protected async _executeCount(
-        params: z.infer<typeof EventFilterInputSchema>,
-        _actor: Actor
-    ): Promise<{ count: number }> {
-        // Omit pagination if present in filters
-        const { page, pageSize, ...filters } = params as Record<string, unknown>;
+    protected async _executeCount(params: z.infer<typeof EventFilterInputSchema>, _actor: Actor) {
+        const { filters = {} } = params;
         const count = await this.model.count(filters);
         return { count };
     }
@@ -499,35 +493,4 @@ export class EventService extends BaseService<
             }
         });
     }
-
-    /**
-     * Updates an existing event.
-     * - Validates input and permissions before updating.
-     * - Returns VALIDATION_ERROR if input is invalid.
-     * - Returns NOT_FOUND if the event does not exist.
-     * - Returns FORBIDDEN if the actor lacks permission.
-     * - Returns INTERNAL_ERROR if the update fails.
-     * @param actor - The actor performing the update
-     * @param id - The event id to update
-     * @param data - The update input (partial event fields)
-     * @returns The updated event
-     */
-    public async update(
-        actor: Actor,
-        id: string,
-        data: z.infer<typeof EventUpdateSchema>
-    ): Promise<ServiceOutput<EventType>> {
-        const parseResult = EventIdSchemaFromSchemas.safeParse(id);
-        if (!parseResult.success) {
-            return {
-                data: undefined,
-                error: new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid event id')
-            };
-        }
-        return super.update(actor, id, data);
-    }
-
-    // --- Lifecycle hooks (to be implemented) ---
-    // protected async _afterCreate() {}
-    // ...
 }

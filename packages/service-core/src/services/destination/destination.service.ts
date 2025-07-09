@@ -4,18 +4,12 @@ import {
     DestinationFilterInputSchema,
     type DestinationSchema,
     UpdateDestinationSchema
-} from '@repo/schemas/entities/destination/destination.schema';
+} from '@repo/schemas';
 import type { AccommodationType, DestinationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseService } from '../../base/base.service';
-import type {
-    Actor,
-    ServiceContext,
-    ServiceInput,
-    ServiceLogger,
-    ServiceOutput
-} from '../../types';
+import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { generateDestinationSlug } from './destination.helpers';
 import {
@@ -127,21 +121,10 @@ export class DestinationService extends BaseService<
         params: z.infer<typeof DestinationFilterInputSchema>,
         _actor: Actor
     ) {
-        // Build filters and pagination
-        const { state, city, country, tags, visibility, isFeatured, q } = params;
-        const filters: Record<string, unknown> = {};
-        if (state) filters.state = state;
-        if (city) filters.city = city;
-        if (country) filters.country = country;
-        if (tags) filters.tags = tags;
-        if (visibility) filters.visibility = visibility;
-        if (isFeatured !== undefined) filters.isFeatured = isFeatured;
-        if (q) filters.q = q;
-        // Default order and pagination
-        const orderBy: Record<string, 'asc' | 'desc'> = { name: 'asc' };
-        const page = 1;
-        const pageSize = 20;
-        return this.model.search({ filters, orderBy, page, pageSize });
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+        return this.model.search({ filters, page, pageSize });
     }
 
     /**
@@ -154,34 +137,27 @@ export class DestinationService extends BaseService<
         params: z.infer<typeof DestinationFilterInputSchema>,
         _actor: Actor
     ) {
-        const { state, city, country, tags, visibility, isFeatured, q } = params;
-        const filters: Record<string, unknown> = {};
-        if (state) filters.state = state;
-        if (city) filters.city = city;
-        if (country) filters.country = country;
-        if (tags) filters.tags = tags;
-        if (visibility) filters.visibility = visibility;
-        if (isFeatured !== undefined) filters.isFeatured = isFeatured;
-        if (q) filters.q = q;
+        const { filters = {} } = params;
         return this.model.countByFilters({ filters });
     }
 
     // --- Métodos específicos de dominio ---
     /**
      * Returns all accommodations for a given destination.
-     * @param input - ServiceInput containing actor and input object with destinationId
+     * @param actor - The actor performing the action
+     * @param params - ServiceInput containing actor and input object with destinationId
      * @returns ServiceOutput with accommodations array or error
      */
     public async getAccommodations(
-        input: ServiceInput<GetAccommodationsInput>
+        actor: Actor,
+        params: GetAccommodationsInput
     ): Promise<ServiceOutput<{ accommodations: AccommodationType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAccommodations',
-            input,
+            input: { ...params, actor },
             schema: GetAccommodationsInputSchema,
-            execute: async (validData, _actor) => {
-                const { destinationId } = validData;
-                // 1. Validate destination existence
+            execute: async (validated, actor) => {
+                const { destinationId } = validated;
                 const destination = await this.model.findById(destinationId);
                 if (!destination) {
                     throw new ServiceError(
@@ -189,14 +165,7 @@ export class DestinationService extends BaseService<
                         `Destination with id '${destinationId}' not found.`
                     );
                 }
-                // 2. Permission check (must be before fetching accommodations)
-                try {
-                    checkCanViewDestination(input.actor, destination);
-                } catch (err) {
-                    if (err instanceof ServiceError) return Promise.reject(err);
-                    throw err;
-                }
-                // 3. Fetch accommodations
+                checkCanViewDestination(actor, destination);
                 const { items } = await this.accommodationModel.search({
                     filters: { destinationId }
                 });
@@ -207,19 +176,20 @@ export class DestinationService extends BaseService<
 
     /**
      * Returns aggregated stats for a destination (accommodations count, reviews count, average rating, etc.)
-     * @param input - ServiceInput containing actor and input object with destinationId
+     * @param actor - The actor performing the action
+     * @param params - ServiceInput containing actor and input object with destinationId
      * @returns ServiceOutput with stats or error
      */
     public async getStats(
-        input: ServiceInput<GetStatsInput>
+        actor: Actor,
+        params: GetStatsInput
     ): Promise<ServiceOutput<{ stats: DestinationStats }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
-            input,
+            input: { ...params, actor },
             schema: GetStatsInputSchema,
-            execute: async (validData, _actor) => {
-                const { destinationId } = validData;
-                // 1. Validate destination existence
+            execute: async (validated, actor) => {
+                const { destinationId } = validated;
                 const destination = await this.model.findById(destinationId);
                 if (!destination) {
                     throw new ServiceError(
@@ -227,14 +197,7 @@ export class DestinationService extends BaseService<
                         `Destination with id '${destinationId}' not found.`
                     );
                 }
-                // 2. Permission check
-                try {
-                    checkCanViewDestination(input.actor, destination);
-                } catch (err) {
-                    if (err instanceof ServiceError) return Promise.reject(err);
-                    throw err;
-                }
-                // 3. Return stats from destination fields
+                checkCanViewDestination(actor, destination);
                 return {
                     stats: {
                         accommodationsCount: destination.accommodationsCount ?? 0,
@@ -249,19 +212,20 @@ export class DestinationService extends BaseService<
     /**
      * Returns a summarized, public-facing version of a destination.
      * This method provides a lightweight DTO for use in lists or cards, excluding sensitive or detailed information.
-     * @param input - ServiceInput containing actor and input object with destinationId
+     * @param actor - The actor performing the action
+     * @param params - ServiceInput containing actor and input object with destinationId
      * @returns ServiceOutput with summary or error
      */
     public async getSummary(
-        input: ServiceInput<GetSummaryInput>
+        actor: Actor,
+        params: GetSummaryInput
     ): Promise<ServiceOutput<{ summary: DestinationSummaryType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
-            input,
+            input: { ...params, actor },
             schema: GetSummaryInputSchema,
-            execute: async (validData, _actor) => {
-                const { destinationId } = validData;
-                // 1. Validate destination existence
+            execute: async (validated, actor) => {
+                const { destinationId } = validated;
                 const destination = await this.model.findById(destinationId);
                 if (!destination) {
                     throw new ServiceError(
@@ -269,13 +233,7 @@ export class DestinationService extends BaseService<
                         `Destination with id '${destinationId}' not found.`
                     );
                 }
-                // 2. Permission check
-                try {
-                    checkCanViewDestination(input.actor, destination);
-                } catch (err) {
-                    if (err instanceof ServiceError) return Promise.reject(err);
-                    throw err;
-                }
+                checkCanViewDestination(actor, destination);
                 if (!destination.location) {
                     this.logger.warn(`Destination ${destination.id} has no location for summary.`);
                     throw new ServiceError(
@@ -283,7 +241,6 @@ export class DestinationService extends BaseService<
                         'Destination location not found.'
                     );
                 }
-                // 3. Build and return the summary DTO
                 const summary: DestinationSummaryType = {
                     id: destination.id,
                     slug: destination.slug,

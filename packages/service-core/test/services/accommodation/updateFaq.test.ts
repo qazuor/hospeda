@@ -45,7 +45,7 @@ describe('AccommodationService.updateFaq', () => {
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
     let faq: { id: string; accommodationId: string; question: string; answer: string };
     let input: UpdateFaqInput;
-    let updateData: { question: string; answer: string };
+    let updateData: { question: string; answer: string; accommodationId: string };
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -67,7 +67,11 @@ describe('AccommodationService.updateFaq', () => {
             question: 'What is the check-in time?',
             answer: 'From 2:00 PM.'
         };
-        updateData = { question: 'Updated question?', answer: 'From 3:00 PM.' };
+        updateData = {
+            question: 'Updated question?',
+            answer: 'From 3:00 PM.',
+            accommodationId: accommodation.id
+        };
         input = { accommodationId: accommodation.id, faqId: faq.id, faq: updateData };
         vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
             () => faqModelMock as unknown as db.AccommodationFaqModel

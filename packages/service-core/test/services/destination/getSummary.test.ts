@@ -7,7 +7,6 @@ import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { GetSummaryInput } from '../../../src/services/destination/destination.schemas';
 import { DestinationService } from '../../../src/services/destination/destination.service';
-import type { ServiceInput } from '../../../src/types';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
 import {
@@ -40,13 +39,11 @@ describe('DestinationService.getSummary', () => {
         // Arrange
         const destination = new DestinationFactoryBuilder().with({ averageRating: 4.5 }).build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const input: ServiceInput<GetSummaryInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetSummaryInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getSummary(input);
+        const result = await service.getSummary(actor, params);
 
         // Assert
         expectSuccess(result);
@@ -67,13 +64,11 @@ describe('DestinationService.getSummary', () => {
     it('should return NOT_FOUND if destination does not exist', async () => {
         // Arrange
         asMock(modelMock.findById).mockResolvedValue(null);
-        const input: ServiceInput<GetSummaryInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: 'nonexistent'
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetSummaryInput = { destinationId: 'nonexistent' };
 
         // Act
-        const result = await service.getSummary(input);
+        const result = await service.getSummary(actor, params);
 
         // Assert
         expectNotFoundError(result);
@@ -83,13 +78,11 @@ describe('DestinationService.getSummary', () => {
         // Arrange
         const destination = new DestinationFactoryBuilder().with({ location: undefined }).build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const input: ServiceInput<GetSummaryInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetSummaryInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getSummary(input);
+        const result = await service.getSummary(actor, params);
 
         // Assert
         expectNotFoundError(result);
@@ -98,13 +91,11 @@ describe('DestinationService.getSummary', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         // Arrange
         asMock(modelMock.findById).mockRejectedValue(new Error('DB error'));
-        const input: ServiceInput<GetSummaryInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] },
-            destinationId: 'dest-1'
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params: GetSummaryInput = { destinationId: 'dest-1' };
 
         // Act
-        const result = await service.getSummary(input);
+        const result = await service.getSummary(actor, params);
 
         // Assert
         expectInternalError(result);
@@ -112,13 +103,11 @@ describe('DestinationService.getSummary', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // Arrange
-        // @ts-expect-error purposely invalid
-        const input: ServiceInput<GetSummaryInput> = {
-            actor: { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] }
-        };
+        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const params = { destinationId: '' };
 
         // Act
-        const result = await service.getSummary(input);
+        const result = await service.getSummary(actor, params);
 
         // Assert
         expectValidationError(result);
@@ -130,13 +119,11 @@ describe('DestinationService.getSummary', () => {
             .with({ visibility: VisibilityEnum.PRIVATE })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const input: ServiceInput<GetSummaryInput> = {
-            actor: { id: 'user-1', role: RoleEnum.USER, permissions: [] },
-            destinationId: destination.id
-        };
+        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const params: GetSummaryInput = { destinationId: destination.id };
 
         // Act
-        const result = await service.getSummary(input);
+        const result = await service.getSummary(actor, params);
 
         // Assert
         expectForbiddenError(result);

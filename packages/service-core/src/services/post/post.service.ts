@@ -3,13 +3,7 @@ import type { PostType, VisibilityEnum } from '@repo/types';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service';
-import type {
-    Actor,
-    ServiceContext,
-    ServiceInput,
-    ServiceLogger,
-    ServiceOutput
-} from '../../types';
+import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { generatePostSlug } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
@@ -40,7 +34,6 @@ import {
     GetPostStatsInputSchema,
     type GetPostSummaryInput,
     GetPostSummaryInputSchema,
-    type LikePostInput,
     LikePostInputSchema,
     type PostCreateInput,
     PostCreateInputSchema,
@@ -68,6 +61,11 @@ export class PostService extends BaseService<
     public readonly updateSchema = PostUpdateSchema;
     public readonly filterSchema = PostFilterInputSchema;
     public readonly searchSchema = PostFilterInputSchema;
+
+    /**
+     * Private property to temporarily store the id for update operations.
+     */
+    private _updateId: string | undefined;
 
     /**
      * Initializes a new instance of the PostService.
@@ -142,20 +140,35 @@ export class PostService extends BaseService<
      * Adds extra business validations:
      * - Title must be unique per category (if changed)
      * - If isNews, expiresAt is required and must be a future date
-     * @param data - The input data
+     * @param data - The input data (fields to update)
+     * @param _actor - The actor performing the update (not used)
      * @returns Normalized and enriched data
      */
     protected async _beforeUpdate(
-        data: z.infer<typeof PostUpdateSchema>
+        data: z.infer<typeof PostUpdateSchema>,
+        _actor: Actor
     ): Promise<Partial<PostType>> {
-        const normalized = normalizeUpdateInput(data);
+        // The id to use for business logic is stored in this._updateId (set in update method)
+        const id = this._updateId;
+        if (!id) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'id is required for post update.'
+            );
+        }
+        const updateFields = data;
+        const normalized = normalizeUpdateInput({ id, ...updateFields });
+        // Revert: if the normalized object is empty, just return an empty object
+        if (Object.keys(normalized).length === 0) {
+            return {} as Partial<PostType>;
+        }
         // If title or category changes, validate uniqueness
         if (normalized.category && normalized.title) {
             const existing = await this.model.findOne({
                 category: normalized.category,
                 title: normalized.title
             });
-            if (existing && (!data.id || existing.id !== data.id)) {
+            if (existing && existing.id !== id) {
                 throw new ServiceError(
                     ServiceErrorCode.VALIDATION_ERROR,
                     'A post with this title already exists in this category'
@@ -180,26 +193,14 @@ export class PostService extends BaseService<
                 );
             }
         }
-        if (normalized.category && normalized.title) {
-            const slug = await generatePostSlug(
-                String(normalized.category),
-                normalized.title,
-                isNews,
-                date
-            );
-            const { id, createdById, updatedById, deletedById, ...rest } = normalized as Record<
-                string,
-                unknown
-            >;
-            return {
-                ...rest,
-                slug
-            } as Partial<PostType>;
-        }
-        const { id, createdById, updatedById, deletedById, ...rest } = normalized as Record<
-            string,
-            unknown
-        >;
+        // Always return all normalized fields except id and audit fields
+        const {
+            id: _id,
+            createdById,
+            updatedById,
+            deletedById,
+            ...rest
+        } = normalized as Record<string, unknown>;
         return {
             ...rest
         } as Partial<PostType>;
@@ -348,30 +349,35 @@ export class PostService extends BaseService<
      * @returns A paginated list of posts matching the criteria.
      */
     protected async _executeSearch(params: z.infer<typeof PostFilterInputSchema>, _actor: Actor) {
-        return this.model.findAll(params);
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+        return this.model.findAll(filters, { page, pageSize });
     }
 
     /**
      * Executes the database count for posts.
-     * @param params - The validated search parameters (filters).
+     * @param params - The validated and processed search parameters.
      * @param actor - The actor performing the count.
-     * @returns The total count of posts matching the criteria.
+     * @returns An object containing the total count of posts matching the criteria.
      */
     protected async _executeCount(params: z.infer<typeof PostFilterInputSchema>, _actor: Actor) {
-        const count = await this.model.count(params);
+        const { filters = {} } = params;
+        const count = await this.model.count(filters);
         return { count };
     }
 
     /**
      * Gets news posts, optionally filtered by date and visibility.
-     * @param input - ServiceInput with actor and optional filters
+     * @param actor - The user or system performing the action.
+     * @param params - Optional filters for news posts.
      * @returns List of news posts
      */
-    public async getNews(input: ServiceInput<GetNewsInput>): Promise<ServiceOutput<PostType[]>> {
+    public async getNews(actor: Actor, params: GetNewsInput): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getNews',
-            input,
-            schema: GetNewsInputSchema,
+            input: { ...params, actor },
+            schema: GetNewsInputSchema.strict(),
             execute: async (validated, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
@@ -390,16 +396,18 @@ export class PostService extends BaseService<
 
     /**
      * Gets featured posts.
-     * @param input - ServiceInput with optional filters
+     * @param actor - The user or system performing the action.
+     * @param params - Optional filters for featured posts.
      * @returns List of featured posts
      */
     public async getFeatured(
-        input: ServiceInput<GetFeaturedInput>
+        actor: Actor,
+        params: GetFeaturedInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFeatured',
-            input,
-            schema: GetFeaturedInputSchema,
+            input: { ...params, actor },
+            schema: GetFeaturedInputSchema.strict(),
             execute: async (validated, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
@@ -418,16 +426,18 @@ export class PostService extends BaseService<
 
     /**
      * Gets posts by category.
-     * @param input - ServiceInput with the category to filter
+     * @param actor - The user or system performing the action.
+     * @param params - The category and optional filters.
      * @returns List of posts in the given category
      */
     public async getByCategory(
-        input: ServiceInput<GetByCategoryInput>
+        actor: Actor,
+        params: GetByCategoryInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByCategory',
-            input,
-            schema: GetByCategoryInputSchema,
+            input: { ...params, actor },
+            schema: GetByCategoryInputSchema.strict(),
             execute: async (validated, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
@@ -445,47 +455,19 @@ export class PostService extends BaseService<
     }
 
     /**
-     * Gets posts related to a destination.
-     * @param input - ServiceInput with the destination ID
-     * @returns List of posts related to the destination
-     */
-    public async getByRelatedDestination(
-        input: ServiceInput<GetByRelatedDestinationInput>
-    ): Promise<ServiceOutput<PostType[]>> {
-        return this.runWithLoggingAndValidation({
-            methodName: 'getByRelatedDestination',
-            input,
-            schema: GetByRelatedDestinationInputSchema,
-            execute: async (validated, actor) => {
-                this._canList(actor);
-                const where: Record<string, unknown> = {
-                    relatedDestinationId: validated.destinationId
-                };
-                if (validated.visibility) where.visibility = validated.visibility;
-                if (validated.fromDate || validated.toDate) {
-                    const createdAtFilter: Record<string, unknown> = {};
-                    if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
-                    if (validated.toDate) createdAtFilter.lte = validated.toDate;
-                    where.createdAt = createdAtFilter;
-                }
-                const { items } = await this.model.findAll(where);
-                return items;
-            }
-        });
-    }
-
-    /**
      * Gets posts related to an accommodation.
-     * @param input - ServiceInput with the accommodation ID
+     * @param actor - The user or system performing the action.
+     * @param params - The accommodationId and optional filters.
      * @returns List of posts related to the accommodation
      */
     public async getByRelatedAccommodation(
-        input: ServiceInput<GetByRelatedAccommodationInput>
+        actor: Actor,
+        params: GetByRelatedAccommodationInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedAccommodation',
-            input,
-            schema: GetByRelatedAccommodationInputSchema,
+            input: { ...params, actor },
+            schema: GetByRelatedAccommodationInputSchema.strict(),
             execute: async (validated, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = {
@@ -505,17 +487,51 @@ export class PostService extends BaseService<
     }
 
     /**
+     * Gets posts related to a destination.
+     * @param actor - The user or system performing the action.
+     * @param params - The destinationId and optional filters.
+     * @returns List of posts related to the destination
+     */
+    public async getByRelatedDestination(
+        actor: Actor,
+        params: GetByRelatedDestinationInput
+    ): Promise<ServiceOutput<PostType[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getByRelatedDestination',
+            input: { ...params, actor },
+            schema: GetByRelatedDestinationInputSchema.strict(),
+            execute: async (validated, actor) => {
+                this._canList(actor);
+                const where: Record<string, unknown> = {
+                    relatedDestinationId: validated.destinationId
+                };
+                if (validated.visibility) where.visibility = validated.visibility;
+                if (validated.fromDate || validated.toDate) {
+                    const createdAtFilter: Record<string, unknown> = {};
+                    if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
+                    if (validated.toDate) createdAtFilter.lte = validated.toDate;
+                    where.createdAt = createdAtFilter;
+                }
+                const { items } = await this.model.findAll(where);
+                return items;
+            }
+        });
+    }
+
+    /**
      * Gets posts related to an event.
-     * @param input - ServiceInput with the event ID
+     * @param actor - The user or system performing the action.
+     * @param params - The eventId and optional filters.
      * @returns List of posts related to the event
      */
     public async getByRelatedEvent(
-        input: ServiceInput<GetByRelatedEventInput>
+        actor: Actor,
+        params: GetByRelatedEventInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedEvent',
-            input,
-            schema: GetByRelatedEventInputSchema,
+            input: { ...params, actor },
+            schema: GetByRelatedEventInputSchema.strict(),
             execute: async (validated, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
@@ -534,15 +550,17 @@ export class PostService extends BaseService<
 
     /**
      * Likes a post for a user.
-     * @param input - ServiceInput with the post ID and the actor performing the action
+     * @param actor - The user or system performing the action
+     * @param params - The input params with postId
      * @returns Result of the operation
      */
     public async like(
-        input: ServiceInput<LikePostInput>
+        actor: Actor,
+        params: { postId: string }
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'like',
-            input,
+            input: { ...params, actor },
             schema: LikePostInputSchema,
             execute: async (validated, actor) => {
                 this._canLike(actor);
@@ -558,15 +576,17 @@ export class PostService extends BaseService<
 
     /**
      * Unlikes a post for a user.
-     * @param input - ServiceInput with the post ID and the actor performing the action
+     * @param actor - The user or system performing the action
+     * @param params - The input params with postId
      * @returns Result of the operation
      */
     public async unlike(
-        input: ServiceInput<LikePostInput>
+        actor: Actor,
+        params: { postId: string }
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'unlike',
-            input,
+            input: { ...params, actor },
             schema: LikePostInputSchema,
             execute: async (validated, actor) => {
                 this._canList(actor);
@@ -583,16 +603,18 @@ export class PostService extends BaseService<
 
     /**
      * Adds a comment to a post. (Stub)
-     * @param input - ServiceInput with the post ID, the comment, and the actor
+     * @param actor - The user or system performing the action
+     * @param params - The post ID and comment
      * @returns NOT_IMPLEMENTED error
      */
     public async addComment(
-        input: ServiceInput<{ postId: string; comment: string }>
+        actor: Actor,
+        params: { postId: string; comment: string }
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addComment',
-            input,
-            schema: z.object({ postId: z.string(), comment: z.string(), actor: z.any() }),
+            input: { ...params, actor },
+            schema: z.object({ postId: z.string(), comment: z.string(), actor: z.any() }).strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 this._canComment(actor);
                 throw new ServiceError(
@@ -604,17 +626,21 @@ export class PostService extends BaseService<
     }
 
     /**
-     * Removes a comment from a post.
-     * @param input - ServiceInput with the post ID and the comment ID to remove
+     * Removes a comment from a post. (Stub)
+     * @param actor - The user or system performing the action
+     * @param params - The post ID and comment ID
      * @returns Result of the operation
      */
     public async removeComment(
-        input: ServiceInput<Record<string, unknown>>
+        actor: Actor,
+        params: { postId: string; commentId: string }
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeComment',
-            input,
-            schema: z.any(),
+            input: { ...params, actor },
+            schema: z
+                .object({ postId: z.string(), commentId: z.string(), actor: z.any() })
+                .strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 this._canComment(actor);
                 // TODO: Implement comment removal logic
@@ -721,5 +747,25 @@ export class PostService extends BaseService<
                 return stats;
             }
         });
+    }
+
+    /**
+     * Updates a post by id, using the new homogeneous pattern.
+     * @param actor - The actor performing the update
+     * @param id - The id of the post to update
+     * @param data - The fields to update (no id)
+     * @returns The updated post or a service error
+     */
+    public async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<typeof PostUpdateSchema>
+    ): Promise<ServiceOutput<PostType>> {
+        this._updateId = id;
+        try {
+            return await super.update(actor, id, data);
+        } finally {
+            this._updateId = undefined;
+        }
     }
 }

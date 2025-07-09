@@ -16,6 +16,7 @@ import {
     expectInternalError,
     expectNotFoundError,
     expectSuccess,
+    expectUnauthorizedError,
     expectValidationError
 } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
@@ -52,7 +53,7 @@ describe('UserService.removePermission', () => {
             permissions: []
         });
         // Act
-        const result = await service.removePermission({ actor, ...input });
+        const result = await service.removePermission(actor, input);
         // Assert
         expectSuccess(result);
         expect(result.data?.user.permissions).not.toContain(PermissionEnum.USER_CREATE);
@@ -69,7 +70,7 @@ describe('UserService.removePermission', () => {
         const user = getUser({ id: userId, permissions: [] });
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
         // Act
-        const result = await service.removePermission({ actor, ...input });
+        const result = await service.removePermission(actor, input);
         // Assert
         expectSuccess(result);
         expect(result.data?.user.permissions).toEqual([]);
@@ -80,7 +81,7 @@ describe('UserService.removePermission', () => {
         // Arrange
         asMock(userModelMock.findById).mockResolvedValue(null);
         // Act
-        const result = await service.removePermission({ actor, ...input });
+        const result = await service.removePermission(actor, input);
         // Assert
         expectNotFoundError(result);
     });
@@ -91,7 +92,7 @@ describe('UserService.removePermission', () => {
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
         const forbiddenActor = getActor(RoleEnum.ADMIN);
         // Act
-        const result = await service.removePermission({ actor: forbiddenActor, ...input });
+        const result = await service.removePermission(forbiddenActor, input);
         // Assert
         expectForbiddenError(result);
     });
@@ -102,15 +103,14 @@ describe('UserService.removePermission', () => {
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
         asMock(userModelMock.update).mockResolvedValue(null);
         // Act
-        const result = await service.removePermission({ actor, ...input });
+        const result = await service.removePermission(actor, input);
         // Assert
         expectInternalError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid userId', async () => {
         // Act
-        const result = await service.removePermission({
-            actor,
+        const result = await service.removePermission(actor, {
             userId: '',
             permission: PermissionEnum.USER_CREATE
         });
@@ -121,8 +121,7 @@ describe('UserService.removePermission', () => {
     it('should return VALIDATION_ERROR for invalid permission', async () => {
         // Act
         const invalidPermission = undefined as unknown as PermissionEnum;
-        const result = await service.removePermission({
-            actor,
+        const result = await service.removePermission(actor, {
             userId,
             permission: invalidPermission
         });
@@ -131,8 +130,7 @@ describe('UserService.removePermission', () => {
     });
 
     it('should return VALIDATION_ERROR if userId is empty', async () => {
-        const result = await service.removePermission({
-            actor: actor,
+        const result = await service.removePermission(actor, {
             userId: '',
             permission: PermissionEnum.USER_READ_ALL
         });
@@ -140,21 +138,19 @@ describe('UserService.removePermission', () => {
     });
 
     it('should return VALIDATION_ERROR if permission is invalid', async () => {
-        const result = await service.removePermission({
-            actor: actor,
+        const result = await service.removePermission(actor, {
             userId: 'some-id',
             permission: 'INVALID' as PermissionEnum
         });
         expectValidationError(result);
     });
 
-    it('should return FORBIDDEN if actor is undefined', async () => {
-        const result = await service.removePermission({
-            actor: {} as Actor,
+    it('should return UNAUTHORIZED if actor is undefined', async () => {
+        const result = await service.removePermission(undefined as unknown as Actor, {
             userId: 'some-id',
             permission: PermissionEnum.USER_READ_ALL
         });
-        expectForbiddenError(result);
+        expectUnauthorizedError(result);
     });
 
     it('should return FORBIDDEN if actor has no role', async () => {
@@ -163,8 +159,7 @@ describe('UserService.removePermission', () => {
             permissions: [],
             role: undefined as unknown as RoleEnum
         } as Actor;
-        const result = await service.removePermission({
-            actor: fakeActor,
+        const result = await service.removePermission(fakeActor, {
             userId: 'some-id',
             permission: PermissionEnum.USER_READ_ALL
         });

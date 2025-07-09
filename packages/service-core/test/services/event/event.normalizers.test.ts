@@ -72,9 +72,15 @@ describe('EventService normalizers', () => {
         expect(result.organizerId).toBe(input.organizerId);
     });
 
-    it('should normalize update input (dates and IDs)', () => {
+    it('should normalize update input (dates and IDs as string)', () => {
         // Arrange
-        const input = createMockEventSchemaInput();
+        const input = {
+            id: getMockId('event') as EventId,
+            name: 'Updated Event',
+            date: { start: '2024-01-01T10:00:00Z', end: '2024-01-01T12:00:00Z' },
+            locationId: getMockId('event') as EventLocationId,
+            organizerId: getMockId('event') as EventOrganizerId
+        };
         // Act
         const result = normalizeUpdateInput(input);
         // Assert

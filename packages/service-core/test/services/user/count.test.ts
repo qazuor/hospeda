@@ -38,7 +38,7 @@ describe('UserService.count', () => {
     it('should return the count if actor is admin', async () => {
         asMock(userModelMock.count).mockResolvedValue(42);
         const filters = { role: RoleEnum.USER };
-        const result = await service.count(admin, filters);
+        const result = await service.count(admin, { filters });
         expectSuccess(result);
         expect(result.data).toEqual({ count: 42 });
         expect(asMock(userModelMock.count)).toHaveBeenCalledWith(filters);
@@ -47,7 +47,7 @@ describe('UserService.count', () => {
     it('should return the count if actor is super admin', async () => {
         asMock(userModelMock.count).mockResolvedValue(7);
         const filters = { role: RoleEnum.USER };
-        const result = await service.count(superAdmin, filters);
+        const result = await service.count(superAdmin, { filters });
         expectSuccess(result);
         expect(result.data).toEqual({ count: 7 });
         expect(asMock(userModelMock.count)).toHaveBeenCalledWith(filters);
@@ -56,7 +56,7 @@ describe('UserService.count', () => {
     it('should return FORBIDDEN if actor is not admin or super admin', async () => {
         asMock(userModelMock.count).mockResolvedValue(0);
         const filters = { role: RoleEnum.USER };
-        const result = await service.count(user, filters);
+        const result = await service.count(user, { filters });
         expectForbiddenError(result);
     });
 
@@ -69,7 +69,7 @@ describe('UserService.count', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(userModelMock.count).mockRejectedValue(new Error('DB error'));
         const filters = { role: RoleEnum.USER };
-        const result = await service.count(admin, filters);
+        const result = await service.count(admin, { filters });
         expectInternalError(result);
     });
 
@@ -80,7 +80,7 @@ describe('UserService.count', () => {
             '_beforeCount'
         ).mockRejectedValue(new Error('beforeCount error'));
         const filters = { role: RoleEnum.USER };
-        const result = await service.count(admin, filters);
+        const result = await service.count(admin, { filters });
         expectInternalError(result);
     });
 
@@ -91,7 +91,7 @@ describe('UserService.count', () => {
             '_afterCount'
         ).mockRejectedValue(new Error('afterCount error'));
         const filters = { role: RoleEnum.USER };
-        const result = await service.count(admin, filters);
+        const result = await service.count(admin, { filters });
         expectInternalError(result);
     });
 });

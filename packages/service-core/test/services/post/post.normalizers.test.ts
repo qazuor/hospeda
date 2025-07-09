@@ -130,7 +130,8 @@ describe('normalizeCreateInput', () => {
 
 describe('normalizeUpdateInput', () => {
     it('trims and normalizes fields if present', () => {
-        const input: z.infer<typeof PostUpdateSchema> = {
+        const input: { id: string } & Partial<Omit<z.infer<typeof PostUpdateSchema>, 'id'>> = {
+            id: 'mock-post-id',
             title: '  Update  ',
             summary: '  Update summary  ',
             content: '  Update content  ',
@@ -144,7 +145,8 @@ describe('normalizeUpdateInput', () => {
     });
 
     it('generates summary from content if summary is empty', () => {
-        const input: z.infer<typeof PostUpdateSchema> = {
+        const input: { id: string } & Partial<Omit<z.infer<typeof PostUpdateSchema>, 'id'>> = {
+            id: 'mock-post-id',
             summary: '',
             content: 'This is a long content for update. '.repeat(10)
         };
@@ -153,7 +155,8 @@ describe('normalizeUpdateInput', () => {
     });
 
     it('handles missing media gracefully', () => {
-        const input: z.infer<typeof PostUpdateSchema> = {
+        const input: { id: string } & Partial<Omit<z.infer<typeof PostUpdateSchema>, 'id'>> = {
+            id: 'mock-post-id',
             title: 'Test update',
             summary: 'Summary',
             content: 'Content'

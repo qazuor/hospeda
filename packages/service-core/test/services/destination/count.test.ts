@@ -33,7 +33,7 @@ describe('DestinationService.count', () => {
 
     it('should return the count if actor has permission', async () => {
         (model.countByFilters as Mock).mockResolvedValue(42);
-        const result = await service.count(actor, { country: 'AR' });
+        const result = await service.count(actor, { filters: { country: 'AR' } });
         expect(result.data).toBe(42);
         expect(result.error).toBeUndefined();
         expect(model.countByFilters).toHaveBeenCalled();
@@ -46,23 +46,22 @@ describe('DestinationService.count', () => {
         vi.spyOn(permissionHelpers, 'checkCanCountDestinations').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');
         });
-        const result = await service.count(noPermsActor, { country: 'AR' });
+        const result = await service.count(noPermsActor, { filters: { country: 'AR' } });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.count(actor, { country: 123 } as unknown as Record<
-            string,
-            unknown
-        >);
+        const result = await service.count(actor, {
+            filters: { country: 123 }
+        } as unknown as Record<string, unknown>);
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(model.countByFilters).mockRejectedValue(new Error('DB error'));
-        const result = await service.count(actor, { country: 'AR' });
+        const result = await service.count(actor, { filters: { country: 'AR' } });
         expectInternalError(result);
     });
 
@@ -72,7 +71,7 @@ describe('DestinationService.count', () => {
             service as unknown as { _beforeCount: () => void },
             '_beforeCount'
         ).mockRejectedValue(new Error('before error'));
-        const result = await service.count(actor, { country: 'AR' });
+        const result = await service.count(actor, { filters: { country: 'AR' } });
         expectInternalError(result);
     });
 
@@ -82,7 +81,7 @@ describe('DestinationService.count', () => {
             service as unknown as { _afterCount: () => void },
             '_afterCount'
         ).mockRejectedValue(new Error('after error'));
-        const result = await service.count(actor, { country: 'AR' });
+        const result = await service.count(actor, { filters: { country: 'AR' } });
         expectInternalError(result);
     });
 });

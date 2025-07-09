@@ -16,6 +16,7 @@ import {
     expectInternalError,
     expectNotFoundError,
     expectSuccess,
+    expectUnauthorizedError,
     expectValidationError
 } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
@@ -52,7 +53,7 @@ describe('UserService.addPermission', () => {
             permissions: [PermissionEnum.USER_CREATE]
         });
         // Act
-        const result = await service.addPermission({ actor, ...input });
+        const result = await service.addPermission(actor, input);
         // Assert
         expectSuccess(result);
         expect(result.data?.user.permissions).toContain(PermissionEnum.USER_CREATE);
@@ -69,7 +70,7 @@ describe('UserService.addPermission', () => {
         const user = getUser({ id: userId, permissions: [PermissionEnum.USER_CREATE] });
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
         // Act
-        const result = await service.addPermission({ actor, ...input });
+        const result = await service.addPermission(actor, input);
         // Assert
         expectSuccess(result);
         expect(result.data?.user.permissions).toEqual([PermissionEnum.USER_CREATE]);
@@ -80,7 +81,7 @@ describe('UserService.addPermission', () => {
         // Arrange
         asMock(userModelMock.findById).mockResolvedValue(null);
         // Act
-        const result = await service.addPermission({ actor, ...input });
+        const result = await service.addPermission(actor, input);
         // Assert
         expectNotFoundError(result);
     });
@@ -91,7 +92,7 @@ describe('UserService.addPermission', () => {
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
         const forbiddenActor = getActor(RoleEnum.ADMIN);
         // Act
-        const result = await service.addPermission({ actor: forbiddenActor, ...input });
+        const result = await service.addPermission(forbiddenActor, input);
         // Assert
         expectForbiddenError(result);
     });
@@ -102,15 +103,14 @@ describe('UserService.addPermission', () => {
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
         asMock(userModelMock.update).mockResolvedValue(null);
         // Act
-        const result = await service.addPermission({ actor, ...input });
+        const result = await service.addPermission(actor, input);
         // Assert
         expectInternalError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid userId', async () => {
         // Act
-        const result = await service.addPermission({
-            actor,
+        const result = await service.addPermission(actor, {
             userId: '',
             permission: PermissionEnum.USER_CREATE
         });
@@ -121,8 +121,7 @@ describe('UserService.addPermission', () => {
     it('should return VALIDATION_ERROR for invalid permission', async () => {
         // Act
         const invalidPermission = undefined as unknown as PermissionEnum;
-        const result = await service.addPermission({
-            actor,
+        const result = await service.addPermission(actor, {
             userId,
             permission: invalidPermission
         });
@@ -131,8 +130,7 @@ describe('UserService.addPermission', () => {
     });
 
     it('should return VALIDATION_ERROR if userId is empty', async () => {
-        const result = await service.addPermission({
-            actor: actor,
+        const result = await service.addPermission(actor, {
             userId: '',
             permission: PermissionEnum.USER_READ_ALL
         });
@@ -140,21 +138,19 @@ describe('UserService.addPermission', () => {
     });
 
     it('should return VALIDATION_ERROR if permission is invalid', async () => {
-        const result = await service.addPermission({
-            actor: actor,
+        const result = await service.addPermission(actor, {
             userId: 'some-id',
             permission: 'INVALID' as PermissionEnum
         });
         expectValidationError(result);
     });
 
-    it('should return FORBIDDEN if actor is undefined', async () => {
-        const result = await service.addPermission({
-            actor: {} as Actor,
+    it('should return UNAUTHORIZED if actor is undefined', async () => {
+        const result = await service.addPermission(undefined as unknown as Actor, {
             userId: 'some-id',
             permission: PermissionEnum.USER_READ_ALL
         });
-        expectForbiddenError(result);
+        expectUnauthorizedError(result);
     });
 
     it('should return FORBIDDEN if actor has no role', async () => {
@@ -163,8 +159,7 @@ describe('UserService.addPermission', () => {
             permissions: [],
             role: undefined as unknown as RoleEnum
         } as Actor;
-        const result = await service.addPermission({
-            actor: fakeActor,
+        const result = await service.addPermission(fakeActor, {
             userId: 'some-id',
             permission: PermissionEnum.USER_READ_ALL
         });

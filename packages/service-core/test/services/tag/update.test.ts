@@ -52,12 +52,13 @@ describe('TagService.update', () => {
 
     it('should return NOT_FOUND if tag does not exist', async () => {
         asMock(tagModelMock.findById).mockResolvedValue(null);
-        const result = await service.update(actor, tag.id, updateInput);
+        const result = await service.update(actor, 'nonexistent-id', updateInput);
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(tagModelMock.findById).mockRejectedValue(new Error('DB error'));
+        asMock(tagModelMock.findById).mockResolvedValue(tag);
+        asMock(tagModelMock.update).mockRejectedValue(new Error('DB error'));
         const result = await service.update(actor, tag.id, updateInput);
         expectInternalError(result);
     });

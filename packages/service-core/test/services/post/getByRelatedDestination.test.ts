@@ -1,11 +1,9 @@
 import { PostModel } from '@repo/db';
 import type { PostId } from '@repo/types';
-import { type DestinationId, VisibilityEnum } from '@repo/types';
+import { type DestinationId, RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
-import type { ServiceInput } from '../../../src/types';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -20,7 +18,11 @@ describe('PostService.getByRelatedDestination', () => {
     let service: PostService;
     let modelMock: PostModel;
     let loggerMock: ServiceLogger;
-    const actor = createActor({ id: getMockId('user') });
+    const actor = {
+        id: 'ee11cbb1-7080-4727-9ed2-fa4cd82060da',
+        role: RoleEnum.USER,
+        permissions: []
+    };
     const destinationId = getMockId('destination') as DestinationId;
 
     beforeEach(() => {
@@ -38,8 +40,8 @@ describe('PostService.getByRelatedDestination', () => {
             })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 2 });
-        const input = { actor, destinationId };
-        const result = await service.getByRelatedDestination(input);
+        const params = { destinationId };
+        const result = await service.getByRelatedDestination(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith({ relatedDestinationId: destinationId });
@@ -53,8 +55,8 @@ describe('PostService.getByRelatedDestination', () => {
             })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
-        const input = { actor, destinationId, visibility: VisibilityEnum.PRIVATE };
-        const result = await service.getByRelatedDestination(input);
+        const params = { destinationId, visibility: VisibilityEnum.PRIVATE };
+        const result = await service.getByRelatedDestination(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
@@ -71,50 +73,52 @@ describe('PostService.getByRelatedDestination', () => {
             })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
-        const input = {
-            actor,
+        const params = {
             destinationId,
             fromDate: new Date('2024-07-01'),
             toDate: new Date('2024-07-31')
         };
-        const result = await service.getByRelatedDestination(input);
+        const result = await service.getByRelatedDestination(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedDestinationId: destinationId,
-            createdAt: { gte: input.fromDate, lte: input.toDate }
+            createdAt: { gte: params.fromDate, lte: params.toDate }
         });
     });
 
     it('should return empty list if no posts found', async () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-        const input = { actor, destinationId };
-        const result = await service.getByRelatedDestination(input);
+        const params = { destinationId };
+        const result = await service.getByRelatedDestination(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(0);
     });
 
     it('should return forbidden if actor is missing', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getByRelatedDestination({ destinationId });
+        // purposely invalid
+        const result = await service.getByRelatedDestination(
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            null as any,
+            { destinationId } as { destinationId: string }
+        );
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
 
     it('should return validation error if input is invalid', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getByRelatedDestination({ actor: 123, destinationId });
+        // purposely invalid
+        const result = await service.getByRelatedDestination(
+            actor,
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+            { actor: 123 } as any
+        );
         expectValidationError(result);
-        // missing destinationId
-        const result2 = await service.getByRelatedDestination({ actor } as unknown as ServiceInput<
-            import('../../../src/services/post/post.schemas').GetByRelatedDestinationInput
-        >);
-        expectValidationError(result2);
     });
 
     it('should return internal error if model fails', async () => {
         asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
-        const input = { actor, destinationId };
-        const result = await service.getByRelatedDestination(input);
+        const params = { destinationId };
+        const result = await service.getByRelatedDestination(actor, params);
         expectInternalError(result);
     });
 });

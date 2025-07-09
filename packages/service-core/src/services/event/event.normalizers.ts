@@ -31,20 +31,32 @@ export const normalizeCreateInput = (input: z.infer<typeof EventSchema>): Partia
  * @param input - The raw input for event update (schema type)
  * @returns The normalized input as Partial<EventType>
  */
-export const normalizeUpdateInput = (input: z.infer<typeof EventSchema>): Partial<EventType> => {
+export const normalizeUpdateInput = (
+    input: { id: string } & Partial<z.infer<typeof EventSchema>>
+): Partial<EventType> => {
     const adminInfo = normalizeAdminInfo(input.adminInfo);
-    const { adminInfo: _adminInfo, ...rest } = input;
+    // Exclude the original date property from rest
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { adminInfo: _adminInfo, date: _date, id, ...rest } = input;
+    let date: EventType['date'] | undefined = undefined;
+    if (input.date?.start) {
+        date = {
+            ...input.date,
+            start: new Date(input.date.start),
+            end: input.date.end ? new Date(input.date.end) : undefined,
+            isAllDay: input.date.isAllDay,
+            recurrence: input.date.recurrence
+        };
+    }
+    // Remove locationId and organizerId from rest to avoid type conflicts
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { locationId, organizerId, ...restWithoutIds } = rest;
     return {
-        ...rest,
+        id,
+        ...restWithoutIds,
         ...(adminInfo ? { adminInfo } : {}),
-        date: input.date
-            ? {
-                  ...input.date,
-                  start: new Date(input.date.start),
-                  end: input.date.end ? new Date(input.date.end) : undefined
-              }
-            : undefined,
-        locationId: input.locationId as EventType['locationId'],
-        organizerId: input.organizerId as EventType['organizerId']
+        ...(date ? { date } : {}),
+        ...(locationId ? { locationId: locationId as EventType['locationId'] } : {}),
+        ...(organizerId ? { organizerId: organizerId as EventType['organizerId'] } : {})
     };
 };
