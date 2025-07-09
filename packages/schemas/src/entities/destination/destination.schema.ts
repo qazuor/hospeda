@@ -14,6 +14,7 @@ import {
     WithTagsSchema,
     WithVisibilitySchema
 } from '../../common/index.js';
+import { BaseSearchSchema } from '../../common/search.schemas.js';
 import { VisibilityEnumSchema } from '../../enums/index.js';
 import { DestinationAttractionSchema } from './destination.attraction.schema.js';
 import { DestinationRatingSchema } from './destination.rating.schema.js';
@@ -68,28 +69,35 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
         reviews: z.array(DestinationReviewSchema).optional(),
         /** Rating object, optional */
         rating: DestinationRatingSchema.optional()
-    });
+    })
+    .strict();
 
 // Input para filtros de búsqueda de destinos
-export const DestinationFilterInputSchema = z.object({
-    state: z.string().optional(),
-    city: z.string().optional(),
-    country: z.string().optional(),
-    tags: TagsArraySchema.optional(),
-    visibility: VisibilityEnumSchema.optional(),
-    isFeatured: z.boolean().optional(),
-    minRating: z.number().min(0).max(5).optional(),
-    maxRating: z.number().min(0).max(5).optional(),
-    q: z.string().optional() // free text search
-});
+export const DestinationFilterInputSchema = BaseSearchSchema.extend({
+    filters: z
+        .object({
+            state: z.string().optional(),
+            city: z.string().optional(),
+            country: z.string().optional(),
+            tags: TagsArraySchema.optional(),
+            visibility: VisibilityEnumSchema.optional(),
+            isFeatured: z.boolean().optional(),
+            minRating: z.number().min(0).max(5).optional(),
+            maxRating: z.number().min(0).max(5).optional(),
+            q: z.string().optional() // free text search
+        })
+        .optional()
+}).strict();
 
 // Input para ordenamiento de resultados
-export const DestinationSortInputSchema = z.object({
-    sortBy: z
-        .enum(['name', 'createdAt', 'averageRating', 'reviewsCount', 'accommodationsCount'])
-        .optional(),
-    order: z.enum(['asc', 'desc']).optional()
-});
+export const DestinationSortInputSchema = z
+    .object({
+        sortBy: z
+            .enum(['name', 'createdAt', 'averageRating', 'reviewsCount', 'accommodationsCount'])
+            .optional(),
+        order: z.enum(['asc', 'desc']).optional()
+    })
+    .strict();
 
 /**
  * Schema for creating a new destination.
@@ -108,7 +116,7 @@ export const CreateDestinationSchema = DestinationSchema.omit({
     rating: true,
     accommodationsCount: true,
     averageRating: true
-});
+}).strict();
 
 /**
  * Type for new destination input (creation).
@@ -119,5 +127,5 @@ export type NewDestinationInput = z.infer<typeof CreateDestinationSchema>;
  * Schema for updating an existing destination.
  * All fields son opcionales para permitir updates parciales.
  */
-export const UpdateDestinationSchema = CreateDestinationSchema.deepPartial();
+export const UpdateDestinationSchema = CreateDestinationSchema.deepPartial().strict();
 export type UpdateDestinationInput = z.infer<typeof UpdateDestinationSchema>;

@@ -11,6 +11,7 @@ import {
     WithLifecycleStateSchema,
     WithVisibilitySchema
 } from '../../common/index.js';
+import { BaseSearchSchema } from '../../common/search.schemas.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { UserBookmarkSchema } from './user.bookmark.schema.js';
 import { UserProfileSchema } from './user.profile.schema.js';
@@ -66,20 +67,24 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
     });
 
 // Input para filtros de búsqueda de usuarios
-export const UserFilterInputSchema = z.object({
-    firstName: z
-        .string()
-        .min(2, { message: 'zodError.user.firstName.min' })
-        .max(50, { message: 'zodError.user.firstName.max' })
-        .optional(),
-    lastName: z
-        .string()
-        .min(2, { message: 'zodError.user.lastName.min' })
-        .max(50, { message: 'zodError.user.lastName.max' })
-        .optional(),
-    role: z.nativeEnum(RoleEnum).optional(),
-    q: z.string().optional() // free text search
-});
+export const UserFilterInputSchema = BaseSearchSchema.extend({
+    filters: z
+        .object({
+            firstName: z
+                .string()
+                .min(2, { message: 'zodError.user.firstName.min' })
+                .max(50, { message: 'zodError.user.firstName.max' })
+                .optional(),
+            lastName: z
+                .string()
+                .min(2, { message: 'zodError.user.lastName.min' })
+                .max(50, { message: 'zodError.user.lastName.max' })
+                .optional(),
+            role: z.nativeEnum(RoleEnum).optional(),
+            q: z.string().optional() // free text search
+        })
+        .optional()
+}).strict();
 
 // Input para ordenamiento de resultados
 export const UserSortInputSchema = z.object({

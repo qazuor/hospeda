@@ -17,6 +17,7 @@ import {
     WithTagsSchema,
     WithVisibilitySchema
 } from '../../common/index.js';
+import { BaseSearchSchema } from '../../common/search.schemas.js';
 import { PostCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.js';
 
 /**
@@ -70,14 +71,18 @@ export const PostSchema = WithIdSchema.merge(WithAuditSchema)
     });
 
 // Input para filtros de búsqueda de posts
-export const PostFilterInputSchema = z.object({
-    category: PostCategoryEnumSchema.optional(),
-    visibility: VisibilityEnumSchema.optional(),
-    isFeatured: z.boolean().optional(),
-    isNews: z.boolean().optional(),
-    isFeaturedInWebsite: z.boolean().optional(),
-    authorId: z.string().optional(),
-    q: z.string().optional() // free text search
+export const PostFilterInputSchema = BaseSearchSchema.extend({
+    filters: z
+        .object({
+            category: PostCategoryEnumSchema.optional(),
+            visibility: VisibilityEnumSchema.optional(),
+            isFeatured: z.boolean().optional(),
+            isNews: z.boolean().optional(),
+            isFeaturedInWebsite: z.boolean().optional(),
+            authorId: z.string().optional(),
+            q: z.string().optional() // free text search
+        })
+        .optional()
 });
 
 // Input para ordenamiento de resultados

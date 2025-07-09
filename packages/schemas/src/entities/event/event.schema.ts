@@ -12,6 +12,7 @@ import {
     WithTagsSchema,
     WithVisibilitySchema
 } from '../../common/index.js';
+import { BaseSearchSchema } from '../../common/search.schemas.js';
 import { EventCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.js';
 import { EventDateSchema } from './event.date.schema.js';
 import { EventPriceSchema } from './event.price.schema.js';
@@ -80,16 +81,20 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
     });
 
 // Input para filtros de búsqueda de eventos
-export const EventFilterInputSchema = z.object({
-    state: z.string().optional(),
-    city: z.string().optional(),
-    country: z.string().optional(),
-    category: EventCategoryEnumSchema.optional(),
-    visibility: VisibilityEnumSchema.optional(),
-    isFeatured: z.boolean().optional(),
-    minDate: z.string().optional(),
-    maxDate: z.string().optional(),
-    q: z.string().optional() // free text search
+export const EventFilterInputSchema = BaseSearchSchema.extend({
+    filters: z
+        .object({
+            state: z.string().optional(),
+            city: z.string().optional(),
+            country: z.string().optional(),
+            category: EventCategoryEnumSchema.optional(),
+            visibility: VisibilityEnumSchema.optional(),
+            isFeatured: z.boolean().optional(),
+            minDate: z.string().optional(),
+            maxDate: z.string().optional(),
+            q: z.string().optional() // free text search
+        })
+        .optional()
 });
 
 // Input para ordenamiento de resultados
