@@ -32,6 +32,8 @@ type StrictDestinationType = Omit<
         icon: string;
         description: string;
         destinationId: DestinationId;
+        isBuiltin: boolean;
+        isFeatured: boolean;
         adminInfo?: { favorite: boolean; notes?: string };
     }[];
     reviews: {
@@ -117,7 +119,20 @@ const baseDestination: StrictDestinationType = {
     reviewsCount: 0,
     averageRating: 0,
     rating: undefined,
-    attractions: [],
+    attractions: [
+        {
+            id: getMockId('feature') as AttractionId,
+            attractionId: getMockId('feature') as AttractionId,
+            name: 'Test Attraction',
+            slug: 'test-attraction',
+            icon: '🎡',
+            description: 'A test attraction',
+            destinationId: getMockId('destination') as DestinationId,
+            isBuiltin: false,
+            isFeatured: false,
+            adminInfo: { favorite: false }
+        }
+    ],
     reviews: []
 };
 
@@ -148,6 +163,22 @@ export class DestinationFactoryBuilder extends BaseFactoryBuilder<StrictDestinat
     }
     public withAverageRating(rating: number) {
         return this.with({ averageRating: rating });
+    }
+    public withAttractions(
+        attractions: Array<{
+            id: AttractionId;
+            attractionId: AttractionId;
+            name: string;
+            slug: string;
+            icon: string;
+            description: string;
+            destinationId: DestinationId;
+            isBuiltin: boolean;
+            isFeatured: boolean;
+            adminInfo?: { favorite: boolean; notes?: string };
+        }>
+    ) {
+        return this.with({ attractions });
     }
 }
 

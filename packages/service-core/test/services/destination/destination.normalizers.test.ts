@@ -1,4 +1,5 @@
 import type { DestinationSchema } from '@repo/schemas/entities/destination/destination.schema';
+import type { AttractionId, DestinationId } from '@repo/types';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
@@ -9,6 +10,7 @@ import {
     normalizeViewInput
 } from '../../../src/services/destination/destination.normalizers';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
+import { getMockId } from '../../factories/utilsFactory';
 
 const testActor = { id: 'test', role: RoleEnum.ADMIN, permissions: [] };
 
@@ -30,25 +32,78 @@ describe('Destination Normalizers', () => {
     it('normalizeCreateInput sets default visibility to PRIVATE if missing', () => {
         const input = new DestinationFactoryBuilder()
             .with({ visibility: undefined, location: validLocation })
+            .withAttractions([
+                {
+                    id: getMockId('feature') as AttractionId,
+                    attractionId: getMockId('feature') as AttractionId,
+                    name: 'Attraction 1',
+                    slug: 'attraction-1',
+                    icon: 'icon1',
+                    description: 'desc',
+                    isBuiltin: false,
+                    isFeatured: false,
+                    destinationId: getMockId('destination') as DestinationId,
+                    adminInfo: { favorite: false }
+                }
+            ])
             .build();
         // Cast for test compatibility: builder uses entity type, schema expects more fields
-        const result = normalizeCreateInput(input as z.infer<typeof DestinationSchema>, testActor);
+        const result = normalizeCreateInput(
+            input as unknown as z.infer<typeof DestinationSchema>,
+            testActor
+        );
         expect(result.visibility).toBe(VisibilityEnum.PRIVATE);
     });
 
     it('normalizeCreateInput preserves provided visibility', () => {
         const input = new DestinationFactoryBuilder()
             .with({ visibility: VisibilityEnum.PUBLIC, location: validLocation })
+            .withAttractions([
+                {
+                    id: getMockId('feature') as AttractionId,
+                    attractionId: getMockId('feature') as AttractionId,
+                    name: 'Attraction 1',
+                    slug: 'attraction-1',
+                    icon: 'icon1',
+                    description: 'desc',
+                    isBuiltin: false,
+                    isFeatured: false,
+                    destinationId: getMockId('destination') as DestinationId,
+                    adminInfo: { favorite: false }
+                }
+            ])
             .build();
         // Cast for test compatibility
-        const result = normalizeCreateInput(input as z.infer<typeof DestinationSchema>, testActor);
+        const result = normalizeCreateInput(
+            input as unknown as z.infer<typeof DestinationSchema>,
+            testActor
+        );
         expect(result.visibility).toBe(VisibilityEnum.PUBLIC);
     });
 
     it('normalizeUpdateInput returns the same object', () => {
-        const input = new DestinationFactoryBuilder().with({ location: validLocation }).build();
+        const input = new DestinationFactoryBuilder()
+            .with({ location: validLocation })
+            .withAttractions([
+                {
+                    id: getMockId('feature') as AttractionId,
+                    attractionId: getMockId('feature') as AttractionId,
+                    name: 'Attraction 1',
+                    slug: 'attraction-1',
+                    icon: 'icon1',
+                    description: 'desc',
+                    isBuiltin: false,
+                    isFeatured: false,
+                    destinationId: getMockId('destination') as DestinationId,
+                    adminInfo: { favorite: false }
+                }
+            ])
+            .build();
         // Cast for test compatibility
-        const result = normalizeUpdateInput(input as z.infer<typeof DestinationSchema>, testActor);
+        const result = normalizeUpdateInput(
+            input as unknown as z.infer<typeof DestinationSchema>,
+            testActor
+        );
         expect(result).toStrictEqual(input);
     });
 

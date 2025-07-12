@@ -57,21 +57,30 @@ describe('DestinationService.create', () => {
                     slug: 'attraction-1',
                     description: 'A valid description for attraction 1',
                     icon: 'icon1',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 },
                 {
                     name: 'Attraction 2',
                     slug: 'attraction-2',
                     description: 'A valid description for attraction 2',
                     icon: 'icon2',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 },
                 {
                     name: 'Attraction 3',
                     slug: 'attraction-3',
                     description: 'A valid description for attraction 3',
                     icon: 'icon3',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 }
             ],
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -116,21 +125,30 @@ describe('DestinationService.create', () => {
                     slug: 'attraction-1',
                     description: 'A valid description for attraction 1',
                     icon: 'icon1',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 },
                 {
                     name: 'Attraction 2',
                     slug: 'attraction-2',
                     description: 'A valid description for attraction 2',
                     icon: 'icon2',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 },
                 {
                     name: 'Attraction 3',
                     slug: 'attraction-3',
                     description: 'A valid description for attraction 3',
                     icon: 'icon3',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 }
             ],
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -172,21 +190,30 @@ describe('DestinationService.create', () => {
                     slug: 'attraction-1',
                     description: 'A valid description for attraction 1',
                     icon: 'icon1',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 },
                 {
                     name: 'Attraction 2',
                     slug: 'attraction-2',
                     description: 'A valid description for attraction 2',
                     icon: 'icon2',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 },
                 {
                     name: 'Attraction 3',
                     slug: 'attraction-3',
                     description: 'A valid description for attraction 3',
                     icon: 'icon3',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 }
             ],
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -228,21 +255,30 @@ describe('DestinationService.create', () => {
                     slug: 'attraction-1',
                     description: 'A valid description for attraction 1',
                     icon: 'icon1',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 },
                 {
                     name: 'Attraction 2',
                     slug: 'attraction-2',
                     description: 'A valid description for attraction 2',
                     icon: 'icon2',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 },
                 {
                     name: 'Attraction 3',
                     slug: 'attraction-3',
                     description: 'A valid description for attraction 3',
                     icon: 'icon3',
-                    destinationId: getMockId('destination')
+                    destinationId: getMockId('destination'),
+                    isBuiltin: false,
+                    isFeatured: false,
+                    adminInfo: { favorite: false }
                 }
             ],
             lifecycleState: LifecycleStatusEnum.ACTIVE,
