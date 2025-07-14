@@ -6,7 +6,6 @@ import {
 } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
-import { getMockTag } from '../../../../services/src/test/factories/tagFactory';
 import {
     normalizeCreateInput,
     normalizeImage,
@@ -14,8 +13,9 @@ import {
     normalizeUpdateInput
 } from '../../../src/services/post/post.normalizers';
 import type { PostCreateInput, PostUpdateSchema } from '../../../src/services/post/post.schemas';
+import { TagFactoryBuilder } from '../../factories/tagFactory';
 
-const validTag = getMockTag();
+const validTag = TagFactoryBuilder.create();
 
 const validImage: ImageType = {
     url: 'https://example.com/image.jpg',

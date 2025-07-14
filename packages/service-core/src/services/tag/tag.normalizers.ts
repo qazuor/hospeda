@@ -21,7 +21,7 @@ export const normalizeCreateInput = async (
     const name = input.name.trim();
     const slug = input.slug?.trim() || (await generateTagSlug(name));
     const color = input.color;
-    if (!Object.values(TagColorEnum).includes(color)) {
+    if (color && !Object.values(TagColorEnum).includes(color)) {
         throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid tag color');
     }
     return {

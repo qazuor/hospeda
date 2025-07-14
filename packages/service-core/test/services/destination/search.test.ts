@@ -1,18 +1,12 @@
 import type { DestinationModel } from '@repo/db';
-import {
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    PermissionEnum,
-    ServiceErrorCode,
-    TagColorEnum
-} from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode, TagColorEnum } from '@repo/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getMockTag } from '../../../../services/src/test/factories/tagFactory';
 import * as permissionHelpers from '../../../src/services/destination/destination.permission';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
+import { TagFactoryBuilder } from '../../factories/tagFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -170,28 +164,14 @@ describe('DestinationService.search and count', () => {
 
     it('should handle edge case: tags filter', async () => {
         // Arrange
-        const tag = {
-            id: getMockTag().id,
+        const tag = TagFactoryBuilder.create({
             name: 'beach',
             slug: 'beach',
             color: TagColorEnum.BLUE,
             icon: 'star',
             notes: 'Test tag',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            createdById: getMockTag().createdById,
-            updatedById: getMockTag().updatedById,
-            deletedAt: undefined,
-            deletedById: undefined,
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
-            moderationState: ModerationStatusEnum.APPROVED,
-            seo: {
-                title: 'SEO Title for tag with beach - valid',
-                description:
-                    'SEO description for tag with beach - valid description and even more characters to pass validation',
-                keywords: ['beach']
-            }
-        };
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
         const destinations = [
             new DestinationFactoryBuilder().with({ name: 'Taggy', tags: [tag] }).build()
         ];

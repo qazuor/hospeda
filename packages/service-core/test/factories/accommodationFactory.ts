@@ -23,6 +23,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PriceCurrencyEnum,
+    TagColorEnum,
     VisibilityEnum
 } from '@repo/types';
 import { getMockId } from '../factories/utilsFactory';
@@ -212,7 +213,7 @@ export class AccommodationFactoryBuilder extends BaseFactoryBuilder<Accommodatio
                 id: `tag-${i + 1}` as TagId,
                 name: `Tag ${i + 1}`,
                 slug: `tag-${i + 1}`,
-                color: 'BLUE',
+                color: TagColorEnum.BLUE,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: getMockId('user') as UserId,

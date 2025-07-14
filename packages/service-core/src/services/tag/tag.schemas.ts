@@ -14,9 +14,7 @@ export const CreateTagSchema = TagSchema.omit({
     createdById: true,
     updatedById: true,
     deletedById: true,
-    lifecycleState: true,
-    moderationState: true,
-    seo: true
+    lifecycleState: true
 }).strict();
 export type CreateTagInput = z.infer<typeof CreateTagSchema>;
 
