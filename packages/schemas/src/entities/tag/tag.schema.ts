@@ -1,8 +1,5 @@
 import { TagIdSchema, UserIdSchema } from '@repo/schemas/common/id.schema.js';
-import {
-    LifecycleStatusEnumSchema,
-    ModerationStatusEnumSchema
-} from '@repo/schemas/enums/index.js';
+import { LifecycleStatusEnumSchema } from '@repo/schemas/enums/index.js';
 import { TagColorEnumSchema } from '@repo/schemas/enums/tag-color.enum.schema.js';
 import { z } from 'zod';
 
@@ -39,39 +36,6 @@ export const TagSchema = z.object({
 
     // From WithLifecycleStateSchema
     lifecycleState: LifecycleStatusEnumSchema,
-
-    // From WithModerationStatusSchema
-    moderationState: ModerationStatusEnumSchema,
-
-    // From WithSeoSchema
-    seo: z
-        .object({
-            title: z
-                .string({
-                    required_error: 'zodError.common.seo.title.required',
-                    invalid_type_error: 'zodError.common.seo.title.invalidType'
-                })
-                .min(30, { message: 'zodError.common.seo.title.min' })
-                .max(60, { message: 'zodError.common.seo.title.max' })
-                .optional(),
-            description: z
-                .string({
-                    required_error: 'zodError.common.seo.description.required',
-                    invalid_type_error: 'zodError.common.seo.description.invalidType'
-                })
-                .min(70, { message: 'zodError.common.seo.description.min' })
-                .max(160, { message: 'zodError.common.seo.description.max' })
-                .optional(),
-            keywords: z
-                .array(
-                    z.string({
-                        required_error: 'zodError.common.seo.keywords.required',
-                        invalid_type_error: 'zodError.common.seo.keywords.invalidType'
-                    })
-                )
-                .optional()
-        })
-        .optional(),
 
     // Own properties
     name: z

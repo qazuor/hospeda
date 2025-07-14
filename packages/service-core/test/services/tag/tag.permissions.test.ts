@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, TagColorEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCountTags,
@@ -15,7 +15,7 @@ import { ServiceError } from '../../../src/types';
 import { TagFactoryBuilder } from '../../factories/tagFactory';
 
 const baseActor = { id: 'actor-id', role: RoleEnum.ADMIN, permissions: [] };
-const tag = TagFactoryBuilder.create({ name: 'Tag', slug: 'tag', color: 'BLUE' });
+const tag = TagFactoryBuilder.create({ name: 'Tag', slug: 'tag', color: TagColorEnum.BLUE });
 
 describe('tag.permissions', () => {
     it('checkCanCreateTag allows with TAG_CREATE', () => {

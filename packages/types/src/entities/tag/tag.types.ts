@@ -13,6 +13,7 @@ import type {
     UserId
 } from '../../common/id.types.js';
 import type { EntityTypeEnum } from '../../enums/entity-type.enum.js';
+import type { TagColorEnum } from '../../enums/tag-color.enum.js';
 
 /**
  * Tag used for categorizing and filtering entities.
@@ -21,7 +22,7 @@ export interface TagType extends WithAudit, WithLifecycleState {
     id: TagId;
     name: string;
     slug: string;
-    color: string;
+    color: TagColorEnum;
     icon?: string;
     notes?: string;
 }
