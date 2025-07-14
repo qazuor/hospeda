@@ -1,0 +1,72 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "tag.schema.json",
+    "title": "Tag Seed Schema",
+    "description": "JSON schema for Tag entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Tag ID (UUID)"
+        },
+        "name": {
+            "type": "string",
+            "description": "Tag name"
+        },
+        "slug": {
+            "type": "string",
+            "description": "Tag slug"
+        },
+        "description": {
+            "type": "string",
+            "description": "Tag description"
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "general",
+                "accommodation",
+                "destination",
+                "activity",
+                "cuisine",
+                "amenity",
+                "experience"
+            ],
+            "description": "Tag type"
+        },
+        "category": {
+            "type": "string",
+            "enum": ["primary", "secondary", "tertiary"],
+            "description": "Tag category"
+        },
+        "color": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+            "description": "Tag color in hex format"
+        },
+        "icon": {
+            "type": "string",
+            "description": "Tag icon identifier"
+        },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether tag is active"
+        },
+        "usageCount": {
+            "type": "integer",
+            "description": "Number of times tag has been used"
+        },
+        "parentId": {
+            "type": "string",
+            "description": "Parent tag ID for hierarchical tags"
+        },
+        "seo": {
+            "$ref": "common.schema.json#/definitions/seo"
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": ["id", "name", "slug", "type", "category"],
+    "additionalProperties": false
+}

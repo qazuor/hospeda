@@ -1,0 +1,165 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "event.schema.json",
+    "title": "Event Seed Schema",
+    "description": "JSON schema for Event entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Event ID (UUID)"
+        },
+        "title": {
+            "type": "string",
+            "description": "Event title"
+        },
+        "description": {
+            "type": "string",
+            "description": "Event description"
+        },
+        "slug": {
+            "type": "string",
+            "description": "Event slug"
+        },
+        "type": {
+            "type": "string",
+            "enum": [
+                "cultural",
+                "sports",
+                "music",
+                "gastronomy",
+                "business",
+                "education",
+                "health",
+                "technology",
+                "art",
+                "other"
+            ],
+            "description": "Event type"
+        },
+        "status": {
+            "type": "string",
+            "enum": ["draft", "published", "cancelled", "postponed", "completed"],
+            "description": "Event status"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "festival",
+                "conference",
+                "concert",
+                "workshop",
+                "exhibition",
+                "competition",
+                "meetup",
+                "celebration",
+                "show",
+                "other"
+            ],
+            "description": "Event category"
+        },
+        "destinationId": {
+            "type": "string",
+            "description": "Related destination ID"
+        },
+        "accommodationId": {
+            "type": "string",
+            "description": "Related accommodation ID"
+        },
+        "featured": {
+            "type": "boolean",
+            "description": "Whether event is featured"
+        },
+        "isRecurring": {
+            "type": "boolean",
+            "description": "Whether event is recurring"
+        },
+        "recurringPattern": {
+            "type": "string",
+            "enum": ["daily", "weekly", "monthly", "yearly"],
+            "description": "Recurring pattern if applicable"
+        },
+        "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Event start date"
+        },
+        "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Event end date"
+        },
+        "capacity": {
+            "type": "integer",
+            "description": "Maximum capacity"
+        },
+        "attendees": {
+            "type": "integer",
+            "description": "Current number of attendees"
+        },
+        "price": {
+            "$ref": "common.schema.json#/definitions/price"
+        },
+        "location": {
+            "$ref": "common.schema.json#/definitions/location"
+        },
+        "contactInfo": {
+            "$ref": "common.schema.json#/definitions/contactInfo"
+        },
+        "socialNetworks": {
+            "$ref": "common.schema.json#/definitions/socialNetworks"
+        },
+        "media": {
+            "$ref": "common.schema.json#/definitions/media"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Array of tag IDs"
+        },
+        "organizer": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Organizer name"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Organizer email"
+                },
+                "phone": {
+                    "type": "string",
+                    "description": "Organizer phone"
+                },
+                "website": {
+                    "type": "string",
+                    "description": "Organizer website"
+                }
+            },
+            "required": ["name"]
+        },
+        "seo": {
+            "$ref": "common.schema.json#/definitions/seo"
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": [
+        "id",
+        "title",
+        "description",
+        "slug",
+        "type",
+        "status",
+        "category",
+        "destinationId",
+        "startDate",
+        "endDate"
+    ],
+    "additionalProperties": false
+}

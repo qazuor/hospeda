@@ -1,0 +1,67 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "feature.schema.json",
+    "title": "Feature Seed Schema",
+    "description": "JSON schema for Feature entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Feature ID (UUID)"
+        },
+        "name": {
+            "type": "string",
+            "description": "Feature name"
+        },
+        "slug": {
+            "type": "string",
+            "description": "Feature slug"
+        },
+        "description": {
+            "type": "string",
+            "description": "Feature description"
+        },
+        "type": {
+            "type": "string",
+            "enum": ["accommodation", "destination", "service", "activity", "facility"],
+            "description": "Feature type"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "essential",
+                "comfort",
+                "luxury",
+                "accessibility",
+                "technology",
+                "entertainment",
+                "business",
+                "wellness",
+                "safety",
+                "sustainability"
+            ],
+            "description": "Feature category"
+        },
+        "icon": {
+            "type": "string",
+            "description": "Feature icon identifier"
+        },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether feature is active"
+        },
+        "isPopular": {
+            "type": "boolean",
+            "description": "Whether feature is popular"
+        },
+        "sortOrder": {
+            "type": "integer",
+            "description": "Sort order for display"
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": ["id", "name", "slug", "type", "category"],
+    "additionalProperties": false
+}

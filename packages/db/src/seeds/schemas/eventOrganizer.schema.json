@@ -1,0 +1,77 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "eventOrganizer.schema.json",
+    "title": "EventOrganizer Seed Schema",
+    "description": "JSON schema for EventOrganizer entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "EventOrganizer ID (UUID)"
+        },
+        "eventId": {
+            "type": "string",
+            "description": "Related event ID"
+        },
+        "name": {
+            "type": "string",
+            "description": "Organizer name"
+        },
+        "logo": {
+            "type": "string",
+            "description": "Organizer logo URL"
+        },
+        "website": {
+            "type": "string",
+            "description": "Organizer website URL"
+        },
+        "description": {
+            "type": "string",
+            "description": "Organizer description"
+        },
+        "type": {
+            "type": "string",
+            "enum": ["primary", "co-organizer", "sponsor", "partner", "supporter"],
+            "description": "Organizer type"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "company",
+                "government",
+                "ngo",
+                "association",
+                "individual",
+                "educational",
+                "cultural",
+                "religious",
+                "sports",
+                "media",
+                "other"
+            ],
+            "description": "Organizer category"
+        },
+        "role": {
+            "type": "string",
+            "description": "Specific role in the event"
+        },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether organizer is active"
+        },
+        "contactInfo": {
+            "$ref": "common.schema.json#/definitions/contactInfo"
+        },
+        "socialNetworks": {
+            "$ref": "common.schema.json#/definitions/socialNetworks"
+        },
+        "location": {
+            "$ref": "common.schema.json#/definitions/location"
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": ["id", "eventId", "name", "type", "category"],
+    "additionalProperties": false
+}

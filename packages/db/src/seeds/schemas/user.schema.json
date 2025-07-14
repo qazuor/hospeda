@@ -1,0 +1,93 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "user.schema.json",
+    "title": "User Seed Schema",
+    "description": "JSON schema for User entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "User ID (UUID)"
+        },
+        "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+        },
+        "username": {
+            "type": "string",
+            "description": "Username"
+        },
+        "firstName": {
+            "type": "string",
+            "description": "User first name"
+        },
+        "lastName": {
+            "type": "string",
+            "description": "User last name"
+        },
+        "avatar": {
+            "type": "string",
+            "description": "Avatar URL"
+        },
+        "bio": {
+            "type": "string",
+            "description": "User biography"
+        },
+        "role": {
+            "type": "string",
+            "enum": ["user", "admin", "moderator"],
+            "description": "User role"
+        },
+        "isVerified": {
+            "type": "boolean",
+            "description": "Whether user is verified"
+        },
+        "contactInfo": {
+            "$ref": "common.schema.json#/definitions/contactInfo"
+        },
+        "socialNetworks": {
+            "$ref": "common.schema.json#/definitions/socialNetworks"
+        },
+        "location": {
+            "$ref": "common.schema.json#/definitions/location"
+        },
+        "preferences": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "type": "string",
+                    "enum": ["es", "en", "pt"],
+                    "description": "Preferred language"
+                },
+                "currency": {
+                    "type": "string",
+                    "enum": ["ARS", "USD", "EUR"],
+                    "description": "Preferred currency"
+                },
+                "notifications": {
+                    "type": "object",
+                    "properties": {
+                        "email": {
+                            "type": "boolean",
+                            "description": "Email notifications enabled"
+                        },
+                        "push": {
+                            "type": "boolean",
+                            "description": "Push notifications enabled"
+                        },
+                        "marketing": {
+                            "type": "boolean",
+                            "description": "Marketing notifications enabled"
+                        }
+                    }
+                }
+            }
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": ["id", "email", "username", "firstName", "lastName", "role"],
+    "additionalProperties": false
+}

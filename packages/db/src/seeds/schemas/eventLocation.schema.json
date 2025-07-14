@@ -1,0 +1,101 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "eventLocation.schema.json",
+    "title": "EventLocation Seed Schema",
+    "description": "JSON schema for EventLocation entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "EventLocation ID (UUID)"
+        },
+        "eventId": {
+            "type": "string",
+            "description": "Related event ID"
+        },
+        "name": {
+            "type": "string",
+            "description": "Location name"
+        },
+        "description": {
+            "type": "string",
+            "description": "Location description"
+        },
+        "type": {
+            "type": "string",
+            "enum": ["primary", "secondary", "alternative", "virtual"],
+            "description": "Location type"
+        },
+        "category": {
+            "type": "string",
+            "enum": ["indoor", "outdoor", "hybrid", "virtual", "mobile"],
+            "description": "Location category"
+        },
+        "venue": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Venue name"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "hotel",
+                        "convention_center",
+                        "theater",
+                        "stadium",
+                        "park",
+                        "museum",
+                        "restaurant",
+                        "bar",
+                        "club",
+                        "beach",
+                        "plaza",
+                        "street",
+                        "building",
+                        "room",
+                        "online",
+                        "other"
+                    ],
+                    "description": "Venue type"
+                },
+                "capacity": {
+                    "type": "integer",
+                    "description": "Venue capacity"
+                },
+                "accessibility": {
+                    "type": "boolean",
+                    "description": "Whether venue is accessible"
+                },
+                "parking": {
+                    "type": "boolean",
+                    "description": "Whether venue has parking"
+                },
+                "publicTransport": {
+                    "type": "boolean",
+                    "description": "Whether venue is accessible by public transport"
+                }
+            },
+            "required": ["name", "type"]
+        },
+        "location": {
+            "$ref": "common.schema.json#/definitions/location"
+        },
+        "contactInfo": {
+            "$ref": "common.schema.json#/definitions/contactInfo"
+        },
+        "media": {
+            "$ref": "common.schema.json#/definitions/media"
+        },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether location is active"
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": ["id", "eventId", "name", "type", "category", "venue"],
+    "additionalProperties": false
+}
