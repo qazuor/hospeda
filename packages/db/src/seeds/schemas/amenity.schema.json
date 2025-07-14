@@ -1,0 +1,72 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "amenity.schema.json",
+    "title": "Amenity Seed Schema",
+    "description": "JSON schema for Amenity entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Amenity ID (UUID)"
+        },
+        "name": {
+            "type": "string",
+            "description": "Amenity name"
+        },
+        "slug": {
+            "type": "string",
+            "description": "Amenity slug"
+        },
+        "description": {
+            "type": "string",
+            "description": "Amenity description"
+        },
+        "type": {
+            "type": "string",
+            "enum": ["accommodation", "room", "common_area", "external", "service"],
+            "description": "Amenity type"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "basic",
+                "comfort",
+                "luxury",
+                "technology",
+                "entertainment",
+                "business",
+                "wellness",
+                "family",
+                "accessibility",
+                "pet_friendly",
+                "eco_friendly"
+            ],
+            "description": "Amenity category"
+        },
+        "icon": {
+            "type": "string",
+            "description": "Amenity icon identifier"
+        },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether amenity is active"
+        },
+        "isPopular": {
+            "type": "boolean",
+            "description": "Whether amenity is popular"
+        },
+        "isPremium": {
+            "type": "boolean",
+            "description": "Whether amenity is premium"
+        },
+        "sortOrder": {
+            "type": "integer",
+            "description": "Sort order for display"
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": ["id", "name", "slug", "type", "category"],
+    "additionalProperties": false
+}

@@ -1,0 +1,202 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "contactInfo": {
+            "type": "object",
+            "properties": {
+                "personalEmail": { "type": "string", "format": "email" },
+                "workEmail": { "type": "string", "format": "email" },
+                "homeEmail": { "type": "string", "format": "email" },
+                "mobilePhone": { "type": "string" },
+                "homePhone": { "type": "string" },
+                "workPhone": { "type": "string" },
+                "website": { "type": "string", "format": "uri" },
+                "preferredEmail": {
+                    "type": "string",
+                    "enum": ["HOME", "WORK", "PERSONAL"]
+                },
+                "preferredPhone": {
+                    "type": "string",
+                    "enum": ["MOBILE", "HOME", "WORK"]
+                }
+            },
+            "additionalProperties": false
+        },
+        "socialNetworks": {
+            "type": "object",
+            "properties": {
+                "facebook": { "type": "string", "format": "uri" },
+                "instagram": { "type": "string", "format": "uri" },
+                "twitter": { "type": "string", "format": "uri" },
+                "youtube": { "type": "string", "format": "uri" },
+                "whatsapp": { "type": "string" },
+                "linkedin": { "type": "string", "format": "uri" }
+            },
+            "additionalProperties": false
+        },
+        "location": {
+            "type": "object",
+            "properties": {
+                "state": { "type": "string" },
+                "zipCode": { "type": "string" },
+                "country": { "type": "string" },
+                "coordinates": {
+                    "type": "object",
+                    "properties": {
+                        "lat": { "type": "string" },
+                        "long": { "type": "string" }
+                    },
+                    "required": ["lat", "long"],
+                    "additionalProperties": false
+                },
+                "street": { "type": "string" },
+                "number": { "type": "string" },
+                "city": { "type": "string" },
+                "neighborhood": { "type": "string" },
+                "floor": { "type": "string" },
+                "apartment": { "type": "string" },
+                "department": { "type": "string" },
+                "placeName": { "type": "string" }
+            },
+            "additionalProperties": false
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "url": { "type": "string", "format": "uri" },
+                "caption": { "type": "string" },
+                "description": { "type": "string" },
+                "state": {
+                    "type": "string",
+                    "enum": ["ACTIVE", "INACTIVE"],
+                    "default": "ACTIVE"
+                }
+            },
+            "required": ["url"],
+            "additionalProperties": false
+        },
+        "media": {
+            "type": "object",
+            "properties": {
+                "featuredImage": { "$ref": "#/definitions/image" },
+                "gallery": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/image" }
+                }
+            },
+            "additionalProperties": false
+        },
+        "price": {
+            "type": "object",
+            "properties": {
+                "price": { "type": "number", "minimum": 0 },
+                "currency": {
+                    "type": "string",
+                    "enum": ["ARS", "USD", "EUR"]
+                }
+            },
+            "required": ["price", "currency"],
+            "additionalProperties": false
+        },
+        "seo": {
+            "type": "object",
+            "properties": {
+                "title": { "type": "string" },
+                "description": { "type": "string" },
+                "keywords": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            },
+            "additionalProperties": false
+        },
+        "adminInfo": {
+            "type": "object",
+            "properties": {
+                "notes": { "type": "string" },
+                "favorite": { "type": "boolean", "default": false }
+            },
+            "additionalProperties": false
+        },
+        "accommodationType": {
+            "type": "string",
+            "enum": [
+                "HOTEL",
+                "APARTMENT",
+                "HOUSE",
+                "CABIN",
+                "HOSTEL",
+                "ROOM",
+                "CAMPING",
+                "COUNTRY_HOUSE"
+            ]
+        },
+        "currency": {
+            "type": "string",
+            "enum": ["ARS", "USD", "EUR"]
+        },
+        "entityType": {
+            "type": "string",
+            "enum": ["ACCOMMODATION", "DESTINATION", "POST", "EVENT", "USER"]
+        },
+        "tagColor": {
+            "type": "string",
+            "enum": [
+                "BLUE",
+                "GREEN",
+                "RED",
+                "YELLOW",
+                "PURPLE",
+                "ORANGE",
+                "PINK",
+                "GRAY",
+                "BROWN",
+                "BLACK",
+                "WHITE",
+                "CYAN",
+                "MAGENTA",
+                "LIME",
+                "INDIGO",
+                "TEAL"
+            ]
+        },
+        "userRole": {
+            "type": "string",
+            "enum": ["ADMIN", "HOST", "GUEST"]
+        },
+        "amenityType": {
+            "type": "string",
+            "enum": [
+                "INTERNET",
+                "KITCHEN",
+                "LAUNDRY",
+                "BATHROOM",
+                "ENTERTAINMENT",
+                "COMFORT",
+                "SAFETY",
+                "PARKING",
+                "OUTDOOR",
+                "BUSINESS",
+                "FAMILY",
+                "WELLNESS",
+                "ACCESSIBILITY",
+                "CLEANING",
+                "PETS",
+                "SERVICES",
+                "OTHER"
+            ]
+        },
+        "clientType": {
+            "type": "string",
+            "enum": ["BUSINESS", "INDIVIDUAL", "ORGANIZATION", "GOVERNMENT"]
+        },
+        "contactPreference": {
+            "type": "string",
+            "enum": ["HOME", "WORK", "PERSONAL"]
+        },
+        "phonePreference": {
+            "type": "string",
+            "enum": ["MOBILE", "HOME", "WORK"]
+        }
+    }
+}

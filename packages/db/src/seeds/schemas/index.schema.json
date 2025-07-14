@@ -1,0 +1,76 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "index.schema.json",
+    "title": "Seed Schemas Index",
+    "description": "Index of all available seed schemas",
+    "type": "object",
+    "properties": {
+        "schemas": {
+            "type": "object",
+            "properties": {
+                "common": {
+                    "$ref": "common.schema.json"
+                },
+                "accommodation": {
+                    "$ref": "accommodation.schema.json"
+                },
+                "destination": {
+                    "$ref": "destination.schema.json"
+                },
+                "user": {
+                    "$ref": "user.schema.json"
+                },
+                "post": {
+                    "$ref": "post.schema.json"
+                },
+                "event": {
+                    "$ref": "event.schema.json"
+                },
+                "tag": {
+                    "$ref": "tag.schema.json"
+                },
+                "feature": {
+                    "$ref": "feature.schema.json"
+                },
+                "amenity": {
+                    "$ref": "amenity.schema.json"
+                },
+                "attraction": {
+                    "$ref": "attraction.schema.json"
+                },
+                "postSponsor": {
+                    "$ref": "postSponsor.schema.json"
+                },
+                "eventOrganizer": {
+                    "$ref": "eventOrganizer.schema.json"
+                },
+                "eventLocation": {
+                    "$ref": "eventLocation.schema.json"
+                },
+                "userBookmark": {
+                    "$ref": "userBookmark.schema.json"
+                }
+            }
+        }
+    },
+    "definitions": {
+        "entityTypes": {
+            "type": "string",
+            "enum": [
+                "accommodation",
+                "destination",
+                "user",
+                "post",
+                "event",
+                "tag",
+                "feature",
+                "amenity",
+                "attraction",
+                "postSponsor",
+                "eventOrganizer",
+                "eventLocation",
+                "userBookmark"
+            ]
+        }
+    }
+}

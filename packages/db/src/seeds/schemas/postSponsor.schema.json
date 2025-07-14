@@ -1,0 +1,90 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "postSponsor.schema.json",
+    "title": "PostSponsor Seed Schema",
+    "description": "JSON schema for PostSponsor entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "PostSponsor ID (UUID)"
+        },
+        "postId": {
+            "type": "string",
+            "description": "Related post ID"
+        },
+        "name": {
+            "type": "string",
+            "description": "Sponsor name"
+        },
+        "logo": {
+            "type": "string",
+            "description": "Sponsor logo URL"
+        },
+        "website": {
+            "type": "string",
+            "description": "Sponsor website URL"
+        },
+        "description": {
+            "type": "string",
+            "description": "Sponsor description"
+        },
+        "type": {
+            "type": "string",
+            "enum": ["primary", "secondary", "tertiary"],
+            "description": "Sponsorship type"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "accommodation",
+                "restaurant",
+                "tour_operator",
+                "transport",
+                "retail",
+                "service",
+                "technology",
+                "media",
+                "government",
+                "ngo",
+                "other"
+            ],
+            "description": "Sponsor category"
+        },
+        "amount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sponsorship amount"
+        },
+        "currency": {
+            "type": "string",
+            "enum": ["ARS", "USD", "EUR"],
+            "description": "Sponsorship currency"
+        },
+        "startDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Sponsorship start date"
+        },
+        "endDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Sponsorship end date"
+        },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether sponsorship is active"
+        },
+        "contactInfo": {
+            "$ref": "common.schema.json#/definitions/contactInfo"
+        },
+        "socialNetworks": {
+            "$ref": "common.schema.json#/definitions/socialNetworks"
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": ["id", "postId", "name", "type", "category"],
+    "additionalProperties": false
+}
