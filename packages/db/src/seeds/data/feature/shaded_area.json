@@ -1,0 +1,16 @@
+{
+    "id": "81c25058-1006-4d13-9c71-bc293f051e28",
+    "name": "shaded_area",
+    "slug": "shaded_area",
+    "description": "Sombra natural",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Característica destacada: shaded area",
+        "favorite": false
+    }
+}

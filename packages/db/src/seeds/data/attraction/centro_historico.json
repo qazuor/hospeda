@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
+    "name": "Centro Histórico",
+    "slug": "centro_historico",
+    "description": "Casco histórico de la ciudad con arquitectura colonial y sitios de interés patrimonial",
+    "icon": "account_balance",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "5df75b3e-1f48-40fe-ad77-3cae754982ab",
+    "name": "iron",
+    "slug": "iron",
+    "description": "Iron",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

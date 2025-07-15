@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "d7f0439d-f451-43e1-a237-415a5a3df74f",
+    "name": "Navegación Recreativa",
+    "slug": "navegacion_recreativa",
+    "description": "Actividades de navegación recreativa y paseos en embarcaciones",
+    "icon": "directions_boat_filled",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

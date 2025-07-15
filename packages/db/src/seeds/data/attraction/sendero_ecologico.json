@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "2a5e7172-bed0-4f9d-9610-c9e53921006b",
+    "name": "Sendero Ecológico",
+    "slug": "sendero_ecologico",
+    "description": "Sendero interpretativo para conocer la flora y fauna local",
+    "icon": "hiking",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

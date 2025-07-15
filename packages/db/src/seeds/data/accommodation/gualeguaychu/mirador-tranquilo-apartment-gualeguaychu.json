@@ -1,0 +1,166 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "mirador-tranquilo-apartment-gualeguaychu",
+    "name": "mirador-tranquilo-apartment",
+    "displayName": "Mirador Tranquilo Apartamento",
+    "type": "APARTMENT",
+    "description": "Disfruta de la calma y una perspectiva serena de Gualeguaychú en Mirador Tranquilo, un apartamento ubicado en un piso alto con vistas parciales a la ciudad o zonas verdes. Ideal para viajeros que valoran un ambiente tranquilo, luminoso y con las comodidades de un apartamento moderno, con fácil acceso a las atracciones principales.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo alojar hasta 3 personas. Los ventanales permiten la entrada de luz y ofrecen las vistas parciales. Dispone de aire acondicionado y calefacción.\n\nUbicado en un edificio con ascensor en una zona residencial tranquila, ofrece un retiro pacífico. Estás a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. Mirador Tranquilo es una opción serena y confortable para tu estadía.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "hola@miradortranquiloapartment.com.ar",
+        "mobilePhone": "+549344615695339",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@miradortranquiloapartment.com.ar",
+        "website": "https://miradortranquiloapartment.tur.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 13000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2200,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2820",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.0015",
+            "lng": "-58.5228"
+        },
+        "street": "Calle Jujuy",
+        "number": "800",
+        "floor": "4",
+        "apartment": "B",
+        "city": "Gualeguaychú",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1001682/pexels-photo-1001682.jpeg",
+                "caption": "Vista parcial",
+                "description": "Vista parcial a la ciudad/zonas verdes desde la ventana",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 2,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piso alto con vistas parciales",
+            "Barrio residencial tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Edificio con ascensor"
+        ]
+    },
+    "seo": {
+        "title": "Mirador Tranquilo - Apartamento sereno en Gualeguaychú",
+        "description": "Apartamento moderno en piso alto en Gualeguaychú. Vistas parciales, tranquilo. Ideal para parejas. Cerca del centro y Carnaval.",
+        "keywords": [
+            "apartamento",
+            "gualeguaychú",
+            "entre ríos",
+            "tranquilo",
+            "vistas",
+            "parejas",
+            "equipado",
+            "carnaval gualeguaychu"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Ofrece vistas parciales desde un piso alto. En zona residencial tranquila.",
+        "favorite": false,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "gualeguaychu",
+        "apartment",
+        "gualeguaychu-apartment",
+        "seed-example",
+        "quiet",
+        "city-view",
+        "carnival"
+    ],
+    "faqs": [
+        {
+            "question": "¿El edificio tiene ascensor?",
+            "answer": "Sí, el edificio cuenta con ascensor.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": [],
+    "socialNetworks": {
+        "twitter": "https://twitter.com/miradortranquiloapartment"
+    },
+    "featureIds": [
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680",
+        "dcf472e4-9275-47c2-8140-e9352de928c0"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "4bad848b-16de-488c-a673-91172ff620f3"
+    ]
+}

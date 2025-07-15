@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "f488a5b5-889b-4900-98fd-854e752a1fa1",
+    "name": "Centro de Interpretación de la Naturaleza",
+    "slug": "centro_interpretacion_naturaleza",
+    "description": "Centro educativo sobre ecosistemas locales y biodiversidad",
+    "icon": "eco",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

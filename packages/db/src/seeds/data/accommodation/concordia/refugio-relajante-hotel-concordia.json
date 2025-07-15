@@ -1,0 +1,178 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "refugio-relajante-hotel-concordia",
+    "name": "refugio-relajante-hotel",
+    "displayName": "Refugio Relajante Hotel",
+    "type": "HOTEL",
+    "description": "Encuentra la tranquilidad y el descanso en Refugio Relajante Hotel, ubicado en una zona serena de Concordia, ideal para quienes visitan la ciudad por sus termas o buscan un lugar apacible para relajarse. Ofrece un ambiente calmado y servicios orientados al bienestar.\n\nEl hotel cuenta con 20 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto a las Termas de Concordia, el Lago de Salto Grande y el centro de la ciudad. Refugio Relajante es la opción ideal para una estancia dedicada al descanso y al bienestar.",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "info@refugiorelajantehotel.com.ar",
+        "mobilePhone": "+54934515928351",
+        "homePhone": "+543452908173",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "price": {
+        "basePrice": {
+            "price": 22000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3200",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.4011",
+            "lng": "-58.0299"
+        },
+        "street": "Avenida Las Heras",
+        "number": "2500",
+        "city": "Concordia",
+        "neighborhood": "Zona Residencial Tranquila"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada del hotel",
+            "description": "Vista exterior de Refugio Relajante Hotel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación triple",
+                "description": "Habitación con cama matrimonial y una individual",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 40,
+        "minNights": 1,
+        "maxNights": 14,
+        "bedrooms": 20,
+        "beds": 30,
+        "bathrooms": 20,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina exterior disponible en temporada",
+            "Desayuno incluido",
+            "Estacionamiento descubierto gratuito",
+            "Ambiente tranquilo"
+        ]
+    },
+    "seo": {
+        "title": "Refugio Relajante Hotel - Tranquilidad y piscina en Concordia",
+        "description": "Hotel con jardín y piscina en zona tranquila de Concordia. Ideal para relax, cerca de Termas y Lago. Desayuno incluido.",
+        "keywords": [
+            "hotel",
+            "concordia",
+            "entre ríos",
+            "piscina",
+            "tranquilidad",
+            "termas concordia",
+            "lago salto grande"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Hotel con enfoque en relax. Bien ubicado para turismo de termas/lago.",
+        "favorite": true,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "concordia",
+        "hotel",
+        "concordia-hotel",
+        "seed-example",
+        "swimming-pool",
+        "thermal",
+        "quiet"
+    ],
+    "faqs": [
+        {
+            "question": "¿Está incluida la entrada a las Termas?",
+            "answer": "No, la entrada a las Termas de Concordia no está incluida en la tarifa del hotel.",
+            "category": "services"
+        },
+        {
+            "question": "¿Hay estacionamiento?",
+            "answer": "Sí, contamos con estacionamiento descubierto gratuito dentro del predio del hotel.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Termas y parques acuáticos en Concordia",
+            "content": "Concordia es famosa por sus complejos termales. El principal es el Parque Termal de Concordia, con piscinas de diferentes temperaturas y propiedades. Justo al lado se encuentra el Parque Acuático, ideal para la diversión familiar con toboganes y juegos de agua. Son una visita obligada durante tu estancia.",
+            "category": "thermal"
+        },
+        {
+            "title": "Lago de Salto Grande y actividades náuticas",
+            "content": "El Lago de Salto Grande, formado por la represa, es un gran espejo de agua ideal para actividades al aire libre. Puedes practicar deportes náuticos como vela, kayak, windsurf o pesca deportiva. También hay zonas de playa y espacios verdes para pasar el día. El Centro de Interpretación de la Represa ofrece visitas guiadas.",
+            "category": "nature"
+        }
+    ],
+    "socialNetworks": {
+        "facebook": "https://facebook.com/refugiorelajantehotelar",
+        "instagram": "https://instagram.com/refugiorelajantehotelar",
+        "twitter": "https://twitter.com/refugiorelajantehotelar"
+    },
+    "featureIds": [
+        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
+        "bdc8b938-9599-428c-92a8-0bf932005ed7"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

@@ -1,0 +1,172 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "refugio-silvestre-hotel-colon",
+    "name": "refugio-silvestre-hotel",
+    "displayName": "Refugio Silvestre Hotel",
+    "type": "HOTEL",
+    "description": "Experimenta una estancia de relax en el Refugio Silvestre Hotel, un oasis de tranquilidad ubicado en una zona semi-céntrica de Colón, ideal para quienes buscan combinar la paz del entorno con la comodidad de estar cerca de las atracciones principales. Este hotel está diseñado para ofrecer una experiencia acogedora y personalizada, rodeado de naturaleza y con servicios pensados para tu bienestar.\n\nEl hotel cuenta con 15 habitaciones confortables, decoradas con un estilo rústico y elegante, equipadas con aire acondicionado, calefacción, TV por cable y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples para adaptarnos a diferentes necesidades de alojamiento. Algunas habitaciones cuentan con vista al jardín o a la piscina.\n\nEntre nuestras instalaciones, destacamos un amplio jardín con piscina y solárium, perfectos para disfrutar de los días cálidos. Contamos con un desayuno buffet casero incluido en la tarifa, que se sirve en nuestro comedor con vista al jardín. También ofrecemos servicio de bar y cafetería. El hotel dispone de conexión WiFi gratuita en todas las áreas y estacionamiento descubierto dentro de la propiedad.\n\nSu ubicación estratégica facilita el acceso en pocos minutos en auto a la costanera, el centro comercial y el complejo termal de Colón. Es un refugio ideal para descansar después de un día de actividades, rodeado de la serenidad que solo un entorno con vegetación puede ofrecer.",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "contacto@refugiosilvestrehotel.com.ar",
+        "mobilePhone": "+549344715784573",
+        "homePhone": "+543447881246",
+        "website": "https://refugiosilvestrehotel.tur.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/refugiosilvestre",
+        "twitter": "https://twitter.com/refugiosilvestre"
+    },
+    "price": {
+        "basePrice": {
+            "price": 18000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2840",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2269",
+            "lng": "-58.1569"
+        },
+        "street": "Calle Las Retamas",
+        "number": "85",
+        "city": "Colón",
+        "neighborhood": "Zona Residencial Tranquila"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Hotel exterior",
+            "description": "Vista de la fachada y jardín del hotel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Fachada",
+                "description": "Exterior del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación triple",
+                "description": "Habitación con cama matrimonial y una individual",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "23:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 35,
+        "minNights": 1,
+        "maxNights": 14,
+        "bedrooms": 15,
+        "beds": 25,
+        "bathrooms": 15,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Desayuno buffet incluido",
+            "Piscina exterior disponible en temporada",
+            "Estacionamiento descubierto gratuito",
+            "Recepción con horario limitado (8:00 a 23:00)"
+        ]
+    },
+    "seo": {
+        "title": "Refugio Silvestre Hotel - Tranquilidad y confort en Colón, Entre Ríos",
+        "description": "Hotel con jardín y piscina en Colón. Habitaciones confortables, desayuno incluido. Ideal para relax cerca del centro y termas.",
+        "keywords": [
+            "hotel",
+            "colón",
+            "entre ríos",
+            "piscina",
+            "tranquilidad",
+            "alojamiento",
+            "vacaciones"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Pequeño hotel con ambiente familiar. Buena gestión de reservas directas.",
+        "favorite": false,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "colon",
+        "hotel",
+        "colon-hotel",
+        "seed-example",
+        "swimming-pool",
+        "nature"
+    ],
+    "faqs": [
+        {
+            "question": "¿La piscina está climatizada?",
+            "answer": "No, la piscina es exterior y no está climatizada. Está disponible para uso en temporada cálida.",
+            "category": "amenities"
+        },
+        {
+            "question": "¿El desayuno está incluido?",
+            "answer": "Sí, todas las tarifas incluyen desayuno buffet.",
+            "category": "dining"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Actividades en Colón",
+            "content": "Colón ofrece una variedad de actividades para todos los gustos. Sus playas sobre el río Uruguay son ideales para disfrutar del sol y actividades acuáticas como kayak y natación. El Parque Termal de Colón, con sus aguas terapéuticas, es perfecto para un día de relax. Para los amantes de la naturaleza, el cercano Parque Nacional El Palmar es una visita obligada para admirar las palmeras Yatay. También puedes recorrer el centro histórico de la ciudad, visitar museos y disfrutar de la gastronomía local, especialmente los pescados de río. En el hotel podemos ayudarte a organizar excursiones y darte recomendaciones.",
+            "category": "activities"
+        }
+    ],
+    "featureIds": [
+        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

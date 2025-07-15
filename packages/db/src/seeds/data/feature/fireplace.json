@@ -1,0 +1,16 @@
+{
+    "id": "8f8acc8b-625f-4244-9904-a21bf2d89900",
+    "name": "fireplace",
+    "slug": "fireplace",
+    "description": "Chimenea",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Chimenea a leña en el living",
+        "favorite": false
+    }
+}

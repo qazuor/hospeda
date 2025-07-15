@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "40b7da4c-3edf-48fb-82f2-6ae0c414f5a1",
+    "name": "Aviario",
+    "slug": "aviario",
+    "description": "Aviario con aves regionales y exóticas",
+    "icon": "flutter_dash",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

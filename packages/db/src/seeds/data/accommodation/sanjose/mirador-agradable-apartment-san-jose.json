@@ -1,0 +1,158 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "mirador-agradable-apartment-san_jose",
+    "name": "mirador-agradable-apartment",
+    "displayName": "Mirador Agradable Apartamento",
+    "type": "APARTMENT",
+    "description": "Disfruta de una estancia agradable con vistas en Mirador Agradable Apartamento, un espacio moderno y confortable ubicado en San José. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado, con vistas parciales y fácil acceso al centro y a los alrededores, incluyendo el Parque Nacional El Palmar.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo alojar hasta 3 personas. Los ventanales permiten la entrada de luz y ofrecen vistas parciales a la ciudad o zonas verdes. Dispone de aire acondicionado y calefacción.\n\nUbicado en un edificio con ascensor en una zona tranquila, ofrece un retiro pacífico. Estás a pocos minutos en auto del centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Una opción práctica y cómoda para tu visita a San José.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "info@miradoragradableapartment.com.ar",
+        "mobilePhone": "+549344715474821",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@miradoragradableapartment.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 13500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2200,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2847",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2005",
+            "lng": "-58.7394"
+        },
+        "street": "Calle Urquiza",
+        "number": "850",
+        "floor": "3",
+        "apartment": "C",
+        "city": "San José",
+        "neighborhood": "Centro"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1001682/pexels-photo-1001682.jpeg",
+                "caption": "Vista parcial",
+                "description": "Vista parcial a la ciudad/zonas verdes desde la ventana",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piso alto con vistas parciales",
+            "Barrio residencial tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Edificio con ascensor"
+        ]
+    },
+    "seo": {
+        "title": "Mirador Agradable - Apartamento en San José | Cerca El Palmar",
+        "description": "Apartamento moderno y tranquilo en San José. Vistas parciales. Ideal para parejas. Cerca del centro y Parque Nacional El Palmar.",
+        "keywords": [
+            "apartamento",
+            "san josé",
+            "entre ríos",
+            "el palmar",
+            "tranquilo",
+            "vistas",
+            "parejas",
+            "equipado"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Ofrece vistas parciales desde un piso alto. En zona residencial tranquila. Relevante para turismo de El Palmar.",
+        "favorite": false,
+        "tags": [
+            "san-jose",
+            "apartment",
+            "san-jose-apartment",
+            "seed-example",
+            "quiet",
+            "city-view",
+            "nature"
+        ]
+    },
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "Parque Nacional El Palmar",
+            "content": "El Parque Nacional El Palmar es uno de los parques nacionales más importantes de Argentina, famoso por sus extensos palmares de yatay. Ofrece senderos para caminar, áreas de picnic y acceso a playas sobre el río Uruguay. Es ideal para la observación de aves y la naturaleza. Se encuentra a pocos kilómetros de San José, por la Ruta Nacional 14.",
+            "category": "nature"
+        }
+    ],
+    "featureIds": [
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680",
+        "a471118f-48f7-4ae4-b6f4-963281900517"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "4bad848b-16de-488c-a673-91172ff620f3"
+    ]
+}

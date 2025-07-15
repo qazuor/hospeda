@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "acc99474-2779-4e5d-8e0a-9d49484d7543",
+    "name": "Iglesia Colonial",
+    "slug": "iglesia_colonial",
+    "description": "Iglesia de época colonial con arquitectura histórica y valor patrimonial",
+    "icon": "church",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "ba6da9c6-40f1-4480-9118-066e4e8bfed2",
+    "name": "Complejo Deportivo",
+    "slug": "complejo_deportivo",
+    "description": "Complejo con múltiples instalaciones deportivas",
+    "icon": "sports",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

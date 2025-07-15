@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "edb41d02-73e5-43ec-b13a-fae945fdfc1e",
+    "name": "Club Náutico",
+    "slug": "club_nautico",
+    "description": "Club con servicios náuticos, alquiler de embarcaciones y actividades acuáticas",
+    "icon": "anchor",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

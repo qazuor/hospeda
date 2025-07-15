@@ -1,0 +1,150 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sueno-natural-apartment-federacion",
+    "name": "sueno-natural-apartment",
+    "displayName": "Sueño Natural Apartamento",
+    "type": "APARTMENT",
+    "description": "Relájate y conecta con la naturaleza en Sueño Natural Apartamento, un espacio moderno y confortable ubicado en una zona tranquila de Federación, con un entorno verde cercano. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado para acceder a las termas y disfrutar del paisaje.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, con toques que recuerdan el entorno natural.\n\nSituado en un edificio tranquilo, ofrece un descanso reparador. Aunque no tiene vistas espectaculares, su proximidad a espacios verdes y la serenidad del barrio lo hacen ideal para recargar energías. Estás a pocos minutos en auto del Parque Termal de Federación y del centro de la ciudad. Una opción práctica y cómoda para tu visita.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@suenonaturalapartment.com.ar",
+        "mobilePhone": "+549345615273490",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "contacto@suenonaturalapartment.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 13000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2100,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0127",
+            "lng": "-57.9001"
+        },
+        "street": "Calle Los Sauces",
+        "number": "30",
+        "floor": "1",
+        "apartment": "B",
+        "city": "Federación",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Cerca de Termas de Federación"
+        ]
+    },
+    "seo": {
+        "title": "Sueño Natural - Apartamento tranquilo en Federación | Cerca Termas",
+        "description": "Apartamento moderno y sereno en Federación. Cerca del Parque Termal. Ideal para parejas. Equipado.",
+        "keywords": [
+            "apartamento",
+            "federación",
+            "entre ríos",
+            "termas federación",
+            "tranquilo",
+            "parejas",
+            "equipado"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad funcional para turismo termal. En zona tranquila.",
+        "favorite": false,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "federacion",
+        "apartment",
+        "federacion-apartment",
+        "seed-example",
+        "thermal",
+        "quiet"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "socialNetworks": {
+        "facebook": "https://facebook.com/suenonaturalapartmentok",
+        "instagram": "https://instagram.com/suenonaturalapartmentok",
+        "twitter": "https://twitter.com/suenonaturalapartmentok"
+    },
+    "featureIds": [
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "bdc8b938-9599-428c-92a8-0bf932005ed7"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

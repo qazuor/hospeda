@@ -1,0 +1,17 @@
+{
+    "id": "fea7a5dd-00b7-49c3-a52d-58596c337587",
+    "name": "ceiling_fan",
+    "slug": "ceiling_fan",
+    "description": "Ceiling Fan",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

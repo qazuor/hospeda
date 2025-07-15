@@ -1,0 +1,17 @@
+{
+    "id": "4bad848b-16de-488c-a673-91172ff620f3",
+    "name": "elevator",
+    "slug": "elevator",
+    "description": "Elevator",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

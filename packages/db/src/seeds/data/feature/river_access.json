@@ -1,0 +1,16 @@
+{
+    "id": "4e01f576-29f6-42e0-adb2-beeb790d77bf",
+    "name": "river_access",
+    "slug": "river_access",
+    "description": "Acceso directo al arroyo",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Ideal para pesca de orilla",
+        "favorite": false
+    }
+}

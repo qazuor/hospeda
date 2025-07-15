@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "7e9b4941-2745-47c1-97bd-c1a947c8627d",
+    "name": "Zona Comercial",
+    "slug": "zona_comercial",
+    "description": "Área comercial con variedad de tiendas y servicios",
+    "icon": "storefront",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

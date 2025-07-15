@@ -36,7 +36,7 @@
         },
         "role": {
             "type": "string",
-            "enum": ["user", "admin", "moderator"],
+            "enum": ["SUPER_ADMIN", "ADMIN", "EDITOR", "HOST", "USER", "GUEST"],
             "description": "User role"
         },
         "isVerified": {

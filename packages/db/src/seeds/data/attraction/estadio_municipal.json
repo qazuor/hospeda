@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "2b33224b-764e-43c5-bcb4-99545f457113",
+    "name": "Estadio Municipal",
+    "slug": "estadio_municipal",
+    "description": "Estadio principal para eventos deportivos y espectáculos",
+    "icon": "stadium",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

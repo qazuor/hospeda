@@ -1,0 +1,17 @@
+{
+    "id": "55196c2d-3fa4-4797-ae33-798ca841f832",
+    "name": "bbq_grill",
+    "slug": "bbq_grill",
+    "description": "Bbq Grill",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

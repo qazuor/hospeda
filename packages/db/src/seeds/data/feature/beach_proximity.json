@@ -1,0 +1,16 @@
+{
+    "id": "8ddd3e6e-0e56-4786-8975-d7431b812912",
+    "name": "beach_proximity",
+    "slug": "beach_proximity",
+    "description": "Cerca de la playa",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "A poca distancia en auto de las playas del río Uruguay",
+        "favorite": false
+    }
+}

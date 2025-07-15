@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "008dd069-a106-40b0-83c2-0416ef6557a5",
+    "name": "Complejo Termal Principal",
+    "slug": "complejo_termal_principal",
+    "description": "Complejo termal con piscinas de aguas termales naturales, ideal para relajación y bienestar",
+    "icon": "hot_tub",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

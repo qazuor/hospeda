@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "6125c3ad-7af7-4f43-bd9f-556870d8fbc5",
+    "name": "Museo Histórico",
+    "slug": "museo_historico",
+    "description": "Museo dedicado a la historia local y regional con colecciones permanentes",
+    "icon": "museum",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

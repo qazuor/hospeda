@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "6df9d9a4-5526-499e-97ee-7e0f986b74e0",
+    "name": "Área Protegida",
+    "slug": "area_protegida",
+    "description": "Zona de conservación de ecosistemas naturales",
+    "icon": "shield",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

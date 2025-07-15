@@ -1,0 +1,113 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "slug": "concepcion-del-uruguay",
+    "name": "Concepción del Uruguay",
+    "summary": "Primera capital histórica de Entre Ríos con rica arquitectura y tradición cultural",
+    "description": "Concepción del Uruguay es una histórica ciudad situada en el centro-oeste de Entre Ríos, conocida por ser la primera capital histórica de la provincia. Esta hermosa ciudad combina historia, arquitectura y tradición, ofreciendo desde magníficos edificios coloniales hasta un rico patrimonio cultural. Con su ubicación privilegiada sobre el río Uruguay, la ciudad se destaca por sus instituciones educativas, su arquitectura histórica, sus tradicionales festivales y su importante papel en la historia argentina. Es un destino perfecto para quienes buscan cultura, historia y contacto con las tradiciones entrerrianas.",
+    "isFeatured": false,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4833",
+            "lng": "-58.2333"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
+            "caption": "Centro histórico de Concepción del Uruguay"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
+                "caption": "Arquitectura colonial de Concepción del Uruguay"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
+                "caption": "Costanera de Concepción del Uruguay"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
+                "caption": "Plaza principal de la ciudad"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Concepción del Uruguay - Primera Capital Histórica | Entre Ríos",
+        "description": "Descubre Concepción del Uruguay, primera capital histórica de Entre Ríos. Historia, arquitectura y tradición.",
+        "keywords": [
+            "Concepción del Uruguay",
+            "Entre Ríos",
+            "Historia",
+            "Arquitectura",
+            "Primera Capital",
+            "Tradición"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Ciudad histórica importante, primera capital de la provincia",
+        "favorite": false
+    },
+    "tags": [
+        "historia",
+        "arquitectura",
+        "educación",
+        "tradición",
+        "cultura"
+    ],
+    "reviews": [
+        {
+            "title": "Rica historia y arquitectura",
+            "content": "Concepción del Uruguay es perfecta para los amantes de la historia. La arquitectura colonial es hermosa y el Colegio del Uruguay tiene mucha historia. Es una ciudad muy tranquila y cultural.",
+            "rating": {
+                "landscape": 4.0,
+                "attractions": 4.0,
+                "accessibility": 4.0,
+                "safety": 4.5,
+                "cleanliness": 4.0,
+                "hospitality": 4.5,
+                "culturalOffer": 4.5,
+                "gastronomy": 4.0,
+                "affordability": 4.5,
+                "nightlife": 3.0,
+                "infrastructure": 4.0,
+                "environmentalCare": 4.0,
+                "wifiAvailability": 4.0,
+                "shopping": 3.5,
+                "familyFriendly": 4.0
+            },
+            "userId": "user-history-enthusiast"
+        },
+        {
+            "title": "Tranquila y con encanto",
+            "content": "Una ciudad muy tranquila con mucho encanto histórico. La basílica es preciosa y la costanera es ideal para caminar. Perfecto para un día de paseo cultural.",
+            "rating": {
+                "landscape": 4.0,
+                "attractions": 4.0,
+                "accessibility": 4.0,
+                "safety": 4.5,
+                "cleanliness": 4.0,
+                "hospitality": 4.5,
+                "culturalOffer": 4.0,
+                "gastronomy": 4.0,
+                "affordability": 4.5,
+                "nightlife": 2.5,
+                "infrastructure": 4.0,
+                "environmentalCare": 4.0,
+                "wifiAvailability": 3.5,
+                "shopping": 3.0,
+                "familyFriendly": 4.0
+            },
+            "userId": "user-cultural-tourist"
+        }
+    ],
+    "attractionIds": [
+        "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
+        "9a0598b0-0aae-4dff-a021-77fd9ca52662",
+        "6125c3ad-7af7-4f43-bd9f-556870d8fbc5",
+        "d759d447-8322-4260-b16b-fe8892843edc",
+        "bf013bf8-b096-4fa1-b376-4c60938bb5c8"
+    ]
+}

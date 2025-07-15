@@ -1,0 +1,17 @@
+{
+    "id": "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+    "name": "kitchen",
+    "slug": "kitchen",
+    "description": "Kitchen",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

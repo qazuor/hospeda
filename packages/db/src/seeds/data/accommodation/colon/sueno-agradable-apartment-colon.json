@@ -1,0 +1,149 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sueno-agradable-apartment-colon",
+    "name": "sueno-agradable-apartment",
+    "displayName": "Sueño Agradable Apartamento",
+    "type": "APARTMENT",
+    "description": "Situado a pocas cuadras de la vibrante costanera de Colón y con fácil acceso al centro, Sueño Agradable es un moderno y cómodo apartamento ideal para parejas o pequeños grupos de amigos que buscan una estadía práctica y bien ubicada. Este espacio de diseño funcional ofrece todas las comodidades necesarias para sentirse como en casa mientras exploras esta hermosa ciudad a orillas del río Uruguay.\n\nEl apartamento cuenta con un dormitorio luminoso con cama matrimonial y un sofá cama en el área de estar, pudiendo alojar hasta 3-4 personas. La cocina integrada está equipada con anafe, microondas, heladera y utensilios básicos para preparar desayunos o comidas ligeras. El área de estar dispone de TV y un pequeño balcón con vista a la calle.\n\nLas instalaciones del edificio incluyen ascensor y seguridad. La ubicación céntrica te permite acceder caminando a restaurantes, supermercados, tiendas y a la principal zona de esparcimiento de Colón, la costanera, donde encontrarás playas, bares y actividades recreativas. Es un punto de partida ideal para visitar las Termas de Colón o el cercano Parque Nacional El Palmar.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "hola@suenoagradableapartment.com.ar",
+        "mobilePhone": "+549344715662146",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "contacto@suenoagradableapartment.com.ar",
+        "website": "https://suenoagradableapartment.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 11000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2840",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2170",
+            "lng": "-58.1462"
+        },
+        "street": "Calle 12 de Abril",
+        "number": "550",
+        "floor": "2",
+        "apartment": "C",
+        "city": "Colón",
+        "neighborhood": "Centro"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Ambiente principal",
+                "description": "Espacio de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama matrimonial",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina compacta equipada",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 1,
+        "maxNights": 15,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Edificio con ascensor",
+            "Check-in autónomo disponible",
+            "Ropa de cama incluida"
+        ]
+    },
+    "seo": {
+        "title": "Sueño Agradable Apartamento - Centro de Colón, Entre Ríos",
+        "description": "Moderno apartamento céntrico en Colón. Ideal para parejas y grupos pequeños. Cerca de la costanera y principales atracciones.",
+        "keywords": [
+            "apartamento",
+            "colón",
+            "entre ríos",
+            "céntrico",
+            "alojamiento",
+            "vacaciones",
+            "costanera"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad ideal para alquiler temporal en ciudad. Buena ubicación.",
+        "favorite": true,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "colon",
+        "apartment",
+        "colon-apartment",
+        "seed-example",
+        "central",
+        "urban"
+    ],
+    "faqs": [
+        {
+            "question": "¿Está cerca de la costanera?",
+            "answer": "Sí, el apartamento se encuentra a solo 3 cuadras de la costanera de Colón.",
+            "category": "location"
+        },
+        {
+            "question": "¿El edificio tiene ascensor?",
+            "answer": "Sí, el edificio cuenta con ascensor.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": [],
+    "featureIds": [
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740"
+    ]
+}

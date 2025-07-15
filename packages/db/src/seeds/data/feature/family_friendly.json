@@ -1,0 +1,16 @@
+{
+    "id": "be30904b-8750-4561-b5e2-0ec228a5e6b4",
+    "name": "family_friendly",
+    "slug": "family_friendly",
+    "description": "Ambiente familiar",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Estadía en casa de familia local",
+        "favorite": false
+    }
+}

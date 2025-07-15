@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "a6013db4-52a3-4f82-aa1b-9643ec37e9e1",
+    "name": "Taller de Carnaval",
+    "slug": "taller_carnaval",
+    "description": "Talleres donde se confeccionan trajes y carros alegóricos para el carnaval",
+    "icon": "palette",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

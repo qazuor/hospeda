@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "5b8f9220-9080-43fa-8e0d-ba8b11eb09a5",
+    "name": "Pub Tradicional",
+    "slug": "pub_tradicional",
+    "description": "Pub con ambiente relajado y música en vivo",
+    "icon": "sports_bar",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

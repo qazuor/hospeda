@@ -1,0 +1,17 @@
+{
+    "id": "3d826d2d-3895-415f-bab7-6148abca5434",
+    "name": "bar",
+    "slug": "bar",
+    "description": "Bar",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

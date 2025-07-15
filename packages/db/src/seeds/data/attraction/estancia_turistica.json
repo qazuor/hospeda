@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "1fcf5ea2-d720-41e0-8705-67d41a5c68ce",
+    "name": "Estancia Turística",
+    "slug": "estancia_turistica",
+    "description": "Estancia con actividades rurales y turismo rural",
+    "icon": "cottage",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

@@ -4,6 +4,9 @@
     "title": "Destination Seed Schema",
     "description": "Schema for destination seed data",
     "properties": {
+        "schema": {
+            "type": "string"
+        },
         "slug": {
             "type": "string",
             "description": "URL-friendly identifier"
@@ -112,5 +115,5 @@
         }
     },
     "required": ["slug", "name", "summary", "description"],
-    "additionalProperties": false
+    "additionalProperties": true
 }

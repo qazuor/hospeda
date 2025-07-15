@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "603a261c-7cf4-4786-8b12-b7e65d8292fe",
+    "name": "Casa Histórica",
+    "slug": "casa_historica",
+    "description": "Casa histórica conservada con valor patrimonial y cultural",
+    "icon": "home",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

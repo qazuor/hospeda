@@ -1,0 +1,16 @@
+{
+    "id": "049c0140-9996-4efa-8c87-815c62d91f9c",
+    "name": "workspace",
+    "slug": "workspace",
+    "description": "Áreas de trabajo",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Todas las habitaciones cuentan con escritorio y hay un business center disponible",
+        "favorite": false
+    }
+}

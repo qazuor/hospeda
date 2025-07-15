@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "a4351fda-6122-4e8a-8a19-bf97467c1b49",
+    "name": "Mercado Central",
+    "slug": "mercado_central",
+    "description": "Mercado tradicional con productos locales y artesanías",
+    "icon": "store",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

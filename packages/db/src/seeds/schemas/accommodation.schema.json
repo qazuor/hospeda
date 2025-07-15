@@ -4,6 +4,9 @@
     "title": "Accommodation Seed Schema",
     "description": "Schema for accommodation seed data",
     "properties": {
+        "schema": {
+            "type": "string"
+        },
         "slug": {
             "type": "string",
             "description": "URL-friendly identifier"
@@ -45,9 +48,14 @@
                     "properties": {
                         "cleaning": { "type": "number", "minimum": 0 },
                         "tax": { "type": "number", "minimum": 0 },
-                        "taxPercent": { "type": "number", "minimum": 0, "maximum": 100 }
+                        "taxPercent": { "type": "number", "minimum": 0, "maximum": 100 },
+                        "lateCheckout": { "type": "number", "minimum": 0 },
+                        "parking": { "type": "number", "minimum": 0 },
+                        "perPerson": { "type": "number", "minimum": 0 },
+                        "electricity": { "type": "number", "minimum": 0 },
+                        "towelRental": { "type": "number", "minimum": 0 }
                     },
-                    "additionalProperties": false
+                    "additionalProperties": true
                 },
                 "discounts": {
                     "type": "object",
@@ -151,6 +159,16 @@
                 "required": ["name", "isOptional"],
                 "additionalProperties": false
             }
+        },
+        "featureIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Array of feature IDs (UUIDs)"
+        },
+        "amenityIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Array of amenity IDs (UUIDs)"
         },
         "faqs": {
             "type": "array",

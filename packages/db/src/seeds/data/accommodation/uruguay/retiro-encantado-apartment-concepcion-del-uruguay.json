@@ -1,0 +1,156 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "retiro-encantado-apartment-concepcion_del_uruguay",
+    "name": "retiro-encantado-apartment",
+    "displayName": "Retiro Encantado Apartamento",
+    "type": "APARTMENT",
+    "description": "Descubre el encanto histórico de Concepción del Uruguay alojándote en Retiro Encantado, un apartamento moderno y confortable situado a pocas cuadras del centro histórico. Ideal para quienes desean explorar 'La Histórica' a pie, combinando la comodidad de un apartamento propio con la cercanía a los principales puntos de interés, cafés, restaurantes y la hermosa costanera.\n\nEste apartamento ofrece un ambiente acogedor con un dormitorio principal con cama doble y un sofá cama en el living, permitiendo alojar hasta 3-4 personas. Cuenta con un baño completo y una cocina integrada al living-comedor, equipada con lo necesario para preparar tus propias comidas (heladera, anafe, microondas, utensilios básicos). Dispone de aire acondicionado y calefacción para una estadía confortable en cualquier época del año.\n\nLa ubicación es uno de sus mayores atractivos, permitiéndote caminar hasta la Plaza Principal, la Basílica, el Colegio Nacional y otras joyas arquitectónicas de la ciudad. La costanera del río Uruguay, con sus espacios verdes y opciones gastronómicas, también está a una distancia caminable. El edificio es tranquilo y cuenta con acceso seguro. Retiro Encantado es el punto de partida perfecto para sumergirte en la historia y la vida cultural de Concepción del Uruguay.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@retiroencantadoapartment.com.ar",
+        "mobilePhone": "+549344215718469",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@retiroencantadoapartment.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 13500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2200,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4780",
+            "lng": "-58.2317"
+        },
+        "street": "Calle 9 de Julio",
+        "number": "870",
+        "floor": "1",
+        "apartment": "B",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Centro"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Ambiente principal",
+                "description": "Espacio de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "15:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Ubicación céntrica",
+            "Ideal para parejas",
+            "Check-in autónomo disponible"
+        ]
+    },
+    "seo": {
+        "title": "Retiro Encantado - Apartamento Céntrico en Concepción del Uruguay",
+        "description": "Apartamento moderno a metros del centro histórico de Concepción del Uruguay. Ideal para parejas, equipado. Cerca de atracciones.",
+        "keywords": [
+            "apartamento",
+            "concepción del uruguay",
+            "entre ríos",
+            "céntrico",
+            "histórico",
+            "alojamiento",
+            "parejas"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad bien ubicada, simple y funcional. Adecuada para alquileres cortos.",
+        "favorite": false,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "apartment",
+        "concepcion-del-uruguay-apartment",
+        "seed-example",
+        "city-center",
+        "historical"
+    ],
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "Recorriendo el centro histórico",
+            "content": "El centro histórico de Concepción del Uruguay, 'La Histórica', invita a ser recorrido a pie. A pocas cuadras encontrarás la Plaza Principal, la imponente Basílica Inmaculada Concepción y el histórico Colegio Nacional. También puedes visitar la Casa de Urquiza y otros edificios de valor arquitectónico. En la zona hay museos, galerías de arte y una variada oferta de cafés y restaurantes.",
+            "category": "sightseeing"
+        },
+        {
+            "title": "La Costanera y el Río Uruguay",
+            "content": "La costanera de Concepción del Uruguay es un espacio ideal para pasear, hacer ejercicio o simplemente disfrutar de la vista al río Uruguay. Cuenta con amplios espacios verdes, áreas de juegos, bares y restaurantes. Desde aquí puedes acceder a la Isla del Puerto, un gran espacio natural con playas y senderos, conectado por una pasarela peatonal. El río es protagonista en la vida de la ciudad, ofreciendo opciones de pesca y actividades náuticas.",
+            "category": "nature"
+        }
+    ],
+    "featureIds": [
+        "45973def-bdc7-47cd-8997-11d649dc3a4f"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

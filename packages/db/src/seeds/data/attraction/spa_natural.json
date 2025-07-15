@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "a01e1820-2b00-4ec6-9079-09cf0dc8880a",
+    "name": "Spa Natural",
+    "slug": "spa_natural",
+    "description": "Spa en entorno natural con tratamientos orgánicos y terapias alternativas",
+    "icon": "nature_people",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

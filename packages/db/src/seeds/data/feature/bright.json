@@ -1,0 +1,16 @@
+{
+    "id": "6814812b-f278-494e-84cd-c10d3b541eea",
+    "name": "bright",
+    "slug": "bright",
+    "description": "Ambiente luminoso",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Grandes ventanales y buena entrada de luz",
+        "favorite": false
+    }
+}

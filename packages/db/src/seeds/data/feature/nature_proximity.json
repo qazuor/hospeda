@@ -1,0 +1,16 @@
+{
+    "id": "a471118f-48f7-4ae4-b6f4-963281900517",
+    "name": "nature_proximity",
+    "slug": "nature_proximity",
+    "description": "Cerca de El Palmar",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "A poca distancia en auto del Parque Nacional El Palmar",
+        "favorite": false
+    }
+}

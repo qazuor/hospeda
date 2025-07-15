@@ -1,0 +1,150 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "paraiso-acogedor-cabana-gualeguaychu",
+    "name": "paraiso-acogedor-cabana",
+    "displayName": "Paraíso Acogedor Cabaña",
+    "type": "CABIN",
+    "description": "Encuentra un rincón acogedor en Paraíso Acogedor, una encantadora cabaña de madera ubicada en un entorno tranquilo de Gualeguaychú. Ideal para parejas o familias que buscan un refugio confortable, rodeado de naturaleza y con fácil acceso a las playas, la ciudad y el Carnaval.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es cálida y rústica, creando un ambiente hogareño.\n\nEl exterior ofrece una galería techada con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y árboles, un espacio agradable para relajarse. La ubicación en las afueras de Gualeguaychú permite un rápido acceso en auto a las playas del río Uruguay, al centro de la ciudad y al Corsódromo. Paraíso Acogedor es tu base ideal para disfrutar de la playa y la tranquilidad de Gualeguaychú.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "alquiler@paraisoacogedorcabana.com.ar",
+        "mobilePhone": "+549344615140177",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "alquiler@paraisoacogedorcabana.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 16500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 3000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2820",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.0130",
+            "lng": "-58.5259"
+        },
+        "street": "Camino a la Playa S/N",
+        "number": "S/N",
+        "city": "Gualeguaychú",
+        "neighborhood": "Zona Periurbana"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "caption": "Cabaña acogedora",
+            "description": "Vista exterior de la cabaña con jardín",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la cabaña",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
+                "caption": "Interior",
+                "description": "Área de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio principal",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
+                "caption": "Altillo",
+                "description": "Espacio con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior cubierta",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 2,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Cabaña acogedora",
+            "Parrilla exterior",
+            "Ideal para familias pequeñas",
+            "Cerca de las playas"
+        ]
+    },
+    "seo": {
+        "title": "Paraíso Acogedor - Cabaña cerca de Gualeguaychú | Playas y Carnaval",
+        "description": "Cabaña confortable para 4 personas cerca de Gualeguaychú. Ideal para familias. Parrilla, jardín. Cerca de playas y Carnaval.",
+        "keywords": [
+            "cabaña",
+            "gualeguaychú",
+            "entre ríos",
+            "playas",
+            "carnaval gualeguaychu",
+            "familiar",
+            "escapada"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad simple pero agradable. Énfasis en cercanía a playas y Carnaval.",
+        "favorite": false,
+        "tags": [
+            "gualeguaychu",
+            "cabin",
+            "gualeguaychu-cabin",
+            "seed-example",
+            "beach",
+            "carnival",
+            "family-friendly"
+        ]
+    },
+    "faqs": [],
+    "iaData": [],
+    "socialNetworks": {
+        "twitter": "https://twitter.com/paraisoacogedorcabana"
+    },
+    "featureIds": [
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "8ddd3e6e-0e56-4786-8975-d7431b812912"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

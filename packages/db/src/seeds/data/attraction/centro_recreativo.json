@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "a833b9fa-c2fe-4a0f-84a6-9d73d9f4814f",
+    "name": "Centro Recreativo",
+    "slug": "centro_recreativo",
+    "description": "Centro con actividades recreativas para toda la familia",
+    "icon": "sports_esports",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

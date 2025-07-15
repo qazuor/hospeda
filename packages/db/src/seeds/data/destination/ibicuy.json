@@ -1,0 +1,88 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "slug": "ibicuy",
+    "name": "Ibicuy",
+    "summary": "Destino de naturaleza y aventura en el delta entrerriano",
+    "description": "Ibicuy es una localidad ubicada en el extremo sur de Entre Ríos, conocida por su ubicación estratégica en el delta del Paraná. Rodeada de naturaleza exuberante, canales y fauna autóctona, Ibicuy es el destino perfecto para el turismo de aventura y naturaleza. Ofrece actividades como pesca, navegación, avistamiento de aves y ecoturismo en un entorno natural único y preservado.",
+    "isFeatured": false,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2840",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7500",
+            "lng": "-58.8333"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+            "caption": "Vista panorámica de Ibicuy"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Paisajes de Ibicuy"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Naturaleza en Ibicuy"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Ibicuy - Destino de naturaleza y aventura en el delta entrerriano | Entre Ríos",
+        "description": "Descubre Ibicuy en Entre Ríos. Destino de naturaleza y aventura en el delta entrerriano",
+        "keywords": [
+            "Ibicuy",
+            "Entre Ríos",
+            "delta",
+            "naturaleza",
+            "aventura",
+            "pesca",
+            "ecoturismo"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Destino delta en Entre Ríos",
+        "favorite": false
+    },
+    "tags": [
+        "delta",
+        "naturaleza",
+        "aventura",
+        "pesca",
+        "ecoturismo"
+    ],
+    "reviews": [
+        {
+            "title": "Experiencia tranquila y auténtica",
+            "content": "Un lugar muy tranquilo y auténtico. Perfecto para desconectar y disfrutar de la naturaleza. La gente es muy cálida y hospitalaria.",
+            "rating": {
+                "landscape": 4.0,
+                "attractions": 3.5,
+                "accessibility": 3.5,
+                "safety": 4.5,
+                "cleanliness": 4.0,
+                "hospitality": 4.5,
+                "culturalOffer": 3.5,
+                "gastronomy": 4.0,
+                "affordability": 4.5,
+                "nightlife": 2.5,
+                "infrastructure": 3.5,
+                "environmentalCare": 4.5,
+                "wifiAvailability": 3.0,
+                "shopping": 3.0,
+                "familyFriendly": 4.0
+            },
+            "userId": "user-nature-lover"
+        }
+    ],
+    "attractionIds": [
+        "71ba3202-089f-488a-9a66-d98b7a5fec58",
+        "96a2de59-4015-4800-b0d0-9e6f2ed5a1d7",
+        "6f176460-9aa8-4b79-b7f8-3c8dedf6e86a",
+        "6f2c20b4-909b-4b17-9a84-59de4c55434e",
+        "7db4be2a-2715-4e7d-a184-15c207fcceed"
+    ]
+}

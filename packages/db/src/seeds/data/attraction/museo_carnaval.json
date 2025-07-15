@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "a56cf687-0789-4df4-b16e-b3580519271b",
+    "name": "Museo del Carnaval",
+    "slug": "museo_carnaval",
+    "description": "Museo dedicado a la historia y tradición del carnaval local",
+    "icon": "museum",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

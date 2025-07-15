@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "e0ff2fc9-be4a-429c-925a-3c28455b7bf4",
+    "name": "Gimnasio Municipal",
+    "slug": "gimnasio_municipal",
+    "description": "Gimnasio público con equipamiento para ejercicio físico",
+    "icon": "fitness_center",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

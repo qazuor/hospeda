@@ -1,0 +1,47 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d487",
+    "email": "moderator@hospeda.com",
+    "username": "moderator_laura",
+    "firstName": "Laura",
+    "lastName": "Vega",
+    "avatar": "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face",
+    "bio": "Moderadora de contenido y community manager. Especializada en gestión de reseñas, resolución de conflictos y mantenimiento de la calidad del contenido en la plataforma.",
+    "role": "ADMIN",
+    "isVerified": true,
+    "contactInfo": {
+        "personalEmail": "laura.vega@gmail.com",
+        "workEmail": "moderator@hospeda.com",
+        "mobilePhone": "+54 11 5555-0008",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "linkedin": "https://linkedin.com/in/laura-vega-moderator",
+        "facebook": "https://facebook.com/laura.vega.moderator"
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "city": "Concordia",
+        "country": "Argentina",
+        "zipCode": "3200",
+        "street": "Entre Ríos",
+        "number": "567",
+        "coordinates": {
+            "lat": "-31.3928",
+            "lng": "-58.0217"
+        }
+    },
+    "preferences": {
+        "language": "es",
+        "currency": "ARS",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "marketing": false
+        }
+    },
+    "adminInfo": {
+        "notes": "Moderadora especializada en gestión de comunidad y contenido",
+        "favorite": false
+    }
+}

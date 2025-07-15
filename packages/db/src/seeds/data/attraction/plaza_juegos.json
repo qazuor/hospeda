@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "888f0220-9809-474f-b3dc-3ac33800659f",
+    "name": "Plaza de Juegos",
+    "slug": "plaza_juegos",
+    "description": "Plaza con juegos infantiles y espacios recreativos",
+    "icon": "toys",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

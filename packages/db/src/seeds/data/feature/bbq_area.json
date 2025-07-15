@@ -1,0 +1,16 @@
+{
+    "id": "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+    "name": "bbq_area",
+    "slug": "bbq_area",
+    "description": "Parrilla techada",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Parrilla tradicional bajo galería",
+        "favorite": false
+    }
+}

@@ -1,0 +1,231 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "hostel-del-viajero-concepcion_del_uruguay",
+    "name": "hostel-del-viajero",
+    "displayName": "Hostel del Viajero",
+    "type": "HOSTEL",
+    "description": "Ubicado en una casona colonial restaurada en pleno corazón histórico de Concepción del Uruguay, el Hostel del Viajero combina el encanto de la arquitectura tradicional con instalaciones modernas para satisfacer las necesidades de los viajeros actuales. A solo dos cuadras de la plaza principal y a distancia caminable de los principales sitios históricos y la costanera, nuestra ubicación es estratégica para quienes desean explorar esta histórica ciudad entrerriana sin necesidad de transporte adicional.\n\nNuestro hostel ofrece varias opciones de alojamiento para adaptarse a diferentes presupuestos y preferencias: dormitorios compartidos de 4 y 6 camas con lockers individuales, y habitaciones privadas dobles y familiares para quienes prefieren mayor privacidad. Todas las opciones incluyen ropa de cama de calidad, enchufes individuales y luces de lectura. Los baños son compartidos, impecablemente mantenidos, y separados por género, con duchas de agua caliente disponibles 24 horas.\n\nLas áreas comunes son el corazón del Hostel del Viajero. La cocina comunitaria está completamente equipada para que los huéspedes puedan preparar sus propias comidas, y el comedor funciona como espacio de socialización durante todo el día. El patio interno con su antigua parra brinda un espacio verde refrescante con mesas, sillas y hamacas paraguayas para relajarse. Contamos también con una sala común con TV, juegos de mesa y una pequeña biblioteca de intercambio donde los viajeros pueden dejar un libro y llevarse otro.\n\nLos servicios incluyen WiFi gratuito en todas las áreas, computadora de uso libre para los huéspedes, guardaequipajes, información turística y asistencia para reservar excursiones y actividades. El desayuno continental está incluido en la tarifa y se sirve de 7:30 a 10:00, mientras que dos veces por semana organizamos cenas comunitarias opcionales que fomentan la interacción entre viajeros de todo el mundo.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "reservas@hosteldelviajero.com.ar",
+        "workEmail": "reservas@hosteldelviajero.com.ar",
+        "mobilePhone": "+549344215775070",
+        "homePhone": "+543442321176",
+        "website": "https://www.hosteldelviajero.net.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/hosteldelviajero",
+        "instagram": "https://instagram.com/hosteldelviajero"
+    },
+    "price": {
+        "basePrice": {
+            "price": 8000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 15,
+            "monthly": 30,
+            "lastMinute": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4913",
+            "lng": "-58.2296"
+        },
+        "street": "Calle de la Constitución",
+        "number": "350",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Centro Histórico"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
+            "caption": "Fachada del hostel",
+            "description": "Entrada principal del Hostel del Viajero",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
+                "caption": "Fachada colonial",
+                "description": "Frente restaurado de la casona colonial",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
+                "caption": "Habitación compartida",
+                "description": "Dormitorio de 6 camas con lockers individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6969518/pexels-photo-6969518.jpeg",
+                "caption": "Habitación privada",
+                "description": "Habitación doble con ventana al patio",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2029731/pexels-photo-2029731.jpeg",
+                "caption": "Baños compartidos",
+                "description": "Instalaciones de baños limpias y modernas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
+                "caption": "Cocina comunitaria",
+                "description": "Cocina equipada para uso de los huéspedes",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6957069/pexels-photo-6957069.jpeg",
+                "caption": "Área común interior",
+                "description": "Sala común con libros y juegos de mesa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/7005428/pexels-photo-7005428.jpeg",
+                "caption": "Patio interno",
+                "description": "Espacio verde con hamacas y mesas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6492403/pexels-photo-6492403.jpeg",
+                "caption": "Área de desayuno",
+                "description": "Comedor donde se sirve el desayuno incluido",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "23:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "12:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 26,
+        "minNights": 1,
+        "maxNights": 14,
+        "bedrooms": 5,
+        "beds": 18,
+        "bathrooms": 4,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Recepción abierta de 8:00 a 23:00",
+            "Toque de queda en áreas comunes: 00:00 a 7:00",
+            "Desayuno incluido en la tarifa",
+            "Toallas disponibles para alquiler",
+            "Guardaequipaje gratuito"
+        ]
+    },
+    "seo": {
+        "title": "Hostel del Viajero - Alojamiento económico en Centro Histórico de Concepción del Uruguay",
+        "description": "Hostel céntrico en casona colonial restaurada. Habitaciones compartidas y privadas, desayuno incluido, cocina comunitaria y patio con hamacas.",
+        "keywords": [
+            "hostel",
+            "concepción del uruguay",
+            "entre ríos",
+            "mochileros",
+            "económico",
+            "centro histórico",
+            "viajeros"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Hostel con buena reputación entre mochileros y jóvenes viajeros. Organiza actividades grupales y hay buena interacción entre huéspedes.",
+        "favorite": true
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "hostel",
+        "budget",
+        "social",
+        "historical",
+        "backpackers"
+    ],
+    "faqs": [
+        {
+            "question": "¿Las habitaciones privadas comparten baño?",
+            "answer": "Sí, todas nuestras habitaciones comparten baños, que están separados por género y se limpian tres veces al día. Contamos con 4 baños completos con duchas de agua caliente disponibles 24 horas.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Se pueden alquilar toallas?",
+            "answer": "Sí, ofrecemos servicio de alquiler de toallas por $500 por estadía. Incluye una toalla de baño y una toalla de mano. Recomendamos solicitarlas al momento de hacer el check-in.",
+            "category": "services"
+        },
+        {
+            "question": "¿Hay conexión WiFi en las habitaciones?",
+            "answer": "Sí, contamos con WiFi gratuito que cubre todas las áreas del hostel, incluidas las habitaciones. La señal es más fuerte en las áreas comunes.",
+            "category": "amenities"
+        },
+        {
+            "question": "¿Ofrecen excursiones o actividades?",
+            "answer": "Sí, organizamos caminatas históricas gratuitas por el centro tres veces por semana y ofrecemos información sobre excursiones a estancias, playas del río Uruguay y otros atractivos. También realizamos noches de mate, música en vivo y cenas comunitarias para fomentar la socialización entre huéspedes.",
+            "category": "activities"
+        },
+        {
+            "question": "¿Hay restricciones de edad para alojarse?",
+            "answer": "En habitaciones compartidas aceptamos viajeros desde 18 años. Para familias con niños ofrecemos únicamente habitaciones privadas. Los menores de 16 años deben estar acompañados por un adulto responsable.",
+            "category": "policies"
+        },
+        {
+            "question": "¿Tienen espacio para guardar equipaje?",
+            "answer": "Sí, ofrecemos servicio gratuito de guardaequipaje el día de llegada y salida. También disponemos de lockers dentro de las habitaciones compartidas para guardar objetos de valor durante su estadía (traiga su candado o puede comprar uno en recepción).",
+            "category": "services"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Historia de Concepción del Uruguay",
+            "content": "Concepción del Uruguay, conocida como 'La Histórica', fue fundada en 1783 por Tomás de Rocamora. Su importancia histórica es fundamental en la conformación del federalismo argentino, siendo la ciudad donde Justo José de Urquiza proclamó la autonomía de Entre Ríos en 1851 y posteriormente sirvió como punto estratégico en la organización nacional. El Colegio Nacional, fundado por Urquiza en 1849, fue uno de los primeros del país y formó a numerosas personalidades influyentes. A 7 cuadras del hostel se encuentra la Basílica Inmaculada Concepción, un impresionante templo neogótico que domina el paisaje urbano. A unos 25 km está el Palacio San José, antigua residencia de Urquiza, hoy Museo Nacional. Otros sitios históricos destacados son la Plaza General Ramírez (a 2 cuadras), el Palacio Municipal y la Casa de Urquiza. Nuestro hostel organiza recorridos históricos gratuitos tres veces por semana que parten desde la recepción y visitan los principales puntos de interés del casco histórico.",
+            "category": "history"
+        },
+        {
+            "title": "Playas y naturaleza",
+            "content": "Concepción del Uruguay cuenta con excelentes playas sobre el río Uruguay que son el principal atractivo durante el verano. La más popular es Banco Pelay, ubicada a 10 km del centro, con arena blanca y fina, vegetación autóctona y servicios completos: baños, duchas, gastronomía y alquiler de sombrillas. Se puede llegar en colectivo urbano (línea 2, parada a 3 cuadras del hostel) o en taxi. Otras opciones son Playa Nebel, más cercana al centro, y la Isla del Puerto, accesible mediante una pasarela peatonal, ideal para caminatas en entornos naturales. Para quienes prefieren la pesca deportiva, el arroyo Molino, a 5 km, es un punto reconocido donde pueden encontrarse especies como dorados, bogas y bagres. En recepción brindamos información sobre alquiler de equipos y guías locales. Durante los meses de noviembre a marzo, recomendamos los atardeceres en la costanera, cuando el sol se pone sobre el río creando un espectáculo natural que complementa con música en vivo los fines de semana.",
+            "category": "nature"
+        },
+        {
+            "title": "Gastronomía local",
+            "content": "La gastronomía de Concepción del Uruguay refleja la identidad entrerriana con fuerte influencia europea debido a la inmigración. Los platos más representativos incluyen el pescado de río en sus diversas preparaciones (a la parrilla, en milanesa o en forma de albóndigas), siendo el dorado y el surubí las especies más apreciadas. Entre los restaurantes que recomendamos está 'El Navegante' en la costanera, con excelente relación calidad-precio y las mejores vistas al río. Para experiencias gourmet, 'La Comarca' en el centro histórico fusiona sabores europeos con ingredientes locales. No pueden dejar la ciudad sin probar el chajá, postre tradicional de la región a base de merengue, crema y bizcochuelo, cuya mejor versión se encuentra en la Confitería El Porteño, a 5 cuadras del hostel. Para opciones económicas, los carritos de la costanera ofrecen choripanes y hamburguesas artesanales hasta la madrugada. Los miércoles organizamos una cena comunitaria opcional donde preparamos recetas típicas y cada viajero puede aportar a la preparación, generando una experiencia cultural y social enriquecedora.",
+            "category": "gastronomy"
+        },
+        {
+            "title": "Eventos y festividades",
+            "content": "Concepción del Uruguay cuenta con una variada agenda cultural durante todo el año. Si visita en febrero, podrá disfrutar de los Carnavales de Costa, celebración que si bien no es tan conocida como la de Gualeguaychú, mantiene un encanto local con comparsas, música y baile en un ambiente más íntimo y familiar. En julio, las Fiestas Patronales en honor a la Inmaculada Concepción incluyen procesiones, ferias artesanales y shows musicales. Para los amantes de la música, el Festival del Río que se realiza en enero en la costanera convoca a artistas de folclore y música popular. Los fines de semana, la Feria de Artesanos en la Plaza Ramírez reúne a productores locales donde pueden adquirirse desde mates artesanales hasta productos de cuero típicos. Si su estadía coincide con algún fin de semana largo, consulte en recepción por las 'peñas folclóricas' que suelen organizarse en distintos puntos de la ciudad, donde podrá disfrutar de música en vivo, danzas tradicionales y comida casera en un ambiente auténticamente local, alejado del circuito turístico convencional.",
+            "category": "events"
+        }
+    ],
+    "featureIds": [
+        "3805637e-c810-41d2-ab7e-3ea43ea9ac3d",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "a14dc9e1-6290-4fda-8078-2e5112716b45",
+        "fea7a5dd-00b7-49c3-a52d-58596c337587",
+        "ba67af27-5e90-44b6-b0ca-23fd5576092f",
+        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

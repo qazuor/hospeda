@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "d759d447-8322-4260-b16b-fe8892843edc",
+    "name": "Plaza Principal",
+    "slug": "plaza_principal",
+    "description": "Plaza central de la ciudad con valor histórico y social",
+    "icon": "location_city",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

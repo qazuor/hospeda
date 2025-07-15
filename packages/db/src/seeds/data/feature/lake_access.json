@@ -1,0 +1,16 @@
+{
+    "id": "9a33f09c-31dd-49a0-a438-b8371b2587a0",
+    "name": "lake_access",
+    "slug": "lake_access",
+    "description": "Cerca del Lago",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "A poca distancia del Lago Salto Grande",
+        "favorite": false
+    }
+}

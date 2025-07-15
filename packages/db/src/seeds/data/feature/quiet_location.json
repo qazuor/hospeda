@@ -1,0 +1,16 @@
+{
+    "id": "bdc8b938-9599-428c-92a8-0bf932005ed7",
+    "name": "quiet_location",
+    "slug": "quiet_location",
+    "description": "Ubicación tranquila",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "",
+        "favorite": false
+    }
+}

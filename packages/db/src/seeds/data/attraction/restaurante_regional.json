@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "6898b835-1277-4b3a-bb35-918d49766aa3",
+    "name": "Restaurante Regional",
+    "slug": "restaurante_regional",
+    "description": "Restaurante especializado en comida típica de Entre Ríos",
+    "icon": "restaurant",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

@@ -1,0 +1,178 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "retiro-encantado-country-house-ubajay",
+    "name": "retiro-encantado-country-house",
+    "displayName": "Retiro Encantado Country House",
+    "type": "COUNTRY_HOUSE",
+    "description": "Descubre un retiro con encanto en Retiro Encantado, una hermosa casa de campo ubicada en un entorno rural sereno cerca de Ubajay. Ideal para familias y grupos que buscan desconectar, disfrutar de la paz del campo y pasar tiempo de calidad en amplios espacios, con fácil acceso al Parque Nacional El Palmar.\n\nLa casa cuenta con tres dormitorios y dos baños completos, ofreciendo privacidad y espacio para hasta 7 personas. El living-comedor es amplio y luminoso, integrado con una cocina bien equipada. La decoración es sencilla y funcional, pensada para una estancia relajada.\n\nEl exterior dispone de un gran jardín parquizado, ideal para actividades al aire libre. Cuenta con una galería techada con asador y una mesa grande, perfecta para disfrutar de comidas. También cuenta con una piscina para refrescarse en verano. Es un entorno seguro y tranquilo para relajarse. Aunque ofrece privacidad, la casa está a una distancia razonable en auto de Ubajay y del Parque Nacional El Palmar.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "reservas@retiroencantadocountryhouse.com.ar",
+        "mobilePhone": "+549344715109012",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@retiroencantadocountryhouse.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 29500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 5500,
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 15
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2845",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.3559",
+            "lng": "-58.2965"
+        },
+        "street": "Camino Rural Este S/N",
+        "number": "S/N",
+        "city": "Ubajay",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+            "caption": "Casa de campo con piscina",
+            "description": "Vista exterior de Retiro Encantado Country House con piscina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la casa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Living",
+                "description": "Living-comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Piscina",
+                "description": "Piscina exterior",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
+                "caption": "Asador",
+                "description": "Área de asador con galería",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
+                "caption": "Jardín",
+                "description": "Jardín amplio",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "15:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "13:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 7,
+        "minNights": 2,
+        "maxNights": 20,
+        "bedrooms": 3,
+        "beds": 5,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Entorno rural tranquilo",
+            "Piscina privada",
+            "Parrilla exterior",
+            "Amplio jardín",
+            "Ideal para familias o grupos",
+            "Cerca del Parque Nacional El Palmar"
+        ]
+    },
+    "seo": {
+        "title": "Retiro Encantado - Casa de Campo con Piscina cerca de Ubajay | El Palmar",
+        "description": "Casa de campo con piscina y parque grande cerca de Ubajay. Ideal para familias y grupos. Quincho con asador. Cerca Parque Nacional El Palmar.",
+        "keywords": [
+            "casa de campo",
+            "ubajay",
+            "entre ríos",
+            "el palmar",
+            "rural",
+            "piscina",
+            "familiar",
+            "asador"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad atractiva para familias/grupos. Piscina y asador son puntos fuertes. Relevante para turismo de El Palmar.",
+        "favorite": true,
+        "tags": [
+            "ubajay",
+            "country-house",
+            "ubajay-country-house",
+            "seed-example",
+            "swimming-pool",
+            "family-friendly",
+            "bbq",
+            "nature"
+        ]
+    },
+    "faqs": [
+        {
+            "question": "¿La piscina es climatizada?",
+            "answer": "No, la piscina es exterior y no está climatizada.",
+            "category": "amenities"
+        }
+    ],
+    "iaData": [],
+    "socialNetworks": {
+        "facebook": "https://facebook.com/retiroencantadocountryhouse"
+    },
+    "featureIds": [
+        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "51f48dd5-48b5-4a4d-aa6e-fe1c2e49b278"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

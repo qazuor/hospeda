@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "833bdb5e-35c9-4350-b786-e5ad292997b8",
+    "name": "Mercado Agrícola",
+    "slug": "mercado_agricola",
+    "description": "Mercado de productos agrícolas frescos y regionales",
+    "icon": "storefront",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "8ad47f64-8ddd-4b79-a747-fd5f6fd30d96",
+    "name": "Paseo Peatonal",
+    "slug": "paseo_peatonal",
+    "description": "Calle peatonal con comercios, restaurantes y entretenimiento",
+    "icon": "directions_walk",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}
