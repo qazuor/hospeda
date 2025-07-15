@@ -1,0 +1,16 @@
+{
+    "id": "tag-yoga-031",
+    "name": "Yoga",
+    "slug": "yoga",
+    "description": "Clases y retiros de yoga",
+    "type": "activity",
+    "category": "secondary",
+    "color": "#9370DB",
+    "icon": "yoga",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para yoga y actividades de bienestar",
+        "favorite": false
+    }
+}

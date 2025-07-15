@@ -1,0 +1,15 @@
+{
+    "id": "tag-invierno-011",
+    "name": "Invierno",
+    "slug": "invierno",
+    "description": "Actividades y destinos para disfrutar en invierno",
+    "type": "general",
+    "category": "secondary",
+    "color": "#607D8B",
+    "icon": "snowflake",
+    "isActive": true,
+    "adminInfo": {
+        "notes": "Tag estacional para contenido de invierno",
+        "favorite": false
+    }
+}

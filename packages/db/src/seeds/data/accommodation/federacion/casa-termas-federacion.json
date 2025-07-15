@@ -164,14 +164,7 @@
         "notes": "Casa muy solicitada en temporada alta (enero y julio). Los propietarios viven cerca y están siempre disponibles para asistir a los huéspedes.",
         "favorite": true
     },
-    "tags": [
-        "federacion",
-        "house",
-        "thermal",
-        "family-friendly",
-        "garden",
-        "bbq"
-    ],
+    "tags": ["federacion", "house", "thermal", "family-friendly", "garden", "bbq"],
     "faqs": [
         {
             "question": "¿Qué distancia hay entre la casa y el Parque Termal?",
@@ -243,5 +236,14 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
+    "tagIds": [
+        "tag-termas-012",
+        "tag-aguas-termales-017",
+        "tag-familia-004",
+        "tag-relax",
+        "tag-spa-027",
+        "tag-entre-rios-003",
+        "tag-naturaleza-002"
     ]
 }

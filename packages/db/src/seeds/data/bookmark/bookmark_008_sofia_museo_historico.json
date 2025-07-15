@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-008-sofia-museo-historico",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "entityId": "6125c3ad-7af7-4f43-bd9f-556870d8fbc5",
+    "entityType": "ATTRACTION",
+    "name": "Museo Histórico",
+    "description": "Museo que tengo pendiente visitar, me encanta la historia regional",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Atracción cultural de interés"
+    },
+    "createdAt": "2024-02-20T15:10:00Z",
+    "updatedAt": "2024-02-20T15:10:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "deletedAt": null,
+    "deletedById": null
+}

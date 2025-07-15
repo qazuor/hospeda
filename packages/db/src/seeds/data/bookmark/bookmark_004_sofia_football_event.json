@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-004-sofia-football-event",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "entityId": "f47ac10b-58cc-4372-a567-0e02b2c3d703",
+    "entityType": "EVENT",
+    "name": "Torneo Nacional de Fútbol",
+    "description": "Evento deportivo que quiero seguir, mi hermano juega en uno de los equipos",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Interés personal por conexión familiar"
+    },
+    "createdAt": "2024-02-10T16:20:00Z",
+    "updatedAt": "2024-02-10T16:20:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "deletedAt": null,
+    "deletedById": null
+}

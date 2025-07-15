@@ -1,0 +1,84 @@
+{
+    "id": "post-001-destinos-imperdibles-er",
+    "slug": "destinos-imperdibles-entre-rios-2024",
+    "category": "TOURISM",
+    "title": "Los 10 Destinos Imperdibles de Entre Ríos en 2024",
+    "summary": "Descubre los rincones más hermosos de Entre Ríos: desde las termas de Federación hasta los paisajes del delta. Una guía completa para planificar tu próxima escapada.",
+    "content": "Entre Ríos es una provincia que sorprende por su diversidad natural y cultural. Con más de 30 centros termales, extensas costas sobre el río Uruguay y el majestuoso delta del Paraná, ofrece experiencias únicas para todos los gustos.\n\n**1. Federación: El paraíso termal**\nConocida como la 'Perla del Uruguay', Federación combina aguas termales con paisajes espectaculares. Sus complejos termales son ideales para relajarse, mientras que el lago de Salto Grande ofrece actividades acuáticas.\n\n**2. Colón: Historia y naturaleza**\nEsta ciudad histórica cuenta con el Palacio San José, antigua residencia de Urquiza, y hermosas playas sobre el río Uruguay. Sus calles empedradas y arquitectura colonial la convierten en un destino imperdible.\n\n**3. Gualeguaychú: Carnaval y diversión**\nFamosa por su carnaval, Gualeguaychú ofrece mucho más: parques temáticos, playas, y una vibrante vida nocturna. Es el lugar perfecto para quienes buscan entretenimiento y cultura.\n\n**4. Villa Paranacito: El corazón del delta**\nEn el delta entrerriano, Villa Paranacito es ideal para el turismo rural y la observación de fauna. Sus arroyos y islas ofrecen paisajes únicos para explorar en kayak.\n\n**5. Chajarí: Citricultura y tradición**\nCentro citrícola por excelencia, Chajarí combina tradición agrícola con atractivos turísticos. Su Fiesta Nacional de la Citricultura es un evento imperdible.\n\nCada destino tiene su encanto particular y ofrece experiencias auténticas que hacen de Entre Ríos un lugar único en Argentina.",
+    "media": {
+        "featured": {
+            "url": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&h=600&fit=crop",
+            "alt": "Paisaje de Entre Ríos con río y vegetación",
+            "caption": "Los paisajes diversos de Entre Ríos ofrecen experiencias únicas"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
+                "alt": "Termas de Federación",
+                "caption": "Complejos termales de Federación"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop",
+                "alt": "Palacio San José en Colón",
+                "caption": "Arquitectura histórica en Colón"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
+                "alt": "Carnaval de Gualeguaychú",
+                "caption": "Colorido carnaval de Gualeguaychú"
+            }
+        ]
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "sponsorshipId": "psp-turismo-post-001",
+    "relatedDestinationId": "dest-federacion-001",
+    "visibility": "PUBLIC",
+    "isNews": false,
+    "isFeaturedInWebsite": true,
+    "expiresAt": null,
+    "likes": 245,
+    "comments": 32,
+    "shares": 67,
+    "isFeatured": true,
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "featuredUntil": "2024-12-31T23:59:59Z",
+        "promotionLevel": "HIGH",
+        "moderationNotes": "Contenido promocional aprobado con sponsor oficial"
+    },
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-01-15T10:00:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "moderationState": "APPROVED",
+    "seo": {
+        "title": "Los 10 Destinos Imperdibles de Entre Ríos en 2024 | Hospeda",
+        "description": "Descubre los rincones más hermosos de Entre Ríos: termas, delta, historia y naturaleza. Guía completa de destinos imperdibles con consejos de expertos.",
+        "keywords": [
+            "Entre Ríos",
+            "turismo",
+            "termas",
+            "delta",
+            "Federación",
+            "Colón",
+            "Gualeguaychú",
+            "destinos",
+            "Argentina"
+        ],
+        "openGraph": {
+            "title": "Los 10 Destinos Imperdibles de Entre Ríos en 2024",
+            "description": "Guía completa de los mejores destinos de Entre Ríos con consejos expertos",
+            "image": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&h=600&fit=crop",
+            "type": "article"
+        }
+    },
+    "tagIds": [
+        "tag-turismo-001",
+        "tag-entre-rios-002",
+        "tag-termas-003",
+        "tag-delta-004",
+        "tag-naturaleza-005",
+        "tag-historia-006",
+        "tag-familia-007"
+    ]
+}

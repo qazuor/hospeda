@@ -1,0 +1,77 @@
+{
+    "id": "post-002-gastronomia-entrerriana",
+    "slug": "gastronomia-entrerriana-sabores-autenticos",
+    "category": "GASTRONOMY",
+    "title": "Gastronomía Entrerriana: Sabores Auténticos del Litoral",
+    "summary": "Un recorrido por los sabores más representativos de Entre Ríos: desde el famoso asado a la parrilla hasta las delicias del río. Descubre restaurantes imperdibles y recetas tradicionales.",
+    "content": "La gastronomía entrerriana es un reflejo fiel de la identidad cultural de la provincia. Con influencias guaraníes, criollas y europeas, la cocina local ofrece una experiencia culinaria única que combina productos del río con tradiciones del campo.\n\n**Platos Típicos Imperdibles:**\n\n**Pacú a la parrilla**\nPescado de río por excelencia, el pacú se prepara tradicionalmente a la parrilla con limón y chimichurri. Su carne blanca y suave lo convierte en el favorito de locales y visitantes.\n\n**Surubí en salsa**\nOtro tesoro del río Paraná, el surubí se prepara con diversas salsas, siendo la más popular la salsa criolla con tomate, cebolla y pimientos.\n\n**Dorado al horno**\nEl dorado, conocido como el 'tigre del río', se cocina al horno con hierbas aromáticas y es considerado uno de los pescados más sabrosos del litoral.\n\n**Dulces y Postres:**\n\n**Dulce de mamón**\nElaborado con la papaya local, es un dulce tradicional que se sirve con queso fresco.\n\n**Dulce de batata**\nEspecialidad regional que se combina perfectamente con queso cremoso.\n\n**Restaurantes Recomendados:**\n\n- **La Casona del Río** (Federación): Especializado en pescados de río con vista al lago\n- **El Quincho de Juancho** (Colón): Parrilla tradicional con ambiente familiar\n- **Sabores del Litoral** (Gualeguaychú): Cocina fusión con ingredientes locales\n\nLa gastronomía entrerriana es una invitación a descubrir sabores auténticos que conectan con la historia y la naturaleza de esta hermosa provincia.",
+    "media": {
+        "featured": {
+            "url": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1200&h=600&fit=crop",
+            "alt": "Plato típico de pescado del río",
+            "caption": "Pescado del río Paraná, especialidad gastronómica entrerriana"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop",
+                "alt": "Parrilla con pescado",
+                "caption": "Pacú a la parrilla, plato típico regional"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1563379091339-03246963d51a?w=800&h=600&fit=crop",
+                "alt": "Dulce de mamón",
+                "caption": "Dulce de mamón con queso fresco"
+            }
+        ]
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "sponsorshipId": "psp-sabores-gastronomia-003",
+    "relatedDestinationId": null,
+    "relatedEventId": null,
+    "visibility": "PUBLIC",
+    "isNews": false,
+    "isFeaturedInWebsite": false,
+    "expiresAt": null,
+    "likes": 189,
+    "comments": 45,
+    "shares": 23,
+    "isFeatured": false,
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "moderationNotes": "Contenido gastronómico con sponsor regional aprobado"
+    },
+    "createdAt": "2024-01-20T14:30:00Z",
+    "updatedAt": "2024-01-20T14:30:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "moderationState": "APPROVED",
+    "seo": {
+        "title": "Gastronomía Entrerriana: Sabores Auténticos del Litoral | Hospeda",
+        "description": "Descubre los sabores más representativos de Entre Ríos: pescados del río, dulces tradicionales y restaurantes recomendados. Guía gastronómica completa.",
+        "keywords": [
+            "gastronomía",
+            "Entre Ríos",
+            "pescados",
+            "comida regional",
+            "restaurantes",
+            "pacú",
+            "surubí",
+            "dorado",
+            "dulces"
+        ],
+        "openGraph": {
+            "title": "Gastronomía Entrerriana: Sabores Auténticos del Litoral",
+            "description": "Recorrido por los sabores más representativos de Entre Ríos",
+            "image": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1200&h=600&fit=crop",
+            "type": "article"
+        }
+    },
+    "tagIds": [
+        "tag-gastronomia-001",
+        "tag-entre-rios-002",
+        "tag-cultura-003",
+        "tag-turismo-004",
+        "tag-pesca-005",
+        "tag-rio-parana-006"
+    ]
+}

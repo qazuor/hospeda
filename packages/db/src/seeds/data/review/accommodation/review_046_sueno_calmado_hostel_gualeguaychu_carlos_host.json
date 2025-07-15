@@ -1,0 +1,15 @@
+{
+    "id": "review-046-sueno-calmado-hostel-gualeguaychu-carlos_host",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d485",
+    "accommodationId": "sueno-calmado-hostel-gualeguaychu",
+    "title": "Buena experiencia en general",
+    "content": "Tuve una estadía agradable. Las instalaciones son adecuadas, el personal es profesional y la limpieza es buena. Hay WiFi disponible y la comunicación con el host fue fluida. Recomendado para una estadía cómoda.",
+    "rating": {
+        "cleanliness": 4,
+        "hospitality": 3,
+        "services": 4,
+        "accuracy": 3,
+        "communication": 4,
+        "location": 3
+    }
+}

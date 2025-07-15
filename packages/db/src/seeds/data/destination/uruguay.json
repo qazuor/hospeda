@@ -50,12 +50,14 @@
         "notes": "Ciudad histórica importante, primera capital de la provincia",
         "favorite": false
     },
-    "tags": [
-        "historia",
-        "arquitectura",
-        "educación",
-        "tradición",
-        "cultura"
+    "tags": ["historia", "arquitectura", "educación", "tradición", "cultura"],
+    "tagIds": [
+        "tag-historia-013",
+        "tag-arquitectura",
+        "tag-cultura-006",
+        "tag-turismo-001",
+        "tag-entre-rios-003",
+        "tag-museos"
     ],
     "reviews": [
         {

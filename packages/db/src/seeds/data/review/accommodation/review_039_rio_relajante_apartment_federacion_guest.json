@@ -1,0 +1,15 @@
+{
+    "id": "review-039-rio-relajante-apartment-federacion-guest",
+    "userId": "guest-user-12345",
+    "accommodationId": "rio-relajante-apartment-federacion",
+    "title": "Buena experiencia en general",
+    "content": "Tuve una estadía agradable. Las instalaciones son adecuadas, el personal es profesional y la limpieza es buena. Hay WiFi disponible y la comunicación con el host fue fluida. Recomendado para una estadía cómoda.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 3,
+        "services": 4,
+        "accuracy": 4,
+        "communication": 5,
+        "location": 5
+    }
+}

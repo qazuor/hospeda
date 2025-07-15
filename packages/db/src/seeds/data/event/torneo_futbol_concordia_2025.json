@@ -20,6 +20,7 @@
     "visibility": "PUBLIC",
     "isFeatured": false,
     "tags": ["futbol", "deporte", "concordia", "torneo", "amateur"],
+    "tagIds": ["tag-deportes-034", "tag-familia-004", "tag-entre-rios-003", "tag-aventura-005"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=600&fit=crop",

@@ -43,5 +43,12 @@
     "adminInfo": {
         "notes": "Usuario activo, buen historial de reseñas",
         "favorite": false
-    }
+    },
+    "tagIds": [
+        "tag-naturaleza-002",
+        "tag-gastronomia-007",
+        "tag-turismo-001",
+        "tag-entre-rios-003",
+        "tag-aventura-005"
+    ]
 }

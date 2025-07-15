@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-009-sofia-termas-post",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "entityId": "post-004-termas-federacion-relax",
+    "entityType": "POST",
+    "name": "Termas de Federación",
+    "description": "Guía completa sobre las termas que quiero visitar para relajarme",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Post útil para planificación de viaje wellness"
+    },
+    "createdAt": "2024-02-25T12:00:00Z",
+    "updatedAt": "2024-02-25T12:00:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "deletedAt": null,
+    "deletedById": null
+}

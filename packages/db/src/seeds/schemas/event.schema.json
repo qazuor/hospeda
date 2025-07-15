@@ -113,6 +113,13 @@
             },
             "description": "Array of tag IDs"
         },
+        "tagIds": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Array of tag IDs (UUIDs)"
+        },
         "seo": {
             "$ref": "common.schema.json#/definitions/seo"
         },

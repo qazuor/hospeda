@@ -1,0 +1,16 @@
+{
+    "id": "tag-aguas-termales-017",
+    "name": "Aguas Termales",
+    "slug": "aguas-termales",
+    "description": "Balnearios y centros termales",
+    "type": "amenity",
+    "category": "primary",
+    "color": "#40E0D0",
+    "icon": "hot-springs",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para balnearios y centros termales",
+        "favorite": false
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "tag-compras-029",
+    "name": "Compras",
+    "slug": "compras",
+    "description": "Centros comerciales y tiendas",
+    "type": "general",
+    "category": "tertiary",
+    "color": "#FF1493",
+    "icon": "shopping",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para centros comerciales y compras",
+        "favorite": false
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "tag-camping-022",
+    "name": "Camping",
+    "slug": "camping",
+    "description": "Sitios para acampar y camping",
+    "type": "accommodation",
+    "category": "secondary",
+    "color": "#556B2F",
+    "icon": "camping",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para sitios de camping y acampe",
+        "favorite": false
+    }
+}

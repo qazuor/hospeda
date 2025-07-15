@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-016-lucas-fotografia-post",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "entityId": "post-007-tips-fotografia-entre-rios",
+    "entityType": "POST",
+    "name": "Tips de Fotografía",
+    "description": "Excelentes consejos para mejorar mis fotos de viajes",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Contenido útil para aficionado a la fotografía"
+    },
+    "createdAt": "2024-02-22T19:15:00Z",
+    "updatedAt": "2024-02-22T19:15:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "deletedAt": null,
+    "deletedById": null
+}

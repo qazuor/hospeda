@@ -170,6 +170,11 @@
             "items": { "type": "string" },
             "description": "Array of amenity IDs (UUIDs)"
         },
+        "tagIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Array of tag IDs (UUIDs)"
+        },
         "faqs": {
             "type": "array",
             "items": {

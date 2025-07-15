@@ -1,0 +1,16 @@
+{
+    "id": "tag-ciclismo-025",
+    "name": "Ciclismo",
+    "slug": "ciclismo",
+    "description": "Rutas y actividades ciclísticas",
+    "type": "activity",
+    "category": "primary",
+    "color": "#FF8C00",
+    "icon": "bicycle",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para ciclismo y rutas en bicicleta",
+        "favorite": false
+    }
+}

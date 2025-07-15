@@ -1,0 +1,27 @@
+{
+    "id": "review-017-federacion-lucas",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "destinationId": "federacion",
+    "title": "El paraíso termal de Entre Ríos",
+    "content": "Federación es mi destino favorito para escapar del estrés. Las termas son increíbles, con aguas que realmente relajan y sanan. La ciudad es tranquila y perfecta para descansar. El lago Salto Grande ofrece vistas espectaculares y actividades acuáticas. Los atardeceres desde la costanera son únicos. La gastronomía local es excelente, especialmente los pescados de río. Es un lugar al que siempre quiero volver.",
+    "rating": {
+        "landscape": 5,
+        "attractions": 5,
+        "accessibility": 4,
+        "safety": 5,
+        "cleanliness": 5,
+        "hospitality": 5,
+        "culturalOffer": 5,
+        "gastronomy": 5,
+        "affordability": 4,
+        "nightlife": 4,
+        "infrastructure": 4,
+        "environmentalCare": 5,
+        "wifiAvailability": 4,
+        "shopping": 4,
+        "beaches": 4,
+        "greenSpaces": 5,
+        "localEvents": 5,
+        "weatherSatisfaction": 5
+    }
+}

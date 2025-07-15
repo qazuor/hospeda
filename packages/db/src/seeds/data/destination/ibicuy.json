@@ -47,12 +47,16 @@
         "notes": "Destino delta en Entre Ríos",
         "favorite": false
     },
-    "tags": [
-        "delta",
-        "naturaleza",
-        "aventura",
-        "pesca",
-        "ecoturismo"
+    "tags": ["delta", "naturaleza", "aventura", "pesca", "ecoturismo"],
+    "tagIds": [
+        "tag-naturaleza-002",
+        "tag-aventura-005",
+        "tag-pesca",
+        "tag-ecoturismo-015",
+        "tag-observacion-fauna-019",
+        "tag-kayak-030",
+        "tag-entre-rios-003",
+        "tag-delta-036"
     ],
     "reviews": [
         {

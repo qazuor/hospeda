@@ -1,0 +1,27 @@
+{
+    "id": "review-020-concordia-miguel",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d485",
+    "destinationId": "concordia",
+    "title": "Capital de la citricultura con encanto",
+    "content": "Concordia me sorprendió gratamente. No esperaba encontrar una ciudad tan verde y ordenada. El festival de la citricultura es impresionante, con una organización excelente. Las termas son muy buenas, aunque no tan conocidas como las de Federación. La arquitectura del centro es interesante y los parques son hermosos. La gastronomía local, especialmente los productos cítricos, es única. Es un destino que merece más promoción turística.",
+    "rating": {
+        "landscape": 4,
+        "attractions": 4,
+        "accessibility": 3,
+        "safety": 4,
+        "cleanliness": 4,
+        "hospitality": 4,
+        "culturalOffer": 4,
+        "gastronomy": 5,
+        "affordability": 4,
+        "nightlife": 2,
+        "infrastructure": 3,
+        "environmentalCare": 4,
+        "wifiAvailability": 3,
+        "shopping": 3,
+        "beaches": 0,
+        "greenSpaces": 5,
+        "localEvents": 5,
+        "weatherSatisfaction": 4
+    }
+}

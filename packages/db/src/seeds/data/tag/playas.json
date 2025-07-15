@@ -1,0 +1,16 @@
+{
+    "id": "tag-playas-021",
+    "name": "Playas",
+    "slug": "playas",
+    "description": "Playas fluviales y costeras",
+    "type": "destination",
+    "category": "primary",
+    "color": "#F0E68C",
+    "icon": "beach",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para playas y costas",
+        "favorite": false
+    }
+}

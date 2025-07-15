@@ -1,0 +1,15 @@
+{
+    "id": "tag-pareja-009",
+    "name": "Pareja",
+    "slug": "pareja",
+    "description": "Experiencias románticas y actividades para parejas",
+    "type": "general",
+    "category": "secondary",
+    "color": "#E91E63",
+    "icon": "heart",
+    "isActive": true,
+    "adminInfo": {
+        "notes": "Tag para contenido romántico y de pareja",
+        "favorite": false
+    }
+}

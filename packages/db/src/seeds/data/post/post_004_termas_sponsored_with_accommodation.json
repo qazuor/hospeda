@@ -1,0 +1,86 @@
+{
+    "id": "post-004-termas-federacion-relax",
+    "slug": "termas-federacion-relax-bienestar",
+    "category": "WELLNESS",
+    "title": "Termas de Federación: Tu Refugio de Relax y Bienestar",
+    "summary": "Descubre por qué las termas de Federación son consideradas las mejores de Argentina. Propiedades terapéuticas, servicios de spa y consejos para una experiencia perfecta.",
+    "content": "Las Termas de Federación se han consolidado como uno de los destinos de bienestar más importantes de Argentina. Con aguas que brotan naturalmente a 45°C, ofrecen una experiencia única de relajación y renovación.\n\n**Propiedades Terapéuticas**\n\nLas aguas termales de Federación son clasificadas como bicarbonatadas sódicas, con propiedades beneficiosas para:\n- Problemas articulares y reumáticos\n- Estrés y tensiones musculares\n- Trastornos circulatorios\n- Afecciones dermatológicas\n- Recuperación deportiva\n\n**Complejos Termales Destacados**\n\n**Termas de Federación**\nEl complejo principal cuenta con piscinas de diferentes temperaturas, toboganes acuáticos y amplias áreas verdes. Perfecto para familias y grupos.\n\n**Termas Park**\nEspecializado en tratamientos de spa y relajación, ofrece servicios de masajes, fangoterapia y tratamientos faciales.\n\n**Aktivitas Termas**\nCombina las aguas termales con actividades deportivas como aqua aeróbicos y natación terapéutica.\n\n**Servicios de Spa y Bienestar**\n\n- **Hidroterapia**: Tratamientos con chorros de agua mineral\n- **Fangoterapia**: Mascarillas y envolturas con fango termal\n- **Masajes terapéuticos**: Desde relajantes hasta deportivos\n- **Aromaterapia**: Sesiones con aceites esenciales naturales\n- **Salas de relajación**: Espacios dedicados a la meditación\n\n**Consejos para tu Visita**\n\n**Mejor época**: Las termas pueden disfrutarse todo el año, pero el otoño e invierno son ideales para el contraste térmico.\n\n**Duración recomendada**: Para obtener beneficios terapéuticos, se recomienda una estadía mínima de 3 días.\n\n**Qué llevar**: Traje de baño, toalla, protector solar y ropa cómoda.\n\n**Horarios**: La mayoría de complejos abren desde las 8:00 hasta las 22:00 horas.\n\n**Actividades Complementarias**\n\n- Paseos en catamarán por el lago de Salto Grande\n- Visita al Museo Regional\n- Recorridos por la reserva natural\n- Deportes acuáticos en el lago\n\n**Gastronomía Termal**\n\nLos restaurantes locales ofrecen menús especializados en cocina saludable, con pescados de río, verduras orgánicas y aguas minerales naturales.\n\nLas Termas de Federación no son solo un destino turístico, sino un verdadero oasis de salud y bienestar que combina las propiedades curativas de la naturaleza con servicios de primer nivel.",
+    "media": {
+        "featured": {
+            "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200&h=600&fit=crop",
+            "alt": "Piscinas termales de Federación",
+            "caption": "Las relajantes aguas termales de Federación"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&h=600&fit=crop",
+                "alt": "Spa y masajes",
+                "caption": "Servicios de spa y bienestar"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&h=600&fit=crop",
+                "alt": "Familia en termas",
+                "caption": "Disfrute familiar en las termas"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
+                "alt": "Lago de Salto Grande",
+                "caption": "Vista al lago de Salto Grande"
+            }
+        ]
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "sponsorshipId": "psp-termas-bienestar-002",
+    "relatedDestinationId": "dest-federacion-001",
+    "relatedAccommodationId": "acc-casa-termas-federacion-001",
+    "visibility": "PUBLIC",
+    "isNews": false,
+    "isFeaturedInWebsite": true,
+    "expiresAt": null,
+    "likes": 378,
+    "comments": 67,
+    "shares": 89,
+    "isFeatured": true,
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "featuredUntil": "2024-06-30T23:59:59Z",
+        "promotionLevel": "MEDIUM",
+        "moderationNotes": "Contenido sobre bienestar con sponsor termal aprobado"
+    },
+    "createdAt": "2024-02-01T11:15:00Z",
+    "updatedAt": "2024-02-01T11:15:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "moderationState": "APPROVED",
+    "seo": {
+        "title": "Termas de Federación: Tu Refugio de Relax y Bienestar | Hospeda",
+        "description": "Descubre las mejores termas de Argentina. Propiedades terapéuticas, servicios de spa y consejos para una experiencia perfecta en Federación.",
+        "keywords": [
+            "termas",
+            "Federación",
+            "bienestar",
+            "spa",
+            "relajación",
+            "salud",
+            "aguas termales",
+            "Entre Ríos",
+            "wellness"
+        ],
+        "openGraph": {
+            "title": "Termas de Federación: Tu Refugio de Relax y Bienestar",
+            "description": "El destino perfecto para relajarse y renovarse",
+            "image": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200&h=600&fit=crop",
+            "type": "article"
+        }
+    },
+    "tagIds": [
+        "tag-termas-001",
+        "tag-aguas-termales-002",
+        "tag-relax-003",
+        "tag-spa-004",
+        "tag-entre-rios-005",
+        "tag-familia-006",
+        "tag-pareja-007",
+        "tag-yoga-008"
+    ]
+}

@@ -1,0 +1,15 @@
+{
+    "id": "tag-familia-008",
+    "name": "Familia",
+    "slug": "familia",
+    "description": "Actividades y alojamientos aptos para familias con niños",
+    "type": "general",
+    "category": "secondary",
+    "color": "#FF5722",
+    "icon": "family",
+    "isActive": true,
+    "adminInfo": {
+        "notes": "Tag para contenido familiar",
+        "favorite": false
+    }
+}

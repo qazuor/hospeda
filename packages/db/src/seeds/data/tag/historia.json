@@ -1,0 +1,16 @@
+{
+    "id": "tag-historia-013",
+    "name": "Historia",
+    "slug": "historia",
+    "description": "Sitios y experiencias con significado histórico",
+    "type": "destination",
+    "category": "primary",
+    "color": "#8B4513",
+    "icon": "history",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para sitios históricos y patrimonio cultural",
+        "favorite": false
+    }
+}

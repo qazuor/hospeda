@@ -86,6 +86,11 @@
         },
         "adminInfo": {
             "$ref": "common.schema.json#/definitions/adminInfo"
+        },
+        "tagIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Array of tag IDs representing user interests (UUIDs)"
         }
     },
     "required": ["id", "email", "username", "firstName", "lastName", "role"],

@@ -1,0 +1,15 @@
+{
+    "id": "tag-turismo-001",
+    "name": "Turismo",
+    "slug": "turismo",
+    "description": "Contenido general relacionado con actividades turísticas",
+    "type": "general",
+    "category": "primary",
+    "color": "#2196F3",
+    "icon": "map",
+    "isActive": true,
+    "adminInfo": {
+        "notes": "Tag principal para contenido turístico general",
+        "favorite": true
+    }
+}

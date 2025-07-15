@@ -45,6 +45,11 @@
             "items": { "type": "string" },
             "description": "Array of tag names"
         },
+        "tagIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Array of tag IDs (UUIDs)"
+        },
         "attractions": {
             "type": "array",
             "items": {

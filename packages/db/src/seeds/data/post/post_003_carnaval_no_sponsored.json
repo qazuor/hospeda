@@ -1,0 +1,85 @@
+{
+    "id": "post-003-carnaval-gualeguaychu",
+    "slug": "carnaval-gualeguaychu-espectaculo-color",
+    "category": "CARNIVAL",
+    "title": "El Carnaval de Gualeguaychú: Un Espectáculo de Color y Tradición",
+    "summary": "Vive la magia del carnaval más famoso de Argentina. Conoce su historia, las comparsas más destacadas y cómo disfrutar al máximo esta celebración única.",
+    "content": "El Carnaval de Gualeguaychú es considerado uno de los espectáculos más importantes de Argentina y el carnaval más grande del país. Cada año, miles de visitantes llegan a la ciudad para presenciar esta explosión de color, música y tradición.\n\n**Historia del Carnaval**\n\nEl carnaval gualeguaychuense tiene sus raíces en la década de 1980, cuando comenzó como una celebración local que gradualmente fue creciendo hasta convertirse en un evento de proyección nacional e internacional. La construcción del Corsódromo en 1997 marcó un antes y un después en la historia del carnaval.\n\n**Las Comparsas Protagonistas**\n\n**Papelitos**\nUna de las comparsas más tradicionales, conocida por sus elaborados carros alegóricos y sus espectaculares coreografías.\n\n**Kamarr**\nFamosa por sus innovadoras propuestas artísticas y su participación constante en el carnaval desde hace más de dos décadas.\n\n**O'Bahía**\nDestacada por sus coloridos vestuarios y la energía de sus bailarines.\n\n**El Corsódromo**\n\nEste moderno estadio cuenta con capacidad para 40,000 espectadores y fue especialmente diseñado para el carnaval. Su arquitectura permite una visión perfecta del espectáculo desde cualquier ubicación.\n\n**Consejos para Visitantes**\n\n- Reserva con anticipación: Las entradas y alojamientos se agotan rápidamente\n- Vístete cómodo: Las noches pueden ser largas y el clima variable\n- Participa en las murgas: Hay actividades para toda la familia\n- Prueba la gastronomía local: Los food trucks ofrecen opciones deliciosas\n\n**Más Allá del Carnaval**\n\nGualeguaychú no solo brilla durante el carnaval. La ciudad ofrece playas, parques, museos y una rica vida cultural durante todo el año. El río Gualeguaychú es perfecto para deportes acuáticos y la relajación.\n\nEl Carnaval de Gualeguaychú es más que un espectáculo; es una celebración de la identidad entrerriana que une tradición, arte y diversión en una experiencia inolvidable.",
+    "media": {
+        "featured": {
+            "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=600&fit=crop",
+            "alt": "Carnaval de Gualeguaychú con bailarines",
+            "caption": "El colorido espectáculo del Carnaval de Gualeguaychú"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1554213352-5ffe6534af08?w=800&h=600&fit=crop",
+                "alt": "Comparsa en el corsódromo",
+                "caption": "Comparsa desfilando en el corsódromo"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&h=600&fit=crop",
+                "alt": "Vestuarios de carnaval",
+                "caption": "Elaborados vestuarios de las comparsas"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=600&fit=crop",
+                "alt": "Público en el carnaval",
+                "caption": "Miles de espectadores disfrutan del espectáculo"
+            }
+        ]
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "sponsorshipId": null,
+    "relatedDestinationId": "dest-gualeguaychu-001",
+    "relatedEventId": "event-carnaval-pais-001",
+    "visibility": "PUBLIC",
+    "isNews": true,
+    "isFeaturedInWebsite": true,
+    "expiresAt": null,
+    "likes": 532,
+    "comments": 89,
+    "shares": 156,
+    "isFeatured": true,
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "featuredUntil": "2024-03-15T23:59:59Z",
+        "promotionLevel": "HIGH",
+        "moderationNotes": "Contenido editorial destacado para temporada carnaval"
+    },
+    "createdAt": "2024-01-25T16:00:00Z",
+    "updatedAt": "2024-01-25T16:00:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "moderationState": "APPROVED",
+    "seo": {
+        "title": "El Carnaval de Gualeguaychú: Un Espectáculo de Color y Tradición | Hospeda",
+        "description": "Vive la magia del carnaval más famoso de Argentina. Historia, comparsas destacadas y consejos para disfrutar al máximo esta celebración única.",
+        "keywords": [
+            "Carnaval",
+            "Gualeguaychú",
+            "Entre Ríos",
+            "comparsas",
+            "corsódromo",
+            "Argentina",
+            "espectáculo",
+            "tradición",
+            "festividad"
+        ],
+        "openGraph": {
+            "title": "El Carnaval de Gualeguaychú: Un Espectáculo de Color y Tradición",
+            "description": "Descubre el carnaval más importante de Argentina",
+            "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=600&fit=crop",
+            "type": "article"
+        }
+    },
+    "tagIds": [
+        "tag-cultura-001",
+        "tag-festivales-002",
+        "tag-entre-rios-003",
+        "tag-turismo-004",
+        "tag-musica-005",
+        "tag-familia-006",
+        "tag-vida-nocturna-007"
+    ]
+}

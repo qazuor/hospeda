@@ -130,10 +130,7 @@
     "adminInfo": {
         "notes": "Destacado por sus vistas. Alta ocupación en temporada alta y fines de semana largos.",
         "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
+        "tags": ["admin", "seed"]
     },
     "tags": [
         "colon",
@@ -180,5 +177,12 @@
         "68987dfa-0982-4783-877e-3979d0a5ad1c",
         "1d7e7ed2-4762-4733-adc7-ad8d870bed20",
         "3d826d2d-3895-415f-bab7-6148abca5434"
+    ],
+    "tagIds": [
+        "tag-termas-012",
+        "tag-familia-004",
+        "tag-pareja-008",
+        "tag-rio-parana-009",
+        "tag-relax"
     ]
 }

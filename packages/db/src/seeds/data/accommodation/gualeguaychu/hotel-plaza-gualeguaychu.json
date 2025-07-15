@@ -146,13 +146,7 @@
         "notes": "Hotel con buena gestión y mantenimiento constante. Ocupa un edificio histórico renovado. Alta demanda durante el Carnaval.",
         "favorite": true
     },
-    "tags": [
-        "gualeguaychu",
-        "hotel",
-        "city-center",
-        "business-travel",
-        "carnival"
-    ],
+    "tags": ["gualeguaychu", "hotel", "city-center", "business-travel", "carnival"],
     "faqs": [
         {
             "question": "¿El hotel cuenta con estacionamiento?",
@@ -224,5 +218,14 @@
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c",
         "1e40f686-3964-4b5b-8259-9ca49016e2e7"
+    ],
+    "tagIds": [
+        "tag-festivales",
+        "tag-turismo-001",
+        "tag-cultura-006",
+        "tag-gastronomia-007",
+        "tag-familia-004",
+        "tag-entre-rios-003",
+        "tag-arquitectura"
     ]
 }

@@ -37,25 +37,21 @@
     "seo": {
         "title": "Gualeguaychú - Capital Nacional del Carnaval | Entre Ríos",
         "description": "Descubre Gualeguaychú, la capital del carnaval argentino. Termas, cultura, gastronomía y entretenimiento en Entre Ríos.",
-        "keywords": [
-            "Gualeguaychú",
-            "Carnaval",
-            "Entre Ríos",
-            "Termas",
-            "Argentina",
-            "Turismo"
-        ]
+        "keywords": ["Gualeguaychú", "Carnaval", "Entre Ríos", "Termas", "Argentina", "Turismo"]
     },
     "adminInfo": {
         "notes": "Destino principal de Entre Ríos, muy popular durante el carnaval",
         "favorite": true
     },
-    "tags": [
-        "carnaval",
-        "termas",
-        "cultura",
-        "familia",
-        "entretenimiento"
+    "tags": ["carnaval", "termas", "cultura", "familia", "entretenimiento"],
+    "tagIds": [
+        "tag-festivales",
+        "tag-termas-012",
+        "tag-cultura-006",
+        "tag-familia-004",
+        "tag-vida-nocturna",
+        "tag-entre-rios-003",
+        "tag-musica-023"
     ],
     "reviews": [
         {
