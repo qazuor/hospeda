@@ -1,0 +1,30 @@
+{
+    "id": "ps-turismo-entrerriano-001",
+    "name": "Turismo Entrerriano",
+    "type": "ADVERTISER",
+    "description": "Agencia oficial de promoción turística de Entre Ríos, especializada en promover los destinos más hermosos de la provincia y conectar viajeros con experiencias auténticas.",
+    "logo": {
+        "url": "https://images.pexels.com/photos/675764/pexels-photo-675764.jpeg",
+        "caption": "Logo oficial de Turismo Entrerriano",
+        "description": "Logotipo de la agencia de turismo provincial"
+    },
+    "contact": {
+        "workEmail": "info@turismoentrerriano.com.ar",
+        "personalEmail": "prensa@turismoentrerriano.com.ar",
+        "mobilePhone": "+5493442987654",
+        "workPhone": "+5493442123456",
+        "website": "https://www.turismoentrerriano.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "WORK"
+    },
+    "social": {
+        "facebook": "https://facebook.com/turismoentrerriano",
+        "instagram": "https://instagram.com/turismo_entrerriano",
+        "twitter": "https://twitter.com/turismo_er",
+        "youtube": "https://youtube.com/turismoentrerriano"
+    },
+    "adminInfo": {
+        "notes": "Sponsor principal para contenido turístico institucional",
+        "favorite": true
+    }
+}

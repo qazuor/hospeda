@@ -1,0 +1,27 @@
+{
+    "id": "ps-cultura-entrerriana-005",
+    "name": "Cultura Entrerriana",
+    "type": "POST_SPONSOR",
+    "description": "Fundación cultural sin fines de lucro dedicada a preservar y promover el patrimonio cultural, artístico e histórico de Entre Ríos a través de eventos y programas educativos.",
+    "logo": {
+        "url": "https://images.pexels.com/photos/1164674/pexels-photo-1164674.jpeg",
+        "caption": "Logo de Cultura Entrerriana",
+        "description": "Logotipo de la fundación cultural"
+    },
+    "contact": {
+        "workEmail": "contacto@culturaentrerriana.org.ar",
+        "mobilePhone": "+5493442901234",
+        "website": "https://www.culturaentrerriana.org.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "social": {
+        "facebook": "https://facebook.com/culturaentrerriana",
+        "instagram": "https://instagram.com/cultura_entrerriana",
+        "twitter": "https://twitter.com/cultura_er"
+    },
+    "adminInfo": {
+        "notes": "Sponsor para contenido cultural e histórico",
+        "favorite": false
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "id": "ps-termas-unidas-002",
+    "name": "Termas Unidas",
+    "type": "POST_SPONSOR",
+    "description": "Asociación de complejos termales de Entre Ríos que promueve el turismo termal y de bienestar en la región. Agrupa los principales centros termales de la provincia.",
+    "logo": {
+        "url": "https://images.pexels.com/photos/3225531/pexels-photo-3225531.jpeg",
+        "caption": "Logo de Termas Unidas",
+        "description": "Logotipo de la asociación de complejos termales"
+    },
+    "contact": {
+        "personalEmail": "contacto@termasunidas.com.ar",
+        "mobilePhone": "+5493456123789",
+        "website": "https://www.termasunidas.com.ar",
+        "preferredEmail": "PERSONAL",
+        "preferredPhone": "MOBILE"
+    },
+    "social": {
+        "facebook": "https://facebook.com/termasunidas",
+        "instagram": "https://instagram.com/termas_unidas",
+        "youtube": "https://youtube.com/termasunidas"
+    },
+    "adminInfo": {
+        "notes": "Sponsor para contenido relacionado con termas y bienestar",
+        "favorite": true
+    }
+}

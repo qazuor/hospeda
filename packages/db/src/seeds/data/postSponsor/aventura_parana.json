@@ -1,0 +1,29 @@
+{
+    "id": "ps-aventura-parana-004",
+    "name": "Aventura Paraná",
+    "type": "POST_SPONSOR",
+    "description": "Operadora turística especializada en actividades de aventura y deportes acuáticos en el río Paraná y sus afluentes. Ofrece experiencias únicas en la naturaleza entrerriana.",
+    "logo": {
+        "url": "https://images.pexels.com/photos/1271619/pexels-photo-1271619.jpeg",
+        "caption": "Logo de Aventura Paraná",
+        "description": "Logotipo de la operadora de turismo aventura"
+    },
+    "contact": {
+        "workEmail": "info@aventuraparana.com.ar",
+        "personalEmail": "reservas@aventuraparana.com.ar",
+        "mobilePhone": "+5493442789012",
+        "workPhone": "+5493442345678",
+        "website": "https://www.aventuraparana.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "social": {
+        "facebook": "https://facebook.com/aventuraparana",
+        "instagram": "https://instagram.com/aventura_parana",
+        "youtube": "https://youtube.com/aventuraparana"
+    },
+    "adminInfo": {
+        "notes": "Sponsor para contenido de turismo aventura y deportes acuáticos",
+        "favorite": false
+    }
+}

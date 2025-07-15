@@ -1,0 +1,19 @@
+{
+    "id": "psp-cultura-post-005",
+    "sponsorId": "ps-cultura-entrerriana-005",
+    "postId": "post-patrimonio-cultural-005",
+    "message": "Conocé el patrimonio cultural de Entre Ríos",
+    "description": "Entrada gratuita a museos y centros culturales participantes presentando este artículo. Descubrí la riqueza histórica y artística de nuestra provincia.",
+    "paid": {
+        "price": 2800,
+        "currency": "ARS"
+    },
+    "paidAt": "2024-11-05T11:15:00Z",
+    "fromDate": "2024-11-01T00:00:00Z",
+    "toDate": "2024-12-01T23:59:59Z",
+    "isHighlighted": false,
+    "adminInfo": {
+        "notes": "Patrocinio para contenido cultural e histórico",
+        "favorite": false
+    }
+}
