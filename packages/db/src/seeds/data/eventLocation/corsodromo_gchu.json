@@ -1,0 +1,19 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d602",
+    "state": "Entre Ríos",
+    "city": "Gualeguaychú",
+    "country": "Argentina",
+    "zipCode": "2840",
+    "street": "Av. Costanera",
+    "number": "1050",
+    "neighborhood": "Centro",
+    "coordinates": {
+        "lat": "-33.0089",
+        "lng": "-58.5133"
+    },
+    "placeName": "Corsódromo de Gualeguaychú",
+    "adminInfo": {
+        "notes": "Sede principal del Carnaval del País y otros eventos masivos",
+        "favorite": true
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d603",
+    "state": "Entre Ríos",
+    "city": "Concordia",
+    "country": "Argentina",
+    "zipCode": "3200",
+    "street": "San Lorenzo",
+    "number": "47",
+    "neighborhood": "Centro",
+    "coordinates": {
+        "lat": "-31.3928",
+        "lng": "-58.0217"
+    },
+    "placeName": "Teatro Municipal Pedro Barbero",
+    "adminInfo": {
+        "notes": "Teatro histórico para eventos culturales y artísticos",
+        "favorite": true
+    }
+}

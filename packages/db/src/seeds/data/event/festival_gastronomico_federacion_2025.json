@@ -1,0 +1,51 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d704",
+    "slug": "festival-gastronomico-termas-federacion-2025",
+    "name": "Festival Gastronómico Termas de Federación 2025",
+    "summary": "Festival gastronómico con productos locales y wellness en las termas de Federación",
+    "description": "El Festival Gastronómico de las Termas de Federación es un evento único que combina la gastronomía regional con el bienestar termal. Durante dos días, los mejores chefs locales y regionales presentan platos elaborados con productos típicos de Entre Ríos, mientras los visitantes pueden disfrutar de las aguas termales y tratamientos de spa. Una experiencia gastronómica y de relajación incomparable.",
+    "category": "GASTRONOMY",
+    "date": {
+        "start": "2025-05-10T11:00:00-03:00",
+        "end": "2025-05-11T22:00:00-03:00"
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d604",
+    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d505",
+    "pricing": {
+        "type": "paid",
+        "value": 8000,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": true,
+    "tags": ["gastronomia", "termas", "federacion", "wellness", "productos-locales"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop",
+            "caption": "Festival gastronómico en las termas",
+            "description": "Platos gourmet con productos locales"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800&h=600&fit=crop",
+                "caption": "Chefs preparando especialidades",
+                "description": "Chefs locales cocinando con productos regionales"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
+                "caption": "Termas de Federación",
+                "description": "Aguas termales del complejo termal"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Festival Gastronómico Termas de Federación 2025 - Gastronomía y Wellness - Hospeda",
+        "description": "Festival gastronómico con productos locales y experiencia termal en Federación. Gastronomía y relajación en un mismo lugar.",
+        "keywords": ["gastronomia", "federacion", "termas", "wellness", "productos-locales"]
+    },
+    "adminInfo": {
+        "notes": "Festival gastronómico con experiencia termal única",
+        "favorite": true
+    }
+}

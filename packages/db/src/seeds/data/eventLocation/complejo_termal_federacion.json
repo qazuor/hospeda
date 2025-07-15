@@ -1,0 +1,19 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d604",
+    "state": "Entre Ríos",
+    "city": "Federación",
+    "country": "Argentina",
+    "zipCode": "3086",
+    "street": "Av. de los Inmigrantes",
+    "number": "1200",
+    "neighborhood": "Costanera",
+    "coordinates": {
+        "lat": "-31.0061",
+        "lng": "-57.9000"
+    },
+    "placeName": "Complejo Termal Federación",
+    "adminInfo": {
+        "notes": "Espacio recreativo y termal para eventos wellness y familiares",
+        "favorite": false
+    }
+}

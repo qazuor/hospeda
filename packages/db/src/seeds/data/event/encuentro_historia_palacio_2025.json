@@ -1,0 +1,51 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d705",
+    "slug": "encuentro-historia-palacio-san-jose-2025",
+    "name": "Encuentro de Historia en Palacio San José 2025",
+    "summary": "Jornadas culturales e históricas en la residencia histórica de Justo José de Urquiza",
+    "description": "El Encuentro de Historia en Palacio San José es un evento cultural que se desarrolla en la histórica residencia de Justo José de Urquiza. Durante dos días, historiadores, escritores y artistas presentan conferencias, exposiciones y espectáculos relacionados con la historia argentina y entrerriana. Un evento único en un marco histórico incomparable que atrae a amantes de la historia y la cultura de todo el país.",
+    "category": "CULTURE",
+    "date": {
+        "start": "2025-06-14T10:00:00-03:00",
+        "end": "2025-06-15T18:00:00-03:00"
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d605",
+    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d502",
+    "pricing": {
+        "type": "paid",
+        "value": 3500,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": true,
+    "tags": ["historia", "cultura", "palacio-san-jose", "urquiza", "patrimonio"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
+            "caption": "Palacio San José - Residencia histórica",
+            "description": "Palacio San José, antigua residencia de Justo José de Urquiza"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1568667256549-094345857637?w=800&h=600&fit=crop",
+                "caption": "Conferencia de historia",
+                "description": "Historiadores presentando en el evento"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&h=600&fit=crop",
+                "caption": "Jardines del palacio",
+                "description": "Jardines históricos del Palacio San José"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Encuentro de Historia Palacio San José 2025 - Cultura e Historia - Hospeda",
+        "description": "Jornadas culturales e históricas en el Palacio San José. Conferencias y exposiciones en un marco histórico único.",
+        "keywords": ["historia", "palacio-san-jose", "cultura", "urquiza", "patrimonio"]
+    },
+    "adminInfo": {
+        "notes": "Evento cultural en marco histórico excepcional",
+        "favorite": true
+    }
+}

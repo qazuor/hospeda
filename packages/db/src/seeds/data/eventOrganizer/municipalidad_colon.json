@@ -1,0 +1,21 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d501",
+    "name": "Municipalidad de Colón",
+    "logo": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=200&h=200&fit=crop",
+    "contactInfo": {
+        "workEmail": "cultura@colon.gob.ar",
+        "workPhone": "+54 3447 421-000",
+        "website": "https://www.colon.gob.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "WORK"
+    },
+    "social": {
+        "facebook": "https://facebook.com/municipalidadcolon",
+        "instagram": "https://instagram.com/municipalidadcolon",
+        "twitter": "https://twitter.com/muni_colon"
+    },
+    "adminInfo": {
+        "notes": "Organización municipal principal de eventos culturales y deportivos",
+        "favorite": true
+    }
+}
