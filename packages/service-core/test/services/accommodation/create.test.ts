@@ -37,6 +37,11 @@ describe('AccommodationService.create', () => {
     beforeEach(() => {
         model = createMockBaseModel();
         service = new AccommodationService({ logger: mockLogger }, model as AccommodationModel);
+        // Mock destinationService.updateAccommodationsCount para evitar acceso real a DB
+        // @ts-expect-error: override for test
+        service.destinationService = {
+            updateAccommodationsCount: vi.fn().mockResolvedValue(undefined)
+        };
         vi.clearAllMocks();
     });
 

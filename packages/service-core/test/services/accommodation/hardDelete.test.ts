@@ -41,6 +41,11 @@ describe('AccommodationService.hardDelete', () => {
             { logger: mockLogger },
             model as unknown as AccommodationModel
         );
+        // Mock destinationService.updateAccommodationsCount para evitar acceso real a DB
+        // @ts-expect-error: override for test
+        service.destinationService = {
+            updateAccommodationsCount: vi.fn().mockResolvedValue(undefined)
+        };
         entity = createEntity();
         actor = createHardDeleteActor();
         vi.clearAllMocks();
