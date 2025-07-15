@@ -1,0 +1,15 @@
+{
+    "id": "review-037-refugio-apacible-hotel-federacion-sofia_travel",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "accommodationId": "refugio-apacible-hotel-federacion",
+    "title": "Excelente alojamiento, muy recomendable",
+    "content": "Mi estadía fue perfecta. Las instalaciones están impecables, la atención es excelente y la ubicación es muy conveniente. El desayuno es delicioso y las habitaciones muy cómodas. Sin duda regresaré.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 4,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 5
+    }
+}

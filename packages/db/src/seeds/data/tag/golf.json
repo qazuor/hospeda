@@ -1,0 +1,16 @@
+{
+    "id": "tag-golf-026",
+    "name": "Golf",
+    "slug": "golf",
+    "description": "Campos de golf y actividades relacionadas",
+    "type": "activity",
+    "category": "tertiary",
+    "color": "#32CD32",
+    "icon": "golf",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para golf y campos de golf",
+        "favorite": false
+    }
+}

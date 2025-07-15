@@ -1,0 +1,16 @@
+{
+    "id": "tag-teatro-024",
+    "name": "Teatro",
+    "slug": "teatro",
+    "description": "Obras teatrales y artes escénicas",
+    "type": "experience",
+    "category": "secondary",
+    "color": "#4B0082",
+    "icon": "theater",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para teatro y artes escénicas",
+        "favorite": false
+    }
+}

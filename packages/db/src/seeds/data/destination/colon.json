@@ -50,13 +50,7 @@
         "notes": "Destino histórico-cultural, muy popular por el Palacio San José",
         "favorite": true
     },
-    "tags": [
-        "historia",
-        "arquitectura",
-        "termas",
-        "cultura",
-        "colonial"
-    ],
+    "tags": ["historia", "arquitectura", "termas", "cultura", "colonial"],
     "reviews": [
         {
             "title": "Un viaje al pasado argentino",
@@ -109,5 +103,12 @@
         "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
         "6125c3ad-7af7-4f43-bd9f-556870d8fbc5",
         "d759d447-8322-4260-b16b-fe8892843edc"
+    ],
+    "tagIds": [
+        "tag-historia-013",
+        "tag-termas-012",
+        "tag-arquitectura",
+        "tag-familia-004",
+        "tag-entre-rios-003"
     ]
 }

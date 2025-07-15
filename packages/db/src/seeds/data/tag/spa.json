@@ -1,0 +1,16 @@
+{
+    "id": "tag-spa-027",
+    "name": "Spa",
+    "slug": "spa",
+    "description": "Servicios de spa y relajación",
+    "type": "amenity",
+    "category": "secondary",
+    "color": "#DA70D6",
+    "icon": "spa",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para servicios de spa y bienestar",
+        "favorite": false
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "tag-senderismo-020",
+    "name": "Senderismo",
+    "slug": "senderismo",
+    "description": "Rutas y senderos para caminatas",
+    "type": "activity",
+    "category": "primary",
+    "color": "#6B8E23",
+    "icon": "hiking",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para senderos y caminatas",
+        "favorite": false
+    }
+}

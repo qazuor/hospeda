@@ -37,25 +37,21 @@
     "seo": {
         "title": "Concordia - Capital de la Citricultura | Termas Entre Ríos",
         "description": "Descubre Concordia, capital de la citricultura argentina. Termas, cultura y naturaleza en Entre Ríos.",
-        "keywords": [
-            "Concordia",
-            "Entre Ríos",
-            "Citricultura",
-            "Termas",
-            "Naranjas",
-            "Cultura"
-        ]
+        "keywords": ["Concordia", "Entre Ríos", "Citricultura", "Termas", "Naranjas", "Cultura"]
     },
     "adminInfo": {
         "notes": "Ciudad importante por su producción citrícola y termas",
         "favorite": false
     },
-    "tags": [
-        "citricultura",
-        "termas",
-        "cultura",
-        "naturaleza",
-        "urbano"
+    "tags": ["citricultura", "termas", "cultura", "naturaleza", "urbano"],
+    "tagIds": [
+        "tag-termas-012",
+        "tag-cultura-006",
+        "tag-naturaleza-002",
+        "tag-familia-004",
+        "tag-entre-rios-003",
+        "tag-aguas-termales-017",
+        "tag-citricultura-035"
     ],
     "reviews": [
         {

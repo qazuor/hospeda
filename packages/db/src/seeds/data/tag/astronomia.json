@@ -1,0 +1,16 @@
+{
+    "id": "tag-astronomia-032",
+    "name": "Astronomía",
+    "slug": "astronomia",
+    "description": "Observación astronómica y planetarios",
+    "type": "activity",
+    "category": "tertiary",
+    "color": "#191970",
+    "icon": "stars",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para astronomía y observación de estrellas",
+        "favorite": false
+    }
+}

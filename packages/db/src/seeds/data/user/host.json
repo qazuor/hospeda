@@ -47,5 +47,13 @@
     "adminInfo": {
         "notes": "Host experimentada con múltiples propiedades, excelente calificación",
         "favorite": true
-    }
+    },
+    "tagIds": [
+        "tag-turismo-001",
+        "tag-historia-013",
+        "tag-termas-012",
+        "tag-familia-004",
+        "tag-entre-rios-003",
+        "tag-arquitectura"
+    ]
 }

@@ -7,6 +7,13 @@
     "icon": "museum",
     "isBuiltin": true,
     "lifecycleState": "PUBLISHED",
+    "tagIds": [
+        "tag-historia-013",
+        "tag-museos",
+        "tag-cultura-006",
+        "tag-familia-004",
+        "tag-turismo-001"
+    ],
     "adminInfo": {
         "notes": "Atracción genérica del sistema",
         "favorite": false

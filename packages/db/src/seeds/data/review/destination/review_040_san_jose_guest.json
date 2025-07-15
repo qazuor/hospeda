@@ -1,0 +1,27 @@
+{
+    "id": "review-040-san-jose-guest",
+    "userId": "guest-user-12345",
+    "destinationId": "san-jose",
+    "title": "Experiencia cultural enriquecedora",
+    "content": "Un destino que sorprende por su riqueza cultural e histórica. Los museos y sitios de interés están bien conservados. La oferta gastronómica es variada y los eventos locales son muy interesantes.",
+    "rating": {
+        "landscape": 4,
+        "attractions": 5,
+        "accessibility": 4,
+        "safety": 4,
+        "cleanliness": 5,
+        "hospitality": 3,
+        "culturalOffer": 5,
+        "gastronomy": 4,
+        "affordability": 3,
+        "nightlife": 4,
+        "infrastructure": 3,
+        "environmentalCare": 3,
+        "wifiAvailability": 3,
+        "shopping": 4,
+        "beaches": 2,
+        "greenSpaces": 3,
+        "localEvents": 5,
+        "weatherSatisfaction": 4
+    }
+}

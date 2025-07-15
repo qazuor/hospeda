@@ -1,0 +1,27 @@
+{
+    "id": "review-044-uruguay-super_admin",
+    "userId": "super-admin-12345",
+    "destinationId": "uruguay",
+    "title": "Destino con mucho potencial",
+    "content": "Es un Uruguay con características únicas, aunque creo que podría mejorarse en algunos aspectos. La belleza natural es indiscutible, pero falta un poco más de desarrollo en servicios. Aún así, vale la pena visitarlo.",
+    "rating": {
+        "landscape": 4,
+        "attractions": 4,
+        "accessibility": 4,
+        "safety": 5,
+        "cleanliness": 3,
+        "hospitality": 3,
+        "culturalOffer": 3,
+        "gastronomy": 4,
+        "affordability": 3,
+        "nightlife": 3,
+        "infrastructure": 4,
+        "environmentalCare": 3,
+        "wifiAvailability": 3,
+        "shopping": 1,
+        "beaches": 2,
+        "greenSpaces": 3,
+        "localEvents": 2,
+        "weatherSatisfaction": 5
+    }
+}

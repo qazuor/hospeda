@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-012-host-federacion-termas",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "entityId": "casa-termas-federacion",
+    "entityType": "ACCOMMODATION",
+    "name": "Casa Termas Federación",
+    "description": "Competencia local, importante analizar sus servicios y precios",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Análisis de competencia para host"
+    },
+    "createdAt": "2024-01-30T14:20:00Z",
+    "updatedAt": "2024-01-30T14:20:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "deletedAt": null,
+    "deletedById": null
+}

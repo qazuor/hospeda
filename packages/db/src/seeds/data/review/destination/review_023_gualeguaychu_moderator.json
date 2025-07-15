@@ -1,0 +1,27 @@
+{
+    "id": "review-023-gualeguaychu-moderator",
+    "userId": "moderator-user-67890",
+    "destinationId": "gualeguaychu",
+    "title": "Muy buena experiencia familiar",
+    "content": "Viajamos en familia y todos quedamos encantados. Hay actividades para todas las edades, los espacios son seguros y la infraestructura está bien mantenida. Los precios son razonables y el servicio es cordial.",
+    "rating": {
+        "landscape": 4,
+        "attractions": 5,
+        "accessibility": 5,
+        "safety": 5,
+        "cleanliness": 5,
+        "hospitality": 4,
+        "culturalOffer": 3,
+        "gastronomy": 3,
+        "affordability": 5,
+        "nightlife": 2,
+        "infrastructure": 5,
+        "environmentalCare": 4,
+        "wifiAvailability": 4,
+        "shopping": 2,
+        "beaches": 5,
+        "greenSpaces": 4,
+        "localEvents": 4,
+        "weatherSatisfaction": 4
+    }
+}

@@ -7,6 +7,13 @@
     "icon": "fishing",
     "isBuiltin": true,
     "lifecycleState": "PUBLISHED",
+    "tagIds": [
+        "tag-pesca",
+        "tag-deportes-034",
+        "tag-naturaleza-002",
+        "tag-rio-parana-009",
+        "tag-aventura-005"
+    ],
     "adminInfo": {
         "notes": "Atracción genérica del sistema",
         "favorite": false

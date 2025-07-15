@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-006-sofia-gualeguaychu-destination",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "entityId": "gualeguaychu",
+    "entityType": "DESTINATION",
+    "name": "Gualeguaychú",
+    "description": "Mi destino favorito en Entre Ríos, siempre vuelvo acá",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Destino recurrente de la usuaria"
+    },
+    "createdAt": "2024-01-05T10:00:00Z",
+    "updatedAt": "2024-01-05T10:00:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "deletedAt": null,
+    "deletedById": null
+}

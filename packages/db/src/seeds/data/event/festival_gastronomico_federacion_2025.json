@@ -20,6 +20,13 @@
     "visibility": "PUBLIC",
     "isFeatured": true,
     "tags": ["gastronomia", "termas", "federacion", "wellness", "productos-locales"],
+    "tagIds": [
+        "tag-gastronomia-007",
+        "tag-termas-012",
+        "tag-festivales",
+        "tag-relax",
+        "tag-entre-rios-003"
+    ],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop",

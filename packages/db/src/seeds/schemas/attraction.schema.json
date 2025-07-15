@@ -34,6 +34,11 @@
             "enum": ["DRAFT", "PUBLISHED", "ARCHIVED", "DELETED"],
             "description": "Lifecycle state of the attraction"
         },
+        "tagIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Array of tag IDs (UUIDs)"
+        },
         "adminInfo": {
             "$ref": "common.schema.json#/definitions/adminInfo"
         }

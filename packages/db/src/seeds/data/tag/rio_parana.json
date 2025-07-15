@@ -1,0 +1,15 @@
+{
+    "id": "tag-rio-parana-012",
+    "name": "Río Paraná",
+    "slug": "rio-parana",
+    "description": "Actividades relacionadas con el río Paraná y sus costas",
+    "type": "destination",
+    "category": "secondary",
+    "color": "#2196F3",
+    "icon": "water",
+    "isActive": true,
+    "adminInfo": {
+        "notes": "Tag específico para el río Paraná",
+        "favorite": false
+    }
+}

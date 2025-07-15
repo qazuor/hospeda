@@ -1,0 +1,15 @@
+{
+    "id": "review-007-hotel-plaza-miguel",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d485",
+    "accommodationId": "hotel-plaza-gualeguaychu",
+    "title": "Experiencia memorable en Gualeguaychú",
+    "content": "Como anfitrión, siempre busco inspiración en otros alojamientos, y el Hotel Plaza me sorprendió gratamente. La atención al detalle es excelente, desde la recepción hasta el servicio de limpieza. Las habitaciones son muy acogedoras y el desayuno es uno de los mejores que he probado en la región. La ubicación es perfecta para explorar el centro histórico y la costanera. Definitivamente un referente en hospitalidad.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 4,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 5
+    }
+}

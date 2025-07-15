@@ -33,25 +33,20 @@
     "seo": {
         "title": "Chajarí - Tradición Rural y Citricultura | Entre Ríos",
         "description": "Descubre Chajarí, ciudad rural con tradición gaucha y producción citrícola en Entre Ríos.",
-        "keywords": [
-            "Chajarí",
-            "Entre Ríos",
-            "Rural",
-            "Citricultura",
-            "Tradición Gaucha",
-            "Campo"
-        ]
+        "keywords": ["Chajarí", "Entre Ríos", "Rural", "Citricultura", "Tradición Gaucha", "Campo"]
     },
     "adminInfo": {
         "notes": "Destino rural auténtico, ideal para turismo de estancias",
         "favorite": false
     },
-    "tags": [
-        "rural",
-        "tradición",
-        "citricultura",
-        "campo",
-        "gaucho"
+    "tags": ["rural", "tradición", "citricultura", "campo", "gaucho"],
+    "tagIds": [
+        "tag-citricultura-035",
+        "tag-naturaleza-002",
+        "tag-cultura-006",
+        "tag-familia-004",
+        "tag-entre-rios-003",
+        "tag-ecoturismo-015"
     ],
     "reviews": [
         {

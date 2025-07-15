@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-013-host-gastronomia-post",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "entityId": "post-002-gastronomia-entrerriana",
+    "entityType": "POST",
+    "name": "Gastronomía Entrerriana",
+    "description": "Ideas para mejorar el desayuno que ofrecemos a los huéspedes",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Inspiración gastronómica para servicios de hosting"
+    },
+    "createdAt": "2024-02-05T09:45:00Z",
+    "updatedAt": "2024-02-05T09:45:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "deletedAt": null,
+    "deletedById": null
+}

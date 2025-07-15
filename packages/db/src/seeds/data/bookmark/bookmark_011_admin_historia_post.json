@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-011-admin-historia-post",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+    "entityId": "post-006-historia-colon-palacio",
+    "entityType": "POST",
+    "name": "Historia Viva en Colón",
+    "description": "Excelente contenido histórico para destacar en la plataforma",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Contenido de calidad marcado para posible destacado"
+    },
+    "createdAt": "2024-02-15T16:45:00Z",
+    "updatedAt": "2024-02-15T16:45:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+    "deletedAt": null,
+    "deletedById": null
+}

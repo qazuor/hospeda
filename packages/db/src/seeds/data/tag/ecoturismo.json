@@ -1,0 +1,16 @@
+{
+    "id": "tag-ecoturismo-015",
+    "name": "Ecoturismo",
+    "slug": "ecoturismo",
+    "description": "Turismo sostenible y responsable con el ambiente",
+    "type": "experience",
+    "category": "primary",
+    "color": "#228B22",
+    "icon": "eco",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para turismo ecológico y sostenible",
+        "favorite": false
+    }
+}

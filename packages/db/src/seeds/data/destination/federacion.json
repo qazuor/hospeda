@@ -37,25 +37,21 @@
     "seo": {
         "title": "Federación - Complejo Termal Más Grande de Argentina | Entre Ríos",
         "description": "Descubre Federación, el destino termal más importante de Argentina. Relax y bienestar en Entre Ríos.",
-        "keywords": [
-            "Federación",
-            "Termas",
-            "Entre Ríos",
-            "Complejo Termal",
-            "Relax",
-            "Bienestar"
-        ]
+        "keywords": ["Federación", "Termas", "Entre Ríos", "Complejo Termal", "Relax", "Bienestar"]
     },
     "adminInfo": {
         "notes": "Destino termal principal de Argentina, muy popular todo el año",
         "favorite": true
     },
-    "tags": [
-        "termas",
-        "relax",
-        "bienestar",
-        "familia",
-        "naturaleza"
+    "tags": ["termas", "relax", "bienestar", "familia", "naturaleza"],
+    "tagIds": [
+        "tag-termas-012",
+        "tag-relax",
+        "tag-aguas-termales-017",
+        "tag-familia-004",
+        "tag-naturaleza-002",
+        "tag-spa-027",
+        "tag-entre-rios-003"
     ],
     "reviews": [
         {

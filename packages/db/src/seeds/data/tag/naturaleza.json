@@ -1,0 +1,15 @@
+{
+    "id": "tag-naturaleza-007",
+    "name": "Naturaleza",
+    "slug": "naturaleza",
+    "description": "Espacios naturales, fauna, flora y ecoturismo",
+    "type": "experience",
+    "category": "primary",
+    "color": "#8BC34A",
+    "icon": "nature",
+    "isActive": true,
+    "adminInfo": {
+        "notes": "Tag para contenido de naturaleza y ecoturismo",
+        "favorite": true
+    }
+}

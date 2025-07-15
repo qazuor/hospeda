@@ -1,0 +1,18 @@
+{
+    "id": "bookmark-001-lucas-federacion",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "entityId": "dest-federacion-001",
+    "entityType": "DESTINATION",
+    "name": "Federación - Destino termal",
+    "description": "Destino favorito para relajarme en las termas y desconectar del trabajo",
+    "lifecycle": "ACTIVE",
+    "adminInfo": {
+        "notes": "Bookmark creado por el usuario, destino muy popular"
+    },
+    "createdAt": "2024-01-10T08:30:00Z",
+    "updatedAt": "2024-01-10T08:30:00Z",
+    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "deletedAt": null,
+    "deletedById": null
+}

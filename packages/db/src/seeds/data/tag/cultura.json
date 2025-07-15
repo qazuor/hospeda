@@ -1,0 +1,15 @@
+{
+    "id": "tag-cultura-006",
+    "name": "Cultura",
+    "slug": "cultura",
+    "description": "Patrimonio cultural, museos, arte e historia regional",
+    "type": "experience",
+    "category": "primary",
+    "color": "#795548",
+    "icon": "museum",
+    "isActive": true,
+    "adminInfo": {
+        "notes": "Tag para contenido cultural e histórico",
+        "favorite": true
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "tag-delta-036",
+    "name": "Delta",
+    "slug": "delta",
+    "description": "Experiencias en el delta del río Paraná",
+    "type": "destination",
+    "category": "primary",
+    "color": "#228B22",
+    "icon": "delta",
+    "isActive": true,
+    "usageCount": 0,
+    "adminInfo": {
+        "notes": "Tag para experiencias en el delta",
+        "favorite": false
+    }
+}
