@@ -1,0 +1,27 @@
+{
+    "id": "ps-sabores-litoral-003",
+    "name": "Sabores del Litoral",
+    "type": "POST_SPONSOR",
+    "description": "Red de restaurantes y productores gastronómicos de Entre Ríos que busca promover la cocina regional y los sabores auténticos del litoral argentino.",
+    "logo": {
+        "url": "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg",
+        "caption": "Logo de Sabores del Litoral",
+        "description": "Logotipo de la red gastronómica regional"
+    },
+    "contact": {
+        "personalEmail": "info@saboresdellitoral.com.ar",
+        "mobilePhone": "+5493442567890",
+        "website": "https://www.saboresdellitoral.com.ar",
+        "preferredEmail": "PERSONAL",
+        "preferredPhone": "MOBILE"
+    },
+    "social": {
+        "facebook": "https://facebook.com/saboresdellitoral",
+        "instagram": "https://instagram.com/sabores_litoral",
+        "twitter": "https://twitter.com/sabores_litoral"
+    },
+    "adminInfo": {
+        "notes": "Sponsor para contenido gastronómico y culinario",
+        "favorite": true
+    }
+}

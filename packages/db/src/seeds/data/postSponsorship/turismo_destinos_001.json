@@ -1,0 +1,19 @@
+{
+    "id": "psp-turismo-post-001",
+    "sponsorId": "ps-turismo-entrerriano-001",
+    "postId": "post-destinos-imperdibles-001",
+    "message": "Descubre los destinos más hermosos de Entre Ríos con nosotros",
+    "description": "Promoción especial para lectores: 15% de descuento en paquetes turísticos oficiales mencionando este artículo en nuestra oficina de turismo.",
+    "paid": {
+        "price": 8500,
+        "currency": "ARS"
+    },
+    "paidAt": "2024-11-15T10:00:00Z",
+    "fromDate": "2024-11-01T00:00:00Z",
+    "toDate": "2024-12-31T23:59:59Z",
+    "isHighlighted": true,
+    "adminInfo": {
+        "notes": "Patrocinio principal para contenido institucional de turismo",
+        "favorite": true
+    }
+}

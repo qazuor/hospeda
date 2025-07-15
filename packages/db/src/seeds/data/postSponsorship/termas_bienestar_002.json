@@ -1,0 +1,19 @@
+{
+    "id": "psp-termas-post-002",
+    "sponsorId": "ps-termas-unidas-002",
+    "postId": "post-termas-bienestar-002",
+    "message": "Relájate en las mejores termas de Entre Ríos",
+    "description": "Oferta especial para visitantes: 20% de descuento en servicios termales presentando este artículo en cualquiera de nuestros complejos asociados.",
+    "paid": {
+        "price": 5500,
+        "currency": "ARS"
+    },
+    "paidAt": "2024-11-10T14:30:00Z",
+    "fromDate": "2024-11-05T00:00:00Z",
+    "toDate": "2024-12-15T23:59:59Z",
+    "isHighlighted": true,
+    "adminInfo": {
+        "notes": "Patrocinio para contenido de turismo termal",
+        "favorite": true
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "psp-aventura-post-004",
+    "sponsorId": "ps-aventura-parana-004",
+    "postId": "post-aventura-parana-004",
+    "message": "Viví la aventura en el río Paraná",
+    "description": "Experiencia única: 25% de descuento en excursiones de kayak y deportes acuáticos para lectores que reserven mencionando este artículo.",
+    "paid": {
+        "price": 4800,
+        "currency": "ARS"
+    },
+    "paidAt": "2024-11-12T09:20:00Z",
+    "fromDate": "2024-11-10T00:00:00Z",
+    "toDate": "2024-12-20T23:59:59Z",
+    "isHighlighted": true,
+    "adminInfo": {
+        "notes": "Patrocinio para contenido de turismo aventura",
+        "favorite": false
+    }
+}

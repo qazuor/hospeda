@@ -1,0 +1,60 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "postSponsorship.schema.json",
+    "title": "PostSponsorship Seed Schema",
+    "description": "JSON schema for PostSponsorship entity seeds",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "PostSponsorship ID (UUID)"
+        },
+        "sponsorId": {
+            "type": "string",
+            "description": "Related sponsor ID"
+        },
+        "postId": {
+            "type": "string",
+            "description": "Related post ID"
+        },
+        "message": {
+            "type": "string",
+            "description": "Sponsorship message",
+            "minLength": 5,
+            "maxLength": 300
+        },
+        "description": {
+            "type": "string",
+            "description": "Sponsorship description",
+            "minLength": 10,
+            "maxLength": 500
+        },
+        "paid": {
+            "$ref": "common.schema.json#/definitions/price"
+        },
+        "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Payment date"
+        },
+        "fromDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Sponsorship start date"
+        },
+        "toDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Sponsorship end date"
+        },
+        "isHighlighted": {
+            "type": "boolean",
+            "description": "Whether sponsorship is highlighted"
+        },
+        "adminInfo": {
+            "$ref": "common.schema.json#/definitions/adminInfo"
+        }
+    },
+    "required": ["id", "sponsorId", "postId", "description", "paid"],
+    "additionalProperties": false
+}
