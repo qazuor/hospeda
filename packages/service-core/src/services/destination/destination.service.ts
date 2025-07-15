@@ -5,7 +5,7 @@ import {
     type DestinationSchema,
     UpdateDestinationSchema
 } from '@repo/schemas';
-import type { AccommodationType, DestinationType } from '@repo/types';
+import type { AccommodationType, DestinationRatingType, DestinationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseService } from '../../base/base.service';
@@ -271,5 +271,25 @@ export class DestinationService extends BaseService<
     ): Promise<Partial<DestinationType>> {
         const slug = await generateDestinationSlug(data.name);
         return { slug };
+    }
+
+    /**
+     * Updates the stats (reviewsCount, averageRating, rating) for a destination.
+     * @param destinationId - The ID of the destination to update
+     * @param stats - Object with reviewsCount, averageRating, and rating
+     */
+    public async updateStatsFromReview(
+        destinationId: string,
+        stats: {
+            reviewsCount: number;
+            averageRating: number;
+            rating: DestinationRatingType | undefined;
+        }
+    ): Promise<void> {
+        await this.model.updateById(destinationId, {
+            reviewsCount: stats.reviewsCount,
+            averageRating: stats.averageRating,
+            rating: stats.rating as DestinationRatingType | undefined
+        });
     }
 }
