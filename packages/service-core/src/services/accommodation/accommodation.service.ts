@@ -606,13 +606,10 @@ export class AccommodationService extends BaseService<
         accommodationId: string,
         stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingType }
     ): Promise<void> {
-        await this.model.update(
-            { id: accommodationId },
-            {
-                reviewsCount: stats.reviewsCount,
-                averageRating: stats.averageRating,
-                rating: stats.rating
-            }
-        );
+        await this.model.updateById(accommodationId, {
+            reviewsCount: stats.reviewsCount,
+            averageRating: stats.averageRating,
+            rating: stats.rating
+        });
     }
 }
