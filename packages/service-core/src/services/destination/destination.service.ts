@@ -292,4 +292,13 @@ export class DestinationService extends BaseService<
             rating: stats.rating as DestinationRatingType | undefined
         });
     }
+
+    /**
+     * Actualiza accommodationsCount del destino contando los accommodations activos.
+     */
+    public async updateAccommodationsCount(destinationId: string): Promise<void> {
+        const { items } = await this.accommodationModel.findAll({ destinationId, deletedAt: null });
+        const count = items.length;
+        await this.model.updateById(destinationId, { accommodationsCount: count });
+    }
 }

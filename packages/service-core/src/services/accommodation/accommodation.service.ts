@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { BaseService } from '../../base';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { DestinationService } from '../destination/destination.service';
 import {
     generateSlug,
     normalizeCreateInput,
@@ -95,6 +96,9 @@ export class AccommodationService extends BaseService<
         search: (params: z.infer<typeof SearchAccommodationSchema>) => params // identity by default, can be overridden in tests
     };
 
+    private destinationService: DestinationService;
+    private _lastDeletedDestinationId: string | undefined;
+
     /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
@@ -103,6 +107,7 @@ export class AccommodationService extends BaseService<
         super(ctx);
         this.logger = ctx.logger;
         this.model = model ?? new AccommodationModel();
+        this.destinationService = new DestinationService(ctx);
     }
 
     // --- Permissions Hooks ---
@@ -189,6 +194,49 @@ export class AccommodationService extends BaseService<
     ): Promise<Partial<AccommodationType>> {
         const slug = await generateSlug(data.type, data.name);
         return { ...data, slug };
+    }
+
+    protected async _afterCreate(entity: AccommodationType): Promise<AccommodationType> {
+        if (entity.destinationId) {
+            await this.destinationService.updateAccommodationsCount(entity.destinationId);
+        }
+        return entity;
+    }
+
+    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+        // Buscar el accommodation antes de borrarlo para obtener el destinationId
+        const entity = await this.model.findById(id);
+        this._lastDeletedDestinationId = entity?.destinationId;
+        return id;
+    }
+
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        if (this._lastDeletedDestinationId) {
+            await this.destinationService.updateAccommodationsCount(this._lastDeletedDestinationId);
+            this._lastDeletedDestinationId = undefined;
+        }
+        return result;
+    }
+
+    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+        // Buscar el accommodation antes de borrarlo para obtener el destinationId
+        const entity = await this.model.findById(id);
+        this._lastDeletedDestinationId = entity?.destinationId;
+        return id;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        if (this._lastDeletedDestinationId) {
+            await this.destinationService.updateAccommodationsCount(this._lastDeletedDestinationId);
+            this._lastDeletedDestinationId = undefined;
+        }
+        return result;
     }
 
     // --- Core Logic ---
