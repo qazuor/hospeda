@@ -1,13 +1,10 @@
 import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
-import type {
-    AccommodationRatingType,
-    AccommodationReviewType,
-    NewAccommodationReviewInputType
-} from '@repo/types';
+import type { AccommodationReviewType, NewAccommodationReviewInputType } from '@repo/types';
 import type { z } from 'zod';
 import { BaseService } from '../../base/base.service';
 import type { Actor, ServiceContext, ServiceLogger } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
+import { calculateStatsFromReviews } from './accommodationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
 import {
     checkCanCreateAccommodationReview,
@@ -110,50 +107,10 @@ export class AccommodationReviewService extends BaseService<
         const reviews = await this.model
             .findAll({ accommodationId, deletedAt: null }, undefined)
             .then((res) => res.items);
-        const reviewsCount = reviews.length;
-        // Initialize sums for each rating field
-        const ratingFields: (keyof AccommodationRatingType)[] = [
-            'cleanliness',
-            'hospitality',
-            'services',
-            'accuracy',
-            'communication',
-            'location'
-        ];
-        const ratingSums: Record<keyof AccommodationRatingType, number> = {
-            cleanliness: 0,
-            hospitality: 0,
-            services: 0,
-            accuracy: 0,
-            communication: 0,
-            location: 0
-        };
-        let totalRatings = 0;
-        let totalSum = 0;
-        for (const review of reviews) {
-            for (const field of ratingFields) {
-                const value = review.rating[field] ?? 0;
-                ratingSums[field] += value;
-                totalSum += value;
-                totalRatings++;
-            }
-        }
-        // Calculate averages
-        const rating: AccommodationRatingType = {
-            cleanliness: reviewsCount ? ratingSums.cleanliness / reviewsCount : 0,
-            hospitality: reviewsCount ? ratingSums.hospitality / reviewsCount : 0,
-            services: reviewsCount ? ratingSums.services / reviewsCount : 0,
-            accuracy: reviewsCount ? ratingSums.accuracy / reviewsCount : 0,
-            communication: reviewsCount ? ratingSums.communication / reviewsCount : 0,
-            location: reviewsCount ? ratingSums.location / reviewsCount : 0
-        };
-        const averageRating = totalRatings ? totalSum / totalRatings : 0;
+        // Usar el helper para calcular los stats
+        const stats = calculateStatsFromReviews(reviews);
         // Update stats in Accommodation via AccommodationService
-        await this.accommodationService.updateStatsFromReview(accommodationId, {
-            reviewsCount,
-            averageRating,
-            rating
-        });
+        await this.accommodationService.updateStatsFromReview(accommodationId, stats);
     }
 
     protected async _afterCreate(
