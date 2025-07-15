@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "500990b6-74ae-40d1-addb-a8440af5a3b7",
+    "name": "Granja Educativa",
+    "slug": "granja_educativa",
+    "description": "Granja didáctica con animales de campo y actividades educativas",
+    "icon": "pets",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

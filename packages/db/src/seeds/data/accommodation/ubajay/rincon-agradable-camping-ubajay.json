@@ -1,0 +1,141 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "rincon-agradable-camping-ubajay",
+    "name": "rincon-agradable-camping",
+    "displayName": "Rincón Agradable Camping",
+    "type": "CAMPING",
+    "description": "Encuentra un lugar agradable para tu experiencia de camping en Rincón Agradable Camping, ubicado en un entorno sereno de Ubajay, a orillas de un arroyo. Ideal para campistas que buscan tranquilidad y un contacto directo con la naturaleza, con fácil acceso al Parque Nacional El Palmar.\n\nEl camping ofrece parcelas con buena sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, diseñado para disfrutar del aire libre y la paz del entorno.\n\nSu ubicación junto a un arroyo ofrece acceso directo al agua, ideal para pesca y simplemente disfrutar del sonido. El entorno es muy tranquilo y natural. Estás a poca distancia en auto de Ubajay y del Parque Nacional El Palmar. Un lugar agradable para una aventura en la naturaleza.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "hola@rinconagradablecamping.com.ar",
+        "mobilePhone": "+549344715106592",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@rinconagradablecamping.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 3900,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21,
+            "perPerson": 1700
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2845",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.3673",
+            "lng": "-58.2983"
+        },
+        "street": "Camino al Arroyo S/N",
+        "number": "S/N",
+        "city": "Ubajay",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+            "caption": "Camping junto al arroyo",
+            "description": "Vista del área de acampe con acceso al arroyo",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+                "caption": "Arroyo",
+                "description": "Acceso al arroyo",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
+                "caption": "Acampe",
+                "description": "Espacio para carpas con sombra",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
+                "caption": "Parcelas",
+                "description": "Vista de las parcelas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
+                "caption": "Baños",
+                "description": "Instalaciones sanitarias",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "12:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "19:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 35,
+        "minNights": 1,
+        "maxNights": 15,
+        "bathrooms": 2,
+        "smokingAllowed": true,
+        "extraInfo": [
+            "Parcelas con sombra y parrilla",
+            "Acceso directo al arroyo",
+            "Entorno tranquilo y natural",
+            "Cerca del Parque Nacional El Palmar"
+        ]
+    },
+    "seo": {
+        "title": "Rincón Agradable Camping - Naturaleza y arroyo en Ubajay | El Palmar",
+        "description": "Camping a orillas de un arroyo en Ubajay. Ideal para pesca y relax. Parcelas con sombra y parrilla. Cerca del Parque Nacional El Palmar.",
+        "keywords": [
+            "camping",
+            "ubajay",
+            "entre ríos",
+            "el palmar",
+            "arroyo",
+            "pesca",
+            "naturaleza",
+            "acampar"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Camping simple con enfoque en la tranquilidad y cercanía a El Palmar. Atrae campistas interesados en el entorno.",
+        "favorite": false,
+        "tags": [
+            "ubajay",
+            "camping",
+            "ubajay-camping",
+            "seed-example",
+            "nature",
+            "quiet",
+            "fishing"
+        ]
+    },
+    "faqs": [],
+    "iaData": [],
+    "socialNetworks": {
+        "facebook": "https://facebook.com/rinconagradablecampingar",
+        "instagram": "https://instagram.com/rinconagradablecampingar",
+        "twitter": "https://twitter.com/rinconagradablecampingar"
+    },
+    "featureIds": [
+        "4e01f576-29f6-42e0-adb2-beeb790d77bf",
+        "81c25058-1006-4d13-9c71-bc293f051e28",
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "51f48dd5-48b5-4a4d-aa6e-fe1c2e49b278"
+    ],
+    "amenityIds": [
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

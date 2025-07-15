@@ -1,0 +1,17 @@
+{
+    "id": "dd386c1d-790a-4c32-ab8f-995829c2af59",
+    "name": "heating",
+    "slug": "heating",
+    "description": "Heating",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

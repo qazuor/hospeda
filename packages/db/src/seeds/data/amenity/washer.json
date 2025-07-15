@@ -1,0 +1,17 @@
+{
+    "id": "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
+    "name": "washer",
+    "slug": "washer",
+    "description": "Washer",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": false,
+    "isPremium": true,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: True",
+        "favorite": false
+    }
+}

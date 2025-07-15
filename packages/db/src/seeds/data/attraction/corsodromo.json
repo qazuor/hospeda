@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "0688804f-3ac2-43a3-acfb-fe135d77710d",
+    "name": "Corsódromo",
+    "slug": "corsodromo",
+    "description": "Sede del carnaval con gradas y pista para desfiles de comparsas",
+    "icon": "theater_comedy",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

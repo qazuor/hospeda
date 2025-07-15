@@ -1,0 +1,17 @@
+{
+    "id": "d03cf19f-e2cc-4949-99fc-e669b64c867d",
+    "name": "fireplace",
+    "slug": "fireplace",
+    "description": "Fireplace",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

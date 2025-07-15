@@ -1,0 +1,16 @@
+{
+    "id": "72f6d9f0-24e1-429d-a665-f5e7a6d8d95a",
+    "name": "unique_design",
+    "slug": "unique_design",
+    "description": "Diseño industrial-minimalista",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Decoración contemporánea con elementos industriales y estilo minimalista",
+        "favorite": false
+    }
+}

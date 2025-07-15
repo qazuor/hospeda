@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "17fc943f-3d02-41d6-abd6-1d9de50ac06b",
+    "name": "Centro Cultural",
+    "slug": "centro_cultural",
+    "description": "Espacio dedicado a actividades culturales, exposiciones y eventos artísticos",
+    "icon": "theater_comedy",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

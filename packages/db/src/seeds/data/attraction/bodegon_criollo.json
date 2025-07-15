@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "f20a48eb-bd85-470c-a9af-3b02f7538d49",
+    "name": "Bodegón Criollo",
+    "slug": "bodegon_criollo",
+    "description": "Bodegón tradicional con comidas criollas y ambiente típico",
+    "icon": "restaurant",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

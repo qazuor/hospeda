@@ -1,0 +1,87 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "slug": "chajari",
+    "name": "Chajarí",
+    "summary": "Pintoresca ciudad citrícola con encanto rural y tradiciones gauchas",
+    "description": "Chajarí es una encantadora ciudad ubicada en el nordeste de Entre Ríos, conocida por su producción citrícola y su fuerte tradición rural. Esta pintoresca ciudad combina el encanto del campo entrerriano con la calidez de su gente, ofreciendo una experiencia auténtica de la vida rural argentina. Con sus estancias, festivales folklóricos y paisajes rurales, Chajarí es el destino perfecto para quienes buscan tranquilidad, contacto con la naturaleza y conocer las tradiciones gauchas de Entre Ríos.",
+    "isFeatured": false,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3237",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-30.7500",
+            "lng": "-57.9833"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+            "caption": "Paisajes rurales de Chajarí"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Campo y citricultura en Chajarí"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Estancias rurales de Chajarí"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Chajarí - Tradición Rural y Citricultura | Entre Ríos",
+        "description": "Descubre Chajarí, ciudad rural con tradición gaucha y producción citrícola en Entre Ríos.",
+        "keywords": [
+            "Chajarí",
+            "Entre Ríos",
+            "Rural",
+            "Citricultura",
+            "Tradición Gaucha",
+            "Campo"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Destino rural auténtico, ideal para turismo de estancias",
+        "favorite": false
+    },
+    "tags": [
+        "rural",
+        "tradición",
+        "citricultura",
+        "campo",
+        "gaucho"
+    ],
+    "reviews": [
+        {
+            "title": "Experiencia rural auténtica",
+            "content": "Chajarí es perfecto para desconectar de la ciudad. Las estancias son muy auténticas y la gente es muy cálida. Una experiencia rural genuina.",
+            "rating": {
+                "landscape": 4.5,
+                "attractions": 4.0,
+                "accessibility": 3.5,
+                "safety": 4.5,
+                "cleanliness": 4.0,
+                "hospitality": 5.0,
+                "culturalOffer": 4.0,
+                "gastronomy": 4.5,
+                "affordability": 4.5,
+                "nightlife": 2.5,
+                "infrastructure": 3.5,
+                "environmentalCare": 4.5,
+                "wifiAvailability": 3.0,
+                "shopping": 3.0,
+                "familyFriendly": 4.0
+            },
+            "userId": "user-rural-experience"
+        }
+    ],
+    "attractionIds": [
+        "1fcf5ea2-d720-41e0-8705-67d41a5c68ce",
+        "0a7dedae-1667-4313-b741-5d10d75292b6",
+        "500990b6-74ae-40d1-addb-a8440af5a3b7",
+        "833bdb5e-35c9-4350-b786-e5ad292997b8",
+        "866d6611-d2ec-47f5-b223-546cc11c2707"
+    ]
+}

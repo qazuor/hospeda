@@ -1,0 +1,16 @@
+{
+    "id": "0ddae569-fe9b-42cc-a800-d5f39e82196f",
+    "name": "shared_kitchen",
+    "slug": "shared_kitchen",
+    "description": "Cocina comunitaria amplia",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "",
+        "favorite": false
+    }
+}

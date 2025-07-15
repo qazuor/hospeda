@@ -1,0 +1,16 @@
+{
+    "id": "03080e07-50f9-4752-a2c6-7502eaacf733",
+    "name": "pet_friendly",
+    "slug": "pet_friendly",
+    "description": "Acepta mascotas",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Se permiten mascotas con previo aviso, ideal para perros por el amplio espacio exterior",
+        "favorite": false
+    }
+}

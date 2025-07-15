@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "e81e3fc1-7bce-4b51-9f5b-36bbfb97d8cc",
+    "name": "Anfiteatro",
+    "slug": "anfiteatro",
+    "description": "Anfiteatro al aire libre para espectáculos y eventos culturales",
+    "icon": "theater_comedy",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

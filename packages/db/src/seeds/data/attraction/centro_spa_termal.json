@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "9bea0bbf-1c7b-4472-9e14-f5236743d43e",
+    "name": "Centro Spa Termal",
+    "slug": "centro_spa_termal",
+    "description": "Centro especializado en tratamientos de spa con aguas termales y terapias de relajación",
+    "icon": "spa",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

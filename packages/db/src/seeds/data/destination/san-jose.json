@@ -1,0 +1,87 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "slug": "san-jose",
+    "name": "San José",
+    "summary": "Tranquila ciudad colonial con arquitectura histórica y tradición",
+    "description": "San José es una apacible ciudad colonial ubicada en el centro de Entre Ríos, conocida por su arquitectura histórica y sus tradiciones bien preservadas. Con sus calles tranquilas, edificios coloniales y ambiente familiar, San José ofrece una experiencia auténtica de la vida en el interior argentino. Es ideal para quienes buscan tranquilidad, historia local y contacto con las tradiciones entrerrianas en un ambiente relajado.",
+    "isFeatured": false,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3264",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.0500",
+            "lng": "-58.7667"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+            "caption": "Vista panorámica de San José"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Paisajes de San José"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Naturaleza en San José"
+            }
+        ]
+    },
+    "seo": {
+        "title": "San José - Tranquila ciudad colonial con arquitectura histórica y tradición | Entre Ríos",
+        "description": "Descubre San José en Entre Ríos. Tranquila ciudad colonial con arquitectura histórica y tradición",
+        "keywords": [
+            "San José",
+            "Entre Ríos",
+            "colonial",
+            "tradición",
+            "historia",
+            "tranquilidad",
+            "familia"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Destino colonial en Entre Ríos",
+        "favorite": false
+    },
+    "tags": [
+        "colonial",
+        "tradición",
+        "historia",
+        "tranquilidad",
+        "familia"
+    ],
+    "reviews": [
+        {
+            "title": "Experiencia tranquila y auténtica",
+            "content": "Un lugar muy tranquilo y auténtico. Perfecto para desconectar y disfrutar de la naturaleza. La gente es muy cálida y hospitalaria.",
+            "rating": {
+                "landscape": 4.0,
+                "attractions": 3.5,
+                "accessibility": 3.5,
+                "safety": 4.5,
+                "cleanliness": 4.0,
+                "hospitality": 4.5,
+                "culturalOffer": 3.5,
+                "gastronomy": 4.0,
+                "affordability": 4.5,
+                "nightlife": 2.5,
+                "infrastructure": 3.5,
+                "environmentalCare": 4.5,
+                "wifiAvailability": 3.0,
+                "shopping": 3.0,
+                "familyFriendly": 4.0
+            },
+            "userId": "user-nature-lover"
+        }
+    ],
+    "attractionIds": [
+        "acc99474-2779-4e5d-8e0a-9d49484d7543",
+        "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
+        "d759d447-8322-4260-b16b-fe8892843edc",
+        "a4351fda-6122-4e8a-8a19-bf97467c1b49"
+    ]
+}

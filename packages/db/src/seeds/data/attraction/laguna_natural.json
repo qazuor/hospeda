@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "3e9b48df-ebfd-436b-904c-fef75b2b8b22",
+    "name": "Laguna Natural",
+    "slug": "laguna_natural",
+    "description": "Laguna natural con posibilidades de pesca y observación",
+    "icon": "water_body",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

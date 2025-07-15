@@ -1,0 +1,87 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "slug": "ubajay",
+    "name": "Ubajay",
+    "summary": "Pequeña ciudad rural con encanto campestre y tradición agropecuaria",
+    "description": "Ubajay es una pequeña y encantadora ciudad rural ubicada en el centro-este de Entre Ríos, conocida por su ambiente campestre y su fuerte tradición agropecuaria. Con sus paisajes rurales, estancias tradicionales y la calidez de su gente, Ubajay ofrece una experiencia auténtica de la vida rural entrerriana. Es el destino perfecto para quienes buscan tranquilidad, contacto con la naturaleza y conocer las tradiciones del campo argentino.",
+    "isFeatured": false,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3271",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.8000",
+            "lng": "-58.3167"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+            "caption": "Vista panorámica de Ubajay"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Paisajes de Ubajay"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Naturaleza en Ubajay"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Ubajay - Pequeña ciudad rural con encanto campestre y tradición agropecuaria | Entre Ríos",
+        "description": "Descubre Ubajay en Entre Ríos. Pequeña ciudad rural con encanto campestre y tradición agropecuaria",
+        "keywords": [
+            "Ubajay",
+            "Entre Ríos",
+            "rural",
+            "agropecuario",
+            "campo",
+            "tradición",
+            "tranquilidad"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Destino rural en Entre Ríos",
+        "favorite": false
+    },
+    "tags": [
+        "rural",
+        "agropecuario",
+        "campo",
+        "tradición",
+        "tranquilidad"
+    ],
+    "reviews": [
+        {
+            "title": "Experiencia tranquila y auténtica",
+            "content": "Un lugar muy tranquilo y auténtico. Perfecto para desconectar y disfrutar de la naturaleza. La gente es muy cálida y hospitalaria.",
+            "rating": {
+                "landscape": 4.0,
+                "attractions": 3.5,
+                "accessibility": 3.5,
+                "safety": 4.5,
+                "cleanliness": 4.0,
+                "hospitality": 4.5,
+                "culturalOffer": 3.5,
+                "gastronomy": 4.0,
+                "affordability": 4.5,
+                "nightlife": 2.5,
+                "infrastructure": 3.5,
+                "environmentalCare": 4.5,
+                "wifiAvailability": 3.0,
+                "shopping": 3.0,
+                "familyFriendly": 4.0
+            },
+            "userId": "user-nature-lover"
+        }
+    ],
+    "attractionIds": [
+        "0a7dedae-1667-4313-b741-5d10d75292b6",
+        "500990b6-74ae-40d1-addb-a8440af5a3b7",
+        "1fcf5ea2-d720-41e0-8705-67d41a5c68ce",
+        "2a5e7172-bed0-4f9d-9610-c9e53921006b"
+    ]
+}

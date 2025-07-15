@@ -1,0 +1,16 @@
+{
+    "id": "28fb935c-d04b-4247-a73b-5099be7719aa",
+    "name": "communal_area",
+    "slug": "communal_area",
+    "description": "Espacios sociales luminosos",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Living y patio para socializar",
+        "favorite": false
+    }
+}

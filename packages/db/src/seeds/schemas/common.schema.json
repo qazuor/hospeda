@@ -44,9 +44,9 @@
                     "type": "object",
                     "properties": {
                         "lat": { "type": "string" },
-                        "long": { "type": "string" }
+                        "lng": { "type": "string" }
                     },
-                    "required": ["lat", "long"],
+                    "required": ["lat", "lng"],
                     "additionalProperties": false
                 },
                 "street": { "type": "string" },

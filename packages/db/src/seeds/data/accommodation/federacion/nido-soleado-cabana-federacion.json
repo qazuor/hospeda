@@ -1,0 +1,173 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "nido-soleado-cabana-federacion",
+    "name": "nido-soleado-cabana",
+    "displayName": "Nido Soleado Cabaña",
+    "type": "CABIN",
+    "description": "Disfruta de la luz y la paz en Nido Soleado, una cabaña moderna ubicada en un entorno tranquilo de Federación, ideal para parejas o familias pequeñas que buscan un refugio luminoso y confortable cerca del parque termal. Un espacio pensado para el relax y el disfrute.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). Los amplios ventanales llenan el interior de luz natural y ofrecen vistas al jardín.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación. La ubicación en un barrio tranquilo de Federación permite un rápido acceso en auto al famoso Parque Termal, al centro de la ciudad y a la costanera del lago. Nido Soleado es tu base ideal para disfrutar de las aguas termales y la tranquilidad de Federación.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@nidosoleadocabana.com.ar",
+        "mobilePhone": "+549345615126950",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@nidosoleadocabana.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 16000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 3000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0151",
+            "lng": "-57.8941"
+        },
+        "street": "Calle Los Ceibos",
+        "number": "125",
+        "city": "Federación",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "caption": "Cabaña luminosa",
+            "description": "Vista exterior de la cabaña con amplias ventanas",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la cabaña",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
+                "caption": "Interior",
+                "description": "Área de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio principal",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
+                "caption": "Altillo",
+                "description": "Espacio con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior cubierta",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 2,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Cabaña muy luminosa",
+            "Parrilla exterior",
+            "Ideal para familias pequeñas",
+            "Cerca del Parque Termal"
+        ]
+    },
+    "seo": {
+        "title": "Nido Soleado - Cabaña luminosa en Federación | Cerca Termas",
+        "description": "Cabaña confortable y luminosa para 4 personas en Federación. Cerca del Parque Termal. Parrilla, jardín. Ideal escapada.",
+        "keywords": [
+            "cabaña",
+            "federación",
+            "entre ríos",
+            "termas federación",
+            "luminosa",
+            "familiar",
+            "escapada"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad simple pero bien ubicada para turismo termal. Énfasis en la luz natural.",
+        "favorite": false,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "federacion",
+        "cabin",
+        "federacion-cabin",
+        "seed-example",
+        "thermal",
+        "family-friendly"
+    ],
+    "faqs": [
+        {
+            "question": "¿Está incluida la entrada al Parque Termal?",
+            "answer": "No, la entrada al Parque Termal de Federación no está incluida en la tarifa de la cabaña.",
+            "category": "services"
+        },
+        {
+            "question": "¿A qué distancia está el centro de Federación?",
+            "answer": "El centro de Federación se encuentra a unos 5-10 minutos en auto.",
+            "category": "location"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Parque Termal de Federación",
+            "content": "El Parque Termal de Federación es uno de los principales atractivos de Entre Ríos. Cuenta con un gran número de piscinas de diferentes temperaturas y profundidades, tanto cubiertas como al aire libre, con aguas mineromedicinales beneficiosas para la salud. También ofrece un parque acuático con toboganes y juegos para niños, ideal para la diversión familiar.",
+            "category": "thermal"
+        }
+    ],
+    "socialNetworks": {
+        "facebook": "https://facebook.com/nidosoleadocabanaok",
+        "instagram": "https://instagram.com/nidosoleadocabanaok",
+        "twitter": "https://twitter.com/nidosoleadocabanaok"
+    },
+    "featureIds": [
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "6814812b-f278-494e-84cd-c10d3b541eea",
+        "1fb29901-701e-4f9d-ab30-942e11dadb4c"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

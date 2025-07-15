@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "bf013bf8-b096-4fa1-b376-4c60938bb5c8",
+    "name": "Edificio Gubernamental",
+    "slug": "edificio_gubernamental",
+    "description": "Edificio de gobierno con arquitectura destacada y valor histórico",
+    "icon": "gavel",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

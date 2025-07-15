@@ -1,0 +1,17 @@
+{
+    "id": "191fac6f-b553-404b-8463-a7281bc52ef9",
+    "name": "smoke_detector",
+    "slug": "smoke_detector",
+    "description": "Smoke Detector",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

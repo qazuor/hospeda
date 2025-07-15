@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "33d4ab86-f265-41c3-b29b-dc973328d4ef",
+    "name": "Feria Artesanal",
+    "slug": "feria_artesanal",
+    "description": "Feria de artesanos locales con productos únicos",
+    "icon": "handyman",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

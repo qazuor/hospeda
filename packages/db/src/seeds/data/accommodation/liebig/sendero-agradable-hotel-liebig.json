@@ -1,0 +1,140 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sendero-agradable-hotel-liebig",
+    "name": "sendero-agradable-hotel",
+    "displayName": "Sendero Agradable Hotel",
+    "type": "HOTEL",
+    "description": "Disfruta de una estancia agradable en Sendero Agradable Hotel, un hotel con encanto ubicado en la histórica localidad de Liebig. Ideal para quienes visitan el antiguo Frigorífico y buscan un lugar cómodo y apacible para descansar, con fácil acceso al río Uruguay.\n\nEl hotel cuenta con 15 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un pequeño jardín y una sala de estar común. El hotel ofrece desayuno incluido en la tarifa. También cuenta con Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder caminando o en pocos minutos en auto a los restos históricos del Frigorífico Liebig y a la costa del río Uruguay. Sendero Agradable es una opción agradable y práctica para explorar la historia y la tranquilidad de Liebig.",
+    "isFeatured": false,
+    "contactInfo": {
+        "workEmail": "contacto@senderoagradablehotel.com.ar",
+        "mobilePhone": "+549345615638876",
+        "homePhone": "+543456417190",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "price": {
+        "basePrice": {
+            "price": 18500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0592",
+            "lng": "-58.0997"
+        },
+        "street": "Calle Las Colonias",
+        "number": "120",
+        "city": "Liebig",
+        "neighborhood": "Centro Histórico"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada del hotel",
+            "description": "Vista exterior de Sendero Agradable Hotel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación triple",
+                "description": "Habitación con cama matrimonial y una individual",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 30,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 15,
+        "beds": 22,
+        "bathrooms": 15,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Desayuno incluido",
+            "Estacionamiento descubierto gratuito",
+            "Cerca del Frigorífico Histórico",
+            "Cerca del río"
+        ]
+    },
+    "seo": {
+        "title": "Sendero Agradable Hotel - Confort y historia en Liebig | Frigorífico",
+        "description": "Hotel cómodo en Liebig. Ideal para visitar el Frigorífico Histórico y disfrutar del río. Desayuno incluido.",
+        "keywords": [
+            "hotel",
+            "liebig",
+            "entre ríos",
+            "frigorífico liebig",
+            "historia",
+            "río uruguay",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Hotel simple con enfoque en la historia de Liebig y el turismo de río. Bien ubicado en el pueblo.",
+        "favorite": false,
+        "tags": [
+            "liebig",
+            "hotel",
+            "liebig-hotel",
+            "seed-example",
+            "history",
+            "riverside"
+        ]
+    },
+    "faqs": [],
+    "iaData": [],
+    "featureIds": [
+        "effbc352-e173-4e30-b7bf-89cb5082531e",
+        "18c797f2-0f94-403d-bb28-a221742e1181"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

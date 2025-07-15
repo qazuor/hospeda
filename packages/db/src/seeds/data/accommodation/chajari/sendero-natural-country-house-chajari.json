@@ -1,0 +1,239 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sendero-natural-country-house-chajari",
+    "name": "sendero-natural-country-house",
+    "displayName": "Sendero Natural Country House",
+    "type": "COUNTRY_HOUSE",
+    "description": "Descubre la paz y la belleza natural de Entre Ríos en esta encantadora casa de campo ubicada en las afueras de Chajarí. Rodeada de naturaleza exuberante, Sendero Natural es el refugio perfecto para aquellos que buscan escapar del bullicio de la ciudad y sumergirse en un entorno tranquilo y rejuvenecedor. La propiedad ofrece amplios espacios, tanto interiores como exteriores, diseñados para brindar comodidad y una auténtica experiencia rural.\n\nLa casa, con su arquitectura tradicional y toques modernos, cuenta con tres espaciosas habitaciones que pueden alojar cómodamente a 8 personas. Los interiores están decorados con un estilo rústico elegante, utilizando maderas locales y elementos naturales que complementan el entorno. La amplia sala de estar invita a relajarse frente a la chimenea en las noches frescas, mientras que la cocina completamente equipada permite a los huéspedes preparar deliciosas comidas con productos locales.\n\nEl verdadero encanto de Sendero Natural se encuentra en sus exteriores. Un extenso jardín parquizado con árboles autóctonos y frutales proporciona sombra y belleza, mientras que la piscina de 8x4 metros ofrece un refrescante alivio durante los días cálidos. El asador tradicional es perfecto para disfrutar de los famosos asados argentinos en una mesa exterior que puede acomodar a 10 personas, ideal para compartir momentos memorables en familia o con amigos.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "hola@senderonaturalcountryhouse.com.ar",
+        "mobilePhone": "+549345615800758",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@senderonaturalcountryhouse.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 25000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 5000,
+            "taxPercent": 21,
+            "lateCheckout": 3000
+        },
+        "discounts": {
+            "weekly": 15,
+            "monthly": 30,
+            "lastMinute": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3228",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-30.7392",
+            "lng": "-58.0387"
+        },
+        "street": "Ruta Provincial 2",
+        "number": "Km 15.5",
+        "city": "Chajarí",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+            "caption": "Fachada principal",
+            "description": "Vista frontal de la casa de campo con su jardín florido",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Fachada",
+                "description": "Vista exterior de la casa de campo",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Sala de estar",
+                "description": "Amplio living con sofás, chimenea y vista al jardín",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina completa con isla central y electrodomésticos modernos",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg",
+                "caption": "Dormitorio principal",
+                "description": "Habitación principal con cama king size y vista al jardín",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2631746/pexels-photo-2631746.jpeg",
+                "caption": "Baño",
+                "description": "Baño principal con ducha y bañera",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Piscina",
+                "description": "Piscina exterior con reposeras y zona de sombra",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
+                "caption": "Jardín",
+                "description": "Extenso jardín con árboles frutales y área de descanso",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
+                "caption": "Parrilla",
+                "description": "Área de asador con mesa para 10 personas",
+                "state": "ACTIVE"
+            }
+        ],
+        "videos": [
+            {
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "caption": "Recorrido virtual",
+                "description": "Tour completo por la casa y los alrededores",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "12:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 8,
+        "minNights": 2,
+        "maxNights": 30,
+        "bedrooms": 3,
+        "beds": 4,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Se admiten mascotas pequeñas con cargo adicional",
+            "Ideal para familias o grupos de amigos",
+            "Estacionamiento gratuito para 4 vehículos",
+            "La casa se encuentra a 15 minutos en auto del centro de Chajarí"
+        ]
+    },
+    "seo": {
+        "title": "Sendero Natural: Casa de Campo en Chajarí, Entre Ríos | Alojamiento Rural",
+        "description": "Disfruta de la tranquilidad y la naturaleza en esta espaciosa casa de campo cerca de Chajarí, con 3 habitaciones, piscina, jardín y asador para hasta 8 personas.",
+        "keywords": [
+            "casa de campo",
+            "chajarí",
+            "entre ríos",
+            "alojamiento rural",
+            "piscina",
+            "naturaleza",
+            "familia",
+            "jardín",
+            "asador"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Propiedad destacada con buena valoración. Mantenimiento programado para marzo 2025.",
+        "favorite": true,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "chajari",
+        "country-house",
+        "family-friendly",
+        "swimming-pool",
+        "nature",
+        "rural",
+        "seed-example"
+    ],
+    "faqs": [
+        {
+            "question": "¿Se permiten mascotas?",
+            "answer": "Sí, se permiten mascotas pequeñas y medianas con previo aviso. Se aplica un cargo adicional de $3000 por estadía para limpieza profunda posterior.",
+            "category": "general"
+        },
+        {
+            "question": "¿Hay servicio de limpieza durante la estadía?",
+            "answer": "Ofrecemos servicio de limpieza opcional cada 3 días por un costo adicional de $2500 por servicio. Debe solicitarse con al menos 24 horas de anticipación.",
+            "category": "services"
+        },
+        {
+            "question": "¿La casa tiene conexión a internet?",
+            "answer": "Sí, la casa cuenta con WiFi de alta velocidad gratuito en todas las áreas.",
+            "category": "amenities"
+        },
+        {
+            "question": "¿Hay restaurantes o supermercados cerca?",
+            "answer": "El centro de Chajarí se encuentra a 15 minutos en auto, donde encontrará supermercados, restaurantes y todos los servicios. Recomendamos venir con vehículo propio para mayor comodidad.",
+            "category": "location"
+        },
+        {
+            "question": "¿La piscina está disponible todo el año?",
+            "answer": "La piscina está disponible y mantenida durante todo el año. En temporada invernal el agua no está climatizada.",
+            "category": "amenities"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Historia de la propiedad",
+            "content": "Sendero Natural fue originalmente una estancia familiar dedicada al cultivo de cítricos desde la década de 1950. La casona principal, construida en 1962, fue renovada completamente en 2015 para convertirla en un alojamiento turístico que conserva el encanto rural pero con todas las comodidades modernas. La propiedad de 3 hectáreas mantiene parte de su producción de naranjas y mandarinas, y los huéspedes pueden disfrutar de fruta fresca cuando están en temporada.",
+            "category": "history"
+        },
+        {
+            "title": "Atracciones cercanas",
+            "content": "A solo 15 minutos de la propiedad se encuentra el Parque Termal de Chajarí, uno de los más importantes de la región, con piscinas de diferentes temperaturas y propiedades curativas. La ciudad de Chajarí, conocida como la 'Capital Nacional de la Citricultura', ofrece recorridos por plantaciones, el Museo Regional Camila Quiroga y diversos restaurantes con gastronomía local. A 40 minutos se encuentra el río Uruguay con sus playas y posibilidades de pesca deportiva. También se puede visitar el Lago Salto Grande a 50 minutos de distancia.",
+            "category": "attractions"
+        },
+        {
+            "title": "Gastronomía local",
+            "content": "La región es conocida por su rica tradición gastronómica que combina influencias criollas e inmigrantes. Recomendamos probar el asado entrerriano, los pescados de río como el dorado o el surubí, y los platos con cítricos locales. En la casa encontrará un recetario con sugerencias de platos regionales que puede preparar, y si lo desea, podemos coordinar la visita de un asador profesional para una experiencia auténtica (servicio con cargo adicional).",
+            "category": "gastronomy"
+        },
+        {
+            "title": "Flora y fauna",
+            "content": "La propiedad y sus alrededores son hogar de una rica biodiversidad. En el jardín y campos cercanos podrá observar aves como cardenales, benteveos, horneros y ocasionalmente loros barranqueros. La vegetación incluye especies nativas como lapachos, jacarandás, ceibos (flor nacional argentina) y diversas plantas aromáticas. Durante su estadía le proporcionamos binoculares y una guía de aves e información sobre las especies vegetales para que pueda disfrutar de la naturaleza local.",
+            "category": "nature"
+        }
+    ],
+    "featureIds": [
+        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
+        "03080e07-50f9-4752-a2c6-7502eaacf733"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "5df75b3e-1f48-40fe-ad77-3cae754982ab",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "191fac6f-b553-404b-8463-a7281bc52ef9"
+    ]
+}

@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "3a338236-9e20-4ad4-8e29-dfb1e470d1e1",
+    "name": "Disco Local",
+    "slug": "disco_local",
+    "description": "Discoteca con música moderna y ambiente nocturno",
+    "icon": "nightlife",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

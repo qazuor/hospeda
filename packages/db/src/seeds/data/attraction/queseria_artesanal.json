@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "0eb6e569-4cf0-4042-9e7f-7cb112c36a95",
+    "name": "Quesería Artesanal",
+    "slug": "queseria_artesanal",
+    "description": "Quesería con producción artesanal y degustación de quesos",
+    "icon": "cheese",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

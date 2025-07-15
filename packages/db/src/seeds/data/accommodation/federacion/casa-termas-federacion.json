@@ -1,0 +1,247 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "casa-termas-federacion",
+    "name": "casa-termas",
+    "displayName": "Casa Termas",
+    "type": "HOUSE",
+    "description": "Casa Termas es una acogedora propiedad ubicada estratégicamente a solo 400 metros del Parque Termal de Federación, el principal atractivo de esta renovada ciudad entrerriana. Esta casa de estilo contemporáneo con toques regionales ofrece el equilibrio perfecto entre proximidad a las atracciones turísticas y la privacidad de un hogar completo para disfrutar en familia o con amigos.\n\nCon una superficie de 120 metros cuadrados, la propiedad se distribuye en una sola planta facilitando la accesibilidad. Cuenta con tres dormitorios cómodamente amueblados: el principal con cama queen y baño en suite, y dos dormitorios adicionales, uno con cama matrimonial y otro con dos camas individuales, ideales para niños o adultos. Un segundo baño completo da servicio a estas habitaciones. La casa puede alojar confortablemente hasta 6 personas.\n\nEl área social incluye un luminoso living-comedor con grandes ventanas que dan al jardín, equipado con cómodos sillones, smart TV y mesa para 6 comensales. La cocina integrada está completamente equipada con electrodomésticos modernos y utensilios necesarios para preparar desde un desayuno hasta una cena completa. El diseño interior prioriza los espacios amplios, la luz natural y utiliza una paleta de colores neutros con acentos en tonos turquesa que evocan las aguas termales de la zona.\n\nEl exterior es uno de los puntos fuertes de Casa Termas, con un jardín cuidadosamente mantenido, una galería cubierta con juego de sillones y hamacas para relajarse, y el infaltable asador argentino para disfrutar de tradicionales parrilladas. Una ducha exterior permite refrescarse después de un día de playa en el lago de Salto Grande, ubicado a solo 10 minutos en auto. El estacionamiento techado tiene capacidad para dos vehículos, brindando comodidad adicional a los huéspedes que llegan en auto.",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "hola@casatermas.com.ar",
+        "mobilePhone": "+549345615226760",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "reservas@casatermas.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/casatermasar",
+        "instagram": "https://instagram.com/casatermasar",
+        "twitter": "https://twitter.com/casatermasar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 28000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 5000,
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 15,
+            "monthly": 25,
+            "lastMinute": 10
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0159",
+            "lng": "-57.9015"
+        },
+        "street": "Calle Los Jacarandás",
+        "number": "745",
+        "city": "Federación",
+        "neighborhood": "Barrio Termal"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg",
+            "caption": "Fachada principal",
+            "description": "Entrada principal de Casa Termas con su jardín florido",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg",
+                "caption": "Frente de la casa",
+                "description": "Vista frontal de la propiedad con jardín",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
+                "caption": "Living comedor",
+                "description": "Amplio espacio de living comedor con vista al jardín",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg",
+                "caption": "Cocina equipada",
+                "description": "Cocina completa con electrodomésticos modernos",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1648771/pexels-photo-1648771.jpeg",
+                "caption": "Dormitorio principal",
+                "description": "Habitación principal con cama queen y baño en suite",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Segundo dormitorio",
+                "description": "Dormitorio con cama matrimonial",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/3935363/pexels-photo-3935363.jpeg",
+                "caption": "Tercer dormitorio",
+                "description": "Habitación con dos camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/3935358/pexels-photo-3935358.jpeg",
+                "caption": "Baño principal",
+                "description": "Baño en suite con ducha",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
+                "caption": "Galería con asador",
+                "description": "Espacio exterior cubierto con parrilla y mesa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997963/pexels-photo-5997963.jpeg",
+                "caption": "Jardín",
+                "description": "Área verde con reposeras y espacios de descanso",
+                "state": "ACTIVE"
+            }
+        ],
+        "videos": [
+            {
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "caption": "Tour de la casa",
+                "description": "Recorrido completo por la propiedad",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "12:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 6,
+        "minNights": 2,
+        "maxNights": 15,
+        "bedrooms": 3,
+        "beds": 4,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Se admiten mascotas pequeñas con cargo adicional de $3000 por estadía",
+            "Ropa de cama y toallas incluidas",
+            "Incluye set de toallas para llevar a las termas",
+            "Estacionamiento techado para dos vehículos",
+            "No apto para eventos o fiestas"
+        ]
+    },
+    "seo": {
+        "title": "Casa Termas - Alojamiento familiar a 400m del Parque Termal de Federación",
+        "description": "Casa de 3 dormitorios a pasos de las Termas de Federación. Jardín privado, asador, cocina completa. Ideal para familias hasta 6 personas.",
+        "keywords": [
+            "casa",
+            "federación",
+            "termas",
+            "entre ríos",
+            "alojamiento familiar",
+            "asador",
+            "jardín",
+            "cerca termas"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Casa muy solicitada en temporada alta (enero y julio). Los propietarios viven cerca y están siempre disponibles para asistir a los huéspedes.",
+        "favorite": true
+    },
+    "tags": [
+        "federacion",
+        "house",
+        "thermal",
+        "family-friendly",
+        "garden",
+        "bbq"
+    ],
+    "faqs": [
+        {
+            "question": "¿Qué distancia hay entre la casa y el Parque Termal?",
+            "answer": "La casa se encuentra a solo 400 metros del Parque Termal de Federación, aproximadamente 5-7 minutos caminando. Es un paseo agradable por calles tranquilas y seguras.",
+            "category": "location"
+        },
+        {
+            "question": "¿Proveen toallas para llevar a las termas?",
+            "answer": "Sí, además de las toallas para uso en la casa, proporcionamos un juego adicional de toallas exclusivamente para llevar a las termas. Pedimos por favor que no se lleven al complejo termal las toallas destinadas para uso dentro de la casa.",
+            "category": "amenities"
+        },
+        {
+            "question": "¿Hay supermercados cerca de la casa?",
+            "answer": "Sí, hay un supermercado a 3 cuadras y una verdulería/frutería a 1 cuadra. En el centro de Federación (a 10 minutos caminando) encontrarán variedad de comercios incluyendo carnicerías, panaderías y farmacias.",
+            "category": "location"
+        },
+        {
+            "question": "¿Ofrecen descuentos o entradas para las termas?",
+            "answer": "Ofrecemos a nuestros huéspedes un 10% de descuento en las entradas al Parque Termal. Las mismas deben adquirirse en la recepción del complejo presentando nuestra tarjeta de descuento que les entregamos al momento del check-in.",
+            "category": "services"
+        },
+        {
+            "question": "¿Se pueden hacer asados en la propiedad?",
+            "answer": "Sí, la casa cuenta con un asador tradicional en la galería exterior. Proporcionamos parrilla, pinzas y elementos básicos. El carbón y leña no están incluidos, pero pueden adquirirse en comercios cercanos.",
+            "category": "amenities"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Las Termas de Federación",
+            "content": "El Parque Termal de Federación, principal atractivo de la ciudad, fue inaugurado en 1997 y es considerado uno de los mejores complejos termales de Argentina. Sus aguas surgen de pozos de más de 1.200 metros de profundidad a una temperatura que oscila entre 37°C y 43°C. El complejo cuenta con 9 piscinas de diferentes temperaturas, desde las más calientes con propiedades medicinales hasta las recreativas con temperaturas más templadas. Las aguas son saladas y ricas en minerales como sodio, potasio, calcio, magnesio y flúor, beneficiosas para problemas reumáticos, estrés y afecciones respiratorias. El parque ofrece servicios adicionales como spa, masajes y fangoterapia (tratamientos con barro termal). Recomendamos visitar temprano en la mañana o después de las 16:00 para evitar las horas de mayor concurrencia. El complejo abre todos los días del año de 9:00 a 20:00. Un día completo en las termas es suficiente para disfrutar de todas las instalaciones, aunque muchos visitantes optan por asistir unas horas cada día durante su estadía.",
+            "category": "attractions"
+        },
+        {
+            "title": "Federación: Ciudad Nueva",
+            "content": "Federación tiene una historia fascinante que la hace única en Argentina: es una ciudad completamente planificada y construida en la década de 1970 para reubicar a la población de la antigua Federación, que quedó sumergida bajo las aguas del embalse de Salto Grande. Este evento le confirió características muy particulares: calles amplias y perfectamente trazadas, arquitectura moderna, abundantes espacios verdes y una planificación urbana ejemplar. A diferencia de otras ciudades históricas, Federación tiene apenas 40 años en su ubicación actual. El Museo de la Antigua Federación, ubicado a 15 minutos caminando desde la casa, exhibe fotografías, objetos y testimonios de la ciudad original y el proceso de traslado. En épocas de sequía, cuando baja el nivel del agua, aún pueden verse restos de la vieja ciudad, creando un espectáculo fantasmal que atrae a muchos turistas. La ciudad nueva fue diseñada para aprovechar la belleza del lago artificial, con una costanera que se extiende por varios kilómetros y ofrece espacios recreativos, restaurantes y hermosas puestas de sol.",
+            "category": "history"
+        },
+        {
+            "title": "Playas y actividades acuáticas",
+            "content": "Además de las termas, Federación cuenta con excelentes playas sobre el Lago de Salto Grande, ubicadas a aproximadamente 10 minutos en auto desde la casa. La Playa Costanera Centro es la más cercana al casco urbano, con servicios de baños, duchas y algunos puestos de comida. Para quienes buscan mayor tranquilidad, la Playa del Puente y Playa Norte ofrecen entornos más naturales y menos concurridos. Las playas tienen fondo arenoso y aguas cálidas y tranquilas, ideales para familias con niños. Durante el verano, hay servicio de guardavidas. El lago es perfecto para la práctica de deportes acuáticos como kayak, windsurf, vela y pesca deportiva. Pueden alquilarse kayaks y tablas de stand-up paddle en la costanera. Los aficionados a la pesca encontrarán abundancia de dorados, bogas, patíes y bagres, entre otras especies. Si viaja con niños, el Parque Acuático de Federación, ubicado junto al complejo termal, ofrece piscinas con toboganes y juegos de agua que complementan perfectamente la experiencia termal.",
+            "category": "activities"
+        },
+        {
+            "title": "Gastronomía y vida nocturna",
+            "content": "La gastronomía de Federación destaca por sus pescados de río y la influencia de la cocina italiana y española. En Casa Termas encontrará una carpeta con nuestras recomendaciones gastronómicas, pero no puede dejar de visitar 'El Embarcadero', especializado en pescados locales con hermosa vista al lago; 'La Parrilla de Don Pedro', con excelentes cortes de carne; y 'Sabores Termales', que ofrece platos innovadores utilizando productos regionales. Para opciones más económicas, la zona de food trucks en la costanera ofrece alternativas informales de buena calidad. Los amantes del dulce deben probar los alfajores de Federación, rellenos con dulce de naranja alusivos a la principal producción frutícola de la región. La vida nocturna es tranquila y familiar, centrada en bares y restaurantes más que en discotecas. En verano, la costanera cobra vida con espectáculos musicales al aire libre y ferias artesanales que funcionan hasta la medianoche. Para quienes buscan actividad nocturna más animada, el Casino de Federación, a 15 minutos caminando desde la casa, ofrece juegos y shows en vivo los fines de semana.",
+            "category": "dining"
+        }
+    ],
+    "featureIds": [
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "03080e07-50f9-4752-a2c6-7502eaacf733"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "0d73b0be-30c1-4cbb-8b21-90d2bde3d412",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "a14dc9e1-6290-4fda-8078-2e5112716b45",
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "5df75b3e-1f48-40fe-ad77-3cae754982ab",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

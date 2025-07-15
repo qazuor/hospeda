@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "141f7706-5461-4c8a-8644-04cab764e8d6",
+    "name": "Galería Comercial",
+    "slug": "galeria_comercial",
+    "description": "Galería cubierta con locales comerciales y servicios",
+    "icon": "store",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

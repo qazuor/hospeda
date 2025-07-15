@@ -1,0 +1,17 @@
+{
+    "id": "a14dc9e1-6290-4fda-8078-2e5112716b45",
+    "name": "coffee_maker",
+    "slug": "coffee_maker",
+    "description": "Coffee Maker",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

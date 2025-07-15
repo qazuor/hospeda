@@ -1,0 +1,184 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "mirador-soleado-hotel-colon",
+    "name": "mirador-soleado-hotel",
+    "displayName": "Mirador Soleado Hotel",
+    "type": "HOTEL",
+    "description": "Con una ubicación privilegiada y vistas panorámicas de Colón y el río Uruguay, Mirador Soleado Hotel ofrece una experiencia de alojamiento superior. Este hotel moderno, ideal para turistas que valoran la comodidad y el acceso rápido a las principales atracciones, se destaca por su diseño contemporáneo y servicios de calidad.\n\nEl hotel dispone de 20 habitaciones elegantemente decoradas, incluyendo opciones Standard, Superior con vista al río y Suites. Todas cuentan con aire acondicionado, calefacción central, TV LED, minibar, caja de seguridad y baño privado con secador de pelo y amenities. Las habitaciones superiores y suites ofrecen balcones privados con vistas espectaculares.\n\nEntre sus instalaciones, el hotel cuenta con un rooftop con piscina y solárium, desde donde se obtienen las mejores vistas de la ciudad y el río. El restaurante en planta baja ofrece desayuno buffet y un menú a la carta para almuerzo y cena, con platos internacionales y regionales. También dispone de un bar y una sala de estar común. Ofrece WiFi de alta velocidad gratuito en todo el edificio y estacionamiento cubierto opcional.\n\nSu excelente ubicación en el centro permite acceder caminando a la peatonal, la plaza principal, restaurantes y tiendas. La costanera y el acceso a las Termas de Colón están a pocos minutos en auto. Un hotel ideal para disfrutar de Colón con estilo y comodidad, con el plus de vistas inolvidables.",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "contacto@miradorsoleadohotel.com.ar",
+        "mobilePhone": "+549344715660179",
+        "homePhone": "+543447369324",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "price": {
+        "basePrice": {
+            "price": 25000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21,
+            "parking": 2000
+        },
+        "discounts": {
+            "monthly": 15
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2840",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2320",
+            "lng": "-58.1554"
+        },
+        "street": "Calle Mitre",
+        "number": "980",
+        "city": "Colón",
+        "neighborhood": "Centro"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
+            "caption": "Hotel moderno",
+            "description": "Fachada del Mirador Soleado Hotel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación Standard",
+                "description": "Habitación doble standard",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg",
+                "caption": "Suite con vista",
+                "description": "Suite con balcón y vista al río",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
+                "caption": "Lobby",
+                "description": "Área de recepción y estar",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104881/pexels-photo-2104881.jpeg",
+                "caption": "Piscina en rooftop",
+                "description": "Piscina en la terraza con vistas panorámicas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/244133/pexels-photo-244133.jpeg",
+                "caption": "Restaurante",
+                "description": "Salón comedor del restaurante",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "12:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "00:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "13:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 40,
+        "minNights": 1,
+        "maxNights": 30,
+        "bedrooms": 20,
+        "beds": 30,
+        "bathrooms": 20,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina exterior en la terraza",
+            "Restaurante y bar en el hotel",
+            "Estacionamiento cubierto opcional",
+            "Recepción 24 horas",
+            "Servicio de lavandería con cargo"
+        ]
+    },
+    "seo": {
+        "title": "Mirador Soleado Hotel - Vistas panorámicas en Colón, Entre Ríos",
+        "description": "Hotel moderno con rooftop y piscina en Colón. Vistas al río, habitaciones confortables, restaurante. Cerca del centro y costanera.",
+        "keywords": [
+            "hotel",
+            "colón",
+            "entre ríos",
+            "vistas",
+            "río",
+            "piscina",
+            "céntrico",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Destacado por sus vistas. Alta ocupación en temporada alta y fines de semana largos.",
+        "favorite": true,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "colon",
+        "hotel",
+        "colon-hotel",
+        "seed-example",
+        "city-center",
+        "river-view",
+        "swimming-pool"
+    ],
+    "faqs": [
+        {
+            "question": "¿El hotel cuenta con estacionamiento?",
+            "answer": "Sí, ofrecemos estacionamiento cubierto dentro del hotel con un costo adicional.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Está incluido el desayuno?",
+            "answer": "Sí, todas las tarifas incluyen un completo desayuno buffet.",
+            "category": "dining"
+        },
+        {
+            "question": "¿La piscina es climatizada?",
+            "answer": "No, la piscina del rooftop es exterior y no está climatizada. Está disponible en temporada cálida.",
+            "category": "amenities"
+        }
+    ],
+    "iaData": [],
+    "featureIds": [
+        "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
+        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
+        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "4bad848b-16de-488c-a673-91172ff620f3",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "1d7e7ed2-4762-4733-adc7-ad8d870bed20",
+        "3d826d2d-3895-415f-bab7-6148abca5434"
+    ]
+}

@@ -1,0 +1,51 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d485",
+    "email": "host2@hospeda.com",
+    "username": "host_miguel",
+    "firstName": "Miguel",
+    "lastName": "Torres",
+    "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+    "bio": "Propietario de cabañas y casas de campo en Victoria. Especializado en turismo familiar y actividades al aire libre. Ofrece experiencias personalizadas para cada huésped.",
+    "role": "HOST",
+    "isVerified": true,
+    "contactInfo": {
+        "personalEmail": "miguel.torres@gmail.com",
+        "workEmail": "host2@hospeda.com",
+        "mobilePhone": "+54 11 5555-0006",
+        "homePhone": "+54 3436 421-567",
+        "website": "https://cabanasmiguel.com",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/cabanas.miguel",
+        "instagram": "https://instagram.com/cabanas_miguel",
+        "whatsapp": "+54 11 5555-0006",
+        "youtube": "https://youtube.com/c/cabanasmiguel"
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "city": "Victoria",
+        "country": "Argentina",
+        "zipCode": "3153",
+        "street": "Ruta Provincial 11",
+        "number": "km 15",
+        "coordinates": {
+            "lat": "-32.6167",
+            "lng": "-60.1500"
+        }
+    },
+    "preferences": {
+        "language": "es",
+        "currency": "ARS",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "marketing": true
+        }
+    },
+    "adminInfo": {
+        "notes": "Host especializado en turismo familiar y actividades outdoor",
+        "favorite": false
+    }
+}

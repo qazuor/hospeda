@@ -1,0 +1,131 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "paraiso-natural-room-liebig",
+    "name": "paraiso-natural-room",
+    "displayName": "Paraíso Natural Habitación",
+    "type": "ROOM",
+    "description": "Descubre un rincón con encanto natural en Paraíso Natural, una habitación privada en una casa con jardín ubicada en un barrio tranquilo de Liebig. Ideal para viajeros que buscan un lugar apacible para descansar, con acceso a espacios verdes y a poca distancia del pueblo histórico y el río Uruguay.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, y cerca de zonas con vegetación. Estás a una distancia conveniente en auto o caminando de los restos históricos del Frigorífico Liebig y del acceso al río. El jardín es un plus para disfrutar del aire libre. Una opción económica y agradable para tu estadía en Liebig.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "hola@paraisonaturalroom.com.ar",
+        "mobilePhone": "+549345615947392",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@paraisonaturalroom.com.ar",
+        "website": "https://www.paraisonaturalroom.net.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 5800,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0432",
+            "lng": "-58.1003"
+        },
+        "street": "Calle Los Sauces",
+        "number": "70",
+        "city": "Liebig",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
+            "caption": "Interior de la habitación",
+            "description": "Vista de la habitación privada",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
+                "caption": "Habitación",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
+                "caption": "Baño",
+                "description": "Baño compartido",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
+                "caption": "Espacio común",
+                "description": "Área con heladera y microondas",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 2,
+        "minNights": 1,
+        "maxNights": 5,
+        "bedrooms": 1,
+        "beds": 1,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Habitación en casa de familia",
+            "Baño compartido",
+            "Acceso a cocina básica compartida",
+            "Barrio tranquilo"
+        ]
+    },
+    "seo": {
+        "title": "Paraíso Natural - Habitación privada económica en Liebig | Frigorífico",
+        "description": "Habitación privada en casa familiar en Liebig. Económica, baño compartido. Cerca Frigorífico Histórico y río Uruguay.",
+        "keywords": [
+            "habitación",
+            "liebig",
+            "entre ríos",
+            "económico",
+            "frigorífico liebig",
+            "historia",
+            "alojamiento"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Opción económica en zona residencial. Atrae viajeros solos o parejas interesados en la historia.",
+        "favorite": false,
+        "tags": [
+            "liebig",
+            "room",
+            "liebig-room",
+            "seed-example",
+            "budget",
+            "history"
+        ]
+    },
+    "faqs": [],
+    "iaData": [],
+    "featureIds": [
+        "0ddae569-fe9b-42cc-a800-d5f39e82196f",
+        "effbc352-e173-4e30-b7bf-89cb5082531e"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

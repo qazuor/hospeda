@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "5113b6d5-b56b-4d2c-9799-4ccdbf7f7274",
+    "name": "Centro de Eventos",
+    "slug": "centro_eventos",
+    "description": "Centro para la realización de eventos, convenciones y espectáculos",
+    "icon": "event",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

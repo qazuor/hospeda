@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "cc972c6d-1d0c-407d-b79f-18c1954dc18e",
+    "name": "Balneario Municipal",
+    "slug": "balneario_municipal",
+    "description": "Balneario público con servicios básicos y acceso controlado al río",
+    "icon": "pool",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

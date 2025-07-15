@@ -1,0 +1,49 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+    "email": "admin@hospeda.com",
+    "username": "admin",
+    "firstName": "María",
+    "lastName": "González",
+    "avatar": "https://images.unsplash.com/photo-1494790108755-2616b9db54ad?w=150&h=150&fit=crop&crop=face",
+    "bio": "Administradora del sistema con permisos para gestionar usuarios, contenido y configuraciones. Especialista en gestión de comunidades y moderación de contenido.",
+    "role": "ADMIN",
+    "isVerified": true,
+    "contactInfo": {
+        "personalEmail": "maria.gonzalez@gmail.com",
+        "workEmail": "admin@hospeda.com",
+        "mobilePhone": "+54 11 5555-0002",
+        "homePhone": "+54 11 4444-0002",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/maria.gonzalez.hospeda",
+        "instagram": "https://instagram.com/maria_hospeda",
+        "linkedin": "https://linkedin.com/in/maria-gonzalez-hospeda"
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "city": "Gualeguaychú",
+        "country": "Argentina",
+        "zipCode": "2840",
+        "street": "Av. Costanera",
+        "number": "1500",
+        "coordinates": {
+            "lat": "-33.0089",
+            "lng": "-58.5133"
+        }
+    },
+    "preferences": {
+        "language": "es",
+        "currency": "ARS",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "marketing": true
+        }
+    },
+    "adminInfo": {
+        "notes": "Administradora principal, especialista en gestión de usuarios y contenido",
+        "favorite": true
+    }
+}

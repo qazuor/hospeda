@@ -1,0 +1,16 @@
+{
+    "id": "3805637e-c810-41d2-ab7e-3ea43ea9ac3d",
+    "name": "historic_property",
+    "slug": "historic_property",
+    "description": "Casona colonial restaurada",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Edificio histórico del siglo XIX completamente restaurado respetando su arquitectura original",
+        "favorite": false
+    }
+}

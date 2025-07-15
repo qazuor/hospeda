@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "d7627716-9f69-4c95-acb3-fa887d67e05d",
+    "name": "Panadería Tradicional",
+    "slug": "panaderia_tradicional",
+    "description": "Panadería con productos caseros y recetas tradicionales",
+    "icon": "bakery_dining",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

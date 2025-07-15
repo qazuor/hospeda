@@ -1,0 +1,17 @@
+{
+    "id": "68987dfa-0982-4783-877e-3979d0a5ad1c",
+    "name": "first_aid_kit",
+    "slug": "first_aid_kit",
+    "description": "First Aid Kit",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

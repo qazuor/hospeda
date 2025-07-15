@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "e599f89b-3c41-4a32-bc27-f706957733cd",
+    "name": "Centro Comercial",
+    "slug": "centro_comercial",
+    "description": "Centro comercial con tiendas, servicios y entretenimiento",
+    "icon": "shopping_mall",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "1d7e7ed2-4762-4733-adc7-ad8d870bed20",
+    "name": "restaurant",
+    "slug": "restaurant",
+    "description": "Restaurant",
+    "type": "accommodation",
+    "category": "basic",
+    "icon": "amenity",
+    "isActive": true,
+    "isPopular": true,
+    "isPremium": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Optional: False",
+        "favorite": false
+    }
+}

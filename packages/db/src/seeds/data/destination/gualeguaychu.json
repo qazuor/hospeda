@@ -1,0 +1,113 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "slug": "gualeguaychu",
+    "name": "Gualeguaychú",
+    "summary": "Capital Nacional del Carnaval y puerta de entrada a las termas de Entre Ríos",
+    "description": "Gualeguaychú es una hermosa ciudad ubicada en el sureste de Entre Ríos, famosa mundialmente por su espectacular Carnaval del País. Esta vibrante ciudad combina tradición y modernidad, ofreciendo desde el famoso Corsódromo hasta pintorescas costas sobre el río Gualeguaychú. Es conocida por sus termas, su rica historia, arquitectura colonial y como centro neurálgico del turismo entrerriano. La ciudad ofrece una amplia variedad de actividades culturales, gastronómicas y de entretenimiento, siendo un destino ideal tanto para familias como para jóvenes que buscan diversión y relax.",
+    "isFeatured": true,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2820",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.0095",
+            "lng": "-58.5123"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
+            "caption": "Vista panorámica de Gualeguaychú y su carnaval"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
+                "caption": "Carnaval de Gualeguaychú"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
+                "caption": "Costanera de Gualeguaychú"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
+                "caption": "Termas de Gualeguaychú"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Gualeguaychú - Capital Nacional del Carnaval | Entre Ríos",
+        "description": "Descubre Gualeguaychú, la capital del carnaval argentino. Termas, cultura, gastronomía y entretenimiento en Entre Ríos.",
+        "keywords": [
+            "Gualeguaychú",
+            "Carnaval",
+            "Entre Ríos",
+            "Termas",
+            "Argentina",
+            "Turismo"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Destino principal de Entre Ríos, muy popular durante el carnaval",
+        "favorite": true
+    },
+    "tags": [
+        "carnaval",
+        "termas",
+        "cultura",
+        "familia",
+        "entretenimiento"
+    ],
+    "reviews": [
+        {
+            "title": "Experiencia increíble durante el carnaval",
+            "content": "Gualeguaychú durante el carnaval es simplemente espectacular. El Corsódromo es impresionante y la energía de la ciudad es contagiosa. Las termas son perfectas para relajarse después de los shows.",
+            "rating": {
+                "landscape": 4.5,
+                "attractions": 5.0,
+                "accessibility": 4.0,
+                "safety": 4.5,
+                "cleanliness": 4.0,
+                "hospitality": 4.5,
+                "culturalOffer": 5.0,
+                "gastronomy": 4.0,
+                "affordability": 3.5,
+                "nightlife": 5.0,
+                "infrastructure": 4.0,
+                "environmentalCare": 4.0,
+                "wifiAvailability": 4.0,
+                "shopping": 3.5,
+                "familyFriendly": 4.5
+            },
+            "userId": "user-carnaval-lover"
+        },
+        {
+            "title": "Destino ideal para familias",
+            "content": "Gualeguaychú es perfecto para ir en familia. Las termas son muy relajantes, la costanera es hermosa para caminar y hay muchas actividades para niños. La gastronomía local es excelente.",
+            "rating": {
+                "landscape": 4.0,
+                "attractions": 4.5,
+                "accessibility": 4.5,
+                "safety": 4.5,
+                "cleanliness": 4.5,
+                "hospitality": 4.5,
+                "culturalOffer": 4.0,
+                "gastronomy": 4.5,
+                "affordability": 4.0,
+                "nightlife": 3.0,
+                "infrastructure": 4.0,
+                "environmentalCare": 4.0,
+                "wifiAvailability": 4.0,
+                "shopping": 4.0,
+                "familyFriendly": 5.0
+            },
+            "userId": "user-family-traveler"
+        }
+    ],
+    "attractionIds": [
+        "0688804f-3ac2-43a3-acfb-fe135d77710d",
+        "008dd069-a106-40b0-83c2-0416ef6557a5",
+        "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
+        "43190ef3-90a5-404a-a1f4-28496687d51f",
+        "17fc943f-3d02-41d6-abd6-1d9de50ac06b"
+    ]
+}

@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "0a7dedae-1667-4313-b741-5d10d75292b6",
+    "name": "Centro Agropecuario",
+    "slug": "centro_agropecuario",
+    "description": "Centro de exhibición y venta de productos agropecuarios locales",
+    "icon": "store",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

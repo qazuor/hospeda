@@ -1,0 +1,16 @@
+{
+    "id": "1fb29901-701e-4f9d-ab30-942e11dadb4c",
+    "name": "thermal_proximity",
+    "slug": "thermal_proximity",
+    "description": "Cerca de las Termas",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "A poca distancia en auto del Parque Termal",
+        "favorite": false
+    }
+}

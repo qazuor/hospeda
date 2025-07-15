@@ -1,0 +1,47 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "email": "user@hospeda.com",
+    "username": "user_lucas",
+    "firstName": "Lucas",
+    "lastName": "Fernández",
+    "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+    "bio": "Viajero frecuente que disfruta explorando destinos únicos en Entre Ríos. Apasionado por la naturaleza y la gastronomía local. Comparte reseñas detalladas de sus experiencias.",
+    "role": "USER",
+    "isVerified": true,
+    "contactInfo": {
+        "personalEmail": "lucas.fernandez@gmail.com",
+        "mobilePhone": "+54 11 5555-0005",
+        "preferredEmail": "PERSONAL",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/lucas_viajero",
+        "facebook": "https://facebook.com/lucas.fernandez.viajero"
+    },
+    "location": {
+        "state": "Buenos Aires",
+        "city": "Buenos Aires",
+        "country": "Argentina",
+        "zipCode": "1425",
+        "street": "Av. Corrientes",
+        "number": "3456",
+        "neighborhood": "Almagro",
+        "coordinates": {
+            "lat": "-34.6037",
+            "lng": "-58.3816"
+        }
+    },
+    "preferences": {
+        "language": "es",
+        "currency": "ARS",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "marketing": false
+        }
+    },
+    "adminInfo": {
+        "notes": "Usuario activo, buen historial de reseñas",
+        "favorite": false
+    }
+}

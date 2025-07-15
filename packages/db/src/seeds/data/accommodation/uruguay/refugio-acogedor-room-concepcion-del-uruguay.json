@@ -1,0 +1,134 @@
+{
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "refugio-acogedor-room-concepcion_del_uruguay",
+    "name": "refugio-acogedor-room",
+    "displayName": "Refugio Acogedor Habitación",
+    "type": "ROOM",
+    "description": "Siéntete bienvenido en Refugio Acogedor, una habitación privada en una casa familiar en un barrio tradicional de Concepción del Uruguay. Ofrece un ambiente cálido, trato amable y la comodidad de un hogar, ideal para viajeros solos o parejas que buscan una base acogedora para explorar la ciudad.\n\nLa habitación es sencilla pero cómoda, con cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido con los anfitriones. Los huéspedes pueden utilizar una pequeña área de cocina básica con microondas y heladera para infusiones o comidas simples. El ambiente es muy hogareño.\n\nUbicado en un barrio residencial tranquilo, permite un buen descanso. Estás a una distancia razonable en auto o transporte público del centro, la costanera y otras atracciones. La hospitalidad de los anfitriones es un punto fuerte de este refugio acogedor.",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@refugioacogedorroom.com.ar",
+        "mobilePhone": "+549344215280584",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@refugioacogedorroom.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 5200,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4820",
+            "lng": "-58.2247"
+        },
+        "street": "Calle Los Rosales",
+        "number": "50",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Barrio Tradicional"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
+            "caption": "Interior de la habitación",
+            "description": "Vista de la habitación privada",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
+                "caption": "Habitación",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
+                "caption": "Baño",
+                "description": "Baño compartido",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
+                "caption": "Espacio común",
+                "description": "Área con heladera y microondas",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 2,
+        "minNights": 1,
+        "maxNights": 5,
+        "bedrooms": 1,
+        "beds": 1,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Habitación en casa de familia",
+            "Baño compartido",
+            "Acceso a cocina básica compartida",
+            "Ambiente hogareño y tranquilo"
+        ]
+    },
+    "seo": {
+        "title": "Refugio Acogedor - Habitación privada y económica en Concepción del Uruguay",
+        "description": "Habitación privada en casa familiar en Concepción del Uruguay. Económica, baño compartido, ambiente acogedor. Ideal para viajeros.",
+        "keywords": [
+            "habitación",
+            "concepción del uruguay",
+            "entre ríos",
+            "económico",
+            "acogedor",
+            "viajero",
+            "compartido"
+        ]
+    },
+    "adminInfo": {
+        "notes": "Opción muy económica. Atrae a viajeros que buscan interacción con locales.",
+        "favorite": false,
+        "tags": [
+            "admin",
+            "seed"
+        ]
+    },
+    "tags": [
+        "concepcion-del-uruguay",
+        "room",
+        "concepcion-del-uruguay-room",
+        "seed-example",
+        "budget",
+        "social"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "featureIds": [
+        "0ddae569-fe9b-42cc-a800-d5f39e82196f",
+        "be30904b-8750-4561-b5e2-0ec228a5e6b4"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ]
+}

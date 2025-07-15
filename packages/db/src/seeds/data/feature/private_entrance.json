@@ -1,0 +1,16 @@
+{
+    "id": "45973def-bdc7-47cd-8997-11d649dc3a4f",
+    "name": "private_entrance",
+    "slug": "private_entrance",
+    "description": "private_entrance",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "",
+        "favorite": false
+    }
+}

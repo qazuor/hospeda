@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "b0d9cc2e-43f7-4583-83c4-b4909cf392a9",
+    "name": "Casino",
+    "slug": "casino",
+    "description": "Casino con juegos de azar y entretenimiento nocturno",
+    "icon": "casino",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "820ec336-953d-4d98-8d3a-d3dc0ec42da6",
+    "name": "panoramic_view",
+    "slug": "panoramic_view",
+    "description": "Vistas espectaculares",
+    "type": "accommodation",
+    "category": "comfort",
+    "icon": "feature",
+    "isActive": true,
+    "isPopular": false,
+    "sortOrder": 1,
+    "adminInfo": {
+        "notes": "Vistas del paisaje desde la cabaña y terraza",
+        "favorite": false
+    }
+}

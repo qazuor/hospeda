@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "1ebcb6bc-0fd2-437c-9883-c226b468efc2",
+    "name": "Muelle Pesquero",
+    "slug": "muelle_pesquero",
+    "description": "Muelle tradicional para pesca deportiva y recreativa en el río",
+    "icon": "phishing",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

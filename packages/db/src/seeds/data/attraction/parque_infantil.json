@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "d65a976c-7b7e-4739-904a-aaeaf023177a",
+    "name": "Parque Infantil",
+    "slug": "parque_infantil",
+    "description": "Parque con juegos y actividades para niños",
+    "icon": "playground",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}

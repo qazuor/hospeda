@@ -1,0 +1,14 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "31f6ed13-d9d9-4422-ae8f-0d9450634f5e",
+    "name": "Palacio Histórico",
+    "slug": "palacio_historico",
+    "description": "Palacio de importancia histórica con arquitectura colonial y visitas guiadas",
+    "icon": "castle",
+    "isBuiltin": true,
+    "lifecycleState": "PUBLISHED",
+    "adminInfo": {
+        "notes": "Atracción genérica del sistema",
+        "favorite": false
+    }
+}
