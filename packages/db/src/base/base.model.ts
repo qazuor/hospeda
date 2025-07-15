@@ -394,4 +394,18 @@ export abstract class BaseModel<T> {
             );
         }
     }
+
+    /**
+     * Updates an entity by its unique ID.
+     * @param id - The entity ID
+     * @param data - The fields to update
+     * @param tx - Optional transaction client
+     */
+    async updateById(
+        id: string,
+        data: Partial<T>,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<void> {
+        await this.update({ id }, data, tx);
+    }
 }
