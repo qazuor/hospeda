@@ -1,0 +1,51 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d706",
+    "slug": "festival-naturaleza-victoria-2025",
+    "name": "Festival de la Naturaleza Victoria 2025",
+    "summary": "Festival de naturaleza y ecoturismo en el Puerto de Victoria con actividades al aire libre",
+    "description": "El Festival de la Naturaleza es un evento que celebra la rica biodiversidad del Delta del Paraná y la región de Victoria. Durante tres días, visitantes pueden participar en actividades de ecoturismo, talleres de conservación, avistamiento de aves y navegación por el delta. Un evento perfecto para familias y amantes de la naturaleza que buscan conectar con el entorno natural de Entre Ríos.",
+    "category": "NATURE",
+    "date": {
+        "start": "2025-07-25T08:00:00-03:00",
+        "end": "2025-07-27T18:00:00-03:00"
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d606",
+    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d502",
+    "pricing": {
+        "type": "paid",
+        "value": 5000,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tags": ["naturaleza", "ecoturismo", "victoria", "delta", "conservacion"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop",
+            "caption": "Festival de la Naturaleza en Victoria",
+            "description": "Actividades de ecoturismo en el delta del Paraná"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Avistamiento de aves",
+                "description": "Actividad de birdwatching en el delta"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
+                "caption": "Navegación por el delta",
+                "description": "Embarcaciones navegando por el delta del Paraná"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Festival de la Naturaleza Victoria 2025 - Ecoturismo y Naturaleza - Hospeda",
+        "description": "Festival de naturaleza y ecoturismo en Victoria. Actividades al aire libre y conservación en el delta del Paraná.",
+        "keywords": ["naturaleza", "ecoturismo", "victoria", "delta", "conservacion"]
+    },
+    "adminInfo": {
+        "notes": "Festival de naturaleza con actividades ecoturísticas",
+        "favorite": false
+    }
+}

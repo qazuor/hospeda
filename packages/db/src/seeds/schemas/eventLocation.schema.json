@@ -9,93 +9,69 @@
             "type": "string",
             "description": "EventLocation ID (UUID)"
         },
-        "eventId": {
+        "state": {
             "type": "string",
-            "description": "Related event ID"
+            "description": "Location state"
         },
-        "name": {
+        "zipCode": {
             "type": "string",
-            "description": "Location name"
+            "description": "Location zip code"
         },
-        "description": {
+        "country": {
             "type": "string",
-            "description": "Location description"
+            "description": "Location country"
         },
-        "type": {
-            "type": "string",
-            "enum": ["primary", "secondary", "alternative", "virtual"],
-            "description": "Location type"
-        },
-        "category": {
-            "type": "string",
-            "enum": ["indoor", "outdoor", "hybrid", "virtual", "mobile"],
-            "description": "Location category"
-        },
-        "venue": {
+        "coordinates": {
             "type": "object",
             "properties": {
-                "name": {
+                "lat": {
                     "type": "string",
-                    "description": "Venue name"
+                    "description": "Latitude"
                 },
-                "type": {
+                "lng": {
                     "type": "string",
-                    "enum": [
-                        "hotel",
-                        "convention_center",
-                        "theater",
-                        "stadium",
-                        "park",
-                        "museum",
-                        "restaurant",
-                        "bar",
-                        "club",
-                        "beach",
-                        "plaza",
-                        "street",
-                        "building",
-                        "room",
-                        "online",
-                        "other"
-                    ],
-                    "description": "Venue type"
-                },
-                "capacity": {
-                    "type": "integer",
-                    "description": "Venue capacity"
-                },
-                "accessibility": {
-                    "type": "boolean",
-                    "description": "Whether venue is accessible"
-                },
-                "parking": {
-                    "type": "boolean",
-                    "description": "Whether venue has parking"
-                },
-                "publicTransport": {
-                    "type": "boolean",
-                    "description": "Whether venue is accessible by public transport"
+                    "description": "Longitude"
                 }
             },
-            "required": ["name", "type"]
+            "required": ["lat", "lng"],
+            "additionalProperties": false
         },
-        "location": {
-            "$ref": "common.schema.json#/definitions/location"
+        "street": {
+            "type": "string",
+            "description": "Street address"
         },
-        "contactInfo": {
-            "$ref": "common.schema.json#/definitions/contactInfo"
+        "number": {
+            "type": "string",
+            "description": "Street number"
         },
-        "media": {
-            "$ref": "common.schema.json#/definitions/media"
+        "city": {
+            "type": "string",
+            "description": "City name"
         },
-        "isActive": {
-            "type": "boolean",
-            "description": "Whether location is active"
+        "neighborhood": {
+            "type": "string",
+            "description": "Neighborhood name"
+        },
+        "floor": {
+            "type": "string",
+            "description": "Floor number"
+        },
+        "apartment": {
+            "type": "string",
+            "description": "Apartment number"
+        },
+        "department": {
+            "type": "string",
+            "description": "Department name"
+        },
+        "placeName": {
+            "type": "string",
+            "description": "Place name"
         },
         "adminInfo": {
             "$ref": "common.schema.json#/definitions/adminInfo"
         }
     },
-    "required": ["id", "eventId", "name", "type", "category", "venue"],
+    "required": ["id", "city"],
     "additionalProperties": false
 }

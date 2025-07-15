@@ -1,0 +1,49 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d702",
+    "slug": "festival-del-rio-colon-2025",
+    "name": "Festival del Río Colón 2025",
+    "summary": "Festival cultural y musical en el Anfiteatro Municipal con vista al río Uruguay",
+    "description": "El Festival del Río es un evento cultural que celebra la música, el arte y la historia de Colón. Se desarrolla en el pintoresco Anfiteatro Municipal con una vista espectacular al río Uruguay. Durante tres días, artistas locales y nacionales presentan espectáculos musicales, obras de teatro y exposiciones artísticas en un ambiente único e inspirador.",
+    "category": "MUSIC",
+    "date": {
+        "start": "2025-03-15T19:00:00-03:00",
+        "end": "2025-03-17T23:00:00-03:00"
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d601",
+    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d501",
+    "pricing": {
+        "type": "free"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": true,
+    "tags": ["festival", "musica", "colon", "rio", "cultura"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
+            "caption": "Festival del Río en el Anfiteatro Municipal",
+            "description": "Espectáculo musical al aire libre con vista al río"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&h=600&fit=crop",
+                "caption": "Artistas en el escenario",
+                "description": "Músicos locales presentando en el festival"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&h=600&fit=crop",
+                "caption": "Anfiteatro al atardecer",
+                "description": "Vista del anfiteatro durante la puesta del sol"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Festival del Río Colón 2025 - Música y Cultura - Hospeda",
+        "description": "Festival cultural gratuito en el Anfiteatro Municipal de Colón con música, arte y vista al río Uruguay.",
+        "keywords": ["festival", "colon", "musica", "rio uruguay", "cultura"]
+    },
+    "adminInfo": {
+        "notes": "Evento cultural gratuito con gran convocatoria",
+        "favorite": true
+    }
+}

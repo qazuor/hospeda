@@ -1,0 +1,19 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d605",
+    "state": "Entre Ríos",
+    "city": "Concepción del Uruguay",
+    "country": "Argentina",
+    "zipCode": "3260",
+    "street": "8 de Junio",
+    "number": "114",
+    "neighborhood": "Centro",
+    "coordinates": {
+        "lat": "-32.4833",
+        "lng": "-58.2333"
+    },
+    "placeName": "Palacio San José",
+    "adminInfo": {
+        "notes": "Museo histórico y residencia de Justo José de Urquiza",
+        "favorite": true
+    }
+}

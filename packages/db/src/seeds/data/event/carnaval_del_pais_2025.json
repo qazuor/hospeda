@@ -1,0 +1,51 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d701",
+    "slug": "carnaval-del-pais-2025",
+    "name": "Carnaval del País 2025",
+    "summary": "El carnaval más importante de Argentina llega a Gualeguaychú con espectáculos únicos",
+    "description": "El Carnaval del País es el evento más importante de Gualeguaychú y uno de los carnavales más reconocidos de Argentina. Durante tres fines de semana consecutivos, el Corsódromo se llena de color, música y alegría con las mejores comparsas del país. Un espectáculo único que combina tradición, arte y diversión para toda la familia.",
+    "category": "FESTIVAL",
+    "date": {
+        "start": "2025-02-01T20:00:00-03:00",
+        "end": "2025-02-23T02:00:00-03:00"
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d602",
+    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d504",
+    "pricing": {
+        "type": "paid",
+        "value": 15000,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": true,
+    "tags": ["carnaval", "festival", "gualeguaychu", "musica", "danza"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=600&fit=crop",
+            "caption": "Carnaval del País en el Corsódromo de Gualeguaychú",
+            "description": "Espectáculo de carnaval con comparsas y bailarines"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1551969014-7d2c4cddf0b6?w=800&h=600&fit=crop",
+                "caption": "Comparsa en el Corsódromo",
+                "description": "Bailarines con trajes coloridos en el carnaval"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
+                "caption": "Reina del Carnaval",
+                "description": "Reina del carnaval con traje típico"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Carnaval del País 2025 - Gualeguaychú - Hospeda",
+        "description": "Vive el carnaval más importante de Argentina. Tres fines de semana de espectáculos únicos en el Corsódromo de Gualeguaychú.",
+        "keywords": ["carnaval", "gualeguaychu", "festival", "entre rios", "argentina"]
+    },
+    "adminInfo": {
+        "notes": "Evento estrella de la temporada turística",
+        "favorite": true
+    }
+}

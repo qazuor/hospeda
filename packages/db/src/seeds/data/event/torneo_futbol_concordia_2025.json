@@ -1,0 +1,51 @@
+{
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d703",
+    "slug": "torneo-nacional-futbol-concordia-2025",
+    "name": "Torneo Nacional de Fútbol Concordia 2025",
+    "summary": "Torneo de fútbol amateur con equipos de todo el país en el Club Atlético Concordia",
+    "description": "El Torneo Nacional de Fútbol es un evento deportivo que reúne a equipos amateur de todo el país en la histórica ciudad de Concordia. Durante una semana, los mejores equipos compiten en el estadio del Club Atlético Concordia en un ambiente festivo y competitivo. Un evento que combina deporte, camaradería y turismo en una de las ciudades más bellas de Entre Ríos.",
+    "category": "SPORTS",
+    "date": {
+        "start": "2025-04-20T09:00:00-03:00",
+        "end": "2025-04-27T18:00:00-03:00"
+    },
+    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d603",
+    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d503",
+    "pricing": {
+        "type": "paid",
+        "value": 2000,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tags": ["futbol", "deporte", "concordia", "torneo", "amateur"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=600&fit=crop",
+            "caption": "Torneo de fútbol en Concordia",
+            "description": "Jugadores compitiendo en el estadio del club"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&h=600&fit=crop",
+                "caption": "Equipos en competencia",
+                "description": "Equipos amateur compitiendo en el torneo"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&h=600&fit=crop",
+                "caption": "Celebración de gol",
+                "description": "Jugadores celebrando un gol en el torneo"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Torneo Nacional de Fútbol Concordia 2025 - Deporte Amateur - Hospeda",
+        "description": "Torneo nacional de fútbol amateur en Concordia. Una semana de competencia deportiva con equipos de todo el país.",
+        "keywords": ["futbol", "concordia", "torneo", "deporte", "amateur"]
+    },
+    "adminInfo": {
+        "notes": "Torneo deportivo con gran participación nacional",
+        "favorite": false
+    }
+}
