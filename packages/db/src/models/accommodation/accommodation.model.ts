@@ -1,4 +1,9 @@
-import type { AccommodationType, BaseSearchType, SortType } from '@repo/types';
+import type {
+    AccommodationRatingType,
+    AccommodationType,
+    BaseSearchType,
+    SortType
+} from '@repo/types';
 import { and, asc, count, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
@@ -99,5 +104,22 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
         const total = totalResult[0]?.count ?? 0;
 
         return { items: items as AccommodationType[], total };
+    }
+
+    /**
+     * Updates the stats (reviewsCount, averageRating, rating) for the accommodation.
+     */
+    async updateStats(
+        accommodationId: string,
+        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingType }
+    ): Promise<void> {
+        await this.update(
+            { id: accommodationId },
+            {
+                reviewsCount: stats.reviewsCount,
+                averageRating: stats.averageRating,
+                rating: stats.rating
+            }
+        );
     }
 }

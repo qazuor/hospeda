@@ -1,5 +1,10 @@
 import { AccommodationFaqModel, AccommodationModel } from '@repo/db';
-import type { AccommodationId, AccommodationSummaryType, AccommodationType } from '@repo/types';
+import type {
+    AccommodationId,
+    AccommodationRatingType,
+    AccommodationSummaryType,
+    AccommodationType
+} from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseService } from '../../base';
@@ -592,5 +597,22 @@ export class AccommodationService extends BaseService<
                 throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
             }
         });
+    }
+
+    /**
+     * Updates the stats (reviewsCount, averageRating, rating) for the accommodation from a review service.
+     */
+    async updateStatsFromReview(
+        accommodationId: string,
+        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingType }
+    ): Promise<void> {
+        await this.model.update(
+            { id: accommodationId },
+            {
+                reviewsCount: stats.reviewsCount,
+                averageRating: stats.averageRating,
+                rating: stats.rating
+            }
+        );
     }
 }
