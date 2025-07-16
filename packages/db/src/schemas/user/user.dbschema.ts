@@ -37,7 +37,7 @@ export const users: ReturnType<typeof pgTable> = pgTable(
         profile: jsonb('profile').$type<UserProfile>(),
         settings: jsonb('settings').$type<UserSettingsType>().notNull(),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
-        lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

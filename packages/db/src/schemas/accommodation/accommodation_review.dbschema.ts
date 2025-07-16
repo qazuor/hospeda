@@ -18,7 +18,7 @@ export const accommodationReviews: ReturnType<typeof pgTable> = pgTable(
         title: text('title'),
         content: text('content'),
         rating: jsonb('rating').$type<AccommodationRatingType>().notNull(),
-        lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

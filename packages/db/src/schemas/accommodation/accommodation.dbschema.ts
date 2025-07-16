@@ -60,7 +60,7 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
                 onDelete: 'restrict'
             }),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
-        lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         reviewsCount: integer('reviews_count').notNull().default(0),
         averageRating: integer('average_rating').notNull().default(0),
         seo: jsonb('seo').$type<SeoType>(),
@@ -79,7 +79,9 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
     (table) => ({
         accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),
         accommodations_visibility_idx: index('accommodations_visibility_idx').on(table.visibility),
-        accommodations_lifecycle_idx: index('accommodations_lifecycle_idx').on(table.lifecycle),
+        accommodations_lifecycle_idx: index('accommodations_lifecycle_idx').on(
+            table.lifecycleState
+        ),
         accommodations_visibility_isFeatured_idx: index(
             'accommodations_visibility_isFeatured_idx'
         ).on(table.visibility, table.isFeatured),

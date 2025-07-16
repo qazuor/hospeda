@@ -15,7 +15,7 @@ export const eventLocations: ReturnType<typeof pgTable> = pgTable('event_locatio
     city: text('city').notNull(),
     department: text('department'),
     placeName: text('place_name'),
-    lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+    lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

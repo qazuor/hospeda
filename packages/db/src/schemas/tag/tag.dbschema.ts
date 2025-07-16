@@ -13,7 +13,7 @@ export const tags: ReturnType<typeof pgTable> = pgTable(
         color: TagColorPgEnum('color').notNull(),
         icon: text('icon'),
         notes: text('notes'),
-        lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
@@ -22,7 +22,7 @@ export const tags: ReturnType<typeof pgTable> = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        tags_lifecycle_idx: index('tags_lifecycle_idx').on(table.lifecycle)
+        tags_lifecycle_idx: index('tags_lifecycle_idx').on(table.lifecycleState)
     })
 );
 

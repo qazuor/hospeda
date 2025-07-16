@@ -13,7 +13,7 @@ export const accommodationIaData: ReturnType<typeof pgTable> = pgTable('accommod
     title: text('title').notNull(),
     content: text('content').notNull(),
     category: text('category'),
-    lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+    lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
