@@ -2,7 +2,7 @@
  * --- BASE ---
  * Exports the foundational abstract `BaseService` class.
  */
-export * from './base/base.service';
+export * from './base';
 
 /**
  * --- TYPES ---

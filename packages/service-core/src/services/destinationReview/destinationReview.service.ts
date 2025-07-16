@@ -1,7 +1,7 @@
 import { DestinationModel, DestinationReviewModel } from '@repo/db';
 import type { DestinationReviewType, NewDestinationReviewInputType } from '@repo/types';
 import type { z } from 'zod';
-import { BaseService } from '../../base/base.service';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger } from '../../types';
 import { DestinationService } from '../destination/destination.service';
 import { calculateStatsFromReviews } from './destinationReview.helpers';
@@ -21,7 +21,7 @@ import {
  * Service for managing destination reviews.
  * Provides CRUD and domain-specific logic for DestinationReview entities.
  */
-export class DestinationReviewService extends BaseService<
+export class DestinationReviewService extends BaseCrudService<
     DestinationReviewType,
     DestinationReviewModel,
     typeof CreateDestinationReviewSchema,

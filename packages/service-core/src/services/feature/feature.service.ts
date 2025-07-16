@@ -8,7 +8,7 @@ import type {
 } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
-import { BaseRelatedService } from '../../base/base.related-service';
+import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceContext, ServiceError, type ServiceLogger } from '../../types';
 import { generateFeatureSlug } from './feature.helpers';
@@ -34,9 +34,9 @@ import {
 
 /**
  * Service for managing features. Implements business logic, permissions, and hooks for Feature entities.
- * @extends BaseRelatedService
+ * @extends BaseCrudRelatedService
  */
-export class FeatureService extends BaseRelatedService<
+export class FeatureService extends BaseCrudRelatedService<
     FeatureType,
     FeatureModel,
     RAccommodationFeatureModel,

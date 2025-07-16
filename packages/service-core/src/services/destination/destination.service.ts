@@ -8,7 +8,7 @@ import {
 import type { AccommodationType, DestinationRatingType, DestinationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
-import { BaseService } from '../../base/base.service';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { generateDestinationSlug } from './destination.helpers';
@@ -47,7 +47,7 @@ import {
  * Service for domain-specific logic related to Destinations.
  * Inherits standard CRUD from BaseService. Only custom methods are defined here.
  */
-export class DestinationService extends BaseService<
+export class DestinationService extends BaseCrudService<
     DestinationType,
     DestinationModel,
     typeof CreateDestinationSchema,

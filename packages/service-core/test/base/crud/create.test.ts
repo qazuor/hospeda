@@ -6,16 +6,16 @@ import {
     expectInternalError,
     expectSuccess,
     expectValidationError
-} from '../helpers/assertions';
-import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { createBaseModelMock } from '../utils/modelMockFactory';
-import { asMock } from '../utils/test-utils';
-import { mockActor, mockAdminActor, mockEntity } from './base.service.mockData';
+} from '../../helpers/assertions';
+import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { createBaseModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
+import { mockActor, mockAdminActor, mockEntity } from '../base/base.service.mockData';
 import {
     type CreateTestEntitySchema,
     type TestEntity,
     TestService
-} from './base.service.test.setup';
+} from '../base/base.service.test.setup';
 
 /**
  * Test suite for the `create` method of BaseService.

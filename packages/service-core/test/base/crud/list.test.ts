@@ -14,12 +14,12 @@ import type { BaseModel } from '@repo/db';
  */
 import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ServiceError } from '../../src/types';
-import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { createBaseModelMock } from '../utils/modelMockFactory';
-import { asMock } from '../utils/test-utils';
-import { mockActor, mockEntity } from './base.service.mockData';
-import { type TestEntity, TestService } from './base.service.test.setup';
+import { ServiceError } from '../../../src/types';
+import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { createBaseModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
+import { mockActor, mockEntity } from '../base/base.service.mockData';
+import { type TestEntity, TestService } from '../base/base.service.test.setup';
 
 /**
  * Test suite for the `list` method of BaseService.

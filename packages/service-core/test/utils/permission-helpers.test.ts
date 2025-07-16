@@ -16,7 +16,7 @@ import {
     checkPermission,
     getPermissionDescription
 } from '../../src/utils/permission';
-import { mockActor, mockAdminActor } from '../base/base.service.mockData';
+import { mockActor, mockAdminActor } from '../base/base/base.service.mockData';
 
 /**
  * Test suite for permission helper functions.

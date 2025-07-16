@@ -1,5 +1,5 @@
 import { EventLocationModel } from '@repo/db';
-import { BaseService, ServiceError } from '@repo/service-core';
+import { BaseCrudService, ServiceError } from '@repo/service-core';
 import type { EventLocationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
@@ -20,9 +20,9 @@ type WhereWithOr = Record<string, unknown> & { or?: Array<Record<string, unknown
 
 /**
  * Service for managing event locations. Implements business logic, permissions, and hooks for EventLocation entities.
- * @extends BaseService
+ * @extends BaseCrudService
  */
-export class EventLocationService extends BaseService<
+export class EventLocationService extends BaseCrudService<
     EventLocationType,
     EventLocationModel,
     typeof CreateEventLocationSchema,

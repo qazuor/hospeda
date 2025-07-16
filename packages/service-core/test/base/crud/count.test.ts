@@ -1,6 +1,6 @@
 import type { BaseModel } from '@repo/db';
 import type { Mock } from 'vitest';
-import { createBaseModelMock } from '../utils/modelMockFactory';
+import { createBaseModelMock } from '../../utils/modelMockFactory';
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 /**
  * @fileoverview
@@ -16,10 +16,10 @@ const asMock = <T>(fn: T) => fn as unknown as Mock;
  */
 import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ServiceError } from '../../src/types';
-import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { mockActor } from './base.service.mockData';
-import { type TestEntity, TestService } from './base.service.test.setup';
+import { ServiceError } from '../../../src/types';
+import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { mockActor } from '../base/base.service.mockData';
+import { type TestEntity, TestService } from '../base/base.service.test.setup';
 
 /**
  * Test suite for the `count` method of BaseService.
