@@ -17,7 +17,12 @@ import type { Actor } from '../../src/types';
 import { createServiceTestInstance } from '../helpers/serviceTestFactory';
 import { createBaseModelMock } from '../utils/modelMockFactory';
 import { asMock } from '../utils/test-utils';
-import { MOCK_ENTITY_ID, mockAdminActor, mockEntity } from './base.service.mockData';
+import {
+    MOCK_ENTITY_ID,
+    mockAdminActor,
+    mockDeletedEntity,
+    mockEntity
+} from './base.service.mockData';
 import { type TestEntity, TestService } from './base.service.test.setup';
 
 /**
@@ -43,6 +48,7 @@ describe('BaseService: restore', () => {
     });
 
     it('should restore a soft-deleted entity and return count', async () => {
+        asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
         asMock(modelMock.restore).mockResolvedValue(1);
         const result = await service.restore(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.data?.count).toBe(1);
@@ -56,18 +62,18 @@ describe('BaseService: restore', () => {
     });
 
     it('should handle errors from the _beforeRestore lifecycle hook', async () => {
-        const hookError = new Error('Error in beforeRestore hook');
-        vi.spyOn(
-            service as unknown as { _beforeRestore: () => void },
-            '_beforeRestore'
-        ).mockRejectedValue(hookError);
+        const hookError = new Error('fail');
+        // biome-ignore lint/suspicious/noExplicitAny: Necesario para mockear método protegido en test
+        vi.spyOn(service as any, '_beforeRestore').mockRejectedValue(hookError);
+        asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
         const result = await service.restore(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
     it('should return an internal error if database fails', async () => {
-        const dbError = new Error('DB connection failed');
+        const dbError = new Error('fail');
         asMock(modelMock.restore).mockRejectedValue(dbError);
+        asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
         const result = await service.restore(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
@@ -83,11 +89,11 @@ describe('BaseService: restore', () => {
     });
 
     it('should handle errors from the _afterRestore hook', async () => {
-        const hookError = new Error('Error in afterRestore hook');
-        vi.spyOn(
-            service as unknown as { _afterRestore: () => void },
-            '_afterRestore'
-        ).mockRejectedValue(hookError);
+        const hookError = new Error('fail');
+        // biome-ignore lint/suspicious/noExplicitAny: Necesario para mockear método protegido en test
+        vi.spyOn(service as any, '_afterRestore').mockRejectedValue(hookError);
+        asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
+        asMock(modelMock.restore).mockResolvedValue(1);
         const result = await service.restore(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });

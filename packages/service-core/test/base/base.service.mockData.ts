@@ -45,5 +45,10 @@ export const mockEntity = {
     updatedById: MOCK_USER_ID,
     createdAt: new Date(),
     updatedAt: new Date(),
-    deletedAt: new Date()
+    deletedAt: null
+};
+
+export const mockDeletedEntity = {
+    ...mockEntity,
+    deletedAt: new Date() // Simula entidad eliminada para restore
 };
