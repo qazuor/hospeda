@@ -54,7 +54,7 @@ export class TestService extends BaseCrudService<
      * @param model - Model instance (mock or real)
      */
     constructor(ctx: ServiceContext, model?: BaseModelDB<TestEntity>) {
-        super(ctx);
+        super(ctx, 'testEntity');
         this.logger = ctx.logger;
         if (model) {
             this.model = model;
