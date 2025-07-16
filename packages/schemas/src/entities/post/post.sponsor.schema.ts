@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
     ContactInfoSchema,
-    MediaSchema,
+    ImageSchema,
     SocialNetworkSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
@@ -27,7 +27,7 @@ export const PostSponsorSchema = WithIdSchema.merge(WithAuditSchema)
             .string()
             .min(10, { message: 'zodError.post.sponsor.description.min' })
             .max(500, { message: 'zodError.post.sponsor.description.max' }),
-        logo: MediaSchema.optional(),
+        logo: ImageSchema.optional(),
         contact: ContactInfoSchema.optional(),
         social: SocialNetworkSchema.optional()
     });
