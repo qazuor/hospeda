@@ -1,7 +1,7 @@
 import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
 import type { AccommodationReviewType, NewAccommodationReviewInputType } from '@repo/types';
 import type { z } from 'zod';
-import { BaseService } from '../../base/base.service';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { calculateStatsFromReviews } from './accommodationReview.helpers';
@@ -21,7 +21,7 @@ import {
  * Service for managing accommodation reviews.
  * Provides CRUD and domain-specific logic for AccommodationReview entities.
  */
-export class AccommodationReviewService extends BaseService<
+export class AccommodationReviewService extends BaseCrudService<
     AccommodationReviewType,
     AccommodationReviewModel,
     typeof CreateAccommodationReviewSchema,

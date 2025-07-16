@@ -12,7 +12,7 @@ import type {
 } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
-import { BaseRelatedService } from '../../base/base.related-service';
+import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
@@ -42,9 +42,9 @@ import {
 
 /**
  * Service for managing tags. Implements business logic, permissions, and hooks for Tag entities.
- * @extends BaseRelatedService
+ * @extends BaseCrudRelatedService
  */
-export class TagService extends BaseRelatedService<
+export class TagService extends BaseCrudRelatedService<
     TagType,
     TagModel,
     REntityTagModel,

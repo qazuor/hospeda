@@ -17,7 +17,7 @@ import type {
 } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
-import { BaseRelatedService } from '../../base/base.related-service';
+import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import {
     type Actor,
     type ServiceContext,
@@ -42,9 +42,9 @@ import {
 
 /**
  * Service for managing attractions. Implements business logic, permissions, and hooks for Attraction entities.
- * @extends BaseRelatedService
+ * @extends BaseCrudRelatedService
  */
-export class AttractionService extends BaseRelatedService<
+export class AttractionService extends BaseCrudRelatedService<
     AttractionType,
     AttractionModel,
     RDestinationAttractionModel,

@@ -1,10 +1,10 @@
 import type { BaseModel as BaseModelDB } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
-import { BaseService } from '../../src/base/base.service';
-import type { Actor, ServiceContext } from '../../src/types';
-import { ServiceError } from '../../src/types';
-import { serviceLogger } from '../../src/utils/service-logger';
+import { BaseCrudService } from '../../../src/base/base.crud.service';
+import type { Actor, ServiceContext } from '../../../src/types';
+import { ServiceError } from '../../../src/types';
+import { serviceLogger } from '../../../src/utils/service-logger';
 
 // Schemas and Types for testing
 export const TestEntitySchema = z.object({
@@ -34,7 +34,7 @@ export const SearchTestEntitySchema = z.object({
 });
 
 // The TestService class to be used in all tests
-export class TestService extends BaseService<
+export class TestService extends BaseCrudService<
     TestEntity,
     BaseModelDB<TestEntity>,
     typeof CreateTestEntitySchema,

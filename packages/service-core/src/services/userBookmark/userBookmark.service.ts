@@ -2,7 +2,7 @@ import { UserBookmarkModel } from '@repo/db';
 import type { UserBookmarkType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
-import { BaseService } from '../../base/base.service';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
@@ -24,9 +24,9 @@ import {
 /**
  * Service for managing user bookmarks (favorites).
  * Implements business logic, permissions, and hooks for UserBookmark entities.
- * @extends BaseService
+ * @extends BaseCrudService
  */
-export class UserBookmarkService extends BaseService<
+export class UserBookmarkService extends BaseCrudService<
     UserBookmarkType,
     UserBookmarkModel,
     typeof CreateUserBookmarkSchema,

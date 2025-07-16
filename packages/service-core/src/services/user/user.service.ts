@@ -7,7 +7,7 @@ import {
 import type { PermissionEnum, UserType } from '@repo/types';
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
-import { BaseService } from '../../base/base.service';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import {
@@ -33,7 +33,7 @@ import {
  * - Only super admin or admin can search/list/count users
  * - Only super admin can manage roles and permissions
  */
-export class UserService extends BaseService<
+export class UserService extends BaseCrudService<
     UserType,
     UserModel,
     typeof UserSchema,

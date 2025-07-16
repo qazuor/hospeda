@@ -2,7 +2,7 @@ import { PostModel } from '@repo/db';
 import type { PostType, VisibilityEnum } from '@repo/types';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
-import { BaseService } from '../../base/base.service';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { generatePostSlug } from './post.helpers';
@@ -45,9 +45,9 @@ import {
 
 /**
  * Service for managing posts. Implements business logic, permissions, and hooks for Post entities.
- * @extends BaseService
+ * @extends BaseCrudService
  */
-export class PostService extends BaseService<
+export class PostService extends BaseCrudService<
     PostType,
     PostModel,
     typeof PostCreateInputSchema,

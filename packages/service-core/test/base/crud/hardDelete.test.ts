@@ -13,12 +13,12 @@ import type { BaseModel } from '@repo/db';
  */
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Actor } from '../../src/types';
-import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { createBaseModelMock } from '../utils/modelMockFactory';
-import { asMock } from '../utils/test-utils';
-import { MOCK_ENTITY_ID, mockAdminActor, mockEntity } from './base.service.mockData';
-import { type TestEntity, TestService } from './base.service.test.setup';
+import type { Actor } from '../../../src/types';
+import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { createBaseModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
+import { MOCK_ENTITY_ID, mockAdminActor, mockEntity } from '../base/base.service.mockData';
+import { type TestEntity, TestService } from '../base/base.service.test.setup';
 
 /**
  * Test suite for the `hardDelete` method of BaseService.

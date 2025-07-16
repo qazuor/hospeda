@@ -8,8 +8,8 @@ import type { BaseModel } from '@repo/db';
  */
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { createBaseModelMock } from '../utils/modelMockFactory';
+import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { createBaseModelMock } from '../../utils/modelMockFactory';
 import { mockActor, mockEntity } from './base.service.mockData';
 import { type TestEntity, TestService } from './base.service.test.setup';
 

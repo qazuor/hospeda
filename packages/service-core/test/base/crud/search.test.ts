@@ -15,11 +15,11 @@ import type { BaseModel } from '@repo/db';
 import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { createServiceTestInstance } from '../helpers/serviceTestFactory';
-import { createBaseModelMock } from '../utils/modelMockFactory';
-import { asMock } from '../utils/test-utils';
-import { mockAdminActor, mockEntity } from './base.service.mockData';
-import { type TestEntity, TestService } from './base.service.test.setup';
+import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
+import { createBaseModelMock } from '../../utils/modelMockFactory';
+import { asMock } from '../../utils/test-utils';
+import { mockAdminActor, mockEntity } from '../base/base.service.mockData';
+import { type TestEntity, TestService } from '../base/base.service.test.setup';
 
 // Extend the base search schema for more specific filter validation
 const SearchTestEntitySchemaWithFilters = z.object({

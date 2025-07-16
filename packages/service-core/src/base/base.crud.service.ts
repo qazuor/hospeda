@@ -47,7 +47,7 @@ interface NormalizerSet<TCreate, TUpdate, TSearch> {
  * @template TUpdateSchema The Zod schema for validating entity update input.
  * @template TSearchSchema The Zod schema for validating entity search input.
  */
-export abstract class BaseService<
+export abstract class BaseCrudService<
     TEntity extends { id: string; adminInfo?: AdminInfoType; deletedAt?: Date | null },
     TModel extends BaseModel<TEntity>,
     TCreateSchema extends AnyZodObject,

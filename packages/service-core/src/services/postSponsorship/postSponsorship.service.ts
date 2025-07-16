@@ -1,6 +1,6 @@
 import type { PostSponsorshipModel } from '@repo/db';
 import { PostSponsorshipModel as RealPostSponsorshipModel } from '@repo/db';
-import { BaseService } from '@repo/service-core';
+import { BaseCrudService } from '@repo/service-core';
 import type { PostSponsorshipType } from '@repo/types';
 import type { Actor, ServiceContext, ServiceLogger } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsorship.normalizers';
@@ -23,7 +23,7 @@ import {
  * Service for managing PostSponsorship entities.
  * Provides CRUD operations, search, and permission checks.
  */
-export class PostSponsorshipService extends BaseService<
+export class PostSponsorshipService extends BaseCrudService<
     PostSponsorshipType,
     PostSponsorshipModel,
     typeof CreatePostSponsorshipSchema,

@@ -1,7 +1,7 @@
 import { EventOrganizerModel } from '@repo/db/models/event/eventOrganizer.model';
 import type { EventOrganizerType, VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
-import { BaseService } from '../../base';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceLogger } from '../../types';
 import * as helpers from './eventOrganizer.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventOrganizer.normalizers';
@@ -18,9 +18,9 @@ import {
 
 /**
  * Service for managing event organizers. Implements business logic, permissions, and hooks for EventOrganizer entities.
- * @extends BaseService
+ * @extends BaseCrudService
  */
-export class EventOrganizerService extends BaseService<
+export class EventOrganizerService extends BaseCrudService<
     EventOrganizerType,
     EventOrganizerModel,
     typeof CreateEventOrganizerSchema,

@@ -1,6 +1,6 @@
 import type { PostSponsorModel } from '@repo/db';
 import { PostSponsorModel as RealPostSponsorModel } from '@repo/db';
-import { BaseService } from '@repo/service-core';
+import { BaseCrudService } from '@repo/service-core';
 import type { PostSponsorType } from '@repo/types';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceLogger } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsor.normalizers';
@@ -16,7 +16,7 @@ import {
  * Service for managing PostSponsor entities.
  * Provides CRUD operations, search, and permission checks.
  */
-export class PostSponsorService extends BaseService<
+export class PostSponsorService extends BaseCrudService<
     PostSponsorType,
     PostSponsorModel,
     typeof CreatePostSponsorSchema,

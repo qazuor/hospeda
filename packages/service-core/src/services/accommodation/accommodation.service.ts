@@ -7,7 +7,7 @@ import type {
 } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
-import { BaseService } from '../../base';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { DestinationService } from '../destination/destination.service';
@@ -48,10 +48,10 @@ import {
 
 /**
  * Provides accommodation-specific business logic, including creation, updates,
- * permissions, and other operations. It extends the generic `BaseService` to
+ * permissions, and other operations. It extends the generic `BaseCrudService` to
  * leverage a standardized service pipeline (validation, permissions, hooks, etc.).
  */
-export class AccommodationService extends BaseService<
+export class AccommodationService extends BaseCrudService<
     AccommodationType,
     AccommodationModel,
     typeof CreateAccommodationSchema,

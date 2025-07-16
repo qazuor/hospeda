@@ -9,7 +9,7 @@ import type {
 import { ServiceErrorCode, type VisibilityEnum } from '@repo/types';
 import type { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum';
 import type { z } from 'zod';
-import { BaseRelatedService } from '../../base/base.related-service';
+import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceContext, ServiceError, type ServiceLogger } from '../../types';
 import { generateAmenitySlug } from './amenity.helpers';
@@ -40,9 +40,9 @@ export type ServiceOutputAccommodations = ServiceOutput<{ accommodations: Accomm
 /**
  * Service for managing amenities and their relation to accommodations.
  * Implements CRUD and amenity-accommodation relation logic.
- * @extends BaseRelatedService
+ * @extends BaseCrudRelatedService
  */
-export class AmenityService extends BaseRelatedService<
+export class AmenityService extends BaseCrudRelatedService<
     AmenityType,
     AmenityModel,
     RAccommodationAmenityModel,

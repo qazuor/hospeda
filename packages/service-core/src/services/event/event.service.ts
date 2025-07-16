@@ -9,7 +9,7 @@ import type {
 } from '@repo/types';
 import { type EventType, PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
-import { BaseService } from '../../base/base.service';
+import { BaseCrudService } from '../../base/base.crud.service';
 import type { PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { type Actor, ServiceError, type ServiceLogger } from '../../types';
 import { generateEventSlug } from './event.helpers';
@@ -40,9 +40,9 @@ import {
 /**
  * Service for managing events.
  * Provides CRUD operations, search, and permission/lifecycle hooks for Event entities.
- * Extends BaseService for homogeneous validation, error handling, and logging.
+ * Extends BaseCrudService for homogeneous validation, error handling, and logging.
  */
-export class EventService extends BaseService<
+export class EventService extends BaseCrudService<
     EventType,
     EventModel,
     typeof EventCreateSchema,
