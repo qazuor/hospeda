@@ -1,4 +1,5 @@
 import type { BaseModel } from '@repo/db';
+import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import {
@@ -159,5 +160,20 @@ describe('BaseService: create', () => {
         expect(localModelMock.create).toHaveBeenCalledWith(
             expect.objectContaining({ normalized: true })
         );
+    });
+
+    it('should handle error thrown by create normalizer', async () => {
+        const modelMock = createBaseModelMock<TestEntity>();
+        class ServiceWithBadNormalizer extends TestService {
+            protected override normalizers = {
+                create: () => {
+                    throw new Error('Normalizer fail');
+                }
+            };
+        }
+        const service = createServiceTestInstance(ServiceWithBadNormalizer, modelMock);
+        const data = { name: 'New Entity', value: 456 };
+        const result = await service.create(mockAdminActor, data);
+        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 });
