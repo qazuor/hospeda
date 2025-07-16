@@ -61,7 +61,7 @@ export const posts: ReturnType<typeof pgTable> = pgTable(
         shares: integer('shares').notNull().default(0),
 
         isFeatured: boolean('is_featured').notNull().default(false),
-        lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -75,7 +75,7 @@ export const posts: ReturnType<typeof pgTable> = pgTable(
     (table) => ({
         posts_isNews_idx: index('posts_isNews_idx').on(table.isNews),
         posts_visibility_idx: index('posts_visibility_idx').on(table.visibility),
-        posts_lifecycle_idx: index('posts_lifecycle_idx').on(table.lifecycle),
+        posts_lifecycle_idx: index('posts_lifecycle_idx').on(table.lifecycleState),
         posts_relatedAccommodationId_idx: index('posts_relatedAccommodationId_idx').on(
             table.relatedAccommodationId
         ),

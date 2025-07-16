@@ -39,7 +39,7 @@ export const destinations: ReturnType<typeof pgTable> = pgTable(
         media: jsonb('media').$type<MediaType>().notNull(),
         isFeatured: boolean('is_featured').notNull().default(false),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
-        lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         reviewsCount: integer('reviews_count').notNull().default(0),
         averageRating: integer('average_rating').notNull().default(0),
         accommodationsCount: integer('accommodations_count').notNull().default(0),
@@ -57,7 +57,7 @@ export const destinations: ReturnType<typeof pgTable> = pgTable(
     (table) => ({
         destinations_isFeatured_idx: index('destinations_isFeatured_idx').on(table.isFeatured),
         destinations_visibility_idx: index('destinations_visibility_idx').on(table.visibility),
-        destinations_lifecycle_idx: index('destinations_lifecycle_idx').on(table.lifecycle),
+        destinations_lifecycle_idx: index('destinations_lifecycle_idx').on(table.lifecycleState),
         destinations_visibility_isFeatured_idx: index('destinations_visibility_isFeatured_idx').on(
             table.visibility,
             table.isFeatured

@@ -43,7 +43,7 @@ export const events: ReturnType<typeof pgTable> = pgTable(
         contact: jsonb('contact').$type<ContactInfoType>(),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         isFeatured: boolean('is_featured').notNull().default(false),
-        lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -57,7 +57,7 @@ export const events: ReturnType<typeof pgTable> = pgTable(
     (table) => ({
         events_isFeatured_idx: index('events_isFeatured_idx').on(table.isFeatured),
         events_visibility_idx: index('events_visibility_idx').on(table.visibility),
-        events_lifecycle_idx: index('events_lifecycle_idx').on(table.lifecycle),
+        events_lifecycle_idx: index('events_lifecycle_idx').on(table.lifecycleState),
         events_category_idx: index('events_category_idx').on(table.category),
         events_visibility_isFeatured_idx: index('events_visibility_isFeatured_idx').on(
             table.visibility,

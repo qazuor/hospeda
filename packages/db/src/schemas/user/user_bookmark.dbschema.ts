@@ -13,7 +13,7 @@ export const userBookmarks: ReturnType<typeof pgTable> = pgTable('user_bookmarks
     entityType: EntityTypePgEnum('entity_type').notNull(),
     name: text('name'),
     description: text('description'),
-    lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+    lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

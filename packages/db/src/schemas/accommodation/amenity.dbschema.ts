@@ -16,7 +16,7 @@ export const amenities: ReturnType<typeof pgTable> = pgTable(
         isBuiltin: boolean('is_builtin').notNull().default(false),
         isFeatured: boolean('is_featured').notNull().default(false),
         type: AmenitiesTypePgEnum('type').notNull(),
-        lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

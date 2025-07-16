@@ -21,7 +21,7 @@ export const postSponsorships: ReturnType<typeof pgTable> = pgTable('post_sponso
     fromDate: timestamp('from_date', { withTimezone: true }),
     toDate: timestamp('to_date', { withTimezone: true }),
     isHighlighted: boolean('is_highlighted').notNull().default(false),
-    lifecycle: LifecycleStatusPgEnum('lifecycle').notNull().default('ACTIVE'),
+    lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
