@@ -40,6 +40,8 @@ export class UserService extends BaseCrudService<
     typeof UpdateUserSchema,
     typeof UserFilterInputSchema
 > {
+    static readonly ENTITY_NAME = 'user';
+    protected readonly entityName = UserService.ENTITY_NAME;
     protected readonly model: UserModel;
     protected readonly schema = UserSchema;
     protected readonly filterSchema = UserFilterInputSchema;
@@ -50,13 +52,12 @@ export class UserService extends BaseCrudService<
         view: normalizeViewInput
     } as const;
     protected readonly logger: ServiceLogger;
-    protected readonly entityName = 'user';
     protected readonly createSchema = UserSchema;
     protected readonly updateSchema = UpdateUserSchema;
     protected readonly searchSchema = UserFilterInputSchema;
 
     constructor(ctx: ServiceContext, model?: UserModel) {
-        super(ctx);
+        super(ctx, UserService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = model ?? new UserModel();
     }

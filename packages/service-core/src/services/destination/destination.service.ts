@@ -54,7 +54,8 @@ export class DestinationService extends BaseCrudService<
     typeof UpdateDestinationSchema,
     typeof DestinationFilterInputSchema
 > {
-    protected readonly entityName = 'destination';
+    static readonly ENTITY_NAME = 'destination';
+    protected readonly entityName = DestinationService.ENTITY_NAME;
     protected readonly model: DestinationModel;
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = CreateDestinationSchema;
@@ -69,7 +70,7 @@ export class DestinationService extends BaseCrudService<
     private readonly accommodationModel: AccommodationModel = new AccommodationModel();
 
     constructor(ctx: ServiceContext, model?: DestinationModel) {
-        super(ctx);
+        super(ctx, DestinationService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = model ?? new DestinationModel();
     }

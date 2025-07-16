@@ -28,7 +28,8 @@ export class AccommodationReviewService extends BaseCrudService<
     typeof UpdateAccommodationReviewSchema,
     typeof UpdateAccommodationReviewSchema // TODO: Replace with actual search schema if different
 > {
-    protected readonly entityName = 'accommodationReview';
+    static readonly ENTITY_NAME = 'accommodationReview';
+    protected readonly entityName = AccommodationReviewService.ENTITY_NAME;
     protected readonly model: AccommodationReviewModel;
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = CreateAccommodationReviewSchema;
@@ -42,7 +43,7 @@ export class AccommodationReviewService extends BaseCrudService<
     private accommodationService: AccommodationService;
 
     constructor(ctx: ServiceContext) {
-        super(ctx);
+        super(ctx, AccommodationReviewService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = new AccommodationReviewModel();
         this.accommodationService = new AccommodationService(ctx);

@@ -1,7 +1,7 @@
 import type { AdminInfoType, UserId } from '@repo/types';
 import { ServiceErrorCode, VisibilityEnum } from '@repo/types';
-import type { ZodTypeAny } from 'zod';
-import { type AnyZodObject, z } from 'zod';
+import type { AnyZodObject } from 'zod';
+import { z } from 'zod';
 import {
     type Actor,
     type BaseModel,
@@ -9,21 +9,14 @@ import {
     type ServiceContext,
     ServiceError,
     type ServiceInput,
-    type ServiceLogger,
     type ServiceOutput
 } from '../types';
-import {
-    logError,
-    logMethodEnd,
-    logMethodStart,
-    normalizeAdminInfo,
-    validateActor,
-    validateEntity
-} from '../utils';
+import { normalizeAdminInfo, validateEntity } from '../utils';
+import { BaseService } from './base.service';
 
 type ListOptions = { page?: number; pageSize?: number };
 
-interface NormalizerSet<TCreate, TUpdate, TSearch> {
+type CrudNormalizers<TCreate, TUpdate, TSearch> = {
     create?: (data: TCreate, actor: Actor) => TCreate | Promise<TCreate>;
     update?: (data: TUpdate, actor: Actor) => TUpdate | Promise<TUpdate>;
     list?: (params: ListOptions, actor: Actor) => ListOptions | Promise<ListOptions>;
@@ -33,7 +26,7 @@ interface NormalizerSet<TCreate, TUpdate, TSearch> {
         actor: Actor
     ) => { field: string; value: unknown } | Promise<{ field: string; value: unknown }>;
     search?: (params: TSearch, actor: Actor) => TSearch | Promise<TSearch>;
-}
+};
 
 /**
  * Abstract base class for all services.
@@ -53,25 +46,14 @@ export abstract class BaseCrudService<
     TCreateSchema extends AnyZodObject,
     TUpdateSchema extends AnyZodObject,
     TSearchSchema extends AnyZodObject
+> extends BaseService<
+    CrudNormalizers<z.infer<TCreateSchema>, z.infer<TUpdateSchema>, z.infer<TSearchSchema>>
 > {
-    /**
-     * The name of the entity, used for logging and error messages.
-     * Must be defined by the concrete service class.
-     * @example 'accommodation'
-     */
-    protected abstract readonly entityName: string;
-
     /**
      * The Drizzle ORM model instance for database operations.
      * It must be initialized in the constructor of the concrete service class.
      */
     protected abstract readonly model: TModel;
-
-    /**
-     * The logger instance for this service.
-     * It must be initialized in the constructor of the concrete service class.
-     */
-    protected abstract readonly logger: ServiceLogger;
 
     /**
      * Zod schema for validating the input of the `create` method.
@@ -91,29 +73,21 @@ export abstract class BaseCrudService<
      */
     protected abstract readonly searchSchema: TSearchSchema;
 
-    /**
-     * An optional object containing normalization functions that are automatically
-     * applied by the BaseService before the lifecycle hooks (`_before...`) are called.
-     * @example
-     * protected normalizers = {
-     *   create: normalizeCreateInput,
-     *   update: normalizeUpdateInput,
-     * };
-     */
-    protected normalizers?: NormalizerSet<
+    protected declare normalizers?: CrudNormalizers<
         z.infer<TCreateSchema>,
         z.infer<TUpdateSchema>,
         z.infer<TSearchSchema>
     >;
 
     /**
-     * Initializes a new instance of the BaseService.
+     * Initializes a new instance of the BaseCrudService.
      * @param ctx - The service context, containing the logger.
+     * @param entityName - The name of the entity for logging and error messages.
      */
 
     // biome-ignore lint/complexity/noUselessConstructor: <explanation>
-    constructor(_ctx: ServiceContext) {
-        // No-op: concrete services assign properties.
+    constructor(ctx: ServiceContext, entityName: string) {
+        super(ctx, entityName);
     }
 
     // --- Permissions Hooks ---
@@ -582,7 +556,13 @@ export abstract class BaseCrudService<
             schema: this.updateSchema,
             execute: async (validData, validActor) => {
                 const updateId = id;
-                await this._getAndValidateEntity(updateId, validActor, this._canUpdate.bind(this));
+                await this._getAndValidateEntity(
+                    this.model,
+                    updateId,
+                    validActor,
+                    this.entityName,
+                    this._canUpdate.bind(this)
+                );
 
                 const normalizedData = this.normalizers?.update
                     ? await this.normalizers.update(validData, validActor)
@@ -781,12 +761,14 @@ export abstract class BaseCrudService<
             execute: async (_, validActor) => {
                 // 1. Fetch, validate entity and check permissions
                 const entity = await this._getAndValidateEntity(
+                    this.model,
                     id,
                     validActor,
+                    this.entityName,
                     this._canSoftDelete.bind(this)
                 );
                 // If entity is already deleted, do nothing.
-                if (entity.deletedAt) {
+                if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
                 // 2. Lifecycle Hook: Before
@@ -819,12 +801,14 @@ export abstract class BaseCrudService<
             execute: async (_, validActor) => {
                 // 1. Fetch, validate entity and check permissions
                 const entity = await this._getAndValidateEntity(
+                    this.model,
                     id,
                     validActor,
+                    this.entityName,
                     this._canHardDelete.bind(this)
                 );
                 // Early return if already deleted
-                if (entity.deletedAt) {
+                if ((entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
                 // 2. Lifecycle Hook: Before
@@ -855,12 +839,14 @@ export abstract class BaseCrudService<
             execute: async (_, validActor) => {
                 // 1. Fetch, validate entity and check permissions
                 const entity = await this._getAndValidateEntity(
+                    this.model,
                     id,
                     validActor,
+                    this.entityName,
                     this._canRestore.bind(this)
                 );
                 // Early return if already restored
-                if (!entity.deletedAt) {
+                if (!(entity as TEntity).deletedAt) {
                     return { count: 0 };
                 }
                 // 2. Lifecycle Hook: Before
@@ -1001,7 +987,13 @@ export abstract class BaseCrudService<
             schema: z.object({ visibility: z.nativeEnum(VisibilityEnum) }),
             execute: async (validData, validActor) => {
                 // 1. Fetch entity
-                const entity = await this._getAndValidateEntity(id, validActor, async () => {});
+                const entity = await this._getAndValidateEntity(
+                    this.model,
+                    id,
+                    validActor,
+                    this.entityName,
+                    async () => {}
+                );
                 if (!entity) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
@@ -1012,7 +1004,11 @@ export abstract class BaseCrudService<
 
                 // 2. Permission check (solo esta línea en try/catch)
                 try {
-                    await this._canUpdateVisibility(validActor, entity, validData.visibility);
+                    await this._canUpdateVisibility(
+                        validActor,
+                        { id: '' } as TEntity,
+                        validData.visibility
+                    );
                 } catch (err) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
@@ -1025,7 +1021,7 @@ export abstract class BaseCrudService<
                 let processedVisibility: VisibilityEnum;
                 try {
                     processedVisibility = await this._beforeUpdateVisibility(
-                        entity,
+                        { id: '' } as TEntity,
                         validData.visibility,
                         validActor
                     );
@@ -1105,8 +1101,10 @@ export abstract class BaseCrudService<
             schema: z.object({ id: z.string(), isFeatured: z.boolean(), actor: z.any() }),
             execute: async (validData, actor) => {
                 const entity = await this._getAndValidateEntity(
+                    this.model,
                     validData.id,
                     actor,
+                    this.entityName,
                     this._canUpdate.bind(this)
                 );
                 if (!('isFeatured' in entity)) {
@@ -1179,112 +1177,5 @@ export abstract class BaseCrudService<
                 return { adminInfo: normalized };
             }
         });
-    }
-
-    // --- PROTECTED ---
-
-    /**
-     * A protected wrapper that orchestrates the execution of a service operation.
-     * It standardizes top-level logging, actor validation, input schema validation,
-     * and centralized error handling, ensuring that all public methods have a
-     * consistent behavior and output.
-     *
-     * @template TInput The Zod schema for input validation.
-     * @template TOutput The expected output type of the `execute` function.
-     * @param options An object containing the `methodName`, `input`, `schema`, and the `execute` function.
-     * @param options.methodName The name of the public method being executed, for logging.
-     * @param options.input The raw input object, including the actor.
-     * @param options.schema The Zod schema to validate the input against.
-     * @param options.execute The core logic of the operation to be executed after validation.
-     * @returns A `ServiceOutput` object containing the result or a captured `ServiceError`.
-     */
-    protected async runWithLoggingAndValidation<TInput extends ZodTypeAny, TOutput>({
-        methodName,
-        input,
-        schema,
-        execute
-    }: {
-        methodName: string;
-        input: { actor: Actor } & Record<string, unknown>;
-        schema: TInput;
-        execute: (data: z.infer<TInput>, actor: Actor) => Promise<TOutput>;
-    }): Promise<ServiceOutput<TOutput>> {
-        const { actor, ...params } = input;
-        this.logMethodStart(methodName, params, actor);
-        try {
-            validateActor(actor);
-            let validationResult: import('zod').SafeParseReturnType<unknown, unknown>;
-            try {
-                validationResult = await schema.safeParseAsync(params);
-            } catch (zodError) {
-                const error = new ServiceError(
-                    ServiceErrorCode.VALIDATION_ERROR,
-                    'Invalid input data provided.',
-                    zodError instanceof Error ? zodError.message : zodError
-                );
-                logError(`${this.entityName}.${methodName}`, error, params, actor);
-                return { error };
-            }
-            if (!validationResult.success) {
-                const error = new ServiceError(
-                    ServiceErrorCode.VALIDATION_ERROR,
-                    'Invalid input data provided.',
-                    validationResult.error.flatten()
-                );
-                logError(`${this.entityName}.${methodName}`, error, params, actor);
-                return { error };
-            }
-            const validData = validationResult.data;
-            const result = await execute(validData, actor);
-            logMethodEnd(`${this.entityName}.${methodName}`, result);
-            return { data: result };
-        } catch (error) {
-            if (error instanceof ServiceError) {
-                logError(`${this.entityName}.${methodName}`, error, params, actor);
-                return { error };
-            }
-
-            const serviceError = new ServiceError(
-                ServiceErrorCode.INTERNAL_ERROR,
-                'An unexpected error occurred.',
-                error
-            );
-            logError(`${this.entityName}.${methodName}`, serviceError, params, actor);
-            return { error: serviceError };
-        }
-    }
-
-    /**
-     * Fetches an entity by ID, validates its existence, and checks permissions.
-     * This is a utility method to reduce boilerplate in update/delete/restore operations.
-     * It ensures that an entity exists and the actor has permission before proceeding.
-     * @param id The ID of the entity to fetch.
-     * @param actor The actor performing the action.
-     * @param permissionCheck A function that performs the required permission check. It should throw a `ServiceError` if the check fails.
-     * @returns The validated, non-null entity.
-     * @throws {ServiceError} if the entity is not found or if the permission check fails.
-     * @protected
-     */
-    protected async _getAndValidateEntity(
-        id: string,
-        actor: Actor,
-        permissionCheck: (actor: Actor, entity: TEntity) => Promise<void> | void = async () =>
-            Promise.resolve()
-    ): Promise<TEntity> {
-        const entityOrNull = await this.model.findById(id);
-        // validateEntity lanza si no existe, así que entity nunca es null
-        const entity = validateEntity(entityOrNull, this.entityName);
-        await Promise.resolve(permissionCheck(actor, entity));
-        return entity;
-    }
-
-    /**
-     * Logs the start of a service method execution.
-     * @param method The full method name (e.g., 'accommodation.create').
-     * @param input The input data for the method.
-     * @param actor The actor performing the action.
-     */
-    private logMethodStart(method: string, input: unknown, actor: Actor): void {
-        logMethodStart(`${this.entityName}.${method}`, input, actor);
     }
 }

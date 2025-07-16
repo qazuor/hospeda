@@ -50,7 +50,8 @@ export class AmenityService extends BaseCrudRelatedService<
     typeof UpdateAmenitySchema,
     typeof SearchAmenitySchema
 > {
-    protected readonly entityName = 'amenity';
+    static readonly ENTITY_NAME = 'amenity';
+    protected readonly entityName = AmenityService.ENTITY_NAME;
     protected readonly model: AmenityModel;
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = CreateAmenitySchema;
@@ -64,7 +65,7 @@ export class AmenityService extends BaseCrudRelatedService<
         relatedModel?: RAccommodationAmenityModel,
         accommodationModel?: AccommodationModel
     ) {
-        super(ctx, relatedModel);
+        super(ctx, AmenityService.ENTITY_NAME, relatedModel);
         this.logger = ctx.logger;
         this.model = model ?? new AmenityModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();

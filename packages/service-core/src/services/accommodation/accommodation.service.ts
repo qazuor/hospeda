@@ -58,10 +58,8 @@ export class AccommodationService extends BaseCrudService<
     typeof UpdateAccommodationSchema,
     typeof SearchAccommodationSchema
 > {
-    /**
-     * @inheritdoc
-     */
-    protected readonly entityName = 'accommodation';
+    static readonly ENTITY_NAME = 'accommodation';
+    protected readonly entityName = AccommodationService.ENTITY_NAME;
     /**
      * @inheritdoc
      */
@@ -104,7 +102,7 @@ export class AccommodationService extends BaseCrudService<
      * @param ctx - The service context, containing the logger.
      */
     constructor(ctx: ServiceContext, model?: AccommodationModel) {
-        super(ctx);
+        super(ctx, AccommodationService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = model ?? new AccommodationModel();
         this.destinationService = new DestinationService(ctx);
