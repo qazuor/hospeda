@@ -818,18 +818,23 @@ export abstract class BaseService<
             schema: z.object({}),
             execute: async (_, validActor) => {
                 // 1. Fetch, validate entity and check permissions
-                await this._getAndValidateEntity(id, validActor, this._canHardDelete.bind(this));
-
+                const entity = await this._getAndValidateEntity(
+                    id,
+                    validActor,
+                    this._canHardDelete.bind(this)
+                );
+                // Early return if already deleted
+                if (entity.deletedAt) {
+                    return { count: 0 };
+                }
                 // 2. Lifecycle Hook: Before
                 const processedId = await this._beforeHardDelete(id, validActor);
-
                 // 3. Main logic
                 const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
                 const result = { count: await this.model.hardDelete(where as any) };
-
                 // 4. Lifecycle Hook: After
-                return this._afterHardDelete(result, validActor);
+                return await this._afterHardDelete(result, validActor);
             }
         });
     }
@@ -859,14 +864,46 @@ export abstract class BaseService<
                     return { count: 0 };
                 }
                 // 2. Lifecycle Hook: Before
-                const processedId = await this._beforeRestore(id, validActor);
+                let processedId: string;
+                try {
+                    processedId = await this._beforeRestore(id, validActor);
+                } catch (err) {
+                    if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
+                        throw err;
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Error in _beforeRestore hook',
+                        err
+                    );
+                }
                 // 3. Main logic
-                // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const count = await this.model.restore({ id: processedId } as any);
+                let count: number;
+                try {
+                    // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
+                    count = await this.model.restore({ id: processedId } as any);
+                } catch (err) {
+                    if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
+                        throw err;
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Error in model.restore',
+                        err
+                    );
+                }
                 const result = { count };
                 // 4. Lifecycle Hook: After
-                const after = await this._afterRestore(result, validActor);
-                return after;
+                try {
+                    await this._afterRestore(result, validActor);
+                } catch (err) {
+                    if (err instanceof ServiceError && err.code === ServiceErrorCode.INTERNAL_ERROR)
+                        throw err;
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Error in _afterRestore hook',
+                        err
+                    );
+                }
+                return result;
             }
         });
     }
