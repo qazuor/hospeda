@@ -44,7 +44,8 @@ export class FeatureService extends BaseCrudRelatedService<
     typeof UpdateFeatureSchema,
     typeof SearchFeatureSchema
 > {
-    public readonly entityName = 'feature';
+    static readonly ENTITY_NAME = 'feature';
+    protected readonly entityName = FeatureService.ENTITY_NAME;
     public readonly model: FeatureModel;
     public readonly logger: ServiceLogger;
     public readonly createSchema = CreateFeatureSchema;
@@ -58,7 +59,7 @@ export class FeatureService extends BaseCrudRelatedService<
         relatedModel?: RAccommodationFeatureModel,
         accommodationModel?: AccommodationModel
     ) {
-        super(ctx, relatedModel);
+        super(ctx, FeatureService.ENTITY_NAME, relatedModel);
         this.logger = ctx.logger;
         this.model = model ?? new FeatureModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();

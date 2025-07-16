@@ -27,7 +27,8 @@ export class EventOrganizerService extends BaseCrudService<
     typeof UpdateEventOrganizerSchema,
     typeof SearchEventOrganizerSchema
 > {
-    protected readonly entityName = 'eventOrganizer';
+    static readonly ENTITY_NAME = 'eventOrganizer';
+    protected readonly entityName = EventOrganizerService.ENTITY_NAME;
     protected readonly model: EventOrganizerModel;
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = CreateEventOrganizerSchema;
@@ -46,7 +47,7 @@ export class EventOrganizerService extends BaseCrudService<
     protected readonly helpers = helpers;
 
     constructor(ctx: ServiceContext, model?: EventOrganizerModel) {
-        super(ctx);
+        super(ctx, EventOrganizerService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = model ?? new EventOrganizerModel();
     }

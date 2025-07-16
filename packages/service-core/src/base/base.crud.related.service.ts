@@ -5,7 +5,7 @@ import { BaseCrudService } from './base.crud.service';
 
 /**
  * Abstract base class for services that manage entities with related models (e.g., tag relations).
- * Extends BaseService and adds a strongly-typed relatedModel property for handling relations.
+ * Extends BaseCrudService and adds a strongly-typed relatedModel property for handling relations.
  *
  * @template TEntity The primary entity type this service manages.
  * @template TModel The Drizzle ORM model type for the entity.
@@ -29,12 +29,12 @@ export abstract class BaseCrudRelatedService<
     protected readonly relatedModel: TRelatedModel;
 
     /**
-     * Initializes a new instance of the BaseRelatedService.
-     * @param ctx - The service context, containing the logger.
-     * @param relatedModel - Optional related model instance (for testing/mocking).
+     * @param ctx - Service context
+     * @param entityName - Name of the entity (homogeneous, passed to super)
+     * @param relatedModel - Optional related model instance
      */
-    constructor(ctx: ServiceContext, relatedModel?: TRelatedModel) {
-        super(ctx);
+    constructor(ctx: ServiceContext, entityName: string, relatedModel?: TRelatedModel) {
+        super(ctx, entityName);
         this.relatedModel = relatedModel ?? this.createDefaultRelatedModel();
     }
 

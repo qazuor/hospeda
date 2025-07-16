@@ -54,7 +54,8 @@ export class PostService extends BaseCrudService<
     typeof PostUpdateSchema,
     typeof PostFilterInputSchema
 > {
-    public readonly entityName = 'post';
+    static readonly ENTITY_NAME = 'post';
+    protected readonly entityName = PostService.ENTITY_NAME;
     public readonly model: PostModel;
     public readonly logger: ServiceLogger;
     public readonly createSchema = PostCreateInputSchema;
@@ -73,7 +74,7 @@ export class PostService extends BaseCrudService<
      * @param model - Optional PostModel instance (for testing/mocking).
      */
     constructor(ctx: ServiceContext, model?: PostModel) {
-        super(ctx);
+        super(ctx, PostService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = model ?? new PostModel();
     }

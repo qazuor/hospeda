@@ -33,7 +33,8 @@ export class UserBookmarkService extends BaseCrudService<
     typeof UpdateUserBookmarkSchema,
     typeof ListBookmarksByUserInputSchema
 > {
-    protected readonly entityName = 'userBookmark';
+    static readonly ENTITY_NAME = 'userBookmark';
+    protected readonly entityName = UserBookmarkService.ENTITY_NAME;
     protected readonly model: UserBookmarkModel;
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = CreateUserBookmarkSchema;
@@ -45,7 +46,7 @@ export class UserBookmarkService extends BaseCrudService<
     };
 
     constructor(ctx: ServiceContext, model?: UserBookmarkModel) {
-        super(ctx);
+        super(ctx, UserBookmarkService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = model ?? new UserBookmarkModel();
     }

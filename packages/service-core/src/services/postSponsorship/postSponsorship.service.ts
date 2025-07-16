@@ -30,7 +30,8 @@ export class PostSponsorshipService extends BaseCrudService<
     typeof UpdatePostSponsorshipSchema,
     typeof SearchPostSponsorshipSchema
 > {
-    public readonly entityName = 'postSponsorship';
+    static readonly ENTITY_NAME = 'postSponsorship';
+    protected readonly entityName = PostSponsorshipService.ENTITY_NAME;
     public readonly model: PostSponsorshipModel;
     public readonly logger: ServiceLogger;
     public readonly createSchema = CreatePostSponsorshipSchema;
@@ -42,7 +43,7 @@ export class PostSponsorshipService extends BaseCrudService<
     };
 
     constructor(ctx: ServiceContext, model?: PostSponsorshipModel) {
-        super(ctx);
+        super(ctx, PostSponsorshipService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = model ?? new RealPostSponsorshipModel();
     }

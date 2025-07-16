@@ -49,7 +49,8 @@ export class EventService extends BaseCrudService<
     typeof EventUpdateSchema,
     typeof EventFilterInputSchema
 > {
-    protected readonly entityName = 'event';
+    static readonly ENTITY_NAME = 'event';
+    protected readonly entityName = EventService.ENTITY_NAME;
     protected readonly model: EventModel;
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = EventCreateSchema;
@@ -57,7 +58,7 @@ export class EventService extends BaseCrudService<
     protected readonly searchSchema = EventFilterInputSchema;
 
     constructor(ctx: ServiceContext & { model?: EventModel }) {
-        super(ctx);
+        super(ctx, EventService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = ctx.model ?? new EventModel();
     }

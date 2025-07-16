@@ -52,10 +52,8 @@ export class TagService extends BaseCrudRelatedService<
     typeof UpdateTagSchema,
     typeof SearchTagSchema
 > {
-    /**
-     * The entity name for logging and error messages.
-     */
-    protected readonly entityName = 'tag';
+    static readonly ENTITY_NAME = 'tag';
+    protected readonly entityName = TagService.ENTITY_NAME;
     /**
      * The database model for Tag.
      */
@@ -89,7 +87,7 @@ export class TagService extends BaseCrudRelatedService<
      * @param relatedModel - Optional REntityTagModel instance (for testing/mocking).
      */
     constructor(ctx: ServiceContext, model?: TagModel, relatedModel?: REntityTagModel) {
-        super(ctx, relatedModel);
+        super(ctx, TagService.ENTITY_NAME, relatedModel);
         this.logger = ctx.logger;
         this.model = model ?? new TagModel();
     }

@@ -52,7 +52,8 @@ export class AttractionService extends BaseCrudRelatedService<
     typeof UpdateAttractionSchema,
     typeof SearchAttractionSchema
 > {
-    public readonly entityName = 'attraction';
+    static readonly ENTITY_NAME = 'attraction';
+    protected readonly entityName = AttractionService.ENTITY_NAME;
     public readonly model: AttractionModel;
     public readonly logger: ServiceLogger;
     public readonly createSchema = CreateAttractionSchema;
@@ -72,7 +73,7 @@ export class AttractionService extends BaseCrudRelatedService<
         relatedModel?: RDestinationAttractionModel,
         destinationModel?: DestinationModel
     ) {
-        super(ctx, relatedModel);
+        super(ctx, AttractionService.ENTITY_NAME, relatedModel);
         this.logger = ctx.logger;
         this.model = model ?? new AttractionModel();
         this.destinationModel = destinationModel ?? new DestinationModel();

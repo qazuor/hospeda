@@ -29,7 +29,8 @@ export class EventLocationService extends BaseCrudService<
     typeof UpdateEventLocationSchema,
     typeof SearchEventLocationSchema
 > {
-    protected readonly entityName = 'eventLocation';
+    static readonly ENTITY_NAME = 'eventLocation';
+    protected readonly entityName = EventLocationService.ENTITY_NAME;
     protected readonly model: EventLocationModel;
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = CreateEventLocationSchema;
@@ -47,7 +48,7 @@ export class EventLocationService extends BaseCrudService<
     };
 
     constructor(ctx: ServiceContext, model?: EventLocationModel) {
-        super(ctx);
+        super(ctx, EventLocationService.ENTITY_NAME);
         this.logger = ctx.logger;
         this.model = model ?? new EventLocationModel();
     }
