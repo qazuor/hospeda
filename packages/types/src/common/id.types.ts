@@ -2,8 +2,6 @@
 export type Brand<K, T> = K & { __brand: T };
 
 export type UserId = Brand<string, 'UserId'>;
-export type RoleId = Brand<string, 'RoleId'>;
-export type PermissionId = Brand<string, 'PermissionId'>;
 export type UserBookmarkId = Brand<string, 'UserBookmarkId'>;
 
 export type TagId = Brand<string, 'TagId'>;
@@ -27,4 +25,3 @@ export type AccommodationFaqId = Brand<string, 'AccommodationFaqId'>;
 export type AccommodationIaDataId = Brand<string, 'AccommodationIaDataId'>;
 export type AccommodationReviewId = Brand<string, 'AccommodationReviewId'>;
 export type DestinationReviewId = Brand<string, 'DestinationReviewId'>;
-export type UserRoleId = Brand<string, 'UserRoleId'>;

@@ -11,15 +11,12 @@ import type {
     EventLocationId,
     EventOrganizerId,
     FeatureId,
-    PermissionId,
     PostId,
     PostSponsorId,
     PostSponsorshipId,
-    RoleId,
     TagId,
     UserBookmarkId,
-    UserId,
-    UserRoleId
+    UserId
 } from '@repo/types';
 import { z } from 'zod';
 
@@ -33,10 +30,7 @@ const BaseIdSchema = z
 export const IdSchema = BaseIdSchema;
 
 export const UserIdSchema = BaseIdSchema.transform((val) => val as UserId);
-export const RoleIdSchema = BaseIdSchema.transform((val) => val as RoleId);
-export const PermissionIdSchema = BaseIdSchema.transform((val) => val as PermissionId);
 export const UserBookmarkIdSchema = BaseIdSchema.transform((val) => val as UserBookmarkId);
-export const UserRoleIdSchema = BaseIdSchema.transform((val) => val as UserRoleId);
 
 export const TagIdSchema = BaseIdSchema.transform((val) => val as TagId);
 

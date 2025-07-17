@@ -1,4 +1,3 @@
-import type { PermissionId, RoleId, RolePermissionAssignmentType } from '@repo/types';
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/client';
@@ -10,9 +9,6 @@ vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new RRolePermissionModel();
-
-const asRoleId = (id: string) => id as unknown as RoleId;
-const asPermissionId = (id: string) => id as unknown as PermissionId;
 
 /**
  * Test suite for RRolePermissionModel.
@@ -28,10 +24,8 @@ describe('RRolePermissionModel', () => {
     it('findWithRelations - relación encontrada', async () => {
         const rolePermissionMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockResolvedValue({
-                roleId: asRoleId('a'),
-                permissionId: asPermissionId('b'),
-                role: {},
-                permission: {}
+                role: RoleEnum.ADMIN,
+                permission: PermissionEnum.USER_CREATE
             })
         });
         vi.mocked(getDb).mockReturnValue({
@@ -46,9 +40,9 @@ describe('RRolePermissionModel', () => {
     });
 
     it('findWithRelations - sin relaciones, fallback a findOne', async () => {
-        const dummy: RolePermissionAssignmentType = {
+        const dummy = {
             role: RoleEnum.ADMIN,
-            permission: PermissionEnum.USER_READ_ALL
+            permission: PermissionEnum.USER_CREATE
         };
         const spy = vi.spyOn(model, 'findOne').mockResolvedValue(dummy);
         const result = await model.findWithRelations({ role: RoleEnum.ADMIN }, {});
