@@ -1,0 +1,147 @@
+{
+    "id": "068-accommodation-san-jose-hotel-rincon-relajante-hotel-san_jose",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "rincon-relajante-hotel-san_jose",
+    "name": "rincon-relajante-hotel",
+    "summary": "Encuentra la tranquilidad y el descanso en Rincón Relajante Hotel, ubicado en San José.",
+    "type": "HOTEL",
+    "description": "Encuentra la tranquilidad y el descanso en Rincón Relajante Hotel, ubicado en San José. Ideal para quienes buscan un lugar sereno para relajarse y explorar esta apacible ciudad y el Parque Nacional El Palmar. Ofrece un ambiente calmado y servicios pensados para tu bienestar.\n\nEl hotel cuenta con 18 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto al centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Rincón Relajante es la opción ideal para una estancia dedicada al descanso y al bienestar en San José.",
+    "ownerId": "016-user-daniel-jimenez",
+    "destinationId": "009-destination-san-jose",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "hola@rinconrelajantehotel.com.ar",
+        "mobilePhone": "+549344715134268",
+        "homePhone": "+543447186908",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/rinconrelajante",
+        "instagram": "https://instagram.com/rinconrelajante",
+        "twitter": "https://twitter.com/rinconrelajante"
+    },
+    "price": {
+        "basePrice": {
+            "price": 21000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2847",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.1941",
+            "lng": "-58.7417"
+        },
+        "street": "Calle 3 de Febrero",
+        "number": "1100",
+        "city": "San José",
+        "neighborhood": "Centro Ampliado"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada del hotel",
+            "description": "Vista exterior de Rincón Relajante Hotel",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación triple",
+                "description": "Habitación con cama matrimonial y una individual",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 40,
+        "minNights": 1,
+        "maxNights": 14,
+        "bedrooms": 18,
+        "beds": 30,
+        "bathrooms": 18,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina exterior disponible en temporada",
+            "Desayuno incluido",
+            "Estacionamiento descubierto gratuito",
+            "Ambiente tranquilo",
+            "Cerca del Parque Nacional El Palmar"
+        ]
+    },
+    "seo": {
+        "title": "Rincón Relajante Hotel - Tranquilidad y piscina en San José | El Palmar",
+        "description": "Hotel con jardín y piscina en San José. Ideal para relax, cerca Parque Nacional El Palmar. Desayuno incluido.",
+        "keywords": [
+            "hotel",
+            "san josé",
+            "entre ríos",
+            "piscina",
+            "tranquilidad",
+            "el palmar",
+            "alojamiento"
+        ]
+    },
+    "featureIds": [
+        "024-feature-private_pool",
+        "025-feature-quiet_location",
+        "018-feature-nature_proximity"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "018-amenity-refrigerator",
+        "011-amenity-hair_dryer",
+        "020-amenity-smoke_detector",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}

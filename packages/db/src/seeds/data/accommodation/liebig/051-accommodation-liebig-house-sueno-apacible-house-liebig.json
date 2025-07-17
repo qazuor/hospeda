@@ -1,0 +1,143 @@
+{
+    "id": "051-accommodation-liebig-house-sueno-apacible-house-liebig",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sueno-apacible-house-liebig",
+    "name": "sueno-apacible-house",
+    "summary": "Disfruta de la paz y el espacio en Sueño Apacible House, una cómoda casa ubicada en un barrio tranquilo de Liebig.",
+    "type": "HOUSE",
+    "description": "Disfruta de la paz y el espacio en Sueño Apacible House, una cómoda casa ubicada en un barrio tranquilo de Liebig. Ideal para familias o grupos de amigos que buscan un lugar propio para descansar y disfrutar de la serenidad del pueblo histórico y el río Uruguay.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio funcional. Está equipada con lo esencial para una estadía confortable. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con parrilla, ideal para disfrutar de asados al aire libre. La ubicación en un barrio tranquilo garantiza serenidad. Estás a una distancia conveniente en auto o caminando de los restos históricos del Frigorífico Liebig y del acceso al río. Una opción práctica y apacible para tu estadía en Liebig.",
+    "ownerId": "037-user-rosario-navarro",
+    "destinationId": "007-destination-liebig",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "info@suenoapaciblehouse.com.ar",
+        "mobilePhone": "+549345615656012",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@suenoapaciblehouse.com.ar",
+        "website": "https://suenoapaciblehouse.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 17000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 3200,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0542",
+            "lng": "-58.1069"
+        },
+        "street": "Calle Los Ciruelos",
+        "number": "88",
+        "city": "Liebig",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+            "caption": "Casa en Liebig",
+            "description": "Vista exterior de Sueño Apacible House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la propiedad",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
+                "caption": "Living comedor",
+                "description": "Espacio integrado de living y comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 5,
+        "minNights": 2,
+        "maxNights": 15,
+        "bedrooms": 2,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio residencial tranquilo",
+            "Parrilla exterior",
+            "Ideal para familias",
+            "Cerca del Frigorífico Histórico y el río"
+        ]
+    },
+    "seo": {
+        "title": "Sueño Apacible House - Casa en Liebig para familias | Frigorífico y Río",
+        "description": "Casa cómoda para 5 personas en Liebig. Ideal familias. Parrilla, jardín. Cerca del Frigorífico Histórico y río Uruguay.",
+        "keywords": [
+            "casa",
+            "liebig",
+            "entre ríos",
+            "familiar",
+            "tranquilo",
+            "parrilla",
+            "frigorífico liebig",
+            "río uruguay"
+        ]
+    },
+    "featureIds": [
+        "001-feature-bbq_area",
+        "023-feature-private_garden",
+        "014-feature-historical_proximity",
+        "027-feature-river_proximity"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}

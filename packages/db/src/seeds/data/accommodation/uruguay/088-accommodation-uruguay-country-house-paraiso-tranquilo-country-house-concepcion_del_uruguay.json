@@ -1,0 +1,151 @@
+{
+    "id": "088-accommodation-uruguay-country-house-paraiso-tranquilo-country-house-concepcion_del_uruguay",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "paraiso-tranquilo-country-house-concepcion_del_uruguay",
+    "name": "paraiso-tranquilo-country-house",
+    "summary": "Buscas paz y naturaleza? Encuéntralas en Paraíso Tranquilo, una hermosa casa de campo en las cercanías de Concepción del Uruguay.",
+    "type": "COUNTRY_HOUSE",
+    "description": "Buscas paz y naturaleza? Encuéntralas en Paraíso Tranquilo, una hermosa casa de campo en las cercanías de Concepción del Uruguay. Rodeada de un entorno natural apacible, esta propiedad es el lugar ideal para desconectar, relajarse y disfrutar de la serenidad del campo entrerriano. Perfecta para familias o grupos pequeños que valoran la privacidad y el espacio al aire libre.\n\nLa casa ofrece un diseño funcional y acogedor, con dos dormitorios cómodos y dos baños completos. El living-comedor es un espacio luminoso con vistas al parque, ideal para descansar. La cocina está semi-integrada y equipada con los electrodomésticos básicos para tu estadía. La capacidad es para 5 personas.\n\nEl exterior es el corazón de Paraíso Tranquilo. Un amplio parque arbolado te invita a caminar, leer o simplemente disfrutar del aire fresco. Cuenta con una piscina para refrescarse en los días cálidos y un sector de parrilla para disfrutar de asados al aire libre. Es un entorno seguro y tranquilo para disfrutar de la naturaleza. Aunque ofrece privacidad, la casa está a una distancia razonable en auto del centro de Concepción del Uruguay, permitiéndote acceder a comercios y atracciones fácilmente. Un verdadero paraíso para quienes buscan tranquilidad.",
+    "ownerId": "023-user-beatriz-sanchez",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@paraisotranquilocountryhouse.com.ar",
+        "mobilePhone": "+549344215589665",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "reservas@paraisotranquilocountryhouse.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 24000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 4000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4906",
+            "lng": "-58.2309"
+        },
+        "street": "Camino al Ñandubay S/N",
+        "number": "S/N",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+            "caption": "Casa de campo con jardín",
+            "description": "Vista exterior de Paraíso Tranquilo Country House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la casa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Living",
+                "description": "Living-comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Piscina",
+                "description": "Piscina exterior",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
+                "caption": "Parrilla",
+                "description": "Sector de parrilla",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
+                "caption": "Parque",
+                "description": "Amplio parque arbolado",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "19:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 5,
+        "minNights": 2,
+        "maxNights": 14,
+        "bedrooms": 2,
+        "beds": 3,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Entorno rural tranquilo",
+            "Piscina privada",
+            "Parrilla exterior",
+            "Ideal para familias pequeñas"
+        ]
+    },
+    "seo": {
+        "title": "Paraíso Tranquilo - Casa de Campo en Concepción del Uruguay | Piscina",
+        "description": "Casa de campo para 5 personas cerca de Concepción del Uruguay. Entorno tranquilo, piscina, parrilla. Ideal para relax familiar.",
+        "keywords": [
+            "casa de campo",
+            "concepción del uruguay",
+            "entre ríos",
+            "rural",
+            "tranquilidad",
+            "piscina",
+            "familiar"
+        ]
+    },
+    "featureIds": [
+        "024-feature-private_pool",
+        "023-feature-private_garden",
+        "001-feature-bbq_area"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "027-tag-naturaleza",
+        "017-tag-familia",
+        "032-tag-relax",
+        "015-tag-ecoturismo",
+        "016-tag-entre-rios"
+    ]
+}

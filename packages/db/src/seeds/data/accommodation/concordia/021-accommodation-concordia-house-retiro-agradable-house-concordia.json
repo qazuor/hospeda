@@ -1,0 +1,153 @@
+{
+    "id": "021-accommodation-concordia-house-retiro-agradable-house-concordia",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "retiro-agradable-house-concordia",
+    "name": "retiro-agradable-house",
+    "summary": "Encuentra un espacio agradable y privado en Retiro Agradable House, una casa cómoda ubicada en un barrio tranquilo de Concordia.",
+    "type": "HOUSE",
+    "description": "Encuentra un espacio agradable y privado en Retiro Agradable House, una casa cómoda ubicada en un barrio tranquilo de Concordia. Ideal para familias o grupos de amigos que buscan un lugar propio para descansar y disfrutar, con fácil acceso a las atracciones de la ciudad y las termas.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio funcional para compartir. Está equipada con lo esencial para una estadía confortable, incluyendo aire acondicionado. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con césped y un sector de parrilla, perfecto para disfrutar de asados al aire libre. La ubicación en un barrio residencial garantiza tranquilidad. Estás a una distancia conveniente en auto del centro de Concordia, las Termas y el Lago de Salto Grande. Una opción práctica y agradable para tu estadía.",
+    "ownerId": "013-user-patricia-ruiz",
+    "destinationId": "003-destination-concordia",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "hola@retiroagradablehouse.com.ar",
+        "mobilePhone": "+54934515641336",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "contacto@retiroagradablehouse.com.ar"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/retiroagradablehouseok",
+        "instagram": "https://instagram.com/retiroagradablehouseok"
+    },
+    "price": {
+        "basePrice": {
+            "price": 18000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 3200,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3200",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.3980",
+            "lng": "-58.0218"
+        },
+        "street": "Calle Las Rosas",
+        "number": "55",
+        "city": "Concordia",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+            "caption": "Fachada de la casa",
+            "description": "Vista exterior de Retiro Agradable House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la propiedad",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
+                "caption": "Living comedor",
+                "description": "Espacio integrado de living y comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 5,
+        "minNights": 2,
+        "maxNights": 15,
+        "bedrooms": 2,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio residencial tranquilo",
+            "Parrilla exterior",
+            "Ideal para familias"
+        ]
+    },
+    "seo": {
+        "title": "Retiro Agradable House - Casa en Concordia para familias",
+        "description": "Casa cómoda para 5 personas en barrio tranquilo de Concordia. Parrilla, jardín. Cerca del centro y Termas.",
+        "keywords": [
+            "casa",
+            "concordia",
+            "entre ríos",
+            "familiar",
+            "tranquilo",
+            "parrilla",
+            "termas concordia"
+        ]
+    },
+    "featureIds": [
+        "001-feature-bbq_area",
+        "023-feature-private_garden"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [
+        {
+            "question": "¿Está cerca de las Termas de Concordia?",
+            "answer": "Las Termas de Concordia se encuentran a unos 10-15 minutos en auto desde la casa.",
+            "category": "location"
+        }
+    ],
+    "iaData": [],
+    "tagIds": [
+        "011-tag-cultura",
+        "022-tag-historia",
+        "017-tag-familia",
+        "027-tag-naturaleza",
+        "032-tag-relax",
+        "016-tag-entre-rios"
+    ]
+}

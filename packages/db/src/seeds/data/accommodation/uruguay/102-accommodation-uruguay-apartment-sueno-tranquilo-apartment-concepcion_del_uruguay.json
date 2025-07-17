@@ -1,0 +1,141 @@
+{
+    "id": "102-accommodation-uruguay-apartment-sueno-tranquilo-apartment-concepcion_del_uruguay",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sueno-tranquilo-apartment-concepcion_del_uruguay",
+    "name": "sueno-tranquilo-apartment",
+    "summary": "Encuentra la paz en Sueño Tranquilo Apartamento, un espacio moderno y sereno ubicado en un barrio residencial de Concepción del Uruguay.",
+    "type": "APARTMENT",
+    "description": "Encuentra la paz en Sueño Tranquilo Apartamento, un espacio moderno y sereno ubicado en un barrio residencial de Concepción del Uruguay. Ideal para quienes buscan descansar en un entorno apacible, con fácil acceso en pocos minutos al centro y a la costanera.\n\nEl apartamento cuenta con un dormitorio con cama doble, baño completo, y un living-comedor integrado con cocina equipada (heladera, microondas, anafe). Es un espacio funcional y cómodo para una estadía relajante de hasta 3 personas (con sofá cama en el living).\n\nUbicado en un edificio tranquilo, ofrece un retiro después de un día explorando la ciudad. Aunque no está en el corazón del centro, su ubicación permite acceder rápidamente en auto o transporte público a las principales atracciones de 'La Histórica', incluyendo el centro histórico, la costanera y las playas. Es una opción perfecta para quienes valoran el descanso en un ambiente tranquilo.",
+    "ownerId": "019-user-claudia-torres",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@suenotranquiloapartment.com.ar",
+        "mobilePhone": "+549344215471944",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@suenotranquiloapartment.com.ar"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/suenotranquiloapartment"
+    },
+    "price": {
+        "basePrice": {
+            "price": 12000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4880",
+            "lng": "-58.2337"
+        },
+        "street": "Calle Los Sauces",
+        "number": "789",
+        "floor": "2",
+        "apartment": "A",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio de living-comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 2,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio residencial tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Cerca de transporte público"
+        ]
+    },
+    "seo": {
+        "title": "Sueño Tranquilo - Apartamento sereno en Concepción del Uruguay",
+        "description": "Apartamento tranquilo y confortable en Concepción del Uruguay. Ideal para descanso. Cerca del centro y atracciones.",
+        "keywords": [
+            "apartamento",
+            "concepción del uruguay",
+            "entre ríos",
+            "tranquilo",
+            "descanso",
+            "parejas",
+            "alojamiento"
+        ]
+    },
+    "featureIds": [
+        "022-feature-private_entrance"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "017-tag-familia",
+        "039-tag-turismo",
+        "011-tag-cultura",
+        "032-tag-relax",
+        "016-tag-entre-rios"
+    ]
+}

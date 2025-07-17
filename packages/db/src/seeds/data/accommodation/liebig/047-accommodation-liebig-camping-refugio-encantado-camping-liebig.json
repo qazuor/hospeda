@@ -1,0 +1,136 @@
+{
+    "id": "047-accommodation-liebig-camping-refugio-encantado-camping-liebig",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "refugio-encantado-camping-liebig",
+    "name": "refugio-encantado-camping",
+    "summary": "Descubre la magia de acampar en Refugio Encantado Camping, un espacio único ubicado en un entorno natural exuberante cerca de Liebig, a orillas de un arroyo.",
+    "type": "CAMPING",
+    "description": "Descubre la magia de acampar en Refugio Encantado Camping, un espacio único ubicado en un entorno natural exuberante cerca de Liebig, a orillas de un arroyo. Ideal para campistas y amantes de la pesca, la tranquilidad y la naturaleza que buscan una experiencia auténtica.\n\nEl camping ofrece parcelas amplias con sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, pensado para disfrutar del arroyo y el entorno.\n\nSu ubicación sobre un arroyo ofrece acceso directo al agua, ideal para pesca y simplemente disfrutar del sonido. El entorno es muy tranquilo y natural. Estás a poca distancia del pueblo de Liebig y los restos del antiguo Frigorífico. Un lugar encantador para una aventura en la naturaleza.",
+    "ownerId": "026-user-gustavo-pena",
+    "destinationId": "007-destination-liebig",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "camping@refugioencantadocamping.com.ar",
+        "mobilePhone": "+549345615510372",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "reservas@refugioencantadocamping.com.ar",
+        "website": "https://refugioencantadocamping.tur.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 4200,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21,
+            "perPerson": 2000
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0440",
+            "lng": "-58.0936"
+        },
+        "street": "Camino al Arroyo S/N",
+        "number": "S/N",
+        "city": "Liebig",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+            "caption": "Camping junto al arroyo",
+            "description": "Vista del área de acampe con acceso al arroyo",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+                "caption": "Arroyo",
+                "description": "Acceso al arroyo",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
+                "caption": "Acampe",
+                "description": "Espacio para carpas con sombra",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
+                "caption": "Parcelas",
+                "description": "Vista de las parcelas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
+                "caption": "Baños",
+                "description": "Instalaciones sanitarias",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "12:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "19:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 35,
+        "minNights": 1,
+        "maxNights": 15,
+        "bathrooms": 2,
+        "smokingAllowed": true,
+        "extraInfo": [
+            "Parcelas con sombra y parrilla",
+            "Acceso directo al arroyo",
+            "Ideal para pesca y relax",
+            "Entorno natural"
+        ]
+    },
+    "seo": {
+        "title": "Refugio Encantado Camping - Naturaleza y arroyo en Liebig | Pesca",
+        "description": "Camping a orillas de un arroyo en Liebig. Ideal para pesca y relax. Parcelas con sombra y parrilla. Cerca del Frigorífico Histórico.",
+        "keywords": [
+            "camping",
+            "liebig",
+            "entre ríos",
+            "arroyo",
+            "pesca",
+            "naturaleza",
+            "acampar",
+            "historia"
+        ]
+    },
+    "featureIds": [
+        "026-feature-river_access",
+        "029-feature-shaded_area",
+        "001-feature-bbq_area",
+        "014-feature-historical_proximity"
+    ],
+    "amenityIds": [
+        "003-amenity-bbq_grill",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "El arroyo y su entorno",
+            "content": "El arroyo que bordea el camping es ideal para la pesca deportiva de especies de menor porte. Su entorno ofrece senderos naturales para caminatas cortas y la posibilidad de avistar aves de la zona. Es un espacio para relajarse y disfrutar del sonido del agua y la naturaleza.",
+            "category": "nature"
+        }
+    ],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}

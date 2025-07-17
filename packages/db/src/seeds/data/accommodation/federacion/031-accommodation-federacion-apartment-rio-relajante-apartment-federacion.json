@@ -1,0 +1,149 @@
+{
+    "id": "031-accommodation-federacion-apartment-rio-relajante-apartment-federacion",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "rio-relajante-apartment-federacion",
+    "name": "rio-relajante-apartment",
+    "summary": "Disfruta de la cercanía al lago y un ambiente relajado en Rio Relajante Apartamento, ubicado en una zona conveniente de Federación, a pocos minutos del Parque Termal y con acceso fácil a la costanera.",
+    "type": "APARTMENT",
+    "description": "Disfruta de la cercanía al lago y un ambiente relajado en Rio Relajante Apartamento, ubicado en una zona conveniente de Federación, a pocos minutos del Parque Termal y con acceso fácil a la costanera. Ideal para quienes buscan combinar el relax de las termas con la cercanía al espejo de agua.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional.\n\nSituado en un edificio moderno, ofrece un refugio tranquilo. Estás a pocos minutos en auto del Parque Termal y con acceso rápido a la costanera del Lago de Salto Grande. El centro de la ciudad también es accesible en poco tiempo. Una opción práctica y cómoda para tu visita a Federación.",
+    "ownerId": "033-user-alejandra-cortes",
+    "destinationId": "004-destination-federacion",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@riorelajanteapartment.com.ar",
+        "mobilePhone": "+549345615672432",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@riorelajanteapartment.com.ar",
+        "website": "https://riorelajanteapartment.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 13800,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2200,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0246",
+            "lng": "-57.9007"
+        },
+        "street": "Calle Paraná",
+        "number": "800",
+        "floor": "2",
+        "apartment": "C",
+        "city": "Federación",
+        "neighborhood": "Zona Costanera"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Cerca de la costanera del lago",
+            "Barrio tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Edificio con ascensor"
+        ]
+    },
+    "seo": {
+        "title": "Rio Relajante - Apartamento cerca del Lago en Federación | Cerca Termas",
+        "description": "Apartamento moderno y sereno en Federación. Cerca del Lago Salto Grande y Parque Termal. Ideal para parejas. Equipado.",
+        "keywords": [
+            "apartamento",
+            "federación",
+            "entre ríos",
+            "termas federación",
+            "lago salto grande",
+            "tranquilo",
+            "parejas"
+        ]
+    },
+    "featureIds": [
+        "022-feature-private_entrance",
+        "016-feature-lake_proximity"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit",
+        "007-amenity-elevator"
+    ],
+    "faqs": [
+        {
+            "question": "¿Está cerca de la costanera?",
+            "answer": "Sí, el apartamento se encuentra a pocas cuadras de la costanera del Lago de Salto Grande.",
+            "category": "location"
+        }
+    ],
+    "iaData": [],
+    "tagIds": [
+        "038-tag-termas",
+        "032-tag-relax",
+        "017-tag-familia",
+        "039-tag-turismo",
+        "011-tag-cultura",
+        "016-tag-entre-rios"
+    ]
+}

@@ -1,0 +1,152 @@
+{
+    "id": "024-accommodation-concordia-apartment-sueno-calido-apartment-concordia",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sueno-calido-apartment-concordia",
+    "name": "sueno-calido-apartment",
+    "summary": "Disfruta de la calidez y el confort en Sueño Cálido Apartamento, un espacio moderno ubicado en una zona residencial de Concordia.",
+    "type": "APARTMENT",
+    "description": "Disfruta de la calidez y el confort en Sueño Cálido Apartamento, un espacio moderno ubicado en una zona residencial de Concordia. Ideal para parejas o viajeros que buscan un lugar tranquilo y bien equipado para descansar, con fácil acceso a las termas y atracciones de la ciudad.\n\nEl apartamento cuenta con un dormitorio principal con cama doble, un baño completo, y un área de living-comedor integrada con cocina equipada (heladera, microondas, anafe). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es acogedora y funcional.\n\nSituado en un edificio moderno, ofrece un refugio cómodo. Estás a pocos minutos en auto de las Termas de Concordia y el centro de la ciudad. Es una base práctica y confortable para tu visita, ofreciendo la paz de un barrio residencial con la cercanía a los puntos de interés.",
+    "ownerId": "027-user-valeria-aguilar",
+    "destinationId": "003-destination-concordia",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "info@suenocalidoapartment.com.ar",
+        "mobilePhone": "+54934515170979",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@suenocalidoapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/suenocalidoapartment",
+        "instagram": "https://instagram.com/suenocalidoapartment",
+        "twitter": "https://twitter.com/suenocalidoapartment"
+    },
+    "price": {
+        "basePrice": {
+            "price": 12500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3200",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.3884",
+            "lng": "-58.0221"
+        },
+        "street": "Calle Los Fresnos",
+        "number": "150",
+        "floor": "3",
+        "apartment": "D",
+        "city": "Concordia",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio residencial tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Cerca de Termas y centro"
+        ]
+    },
+    "seo": {
+        "title": "Sueño Cálido - Apartamento cómodo en Concordia",
+        "description": "Apartamento moderno y confortable en Concordia. Ideal para parejas. Cerca de Termas y centro. Equipado y acogedor.",
+        "keywords": [
+            "apartamento",
+            "concordia",
+            "entre ríos",
+            "termas concordia",
+            "cómodo",
+            "parejas",
+            "equipado"
+        ]
+    },
+    "featureIds": [
+        "022-feature-private_entrance",
+        "025-feature-quiet_location"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [
+        {
+            "question": "¿Está cerca del centro?",
+            "answer": "El centro de Concordia se encuentra a unos 5-10 minutos en auto o transporte público.",
+            "category": "location"
+        }
+    ],
+    "iaData": [],
+    "tagIds": [
+        "011-tag-cultura",
+        "022-tag-historia",
+        "017-tag-familia",
+        "039-tag-turismo",
+        "038-tag-termas",
+        "032-tag-relax",
+        "016-tag-entre-rios"
+    ]
+}

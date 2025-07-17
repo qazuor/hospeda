@@ -1,0 +1,154 @@
+{
+    "id": "074-accommodation-ubajay-hotel-paraiso-natural-hotel-ubajay",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "paraiso-natural-hotel-ubajay",
+    "name": "paraiso-natural-hotel",
+    "summary": "Sumérgete en un ambiente natural en Paraíso Natural Hotel, ubicado en una zona tranquila de Ubajay, con un entorno verde cercano y acceso al Parque Nacional El Palmar.",
+    "type": "HOTEL",
+    "description": "Sumérgete en un ambiente natural en Paraíso Natural Hotel, ubicado en una zona tranquila de Ubajay, con un entorno verde cercano y acceso al Parque Nacional El Palmar. Ideal para quienes buscan confort y contacto directo con la naturaleza, con fácil acceso a la Ruta 14.\n\nEl hotel cuenta con 20 habitaciones confortables, muchas de ellas con vista al entorno natural. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para relajarse. El hotel ofrece desayuno incluido en la tarifa, servido en un comedor con vista al exterior. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder fácilmente al centro de Ubajay y es una excelente base para visitar el Parque Nacional El Palmar, que se encuentra a pocos minutos en auto. Paraíso Natural Hotel es la opción ideal para una estancia relajante en contacto con la belleza natural y el principal atractivo de la zona.",
+    "ownerId": "022-user-ricardo-delgado",
+    "destinationId": "010-destination-ubajay",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "hola@paraisonaturalhotel.com.ar",
+        "mobilePhone": "+549344715149891",
+        "homePhone": "+543447548382",
+        "website": "https://paraisonaturalhotel.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/paraisonaturalhotel",
+        "instagram": "https://instagram.com/paraisonaturalhotel",
+        "twitter": "https://twitter.com/paraisonaturalhotel"
+    },
+    "price": {
+        "basePrice": {
+            "price": 22000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2845",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.3554",
+            "lng": "-58.3014"
+        },
+        "street": "Avenida Las Palmeras",
+        "number": "150",
+        "city": "Ubajay",
+        "neighborhood": "Zona Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada y entorno natural del hotel",
+            "description": "Vista exterior de Paraíso Natural Hotel rodeado de vegetación",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium con vista al entorno",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación triple",
+                "description": "Habitación con cama matrimonial y una individual",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador con vista al jardín",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 40,
+        "minNights": 1,
+        "maxNights": 14,
+        "bedrooms": 20,
+        "beds": 32,
+        "bathrooms": 20,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina exterior disponible en temporada",
+            "Desayuno incluido",
+            "Estacionamiento descubierto gratuito",
+            "Entorno natural cercano",
+            "Cerca del Parque Nacional El Palmar"
+        ]
+    },
+    "seo": {
+        "title": "Paraíso Natural Hotel - Naturaleza y piscina en Ubajay | El Palmar",
+        "description": "Hotel con jardín y piscina en Ubajay. Ideal para relax, cerca del Parque Nacional El Palmar. Desayuno incluido.",
+        "keywords": [
+            "hotel",
+            "ubajay",
+            "entre ríos",
+            "el palmar",
+            "piscina",
+            "naturaleza",
+            "alojamiento"
+        ]
+    },
+    "featureIds": [
+        "024-feature-private_pool",
+        "018-feature-nature_proximity",
+        "017-feature-national_park_proximity"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "018-amenity-refrigerator",
+        "011-amenity-hair_dryer",
+        "020-amenity-smoke_detector",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia está el Parque Nacional El Palmar?",
+            "answer": "El Parque Nacional El Palmar se encuentra a unos 10-15 minutos en auto desde el hotel.",
+            "category": "location"
+        }
+    ],
+    "iaData": [],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}

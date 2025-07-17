@@ -1,0 +1,145 @@
+{
+    "id": "061-accommodation-paranacito-house-sendero-encantado-house-villa_paranacito",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sendero-encantado-house-villa_paranacito",
+    "name": "sendero-encantado-house",
+    "summary": "Descubre un hogar con encanto en Sendero Encantado House, una cómoda casa ubicada en un barrio tranquilo de Paranacito.",
+    "type": "HOUSE",
+    "description": "Descubre un hogar con encanto en Sendero Encantado House, una cómoda casa ubicada en un barrio tranquilo de Paranacito. Ideal para familias o grupos de amigos que buscan un lugar propio para descansar y disfrutar, con fácil acceso al pueblo y a las actividades del Delta.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio funcional para compartir. Está equipada con lo esencial para una estadía confortable, incluyendo aire acondicionado. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con césped y un sector de parrilla, perfecto para disfrutar de asados al aire libre. La ubicación en un barrio residencial garantiza tranquilidad. Estás a una distancia conveniente en auto o caminando del centro de Paranacito y de los puntos de acceso al Delta. Una opción práctica y agradable para tu estadía.",
+    "ownerId": "039-user-cristina-romero",
+    "destinationId": "008-destination-paranacito",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@senderoencantadohouse.com.ar",
+        "mobilePhone": "+549344615954815",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@senderoencantadohouse.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/senderoencantadohousear",
+        "instagram": "https://instagram.com/senderoencantadohousear",
+        "twitter": "https://twitter.com/senderoencantadohousear"
+    },
+    "price": {
+        "basePrice": {
+            "price": 17500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 3200,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2826",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7070",
+            "lng": "-58.6549"
+        },
+        "street": "Calle Los Cerezos",
+        "number": "50",
+        "city": "Paranacito",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+            "caption": "Casa en Paranacito",
+            "description": "Vista exterior de Sendero Encantado House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la propiedad",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
+                "caption": "Living comedor",
+                "description": "Espacio integrado de living y comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 5,
+        "minNights": 2,
+        "maxNights": 15,
+        "bedrooms": 2,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio residencial tranquilo",
+            "Parrilla exterior",
+            "Ideal para familias",
+            "Cerca de Paranacito y el Delta"
+        ]
+    },
+    "seo": {
+        "title": "Sendero Encantado House - Casa en Paranacito para familias | Delta",
+        "description": "Casa cómoda para 5 personas en barrio tranquilo de Paranacito. Parrilla, jardín. Cerca del pueblo y actividades del Delta.",
+        "keywords": [
+            "casa",
+            "paranacito",
+            "entre ríos",
+            "delta",
+            "familiar",
+            "tranquilo",
+            "parrilla"
+        ]
+    },
+    "featureIds": [
+        "001-feature-bbq_area",
+        "023-feature-private_garden",
+        "018-feature-nature_proximity"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}

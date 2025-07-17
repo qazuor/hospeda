@@ -1,0 +1,186 @@
+{
+    "id": "008-accommodation-colon-country-house-paraiso-calido-country-house-colon",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "paraiso-calido-country-house-colon",
+    "name": "paraiso-calido-country-house",
+    "summary": "Sumérgete en la serenidad del campo entrerriano en Paraíso Cálido, una encantadora casa de campo situada en las afueras de Colón.",
+    "type": "COUNTRY_HOUSE",
+    "description": "Sumérgete en la serenidad del campo entrerriano en Paraíso Cálido, una encantadora casa de campo situada en las afueras de Colón. Ideal para familias y grupos de amigos que buscan un retiro tranquilo, rodeado de naturaleza, con amplios espacios para relajarse y disfrutar al aire libre. Esta propiedad ofrece la combinación perfecta de confort rústico y comodidades modernas.\n\nLa casa principal cuenta con tres dormitorios espaciosos, dos baños completos, una cocina totalmente equipada con comedor integrado y un living acogedor con chimenea. La decoración utiliza elementos de madera y piedra, creando un ambiente cálido y hogareño. La casa puede alojar hasta 8 personas.\n\nEl exterior es un verdadero paraíso. Un amplio parque de 1 hectárea con árboles añosos proporciona un entorno verde y sombreado. La piscina de generosas dimensiones es perfecta para refrescarse en verano. Cuenta con un gran quincho cubierto con parrilla, horno de barro y una mesa grande, ideal para asados y reuniones familiares. Hay espacio de sobra para juegos al aire libre y estacionamiento.\n\nUbicada a poca distancia en auto del centro de Colón, sus playas y las Termas, Paraíso Cálido te permite disfrutar de la paz del campo sin renunciar a la cercanía de las atracciones turísticas. Es el lugar ideal para desconectar, disfrutar de la naturaleza, hacer actividades al aire libre y crear recuerdos inolvidables con tus seres queridos.",
+    "ownerId": "036-user-gonzalo-reyes",
+    "destinationId": "002-destination-colon",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "hola@paraisocalidocountryhouse.com.ar",
+        "mobilePhone": "+549344715380163",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "reservas@paraisocalidocountryhouse.com.ar",
+        "website": "https://www.paraisocalidocountryhouse.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 32000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 6000,
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 15,
+            "monthly": 25
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2840",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2280",
+            "lng": "-58.1540"
+        },
+        "street": "Camino a Pescadores S/N",
+        "number": "S/N",
+        "city": "Colón",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+            "caption": "Casa de campo con jardín",
+            "description": "Vista exterior de Paraíso Cálido Country House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la casa y jardín",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
+                "caption": "Living",
+                "description": "Sala de estar con chimenea",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina completa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
+                "caption": "Piscina",
+                "description": "Piscina en el parque",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
+                "caption": "Quincho y parrilla",
+                "description": "Área de asador cubierta",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
+                "caption": "Parque",
+                "description": "Amplio parque con árboles",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "15:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "13:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 8,
+        "minNights": 3,
+        "maxNights": 30,
+        "bedrooms": 3,
+        "beds": 5,
+        "bathrooms": 2,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina privada",
+            "Quincho con parrilla y horno de barro",
+            "Amplio parque",
+            "Ideal para familias o grupos grandes",
+            "Se admiten mascotas con previo aviso (aplican condiciones)"
+        ]
+    },
+    "seo": {
+        "title": "Paraíso Cálido - Casa de Campo con Piscina en Colón, Entre Ríos",
+        "description": "Casa de campo con piscina y parque grande cerca de Colón. Ideal para familias y grupos. Quincho con asador. Capacidad 8 personas.",
+        "keywords": [
+            "casa de campo",
+            "colón",
+            "entre ríos",
+            "rural",
+            "piscina",
+            "familiar",
+            "grupo",
+            "asador",
+            "naturaleza"
+        ]
+    },
+    "featureIds": [
+        "024-feature-private_pool",
+        "023-feature-private_garden",
+        "001-feature-bbq_area",
+        "020-feature-pet_friendly"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "016-amenity-oven",
+        "003-amenity-bbq_grill",
+        "009-amenity-fireplace",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia está del centro de Colón?",
+            "answer": "La casa se encuentra a aproximadamente 10-15 minutos en auto del centro de Colón.",
+            "category": "location"
+        },
+        {
+            "question": "¿Se admiten mascotas?",
+            "answer": "Sí, se permiten mascotas con previo aviso y aceptación de las condiciones.",
+            "category": "policies"
+        },
+        {
+            "question": "¿La piscina es climatizada?",
+            "answer": "No, la piscina es exterior y no está climatizada.",
+            "category": "amenities"
+        }
+    ],
+    "iaData": [],
+    "tagIds": [
+        "033-tag-rio-parana",
+        "027-tag-naturaleza",
+        "017-tag-familia",
+        "032-tag-relax",
+        "016-tag-entre-rios"
+    ]
+}

@@ -1,0 +1,142 @@
+{
+    "id": "064-accommodation-san-jose-apartment-nido-tranquilo-apartment-san_jose",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "nido-tranquilo-apartment-san_jose",
+    "name": "nido-tranquilo-apartment",
+    "summary": "Encuentra la paz y el confort en Nido Tranquilo Apartamento, un espacio moderno ubicado en un barrio sereno de San José.",
+    "type": "APARTMENT",
+    "description": "Encuentra la paz y el confort en Nido Tranquilo Apartamento, un espacio moderno ubicado en un barrio sereno de San José. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado para acceder al centro y al Parque Nacional El Palmar.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, invitando a la relajación.\n\nSituado en un edificio tranquilo, ofrece un descanso reparador. Estás a pocos minutos en auto del centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Una opción práctica y cómoda para tu visita a San José.",
+    "ownerId": "026-user-gustavo-pena",
+    "destinationId": "009-destination-san-jose",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@nidotranquiloapartment.com.ar",
+        "mobilePhone": "+549344715855910",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@nidotranquiloapartment.com.ar",
+        "website": "https://nidotranquiloapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/nidotranquiloapartmentar",
+        "instagram": "https://instagram.com/nidotranquiloapartmentar",
+        "twitter": "https://twitter.com/nidotranquiloapartmentar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 12500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2000,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2847",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.1870",
+            "lng": "-58.7362"
+        },
+        "street": "Calle Sarmiento",
+        "number": "1300",
+        "floor": "1",
+        "apartment": "A",
+        "city": "San José",
+        "neighborhood": "Barrio Residencial"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Barrio tranquilo",
+            "Ideal para parejas o viajeros solos",
+            "Cerca del Parque Nacional El Palmar"
+        ]
+    },
+    "seo": {
+        "title": "Nido Tranquilo - Apartamento sereno en San José | El Palmar",
+        "description": "Apartamento moderno y tranquilo en San José. Ideal para descanso. Cerca del centro y Parque Nacional El Palmar. Equipado.",
+        "keywords": [
+            "apartamento",
+            "san josé",
+            "entre ríos",
+            "el palmar",
+            "tranquilo",
+            "parejas",
+            "equipado"
+        ]
+    },
+    "featureIds": [
+        "022-feature-private_entrance",
+        "025-feature-quiet_location",
+        "018-feature-nature_proximity"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}

@@ -1,0 +1,133 @@
+{
+    "id": "089-accommodation-uruguay-room-paraiso-tranquilo-room-concepcion_del_uruguay",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "paraiso-tranquilo-room-concepcion_del_uruguay",
+    "name": "paraiso-tranquilo-room",
+    "summary": "Encuentra un remanso de paz en Paraíso Tranquilo, una habitación privada en una casa con jardín ubicada en un barrio sereno de Concepción del Uruguay.",
+    "type": "ROOM",
+    "description": "Encuentra un remanso de paz en Paraíso Tranquilo, una habitación privada en una casa con jardín ubicada en un barrio sereno de Concepción del Uruguay. Ideal para viajeros que buscan un lugar silencioso para descansar y recargar energías, con la calidez de un hogar y acceso a espacios comunes.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, siempre limpio. Los huéspedes pueden usar una cocina básica compartida con heladera y microondas para preparar infusiones o comidas sencillas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial apacible, alejado del ruido del centro, pero a una distancia conveniente (en auto o transporte público) de las atracciones principales de la ciudad, la costanera y las playas. El jardín es un plus para disfrutar del aire libre. Una opción económica y tranquila para tu estadía en 'La Histórica'.",
+    "ownerId": "039-user-cristina-romero",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@paraisotranquiloroom.com.ar",
+        "mobilePhone": "+549344215721926",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@paraisotranquiloroom.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/paraisotranquiloroom",
+        "instagram": "https://instagram.com/paraisotranquiloroom",
+        "twitter": "https://twitter.com/paraisotranquiloroom"
+    },
+    "price": {
+        "basePrice": {
+            "price": 5800,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4815",
+            "lng": "-58.2405"
+        },
+        "street": "Calle Los Paraísos",
+        "number": "305",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Barrio Residencial Tranquilo"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
+            "caption": "Interior de la habitación",
+            "description": "Vista de la habitación privada",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
+                "caption": "Habitación",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
+                "caption": "Baño",
+                "description": "Baño compartido",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
+                "caption": "Espacio común",
+                "description": "Área con heladera y microondas",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 2,
+        "minNights": 1,
+        "maxNights": 7,
+        "bedrooms": 1,
+        "beds": 1,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Habitación en casa de familia",
+            "Baño compartido",
+            "Acceso a cocina básica compartida",
+            "Barrio tranquilo"
+        ]
+    },
+    "seo": {
+        "title": "Paraíso Tranquilo - Habitación privada y serena en Concepción del Uruguay",
+        "description": "Habitación privada económica y tranquila en Concepción del Uruguay. Baño compartido, acceso a cocina básica. Ideal para descansar.",
+        "keywords": [
+            "habitación",
+            "concepción del uruguay",
+            "entre ríos",
+            "económico",
+            "tranquilo",
+            "alojamiento",
+            "compartido"
+        ]
+    },
+    "featureIds": [
+        "030-feature-shared_kitchen",
+        "025-feature-quiet_location"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "012-amenity-heating",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "017-tag-familia",
+        "039-tag-turismo",
+        "011-tag-cultura",
+        "032-tag-relax",
+        "016-tag-entre-rios"
+    ]
+}

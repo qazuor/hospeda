@@ -1,0 +1,148 @@
+{
+    "id": "060-accommodation-paranacito-hotel-rio-silvestre-hotel-villa_paranacito",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "rio-silvestre-hotel-villa_paranacito",
+    "name": "rio-silvestre-hotel",
+    "summary": "Sumérgete en un ambiente natural y tranquilo en Rio Silvestre Hotel, ubicado en una zona serena de Paranacito, con vistas al entorno silvestre del Delta.",
+    "type": "HOTEL",
+    "description": "Sumérgete en un ambiente natural y tranquilo en Rio Silvestre Hotel, ubicado en una zona serena de Paranacito, con vistas al entorno silvestre del Delta. Ideal para quienes buscan confort y contacto directo con la naturaleza del Delta.\n\nEl hotel cuenta con 18 habitaciones confortables, muchas de ellas con vista al entorno natural. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para relajarse. El hotel ofrece desayuno incluido en la tarifa, servido en un comedor con vista al exterior. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder fácilmente a los puntos de interés de Paranacito y es una excelente base para explorar el Delta en lancha. Rio Silvestre Hotel es la opción ideal para una estancia relajante en contacto con la belleza natural del Delta.",
+    "ownerId": "019-user-claudia-torres",
+    "destinationId": "008-destination-paranacito",
+    "isFeatured": true,
+    "contactInfo": {
+        "workEmail": "contacto@riosilvestrehotel.com.ar",
+        "mobilePhone": "+549344615316683",
+        "homePhone": "+543446925701",
+        "website": "https://www.riosilvestrehotel.com.ar",
+        "preferredEmail": "WORK",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/riosilvestre",
+        "instagram": "https://instagram.com/riosilvestre",
+        "twitter": "https://twitter.com/riosilvestre"
+    },
+    "price": {
+        "basePrice": {
+            "price": 22000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2826",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7069",
+            "lng": "-58.6588"
+        },
+        "street": "Avenida Costanera S/N",
+        "number": "S/N",
+        "city": "Paranacito",
+        "neighborhood": "Zona Ribereña"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+            "caption": "Fachada y entorno natural del hotel",
+            "description": "Vista exterior de Rio Silvestre Hotel rodeado de vegetación",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
+                "caption": "Exterior",
+                "description": "Vista frontal del hotel",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
+                "caption": "Piscina",
+                "description": "Área de piscina y solárium con vista al entorno",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Habitación doble",
+                "description": "Habitación con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
+                "caption": "Habitación triple",
+                "description": "Habitación con cama matrimonial y una individual",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
+                "caption": "Comedor",
+                "description": "Salón desayunador con vista al jardín",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "13:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "11:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "22:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 36,
+        "minNights": 1,
+        "maxNights": 14,
+        "bedrooms": 18,
+        "beds": 28,
+        "bathrooms": 18,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Piscina exterior disponible en temporada",
+            "Desayuno incluido",
+            "Estacionamiento descubierto gratuito",
+            "Entorno natural cercano",
+            "Cerca del Delta"
+        ]
+    },
+    "seo": {
+        "title": "Rio Silvestre Hotel - Naturaleza y piscina en Paranacito | Delta",
+        "description": "Hotel con jardín y piscina en Paranacito. Ideal para relax, cerca del Delta. Desayuno incluido.",
+        "keywords": [
+            "hotel",
+            "paranacito",
+            "entre ríos",
+            "delta",
+            "piscina",
+            "naturaleza",
+            "alojamiento"
+        ]
+    },
+    "featureIds": [
+        "024-feature-private_pool",
+        "018-feature-nature_proximity",
+        "027-feature-river_proximity"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "018-amenity-refrigerator",
+        "011-amenity-hair_dryer",
+        "020-amenity-smoke_detector",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}

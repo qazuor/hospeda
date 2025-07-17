@@ -1,0 +1,145 @@
+{
+    "id": "058-accommodation-paranacito-cabin-retiro-apacible-cabana-villa_paranacito",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "retiro-apacible-cabana-villa_paranacito",
+    "name": "retiro-apacible-cabana",
+    "summary": "Encuentra la paz en Retiro Apacible, una cómoda cabaña de madera ubicada en un entorno tranquilo de Paranacito, cerca de un arroyo.",
+    "type": "CABIN",
+    "description": "Encuentra la paz en Retiro Apacible, una cómoda cabaña de madera ubicada en un entorno tranquilo de Paranacito, cerca de un arroyo. Ideal para parejas o familias que buscan un refugio sereno y apacible con acceso a la naturaleza del Delta.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es sencilla y rústica, invitando a la relajación.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación. La ubicación en un entorno tranquilo de Paranacito permite un rápido acceso en auto al pueblo y a los puntos de acceso al Delta y sus actividades. Retiro Apacible es tu base ideal para disfrutar de la tranquilidad y la naturaleza.",
+    "ownerId": "013-user-patricia-ruiz",
+    "destinationId": "008-destination-paranacito",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@retiroapaciblecabana.com.ar",
+        "mobilePhone": "+549344615864481",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@retiroapaciblecabana.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/retiroapacible",
+        "twitter": "https://twitter.com/retiroapacible"
+    },
+    "price": {
+        "basePrice": {
+            "price": 15000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2800,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2826",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7056",
+            "lng": "-58.6623"
+        },
+        "street": "Camino al Arroyo S/N",
+        "number": "S/N",
+        "city": "Paranacito",
+        "neighborhood": "Zona Rural"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+            "caption": "Cabaña apacible",
+            "description": "Vista exterior de la cabaña con entorno verde",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la cabaña",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
+                "caption": "Interior",
+                "description": "Área de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio principal",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
+                "caption": "Altillo",
+                "description": "Espacio con camas individuales",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior cubierta",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 2,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Cabaña apacible",
+            "Parrilla exterior",
+            "Ideal para familias pequeñas",
+            "Cerca del Delta y Paranacito"
+        ]
+    },
+    "seo": {
+        "title": "Retiro Apacible - Cabaña tranquila cerca de Paranacito | Delta",
+        "description": "Cabaña confortable para 4 personas cerca de Paranacito. Ideal para familias. Parrilla, jardín. Acceso al Delta.",
+        "keywords": [
+            "cabaña",
+            "paranacito",
+            "entre ríos",
+            "delta",
+            "tranquilo",
+            "familiar",
+            "escapada",
+            "parrilla"
+        ]
+    },
+    "featureIds": [
+        "001-feature-bbq_area",
+        "018-feature-nature_proximity"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}

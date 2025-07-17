@@ -1,0 +1,147 @@
+{
+    "id": "045-accommodation-liebig-camping-paraiso-apacible-camping-liebig",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "paraiso-apacible-camping-liebig",
+    "name": "paraiso-apacible-camping",
+    "summary": "Encuentra un lugar apacible para tu experiencia de camping en Paraíso Apacible Camping, ubicado en un entorno sereno cerca de Liebig, a orillas del río Uruguay.",
+    "type": "CAMPING",
+    "description": "Encuentra un lugar apacible para tu experiencia de camping en Paraíso Apacible Camping, ubicado en un entorno sereno cerca de Liebig, a orillas del río Uruguay. Ideal para campistas que buscan tranquilidad y un contacto directo con la naturaleza, con fácil acceso al río y a la histórica localidad.\n\nEl camping ofrece parcelas con buena sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, diseñado para disfrutar del aire libre y la paz del entorno.\n\nSu ubicación junto al río Uruguay lo convierte en una base conveniente para actividades como pesca, kayak y simplemente disfrutar de la vista del río. La tranquilidad del lugar es su mayor atractivo. Estás a poca distancia del pueblo de Liebig y de los restos del antiguo Frigorífico.",
+    "ownerId": "012-user-fernando-lopez",
+    "destinationId": "007-destination-liebig",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "camping@paraisoapaciblecamping.com.ar",
+        "mobilePhone": "+549345615991613",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "camping@paraisoapaciblecamping.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/paraisoapacible",
+        "instagram": "https://instagram.com/paraisoapacible",
+        "twitter": "https://twitter.com/paraisoapacible"
+    },
+    "price": {
+        "basePrice": {
+            "price": 3800,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21,
+            "perPerson": 1600
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-31.0419",
+            "lng": "-58.1013"
+        },
+        "street": "Ribera del Uruguay S/N",
+        "number": "S/N",
+        "city": "Liebig",
+        "neighborhood": "Zona de Camping"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+            "caption": "Camping a orillas del río",
+            "description": "Vista del área de acampe con acceso al río",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+                "caption": "Río",
+                "description": "Acceso al río Uruguay",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
+                "caption": "Acampe",
+                "description": "Espacio para carpas con sombra",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
+                "caption": "Parcelas",
+                "description": "Vista de las parcelas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
+                "caption": "Baños",
+                "description": "Instalaciones sanitarias",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "12:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "10:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 50,
+        "minNights": 1,
+        "maxNights": 20,
+        "bathrooms": 2,
+        "smokingAllowed": true,
+        "extraInfo": [
+            "Parcelas con sombra y parrilla",
+            "Acceso directo al río",
+            "Entorno tranquilo",
+            "Cerca del pueblo de Liebig"
+        ]
+    },
+    "seo": {
+        "title": "Paraíso Apacible Camping - Tranquilidad a orillas del río en Liebig",
+        "description": "Camping tranquilo y arbolado a orillas del río Uruguay en Liebig. Parcelas con parrilla. Ideal para amantes de la pesca y naturaleza.",
+        "keywords": [
+            "camping",
+            "liebig",
+            "entre ríos",
+            "río uruguay",
+            "pesca",
+            "naturaleza",
+            "acampar",
+            "historia"
+        ]
+    },
+    "featureIds": [
+        "026-feature-river_access",
+        "029-feature-shaded_area",
+        "001-feature-bbq_area",
+        "014-feature-historical_proximity"
+    ],
+    "amenityIds": [
+        "003-amenity-bbq_grill",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [
+        {
+            "question": "¿Se puede pescar desde el camping?",
+            "answer": "Sí, el camping tiene acceso directo al río Uruguay, ideal para la pesca de costa.",
+            "category": "activities"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Historia del Frigorífico Liebig",
+            "content": "El antiguo Frigorífico Liebig fue un complejo industrial de origen inglés que funcionó en Puerto Liebig durante décadas, marcando la historia de la región. Hoy sus ruinas son un sitio histórico visitable, un testimonio de la industria cárnica y la vida obrera de principios del siglo XX.",
+            "category": "history"
+        }
+    ],
+    "tagIds": [
+        "016-tag-entre-rios"
+    ]
+}
