@@ -1,18 +1,10 @@
 {
+    "$schema": "../../schemas/userBookmark.schema.json",
     "id": "bookmark-010-admin-eventos-post",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
     "entityId": "post-008-eventos-culturales-concordia",
     "entityType": "POST",
     "name": "Eventos Culturales Concordia",
     "description": "Post importante para monitorear eventos culturales en la región",
-    "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "notes": "Bookmark administrativo para seguimiento de contenido"
-    },
-    "createdAt": "2024-02-18T08:30:00Z",
-    "updatedAt": "2024-02-18T08:30:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
-    "deletedAt": null,
-    "deletedById": null
+    "lifecycleState": "ACTIVE"
 }

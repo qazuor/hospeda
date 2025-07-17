@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/post.schema.json",
     "id": "post-004-termas-federacion-relax",
     "slug": "termas-federacion-relax-bienestar",
     "category": "WELLNESS",
@@ -42,15 +43,6 @@
     "shares": 89,
     "isFeatured": true,
     "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "featuredUntil": "2024-06-30T23:59:59Z",
-        "promotionLevel": "MEDIUM",
-        "moderationNotes": "Contenido sobre bienestar con sponsor termal aprobado"
-    },
-    "createdAt": "2024-02-01T11:15:00Z",
-    "updatedAt": "2024-02-01T11:15:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
     "moderationState": "APPROVED",
     "seo": {
         "title": "Termas de Federación: Tu Refugio de Relax y Bienestar | Hospeda",
@@ -73,14 +65,5 @@
             "type": "article"
         }
     },
-    "tagIds": [
-        "tag-termas-001",
-        "tag-aguas-termales-002",
-        "tag-relax-003",
-        "tag-spa-004",
-        "tag-entre-rios-005",
-        "tag-familia-006",
-        "tag-pareja-007",
-        "tag-yoga-008"
-    ]
+    "lifecycleState": "ACTIVE"
 }

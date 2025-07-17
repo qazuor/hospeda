@@ -1,15 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-familia-008",
     "name": "Familia",
     "slug": "familia",
-    "description": "Actividades y alojamientos aptos para familias con niños",
-    "type": "general",
-    "category": "secondary",
-    "color": "#FF5722",
+    "color": "ORANGE",
     "icon": "family",
-    "isActive": true,
-    "adminInfo": {
-        "notes": "Tag para contenido familiar",
-        "favorite": false
-    }
+    "notes": "Actividades y alojamientos aptos para familias con niños",
+    "lifecycleState": "ACTIVE"
 }

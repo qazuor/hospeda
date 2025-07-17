@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/post.schema.json",
     "id": "post-002-gastronomia-entrerriana",
     "slug": "gastronomia-entrerriana-sabores-autenticos",
     "category": "GASTRONOMY",
@@ -37,13 +38,6 @@
     "shares": 23,
     "isFeatured": false,
     "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "moderationNotes": "Contenido gastronómico con sponsor regional aprobado"
-    },
-    "createdAt": "2024-01-20T14:30:00Z",
-    "updatedAt": "2024-01-20T14:30:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
     "moderationState": "APPROVED",
     "seo": {
         "title": "Gastronomía Entrerriana: Sabores Auténticos del Litoral | Hospeda",
@@ -66,12 +60,5 @@
             "type": "article"
         }
     },
-    "tagIds": [
-        "tag-gastronomia-001",
-        "tag-entre-rios-002",
-        "tag-cultura-003",
-        "tag-turismo-004",
-        "tag-pesca-005",
-        "tag-rio-parana-006"
-    ]
+    "lifecycleState": "ACTIVE"
 }

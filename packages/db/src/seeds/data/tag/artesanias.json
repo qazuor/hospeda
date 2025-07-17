@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-artesanias-016",
     "name": "Artesanías",
     "slug": "artesanias",
-    "description": "Productos y talleres artesanales locales",
-    "type": "activity",
-    "category": "secondary",
-    "color": "#DEB887",
+    "color": "BROWN",
     "icon": "craft",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para artesanías y productos locales",
-        "favorite": false
-    }
+    "notes": "Productos y talleres artesanales locales",
+    "lifecycleState": "ACTIVE"
 }

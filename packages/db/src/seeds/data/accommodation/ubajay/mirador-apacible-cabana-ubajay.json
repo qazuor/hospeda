@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-apacible-cabana-ubajay",
     "name": "mirador-apacible-cabana",
-    "displayName": "Mirador Apacible Cabaña",
+    "summary": "Encuentra la paz y vistas apacibles en Mirador Apacible, una cómoda cabaña de madera ubicada en un entorno tranquilo de Ubajay, cerca del Parque Nacional El Palmar.",
     "type": "CABIN",
     "description": "Encuentra la paz y vistas apacibles en Mirador Apacible, una cómoda cabaña de madera ubicada en un entorno tranquilo de Ubajay, cerca del Parque Nacional El Palmar. Ideal para parejas o familias que buscan un refugio sereno y apacible con vistas al campo o zonas arboladas, y fácil acceso a la naturaleza.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es sencilla y rústica, invitando a la relajación.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación, con vistas abiertas al entorno. La ubicación en un barrio tranquilo de Ubajay permite un rápido acceso en auto al Parque Nacional El Palmar y al centro del pueblo. Mirador Apacible es tu base ideal para disfrutar de la tranquilidad y la naturaleza.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@miradorapaciblecabana.com.ar",
@@ -12,6 +14,9 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "reservas@miradorapaciblecabana.com.ar"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/miradorapaciblecabana"
     },
     "price": {
         "basePrice": {
@@ -122,37 +127,6 @@
             "parrilla"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple pero agradable. Énfasis en cercanía a El Palmar y vistas.",
-        "favorite": false,
-        "tags": [
-            "ubajay",
-            "cabin",
-            "ubajay-cabin",
-            "seed-example",
-            "nature",
-            "quiet",
-            "family-friendly",
-            "view"
-        ]
-    },
-    "faqs": [
-        {
-            "question": "¿A qué distancia está el Parque Nacional El Palmar?",
-            "answer": "El Parque Nacional El Palmar se encuentra a unos 10-15 minutos en auto desde la cabaña.",
-            "category": "location"
-        }
-    ],
-    "iaData": [
-        {
-            "title": "Parque Nacional El Palmar desde Ubajay",
-            "content": "Ubajay es una de las localidades cercanas al Parque Nacional El Palmar, ofreciendo una entrada alternativa al parque. Desde aquí puedes acceder rápidamente para disfrutar de sus senderos, avistaje de aves y la inmensa belleza de los palmares de yatay.",
-            "category": "nature"
-        }
-    ],
-    "socialNetworks": {
-        "twitter": "https://twitter.com/miradorapaciblecabana"
-    },
     "featureIds": [
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
         "a471118f-48f7-4ae4-b6f4-963281900517",
@@ -168,5 +142,19 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia está el Parque Nacional El Palmar?",
+            "answer": "El Parque Nacional El Palmar se encuentra a unos 10-15 minutos en auto desde la cabaña.",
+            "category": "location"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Parque Nacional El Palmar desde Ubajay",
+            "content": "Ubajay es una de las localidades cercanas al Parque Nacional El Palmar, ofreciendo una entrada alternativa al parque. Desde aquí puedes acceder rápidamente para disfrutar de sus senderos, avistaje de aves y la inmensa belleza de los palmares de yatay.",
+            "category": "nature"
+        }
     ]
 }

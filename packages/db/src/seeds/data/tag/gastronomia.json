@@ -1,15 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-gastronomia-004",
     "name": "Gastronomía",
     "slug": "gastronomia",
-    "description": "Contenido sobre cocina regional, restaurantes y experiencias gastronómicas",
-    "type": "cuisine",
-    "category": "primary",
-    "color": "#E91E63",
+    "color": "GREY",
     "icon": "restaurant",
-    "isActive": true,
-    "adminInfo": {
-        "notes": "Tag para contenido gastronómico y culinario",
-        "favorite": true
-    }
+    "notes": "Contenido sobre cocina regional, restaurantes y experiencias gastronómicas",
+    "lifecycleState": "ACTIVE"
 }

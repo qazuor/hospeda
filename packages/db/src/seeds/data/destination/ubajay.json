@@ -43,45 +43,15 @@
             "tranquilidad"
         ]
     },
-    "adminInfo": {
-        "notes": "Destino rural en Entre Ríos",
-        "favorite": false
-    },
-    "tags": [
-        "rural",
-        "agropecuario",
-        "campo",
-        "tradición",
-        "tranquilidad"
-    ],
-    "reviews": [
-        {
-            "title": "Experiencia tranquila y auténtica",
-            "content": "Un lugar muy tranquilo y auténtico. Perfecto para desconectar y disfrutar de la naturaleza. La gente es muy cálida y hospitalaria.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 3.5,
-                "accessibility": 3.5,
-                "safety": 4.5,
-                "cleanliness": 4.0,
-                "hospitality": 4.5,
-                "culturalOffer": 3.5,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 2.5,
-                "infrastructure": 3.5,
-                "environmentalCare": 4.5,
-                "wifiAvailability": 3.0,
-                "shopping": 3.0,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-nature-lover"
-        }
-    ],
     "attractionIds": [
         "0a7dedae-1667-4313-b741-5d10d75292b6",
         "500990b6-74ae-40d1-addb-a8440af5a3b7",
         "1fcf5ea2-d720-41e0-8705-67d41a5c68ce",
         "2a5e7172-bed0-4f9d-9610-c9e53921006b"
-    ]
+    ],
+    "id": "f8058cb6-282c-564a-8fe5-7b471182efd5",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

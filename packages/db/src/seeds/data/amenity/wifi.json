@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "84fb4c84-942d-4682-8cbd-5e0229697670",
     "name": "wifi",
     "slug": "wifi",
     "description": "Wifi",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "CONNECTIVITY",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

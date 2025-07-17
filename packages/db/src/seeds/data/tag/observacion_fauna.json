@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-observacion-fauna-019",
     "name": "Observación de Fauna",
     "slug": "observacion-fauna",
-    "description": "Actividades de avistamiento de animales",
-    "type": "activity",
-    "category": "secondary",
-    "color": "#8FBC8F",
+    "color": "GREY",
     "icon": "wildlife",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para observación de fauna y vida silvestre",
-        "favorite": false
-    }
+    "notes": "Actividades de avistamiento de animales",
+    "lifecycleState": "ACTIVE"
 }

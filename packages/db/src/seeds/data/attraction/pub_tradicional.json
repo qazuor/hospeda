@@ -6,9 +6,6 @@
     "description": "Pub con ambiente relajado y música en vivo",
     "icon": "sports_bar",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

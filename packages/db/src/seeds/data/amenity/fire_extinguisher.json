@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
     "name": "fire_extinguisher",
     "slug": "fire_extinguisher",
     "description": "Fire Extinguisher",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "SAFETY",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

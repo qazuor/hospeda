@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-silvestre-hotel-gualeguaychu",
     "name": "nido-silvestre-hotel",
-    "displayName": "Nido Silvestre Hotel",
+    "summary": "Sumérgete en un ambiente natural en Nido Silvestre Hotel, ubicado en una zona tranquila de Gualeguaychú con un entorno verde cercano.",
     "type": "HOTEL",
     "description": "Sumérgete en un ambiente natural en Nido Silvestre Hotel, ubicado en una zona tranquila de Gualeguaychú con un entorno verde cercano. Ideal para quienes buscan combinar el confort de un hotel con la serenidad de la naturaleza, con fácil acceso a las playas, la ciudad y el Carnaval.\n\nEl hotel cuenta con 22 habitaciones confortables, muchas de ellas con vista al jardín o al entorno arbolado. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y familiares.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para relajarse. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto a las playas del río Uruguay, al centro de la ciudad y al Corsódromo. Nido Silvestre es la opción ideal para una estancia relajante en contacto con la belleza natural de Gualeguaychú, con el Carnaval cerca en temporada.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "hola@nidosilvestrehotel.com.ar",
@@ -115,27 +117,6 @@
             "playas"
         ]
     },
-    "adminInfo": {
-        "notes": "Hotel con enfoque en relax y naturaleza. Bien ubicado para playas y Carnaval.",
-        "favorite": true,
-        "tags": [
-            "gualeguaychu",
-            "hotel",
-            "gualeguaychu-hotel",
-            "seed-example",
-            "swimming-pool",
-            "nature",
-            "carnival"
-        ]
-    },
-    "faqs": [
-        {
-            "question": "¿A qué distancia está la playa Ñandubaysal?",
-            "answer": "La playa Ñandubaysal se encuentra a unos 10-15 minutos en auto desde el hotel.",
-            "category": "location"
-        }
-    ],
-    "iaData": [],
     "featureIds": [
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
         "a471118f-48f7-4ae4-b6f4-963281900517",
@@ -151,5 +132,13 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia está la playa Ñandubaysal?",
+            "answer": "La playa Ñandubaysal se encuentra a unos 10-15 minutos en auto desde el hotel.",
+            "category": "location"
+        }
+    ],
+    "iaData": []
 }

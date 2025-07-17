@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-005-hotel-plaza-carlos",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
     "accommodationId": "hotel-plaza-gualeguaychu",
@@ -11,5 +12,6 @@
         "accuracy": 3,
         "communication": 3,
         "location": 3
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

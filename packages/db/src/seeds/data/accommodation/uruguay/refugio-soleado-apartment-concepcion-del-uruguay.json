@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-soleado-apartment-concepcion_del_uruguay",
     "name": "refugio-soleado-apartment",
-    "displayName": "Refugio Soleado Apartamento",
+    "summary": "Disfruta de la luz natural y la comodidad en Refugio Soleado, un apartamento moderno y luminoso ubicado en una zona conveniente de Concepción del Uruguay.",
     "type": "APARTMENT",
     "description": "Disfruta de la luz natural y la comodidad en Refugio Soleado, un apartamento moderno y luminoso ubicado en una zona conveniente de Concepción del Uruguay. Ideal para parejas o viajeros de negocios que buscan un espacio agradable, bien equipado y con fácil acceso a los principales puntos de la ciudad. Su orientación le confiere una calidez especial durante gran parte del día.\n\nEl apartamento cuenta con un dormitorio confortable con cama doble, un baño completo, y un espacio integrado de living-comedor con cocina americana. El living dispone de un sofá y TV, con un gran ventanal que llena el ambiente de luz. La cocina está equipada con heladera, anafe eléctrico, microondas y utensilios básicos.\n\nUbicado en un edificio seguro, el apartamento ofrece un retiro tranquilo después de un día de actividades. Se encuentra a corta distancia en auto o transporte público del centro histórico, la costanera y la zona comercial. Es una base práctica y agradable para explorar Concepción del Uruguay. El edificio cuenta con ascensor para mayor comodidad.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@refugiosoleadoapartment.com.ar",
@@ -110,14 +112,6 @@
             "equipado"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple y funcional. Buena para alquileres de corta duración.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "apartment",
@@ -125,8 +119,6 @@
         "seed-example",
         "city-center"
     ],
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "2f7d146e-ed8a-4535-8f70-0a5c6ea47680"
@@ -142,5 +134,7 @@
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c",
         "4bad848b-16de-488c-a673-91172ff620f3"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

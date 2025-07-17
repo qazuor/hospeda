@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "92b8c95b-264e-4bfc-86b5-23f1692f45af",
     "name": "usb_outlets",
     "slug": "usb_outlets",
     "description": "Usb Outlets",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "CONNECTIVITY",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

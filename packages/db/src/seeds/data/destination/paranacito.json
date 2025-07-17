@@ -43,45 +43,15 @@
             "aventura"
         ]
     },
-    "adminInfo": {
-        "notes": "Destino delta en Entre Ríos",
-        "favorite": false
-    },
-    "tags": [
-        "delta",
-        "naturaleza",
-        "islas",
-        "pesca",
-        "aventura"
-    ],
-    "reviews": [
-        {
-            "title": "Experiencia tranquila y auténtica",
-            "content": "Un lugar muy tranquilo y auténtico. Perfecto para desconectar y disfrutar de la naturaleza. La gente es muy cálida y hospitalaria.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 3.5,
-                "accessibility": 3.5,
-                "safety": 4.5,
-                "cleanliness": 4.0,
-                "hospitality": 4.5,
-                "culturalOffer": 3.5,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 2.5,
-                "infrastructure": 3.5,
-                "environmentalCare": 4.5,
-                "wifiAvailability": 3.0,
-                "shopping": 3.0,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-nature-lover"
-        }
-    ],
     "attractionIds": [
         "71ba3202-089f-488a-9a66-d98b7a5fec58",
         "96a2de59-4015-4800-b0d0-9e6f2ed5a1d7",
         "7db4be2a-2715-4e7d-a184-15c207fcceed",
         "b2342613-4fc0-4250-8328-bcb3a5adea66"
-    ]
+    ],
+    "id": "716130ad-5bda-5db6-9a48-ba12bbfb8fcb",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

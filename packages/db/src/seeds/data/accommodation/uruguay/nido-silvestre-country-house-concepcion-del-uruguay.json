@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-silvestre-country-house-concepcion_del_uruguay",
     "name": "nido-silvestre-country-house",
-    "displayName": "Nido Silvestre Country House",
+    "summary": "Adéntrate en la naturaleza salvaje en Nido Silvestre, una casa de campo ubicada en un entorno más agreste y natural cerca de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
     "description": "Adéntrate en la naturaleza salvaje en Nido Silvestre, una casa de campo ubicada en un entorno más agreste y natural cerca de Concepción del Uruguay. Ideal para amantes de la tranquilidad absoluta, la observación de aves y la flora nativa. Un verdadero nido en la naturaleza silvestre entrerriana.\n\nLa casa ofrece un espacio rústico pero cómodo, con dos dormitorios y un baño completo. El living-comedor es integrado con una cocina básica equipada con heladera y anafe. La electricidad es limitada y prioriza la iluminación y carga de dispositivos, fomentando la desconexión. La capacidad es para 4 personas.\n\nEl exterior es su mayor valor, rodeado de vegetación nativa. Un deck exterior permite disfrutar del paisaje y el sonido de las aves. Cuenta con un fogón y parrilla rústica. Es un lugar para apreciar la vida silvestre, caminar por los alrededores y disfrutar de noches estrelladas lejos de las luces de la ciudad. La propiedad se encuentra a una distancia considerable en auto del centro de Concepción del Uruguay, lo que garantiza la paz, pero requiere planificación para abastecerse y acceder a atracciones.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@nidosilvestrecountryhouse.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "contacto@nidosilvestrecountryhouse.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/nidosilvestrecountryhouse",
+        "instagram": "https://instagram.com/nidosilvestrecountryhouse",
+        "twitter": "https://twitter.com/nidosilvestrecountryhouse"
     },
     "price": {
         "basePrice": {
@@ -115,14 +122,6 @@
             "aislado"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad muy específica para turismo de naturaleza y aventura. Clientes que buscan aislamiento.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "country-house",
@@ -131,6 +130,17 @@
         "nature",
         "eco-friendly",
         "remote"
+    ],
+    "featureIds": [
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "0c978d78-6745-4cec-bf3b-d3e71553ea28"
+    ],
+    "amenityIds": [
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -155,21 +165,5 @@
             "content": "Al ser un lugar remoto, es importante venir bien preparado. Recomendamos traer todos tus alimentos y bebidas, linterna, repelente extra fuerte, protector solar, calzado adecuado para caminar por senderos, y ropa para cambios de clima. La experiencia es rústica, pensada para quienes disfrutan de la aventura y la vida simple.",
             "category": "information"
         }
-    ],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/nidosilvestrecountryhouse",
-        "instagram": "https://instagram.com/nidosilvestrecountryhouse",
-        "twitter": "https://twitter.com/nidosilvestrecountryhouse"
-    },
-    "featureIds": [
-        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
-        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
-        "0c978d78-6745-4cec-bf3b-d3e71553ea28"
-    ],
-    "amenityIds": [
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ]
 }

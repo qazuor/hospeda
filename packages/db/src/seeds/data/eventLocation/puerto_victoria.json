@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/eventLocation.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d606",
     "state": "Entre Ríos",
     "city": "Victoria",
@@ -9,11 +10,8 @@
     "neighborhood": "Puerto",
     "coordinates": {
         "lat": "-32.6167",
-        "lng": "-60.1500"
+        "long": "-60.1500"
     },
     "placeName": "Puerto de Victoria",
-    "adminInfo": {
-        "notes": "Espacio portuario para eventos al aire libre y festivales",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE"
 }

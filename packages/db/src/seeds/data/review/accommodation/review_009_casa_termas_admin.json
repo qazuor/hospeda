@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-009-casa-termas-admin",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
     "accommodationId": "casa-termas-federacion",
@@ -11,5 +12,6 @@
         "accuracy": 4,
         "communication": 4,
         "location": 4
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

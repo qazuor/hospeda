@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-vinos-028",
     "name": "Vinos",
     "slug": "vinos",
-    "description": "Bodegas y degustación de vinos",
-    "type": "cuisine",
-    "category": "secondary",
-    "color": "#800000",
+    "color": "PURPLE",
     "icon": "wine",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para bodegas y experiencias enológicas",
-        "favorite": false
-    }
+    "notes": "Bodegas y degustación de vinos",
+    "lifecycleState": "ACTIVE"
 }

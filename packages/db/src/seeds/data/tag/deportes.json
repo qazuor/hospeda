@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-deportes-034",
     "name": "Deportes",
     "slug": "deportes",
-    "description": "Actividades deportivas y competencias",
-    "type": "activity",
-    "category": "primary",
-    "color": "#FF6347",
+    "color": "ORANGE",
     "icon": "sports",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para deportes y actividades físicas",
-        "favorite": false
-    }
+    "notes": "Actividades deportivas y competencias",
+    "lifecycleState": "ACTIVE"
 }

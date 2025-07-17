@@ -1,13 +1,28 @@
 {
+    "$schema": "../../schemas/user.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
-    "email": "admin@hospeda.com",
-    "username": "admin",
+    "slug": "maría-gonzález",
+    "role": "ADMIN",
+    "permissions": [
+        "accommodation.create",
+        "accommodation.update.any",
+        "accommodation.delete.any",
+        "destination.create",
+        "destination.update.any",
+        "destination.delete.any",
+        "event.create",
+        "event.update.any",
+        "event.delete.any",
+        "post.create",
+        "post.update.any",
+        "post.delete.any",
+        "user.create",
+        "user.update.any",
+        "user.delete.any"
+    ],
     "firstName": "María",
     "lastName": "González",
-    "avatar": "https://images.unsplash.com/photo-1494790108755-2616b9db54ad?w=150&h=150&fit=crop&crop=face",
-    "bio": "Administradora del sistema con permisos para gestionar usuarios, contenido y configuraciones. Especialista en gestión de comunidades y moderación de contenido.",
-    "role": "ADMIN",
-    "isVerified": true,
+    "displayName": "María González",
     "contactInfo": {
         "personalEmail": "maria.gonzalez@gmail.com",
         "workEmail": "admin@hospeda.com",
@@ -15,11 +30,6 @@
         "homePhone": "+54 11 4444-0002",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
-    },
-    "socialNetworks": {
-        "facebook": "https://facebook.com/maria.gonzalez.hospeda",
-        "instagram": "https://instagram.com/maria_hospeda",
-        "linkedin": "https://linkedin.com/in/maria-gonzalez-hospeda"
     },
     "location": {
         "state": "Entre Ríos",
@@ -33,17 +43,24 @@
             "lng": "-58.5133"
         }
     },
-    "preferences": {
+    "socialNetworks": {
+        "facebook": "https://facebook.com/maria.gonzalez.hospeda",
+        "instagram": "https://instagram.com/maria_hospeda",
+        "linkedin": "https://linkedin.com/in/maria-gonzalez-hospeda"
+    },
+    "profile": {
+        "avatar": "https://images.unsplash.com/photo-1494790108755-2616b9db54ad?w=150&h=150&fit=crop&crop=face",
+        "bio": "Administradora del sistema con permisos para gestionar usuarios, contenido y configuraciones. Especialista en gestión de comunidades y moderación de contenido."
+    },
+    "settings": {
         "language": "es",
-        "currency": "ARS",
         "notifications": {
-            "email": true,
-            "push": true,
-            "marketing": true
+            "enabled": true,
+            "allowEmails": true,
+            "allowSms": false,
+            "allowPush": true
         }
     },
-    "adminInfo": {
-        "notes": "Administradora principal, especialista en gestión de usuarios y contenido",
-        "favorite": true
-    }
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

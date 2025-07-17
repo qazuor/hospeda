@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-natural-room-liebig",
     "name": "paraiso-natural-room",
-    "displayName": "Paraíso Natural Habitación",
+    "summary": "Descubre un rincón con encanto natural en Paraíso Natural, una habitación privada en una casa con jardín ubicada en un barrio tranquilo de Liebig.",
     "type": "ROOM",
     "description": "Descubre un rincón con encanto natural en Paraíso Natural, una habitación privada en una casa con jardín ubicada en un barrio tranquilo de Liebig. Ideal para viajeros que buscan un lugar apacible para descansar, con acceso a espacios verdes y a poca distancia del pueblo histórico y el río Uruguay.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, y cerca de zonas con vegetación. Estás a una distancia conveniente en auto o caminando de los restos históricos del Frigorífico Liebig y del acceso al río. El jardín es un plus para disfrutar del aire libre. Una opción económica y agradable para tu estadía en Liebig.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@paraisonaturalroom.com.ar",
@@ -102,20 +104,6 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción económica en zona residencial. Atrae viajeros solos o parejas interesados en la historia.",
-        "favorite": false,
-        "tags": [
-            "liebig",
-            "room",
-            "liebig-room",
-            "seed-example",
-            "budget",
-            "history"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "effbc352-e173-4e30-b7bf-89cb5082531e"
@@ -127,5 +115,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

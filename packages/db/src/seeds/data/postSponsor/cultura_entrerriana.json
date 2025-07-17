@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/postSponsor.schema.json",
     "id": "ps-cultura-entrerriana-005",
     "name": "Cultura Entrerriana",
     "type": "POST_SPONSOR",
@@ -19,9 +20,5 @@
         "facebook": "https://facebook.com/culturaentrerriana",
         "instagram": "https://instagram.com/cultura_entrerriana",
         "twitter": "https://twitter.com/cultura_er"
-    },
-    "adminInfo": {
-        "notes": "Sponsor para contenido cultural e histórico",
-        "favorite": false
     }
 }

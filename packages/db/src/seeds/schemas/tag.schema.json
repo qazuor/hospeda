@@ -5,6 +5,10 @@
     "description": "JSON schema for Tag entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "JSON Schema reference"
+        },
         "id": {
             "type": "string",
             "description": "Tag ID (UUID)"
@@ -17,56 +21,40 @@
             "type": "string",
             "description": "Tag slug"
         },
-        "description": {
-            "type": "string",
-            "description": "Tag description"
-        },
-        "type": {
-            "type": "string",
-            "enum": [
-                "general",
-                "accommodation",
-                "destination",
-                "activity",
-                "cuisine",
-                "amenity",
-                "experience"
-            ],
-            "description": "Tag type"
-        },
-        "category": {
-            "type": "string",
-            "enum": ["primary", "secondary", "tertiary"],
-            "description": "Tag category"
-        },
         "color": {
             "type": "string",
-            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-            "description": "Tag color in hex format"
+            "enum": [
+                "RED",
+                "BLUE",
+                "GREEN",
+                "YELLOW",
+                "ORANGE",
+                "PURPLE",
+                "PINK",
+                "BROWN",
+                "GREY",
+                "WHITE",
+                "CYAN",
+                "MAGENTA",
+                "LIGHT_BLUE",
+                "LIGHT_GREEN"
+            ],
+            "description": "Tag color from TagColorEnum"
         },
         "icon": {
             "type": "string",
             "description": "Tag icon identifier"
         },
-        "isActive": {
-            "type": "boolean",
-            "description": "Whether tag is active"
-        },
-        "usageCount": {
-            "type": "integer",
-            "description": "Number of times tag has been used"
-        },
-        "parentId": {
+        "notes": {
             "type": "string",
-            "description": "Parent tag ID for hierarchical tags"
+            "description": "Optional notes about the tag"
         },
-        "seo": {
-            "$ref": "common.schema.json#/definitions/seo"
-        },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
+        "lifecycleState": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE", "DRAFT", "ARCHIVED"],
+            "description": "Lifecycle state of the tag"
         }
     },
-    "required": ["id", "name", "slug", "type", "category"],
+    "required": ["id", "name", "slug", "color"],
     "additionalProperties": false
 }

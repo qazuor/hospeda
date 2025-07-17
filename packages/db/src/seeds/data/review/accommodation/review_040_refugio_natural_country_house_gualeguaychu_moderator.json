@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-040-refugio-natural-country-house-gualeguaychu-moderator",
     "userId": "moderator-user-67890",
     "accommodationId": "refugio-natural-country-house-gualeguaychu",
@@ -11,5 +12,6 @@
         "accuracy": 4,
         "communication": 5,
         "location": 5
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

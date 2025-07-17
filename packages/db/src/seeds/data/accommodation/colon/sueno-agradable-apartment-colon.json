@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-agradable-apartment-colon",
     "name": "sueno-agradable-apartment",
-    "displayName": "Sueño Agradable Apartamento",
+    "summary": "Situado a pocas cuadras de la vibrante costanera de Colón y con fácil acceso al centro, Sueño Agradable es un moderno y cómodo apartamento ideal para parejas o pequeños grupos de amigos que buscan una estadía práctica y bien ubicada.",
     "type": "APARTMENT",
     "description": "Situado a pocas cuadras de la vibrante costanera de Colón y con fácil acceso al centro, Sueño Agradable es un moderno y cómodo apartamento ideal para parejas o pequeños grupos de amigos que buscan una estadía práctica y bien ubicada. Este espacio de diseño funcional ofrece todas las comodidades necesarias para sentirse como en casa mientras exploras esta hermosa ciudad a orillas del río Uruguay.\n\nEl apartamento cuenta con un dormitorio luminoso con cama matrimonial y un sofá cama en el área de estar, pudiendo alojar hasta 3-4 personas. La cocina integrada está equipada con anafe, microondas, heladera y utensilios básicos para preparar desayunos o comidas ligeras. El área de estar dispone de TV y un pequeño balcón con vista a la calle.\n\nLas instalaciones del edificio incluyen ascensor y seguridad. La ubicación céntrica te permite acceder caminando a restaurantes, supermercados, tiendas y a la principal zona de esparcimiento de Colón, la costanera, donde encontrarás playas, bares y actividades recreativas. Es un punto de partida ideal para visitar las Termas de Colón o el cercano Parque Nacional El Palmar.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@suenoagradableapartment.com.ar",
@@ -104,14 +106,6 @@
             "costanera"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad ideal para alquiler temporal en ciudad. Buena ubicación.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "apartment",
@@ -119,6 +113,19 @@
         "seed-example",
         "central",
         "urban"
+    ],
+    "featureIds": [
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740"
     ],
     "faqs": [
         {
@@ -132,18 +139,5 @@
             "category": "facilities"
         }
     ],
-    "iaData": [],
-    "featureIds": [
-        "45973def-bdc7-47cd-8997-11d649dc3a4f",
-        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740"
-    ]
+    "iaData": []
 }

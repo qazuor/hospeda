@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "c7ecb8a1-5edb-4ed5-83c0-4c4b54bf4957",
     "name": "oven",
     "slug": "oven",
     "description": "Oven",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "KITCHEN",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

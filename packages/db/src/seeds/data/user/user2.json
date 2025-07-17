@@ -1,13 +1,12 @@
 {
+    "$schema": "../../schemas/user.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
-    "email": "sofia.travel@gmail.com",
-    "username": "sofia_travel",
+    "slug": "sofia-morales",
+    "role": "USER",
+    "permissions": ["post.create", "post.update.own", "post.delete.own", "user.update.own"],
     "firstName": "Sofía",
     "lastName": "Morales",
-    "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
-    "bio": "Bloggers de viajes y fotografía que documenta experiencias únicas en destinos argentinos. Especializada en turismo sustentable y cultural. Amante de la historia local.",
-    "role": "USER",
-    "isVerified": true,
+    "displayName": "Sofía Morales",
     "contactInfo": {
         "personalEmail": "sofia.travel@gmail.com",
         "workEmail": "sofia@viajesyfotos.com",
@@ -15,12 +14,6 @@
         "website": "https://viajesyfotos.com",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
-    },
-    "socialNetworks": {
-        "instagram": "https://instagram.com/sofia_travel",
-        "facebook": "https://facebook.com/sofia.morales.travel",
-        "twitter": "https://twitter.com/sofia_travel",
-        "youtube": "https://youtube.com/c/sofiaviajes"
     },
     "location": {
         "state": "Santa Fe",
@@ -35,17 +28,15 @@
             "lng": "-60.6505"
         }
     },
-    "preferences": {
-        "language": "es",
-        "currency": "ARS",
-        "notifications": {
-            "email": true,
-            "push": true,
-            "marketing": true
-        }
+    "socialNetworks": {
+        "instagram": "https://instagram.com/sofia_travel",
+        "facebook": "https://facebook.com/sofia.morales.travel",
+        "twitter": "https://twitter.com/sofia_travel",
+        "youtube": "https://youtube.com/c/sofiaviajes"
     },
-    "adminInfo": {
-        "notes": "Blogger de viajes activa, genera contenido de calidad",
-        "favorite": true
-    }
+    "profile": {
+        "website": "https://viajesyfotos.com"
+    },
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

@@ -6,9 +6,6 @@
     "description": "Aviario con aves regionales y exóticas",
     "icon": "flutter_dash",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

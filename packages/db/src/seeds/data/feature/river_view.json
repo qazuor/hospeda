@@ -1,16 +1,11 @@
 {
+    "$schema": "../../schemas/feature.schema.json",
     "id": "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
     "name": "river_view",
     "slug": "river_view",
     "description": "Vista al campo",
-    "type": "accommodation",
-    "category": "comfort",
     "icon": "feature",
-    "isActive": true,
-    "isPopular": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Hermosas vistas a los campos de cultivo y al atardecer",
-        "favorite": false
-    }
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
 }

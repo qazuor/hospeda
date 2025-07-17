@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "e5fa69c0-b8e8-431a-b508-14a211a54740",
     "name": "microwave",
     "slug": "microwave",
     "description": "Microwave",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "KITCHEN",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

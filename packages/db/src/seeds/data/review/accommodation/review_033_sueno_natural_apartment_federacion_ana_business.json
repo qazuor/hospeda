@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-033-sueno-natural-apartment-federacion-ana_business",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
     "accommodationId": "sueno-natural-apartment-federacion",
@@ -11,5 +12,6 @@
         "accuracy": 4,
         "communication": 3,
         "location": 3
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

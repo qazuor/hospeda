@@ -6,9 +6,6 @@
     "description": "Complejo con múltiples instalaciones deportivas",
     "icon": "sports",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

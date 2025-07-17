@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-calido-apartment-colon",
     "name": "sueno-calido-apartment",
-    "displayName": "Sueño Cálido Apartamento",
+    "summary": "Descubre el confort y la calidez en Sueño Cálido Apartamento, ubicado en una zona tranquila de Colón, a solo minutos del centro y de las playas.",
     "type": "APARTMENT",
     "description": "Descubre el confort y la calidez en Sueño Cálido Apartamento, ubicado en una zona tranquila de Colón, a solo minutos del centro y de las playas. Este apartamento moderno y totalmente equipado es ideal para disfrutar de una estadía relajante, ya sea en pareja o en familia.\n\nEl apartamento cuenta con un dormitorio principal con cama queen y placard, y un área de estar luminosa con sofá cama y TV Smart. La cocina semi-integrada está equipada con horno, anafe, microondas, heladera con freezer y todos los utensilios necesarios para una estadía cómoda. Dispone de un baño completo con ducha.\n\nPodrás disfrutar de un pequeño balcón con vista lateral a un área verde. El edificio cuenta con acceso por escalera (no tiene ascensor). La ubicación te permite acceder fácilmente a supermercados, panaderías y a las vías de acceso para visitar las Termas de Colón o el Parque Nacional El Palmar. Un espacio diseñado para ofrecer una experiencia hogareña durante tus vacaciones o escapadas de fin de semana.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@suenocalidoapartment.com.ar",
@@ -109,14 +111,6 @@
             "cómodo"
         ]
     },
-    "adminInfo": {
-        "notes": "Buena opción para estadías más largas. Propietarios atentos.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "apartment",
@@ -124,19 +118,6 @@
         "seed-example",
         "family-friendly"
     ],
-    "faqs": [
-        {
-            "question": "¿El apartamento tiene lavarropas?",
-            "answer": "No, el apartamento no cuenta con lavarropas. Hay lavanderías en las cercanías.",
-            "category": "amenities"
-        },
-        {
-            "question": "¿Está permitido fumar?",
-            "answer": "No, está estrictamente prohibido fumar dentro del apartamento y en el balcón.",
-            "category": "policies"
-        }
-    ],
-    "iaData": [],
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "2f7d146e-ed8a-4535-8f70-0a5c6ea47680"
@@ -154,5 +135,18 @@
         "8305de52-109d-48bb-8781-c7e837443809",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿El apartamento tiene lavarropas?",
+            "answer": "No, el apartamento no cuenta con lavarropas. Hay lavanderías en las cercanías.",
+            "category": "amenities"
+        },
+        {
+            "question": "¿Está permitido fumar?",
+            "answer": "No, está estrictamente prohibido fumar dentro del apartamento y en el balcón.",
+            "category": "policies"
+        }
+    ],
+    "iaData": []
 }

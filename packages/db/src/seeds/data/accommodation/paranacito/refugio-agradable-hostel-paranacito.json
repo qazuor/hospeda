@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-agradable-hostel-villa_paranacito",
     "name": "refugio-agradable-hostel",
-    "displayName": "Refugio Agradable Hostel",
+    "summary": "Encuentra un espacio agradable y económico para tu estadía en Refugio Agradable Hostel, ubicado en el pueblo de Paranacito.",
     "type": "HOSTEL",
     "description": "Encuentra un espacio agradable y económico para tu estadía en Refugio Agradable Hostel, ubicado en el pueblo de Paranacito. Ideal para mochileros y viajeros que buscan un lugar amigable y bien ubicado para explorar el Delta y disfrutar de la vida local.\n\nEl hostel ofrece dormitorios compartidos (4 y 6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes incluyen una cocina equipada para uso de los huéspedes, un comedor social y un living con TV. Dispone de un pequeño patio.\n\nSu ubicación en el pueblo permite acceder caminando a comercios y servicios. Estás a poca distancia en auto de los puntos de acceso al Delta y las actividades fluviales. Es una base práctica y económica para explorar la zona, con un ambiente relajado.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@refugioagradablehostel.com.ar",
@@ -12,6 +14,9 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "info@refugioagradablehostel.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/refugioagradablehostel"
     },
     "price": {
         "basePrice": {
@@ -109,24 +114,6 @@
             "compartido"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción de bajo costo en el pueblo. Atrae principalmente a mochileros interesados en el Delta.",
-        "favorite": false,
-        "tags": [
-            "paranacito",
-            "hostel",
-            "paranacito-hostel",
-            "seed-example",
-            "budget",
-            "nature",
-            "social"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/refugioagradablehostel"
-    },
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "9b02aadf-8f00-4ea5-9109-5a71ae71ad1f",
@@ -140,5 +127,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

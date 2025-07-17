@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-agradable-apartment-san_jose",
     "name": "mirador-agradable-apartment",
-    "displayName": "Mirador Agradable Apartamento",
+    "summary": "Disfruta de una estancia agradable con vistas en Mirador Agradable Apartamento, un espacio moderno y confortable ubicado en San José.",
     "type": "APARTMENT",
     "description": "Disfruta de una estancia agradable con vistas en Mirador Agradable Apartamento, un espacio moderno y confortable ubicado en San José. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado, con vistas parciales y fácil acceso al centro y a los alrededores, incluyendo el Parque Nacional El Palmar.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo alojar hasta 3 personas. Los ventanales permiten la entrada de luz y ofrecen vistas parciales a la ciudad o zonas verdes. Dispone de aire acondicionado y calefacción.\n\nUbicado en un edificio con ascensor en una zona tranquila, ofrece un retiro pacífico. Estás a pocos minutos en auto del centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Una opción práctica y cómoda para tu visita a San José.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "info@miradoragradableapartment.com.ar",
@@ -117,27 +119,6 @@
             "equipado"
         ]
     },
-    "adminInfo": {
-        "notes": "Ofrece vistas parciales desde un piso alto. En zona residencial tranquila. Relevante para turismo de El Palmar.",
-        "favorite": false,
-        "tags": [
-            "san-jose",
-            "apartment",
-            "san-jose-apartment",
-            "seed-example",
-            "quiet",
-            "city-view",
-            "nature"
-        ]
-    },
-    "faqs": [],
-    "iaData": [
-        {
-            "title": "Parque Nacional El Palmar",
-            "content": "El Parque Nacional El Palmar es uno de los parques nacionales más importantes de Argentina, famoso por sus extensos palmares de yatay. Ofrece senderos para caminar, áreas de picnic y acceso a playas sobre el río Uruguay. Es ideal para la observación de aves y la naturaleza. Se encuentra a pocos kilómetros de San José, por la Ruta Nacional 14.",
-            "category": "nature"
-        }
-    ],
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "2f7d146e-ed8a-4535-8f70-0a5c6ea47680",
@@ -154,5 +135,13 @@
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c",
         "4bad848b-16de-488c-a673-91172ff620f3"
+    ],
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "Parque Nacional El Palmar",
+            "content": "El Parque Nacional El Palmar es uno de los parques nacionales más importantes de Argentina, famoso por sus extensos palmares de yatay. Ofrece senderos para caminar, áreas de picnic y acceso a playas sobre el río Uruguay. Es ideal para la observación de aves y la naturaleza. Se encuentra a pocos kilómetros de San José, por la Ruta Nacional 14.",
+            "category": "nature"
+        }
     ]
 }

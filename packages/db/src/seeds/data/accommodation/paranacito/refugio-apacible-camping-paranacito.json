@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-apacible-camping-villa_paranacito",
     "name": "refugio-apacible-camping",
-    "displayName": "Refugio Apacible Camping",
+    "summary": "Encuentra la paz a orillas del río en Refugio Apacible Camping, un espacio tranquilo ubicado en el Delta entrerriano, cerca de Paranacito.",
     "type": "CAMPING",
     "description": "Encuentra la paz a orillas del río en Refugio Apacible Camping, un espacio tranquilo ubicado en el Delta entrerriano, cerca de Paranacito. Ideal para campistas y amantes de la pesca, la navegación y la naturaleza que buscan un refugio sereno y apacible con acceso directo al río.\n\nEl camping ofrece parcelas amplias con buena sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, pensado para disfrutar del río y el entorno deltaico.\n\nSu ubicación junto a un brazo del río Paraná ofrece acceso directo al agua, ideal para pesca, navegación (se pueden botar lanchas pequeñas o kayaks) y avistaje de aves. El entorno es muy tranquilo y natural. Paranacito, el pueblo más cercano, ofrece servicios básicos. Un lugar apacible para una aventura en el Delta.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "contacto@refugioapaciblecamping.com.ar",
@@ -110,19 +112,16 @@
             "acampar"
         ]
     },
-    "adminInfo": {
-        "notes": "Camping con enfoque en pesca y Delta. Requiere vehículo para acceder. Temporada alta de pesca y verano.",
-        "favorite": true,
-        "tags": [
-            "paranacito",
-            "camping",
-            "paranacito-camping",
-            "seed-example",
-            "nature",
-            "fishing",
-            "riverside"
-        ]
-    },
+    "featureIds": [
+        "4e01f576-29f6-42e0-adb2-beeb790d77bf",
+        "81c25058-1006-4d13-9c71-bc293f051e28",
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4"
+    ],
+    "amenityIds": [
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
     "faqs": [
         {
             "question": "¿Se pueden botar lanchas?",
@@ -146,15 +145,5 @@
             "content": "Paranacito es un destino popular para la pesca deportiva, especialmente de especies como dorados, surubíes y bogas en temporada. El camping Refugio Apacible, al estar a orillas del río, es un excelente punto para pescar desde la costa o salir a navegar en busca de los mejores pesqueros.",
             "category": "activities"
         }
-    ],
-    "featureIds": [
-        "4e01f576-29f6-42e0-adb2-beeb790d77bf",
-        "81c25058-1006-4d13-9c71-bc293f051e28",
-        "20e2f309-ce52-476f-92bc-a1352bfd5ce4"
-    ],
-    "amenityIds": [
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ]
 }

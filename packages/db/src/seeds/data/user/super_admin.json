@@ -1,22 +1,39 @@
 {
+    "$schema": "../../schemas/user.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    "email": "superadmin@hospeda.com",
-    "username": "superadmin",
+    "slug": "super-administrator",
+    "role": "SUPER_ADMIN",
+    "permissions": [
+        "accommodation.create",
+        "accommodation.update.any",
+        "accommodation.delete.any",
+        "accommodation.restore.any",
+        "destination.create",
+        "destination.update.any",
+        "destination.delete.any",
+        "destination.restore.any",
+        "event.create",
+        "event.update.any",
+        "event.delete.any",
+        "event.restore.any",
+        "post.create",
+        "post.update.any",
+        "post.delete.any",
+        "post.restore.any",
+        "user.create",
+        "user.update.any",
+        "user.delete.any",
+        "user.restore.any"
+    ],
     "firstName": "Super",
     "lastName": "Administrator",
-    "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-    "bio": "Super administrador del sistema con acceso completo a todas las funcionalidades. Responsable de la gestión general de la plataforma y configuraciones del sistema.",
-    "role": "SUPER_ADMIN",
-    "isVerified": true,
+    "displayName": "Super Administrator",
     "contactInfo": {
         "personalEmail": "superadmin@hospeda.com",
         "workEmail": "admin@hospeda.com",
         "mobilePhone": "+54 11 5555-0001",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
-    },
-    "socialNetworks": {
-        "linkedin": "https://linkedin.com/in/superadmin-hospeda"
     },
     "location": {
         "state": "Entre Ríos",
@@ -28,17 +45,22 @@
             "lng": "-60.5333"
         }
     },
-    "preferences": {
+    "socialNetworks": {
+        "linkedin": "https://linkedin.com/in/superadmin-hospeda"
+    },
+    "profile": {
+        "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+        "bio": "Super administrador del sistema con acceso completo a todas las funcionalidades. Responsable de la gestión general de la plataforma y configuraciones del sistema."
+    },
+    "settings": {
         "language": "es",
-        "currency": "ARS",
         "notifications": {
-            "email": true,
-            "push": true,
-            "marketing": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowSms": false,
+            "allowPush": true
         }
     },
-    "adminInfo": {
-        "notes": "Super administrador principal del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

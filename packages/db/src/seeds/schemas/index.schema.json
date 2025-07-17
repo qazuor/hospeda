@@ -5,6 +5,9 @@
     "description": "Index of all available seed schemas",
     "type": "object",
     "properties": {
+        "schema": {
+            "type": "string"
+        },
         "schemas": {
             "type": "object",
             "properties": {

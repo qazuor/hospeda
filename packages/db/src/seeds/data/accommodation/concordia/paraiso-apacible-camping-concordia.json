@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-apacible-camping-concordia",
     "name": "paraiso-apacible-camping",
-    "displayName": "Paraíso Apacible Camping",
+    "summary": "Encuentra un lugar apacible para tu experiencia de camping en Paraíso Apacible Camping, ubicado en un entorno sereno cerca de Concordia.",
     "type": "CAMPING",
     "description": "Encuentra un lugar apacible para tu experiencia de camping en Paraíso Apacible Camping, ubicado en un entorno sereno cerca de Concordia. Ideal para campistas que buscan tranquilidad y un contacto directo con la naturaleza, a poca distancia de las Termas y el Lago de Salto Grande.\n\nEl camping ofrece parcelas con buena sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, diseñado para disfrutar del aire libre y la paz del entorno.\n\nDisponemos de un espacio central con mesas y bancos. La cercanía a la zona del lago y la represa lo convierte en una base conveniente para actividades náuticas y pesca. La tranquilidad del lugar es su mayor atractivo. Estás a una distancia razonable en auto de las Termas de Concordia y del centro de la ciudad.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "info@paraisoapaciblecamping.com.ar",
@@ -12,6 +14,10 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "info@paraisoapaciblecamping.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/paraisoapaciblecamping",
+        "twitter": "https://twitter.com/paraisoapaciblecamping"
     },
     "price": {
         "basePrice": {
@@ -106,14 +112,6 @@
             "pesca"
         ]
     },
-    "adminInfo": {
-        "notes": "Camping simple con enfoque en el acceso al lago. Atrae campistas pescadores y deportistas náuticos.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concordia",
         "camping",
@@ -123,6 +121,16 @@
         "quiet",
         "fishing",
         "lake"
+    ],
+    "featureIds": [
+        "81c25058-1006-4d13-9c71-bc293f051e28",
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "9a33f09c-31dd-49a0-a438-b8371b2587a0"
+    ],
+    "amenityIds": [
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -136,19 +144,5 @@
             "category": "activities"
         }
     ],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/paraisoapaciblecamping",
-        "twitter": "https://twitter.com/paraisoapaciblecamping"
-    },
-    "featureIds": [
-        "81c25058-1006-4d13-9c71-bc293f051e28",
-        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
-        "9a33f09c-31dd-49a0-a438-b8371b2587a0"
-    ],
-    "amenityIds": [
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    "iaData": []
 }

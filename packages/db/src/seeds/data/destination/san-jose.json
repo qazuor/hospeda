@@ -43,45 +43,15 @@
             "familia"
         ]
     },
-    "adminInfo": {
-        "notes": "Destino colonial en Entre Ríos",
-        "favorite": false
-    },
-    "tags": [
-        "colonial",
-        "tradición",
-        "historia",
-        "tranquilidad",
-        "familia"
-    ],
-    "reviews": [
-        {
-            "title": "Experiencia tranquila y auténtica",
-            "content": "Un lugar muy tranquilo y auténtico. Perfecto para desconectar y disfrutar de la naturaleza. La gente es muy cálida y hospitalaria.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 3.5,
-                "accessibility": 3.5,
-                "safety": 4.5,
-                "cleanliness": 4.0,
-                "hospitality": 4.5,
-                "culturalOffer": 3.5,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 2.5,
-                "infrastructure": 3.5,
-                "environmentalCare": 4.5,
-                "wifiAvailability": 3.0,
-                "shopping": 3.0,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-nature-lover"
-        }
-    ],
     "attractionIds": [
         "acc99474-2779-4e5d-8e0a-9d49484d7543",
         "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
         "d759d447-8322-4260-b16b-fe8892843edc",
         "a4351fda-6122-4e8a-8a19-bf97467c1b49"
-    ]
+    ],
+    "id": "cee65ddf-22b2-5403-a649-b1fc407b7c0b",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-encantado-room-san_jose",
     "name": "refugio-encantado-room",
-    "displayName": "Refugio Encantado Habitación",
+    "summary": "Descubre un rincón encantador en Refugio Encantado, una habitación privada en una casa con jardín ubicada en un barrio residencial de San José.",
     "type": "ROOM",
     "description": "Descubre un rincón encantador en Refugio Encantado, una habitación privada en una casa con jardín ubicada en un barrio residencial de San José. Ideal para viajeros que buscan un lugar apacible y agradable para descansar, con acceso a espacios verdes y a poca distancia del pueblo y el Parque Nacional El Palmar.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, y cerca de zonas con vegetación. Estás a una distancia conveniente en auto o caminando del centro de San José y del Parque Nacional El Palmar. El jardín es un plus para disfrutar del aire libre. Una opción económica y agradable para tu estadía en San José.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "info@refugioencantadoroom.com.ar",
@@ -102,20 +104,6 @@
             "compartido"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción económica en zona residencial. Atrae viajeros solos o parejas interesados en El Palmar.",
-        "favorite": false,
-        "tags": [
-            "san-jose",
-            "room",
-            "san-jose-room",
-            "seed-example",
-            "budget",
-            "nature"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "a471118f-48f7-4ae4-b6f4-963281900517"
@@ -127,5 +115,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

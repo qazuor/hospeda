@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/postSponsorship.schema.json",
     "id": "psp-aventura-post-004",
     "sponsorId": "ps-aventura-parana-004",
     "postId": "post-aventura-parana-004",
@@ -12,8 +13,5 @@
     "fromDate": "2024-11-10T00:00:00Z",
     "toDate": "2024-12-20T23:59:59Z",
     "isHighlighted": true,
-    "adminInfo": {
-        "notes": "Patrocinio para contenido de turismo aventura",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE"
 }

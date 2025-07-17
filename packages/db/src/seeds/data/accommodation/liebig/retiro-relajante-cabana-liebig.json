@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-relajante-cabana-liebig",
     "name": "retiro-relajante-cabana",
-    "displayName": "Retiro Relajante Cabaña",
+    "summary": "Busca un espacio de relax en Retiro Relajante, una cómoda cabaña de madera ubicada en un entorno tranquilo de Liebig, cerca del río Uruguay.",
     "type": "CABIN",
     "description": "Busca un espacio de relax en Retiro Relajante, una cómoda cabaña de madera ubicada en un entorno tranquilo de Liebig, cerca del río Uruguay. Ideal para parejas o viajeros que buscan un refugio apacible y bien ubicado para acceder a la historia de la localidad y disfrutar del río.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es sencilla y rústica, invitando a la relajación.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación. La ubicación en un barrio tranquilo de Liebig permite un rápido acceso en auto o caminando a los restos históricos del Frigorífico Liebig y al acceso al río. Retiro Relajante es tu base ideal para combinar la historia y la tranquilidad del río.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "cabanas@retirorelajantecabana.com.ar",
@@ -116,20 +118,6 @@
             "escapada"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple pero bien ubicada para turismo histórico y de río. Énfasis en la tranquilidad.",
-        "favorite": false,
-        "tags": [
-            "liebig",
-            "cabin",
-            "liebig-cabin",
-            "seed-example",
-            "riverside",
-            "history"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
         "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
@@ -146,5 +134,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

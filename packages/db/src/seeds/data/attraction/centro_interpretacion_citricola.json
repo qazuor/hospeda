@@ -6,9 +6,6 @@
     "description": "Centro educativo sobre la producción citrícola regional",
     "icon": "school",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

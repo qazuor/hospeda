@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/eventOrganizer.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d502",
     "name": "Fundación Cultural Entre Ríos",
     "logo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
@@ -14,8 +15,5 @@
         "instagram": "https://instagram.com/fundacion_cultura_er",
         "linkedin": "https://linkedin.com/company/fundacion-cultura-entre-rios"
     },
-    "adminInfo": {
-        "notes": "Organización sin fines de lucro dedicada a promover la cultura en Entre Ríos",
-        "favorite": true
-    }
+    "lifecycleState": "ACTIVE"
 }

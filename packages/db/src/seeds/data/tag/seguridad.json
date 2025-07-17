@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-seguridad-033",
     "name": "Seguridad",
     "slug": "seguridad",
-    "description": "Lugares seguros y medidas de seguridad",
-    "type": "general",
-    "category": "primary",
-    "color": "#696969",
+    "color": "GREY",
     "icon": "security",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para seguridad y lugares seguros",
-        "favorite": false
-    }
+    "notes": "Lugares seguros y medidas de seguridad",
+    "lifecycleState": "ACTIVE"
 }

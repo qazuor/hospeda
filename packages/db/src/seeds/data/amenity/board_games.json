@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "ba67af27-5e90-44b6-b0ca-23fd5576092f",
     "name": "board_games",
     "slug": "board_games",
     "description": "Board Games",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "ENTERTAINMENT",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

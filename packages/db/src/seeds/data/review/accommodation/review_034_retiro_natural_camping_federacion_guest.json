@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-034-retiro-natural-camping-federacion-guest",
     "userId": "guest-user-12345",
     "accommodationId": "retiro-natural-camping-federacion",
@@ -11,5 +12,6 @@
         "accuracy": 3,
         "communication": 2,
         "location": 3
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

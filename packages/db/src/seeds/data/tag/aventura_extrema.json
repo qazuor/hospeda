@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-aventura-extrema-014",
     "name": "Aventura Extrema",
     "slug": "aventura-extrema",
-    "description": "Actividades de alto riesgo y adrenalina",
-    "type": "activity",
-    "category": "primary",
-    "color": "#FF4500",
+    "color": "RED",
     "icon": "extreme",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para actividades de aventura extrema",
-        "favorite": false
-    }
+    "notes": "Actividades de alto riesgo y adrenalina",
+    "lifecycleState": "ACTIVE"
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "loft-urbano-concordia",
     "name": "loft-urbano",
-    "displayName": "Loft Urbano",
+    "summary": "Moderno y luminoso loft ubicado en pleno centro de Concordia, ideal para viajeros urbanos que buscan una ubicación estratégica y un ambiente contemporáneo.",
     "type": "APARTMENT",
     "description": "Moderno y luminoso loft ubicado en pleno centro de Concordia, ideal para viajeros urbanos que buscan una ubicación estratégica y un ambiente contemporáneo. Este espacio de diseño urbano-industrial combina funcionalidad y estilo en sus 65 metros cuadrados distribuidos en un ambiente abierto con distintas áreas definidas para maximizar la comodidad.\n\nEl área de descanso cuenta con una cama queen size con colchón premium y ropa de cama de alta calidad, separada del espacio común por una biblioteca de diseño que permite privacidad sin perder la amplitud. El living está equipado con un cómodo sofá que puede convertirse en cama adicional, Smart TV de 50 pulgadas y una pequeña área de trabajo ideal para quienes necesitan conectarse durante su viaje. La cocina totalmente equipada incluye una barra con taburetes que funciona perfectamente como zona de desayuno o para disfrutar de un vino por la noche.\n\nLa iluminación ha sido cuidadosamente diseñada para crear diferentes ambientes según la hora del día, complementada por los amplios ventanales que permiten la entrada de luz natural abundante y ofrecen vistas a la ciudad. El baño, totalmente renovado, cuenta con una amplia ducha con hidromasaje y amenities de alta calidad.\n\nSu ubicación privilegiada permite llegar caminando a los principales atractivos del centro de Concordia, incluyendo la peatonal, el Palacio San Carlos, restaurantes, cafés y tiendas. A solo 10 minutos en auto se encuentran las famosas Termas de Concordia, y a 15 minutos el Lago de Salto Grande, destino ideal para los amantes de la naturaleza y los deportes acuáticos.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "reservas@lofturbano.com.ar",
@@ -154,10 +156,6 @@
             "entre ríos"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad de alta demanda en semana santa y vacaciones. El propietario ofrece servicios adicionales como city tour y transfer a las termas.",
-        "favorite": true
-    },
     "tags": [
         "concordia",
         "apartment",
@@ -166,6 +164,27 @@
         "business-travel",
         "central",
         "modern"
+    ],
+    "featureIds": [
+        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680",
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "72f6d9f0-24e1-429d-a665-f5e7a6d8d95a"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "0d73b0be-30c1-4cbb-8b21-90d2bde3d412",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "a14dc9e1-6290-4fda-8078-2e5112716b45",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "5df75b3e-1f48-40fe-ad77-3cae754982ab",
+        "4bad848b-16de-488c-a673-91172ff620f3",
+        "1e40f686-3964-4b5b-8259-9ca49016e2e7",
+        "92b8c95b-264e-4bfc-86b5-23f1692f45af"
     ],
     "faqs": [
         {
@@ -215,26 +234,5 @@
             "content": "A 15 minutos en auto del loft se encuentra el Lago de Salto Grande, formado por la represa binacional del mismo nombre. Este entorno natural ofrece múltiples actividades al aire libre como navegación, kayak, windsurf y pesca deportiva. En la zona se pueden observar más de 150 especies de aves, lo que lo convierte en un destino ideal para los aficionados al avistamiento de aves; recomendamos llevar binoculares. El Centro de Interpretación de la Represa ofrece visitas guiadas gratuitas (reserva previa) donde podrás aprender sobre la generación de energía hidroeléctrica y su impacto ambiental. Para los amantes del senderismo, el Parque San Carlos cuenta con varios circuitos señalizados de diferentes niveles de dificultad, permitiendo explorar la flora autóctona. En el extremo norte del lago se encuentra la Reserva Natural Salto Grande, menos concurrida pero con extraordinaria biodiversidad.",
             "category": "ecotourism"
         }
-    ],
-    "featureIds": [
-        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680",
-        "45973def-bdc7-47cd-8997-11d649dc3a4f",
-        "72f6d9f0-24e1-429d-a665-f5e7a6d8d95a"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "0d73b0be-30c1-4cbb-8b21-90d2bde3d412",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "a14dc9e1-6290-4fda-8078-2e5112716b45",
-        "8305de52-109d-48bb-8781-c7e837443809",
-        "5df75b3e-1f48-40fe-ad77-3cae754982ab",
-        "4bad848b-16de-488c-a673-91172ff620f3",
-        "1e40f686-3964-4b5b-8259-9ca49016e2e7",
-        "92b8c95b-264e-4bfc-86b5-23f1692f45af"
     ]
 }

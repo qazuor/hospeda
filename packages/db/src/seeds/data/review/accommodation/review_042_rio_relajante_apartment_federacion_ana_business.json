@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-042-rio-relajante-apartment-federacion-ana_business",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
     "accommodationId": "rio-relajante-apartment-federacion",
@@ -11,5 +12,6 @@
         "accuracy": 3,
         "communication": 4,
         "location": 4
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

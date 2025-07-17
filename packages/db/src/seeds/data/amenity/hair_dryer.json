@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "8305de52-109d-48bb-8781-c7e837443809",
     "name": "hair_dryer",
     "slug": "hair_dryer",
     "description": "Hair Dryer",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "CLIMATE_CONTROL",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

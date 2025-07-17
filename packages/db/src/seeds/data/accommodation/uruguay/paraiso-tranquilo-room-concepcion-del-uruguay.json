@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-tranquilo-room-concepcion_del_uruguay",
     "name": "paraiso-tranquilo-room",
-    "displayName": "Paraíso Tranquilo Habitación",
+    "summary": "Encuentra un remanso de paz en Paraíso Tranquilo, una habitación privada en una casa con jardín ubicada en un barrio sereno de Concepción del Uruguay.",
     "type": "ROOM",
     "description": "Encuentra un remanso de paz en Paraíso Tranquilo, una habitación privada en una casa con jardín ubicada en un barrio sereno de Concepción del Uruguay. Ideal para viajeros que buscan un lugar silencioso para descansar y recargar energías, con la calidez de un hogar y acceso a espacios comunes.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, siempre limpio. Los huéspedes pueden usar una cocina básica compartida con heladera y microondas para preparar infusiones o comidas sencillas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial apacible, alejado del ruido del centro, pero a una distancia conveniente (en auto o transporte público) de las atracciones principales de la ciudad, la costanera y las playas. El jardín es un plus para disfrutar del aire libre. Una opción económica y tranquila para tu estadía en 'La Histórica'.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@paraisotranquiloroom.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "hola@paraisotranquiloroom.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/paraisotranquiloroom",
+        "instagram": "https://instagram.com/paraisotranquiloroom",
+        "twitter": "https://twitter.com/paraisotranquiloroom"
     },
     "price": {
         "basePrice": {
@@ -101,14 +108,6 @@
             "compartido"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción básica y económica para viajeros solos o parejas. Énfasis en la tranquilidad.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "room",
@@ -117,13 +116,6 @@
         "budget",
         "quiet"
     ],
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/paraisotranquiloroom",
-        "instagram": "https://instagram.com/paraisotranquiloroom",
-        "twitter": "https://twitter.com/paraisotranquiloroom"
-    },
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "bdc8b938-9599-428c-92a8-0bf932005ed7"
@@ -135,5 +127,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

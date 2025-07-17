@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "4bad848b-16de-488c-a673-91172ff620f3",
     "name": "elevator",
     "slug": "elevator",
     "description": "Elevator",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "ACCESSIBILITY",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-tranquilo-apartment-san_jose",
     "name": "nido-tranquilo-apartment",
-    "displayName": "Nido Tranquilo Apartamento",
+    "summary": "Encuentra la paz y el confort en Nido Tranquilo Apartamento, un espacio moderno ubicado en un barrio sereno de San José.",
     "type": "APARTMENT",
     "description": "Encuentra la paz y el confort en Nido Tranquilo Apartamento, un espacio moderno ubicado en un barrio sereno de San José. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado para acceder al centro y al Parque Nacional El Palmar.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, invitando a la relajación.\n\nSituado en un edificio tranquilo, ofrece un descanso reparador. Estás a pocos minutos en auto del centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Una opción práctica y cómoda para tu visita a San José.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@nidotranquiloapartment.com.ar",
@@ -13,6 +15,11 @@
         "preferredPhone": "MOBILE",
         "homeEmail": "info@nidotranquiloapartment.com.ar",
         "website": "https://nidotranquiloapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/nidotranquiloapartmentar",
+        "instagram": "https://instagram.com/nidotranquiloapartmentar",
+        "twitter": "https://twitter.com/nidotranquiloapartmentar"
     },
     "price": {
         "basePrice": {
@@ -110,25 +117,6 @@
             "equipado"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple y funcional en zona residencial. Buena para estancias cortas. Relevante para turismo de El Palmar.",
-        "favorite": false,
-        "tags": [
-            "san-jose",
-            "apartment",
-            "san-jose-apartment",
-            "seed-example",
-            "quiet",
-            "nature"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/nidotranquiloapartmentar",
-        "instagram": "https://instagram.com/nidotranquiloapartmentar",
-        "twitter": "https://twitter.com/nidotranquiloapartmentar"
-    },
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "bdc8b938-9599-428c-92a8-0bf932005ed7",
@@ -144,5 +132,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

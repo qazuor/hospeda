@@ -1,7 +1,8 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag_vida_nocturna",
     "name": "Vida Nocturna",
-    "description": "Entretenimiento y actividades nocturnas",
-    "color": "#8A2BE2",
-    "category": "entretenimiento"
+    "slug": "vida-nocturna",
+    "color": "GREY",
+    "notes": "Entretenimiento y actividades nocturnas"
 }

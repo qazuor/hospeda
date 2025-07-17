@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-calido-apartment-concordia",
     "name": "sueno-calido-apartment",
-    "displayName": "Sueño Cálido Apartamento",
+    "summary": "Disfruta de la calidez y el confort en Sueño Cálido Apartamento, un espacio moderno ubicado en una zona residencial de Concordia.",
     "type": "APARTMENT",
     "description": "Disfruta de la calidez y el confort en Sueño Cálido Apartamento, un espacio moderno ubicado en una zona residencial de Concordia. Ideal para parejas o viajeros que buscan un lugar tranquilo y bien equipado para descansar, con fácil acceso a las termas y atracciones de la ciudad.\n\nEl apartamento cuenta con un dormitorio principal con cama doble, un baño completo, y un área de living-comedor integrada con cocina equipada (heladera, microondas, anafe). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es acogedora y funcional.\n\nSituado en un edificio moderno, ofrece un refugio cómodo. Estás a pocos minutos en auto de las Termas de Concordia y el centro de la ciudad. Es una base práctica y confortable para tu visita, ofreciendo la paz de un barrio residencial con la cercanía a los puntos de interés.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "info@suenocalidoapartment.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "hola@suenocalidoapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/suenocalidoapartment",
+        "instagram": "https://instagram.com/suenocalidoapartment",
+        "twitter": "https://twitter.com/suenocalidoapartment"
     },
     "price": {
         "basePrice": {
@@ -109,14 +116,6 @@
             "equipado"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple y funcional en zona residencial. Buena para estancias cortas.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concordia",
         "apartment",
@@ -125,19 +124,6 @@
         "thermal",
         "quiet"
     ],
-    "faqs": [
-        {
-            "question": "¿Está cerca del centro?",
-            "answer": "El centro de Concordia se encuentra a unos 5-10 minutos en auto o transporte público.",
-            "category": "location"
-        }
-    ],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/suenocalidoapartment",
-        "instagram": "https://instagram.com/suenocalidoapartment",
-        "twitter": "https://twitter.com/suenocalidoapartment"
-    },
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "bdc8b938-9599-428c-92a8-0bf932005ed7"
@@ -152,5 +138,13 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿Está cerca del centro?",
+            "answer": "El centro de Concordia se encuentra a unos 5-10 minutos en auto o transporte público.",
+            "category": "location"
+        }
+    ],
+    "iaData": []
 }

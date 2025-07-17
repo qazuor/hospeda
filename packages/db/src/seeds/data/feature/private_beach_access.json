@@ -1,16 +1,11 @@
 {
+    "$schema": "../../schemas/feature.schema.json",
     "id": "3c8210e0-06e0-4ac6-b0eb-86755f5425df",
     "name": "private_beach_access",
     "slug": "private_beach_access",
     "description": "Acceso privado a la playa",
-    "type": "accommodation",
-    "category": "comfort",
     "icon": "feature",
-    "isActive": true,
-    "isPopular": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Zona de playa exclusiva para huéspedes del camping",
-        "favorite": false
-    }
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
 }

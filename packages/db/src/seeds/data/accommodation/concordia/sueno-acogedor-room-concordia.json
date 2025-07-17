@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-acogedor-room-concordia",
     "name": "sueno-acogedor-room",
-    "displayName": "Sueño Acogedor Habitación",
+    "summary": "Siéntete como en casa en Sueño Acogedor, una habitación privada dentro de una casa familiar en Concordia.",
     "type": "ROOM",
     "description": "Siéntete como en casa en Sueño Acogedor, una habitación privada dentro de una casa familiar en Concordia. Ideal para viajeros solos o parejas que buscan un lugar cómodo, limpio y con la calidez de un hogar local. Ubicado en un barrio tranquilo, ofrece una base conveniente para explorar la ciudad.\n\nLa habitación es sencilla pero confortable, con cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, mantenido con cuidado. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para comidas rápidas o infusiones.\n\nLa casa se encuentra en un barrio residencial que permite descansar bien. Estás a una distancia razonable en auto o transporte público del centro de Concordia, las Termas y otros atractivos. Los anfitriones ofrecen un trato cercano y amable, haciendo de tu estadía una experiencia acogedora.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@suenoacogedorroom.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "info@suenoacogedorroom.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/suenoacogedorroom",
+        "instagram": "https://instagram.com/suenoacogedorroom",
+        "twitter": "https://twitter.com/suenoacogedorroom"
     },
     "price": {
         "basePrice": {
@@ -101,14 +108,6 @@
             "compartido"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción muy económica. Atrae a viajeros que buscan interacción con locales.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concordia",
         "room",
@@ -117,13 +116,6 @@
         "budget",
         "social"
     ],
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/suenoacogedorroom",
-        "instagram": "https://instagram.com/suenoacogedorroom",
-        "twitter": "https://twitter.com/suenoacogedorroom"
-    },
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "be30904b-8750-4561-b5e2-0ec228a5e6b4"
@@ -135,5 +127,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

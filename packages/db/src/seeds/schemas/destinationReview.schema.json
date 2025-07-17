@@ -1,0 +1,169 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "destinationReview.schema.json",
+    "title": "DestinationReview Seed Schema",
+    "description": "JSON schema for DestinationReview entity seeds - matches TypeScript DestinationReviewType interface",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "id": {
+            "type": "string",
+            "description": "DestinationReview ID (UUID)"
+        },
+        "destinationId": {
+            "type": "string",
+            "description": "Related destination ID (UUID)"
+        },
+        "userId": {
+            "type": "string",
+            "description": "User who wrote the review (UUID)"
+        },
+        "title": {
+            "type": "string",
+            "description": "Optional review title"
+        },
+        "content": {
+            "type": "string",
+            "description": "Optional review content"
+        },
+        "rating": {
+            "type": "object",
+            "description": "DestinationRatingType object with required rating fields",
+            "properties": {
+                "landscape": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Landscape rating (1-5)"
+                },
+                "attractions": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Attractions rating (1-5)"
+                },
+                "accessibility": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Accessibility rating (1-5)"
+                },
+                "safety": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Safety rating (1-5)"
+                },
+                "cleanliness": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Cleanliness rating (1-5)"
+                },
+                "hospitality": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Hospitality rating (1-5)"
+                },
+                "culturalOffer": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Cultural offer rating (1-5)"
+                },
+                "gastronomy": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Gastronomy rating (1-5)"
+                },
+                "affordability": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Affordability rating (1-5)"
+                },
+                "nightlife": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Nightlife rating (1-5)"
+                },
+                "infrastructure": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Infrastructure rating (1-5)"
+                },
+                "environmentalCare": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Environmental care rating (1-5)"
+                },
+                "wifiAvailability": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "WiFi availability rating (1-5)"
+                },
+                "shopping": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Shopping rating (1-5)"
+                },
+                "beaches": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Beaches rating (1-5)"
+                },
+                "greenSpaces": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Green spaces rating (1-5)"
+                },
+                "localEvents": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Local events rating (1-5)"
+                },
+                "weatherSatisfaction": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Weather satisfaction rating (1-5)"
+                }
+            },
+            "required": [
+                "landscape",
+                "attractions",
+                "accessibility",
+                "safety",
+                "cleanliness",
+                "hospitality",
+                "culturalOffer",
+                "gastronomy",
+                "affordability",
+                "nightlife",
+                "infrastructure",
+                "environmentalCare",
+                "wifiAvailability",
+                "shopping",
+                "beaches",
+                "greenSpaces",
+                "localEvents",
+                "weatherSatisfaction"
+            ],
+            "additionalProperties": false
+        }
+    },
+    "required": ["id", "destinationId", "userId", "rating"],
+    "additionalProperties": false
+}

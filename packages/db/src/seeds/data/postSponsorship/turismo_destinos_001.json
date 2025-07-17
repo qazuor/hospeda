@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/postSponsorship.schema.json",
     "id": "psp-turismo-post-001",
     "sponsorId": "ps-turismo-entrerriano-001",
     "postId": "post-destinos-imperdibles-001",
@@ -12,8 +13,5 @@
     "fromDate": "2024-11-01T00:00:00Z",
     "toDate": "2024-12-31T23:59:59Z",
     "isHighlighted": true,
-    "adminInfo": {
-        "notes": "Patrocinio principal para contenido institucional de turismo",
-        "favorite": true
-    }
+    "lifecycleState": "ACTIVE"
 }

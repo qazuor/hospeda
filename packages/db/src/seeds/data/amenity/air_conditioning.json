@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "8c8cc325-bd60-4de1-a961-edc232c8e03b",
     "name": "air_conditioning",
     "slug": "air_conditioning",
     "description": "Air Conditioning",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "CLIMATE_CONTROL",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

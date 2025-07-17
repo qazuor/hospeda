@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "hostel-del-viajero-concepcion_del_uruguay",
     "name": "hostel-del-viajero",
-    "displayName": "Hostel del Viajero",
+    "summary": "Ubicado en una casona colonial restaurada en pleno corazón histórico de Concepción del Uruguay, el Hostel del Viajero combina el encanto de la arquitectura tradicional con instalaciones modernas para satisfacer las necesidades de los viajeros actuales.",
     "type": "HOSTEL",
     "description": "Ubicado en una casona colonial restaurada en pleno corazón histórico de Concepción del Uruguay, el Hostel del Viajero combina el encanto de la arquitectura tradicional con instalaciones modernas para satisfacer las necesidades de los viajeros actuales. A solo dos cuadras de la plaza principal y a distancia caminable de los principales sitios históricos y la costanera, nuestra ubicación es estratégica para quienes desean explorar esta histórica ciudad entrerriana sin necesidad de transporte adicional.\n\nNuestro hostel ofrece varias opciones de alojamiento para adaptarse a diferentes presupuestos y preferencias: dormitorios compartidos de 4 y 6 camas con lockers individuales, y habitaciones privadas dobles y familiares para quienes prefieren mayor privacidad. Todas las opciones incluyen ropa de cama de calidad, enchufes individuales y luces de lectura. Los baños son compartidos, impecablemente mantenidos, y separados por género, con duchas de agua caliente disponibles 24 horas.\n\nLas áreas comunes son el corazón del Hostel del Viajero. La cocina comunitaria está completamente equipada para que los huéspedes puedan preparar sus propias comidas, y el comedor funciona como espacio de socialización durante todo el día. El patio interno con su antigua parra brinda un espacio verde refrescante con mesas, sillas y hamacas paraguayas para relajarse. Contamos también con una sala común con TV, juegos de mesa y una pequeña biblioteca de intercambio donde los viajeros pueden dejar un libro y llevarse otro.\n\nLos servicios incluyen WiFi gratuito en todas las áreas, computadora de uso libre para los huéspedes, guardaequipajes, información turística y asistencia para reservar excursiones y actividades. El desayuno continental está incluido en la tarifa y se sirve de 7:30 a 10:00, mientras que dos veces por semana organizamos cenas comunitarias opcionales que fomentan la interacción entre viajeros de todo el mundo.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "reservas@hosteldelviajero.com.ar",
@@ -145,10 +147,6 @@
             "viajeros"
         ]
     },
-    "adminInfo": {
-        "notes": "Hostel con buena reputación entre mochileros y jóvenes viajeros. Organiza actividades grupales y hay buena interacción entre huéspedes.",
-        "favorite": true
-    },
     "tags": [
         "concepcion-del-uruguay",
         "hostel",
@@ -156,6 +154,23 @@
         "social",
         "historical",
         "backpackers"
+    ],
+    "featureIds": [
+        "3805637e-c810-41d2-ab7e-3ea43ea9ac3d",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "a14dc9e1-6290-4fda-8078-2e5112716b45",
+        "fea7a5dd-00b7-49c3-a52d-58596c337587",
+        "ba67af27-5e90-44b6-b0ca-23fd5576092f",
+        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -210,22 +225,5 @@
             "content": "Concepción del Uruguay cuenta con una variada agenda cultural durante todo el año. Si visita en febrero, podrá disfrutar de los Carnavales de Costa, celebración que si bien no es tan conocida como la de Gualeguaychú, mantiene un encanto local con comparsas, música y baile en un ambiente más íntimo y familiar. En julio, las Fiestas Patronales en honor a la Inmaculada Concepción incluyen procesiones, ferias artesanales y shows musicales. Para los amantes de la música, el Festival del Río que se realiza en enero en la costanera convoca a artistas de folclore y música popular. Los fines de semana, la Feria de Artesanos en la Plaza Ramírez reúne a productores locales donde pueden adquirirse desde mates artesanales hasta productos de cuero típicos. Si su estadía coincide con algún fin de semana largo, consulte en recepción por las 'peñas folclóricas' que suelen organizarse en distintos puntos de la ciudad, donde podrá disfrutar de música en vivo, danzas tradicionales y comida casera en un ambiente auténticamente local, alejado del circuito turístico convencional.",
             "category": "events"
         }
-    ],
-    "featureIds": [
-        "3805637e-c810-41d2-ab7e-3ea43ea9ac3d",
-        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "a14dc9e1-6290-4fda-8078-2e5112716b45",
-        "fea7a5dd-00b7-49c3-a52d-58596c337587",
-        "ba67af27-5e90-44b6-b0ca-23fd5576092f",
-        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
-        "191fac6f-b553-404b-8463-a7281bc52ef9",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ]
 }

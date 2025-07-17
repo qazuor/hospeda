@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-soleado-hostel-concepcion_del_uruguay",
     "name": "rincon-soleado-hostel",
-    "displayName": "Rincón Soleado Hostel",
+    "summary": "Disfruta de la luz y un ambiente vibrante en Rincón Soleado Hostel, ubicado en el corazón de Concepción del Uruguay.",
     "type": "HOSTEL",
     "description": "Disfruta de la luz y un ambiente vibrante en Rincón Soleado Hostel, ubicado en el corazón de Concepción del Uruguay. Ideal para jóvenes viajeros y mochileros que buscan socializar y estar cerca de la acción. Su diseño moderno y luminoso crea un espacio muy agradable para tu estadía.\n\nEl hostel cuenta con dormitorios compartidos (4, 6 y 10 camas) equipados con literas robustas y lockers individuales. También ofrecemos algunas habitaciones privadas dobles y triples. Los baños son compartidos, separados por género y con duchas de agua caliente 24hs. Las áreas comunes son amplias y luminosas: una gran cocina equipada, un comedor espacioso, un living con puff y TV, y un patio interior con mesas y sillas.\n\nLa ubicación es inmejorable, a pocas cuadras de la plaza principal, la peatonal, bares, restaurantes y la costanera. Es muy fácil moverse a pie desde aquí. El hostel organiza actividades sociales como noches de pizza, juegos o salidas grupales para fomentar la interacción entre huéspedes de todo el mundo. Rincón Soleado es tu base ideal para explorar 'La Histórica' y hacer nuevos amigos.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "contacto@rinconsoleadohostel.com.ar",
@@ -126,14 +128,6 @@
             "luminoso"
         ]
     },
-    "adminInfo": {
-        "notes": "Excelente ubicación para jóvenes. Mucha luz natural.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "hostel",
@@ -142,6 +136,22 @@
         "city-center",
         "social",
         "budget"
+    ],
+    "featureIds": [
+        "0ddae569-fe9b-42cc-a800-d5f39e82196f",
+        "28fb935c-d04b-4247-a73b-5099be7719aa",
+        "9b02aadf-8f00-4ea5-9109-5a71ae71ad1f"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "ba67af27-5e90-44b6-b0ca-23fd5576092f"
     ],
     "faqs": [
         {
@@ -160,21 +170,5 @@
             "category": "facilities"
         }
     ],
-    "iaData": [],
-    "featureIds": [
-        "0ddae569-fe9b-42cc-a800-d5f39e82196f",
-        "28fb935c-d04b-4247-a73b-5099be7719aa",
-        "9b02aadf-8f00-4ea5-9109-5a71ae71ad1f"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c",
-        "ba67af27-5e90-44b6-b0ca-23fd5576092f"
-    ]
+    "iaData": []
 }

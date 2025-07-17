@@ -43,45 +43,15 @@
             "río"
         ]
     },
-    "adminInfo": {
-        "notes": "Destino industrial en Entre Ríos",
-        "favorite": false
-    },
-    "tags": [
-        "industrial",
-        "historia",
-        "frigorífico",
-        "patrimonio",
-        "río"
-    ],
-    "reviews": [
-        {
-            "title": "Experiencia tranquila y auténtica",
-            "content": "Un lugar muy tranquilo y auténtico. Perfecto para desconectar y disfrutar de la naturaleza. La gente es muy cálida y hospitalaria.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 3.5,
-                "accessibility": 3.5,
-                "safety": 4.5,
-                "cleanliness": 4.0,
-                "hospitality": 4.5,
-                "culturalOffer": 3.5,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 2.5,
-                "infrastructure": 3.5,
-                "environmentalCare": 4.5,
-                "wifiAvailability": 3.0,
-                "shopping": 3.0,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-nature-lover"
-        }
-    ],
     "attractionIds": [
         "1fcf5ea2-d720-41e0-8705-67d41a5c68ce",
         "408c65c8-cadd-4597-a362-4001da9a2c35",
         "0a7dedae-1667-4313-b741-5d10d75292b6",
         "2a5e7172-bed0-4f9d-9610-c9e53921006b"
-    ]
+    ],
+    "id": "2cce4f03-9cb5-5f91-ac06-a75b11c3d1c2",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

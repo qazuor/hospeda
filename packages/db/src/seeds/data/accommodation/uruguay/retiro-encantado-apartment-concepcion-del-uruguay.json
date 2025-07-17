@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-encantado-apartment-concepcion_del_uruguay",
     "name": "retiro-encantado-apartment",
-    "displayName": "Retiro Encantado Apartamento",
+    "summary": "Descubre el encanto histórico de Concepción del Uruguay alojándote en Retiro Encantado, un apartamento moderno y confortable situado a pocas cuadras del centro histórico.",
     "type": "APARTMENT",
     "description": "Descubre el encanto histórico de Concepción del Uruguay alojándote en Retiro Encantado, un apartamento moderno y confortable situado a pocas cuadras del centro histórico. Ideal para quienes desean explorar 'La Histórica' a pie, combinando la comodidad de un apartamento propio con la cercanía a los principales puntos de interés, cafés, restaurantes y la hermosa costanera.\n\nEste apartamento ofrece un ambiente acogedor con un dormitorio principal con cama doble y un sofá cama en el living, permitiendo alojar hasta 3-4 personas. Cuenta con un baño completo y una cocina integrada al living-comedor, equipada con lo necesario para preparar tus propias comidas (heladera, anafe, microondas, utensilios básicos). Dispone de aire acondicionado y calefacción para una estadía confortable en cualquier época del año.\n\nLa ubicación es uno de sus mayores atractivos, permitiéndote caminar hasta la Plaza Principal, la Basílica, el Colegio Nacional y otras joyas arquitectónicas de la ciudad. La costanera del río Uruguay, con sus espacios verdes y opciones gastronómicas, también está a una distancia caminable. El edificio es tranquilo y cuenta con acceso seguro. Retiro Encantado es el punto de partida perfecto para sumergirte en la historia y la vida cultural de Concepción del Uruguay.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@retiroencantadoapartment.com.ar",
@@ -110,14 +112,6 @@
             "parejas"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad bien ubicada, simple y funcional. Adecuada para alquileres cortos.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "apartment",
@@ -125,19 +119,6 @@
         "seed-example",
         "city-center",
         "historical"
-    ],
-    "faqs": [],
-    "iaData": [
-        {
-            "title": "Recorriendo el centro histórico",
-            "content": "El centro histórico de Concepción del Uruguay, 'La Histórica', invita a ser recorrido a pie. A pocas cuadras encontrarás la Plaza Principal, la imponente Basílica Inmaculada Concepción y el histórico Colegio Nacional. También puedes visitar la Casa de Urquiza y otros edificios de valor arquitectónico. En la zona hay museos, galerías de arte y una variada oferta de cafés y restaurantes.",
-            "category": "sightseeing"
-        },
-        {
-            "title": "La Costanera y el Río Uruguay",
-            "content": "La costanera de Concepción del Uruguay es un espacio ideal para pasear, hacer ejercicio o simplemente disfrutar de la vista al río Uruguay. Cuenta con amplios espacios verdes, áreas de juegos, bares y restaurantes. Desde aquí puedes acceder a la Isla del Puerto, un gran espacio natural con playas y senderos, conectado por una pasarela peatonal. El río es protagonista en la vida de la ciudad, ofreciendo opciones de pesca y actividades náuticas.",
-            "category": "nature"
-        }
     ],
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f"
@@ -152,5 +133,18 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "Recorriendo el centro histórico",
+            "content": "El centro histórico de Concepción del Uruguay, 'La Histórica', invita a ser recorrido a pie. A pocas cuadras encontrarás la Plaza Principal, la imponente Basílica Inmaculada Concepción y el histórico Colegio Nacional. También puedes visitar la Casa de Urquiza y otros edificios de valor arquitectónico. En la zona hay museos, galerías de arte y una variada oferta de cafés y restaurantes.",
+            "category": "sightseeing"
+        },
+        {
+            "title": "La Costanera y el Río Uruguay",
+            "content": "La costanera de Concepción del Uruguay es un espacio ideal para pasear, hacer ejercicio o simplemente disfrutar de la vista al río Uruguay. Cuenta con amplios espacios verdes, áreas de juegos, bares y restaurantes. Desde aquí puedes acceder a la Isla del Puerto, un gran espacio natural con playas y senderos, conectado por una pasarela peatonal. El río es protagonista en la vida de la ciudad, ofreciendo opciones de pesca y actividades náuticas.",
+            "category": "nature"
+        }
     ]
 }

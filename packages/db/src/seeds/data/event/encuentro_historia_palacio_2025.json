@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/event.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d705",
     "slug": "encuentro-historia-palacio-san-jose-2025",
     "name": "Encuentro de Historia en Palacio San José 2025",
@@ -13,13 +14,12 @@
     "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d605",
     "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d502",
     "pricing": {
-        "type": "paid",
-        "value": 3500,
+        "isFree": false,
+        "price": 3500,
         "currency": "ARS"
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
-    "tags": ["historia", "cultura", "palacio-san-jose", "urquiza", "patrimonio"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
@@ -42,10 +42,14 @@
     "seo": {
         "title": "Encuentro de Historia Palacio San José 2025 - Cultura e Historia - Hospeda",
         "description": "Jornadas culturales e históricas en el Palacio San José. Conferencias y exposiciones en un marco histórico único.",
-        "keywords": ["historia", "palacio-san-jose", "cultura", "urquiza", "patrimonio"]
+        "keywords": [
+            "historia",
+            "palacio-san-jose",
+            "cultura",
+            "urquiza",
+            "patrimonio"
+        ]
     },
-    "adminInfo": {
-        "notes": "Evento cultural en marco histórico excepcional",
-        "favorite": true
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

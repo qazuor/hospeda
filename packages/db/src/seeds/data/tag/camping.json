@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-camping-022",
     "name": "Camping",
     "slug": "camping",
-    "description": "Sitios para acampar y camping",
-    "type": "accommodation",
-    "category": "secondary",
-    "color": "#556B2F",
+    "color": "GREY",
     "icon": "camping",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para sitios de camping y acampe",
-        "favorite": false
-    }
+    "notes": "Sitios para acampar y camping",
+    "lifecycleState": "ACTIVE"
 }

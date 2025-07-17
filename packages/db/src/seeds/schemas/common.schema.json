@@ -4,13 +4,31 @@
         "contactInfo": {
             "type": "object",
             "properties": {
-                "personalEmail": { "type": "string", "format": "email" },
-                "workEmail": { "type": "string", "format": "email" },
-                "homeEmail": { "type": "string", "format": "email" },
-                "mobilePhone": { "type": "string" },
-                "homePhone": { "type": "string" },
-                "workPhone": { "type": "string" },
-                "website": { "type": "string", "format": "uri" },
+                "personalEmail": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "workEmail": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "homeEmail": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "mobilePhone": {
+                    "type": "string"
+                },
+                "homePhone": {
+                    "type": "string"
+                },
+                "workPhone": {
+                    "type": "string"
+                },
+                "website": {
+                    "type": "string",
+                    "format": "uri"
+                },
                 "preferredEmail": {
                     "type": "string",
                     "enum": ["HOME", "WORK", "PERSONAL"]
@@ -25,47 +43,97 @@
         "socialNetworks": {
             "type": "object",
             "properties": {
-                "facebook": { "type": "string", "format": "uri" },
-                "instagram": { "type": "string", "format": "uri" },
-                "twitter": { "type": "string", "format": "uri" },
-                "youtube": { "type": "string", "format": "uri" },
-                "whatsapp": { "type": "string" },
-                "linkedin": { "type": "string", "format": "uri" }
+                "facebook": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "instagram": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "twitter": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "youtube": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "whatsapp": {
+                    "type": "string"
+                },
+                "linkedin": {
+                    "type": "string",
+                    "format": "uri"
+                }
             },
             "additionalProperties": false
         },
         "location": {
             "type": "object",
             "properties": {
-                "state": { "type": "string" },
-                "zipCode": { "type": "string" },
-                "country": { "type": "string" },
+                "state": {
+                    "type": "string"
+                },
+                "zipCode": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
                 "coordinates": {
                     "type": "object",
                     "properties": {
-                        "lat": { "type": "string" },
-                        "lng": { "type": "string" }
+                        "lat": {
+                            "type": "string"
+                        },
+                        "lng": {
+                            "type": "string"
+                        }
                     },
                     "required": ["lat", "lng"],
                     "additionalProperties": false
                 },
-                "street": { "type": "string" },
-                "number": { "type": "string" },
-                "city": { "type": "string" },
-                "neighborhood": { "type": "string" },
-                "floor": { "type": "string" },
-                "apartment": { "type": "string" },
-                "department": { "type": "string" },
-                "placeName": { "type": "string" }
+                "street": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "neighborhood": {
+                    "type": "string"
+                },
+                "floor": {
+                    "type": "string"
+                },
+                "apartment": {
+                    "type": "string"
+                },
+                "department": {
+                    "type": "string"
+                },
+                "placeName": {
+                    "type": "string"
+                }
             },
             "additionalProperties": false
         },
         "image": {
             "type": "object",
             "properties": {
-                "url": { "type": "string", "format": "uri" },
-                "caption": { "type": "string" },
-                "description": { "type": "string" },
+                "url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "caption": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
                 "state": {
                     "type": "string",
                     "enum": ["ACTIVE", "INACTIVE"],
@@ -78,10 +146,14 @@
         "media": {
             "type": "object",
             "properties": {
-                "featuredImage": { "$ref": "#/definitions/image" },
+                "featuredImage": {
+                    "$ref": "#/definitions/image"
+                },
                 "gallery": {
                     "type": "array",
-                    "items": { "$ref": "#/definitions/image" }
+                    "items": {
+                        "$ref": "#/definitions/image"
+                    }
                 }
             },
             "additionalProperties": false
@@ -89,7 +161,10 @@
         "price": {
             "type": "object",
             "properties": {
-                "price": { "type": "number", "minimum": 0 },
+                "price": {
+                    "type": "number",
+                    "minimum": 0
+                },
                 "currency": {
                     "type": "string",
                     "enum": ["ARS", "USD", "EUR"]
@@ -101,11 +176,17 @@
         "seo": {
             "type": "object",
             "properties": {
-                "title": { "type": "string" },
-                "description": { "type": "string" },
+                "title": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
                 "keywords": {
                     "type": "array",
-                    "items": { "type": "string" }
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "additionalProperties": false
@@ -113,22 +194,29 @@
         "adminInfo": {
             "type": "object",
             "properties": {
-                "notes": { "type": "string" },
-                "favorite": { "type": "boolean", "default": false }
+                "notes": {
+                    "type": "string"
+                },
+                "favorite": {
+                    "type": "boolean",
+                    "default": false
+                }
             },
             "additionalProperties": false
         },
         "accommodationType": {
             "type": "string",
             "enum": [
-                "HOTEL",
                 "APARTMENT",
                 "HOUSE",
+                "COUNTRY_HOUSE",
                 "CABIN",
+                "HOTEL",
                 "HOSTEL",
-                "ROOM",
                 "CAMPING",
-                "COUNTRY_HOUSE"
+                "ROOM",
+                "MOTEL",
+                "RESORT"
             ]
         },
         "currency": {
@@ -197,6 +285,11 @@
         "phonePreference": {
             "type": "string",
             "enum": ["MOBILE", "HOME", "WORK"]
+        }
+    },
+    "properties": {
+        "schema": {
+            "type": "string"
         }
     }
 }

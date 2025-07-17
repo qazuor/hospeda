@@ -5,6 +5,9 @@
     "description": "JSON schema for Attraction entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "Attraction ID (UUID)"
@@ -31,16 +34,15 @@
         },
         "lifecycleState": {
             "type": "string",
-            "enum": ["DRAFT", "PUBLISHED", "ARCHIVED", "DELETED"],
+            "enum": ["DRAFT", "ACTIVE", "ARCHIVED"],
             "description": "Lifecycle state of the attraction"
         },
         "tagIds": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+                "type": "string"
+            },
             "description": "Array of tag IDs (UUIDs)"
-        },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
         }
     },
     "required": ["id", "name", "slug", "isBuiltin", "lifecycleState"],

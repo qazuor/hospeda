@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-apacible-cabana-villa_paranacito",
     "name": "retiro-apacible-cabana",
-    "displayName": "Retiro Apacible Cabaña",
+    "summary": "Encuentra la paz en Retiro Apacible, una cómoda cabaña de madera ubicada en un entorno tranquilo de Paranacito, cerca de un arroyo.",
     "type": "CABIN",
     "description": "Encuentra la paz en Retiro Apacible, una cómoda cabaña de madera ubicada en un entorno tranquilo de Paranacito, cerca de un arroyo. Ideal para parejas o familias que buscan un refugio sereno y apacible con acceso a la naturaleza del Delta.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es sencilla y rústica, invitando a la relajación.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación. La ubicación en un entorno tranquilo de Paranacito permite un rápido acceso en auto al pueblo y a los puntos de acceso al Delta y sus actividades. Retiro Apacible es tu base ideal para disfrutar de la tranquilidad y la naturaleza.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@retiroapaciblecabana.com.ar",
@@ -12,6 +14,10 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "hola@retiroapaciblecabana.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/retiroapacible",
+        "twitter": "https://twitter.com/retiroapacible"
     },
     "price": {
         "basePrice": {
@@ -115,25 +121,6 @@
             "parrilla"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple pero agradable. Énfasis en la tranquilidad y cercanía al Delta.",
-        "favorite": false,
-        "tags": [
-            "paranacito",
-            "cabin",
-            "paranacito-cabin",
-            "seed-example",
-            "nature",
-            "quiet",
-            "family-friendly"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/retiroapacible",
-        "twitter": "https://twitter.com/retiroapacible"
-    },
     "featureIds": [
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
         "a471118f-48f7-4ae4-b6f4-963281900517"
@@ -148,5 +135,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

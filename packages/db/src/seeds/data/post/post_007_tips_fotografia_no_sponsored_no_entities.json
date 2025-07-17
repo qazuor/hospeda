@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/post.schema.json",
     "id": "post-007-tips-fotografia-entre-rios",
     "slug": "tips-fotografia-entre-rios-mejores-ubicaciones",
     "category": "TIPS",
@@ -43,13 +44,6 @@
     "shares": 67,
     "isFeatured": false,
     "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "moderationNotes": "Contenido educativo sobre fotografía sin sponsor"
-    },
-    "createdAt": "2024-02-20T15:30:00Z",
-    "updatedAt": "2024-02-20T15:30:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
     "moderationState": "APPROVED",
     "seo": {
         "title": "Tips de Fotografía: Captura la Belleza Natural de Entre Ríos | Hospeda",
@@ -72,12 +66,5 @@
             "type": "article"
         }
     },
-    "tagIds": [
-        "tag-fotografia-001",
-        "tag-naturaleza-002",
-        "tag-entre-rios-003",
-        "tag-turismo-004",
-        "tag-aventura-005",
-        "tag-observacion-fauna-006"
-    ]
+    "lifecycleState": "ACTIVE"
 }

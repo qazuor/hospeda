@@ -1,16 +1,11 @@
 {
+    "$schema": "../../schemas/feature.schema.json",
     "id": "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
     "name": "private_pool",
     "slug": "private_pool",
     "description": "Piscina amplia con solarium",
-    "type": "accommodation",
-    "category": "comfort",
     "icon": "feature",
-    "isActive": true,
-    "isPopular": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Piscina privada de 8x4 metros con zona de sol y reposeras",
-        "favorite": false
-    }
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
 }

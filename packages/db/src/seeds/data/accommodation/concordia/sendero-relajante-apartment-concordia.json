@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-relajante-apartment-concordia",
     "name": "sendero-relajante-apartment",
-    "displayName": "Sendero Relajante Apartamento",
+    "summary": "Encuentra tu espacio de relax en Sendero Relajante Apartamento, un moderno y cómodo apartamento ubicado en una zona estratégica de Concordia.",
     "type": "APARTMENT",
     "description": "Encuentra tu espacio de relax en Sendero Relajante Apartamento, un moderno y cómodo apartamento ubicado en una zona estratégica de Concordia. Ideal para quienes buscan un lugar bien conectado para acceder fácilmente a las termas, el centro y el Lago de Salto Grande, con la tranquilidad necesaria para descansar.\n\nEl apartamento ofrece un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es funcional y invita a la relajación. Cuenta con aire acondicionado y calefacción.\n\nUbicado en un edificio seguro, ofrece un retiro pacífico. Su nombre evoca la idea de un 'sendero' hacia el relax. Estás a pocos minutos en auto de las Termas de Concordia y con acceso rápido a la ruta que lleva al Lago de Salto Grande. El centro de la ciudad también es accesible en poco tiempo. Una opción práctica y cómoda para tu visita a Concordia.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "info@senderorelajanteapartment.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "contacto@senderorelajanteapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/senderorelajanteapartment",
+        "instagram": "https://instagram.com/senderorelajanteapartment",
+        "twitter": "https://twitter.com/senderorelajanteapartment"
     },
     "price": {
         "basePrice": {
@@ -109,14 +116,6 @@
             "parejas"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad funcional para turismo de termas y lago. En zona tranquila.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concordia",
         "apartment",
@@ -125,19 +124,6 @@
         "thermal",
         "nature"
     ],
-    "faqs": [
-        {
-            "question": "¿A qué distancia están las Termas?",
-            "answer": "Las Termas de Concordia se encuentran a unos 5-10 minutos en auto.",
-            "category": "location"
-        }
-    ],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/senderorelajanteapartment",
-        "instagram": "https://instagram.com/senderorelajanteapartment",
-        "twitter": "https://twitter.com/senderorelajanteapartment"
-    },
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "bdc8b938-9599-428c-92a8-0bf932005ed7"
@@ -152,5 +138,13 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia están las Termas?",
+            "answer": "Las Termas de Concordia se encuentran a unos 5-10 minutos en auto.",
+            "category": "location"
+        }
+    ],
+    "iaData": []
 }

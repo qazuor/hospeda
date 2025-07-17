@@ -1,18 +1,10 @@
 {
+    "$schema": "../../schemas/userBookmark.schema.json",
     "id": "bookmark-015-guest-delta-post",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
     "entityId": "post-005-aventura-delta-parana",
     "entityType": "POST",
     "name": "Aventura en el Delta",
     "description": "Actividad que me llamó la atención para una futura visita",
-    "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "notes": "Usuario casual con interés esporádico"
-    },
-    "createdAt": "2024-02-28T17:30:00Z",
-    "updatedAt": "2024-02-28T17:30:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
-    "deletedAt": null,
-    "deletedById": null
+    "lifecycleState": "ACTIVE"
 }

@@ -1,15 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-entre-rios-002",
     "name": "Entre Ríos",
     "slug": "entre-rios",
-    "description": "Contenido específico de la provincia de Entre Ríos",
-    "type": "destination",
-    "category": "primary",
-    "color": "#4CAF50",
+    "color": "BLUE",
     "icon": "location",
-    "isActive": true,
-    "adminInfo": {
-        "notes": "Tag geográfico principal para la provincia",
-        "favorite": true
-    }
+    "notes": "Contenido específico de la provincia de Entre Ríos",
+    "lifecycleState": "ACTIVE"
 }

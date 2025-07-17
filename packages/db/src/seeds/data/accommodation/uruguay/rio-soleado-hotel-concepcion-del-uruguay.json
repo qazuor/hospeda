@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-soleado-hotel-concepcion_del_uruguay",
     "name": "rio-soleado-hotel",
-    "displayName": "Rio Soleado Hotel",
+    "summary": "Disfruta de la brisa y la luz del río Uruguay en Rio Soleado Hotel, ubicado a solo una cuadra de la costanera de Concepción del Uruguay.",
     "type": "HOTEL",
     "description": "Disfruta de la brisa y la luz del río Uruguay en Rio Soleado Hotel, ubicado a solo una cuadra de la costanera de Concepción del Uruguay. Este hotel moderno ofrece una estancia cómoda y luminosa, ideal para quienes desean estar cerca de la acción del río y al mismo tiempo tener fácil acceso al centro histórico.\n\nEl hotel cuenta con 22 habitaciones, muchas de ellas con vista parcial o total al río. Todas están equipadas con aire acondicionado, calefacción, TV por cable, minibar y baño privado con secador de pelo. Ofrecemos habitaciones individuales, dobles y triples.\n\nEntre sus instalaciones, destacamos una terraza con solárium desde donde se puede apreciar el río. El hotel ofrece desayuno continental incluido en la tarifa, servido en un área común. También dispone de lobby con Wi-Fi gratuito en todo el edificio. Cuenta con estacionamiento descubierto limitado.\n\nSu ubicación privilegiada te permite acceder caminando a la costanera, la Isla del Puerto y disfrutar de las actividades al aire libre. El centro histórico, con sus museos y edificios emblemáticos, se encuentra a pocas cuadras. Rio Soleado Hotel es una excelente opción para disfrutar de Concepción del Uruguay, con el río siempre cerca.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "reservas@riosoleadohotel.com.ar",
@@ -121,14 +123,6 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Muy buena ubicación para turismo de río. Desayuno bien valorado por huéspedes.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "hotel",
@@ -137,19 +131,6 @@
         "river-view",
         "city-center"
     ],
-    "faqs": [
-        {
-            "question": "¿El hotel tiene estacionamiento?",
-            "answer": "Contamos con estacionamiento descubierto dentro del predio con capacidad limitada. Se asigna por orden de llegada.",
-            "category": "facilities"
-        },
-        {
-            "question": "¿Está cerca de la playa Banco Pelay?",
-            "answer": "La playa Banco Pelay se encuentra a unos 10-15 minutos en auto o colectivo desde el hotel.",
-            "category": "location"
-        }
-    ],
-    "iaData": [],
     "featureIds": [
         "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
         "9b02aadf-8f00-4ea5-9109-5a71ae71ad1f"
@@ -164,5 +145,18 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿El hotel tiene estacionamiento?",
+            "answer": "Contamos con estacionamiento descubierto dentro del predio con capacidad limitada. Se asigna por orden de llegada.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Está cerca de la playa Banco Pelay?",
+            "answer": "La playa Banco Pelay se encuentra a unos 10-15 minutos en auto o colectivo desde el hotel.",
+            "category": "location"
+        }
+    ],
+    "iaData": []
 }

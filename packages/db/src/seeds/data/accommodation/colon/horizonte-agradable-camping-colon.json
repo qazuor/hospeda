@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "horizonte-agradable-camping-colon",
     "name": "horizonte-agradable-camping",
-    "displayName": "Horizonte Agradable Camping",
+    "summary": "Sumérgete en la naturaleza en Horizonte Agradable Camping, un tranquilo espacio a orillas del río Uruguay, a pocos minutos del centro de Colón.",
     "type": "CAMPING",
     "description": "Sumérgete en la naturaleza en Horizonte Agradable Camping, un tranquilo espacio a orillas del río Uruguay, a pocos minutos del centro de Colón. Ideal para campistas y amantes de la vida al aire libre que buscan un lugar sencillo y con acceso directo a la playa y actividades fluviales.\n\nNuestro camping ofrece parcelas amplias con sombra natural, equipadas con toma de luz y parrilla individual. Contamos con instalaciones básicas pero funcionales: baños y duchas con agua caliente, y una pileta para lavar vajilla. Es un lugar pensado para disfrutar de la experiencia de acampar, desconectar y conectar con el entorno natural.\n\nLa ubicación junto al río es nuestro mayor atractivo, con una zona de playa privada para nuestros huéspedes. Podrás disfrutar de días de sol y arena, nadar en el río, o lanzar tu kayak o tabla de SUP directamente desde el camping. Al atardecer, la vista del horizonte sobre el río es simplemente espectacular. Estamos cerca de zonas de pesca y ofrecemos información sobre alquiler de equipos.\n\nAunque estamos en un entorno natural, el centro de Colón y sus servicios están a una corta distancia en auto o bicicleta, permitiéndote abastecerte fácilmente y visitar las atracciones de la ciudad y las Termas de Colón. Un lugar perfecto para una escapada económica y en contacto con la naturaleza.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "info@horizonteagradablecamping.com.ar",
@@ -111,14 +113,6 @@
             "acampar"
         ]
     },
-    "adminInfo": {
-        "notes": "Camping básico pero bien ubicado para amantes del río. Temporada alta en verano.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "camping",
@@ -127,6 +121,17 @@
         "riverside",
         "nature",
         "budget"
+    ],
+    "featureIds": [
+        "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
+        "3c8210e0-06e0-4ac6-b0eb-86755f5425df"
+    ],
+    "amenityIds": [
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -140,16 +145,5 @@
             "category": "policies"
         }
     ],
-    "iaData": [],
-    "featureIds": [
-        "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
-        "3c8210e0-06e0-4ac6-b0eb-86755f5425df"
-    ],
-    "amenityIds": [
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    "iaData": []
 }

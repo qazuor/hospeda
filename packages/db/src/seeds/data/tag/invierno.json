@@ -1,15 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-invierno-011",
     "name": "Invierno",
     "slug": "invierno",
-    "description": "Actividades y destinos para disfrutar en invierno",
-    "type": "general",
-    "category": "secondary",
-    "color": "#607D8B",
+    "color": "GREY",
     "icon": "snowflake",
-    "isActive": true,
-    "adminInfo": {
-        "notes": "Tag estacional para contenido de invierno",
-        "favorite": false
-    }
+    "notes": "Actividades y destinos para disfrutar en invierno",
+    "lifecycleState": "ACTIVE"
 }

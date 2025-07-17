@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "camping-rio-vida-villa_paranacito",
     "name": "camping-rio-vida",
-    "displayName": "Camping Río Vida",
+    "summary": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza.",
     "type": "CAMPING",
     "description": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza. A diferencia de los campings tradicionales, Río Vida se encuentra en una isla de tres hectáreas rodeada por los arroyos Paranacito, Las Tintas y una pequeña bahía que forma un entorno natural protegido, accesible únicamente por lancha.\n\nEl camping cuenta con amplios espacios para acampar bajo la sombra de sauces, ceibos y timbos autóctonos, con parcelas demarcadas que respetan la privacidad sin perder la esencia natural del lugar. Cada sitio para carpas dispone de mesa con bancos, parrilla individual, agua potable y toma de luz, distribuidos estratégicamente para aprovechar las mejores vistas al agua. Para quienes prefieren mayor comodidad, ofrecemos un sector de domos equipados con colchones que pueden alojar entre 2 y 6 personas, una opción perfecta para quienes se inician en la experiencia del camping o desean un mayor confort.\n\nLas instalaciones incluyen sanitarios limpios y modernos, duchas con agua caliente, una proveeduría básica para artículos esenciales, y un salón comunitario techado con cocina compartida, ideal para días lluviosos o para socializar con otros campistas. El muelle principal permite la pesca directamente desde la costa, siendo un punto privilegiado para la captura de dorados, bogas y bagres. También contamos con servicio de alquiler de kayaks, canoas y tablas de stand-up paddle para explorar los arroyos circundantes.\n\nCamping Río Vida es un refugio para la observación de aves, con más de 50 especies identificadas en el predio, y ofrece rutas de senderismo que recorren la isla mostrando la rica biodiversidad local. Por las noches, organizamos fogones comunitarios donde se comparten historias, música y, a veces, un típico guiso de pescado preparado por los anfitriones. La experiencia se completa con los impresionantes amaneceres y atardeceres sobre el agua, que pintan el cielo con colores que quedarán grabados en la memoria de los visitantes.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "info@campingriovida.com.ar",
@@ -156,10 +158,6 @@
             "domos"
         ]
     },
-    "adminInfo": {
-        "notes": "Camping abierto de septiembre a mayo (cierra en temporada invernal). Alta dependencia del clima y nivel de los ríos. Los propietarios viven en la isla y son excelentes anfitriones con amplio conocimiento del delta.",
-        "favorite": true
-    },
     "tags": [
         "villa_paranacito",
         "camping",
@@ -169,6 +167,21 @@
         "kayaking",
         "nature",
         "eco-friendly"
+    ],
+    "featureIds": [
+        "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "03080e07-50f9-4752-a2c6-7502eaacf733",
+        "0c978d78-6745-4cec-bf3b-d3e71553ea28"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "ba67af27-5e90-44b6-b0ca-23fd5576092f"
     ],
     "faqs": [
         {
@@ -223,20 +236,5 @@
             "content": "El Delta entrerriano presenta un clima subtropical húmedo sin estación seca. Las temperaturas medias oscilan entre 25°C y 32°C en verano (diciembre-marzo) y entre 10°C y 18°C en invierno (junio-septiembre). Las precipitaciones se distribuyen durante todo el año, con un promedio de 1200mm anuales, siendo algo más frecuentes en otoño y primavera. Un fenómeno característico de este ecosistema son las crecientes periódicas, originadas tanto por lluvias locales como por las que ocurren en la cuenca alta de los ríos Paraná y Uruguay. Las crecientes son parte natural del ciclo del delta y moldean constantemente el paisaje, renovando nutrientes y manteniendo la biodiversidad. Nuestras instalaciones están diseñadas considerando estos ciclos naturales, con estructuras elevadas y protocoles de seguridad bien establecidos. Normalmente, las crecientes más importantes ocurren entre febrero y abril, aunque el fenómeno de El Niño puede alterar estos patrones. Recomendamos consultar las previsiones hidrológicas antes de su visita, especialmente si planea venir entre febrero y mayo. Nuestro camping cierra temporalmente solo cuando se producen crecientes extraordinarias que superan ciertos niveles de seguridad.",
             "category": "information"
         }
-    ],
-    "featureIds": [
-        "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
-        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
-        "03080e07-50f9-4752-a2c6-7502eaacf733",
-        "0c978d78-6745-4cec-bf3b-d3e71553ea28"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c",
-        "ba67af27-5e90-44b6-b0ca-23fd5576092f"
     ]
 }

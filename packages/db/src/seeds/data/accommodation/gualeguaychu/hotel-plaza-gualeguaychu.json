@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "hotel-plaza-gualeguaychu",
     "name": "hotel-plaza",
-    "displayName": "Hotel Plaza",
+    "summary": "Hotel Plaza se encuentra en el corazón de Gualeguaychú, a solo 200 metros de la Plaza Principal y a corta distancia de los principales atractivos de esta vibrante ciudad entrerriana.",
     "type": "HOTEL",
     "description": "Hotel Plaza se encuentra en el corazón de Gualeguaychú, a solo 200 metros de la Plaza Principal y a corta distancia de los principales atractivos de esta vibrante ciudad entrerriana. Con una arquitectura que combina elementos clásicos y modernos, este hotel boutique de 3 estrellas ofrece una experiencia confortable y personalizada para viajeros de negocios y turistas.\n\nCon 24 habitaciones distribuidas en tres categorías (estándar, superior y suite), el hotel satisface las necesidades de diferentes tipos de huéspedes. Todas las habitaciones están equipadas con camas de alta calidad, ropa de cama premium, aire acondicionado, TV LED con cable, minibar y baño privado con amenities seleccionados. Las habitaciones superiores y suites añaden áreas de descanso adicionales y vistas privilegiadas a la ciudad.\n\nEntre los servicios destacados del Hotel Plaza se encuentra su restaurante 'El Dorado', que sirve desayuno buffet completo incluido en la tarifa, así como almuerzos y cenas con un menú que resalta los sabores regionales y productos locales. El lobby bar es el punto de encuentro ideal para disfrutar de un café o un cóctel en un ambiente relajado. El hotel también cuenta con una pequeña sala de reuniones con capacidad para 20 personas, ideal para pequeños eventos corporativos, y ofrece WiFi de alta velocidad gratuito en todas las instalaciones.\n\nUna de las ventajas más apreciadas por los huéspedes es su ubicación estratégica que permite explorar caminando el casco histórico, la zona comercial y la costanera de Gualeguaychú. Durante la temporada de Carnaval, el hotel ofrece servicio de traslado al Corsódromo y paquetes especiales que incluyen entradas al espectáculo.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "contacto@hotelplaza.com.ar",
@@ -142,11 +144,45 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Hotel con buena gestión y mantenimiento constante. Ocupa un edificio histórico renovado. Alta demanda durante el Carnaval.",
-        "favorite": true
-    },
-    "tags": ["gualeguaychu", "hotel", "city-center", "business-travel", "carnival"],
+    "tags": [
+        "gualeguaychu",
+        "hotel",
+        "city-center",
+        "business-travel",
+        "carnival"
+    ],
+    "featureIds": [
+        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680",
+        "72f6d9f0-24e1-429d-a665-f5e7a6d8d95a",
+        "049c0140-9996-4efa-8c87-815c62d91f9c"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "a14dc9e1-6290-4fda-8078-2e5112716b45",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "5df75b3e-1f48-40fe-ad77-3cae754982ab",
+        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
+        "4bad848b-16de-488c-a673-91172ff620f3",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "1e40f686-3964-4b5b-8259-9ca49016e2e7"
+    ],
+    "tagIds": [
+        "tag-festivales",
+        "tag-turismo-001",
+        "tag-cultura-006",
+        "tag-gastronomia-007",
+        "tag-familia-004",
+        "tag-entre-rios-003",
+        "tag-arquitectura"
+    ],
     "faqs": [
         {
             "question": "¿El hotel cuenta con estacionamiento?",
@@ -195,37 +231,5 @@
             "content": "El edificio que hoy alberga al Hotel Plaza fue construido en 1943 como residencia de la familia Méndez, importantes comerciantes locales vinculados a la exportación de productos agrícolas. La casa, ejemplo destacado de arquitectura racionalista, fue diseñada por el arquitecto italiano Gino Pompei, quien dejó su huella en varios edificios emblemáticos de la ciudad. En 1985, la propiedad fue adquirida y transformada en hotel, manteniendo elementos arquitectónicos originales como los pisos de mosaico, escaleras de mármol de Carrara y algunas aberturas de madera. La última renovación importante se realizó en 2018, actualizando completamente las instalaciones pero respetando y poniendo en valor los elementos patrimoniales. El nombre 'Plaza' hace honor a su ubicación cercana a la Plaza Principal (San Martín) y a la antigua costumbre de denominar así a los hoteles céntricos de las ciudades de provincia argentinas. A lo largo de los años, el hotel ha alojado a personalidades destacadas de la cultura, la política y el deporte que han visitado Gualeguaychú.",
             "category": "history"
         }
-    ],
-    "featureIds": [
-        "2f7d146e-ed8a-4535-8f70-0a5c6ea47680",
-        "72f6d9f0-24e1-429d-a665-f5e7a6d8d95a",
-        "049c0140-9996-4efa-8c87-815c62d91f9c"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "a14dc9e1-6290-4fda-8078-2e5112716b45",
-        "8305de52-109d-48bb-8781-c7e837443809",
-        "5df75b3e-1f48-40fe-ad77-3cae754982ab",
-        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
-        "4bad848b-16de-488c-a673-91172ff620f3",
-        "191fac6f-b553-404b-8463-a7281bc52ef9",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c",
-        "1e40f686-3964-4b5b-8259-9ca49016e2e7"
-    ],
-    "tagIds": [
-        "tag-festivales",
-        "tag-turismo-001",
-        "tag-cultura-006",
-        "tag-gastronomia-007",
-        "tag-familia-004",
-        "tag-entre-rios-003",
-        "tag-arquitectura"
     ]
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-tranquilo-apartment-concepcion_del_uruguay",
     "name": "sueno-tranquilo-apartment",
-    "displayName": "Sueño Tranquilo Apartamento",
+    "summary": "Encuentra la paz en Sueño Tranquilo Apartamento, un espacio moderno y sereno ubicado en un barrio residencial de Concepción del Uruguay.",
     "type": "APARTMENT",
     "description": "Encuentra la paz en Sueño Tranquilo Apartamento, un espacio moderno y sereno ubicado en un barrio residencial de Concepción del Uruguay. Ideal para quienes buscan descansar en un entorno apacible, con fácil acceso en pocos minutos al centro y a la costanera.\n\nEl apartamento cuenta con un dormitorio con cama doble, baño completo, y un living-comedor integrado con cocina equipada (heladera, microondas, anafe). Es un espacio funcional y cómodo para una estadía relajante de hasta 3 personas (con sofá cama en el living).\n\nUbicado en un edificio tranquilo, ofrece un retiro después de un día explorando la ciudad. Aunque no está en el corazón del centro, su ubicación permite acceder rápidamente en auto o transporte público a las principales atracciones de 'La Histórica', incluyendo el centro histórico, la costanera y las playas. Es una opción perfecta para quienes valoran el descanso en un ambiente tranquilo.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@suenotranquiloapartment.com.ar",
@@ -12,6 +14,9 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "hola@suenotranquiloapartment.com.ar"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/suenotranquiloapartment"
     },
     "price": {
         "basePrice": {
@@ -109,14 +114,6 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple y funcional en zona residencial. Buena para estancias cortas.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "apartment",
@@ -124,11 +121,6 @@
         "seed-example",
         "quiet"
     ],
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "twitter": "https://twitter.com/suenotranquiloapartment"
-    },
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f"
     ],
@@ -142,5 +134,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

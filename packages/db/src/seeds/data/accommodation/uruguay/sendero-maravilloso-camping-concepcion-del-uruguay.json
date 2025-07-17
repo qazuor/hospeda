@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-maravilloso-camping-concepcion_del_uruguay",
     "name": "sendero-maravilloso-camping",
-    "displayName": "Sendero Maravilloso Camping",
+    "summary": "Embárcate en una aventura natural en Sendero Maravilloso Camping, un espacio único ubicado en un entorno boscoso cerca de Concepción del Uruguay.",
     "type": "CAMPING",
     "description": "Embárcate en una aventura natural en Sendero Maravilloso Camping, un espacio único ubicado en un entorno boscoso cerca de Concepción del Uruguay. Ideal para campistas y amantes de la naturaleza que buscan tranquilidad, amplias parcelas y senderos para explorar el paisaje entrerriano. Un lugar donde la belleza natural te sorprenderá en cada rincón.\n\nEl camping ofrece extensas parcelas con sombra abundante, perfectas para carpas grandes y rodantes. Todas cuentan con parrilla individual y acceso cercano a tomas de luz y agua. Las instalaciones incluyen baños completos con duchas de agua caliente y un sector para lavado de vajilla.\n\nPodrás disfrutar de senderos internos que recorren la propiedad, permitiéndote explorar la flora local y avistar aves. Contamos con un gran espacio central para juegos y actividades grupales. La tranquilidad del lugar lo hace ideal para desconectar y disfrutar del sonido de la naturaleza. Estamos a una distancia conveniente en auto de Concepción del Uruguay y sus playas, permitiéndote combinar la experiencia de camping con las atracciones de la ciudad.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "reservas@senderomaravillosocamping.com.ar",
@@ -116,14 +118,6 @@
             "senderismo"
         ]
     },
-    "adminInfo": {
-        "notes": "Camping con mucho potencial por su entorno natural. Bueno para promocionar actividades al aire libre.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "camping",
@@ -131,6 +125,17 @@
         "seed-example",
         "nature",
         "family-friendly"
+    ],
+    "featureIds": [
+        "81c25058-1006-4d13-9c71-bc293f051e28",
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "03080e07-50f9-4752-a2c6-7502eaacf733"
+    ],
+    "amenityIds": [
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "860df8e3-d746-4500-890f-9d1aafaec446"
     ],
     "faqs": [
         {
@@ -155,16 +160,5 @@
             "content": "El camping dispone de senderos internos que permiten dar paseos cortos por el bosque. Para caminatas más largas, puedes explorar los caminos rurales cercanos. Es importante usar calzado adecuado, llevar repelente y agua, y no desviarse de los senderos marcados.",
             "category": "activities"
         }
-    ],
-    "featureIds": [
-        "81c25058-1006-4d13-9c71-bc293f051e28",
-        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
-        "03080e07-50f9-4752-a2c6-7502eaacf733"
-    ],
-    "amenityIds": [
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c",
-        "860df8e3-d746-4500-890f-9d1aafaec446"
     ]
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-agradable-hotel-concepcion_del_uruguay",
     "name": "paraiso-agradable-hotel",
-    "displayName": "Paraíso Agradable Hotel",
+    "summary": "Experimenta una estancia agradable en Paraíso Agradable Hotel, un hotel con encanto ubicado en una zona conveniente de Concepción del Uruguay.",
     "type": "HOTEL",
     "description": "Experimenta una estancia agradable en Paraíso Agradable Hotel, un hotel con encanto ubicado en una zona conveniente de Concepción del Uruguay. Ofrece un ambiente relajado, servicios de calidad y fácil acceso a los puntos de interés de la ciudad, ideal para turistas que buscan confort y buena atención.\n\nEl hotel dispone de 28 habitaciones, incluyendo opciones Standard y Superior, todas equipadas con aire acondicionado, calefacción, TV, minibar y baño privado. Las habitaciones Superior son más amplias o cuentan con alguna comodidad adicional. La decoración es clásica y confortable.\n\nEntre sus instalaciones, cuenta con un área de piscina exterior con solárium en el jardín, un espacio ideal para descansar. El hotel ofrece desayuno buffet incluido, servido en su comedor. También dispone de un lobby acogedor y Wi-Fi gratuito en todas las áreas. Ofrece estacionamiento descubierto en el predio.\n\nSu ubicación permite llegar en pocos minutos en auto al centro histórico, la costanera, la Terminal de Ómnibus y las playas. Un hotel agradable para disfrutar de una estancia cómoda en Concepción del Uruguay.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "hola@paraisoagradablehotel.com.ar",
@@ -12,6 +14,10 @@
         "homePhone": "+543442343162",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/paraisoagradablehotel",
+        "twitter": "https://twitter.com/paraisoagradablehotel"
     },
     "price": {
         "basePrice": {
@@ -118,14 +124,6 @@
             "céntrico"
         ]
     },
-    "adminInfo": {
-        "notes": "Hotel clásico, buena atención y servicios. Target familiar y turístico.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "hotel",
@@ -134,12 +132,6 @@
         "swimming-pool",
         "family-friendly"
     ],
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/paraisoagradablehotel",
-        "twitter": "https://twitter.com/paraisoagradablehotel"
-    },
     "featureIds": [
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
         "9b02aadf-8f00-4ea5-9109-5a71ae71ad1f"
@@ -154,5 +146,7 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

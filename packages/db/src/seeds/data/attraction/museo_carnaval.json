@@ -6,9 +6,6 @@
     "description": "Museo dedicado a la historia y tradición del carnaval local",
     "icon": "museum",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

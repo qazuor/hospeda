@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-045-nido-natural-room-gualeguaychu-laura_editor",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d487",
     "accommodationId": "nido-natural-room-gualeguaychu",
@@ -11,5 +12,6 @@
         "accuracy": 5,
         "communication": 5,
         "location": 5
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

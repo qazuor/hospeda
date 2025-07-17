@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-musica-023",
     "name": "Música",
     "slug": "musica",
-    "description": "Eventos musicales y experiencias sonoras",
-    "type": "experience",
-    "category": "secondary",
-    "color": "#DC143C",
+    "color": "RED",
     "icon": "music",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para eventos musicales y espectáculos",
-        "favorite": false
-    }
+    "notes": "Eventos musicales y experiencias sonoras",
+    "lifecycleState": "ACTIVE"
 }

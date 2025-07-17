@@ -6,9 +6,6 @@
     "description": "Galería cubierta con locales comerciales y servicios",
     "icon": "store",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

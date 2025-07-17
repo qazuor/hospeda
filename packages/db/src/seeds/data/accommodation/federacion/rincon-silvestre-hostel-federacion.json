@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-silvestre-hostel-federacion",
     "name": "rincon-silvestre-hostel",
-    "displayName": "Rincón Silvestre Hostel",
+    "summary": "Descubre un rincón con espíritu natural en Rincón Silvestre Hostel, ubicado en las afueras de Federación, ideal para viajeros que disfrutan de la naturaleza y buscan un ambiente relajado y económico.",
     "type": "HOSTEL",
     "description": "Descubre un rincón con espíritu natural en Rincón Silvestre Hostel, ubicado en las afueras de Federación, ideal para viajeros que disfrutan de la naturaleza y buscan un ambiente relajado y económico. Un lugar para desconectar y explorar el entorno silvestre cercano.\n\nEl hostel ofrece dormitorios compartidos (6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos. Las áreas comunes incluyen una cocina básica compartida, un comedor y un espacio de estar sencillo. Dispone de un patio con algo de vegetación.\n\nSu ubicación en las afueras ofrece más tranquilidad y cercanía a caminos rurales. Estás a poca distancia en auto del Parque Termal y del centro de Federación. Es una base económica para explorar la zona, con un ambiente más cercano a la naturaleza que un hostel céntrico.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@rinconsilvestrehostel.com.ar",
@@ -13,6 +15,11 @@
         "preferredPhone": "MOBILE",
         "homeEmail": "contacto@rinconsilvestrehostel.com.ar",
         "website": "https://rinconsilvestrehostel.tur.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/rinconsilvestrehostelar",
+        "instagram": "https://instagram.com/rinconsilvestrehostelar",
+        "twitter": "https://twitter.com/rinconsilvestrehostelar"
     },
     "price": {
         "basePrice": {
@@ -110,14 +117,6 @@
             "termas federación"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción básica y económica. Atrae a viajeros que buscan un ambiente más tranquilo y cerca de la naturaleza.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "federacion",
         "hostel",
@@ -127,19 +126,6 @@
         "thermal",
         "nature"
     ],
-    "faqs": [
-        {
-            "question": "¿El baño es compartido?",
-            "answer": "Sí, los baños son compartidos, separados por género.",
-            "category": "facilities"
-        }
-    ],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/rinconsilvestrehostelar",
-        "instagram": "https://instagram.com/rinconsilvestrehostelar",
-        "twitter": "https://twitter.com/rinconsilvestrehostelar"
-    },
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "1fb29901-701e-4f9d-ab30-942e11dadb4c",
@@ -153,5 +139,13 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿El baño es compartido?",
+            "answer": "Sí, los baños son compartidos, separados por género.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": []
 }

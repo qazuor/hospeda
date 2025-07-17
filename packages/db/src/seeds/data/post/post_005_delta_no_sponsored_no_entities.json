@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/post.schema.json",
     "id": "post-005-aventura-delta-parana",
     "slug": "aventura-delta-parana-ecoturismo",
     "category": "NATURE",
@@ -48,13 +49,6 @@
     "shares": 78,
     "isFeatured": false,
     "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "moderationNotes": "Contenido educativo sobre ecoturismo sin sponsor"
-    },
-    "createdAt": "2024-02-10T09:45:00Z",
-    "updatedAt": "2024-02-10T09:45:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
     "moderationState": "APPROVED",
     "seo": {
         "title": "Aventura en el Delta del Paraná: Ecoturismo en Estado Puro | Hospeda",
@@ -78,15 +72,5 @@
             "type": "article"
         }
     },
-    "tagIds": [
-        "tag-naturaleza-001",
-        "tag-ecoturismo-002",
-        "tag-delta-003",
-        "tag-rio-parana-004",
-        "tag-aventura-005",
-        "tag-observacion-fauna-006",
-        "tag-kayak-007",
-        "tag-pesca-008",
-        "tag-senderismo-009"
-    ]
+    "lifecycleState": "ACTIVE"
 }

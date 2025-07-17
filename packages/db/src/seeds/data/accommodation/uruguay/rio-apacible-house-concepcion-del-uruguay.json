@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-apacible-house-concepcion_del_uruguay",
     "name": "rio-apacible-house",
-    "displayName": "Rio Apacible House",
+    "summary": "Disfruta de la tranquilidad del río en Rio Apacible House, una cómoda casa ubicada en una zona serena de Concepción del Uruguay, con acceso cercano a la costanera.",
     "type": "HOUSE",
     "description": "Disfruta de la tranquilidad del río en Rio Apacible House, una cómoda casa ubicada en una zona serena de Concepción del Uruguay, con acceso cercano a la costanera. Ideal para familias o grupos que buscan un espacio privado y relajado para sus vacaciones, a poca distancia de las playas y el movimiento de la ciudad.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio social funcional y luminoso. Está equipada con lo básico para una estadía confortable. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con parrilla, ideal para disfrutar de asados al aire libre. La cercanía a la costanera permite acceder fácilmente a pie a zonas verdes y con vistas al río Uruguay. Un lugar simple y apacible para descansar y disfrutar del entorno fluvial de Concepción del Uruguay.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@rioapaciblehouse.com.ar",
@@ -113,14 +115,6 @@
             "familiar"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple, bien ubicada para turismo de río. Precio competitivo.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "house",
@@ -129,8 +123,6 @@
         "riverside",
         "family-friendly"
     ],
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
         "4e01f576-29f6-42e0-adb2-beeb790d77bf"
@@ -144,5 +136,7 @@
         "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

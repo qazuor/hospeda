@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "1e40f686-3964-4b5b-8259-9ca49016e2e7",
     "name": "workspace",
     "slug": "workspace",
     "description": "Workspace",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "SERVICES",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

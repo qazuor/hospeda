@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-tranquilo-hostel-federacion",
     "name": "nido-tranquilo-hostel",
-    "displayName": "Nido Tranquilo Hostel",
+    "summary": "Encuentra un espacio para descansar en Nido Tranquilo Hostel, ubicado en una zona serena de Federación.",
     "type": "HOSTEL",
     "description": "Encuentra un espacio para descansar en Nido Tranquilo Hostel, ubicado en una zona serena de Federación. Ideal para viajeros que buscan un lugar apacible y económico para alojarse, con acceso conveniente al Parque Termal y el centro de la ciudad.\n\nEl hostel ofrece dormitorios compartidos (4 y 6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes incluyen una cocina equipada para uso de los huéspedes, un comedor social y un living sencillo. Dispone de un pequeño patio.\n\nLa ubicación en un barrio tranquilo te garantiza un buen descanso. Estás a poca distancia en auto de los principales puntos de interés de Federación, incluyendo el Parque Termal y la costanera. Es una base práctica y económica para explorar la ciudad y disfrutar de sus termas.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "info@nidotranquilohostel.com.ar",
@@ -12,6 +14,9 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "reservas@nidotranquilohostel.com.ar"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/nidotranquilohostelok"
     },
     "price": {
         "basePrice": {
@@ -109,14 +114,6 @@
             "termas federación"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción de bajo costo en zona tranquila. Atrae principalmente a mochileros que visitan las termas.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "federacion",
         "hostel",
@@ -126,11 +123,6 @@
         "thermal",
         "quiet"
     ],
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "instagram": "https://instagram.com/nidotranquilohostelok"
-    },
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "1fb29901-701e-4f9d-ab30-942e11dadb4c"
@@ -143,5 +135,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

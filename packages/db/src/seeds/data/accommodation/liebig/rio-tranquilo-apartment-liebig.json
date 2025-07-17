@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-tranquilo-apartment-liebig",
     "name": "rio-tranquilo-apartment",
-    "displayName": "Rio Tranquilo Apartamento",
+    "summary": "Encuentra la paz y el confort en Rio Tranquilo Apartamento, un espacio moderno ubicado en un barrio sereno de Liebig, con fácil acceso al río Uruguay.",
     "type": "APARTMENT",
     "description": "Encuentra la paz y el confort en Rio Tranquilo Apartamento, un espacio moderno ubicado en un barrio sereno de Liebig, con fácil acceso al río Uruguay. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado para disfrutar de la tranquilidad del pueblo histórico y la naturaleza ribereña.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, invitando a la relajación.\n\nSituado en un edificio tranquilo, ofrece un descanso reparador. Estás a pocos minutos en auto o caminando de los restos históricos del Frigorífico Liebig y con acceso rápido al río Uruguay. Una opción práctica y cómoda para tu visita a Liebig.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@riotranquiloapartment.com.ar",
@@ -13,6 +15,9 @@
         "preferredPhone": "MOBILE",
         "homeEmail": "contacto@riotranquiloapartment.com.ar",
         "website": "https://riotranquiloapartment.tur.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/riotranquiloapartmentok"
     },
     "price": {
         "basePrice": {
@@ -110,24 +115,6 @@
             "parejas"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple y funcional en zona residencial. Buena para estancias cortas.",
-        "favorite": false,
-        "tags": [
-            "liebig",
-            "apartment",
-            "liebig-apartment",
-            "seed-example",
-            "quiet",
-            "history",
-            "riverside"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/riotranquiloapartmentok"
-    },
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "effbc352-e173-4e30-b7bf-89cb5082531e",
@@ -143,5 +130,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

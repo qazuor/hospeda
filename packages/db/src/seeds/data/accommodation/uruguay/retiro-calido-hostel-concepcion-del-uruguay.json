@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-calido-hostel-concepcion_del_uruguay",
     "name": "retiro-calido-hostel",
-    "displayName": "Retiro Cálido Hostel",
+    "summary": "Siente la calidez de hogar en Retiro Cálido Hostel, un espacio acogedor en Concepción del Uruguay, perfecto para viajeros que valoran un ambiente amigable y tranquilo.",
     "type": "HOSTEL",
     "description": "Siente la calidez de hogar en Retiro Cálido Hostel, un espacio acogedor en Concepción del Uruguay, perfecto para viajeros que valoran un ambiente amigable y tranquilo. Ubicado en un barrio tradicional, ofrece una experiencia local auténtica, a poca distancia de los puntos de interés.\n\nEl hostel dispone de dormitorios compartidos con literas (4 y 8 camas) y algunas habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes son el corazón del hostel: una cocina equipada, un comedor, un living con TV y libros, y un patio pequeño pero encantador ideal para relajarse o conversar.\n\nEl ambiente es relajado y promueve la interacción entre huéspedes. La ubicación en un barrio residencial te permite descansar bien por la noche, pero estás a una distancia corta en auto o colectivo del centro histórico, la costanera y la Terminal de Ómnibus. Un lugar sencillo y cálido para tu estadía en 'La Histórica'.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@retirocalidohostel.com.ar",
@@ -116,14 +118,6 @@
             "familiar"
         ]
     },
-    "adminInfo": {
-        "notes": "Bueno para estancias de corta duración. Ambiente amigable.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "hostel",
@@ -131,19 +125,6 @@
         "seed-example",
         "budget",
         "social"
-    ],
-    "faqs": [],
-    "iaData": [
-        {
-            "title": "Gastronomía local en Concepción del Uruguay",
-            "content": "La ciudad ofrece una variada gastronomía con opciones para todos los gustos y presupuestos. Puedes encontrar restaurantes especializados en pescados de río cerca de la costanera, parrillas con excelentes carnes, y opciones de cocina internacional. No dejes de probar el postre Chajá, típico de la región. En el centro hay numerosos cafés y bares para disfrutar de un break. El hostel puede recomendarte algunos lugares según tus preferencias.",
-            "category": "gastronomy"
-        },
-        {
-            "title": "Palacio San José: un viaje al pasado",
-            "content": "A unos 25 km de Concepción del Uruguay se encuentra el Palacio San José, antigua residencia del General Justo José de Urquiza. Hoy es un Museo Nacional y ofrece un fascinante recorrido por la historia argentina del siglo XIX. Puedes llegar en transporte público (colectivo) o en taxi/remis. La visita guiada es muy recomendable para conocer los detalles de la vida de Urquiza y la arquitectura de la época.",
-            "category": "history"
-        }
     ],
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
@@ -157,5 +138,18 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "Gastronomía local en Concepción del Uruguay",
+            "content": "La ciudad ofrece una variada gastronomía con opciones para todos los gustos y presupuestos. Puedes encontrar restaurantes especializados en pescados de río cerca de la costanera, parrillas con excelentes carnes, y opciones de cocina internacional. No dejes de probar el postre Chajá, típico de la región. En el centro hay numerosos cafés y bares para disfrutar de un break. El hostel puede recomendarte algunos lugares según tus preferencias.",
+            "category": "gastronomy"
+        },
+        {
+            "title": "Palacio San José: un viaje al pasado",
+            "content": "A unos 25 km de Concepción del Uruguay se encuentra el Palacio San José, antigua residencia del General Justo José de Urquiza. Hoy es un Museo Nacional y ofrece un fascinante recorrido por la historia argentina del siglo XIX. Puedes llegar en transporte público (colectivo) o en taxi/remis. La visita guiada es muy recomendable para conocer los detalles de la vida de Urquiza y la arquitectura de la época.",
+            "category": "history"
+        }
     ]
 }

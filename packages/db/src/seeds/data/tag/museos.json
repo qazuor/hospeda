@@ -1,7 +1,8 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag_museos",
     "name": "Museos",
-    "description": "Espacios de arte y historia",
-    "color": "#800080",
-    "category": "cultura"
+    "slug": "museos",
+    "color": "PURPLE",
+    "notes": "Espacios de arte y historia"
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-natural-hotel-concepcion_del_uruguay",
     "name": "mirador-natural-hotel",
-    "displayName": "Mirador Natural Hotel",
+    "summary": "Disfruta de la serenidad y las vistas en Mirador Natural Hotel, un refugio tranquilo en Concepción del Uruguay con hermosas vistas al entorno natural.",
     "type": "HOTEL",
     "description": "Disfruta de la serenidad y las vistas en Mirador Natural Hotel, un refugio tranquilo en Concepción del Uruguay con hermosas vistas al entorno natural. Ubicado estratégicamente cerca de la costanera y con fácil acceso al centro, este hotel es ideal para quienes buscan paz y confort.\n\nEl hotel cuenta con 18 habitaciones confortables, muchas de ellas con balcón y vista panorámica al río o a zonas arboladas. Todas están equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y familiares.\n\nEntre nuestras instalaciones, destacamos un jardín con piscina y solárium, un espacio perfecto para relajarse disfrutando del paisaje. El hotel ofrece desayuno buffet incluido, servido en un comedor con vista al exterior. También contamos con un lobby acogedor y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder rápidamente a la costanera, la Isla del Puerto y zonas de esparcimiento al aire libre. El centro histórico y los sitios de interés de 'La Histórica' están a pocos minutos en auto. Mirador Natural Hotel es la opción ideal para una estancia relajante en contacto con la belleza natural de Concepción del Uruguay.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "info@miradornaturalhotel.com.ar",
@@ -122,14 +124,6 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Hotel con buen diferencial por sus vistas. Promocionar el acceso a la costanera.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "hotel",
@@ -139,19 +133,6 @@
         "swimming-pool",
         "nature"
     ],
-    "faqs": [
-        {
-            "question": "¿El hotel tiene restaurante?",
-            "answer": "Contamos con un comedor donde se sirve el desayuno, pero no ofrecemos servicio de restaurante para almuerzo o cena.",
-            "category": "dining"
-        },
-        {
-            "question": "¿Está cerca de la Isla del Puerto?",
-            "answer": "La Isla del Puerto se encuentra a poca distancia en auto, o se puede acceder caminando por la pasarela desde la zona de la costanera.",
-            "category": "location"
-        }
-    ],
-    "iaData": [],
     "featureIds": [
         "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
@@ -167,5 +148,18 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿El hotel tiene restaurante?",
+            "answer": "Contamos con un comedor donde se sirve el desayuno, pero no ofrecemos servicio de restaurante para almuerzo o cena.",
+            "category": "dining"
+        },
+        {
+            "question": "¿Está cerca de la Isla del Puerto?",
+            "answer": "La Isla del Puerto se encuentra a poca distancia en auto, o se puede acceder caminando por la pasarela desde la zona de la costanera.",
+            "category": "location"
+        }
+    ],
+    "iaData": []
 }
