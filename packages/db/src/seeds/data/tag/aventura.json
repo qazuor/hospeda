@@ -1,15 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-aventura-005",
     "name": "Aventura",
     "slug": "aventura",
-    "description": "Actividades de aventura, deportes extremos y turismo activo",
-    "type": "activity",
-    "category": "primary",
-    "color": "#9C27B0",
+    "color": "PURPLE",
     "icon": "adventure",
-    "isActive": true,
-    "adminInfo": {
-        "notes": "Tag para turismo de aventura y deportes",
-        "favorite": true
-    }
+    "notes": "Actividades de aventura, deportes extremos y turismo activo",
+    "lifecycleState": "ACTIVE"
 }

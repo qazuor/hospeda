@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-soleado-hostel-san_jose",
     "name": "rio-soleado-hostel",
-    "displayName": "Rio Soleado Hostel",
+    "summary": "Disfruta de la luz y un ambiente vibrante en Rio Soleado Hostel, ubicado en San José.",
     "type": "HOSTEL",
     "description": "Disfruta de la luz y un ambiente vibrante en Rio Soleado Hostel, ubicado en San José. Ideal para jóvenes viajeros y mochileros que buscan socializar y estar cerca de los puntos de interés, incluyendo el Parque Nacional El Palmar. Su diseño moderno y luminoso crea un espacio muy agradable para tu estadía.\n\nEl hostel cuenta con dormitorios compartidos (4, 6 y 8 camas) equipados con literas robustas y lockers individuales. También ofrecemos algunas habitaciones privadas dobles. Los baños son compartidos, separados por género y con duchas de agua caliente 24hs. Las áreas comunes son amplias y luminosas: una gran cocina equipada, un comedor espacioso, un living con puff y TV, y un patio interior.\n\nLa ubicación permite un acceso fácil en auto a la Ruta 14 hacia el Parque Nacional El Palmar, así como al centro de San José y la cercana Colón. Es una base ideal para explorar la zona de forma económica y hacer nuevos amigos. El ambiente es relajado y promueve la interacción entre huéspedes.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "hola@riosoleadohostel.com.ar",
@@ -125,32 +127,6 @@
             "luminoso"
         ]
     },
-    "adminInfo": {
-        "notes": "Excelente ubicación para jóvenes interesados en El Palmar. Mucha luz natural.",
-        "favorite": true,
-        "tags": [
-            "san-jose",
-            "hostel",
-            "san-jose-hostel",
-            "seed-example",
-            "budget",
-            "social",
-            "nature"
-        ]
-    },
-    "faqs": [
-        {
-            "question": "¿Está cerca del centro de San José?",
-            "answer": "Sí, el hostel se encuentra a pocas cuadras del centro.",
-            "category": "location"
-        },
-        {
-            "question": "¿Ofrecen desayuno?",
-            "answer": "No, el desayuno no está incluido, pero puedes prepararlo en nuestra cocina comunitaria.",
-            "category": "dining"
-        }
-    ],
-    "iaData": [],
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "28fb935c-d04b-4247-a73b-5099be7719aa",
@@ -166,5 +142,18 @@
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c",
         "ba67af27-5e90-44b6-b0ca-23fd5576092f"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿Está cerca del centro de San José?",
+            "answer": "Sí, el hostel se encuentra a pocas cuadras del centro.",
+            "category": "location"
+        },
+        {
+            "question": "¿Ofrecen desayuno?",
+            "answer": "No, el desayuno no está incluido, pero puedes prepararlo en nuestra cocina comunitaria.",
+            "category": "dining"
+        }
+    ],
+    "iaData": []
 }

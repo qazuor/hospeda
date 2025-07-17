@@ -1,0 +1,88 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "accommodationReview.schema.json",
+    "title": "AccommodationReview Seed Schema",
+    "description": "JSON schema for AccommodationReview entity seeds - matches TypeScript AccommodationReviewType interface",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "id": {
+            "type": "string",
+            "description": "AccommodationReview ID (UUID)"
+        },
+        "accommodationId": {
+            "type": "string",
+            "description": "Related accommodation ID (UUID)"
+        },
+        "userId": {
+            "type": "string",
+            "description": "User who wrote the review (UUID)"
+        },
+        "title": {
+            "type": "string",
+            "description": "Optional review title"
+        },
+        "content": {
+            "type": "string",
+            "description": "Optional review content"
+        },
+        "rating": {
+            "type": "object",
+            "description": "AccommodationRatingType object with required rating fields",
+            "properties": {
+                "cleanliness": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Cleanliness rating (1-5)"
+                },
+                "hospitality": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Hospitality rating (1-5)"
+                },
+                "services": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Services rating (1-5)"
+                },
+                "accuracy": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Accuracy rating (1-5)"
+                },
+                "communication": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Communication rating (1-5)"
+                },
+                "location": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "description": "Location rating (1-5)"
+                }
+            },
+            "required": [
+                "cleanliness",
+                "hospitality",
+                "services",
+                "accuracy",
+                "communication",
+                "location"
+            ],
+            "additionalProperties": false
+        },
+        "lifecycleState": {
+            "$ref": "common.schema.json#/definitions/lifecycleState"
+        }
+    },
+    "required": ["id", "accommodationId", "userId", "rating"],
+    "additionalProperties": false
+}

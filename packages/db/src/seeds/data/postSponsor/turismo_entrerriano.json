@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/postSponsor.schema.json",
     "id": "ps-turismo-entrerriano-001",
     "name": "Turismo Entrerriano",
     "type": "ADVERTISER",
@@ -22,9 +23,5 @@
         "instagram": "https://instagram.com/turismo_entrerriano",
         "twitter": "https://twitter.com/turismo_er",
         "youtube": "https://youtube.com/turismoentrerriano"
-    },
-    "adminInfo": {
-        "notes": "Sponsor principal para contenido turístico institucional",
-        "favorite": true
     }
 }

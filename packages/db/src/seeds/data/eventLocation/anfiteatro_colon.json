@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/eventLocation.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d601",
     "state": "Entre Ríos",
     "city": "Colón",
@@ -9,11 +10,8 @@
     "neighborhood": "Centro",
     "coordinates": {
         "lat": "-32.2208",
-        "lng": "-58.1431"
+        "long": "-58.1431"
     },
     "placeName": "Anfiteatro Municipal de Colón",
-    "adminInfo": {
-        "notes": "Espacio cultural al aire libre con vista al río Uruguay",
-        "favorite": true
-    }
+    "lifecycleState": "ACTIVE"
 }

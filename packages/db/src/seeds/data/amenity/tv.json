@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
     "name": "tv",
     "slug": "tv",
     "description": "Tv",
-    "type": "accommodation",
-    "category": "comfort",
+    "type": "CONNECTIVITY",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": false,
-    "isPremium": true,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: True",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": false
 }

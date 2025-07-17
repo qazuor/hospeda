@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-calmado-room-villa_paranacito",
     "name": "rincon-calmado-room",
-    "displayName": "Rincón Calmado Habitación",
+    "summary": "Encuentra un espacio tranquilo para tu descanso en Rincón Calmado, una habitación privada en una casa familiar ubicada en un barrio residencial apacible de Paranacito.",
     "type": "ROOM",
     "description": "Encuentra un espacio tranquilo para tu descanso en Rincón Calmado, una habitación privada en una casa familiar ubicada en un barrio residencial apacible de Paranacito. Ideal para viajeros que valoran la serenidad y un ambiente hogareño, con fácil acceso a los puntos de interés del pueblo y el Delta.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común para relajarse.\n\nLa casa se encuentra en un barrio tranquilo, garantizando un buen descanso. Estás a una distancia conveniente en auto o caminando del centro de Paranacito y de los puntos de acceso al Delta. Los anfitriones ofrecen un trato amable, haciendo de tu estancia una experiencia calmada y agradable.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@rinconcalmadoroom.com.ar",
@@ -12,6 +14,9 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "reservas@rinconcalmadoroom.com.ar"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/rinconcalmadoroom"
     },
     "price": {
         "basePrice": {
@@ -102,24 +107,6 @@
             "compartido"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción básica y económica. Atrae a viajeros que priorizan el descanso y el acceso al Delta.",
-        "favorite": false,
-        "tags": [
-            "paranacito",
-            "room",
-            "paranacito-room",
-            "seed-example",
-            "budget",
-            "quiet",
-            "nature"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "instagram": "https://instagram.com/rinconcalmadoroom"
-    },
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "bdc8b938-9599-428c-92a8-0bf932005ed7",
@@ -132,5 +119,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

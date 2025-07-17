@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-relajante-hotel-san_jose",
     "name": "rincon-relajante-hotel",
-    "displayName": "Rincón Relajante Hotel",
+    "summary": "Encuentra la tranquilidad y el descanso en Rincón Relajante Hotel, ubicado en San José.",
     "type": "HOTEL",
     "description": "Encuentra la tranquilidad y el descanso en Rincón Relajante Hotel, ubicado en San José. Ideal para quienes buscan un lugar sereno para relajarse y explorar esta apacible ciudad y el Parque Nacional El Palmar. Ofrece un ambiente calmado y servicios pensados para tu bienestar.\n\nEl hotel cuenta con 18 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto al centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Rincón Relajante es la opción ideal para una estancia dedicada al descanso y al bienestar en San José.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "hola@rinconrelajantehotel.com.ar",
@@ -12,6 +14,11 @@
         "homePhone": "+543447186908",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/rinconrelajante",
+        "instagram": "https://instagram.com/rinconrelajante",
+        "twitter": "https://twitter.com/rinconrelajante"
     },
     "price": {
         "basePrice": {
@@ -115,26 +122,6 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Hotel con enfoque en relax y El Palmar. Bien ubicado.",
-        "favorite": true,
-        "tags": [
-            "san-jose",
-            "hotel",
-            "san-jose-hotel",
-            "seed-example",
-            "swimming-pool",
-            "nature",
-            "quiet"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/rinconrelajante",
-        "instagram": "https://instagram.com/rinconrelajante",
-        "twitter": "https://twitter.com/rinconrelajante"
-    },
     "featureIds": [
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
         "bdc8b938-9599-428c-92a8-0bf932005ed7",
@@ -150,5 +137,7 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

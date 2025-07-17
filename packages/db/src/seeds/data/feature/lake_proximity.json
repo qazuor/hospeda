@@ -1,16 +1,11 @@
 {
+    "$schema": "../../schemas/feature.schema.json",
     "id": "5a082d52-22f4-471f-88c3-130a3dfa1ca3",
     "name": "lake_proximity",
     "slug": "lake_proximity",
     "description": "Cerca del Lago",
-    "type": "accommodation",
-    "category": "comfort",
     "icon": "feature",
-    "isActive": true,
-    "isPopular": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "A poca distancia de la costanera del Lago Salto Grande",
-        "favorite": false
-    }
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
 }

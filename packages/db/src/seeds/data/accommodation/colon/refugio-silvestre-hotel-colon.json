@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-silvestre-hotel-colon",
     "name": "refugio-silvestre-hotel",
-    "displayName": "Refugio Silvestre Hotel",
+    "summary": "Experimenta una estancia de relax en el Refugio Silvestre Hotel, un oasis de tranquilidad ubicado en una zona semi-céntrica de Colón, ideal para quienes buscan combinar la paz del entorno con la comodidad de estar cerca de las atracciones principales.",
     "type": "HOTEL",
     "description": "Experimenta una estancia de relax en el Refugio Silvestre Hotel, un oasis de tranquilidad ubicado en una zona semi-céntrica de Colón, ideal para quienes buscan combinar la paz del entorno con la comodidad de estar cerca de las atracciones principales. Este hotel está diseñado para ofrecer una experiencia acogedora y personalizada, rodeado de naturaleza y con servicios pensados para tu bienestar.\n\nEl hotel cuenta con 15 habitaciones confortables, decoradas con un estilo rústico y elegante, equipadas con aire acondicionado, calefacción, TV por cable y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples para adaptarnos a diferentes necesidades de alojamiento. Algunas habitaciones cuentan con vista al jardín o a la piscina.\n\nEntre nuestras instalaciones, destacamos un amplio jardín con piscina y solárium, perfectos para disfrutar de los días cálidos. Contamos con un desayuno buffet casero incluido en la tarifa, que se sirve en nuestro comedor con vista al jardín. También ofrecemos servicio de bar y cafetería. El hotel dispone de conexión WiFi gratuita en todas las áreas y estacionamiento descubierto dentro de la propiedad.\n\nSu ubicación estratégica facilita el acceso en pocos minutos en auto a la costanera, el centro comercial y el complejo termal de Colón. Es un refugio ideal para descansar después de un día de actividades, rodeado de la serenidad que solo un entorno con vegetación puede ofrecer.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "contacto@refugiosilvestrehotel.com.ar",
@@ -119,14 +121,6 @@
             "vacaciones"
         ]
     },
-    "adminInfo": {
-        "notes": "Pequeño hotel con ambiente familiar. Buena gestión de reservas directas.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "hotel",
@@ -134,6 +128,21 @@
         "seed-example",
         "swimming-pool",
         "nature"
+    ],
+    "featureIds": [
+        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -153,20 +162,5 @@
             "content": "Colón ofrece una variedad de actividades para todos los gustos. Sus playas sobre el río Uruguay son ideales para disfrutar del sol y actividades acuáticas como kayak y natación. El Parque Termal de Colón, con sus aguas terapéuticas, es perfecto para un día de relax. Para los amantes de la naturaleza, el cercano Parque Nacional El Palmar es una visita obligada para admirar las palmeras Yatay. También puedes recorrer el centro histórico de la ciudad, visitar museos y disfrutar de la gastronomía local, especialmente los pescados de río. En el hotel podemos ayudarte a organizar excursiones y darte recomendaciones.",
             "category": "activities"
         }
-    ],
-    "featureIds": [
-        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
-        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "8305de52-109d-48bb-8781-c7e837443809",
-        "191fac6f-b553-404b-8463-a7281bc52ef9",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ]
 }

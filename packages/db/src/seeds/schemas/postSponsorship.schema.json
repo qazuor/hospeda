@@ -2,24 +2,27 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "postSponsorship.schema.json",
     "title": "PostSponsorship Seed Schema",
-    "description": "JSON schema for PostSponsorship entity seeds",
+    "description": "JSON schema for PostSponsorship entity seeds - matches TypeScript PostSponsorshipType interface",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "PostSponsorship ID (UUID)"
         },
         "sponsorId": {
             "type": "string",
-            "description": "Related sponsor ID"
+            "description": "Related sponsor ID (UUID)"
         },
         "postId": {
             "type": "string",
-            "description": "Related post ID"
+            "description": "Related post ID (UUID)"
         },
         "message": {
             "type": "string",
-            "description": "Sponsorship message",
+            "description": "Optional sponsorship message",
             "minLength": 5,
             "maxLength": 300
         },
@@ -49,10 +52,11 @@
         },
         "isHighlighted": {
             "type": "boolean",
-            "description": "Whether sponsorship is highlighted"
+            "description": "Whether sponsorship is highlighted",
+            "default": false
         },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
+        "lifecycleState": {
+            "$ref": "common.schema.json#/definitions/lifecycleState"
         }
     },
     "required": ["id", "sponsorId", "postId", "description", "paid"],

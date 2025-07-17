@@ -1,7 +1,8 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag_arquitectura",
     "name": "Arquitectura",
-    "description": "Edificaciones y construcciones destacadas",
-    "color": "#CD853F",
-    "category": "cultura"
+    "slug": "arquitectura",
+    "color": "GREY",
+    "notes": "Edificaciones y construcciones destacadas"
 }

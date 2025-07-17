@@ -5,6 +5,9 @@
     "description": "JSON schema for Amenity entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "Amenity ID (UUID)"
@@ -23,50 +26,38 @@
         },
         "type": {
             "type": "string",
-            "enum": ["accommodation", "room", "common_area", "external", "service"],
-            "description": "Amenity type"
-        },
-        "category": {
-            "type": "string",
             "enum": [
-                "basic",
-                "comfort",
-                "luxury",
-                "technology",
-                "entertainment",
-                "business",
-                "wellness",
-                "family",
-                "accessibility",
-                "pet_friendly",
-                "eco_friendly"
+                "CLIMATE_CONTROL",
+                "CONNECTIVITY",
+                "ENTERTAINMENT",
+                "KITCHEN",
+                "BED_AND_BATH",
+                "OUTDOORS",
+                "ACCESSIBILITY",
+                "SERVICES",
+                "SAFETY",
+                "FAMILY_FRIENDLY",
+                "WORK_FRIENDLY",
+                "GENERAL_APPLIANCES"
             ],
-            "description": "Amenity category"
+            "description": "Amenity type"
         },
         "icon": {
             "type": "string",
             "description": "Amenity icon identifier"
         },
-        "isActive": {
+        "isBuiltin": {
             "type": "boolean",
-            "description": "Whether amenity is active"
+            "description": "Whether this amenity is built-in (system default)"
         },
-        "isPopular": {
+        "isFeatured": {
             "type": "boolean",
-            "description": "Whether amenity is popular"
-        },
-        "isPremium": {
-            "type": "boolean",
-            "description": "Whether amenity is premium"
-        },
-        "sortOrder": {
-            "type": "integer",
-            "description": "Sort order for display"
+            "description": "Whether this amenity is featured (highlighted in UI)"
         },
         "adminInfo": {
             "$ref": "common.schema.json#/definitions/adminInfo"
         }
     },
-    "required": ["id", "name", "slug", "type", "category"],
+    "required": ["id", "name", "slug", "type", "isBuiltin", "isFeatured"],
     "additionalProperties": false
 }

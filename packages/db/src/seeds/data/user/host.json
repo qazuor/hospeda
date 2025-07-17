@@ -1,13 +1,19 @@
 {
+    "$schema": "../../schemas/user.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
-    "email": "host@hospeda.com",
-    "username": "host_ana",
+    "slug": "ana-rodríguez",
+    "role": "HOST",
+    "permissions": [
+        "accommodation.create",
+        "accommodation.update.own",
+        "accommodation.delete.own",
+        "event.create",
+        "event.update.own",
+        "event.delete.own"
+    ],
     "firstName": "Ana",
     "lastName": "Rodríguez",
-    "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-    "bio": "Propietaria de alojamientos turísticos en Colón. Especialista en hospitalidad y turismo rural. Gestiona múltiples propiedades con enfoque en la experiencia del huésped.",
-    "role": "HOST",
-    "isVerified": true,
+    "displayName": "Ana Rodríguez",
     "contactInfo": {
         "personalEmail": "ana.rodriguez@gmail.com",
         "workEmail": "host@hospeda.com",
@@ -16,11 +22,6 @@
         "website": "https://alojamientosana.com",
         "preferredEmail": "PERSONAL",
         "preferredPhone": "MOBILE"
-    },
-    "socialNetworks": {
-        "facebook": "https://facebook.com/alojamientos.ana",
-        "instagram": "https://instagram.com/alojamientos_ana",
-        "whatsapp": "+54 11 5555-0004"
     },
     "location": {
         "state": "Entre Ríos",
@@ -35,25 +36,25 @@
             "lng": "-58.1431"
         }
     },
-    "preferences": {
+    "socialNetworks": {
+        "facebook": "https://facebook.com/alojamientos.ana",
+        "instagram": "https://instagram.com/alojamientos_ana",
+        "whatsapp": "+54 11 5555-0004"
+    },
+    "profile": {
+        "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+        "bio": "Propietaria de alojamientos turísticos en Colón. Especialista en hospitalidad y turismo rural. Gestiona múltiples propiedades con enfoque en la experiencia del huésped.",
+        "website": "https://alojamientosana.com"
+    },
+    "settings": {
         "language": "es",
-        "currency": "ARS",
         "notifications": {
-            "email": true,
-            "push": true,
-            "marketing": true
+            "enabled": true,
+            "allowEmails": true,
+            "allowSms": false,
+            "allowPush": true
         }
     },
-    "adminInfo": {
-        "notes": "Host experimentada con múltiples propiedades, excelente calificación",
-        "favorite": true
-    },
-    "tagIds": [
-        "tag-turismo-001",
-        "tag-historia-013",
-        "tag-termas-012",
-        "tag-familia-004",
-        "tag-entre-rios-003",
-        "tag-arquitectura"
-    ]
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

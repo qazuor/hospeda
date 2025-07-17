@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "0d73b0be-30c1-4cbb-8b21-90d2bde3d412",
     "name": "streaming_service",
     "slug": "streaming_service",
     "description": "Streaming Service",
-    "type": "accommodation",
-    "category": "comfort",
+    "type": "CONNECTIVITY",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": false,
-    "isPremium": true,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: True",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": false
 }

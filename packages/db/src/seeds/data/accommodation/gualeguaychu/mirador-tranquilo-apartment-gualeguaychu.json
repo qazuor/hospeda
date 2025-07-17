@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-tranquilo-apartment-gualeguaychu",
     "name": "mirador-tranquilo-apartment",
-    "displayName": "Mirador Tranquilo Apartamento",
+    "summary": "Disfruta de la calma y una perspectiva serena de Gualeguaychú en Mirador Tranquilo, un apartamento ubicado en un piso alto con vistas parciales a la ciudad o zonas verdes.",
     "type": "APARTMENT",
     "description": "Disfruta de la calma y una perspectiva serena de Gualeguaychú en Mirador Tranquilo, un apartamento ubicado en un piso alto con vistas parciales a la ciudad o zonas verdes. Ideal para viajeros que valoran un ambiente tranquilo, luminoso y con las comodidades de un apartamento moderno, con fácil acceso a las atracciones principales.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo alojar hasta 3 personas. Los ventanales permiten la entrada de luz y ofrecen las vistas parciales. Dispone de aire acondicionado y calefacción.\n\nUbicado en un edificio con ascensor en una zona residencial tranquila, ofrece un retiro pacífico. Estás a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. Mirador Tranquilo es una opción serena y confortable para tu estadía.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@miradortranquiloapartment.com.ar",
@@ -13,6 +15,9 @@
         "preferredPhone": "MOBILE",
         "homeEmail": "info@miradortranquiloapartment.com.ar",
         "website": "https://miradortranquiloapartment.tur.ar"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/miradortranquiloapartment"
     },
     "price": {
         "basePrice": {
@@ -118,14 +123,6 @@
             "carnaval gualeguaychu"
         ]
     },
-    "adminInfo": {
-        "notes": "Ofrece vistas parciales desde un piso alto. En zona residencial tranquila.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "gualeguaychu",
         "apartment",
@@ -135,17 +132,6 @@
         "city-view",
         "carnival"
     ],
-    "faqs": [
-        {
-            "question": "¿El edificio tiene ascensor?",
-            "answer": "Sí, el edificio cuenta con ascensor.",
-            "category": "facilities"
-        }
-    ],
-    "iaData": [],
-    "socialNetworks": {
-        "twitter": "https://twitter.com/miradortranquiloapartment"
-    },
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "2f7d146e-ed8a-4535-8f70-0a5c6ea47680",
@@ -162,5 +148,13 @@
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c",
         "4bad848b-16de-488c-a673-91172ff620f3"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿El edificio tiene ascensor?",
+            "answer": "Sí, el edificio cuenta con ascensor.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": []
 }

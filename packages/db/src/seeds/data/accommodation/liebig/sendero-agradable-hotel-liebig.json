@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-agradable-hotel-liebig",
     "name": "sendero-agradable-hotel",
-    "displayName": "Sendero Agradable Hotel",
+    "summary": "Disfruta de una estancia agradable en Sendero Agradable Hotel, un hotel con encanto ubicado en la histórica localidad de Liebig.",
     "type": "HOTEL",
     "description": "Disfruta de una estancia agradable en Sendero Agradable Hotel, un hotel con encanto ubicado en la histórica localidad de Liebig. Ideal para quienes visitan el antiguo Frigorífico y buscan un lugar cómodo y apacible para descansar, con fácil acceso al río Uruguay.\n\nEl hotel cuenta con 15 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un pequeño jardín y una sala de estar común. El hotel ofrece desayuno incluido en la tarifa. También cuenta con Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder caminando o en pocos minutos en auto a los restos históricos del Frigorífico Liebig y a la costa del río Uruguay. Sendero Agradable es una opción agradable y práctica para explorar la historia y la tranquilidad de Liebig.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "workEmail": "contacto@senderoagradablehotel.com.ar",
@@ -108,20 +110,6 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Hotel simple con enfoque en la historia de Liebig y el turismo de río. Bien ubicado en el pueblo.",
-        "favorite": false,
-        "tags": [
-            "liebig",
-            "hotel",
-            "liebig-hotel",
-            "seed-example",
-            "history",
-            "riverside"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "effbc352-e173-4e30-b7bf-89cb5082531e",
         "18c797f2-0f94-403d-bb28-a221742e1181"
@@ -136,5 +124,7 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

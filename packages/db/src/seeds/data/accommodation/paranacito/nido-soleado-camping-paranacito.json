@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-soleado-camping-villa_paranacito",
     "name": "nido-soleado-camping",
-    "displayName": "Nido Soleado Camping",
+    "summary": "Disfruta de la luminosidad y un entorno natural en Nido Soleado Camping, ubicado en un espacio amplio cerca de Paranacito.",
     "type": "CAMPING",
     "description": "Disfruta de la luminosidad y un entorno natural en Nido Soleado Camping, ubicado en un espacio amplio cerca de Paranacito. Ideal para campistas que buscan sol, espacio y contacto con la naturaleza, con fácil acceso al Delta y sus actividades.\n\nEl camping ofrece extensas parcelas soleadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping simple, pensado para disfrutar del aire libre y el sol.\n\nDisponemos de un espacio central con mesas y bancos. La cercanía a caminos rurales y al acceso al Delta invita a explorar la zona. Es un lugar con buena exposición al sol, ideal para quienes disfrutan de acampar con luz natural. Estás a una distancia conveniente en auto de Paranacito y los puntos de acceso al Delta.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@nidosoleadocamping.com.ar",
@@ -107,21 +109,6 @@
             "parrilla"
         ]
     },
-    "adminInfo": {
-        "notes": "Camping simple con buena exposición al sol. Atrae campistas que buscan espacio.",
-        "favorite": false,
-        "tags": [
-            "paranacito",
-            "camping",
-            "paranacito-camping",
-            "seed-example",
-            "nature",
-            "sun",
-            "bbq"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "541f0f7e-638d-49ef-b9c3-3cba79f48514",
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
@@ -131,5 +118,7 @@
         "55196c2d-3fa4-4797-ae33-798ca841f832",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

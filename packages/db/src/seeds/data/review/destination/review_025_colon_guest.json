@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "review-025-colon-guest",
     "userId": "guest-user-12345",
     "destinationId": "colon",

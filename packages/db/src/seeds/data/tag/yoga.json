@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-yoga-031",
     "name": "Yoga",
     "slug": "yoga",
-    "description": "Clases y retiros de yoga",
-    "type": "activity",
-    "category": "secondary",
-    "color": "#9370DB",
+    "color": "PURPLE",
     "icon": "yoga",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para yoga y actividades de bienestar",
-        "favorite": false
-    }
+    "notes": "Clases y retiros de yoga",
+    "lifecycleState": "ACTIVE"
 }

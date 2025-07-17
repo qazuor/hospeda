@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-maravilloso-country-house-concepcion_del_uruguay",
     "name": "nido-maravilloso-country-house",
-    "displayName": "Nido Maravilloso Country House",
+    "summary": "Encuentra tu 'Nido Maravilloso' en esta encantadora casa de campo ubicada en un entorno rural sereno cerca de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
     "description": "Encuentra tu 'Nido Maravilloso' en esta encantadora casa de campo ubicada en un entorno rural sereno cerca de Concepción del Uruguay. Ideal para quienes buscan desconectar, disfrutar de la paz del campo y pasar tiempo de calidad en familia o con amigos. La propiedad ofrece un ambiente cálido y todas las comodidades para una estancia inolvidable.\n\nLa casa, con su estilo rústico renovado, cuenta con tres dormitorios confortables y dos baños completos. El living-comedor es amplio y acogedor, con grandes ventanales que ofrecen vistas al parque. La cocina es independiente y está completamente equipada para que prepares tus comidas con facilidad. La capacidad es para 7 personas.\n\nEl exterior es ideal para disfrutar al aire libre. Dispone de un extenso parque con árboles, una piscina para refrescarse, una galería con asador y horno de barro, y un espacio de fogón para las noches estrelladas. Es un lugar perfecto para juegos al aire libre, observar aves y simplemente relajarse en contacto con la naturaleza.\n\nSituada a corta distancia en auto de Concepción del Uruguay, tendrás acceso rápido al centro histórico, la costanera y otros atractivos. También es una base ideal para visitar el Palacio San José y explorar los caminos rurales de la zona. Nido Maravilloso es tu refugio perfecto en el campo entrerriano.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "reservas@nidomaravillosocountryhouse.com.ar",
@@ -133,14 +135,6 @@
             "naturaleza"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad atractiva por sus instalaciones exteriores y entorno. Buena capacidad.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "country-house",
@@ -150,6 +144,25 @@
         "family-friendly",
         "bbq",
         "nature"
+    ],
+    "featureIds": [
+        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "8f8acc8b-625f-4244-9904-a21bf2d89900"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "c7ecb8a1-5edb-4ed5-83c0-4c4b54bf4957",
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -174,24 +187,5 @@
             "content": "El área del río Uruguay es un excelente punto para la observación de aves. Con binoculares, desde la costanera o zonas rurales cercanas, puedes avistar una gran variedad de especies, incluyendo aves acuáticas, rapaces y pájaros cantores típicos de la región del litoral.",
             "category": "nature"
         }
-    ],
-    "featureIds": [
-        "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
-        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
-        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
-        "8f8acc8b-625f-4244-9904-a21bf2d89900"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "c7ecb8a1-5edb-4ed5-83c0-4c4b54bf4957",
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ]
 }

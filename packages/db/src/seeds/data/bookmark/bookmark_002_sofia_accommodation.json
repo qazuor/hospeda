@@ -1,18 +1,10 @@
 {
+    "$schema": "../../schemas/userBookmark.schema.json",
     "id": "bookmark-002-sofia-accommodation",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
     "entityId": "hotel-plaza-gualeguaychu",
     "entityType": "ACCOMMODATION",
     "name": "Hotel Plaza Gualeguaychú",
     "description": "Hotel céntrico perfecto para el Carnaval",
-    "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "notes": "Bookmark para temporada de Carnaval"
-    },
-    "createdAt": "2024-01-20T14:45:00Z",
-    "updatedAt": "2024-01-20T14:45:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
-    "deletedAt": null,
-    "deletedById": null
+    "lifecycleState": "ACTIVE"
 }

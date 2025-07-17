@@ -1,4 +1,4 @@
-import { ClientTypeEnum, StateEnum } from '@repo/types';
+import { ClientTypeEnum, LifecycleStatusEnum } from '@repo/types';
 import { eq, ilike } from 'drizzle-orm';
 import { getDb } from '../../client.js';
 import { postSponsors, users } from '../../schema';
@@ -34,11 +34,14 @@ export async function seedSponsors() {
         // Define example sponsors
         const sponsors = [
             {
-                name: 'sponsor-example-entrerriano',
-                displayName: 'Turismo Entrerriano',
+                name: 'Turismo Entrerriano',
                 description: 'Agencia de promoción turística de Entre Ríos',
                 type: ClientTypeEnum.ADVERTISER,
-                logo: 'https://images.pexels.com/photos/675764/pexels-photo-675764.jpeg',
+                logo: {
+                    url: 'https://images.pexels.com/photos/675764/pexels-photo-675764.jpeg',
+                    caption: 'Turismo Entrerriano logo',
+                    state: LifecycleStatusEnum.ACTIVE
+                },
                 social: {
                     facebook: 'https://facebook.com/turismoentrerriano',
                     instagram: 'https://instagram.com/turismo_entrerriano',
@@ -52,7 +55,7 @@ export async function seedSponsors() {
                     preferredEmail: 'WORK',
                     preferredPhone: 'MOBILE'
                 },
-                state: StateEnum.ACTIVE,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 adminInfo: {
                     notes: 'Sponsor creado para pruebas y demo',
                     favorite: true
@@ -61,11 +64,14 @@ export async function seedSponsors() {
                 updatedById: adminUser.id
             },
             {
-                name: 'sponsor-example-termal',
-                displayName: 'Termas Unidas',
+                name: 'Termas Unidas',
                 description: 'Asociación de complejos termales de Entre Ríos',
                 type: ClientTypeEnum.POST_SPONSOR,
-                logo: 'https://images.pexels.com/photos/3225531/pexels-photo-3225531.jpeg',
+                logo: {
+                    url: 'https://images.pexels.com/photos/3225531/pexels-photo-3225531.jpeg',
+                    caption: 'Termas Unidas logo',
+                    state: LifecycleStatusEnum.ACTIVE
+                },
                 social: {
                     facebook: 'https://facebook.com/termasunidas',
                     instagram: 'https://instagram.com/termas_unidas'
@@ -77,7 +83,7 @@ export async function seedSponsors() {
                     preferredEmail: 'HOME',
                     preferredPhone: 'MOBILE'
                 },
-                state: StateEnum.ACTIVE,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 adminInfo: {
                     notes: 'Sponsor de prueba para contenido relacionado con termas',
                     favorite: true
@@ -86,11 +92,14 @@ export async function seedSponsors() {
                 updatedById: adminUser.id
             },
             {
-                name: 'sponsor-example-gastronomia',
-                displayName: 'Sabores del Litoral',
+                name: 'Sabores del Litoral',
                 description: 'Red de restaurantes y productores gastronómicos de Entre Ríos',
                 type: ClientTypeEnum.POST_SPONSOR,
-                logo: 'https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg',
+                logo: {
+                    url: 'https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg',
+                    caption: 'Sabores del Litoral logo',
+                    state: LifecycleStatusEnum.ACTIVE
+                },
                 social: {
                     facebook: 'https://facebook.com/saboresdellitoral',
                     instagram: 'https://instagram.com/sabores_litoral'
@@ -102,7 +111,7 @@ export async function seedSponsors() {
                     preferredEmail: 'HOME',
                     preferredPhone: 'MOBILE'
                 },
-                state: StateEnum.ACTIVE,
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
                 adminInfo: {
                     notes: 'Sponsor para contenido gastronómico y culinario',
                     favorite: true

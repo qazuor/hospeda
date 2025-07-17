@@ -1,18 +1,10 @@
 {
+    "$schema": "../../schemas/userBookmark.schema.json",
     "id": "bookmark-017-lucas-chajari-destination",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
     "entityId": "chajari",
     "entityType": "DESTINATION",
     "name": "Chajarí",
     "description": "Destino que tengo pendiente explorar, especialmente por la citricultura",
-    "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "notes": "Destino en lista de pendientes"
-    },
-    "createdAt": "2024-02-12T14:00:00Z",
-    "updatedAt": "2024-02-12T14:00:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
-    "deletedAt": null,
-    "deletedById": null
+    "lifecycleState": "ACTIVE"
 }

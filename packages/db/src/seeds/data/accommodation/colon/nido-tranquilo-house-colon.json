@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-tranquilo-house-colon",
     "name": "nido-tranquilo-house",
-    "displayName": "Nido Tranquilo House",
+    "summary": "Escapa a la tranquilidad en Nido Tranquilo House, una encantadora casa ubicada en una zona residencial apacible de Colón.",
     "type": "HOUSE",
     "description": "Escapa a la tranquilidad en Nido Tranquilo House, una encantadora casa ubicada en una zona residencial apacible de Colón. Perfecta para familias o grupos de amigos que buscan un espacio amplio y privado para relajarse y disfrutar de las atracciones de la ciudad y sus alrededores.\n\nLa casa cuenta con tres dormitorios confortables, dos baños completos, una cocina totalmente equipada con comedor diario, y un living espacioso con TV. El diseño prioriza la comodidad y los espacios para compartir, con una decoración sencilla y funcional. Puede alojar hasta 6 personas cómodamente.\n\nEl exterior ofrece un amplio jardín parquizado, ideal para actividades al aire libre, y una galería cubierta con asador tradicional, perfecta para disfrutar de comidas al aire libre. También cuenta con entrada para vehículo dentro de la propiedad. La ubicación permite un acceso rápido en auto al centro, la costanera y las Termas de Colón, combinando la paz de un barrio residencial con la cercanía a los puntos de interés.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@nidotranquilohouse.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "reservas@nidotranquilohouse.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/nidotranquilohouse",
+        "instagram": "https://instagram.com/nidotranquilohouse",
+        "twitter": "https://twitter.com/nidotranquilohouse"
     },
     "price": {
         "basePrice": {
@@ -122,14 +129,6 @@
             "vacaciones"
         ]
     },
-    "adminInfo": {
-        "notes": "Buena opción para familias numerosas. Ubicación conveniente.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "house",
@@ -139,13 +138,6 @@
         "garden",
         "bbq"
     ],
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/nidotranquilohouse",
-        "instagram": "https://instagram.com/nidotranquilohouse",
-        "twitter": "https://twitter.com/nidotranquilohouse"
-    },
     "featureIds": [
         "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4"
@@ -163,5 +155,7 @@
         "5df75b3e-1f48-40fe-ad77-3cae754982ab",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

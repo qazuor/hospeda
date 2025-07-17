@@ -1,7 +1,8 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag_pesca",
     "name": "Pesca",
-    "description": "Actividades de pesca deportiva y recreativa",
-    "color": "#4682B4",
-    "category": "deportes"
+    "slug": "pesca",
+    "color": "BLUE",
+    "notes": "Actividades de pesca deportiva y recreativa"
 }

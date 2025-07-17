@@ -37,13 +37,15 @@
     "seo": {
         "title": "Concordia - Capital de la Citricultura | Termas Entre Ríos",
         "description": "Descubre Concordia, capital de la citricultura argentina. Termas, cultura y naturaleza en Entre Ríos.",
-        "keywords": ["Concordia", "Entre Ríos", "Citricultura", "Termas", "Naranjas", "Cultura"]
+        "keywords": [
+            "Concordia",
+            "Entre Ríos",
+            "Citricultura",
+            "Termas",
+            "Naranjas",
+            "Cultura"
+        ]
     },
-    "adminInfo": {
-        "notes": "Ciudad importante por su producción citrícola y termas",
-        "favorite": false
-    },
-    "tags": ["citricultura", "termas", "cultura", "naturaleza", "urbano"],
     "tagIds": [
         "tag-termas-012",
         "tag-cultura-006",
@@ -53,57 +55,15 @@
         "tag-aguas-termales-017",
         "tag-citricultura-035"
     ],
-    "reviews": [
-        {
-            "title": "Termas excelentes y ciudad agradable",
-            "content": "Concordia tiene unas termas fantásticas y la ciudad es muy agradable. Me encantó conocer sobre la producción de naranjas y el parque San Carlos es perfecto para pasear en familia.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 4.0,
-                "accessibility": 4.5,
-                "safety": 4.5,
-                "cleanliness": 4.5,
-                "hospitality": 4.5,
-                "culturalOffer": 4.0,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 3.5,
-                "infrastructure": 4.5,
-                "environmentalCare": 4.0,
-                "wifiAvailability": 4.0,
-                "shopping": 4.0,
-                "familyFriendly": 4.5
-            },
-            "userId": "user-family-explorer"
-        },
-        {
-            "title": "Perfecta para relajarse",
-            "content": "Concordia es ideal para un descanso. Las termas son muy buenas, la ciudad es tranquila y hay lindos lugares para caminar. La costanera es especialmente hermosa al atardecer.",
-            "rating": {
-                "landscape": 4.5,
-                "attractions": 4.0,
-                "accessibility": 4.0,
-                "safety": 4.5,
-                "cleanliness": 4.5,
-                "hospitality": 4.5,
-                "culturalOffer": 3.5,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 3.0,
-                "infrastructure": 4.0,
-                "environmentalCare": 4.5,
-                "wifiAvailability": 4.0,
-                "shopping": 3.5,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-relax-seeker"
-        }
-    ],
     "attractionIds": [
         "783ded3b-060a-4abc-b623-2be0d7002133",
         "9bea0bbf-1c7b-4472-9e14-f5236743d43e",
         "e89f7034-ffca-4b86-8b13-edc7d02ac48a",
         "866d6611-d2ec-47f5-b223-546cc11c2707",
         "90b073e2-0675-447c-bee6-b6eecd0dbfbe"
-    ]
+    ],
+    "id": "50edeec6-c33a-508c-9155-6c134d3b6a2c",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
 }

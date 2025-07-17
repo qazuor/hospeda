@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-maravilloso-hotel-villa_paranacito",
     "name": "mirador-maravilloso-hotel",
-    "displayName": "Mirador Maravilloso Hotel",
+    "summary": "Disfruta de vistas maravillosas al río y el Delta en Mirador Maravilloso Hotel, ubicado estratégicamente en Paranacito.",
     "type": "HOTEL",
     "description": "Disfruta de vistas maravillosas al río y el Delta en Mirador Maravilloso Hotel, ubicado estratégicamente en Paranacito. Ideal para quienes buscan confort y vistas panorámicas al entorno natural del Delta. Un lugar para relajarse y contemplar el paisaje único.\n\nEl hotel cuenta con 16 habitaciones confortables, muchas de ellas con balcón y vista panorámica al río o a las islas. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de una terraza con solárium con las mejores vistas, perfecta para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en un comedor con vista al exterior. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder fácilmente a los puntos de interés de Paranacito y es una excelente base para explorar el Delta en lancha. Mirador Maravilloso Hotel es la opción ideal para una estancia con vistas inigualables en el corazón del Delta.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "info@miradormaravillosohotel.com.ar",
@@ -12,6 +14,10 @@
         "homePhone": "+543446236499",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/miradormaravillosohotel",
+        "twitter": "https://twitter.com/miradormaravillosohotel"
     },
     "price": {
         "basePrice": {
@@ -115,31 +121,6 @@
             "naturaleza"
         ]
     },
-    "adminInfo": {
-        "notes": "Hotel con buen diferencial por sus vistas. Promocionar turismo de Delta.",
-        "favorite": true,
-        "tags": [
-            "paranacito",
-            "hotel",
-            "paranacito-hotel",
-            "seed-example",
-            "river-view",
-            "nature",
-            "fishing"
-        ]
-    },
-    "faqs": [
-        {
-            "question": "¿Se organizan excursiones por el Delta?",
-            "answer": "Podemos ayudarte a contactar proveedores locales de excursiones en lancha por el Delta.",
-            "category": "services"
-        }
-    ],
-    "iaData": [],
-    "socialNetworks": {
-        "instagram": "https://instagram.com/miradormaravillosohotel",
-        "twitter": "https://twitter.com/miradormaravillosohotel"
-    },
     "featureIds": [
         "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d"
@@ -154,5 +135,13 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿Se organizan excursiones por el Delta?",
+            "answer": "Podemos ayudarte a contactar proveedores locales de excursiones en lancha por el Delta.",
+            "category": "services"
+        }
+    ],
+    "iaData": []
 }

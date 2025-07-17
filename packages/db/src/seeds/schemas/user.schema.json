@@ -5,18 +5,20 @@
     "description": "JSON schema for User entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "User ID (UUID)"
         },
-        "email": {
+        "slug": {
             "type": "string",
-            "format": "email",
-            "description": "User email address"
+            "description": "User slug"
         },
-        "username": {
+        "displayName": {
             "type": "string",
-            "description": "Username"
+            "description": "User display name"
         },
         "firstName": {
             "type": "string",
@@ -26,73 +28,171 @@
             "type": "string",
             "description": "User last name"
         },
-        "avatar": {
+        "birthDate": {
             "type": "string",
-            "description": "Avatar URL"
+            "format": "date",
+            "description": "User birth date"
         },
-        "bio": {
-            "type": "string",
-            "description": "User biography"
+        "contactInfo": {
+            "$ref": "common.schema.json#/definitions/contactInfo"
+        },
+        "location": {
+            "$ref": "common.schema.json#/definitions/location"
+        },
+        "socialNetworks": {
+            "$ref": "common.schema.json#/definitions/socialNetworks"
         },
         "role": {
             "type": "string",
             "enum": ["SUPER_ADMIN", "ADMIN", "EDITOR", "HOST", "USER", "GUEST"],
             "description": "User role"
         },
-        "isVerified": {
-            "type": "boolean",
-            "description": "Whether user is verified"
+        "permissions": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "accommodation.create",
+                    "accommodation.update.own",
+                    "accommodation.update.any",
+                    "accommodation.delete.own",
+                    "accommodation.delete.any",
+                    "accommodation.restore.own",
+                    "accommodation.restore.any",
+                    "destination.create",
+                    "destination.update.own",
+                    "destination.update.any",
+                    "destination.delete.own",
+                    "destination.delete.any",
+                    "destination.restore.own",
+                    "destination.restore.any",
+                    "event.create",
+                    "event.update.own",
+                    "event.update.any",
+                    "event.delete.own",
+                    "event.delete.any",
+                    "event.restore.own",
+                    "event.restore.any",
+                    "post.create",
+                    "post.update.own",
+                    "post.update.any",
+                    "post.delete.own",
+                    "post.delete.any",
+                    "post.restore.own",
+                    "post.restore.any",
+                    "user.create",
+                    "user.update.own",
+                    "user.update.any",
+                    "user.delete.own",
+                    "user.delete.any",
+                    "user.restore.own",
+                    "user.restore.any"
+                ]
+            },
+            "description": "Array of user permissions"
         },
-        "contactInfo": {
-            "$ref": "common.schema.json#/definitions/contactInfo"
-        },
-        "socialNetworks": {
-            "$ref": "common.schema.json#/definitions/socialNetworks"
-        },
-        "location": {
-            "$ref": "common.schema.json#/definitions/location"
-        },
-        "preferences": {
+        "profile": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string",
+                    "description": "Avatar URL"
+                },
+                "bio": {
+                    "type": "string",
+                    "description": "User biography"
+                },
+                "website": {
+                    "type": "string",
+                    "description": "User website URL"
+                },
+                "occupation": {
+                    "type": "string",
+                    "description": "User occupation"
+                }
+            },
+            "additionalProperties": false
+        },
+        "settings": {
+            "type": "object",
+            "properties": {
+                "darkMode": {
+                    "type": "boolean",
+                    "description": "Dark mode preference"
+                },
                 "language": {
                     "type": "string",
-                    "enum": ["es", "en", "pt"],
                     "description": "Preferred language"
-                },
-                "currency": {
-                    "type": "string",
-                    "enum": ["ARS", "USD", "EUR"],
-                    "description": "Preferred currency"
                 },
                 "notifications": {
                     "type": "object",
                     "properties": {
-                        "email": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Notifications enabled"
+                        },
+                        "allowEmails": {
                             "type": "boolean",
                             "description": "Email notifications enabled"
                         },
-                        "push": {
+                        "allowSms": {
+                            "type": "boolean",
+                            "description": "SMS notifications enabled"
+                        },
+                        "allowPush": {
                             "type": "boolean",
                             "description": "Push notifications enabled"
-                        },
-                        "marketing": {
-                            "type": "boolean",
-                            "description": "Marketing notifications enabled"
                         }
-                    }
+                    },
+                    "required": ["enabled", "allowEmails", "allowSms", "allowPush"],
+                    "additionalProperties": false
                 }
-            }
+            },
+            "additionalProperties": false
         },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
-        },
-        "tagIds": {
+        "bookmarks": {
             "type": "array",
-            "items": { "type": "string" },
-            "description": "Array of tag IDs representing user interests (UUIDs)"
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Bookmark ID"
+                    },
+                    "entityId": {
+                        "type": "string",
+                        "description": "Entity ID being bookmarked"
+                    },
+                    "entityType": {
+                        "type": "string",
+                        "enum": ["ACCOMMODATION", "DESTINATION", "USER", "POST", "EVENT"],
+                        "description": "Type of entity being bookmarked"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Bookmark name"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Bookmark description"
+                    }
+                },
+                "required": ["id", "entityId", "entityType"],
+                "additionalProperties": false
+            },
+            "description": "User bookmarks"
+        },
+        "lifecycleState": {
+            "type": "string",
+            "enum": ["ACTIVE", "INACTIVE", "DRAFT", "ARCHIVED"],
+            "description": "Lifecycle state of the user"
+        },
+        "visibility": {
+            "type": "string",
+            "enum": ["PUBLIC", "DRAFT", "PRIVATE"],
+            "description": "Visibility level of the user"
         }
     },
-    "required": ["id", "email", "username", "firstName", "lastName", "role"],
+    "required": ["id", "slug", "role", "permissions"],
     "additionalProperties": false
 }

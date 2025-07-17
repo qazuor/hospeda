@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/eventOrganizer.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d503",
     "name": "Club Atlético Concordia",
     "logo": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&h=200&fit=crop",
@@ -14,8 +15,5 @@
         "instagram": "https://instagram.com/club_concordia",
         "twitter": "https://twitter.com/clubconcordia"
     },
-    "adminInfo": {
-        "notes": "Club deportivo organizador de eventos deportivos y sociales",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE"
 }

@@ -1,17 +1,11 @@
 {
+    "$schema": "../../schemas/amenity.schema.json",
     "id": "860df8e3-d746-4500-890f-9d1aafaec446",
     "name": "playground",
     "slug": "playground",
     "description": "Playground",
-    "type": "accommodation",
-    "category": "basic",
+    "type": "OUTDOORS",
     "icon": "amenity",
-    "isActive": true,
-    "isPopular": true,
-    "isPremium": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Optional: False",
-        "favorite": false
-    }
+    "isBuiltin": false,
+    "isFeatured": true
 }

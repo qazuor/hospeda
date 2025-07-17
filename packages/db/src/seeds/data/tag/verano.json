@@ -1,15 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-verano-010",
     "name": "Verano",
     "slug": "verano",
-    "description": "Actividades y destinos ideales para la temporada de verano",
-    "type": "general",
-    "category": "secondary",
-    "color": "#FFC107",
+    "color": "PINK",
     "icon": "sun",
-    "isActive": true,
-    "adminInfo": {
-        "notes": "Tag estacional para contenido de verano",
-        "favorite": false
-    }
+    "notes": "Actividades y destinos ideales para la temporada de verano",
+    "lifecycleState": "ACTIVE"
 }

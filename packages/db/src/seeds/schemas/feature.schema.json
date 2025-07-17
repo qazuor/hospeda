@@ -5,6 +5,9 @@
     "description": "JSON schema for Feature entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "Feature ID (UUID)"
@@ -21,47 +24,24 @@
             "type": "string",
             "description": "Feature description"
         },
-        "type": {
-            "type": "string",
-            "enum": ["accommodation", "destination", "service", "activity", "facility"],
-            "description": "Feature type"
-        },
-        "category": {
-            "type": "string",
-            "enum": [
-                "essential",
-                "comfort",
-                "luxury",
-                "accessibility",
-                "technology",
-                "entertainment",
-                "business",
-                "wellness",
-                "safety",
-                "sustainability"
-            ],
-            "description": "Feature category"
-        },
         "icon": {
             "type": "string",
             "description": "Feature icon identifier"
         },
-        "isActive": {
+        "isBuiltin": {
             "type": "boolean",
-            "description": "Whether feature is active"
+            "description": "Whether this feature is built-in (system default)"
         },
-        "isPopular": {
+        "isFeatured": {
             "type": "boolean",
-            "description": "Whether feature is popular"
+            "description": "Whether this feature is highlighted (featured) in the UI"
         },
-        "sortOrder": {
-            "type": "integer",
-            "description": "Sort order for display"
-        },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
+        "lifecycleState": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "ARCHIVED"],
+            "description": "Lifecycle state of the feature"
         }
     },
-    "required": ["id", "name", "slug", "type", "category"],
+    "required": ["id", "name", "slug", "isBuiltin", "isFeatured", "lifecycleState"],
     "additionalProperties": false
 }

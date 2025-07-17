@@ -4,7 +4,7 @@
     "title": "Accommodation Seed Schema",
     "description": "Schema for accommodation seed data",
     "properties": {
-        "schema": {
+        "$schema": {
             "type": "string"
         },
         "slug": {
@@ -15,9 +15,9 @@
             "type": "string",
             "description": "Name of the accommodation"
         },
-        "displayName": {
+        "summary": {
             "type": "string",
-            "description": "Display name for the accommodation"
+            "description": "Brief summary of the accommodation"
         },
         "type": {
             "$ref": "common.schema.json#/definitions/accommodationType"
@@ -25,6 +25,14 @@
         "description": {
             "type": "string",
             "description": "Full description of the accommodation"
+        },
+        "ownerId": {
+            "type": "string",
+            "description": "ID of the accommodation owner"
+        },
+        "destinationId": {
+            "type": "string",
+            "description": "ID of the destination where the accommodation is located"
         },
         "isFeatured": {
             "type": "boolean",
@@ -202,6 +210,6 @@
             }
         }
     },
-    "required": ["slug", "name", "displayName", "type", "description"],
+    "required": ["slug", "name", "summary", "type", "description", "ownerId", "destinationId"],
     "additionalProperties": false
 }

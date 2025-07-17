@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-soleado-hotel-colon",
     "name": "mirador-soleado-hotel",
-    "displayName": "Mirador Soleado Hotel",
+    "summary": "Con una ubicación privilegiada y vistas panorámicas de Colón y el río Uruguay, Mirador Soleado Hotel ofrece una experiencia de alojamiento superior.",
     "type": "HOTEL",
     "description": "Con una ubicación privilegiada y vistas panorámicas de Colón y el río Uruguay, Mirador Soleado Hotel ofrece una experiencia de alojamiento superior. Este hotel moderno, ideal para turistas que valoran la comodidad y el acceso rápido a las principales atracciones, se destaca por su diseño contemporáneo y servicios de calidad.\n\nEl hotel dispone de 20 habitaciones elegantemente decoradas, incluyendo opciones Standard, Superior con vista al río y Suites. Todas cuentan con aire acondicionado, calefacción central, TV LED, minibar, caja de seguridad y baño privado con secador de pelo y amenities. Las habitaciones superiores y suites ofrecen balcones privados con vistas espectaculares.\n\nEntre sus instalaciones, el hotel cuenta con un rooftop con piscina y solárium, desde donde se obtienen las mejores vistas de la ciudad y el río. El restaurante en planta baja ofrece desayuno buffet y un menú a la carta para almuerzo y cena, con platos internacionales y regionales. También dispone de un bar y una sala de estar común. Ofrece WiFi de alta velocidad gratuito en todo el edificio y estacionamiento cubierto opcional.\n\nSu excelente ubicación en el centro permite acceder caminando a la peatonal, la plaza principal, restaurantes y tiendas. La costanera y el acceso a las Termas de Colón están a pocos minutos en auto. Un hotel ideal para disfrutar de Colón con estilo y comodidad, con el plus de vistas inolvidables.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "contacto@miradorsoleadohotel.com.ar",
@@ -127,11 +129,6 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Destacado por sus vistas. Alta ocupación en temporada alta y fines de semana largos.",
-        "favorite": true,
-        "tags": ["admin", "seed"]
-    },
     "tags": [
         "colon",
         "hotel",
@@ -141,24 +138,6 @@
         "river-view",
         "swimming-pool"
     ],
-    "faqs": [
-        {
-            "question": "¿El hotel cuenta con estacionamiento?",
-            "answer": "Sí, ofrecemos estacionamiento cubierto dentro del hotel con un costo adicional.",
-            "category": "facilities"
-        },
-        {
-            "question": "¿Está incluido el desayuno?",
-            "answer": "Sí, todas las tarifas incluyen un completo desayuno buffet.",
-            "category": "dining"
-        },
-        {
-            "question": "¿La piscina es climatizada?",
-            "answer": "No, la piscina del rooftop es exterior y no está climatizada. Está disponible en temporada cálida.",
-            "category": "amenities"
-        }
-    ],
-    "iaData": [],
     "featureIds": [
         "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
@@ -184,5 +163,23 @@
         "tag-pareja-008",
         "tag-rio-parana-009",
         "tag-relax"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿El hotel cuenta con estacionamiento?",
+            "answer": "Sí, ofrecemos estacionamiento cubierto dentro del hotel con un costo adicional.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Está incluido el desayuno?",
+            "answer": "Sí, todas las tarifas incluyen un completo desayuno buffet.",
+            "category": "dining"
+        },
+        {
+            "question": "¿La piscina es climatizada?",
+            "answer": "No, la piscina del rooftop es exterior y no está climatizada. Está disponible en temporada cálida.",
+            "category": "amenities"
+        }
+    ],
+    "iaData": []
 }

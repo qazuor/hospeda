@@ -37,13 +37,15 @@
     "seo": {
         "title": "Federación - Complejo Termal Más Grande de Argentina | Entre Ríos",
         "description": "Descubre Federación, el destino termal más importante de Argentina. Relax y bienestar en Entre Ríos.",
-        "keywords": ["Federación", "Termas", "Entre Ríos", "Complejo Termal", "Relax", "Bienestar"]
+        "keywords": [
+            "Federación",
+            "Termas",
+            "Entre Ríos",
+            "Complejo Termal",
+            "Relax",
+            "Bienestar"
+        ]
     },
-    "adminInfo": {
-        "notes": "Destino termal principal de Argentina, muy popular todo el año",
-        "favorite": true
-    },
-    "tags": ["termas", "relax", "bienestar", "familia", "naturaleza"],
     "tagIds": [
         "tag-termas-012",
         "tag-relax",
@@ -53,57 +55,15 @@
         "tag-spa-027",
         "tag-entre-rios-003"
     ],
-    "reviews": [
-        {
-            "title": "El mejor destino termal de Argentina",
-            "content": "Federación es increíble. El complejo termal es enorme y las instalaciones son de primera calidad. Perfecto para desconectar y relajarse. Las aguas termales son realmente terapéuticas.",
-            "rating": {
-                "landscape": 4.5,
-                "attractions": 5.0,
-                "accessibility": 4.5,
-                "safety": 4.5,
-                "cleanliness": 5.0,
-                "hospitality": 4.5,
-                "culturalOffer": 3.5,
-                "gastronomy": 4.0,
-                "affordability": 4.0,
-                "nightlife": 3.0,
-                "infrastructure": 4.5,
-                "environmentalCare": 4.5,
-                "wifiAvailability": 4.0,
-                "shopping": 3.5,
-                "familyFriendly": 5.0
-            },
-            "userId": "user-thermal-enthusiast"
-        },
-        {
-            "title": "Perfecto para familias",
-            "content": "Federación tiene todo lo que necesitas para unas vacaciones familiares perfectas. Los niños se divierten en el parque acuático y los adultos pueden relajarse en las termas. Muy recomendable.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 4.5,
-                "accessibility": 4.5,
-                "safety": 5.0,
-                "cleanliness": 4.5,
-                "hospitality": 4.5,
-                "culturalOffer": 3.0,
-                "gastronomy": 4.0,
-                "affordability": 4.0,
-                "nightlife": 2.5,
-                "infrastructure": 4.5,
-                "environmentalCare": 4.0,
-                "wifiAvailability": 4.0,
-                "shopping": 3.0,
-                "familyFriendly": 5.0
-            },
-            "userId": "user-family-vacationer"
-        }
-    ],
     "attractionIds": [
         "008dd069-a106-40b0-83c2-0416ef6557a5",
         "c15d26f3-edad-4cd3-83cf-d8c8569373d3",
         "d5f4e3d0-ef01-4289-a8c0-7127b37dcca5",
         "a01e1820-2b00-4ec6-9079-09cf0dc8880a",
         "5083044b-f9ea-4bce-bbba-8e7a72ae41dc"
-    ]
+    ],
+    "id": "ec7cd664-fee4-5645-af1d-f5e62736f899",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
 }

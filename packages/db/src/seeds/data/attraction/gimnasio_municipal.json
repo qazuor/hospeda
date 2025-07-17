@@ -6,9 +6,6 @@
     "description": "Gimnasio público con equipamiento para ejercicio físico",
     "icon": "fitness_center",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

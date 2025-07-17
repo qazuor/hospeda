@@ -1,7 +1,8 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag_festivales",
     "name": "Festivales",
-    "description": "Eventos culturales y celebraciones",
-    "color": "#FF69B4",
-    "category": "eventos"
+    "slug": "festivales",
+    "color": "PINK",
+    "notes": "Eventos culturales y celebraciones"
 }

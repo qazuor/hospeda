@@ -46,11 +46,6 @@
             "Tradición"
         ]
     },
-    "adminInfo": {
-        "notes": "Ciudad histórica importante, primera capital de la provincia",
-        "favorite": false
-    },
-    "tags": ["historia", "arquitectura", "educación", "tradición", "cultura"],
     "tagIds": [
         "tag-historia-013",
         "tag-arquitectura",
@@ -59,57 +54,15 @@
         "tag-entre-rios-003",
         "tag-museos"
     ],
-    "reviews": [
-        {
-            "title": "Rica historia y arquitectura",
-            "content": "Concepción del Uruguay es perfecta para los amantes de la historia. La arquitectura colonial es hermosa y el Colegio del Uruguay tiene mucha historia. Es una ciudad muy tranquila y cultural.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 4.0,
-                "accessibility": 4.0,
-                "safety": 4.5,
-                "cleanliness": 4.0,
-                "hospitality": 4.5,
-                "culturalOffer": 4.5,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 3.0,
-                "infrastructure": 4.0,
-                "environmentalCare": 4.0,
-                "wifiAvailability": 4.0,
-                "shopping": 3.5,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-history-enthusiast"
-        },
-        {
-            "title": "Tranquila y con encanto",
-            "content": "Una ciudad muy tranquila con mucho encanto histórico. La basílica es preciosa y la costanera es ideal para caminar. Perfecto para un día de paseo cultural.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 4.0,
-                "accessibility": 4.0,
-                "safety": 4.5,
-                "cleanliness": 4.0,
-                "hospitality": 4.5,
-                "culturalOffer": 4.0,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 2.5,
-                "infrastructure": 4.0,
-                "environmentalCare": 4.0,
-                "wifiAvailability": 3.5,
-                "shopping": 3.0,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-cultural-tourist"
-        }
-    ],
     "attractionIds": [
         "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
         "9a0598b0-0aae-4dff-a021-77fd9ca52662",
         "6125c3ad-7af7-4f43-bd9f-556870d8fbc5",
         "d759d447-8322-4260-b16b-fe8892843edc",
         "bf013bf8-b096-4fa1-b376-4c60938bb5c8"
-    ]
+    ],
+    "id": "3f0562e3-d703-5dc6-800f-5bc424bacacf",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
 }

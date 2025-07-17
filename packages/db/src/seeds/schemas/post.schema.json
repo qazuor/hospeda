@@ -5,91 +5,139 @@
     "description": "JSON schema for Post entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "Post ID (UUID)"
-        },
-        "title": {
-            "type": "string",
-            "description": "Post title"
-        },
-        "content": {
-            "type": "string",
-            "description": "Post content"
-        },
-        "excerpt": {
-            "type": "string",
-            "description": "Post excerpt"
         },
         "slug": {
             "type": "string",
             "description": "Post slug"
         },
-        "type": {
+        "category": {
             "type": "string",
-            "enum": ["blog", "guide", "news", "review", "announcement"],
-            "description": "Post type"
+            "enum": [
+                "EVENTS",
+                "CULTURE",
+                "GASTRONOMY",
+                "NATURE",
+                "TOURISM",
+                "GENERAL",
+                "SPORT",
+                "CARNIVAL",
+                "NIGHTLIFE",
+                "HISTORY",
+                "TRADITIONS",
+                "WELLNESS",
+                "FAMILY",
+                "TIPS",
+                "ART",
+                "BEACH",
+                "RURAL",
+                "FESTIVALS"
+            ],
+            "description": "Post category"
         },
-        "status": {
+        "title": {
             "type": "string",
-            "enum": ["draft", "published", "archived"],
-            "description": "Post status"
+            "description": "Post title"
+        },
+        "summary": {
+            "type": "string",
+            "description": "Post summary"
+        },
+        "content": {
+            "type": "string",
+            "description": "Post content"
+        },
+        "media": {
+            "$ref": "common.schema.json#/definitions/media"
         },
         "authorId": {
             "type": "string",
             "description": "Author user ID"
         },
-        "destinationId": {
+        "sponsorshipId": {
+            "type": "string",
+            "description": "Post sponsorship ID"
+        },
+        "relatedDestinationId": {
             "type": "string",
             "description": "Related destination ID"
         },
-        "accommodationId": {
+        "relatedAccommodationId": {
             "type": "string",
             "description": "Related accommodation ID"
         },
-        "featured": {
+        "relatedEventId": {
+            "type": "string",
+            "description": "Related event ID"
+        },
+        "visibility": {
+            "type": "string",
+            "enum": ["PUBLIC", "PRIVATE", "RESTRICTED"],
+            "description": "Post visibility"
+        },
+        "isFeatured": {
             "type": "boolean",
             "description": "Whether post is featured"
         },
-        "readingTime": {
-            "type": "integer",
-            "description": "Estimated reading time in minutes"
+        "isNews": {
+            "type": "boolean",
+            "description": "Whether post is news"
         },
-        "views": {
-            "type": "integer",
-            "description": "Number of views"
+        "isFeaturedInWebsite": {
+            "type": "boolean",
+            "description": "Whether post is featured in website"
+        },
+        "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Post expiration date"
         },
         "likes": {
             "type": "integer",
             "description": "Number of likes"
         },
-        "media": {
-            "$ref": "common.schema.json#/definitions/media"
+        "comments": {
+            "type": "integer",
+            "description": "Number of comments"
         },
-        "tags": {
-            "type": "array",
-            "items": {
-                "type": "string"
-            },
-            "description": "Array of tag IDs"
+        "shares": {
+            "type": "integer",
+            "description": "Number of shares"
+        },
+        "lifecycleState": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "ARCHIVED"],
+            "description": "Lifecycle state of the post"
         },
         "seo": {
             "$ref": "common.schema.json#/definitions/seo"
-        },
-        "publishedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Publication date"
-        },
-        "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Last update date"
         },
         "adminInfo": {
             "$ref": "common.schema.json#/definitions/adminInfo"
         }
     },
-    "required": ["id", "title", "content", "slug", "type", "status", "authorId"],
+    "required": [
+        "id",
+        "slug",
+        "category",
+        "title",
+        "summary",
+        "content",
+        "media",
+        "authorId",
+        "visibility",
+        "isFeatured",
+        "isNews",
+        "isFeaturedInWebsite",
+        "likes",
+        "comments",
+        "shares",
+        "lifecycleState"
+    ],
     "additionalProperties": false
 }

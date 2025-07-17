@@ -6,9 +6,6 @@
     "description": "Palacio de importancia histórica con arquitectura colonial y visitas guiadas",
     "icon": "castle",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

@@ -1,13 +1,25 @@
 {
+    "$schema": "../../schemas/user.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-    "email": "editor@hospeda.com",
-    "username": "editor_carlos",
+    "slug": "carlos-martínez",
+    "role": "EDITOR",
+    "permissions": [
+        "accommodation.create",
+        "accommodation.update.own",
+        "accommodation.delete.own",
+        "destination.create",
+        "destination.update.own",
+        "destination.delete.own",
+        "event.create",
+        "event.update.own",
+        "event.delete.own",
+        "post.create",
+        "post.update.own",
+        "post.delete.own"
+    ],
     "firstName": "Carlos",
     "lastName": "Martínez",
-    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    "bio": "Editor de contenido especializado en crear y gestionar eventos, posts y contenido promocional. Experto en marketing digital y comunicación turística.",
-    "role": "EDITOR",
-    "isVerified": true,
+    "displayName": "Carlos Martínez",
     "contactInfo": {
         "personalEmail": "carlos.martinez@gmail.com",
         "workEmail": "editor@hospeda.com",
@@ -15,12 +27,6 @@
         "website": "https://carlosmartinez.com",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
-    },
-    "socialNetworks": {
-        "facebook": "https://facebook.com/carlos.martinez.editor",
-        "instagram": "https://instagram.com/carlos_editor",
-        "twitter": "https://twitter.com/carlos_editor",
-        "linkedin": "https://linkedin.com/in/carlos-martinez-editor"
     },
     "location": {
         "state": "Entre Ríos",
@@ -34,17 +40,26 @@
             "lng": "-58.2333"
         }
     },
-    "preferences": {
+    "socialNetworks": {
+        "facebook": "https://facebook.com/carlos.martinez.editor",
+        "instagram": "https://instagram.com/carlos_editor",
+        "twitter": "https://twitter.com/carlos_editor",
+        "linkedin": "https://linkedin.com/in/carlos-martinez-editor"
+    },
+    "profile": {
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+        "bio": "Editor de contenido especializado en crear y gestionar eventos, posts y contenido promocional. Experto en marketing digital y comunicación turística.",
+        "website": "https://carlosmartinez.com"
+    },
+    "settings": {
         "language": "es",
-        "currency": "ARS",
         "notifications": {
-            "email": true,
-            "push": true,
-            "marketing": true
+            "enabled": true,
+            "allowEmails": true,
+            "allowSms": false,
+            "allowPush": true
         }
     },
-    "adminInfo": {
-        "notes": "Editor principal, especialista en contenido y marketing digital",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-kayak-030",
     "name": "Kayak",
     "slug": "kayak",
-    "description": "Actividades de kayak y canoa",
-    "type": "activity",
-    "category": "primary",
-    "color": "#20B2AA",
+    "color": "GREEN",
     "icon": "kayak",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para kayak y actividades en canoa",
-        "favorite": false
-    }
+    "notes": "Actividades de kayak y canoa",
+    "lifecycleState": "ACTIVE"
 }

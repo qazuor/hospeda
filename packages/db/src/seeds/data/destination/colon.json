@@ -46,57 +46,6 @@
             "Arquitectura Colonial"
         ]
     },
-    "adminInfo": {
-        "notes": "Destino histórico-cultural, muy popular por el Palacio San José",
-        "favorite": true
-    },
-    "tags": ["historia", "arquitectura", "termas", "cultura", "colonial"],
-    "reviews": [
-        {
-            "title": "Un viaje al pasado argentino",
-            "content": "Colón es increíble para los amantes de la historia. El Palacio San José es impresionante y las calles empedradas te transportan a otra época. Las termas son perfectas para relajarse.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 4.5,
-                "accessibility": 4.0,
-                "safety": 4.5,
-                "cleanliness": 4.5,
-                "hospitality": 4.5,
-                "culturalOffer": 5.0,
-                "gastronomy": 4.0,
-                "affordability": 4.0,
-                "nightlife": 3.0,
-                "infrastructure": 4.0,
-                "environmentalCare": 4.0,
-                "wifiAvailability": 3.5,
-                "shopping": 3.5,
-                "familyFriendly": 4.5
-            },
-            "userId": "user-history-buff"
-        },
-        {
-            "title": "Perfecta combinación de historia y relax",
-            "content": "Colón ofrece lo mejor de ambos mundos: historia rica y termas relajantes. La arquitectura colonial es hermosa y el pueblo tiene un encanto especial. Ideal para un fin de semana.",
-            "rating": {
-                "landscape": 4.5,
-                "attractions": 4.0,
-                "accessibility": 4.0,
-                "safety": 4.5,
-                "cleanliness": 4.5,
-                "hospitality": 4.5,
-                "culturalOffer": 4.5,
-                "gastronomy": 4.5,
-                "affordability": 4.0,
-                "nightlife": 3.0,
-                "infrastructure": 4.0,
-                "environmentalCare": 4.5,
-                "wifiAvailability": 4.0,
-                "shopping": 3.5,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-weekend-getaway"
-        }
-    ],
     "attractionIds": [
         "31f6ed13-d9d9-4422-ae8f-0d9450634f5e",
         "737e1b35-3436-422a-88c6-5ae1569c0d6f",
@@ -110,5 +59,9 @@
         "tag-arquitectura",
         "tag-familia-004",
         "tag-entre-rios-003"
-    ]
+    ],
+    "id": "20ec7e64-dab8-570c-8be8-dc8be827e8b5",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
 }

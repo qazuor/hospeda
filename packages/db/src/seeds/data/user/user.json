@@ -1,22 +1,17 @@
 {
+    "$schema": "../../schemas/user.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
-    "email": "user@hospeda.com",
-    "username": "user_lucas",
+    "slug": "lucas-fernandez",
+    "role": "USER",
+    "permissions": ["post.create", "post.update.own", "post.delete.own", "user.update.own"],
     "firstName": "Lucas",
     "lastName": "Fernández",
-    "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
-    "bio": "Viajero frecuente que disfruta explorando destinos únicos en Entre Ríos. Apasionado por la naturaleza y la gastronomía local. Comparte reseñas detalladas de sus experiencias.",
-    "role": "USER",
-    "isVerified": true,
+    "displayName": "Lucas Fernández",
     "contactInfo": {
         "personalEmail": "lucas.fernandez@gmail.com",
         "mobilePhone": "+54 11 5555-0005",
         "preferredEmail": "PERSONAL",
         "preferredPhone": "MOBILE"
-    },
-    "socialNetworks": {
-        "instagram": "https://instagram.com/lucas_viajero",
-        "facebook": "https://facebook.com/lucas.fernandez.viajero"
     },
     "location": {
         "state": "Buenos Aires",
@@ -31,24 +26,10 @@
             "lng": "-58.3816"
         }
     },
-    "preferences": {
-        "language": "es",
-        "currency": "ARS",
-        "notifications": {
-            "email": true,
-            "push": true,
-            "marketing": false
-        }
+    "socialNetworks": {
+        "instagram": "https://instagram.com/lucas_viajero",
+        "facebook": "https://facebook.com/lucas.fernandez.viajero"
     },
-    "adminInfo": {
-        "notes": "Usuario activo, buen historial de reseñas",
-        "favorite": false
-    },
-    "tagIds": [
-        "tag-naturaleza-002",
-        "tag-gastronomia-007",
-        "tag-turismo-001",
-        "tag-entre-rios-003",
-        "tag-aventura-005"
-    ]
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

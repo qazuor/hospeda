@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-playas-021",
     "name": "Playas",
     "slug": "playas",
-    "description": "Playas fluviales y costeras",
-    "type": "destination",
-    "category": "primary",
-    "color": "#F0E68C",
+    "color": "YELLOW",
     "icon": "beach",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para playas y costas",
-        "favorite": false
-    }
+    "notes": "Playas fluviales y costeras",
+    "lifecycleState": "ACTIVE"
 }

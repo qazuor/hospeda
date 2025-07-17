@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-soleado-room-gualeguaychu",
     "name": "refugio-soleado-room",
-    "displayName": "Refugio Soleado Habitación",
+    "summary": "Disfruta de la luz y la calidez en Refugio Soleado, una habitación privada ubicada en un barrio tranquilo de Gualeguaychú.",
     "type": "ROOM",
     "description": "Disfruta de la luz y la calidez en Refugio Soleado, una habitación privada ubicada en un barrio tranquilo de Gualeguaychú. Ideal para viajeros solos o parejas que buscan un lugar luminoso y confortable para descansar, con fácil acceso a los puntos de interés de la ciudad.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial tranquilo, garantizando un buen descanso. Estás a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera y el Corsódromo (en temporada de Carnaval). Es una opción económica y luminosa para tu estadía en la ciudad del Carnaval.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@refugiosoleadoroom.com.ar",
@@ -102,14 +104,6 @@
             "luminoso"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción económica, especialmente relevante en temporada de Carnaval.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "gualeguaychu",
         "room",
@@ -117,14 +111,6 @@
         "seed-example",
         "budget",
         "carnival"
-    ],
-    "faqs": [],
-    "iaData": [
-        {
-            "title": "El Carnaval del País en Gualeguaychú",
-            "content": "El Carnaval de Gualeguaychú es uno de los espectáculos a cielo abierto más grandes del mundo, celebrado todos los sábados de enero y febrero en el Corsódromo. Comparsas con elaborados trajes, carrozas gigantes y música vibrante desfilan en una fiesta única. Es un evento imperdible si visitas la ciudad en esa época.",
-            "category": "events"
-        }
     ],
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
@@ -137,5 +123,13 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "El Carnaval del País en Gualeguaychú",
+            "content": "El Carnaval de Gualeguaychú es uno de los espectáculos a cielo abierto más grandes del mundo, celebrado todos los sábados de enero y febrero en el Corsódromo. Comparsas con elaborados trajes, carrozas gigantes y música vibrante desfilan en una fiesta única. Es un evento imperdible si visitas la ciudad en esa época.",
+            "category": "events"
+        }
     ]
 }

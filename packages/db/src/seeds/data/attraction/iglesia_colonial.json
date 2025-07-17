@@ -6,9 +6,6 @@
     "description": "Iglesia de época colonial con arquitectura histórica y valor patrimonial",
     "icon": "church",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

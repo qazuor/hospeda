@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "review-018-federacion-sofia",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
     "destinationId": "federacion",

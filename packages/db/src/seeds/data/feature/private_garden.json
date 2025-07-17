@@ -1,16 +1,11 @@
 {
+    "$schema": "../../schemas/feature.schema.json",
     "id": "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
     "name": "private_garden",
     "slug": "private_garden",
     "description": "Amplio jardín privado",
-    "type": "accommodation",
-    "category": "comfort",
     "icon": "feature",
-    "isActive": true,
-    "isPopular": false,
-    "sortOrder": 1,
-    "adminInfo": {
-        "notes": "Espacio exterior exclusivo con árboles y verde",
-        "favorite": false
-    }
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
 }

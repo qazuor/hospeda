@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/event.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d702",
     "slug": "festival-del-rio-colon-2025",
     "name": "Festival del Río Colón 2025",
@@ -13,11 +14,10 @@
     "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d601",
     "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d501",
     "pricing": {
-        "type": "free"
+        "isFree": true
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
-    "tags": ["festival", "musica", "colon", "rio", "cultura"],
     "tagIds": [
         "tag-festivales",
         "tag-musica-023",
@@ -49,10 +49,13 @@
     "seo": {
         "title": "Festival del Río Colón 2025 - Música y Cultura - Hospeda",
         "description": "Festival cultural gratuito en el Anfiteatro Municipal de Colón con música, arte y vista al río Uruguay.",
-        "keywords": ["festival", "colon", "musica", "rio uruguay", "cultura"]
+        "keywords": [
+            "festival",
+            "colon",
+            "musica",
+            "rio uruguay",
+            "cultura"
+        ]
     },
-    "adminInfo": {
-        "notes": "Evento cultural gratuito con gran convocatoria",
-        "favorite": true
-    }
+    "lifecycleState": "ACTIVE"
 }

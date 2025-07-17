@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-maravilloso-cabana-colon",
     "name": "refugio-maravilloso-cabana",
-    "displayName": "Refugio Maravilloso Cabaña",
+    "summary": "Descubre un verdadero santuario en Refugio Maravilloso, una cabaña apartada en un entorno natural idílico cerca de Colón.",
     "type": "CABIN",
     "description": "Descubre un verdadero santuario en Refugio Maravilloso, una cabaña apartada en un entorno natural idílico cerca de Colón. Diseñada para ofrecer paz y privacidad, esta cabaña es el escape perfecto para parejas o familias que buscan reconectar con la naturaleza y disfrutar de momentos especiales en un lugar verdaderamente maravilloso.\n\nLa cabaña cuenta con un dormitorio principal espacioso, un baño completo y un área de living-comedor integrada con una cocina totalmente equipada. Los grandes ventanales permiten que la luz natural inunde el espacio y ofrecen vistas espectaculares al paisaje circundante. La decoración es cálida y confortable, con detalles rústicos que complementan el entorno.\n\nEl exterior es simplemente impresionante. Una amplia terraza de madera con una pequeña piscina o hot tub (según la estación) es el lugar ideal para relajarse y disfrutar de las vistas al atardecer. Cuenta con asador y mobiliario exterior para disfrutar de comidas al aire libre. El extenso jardín ofrece senderos privados para caminatas y la posibilidad de avistar aves locales. La paz y la belleza del lugar te harán sentir en un refugio maravilloso.\n\nAunque ofrece total privacidad, la cabaña se encuentra a una distancia conveniente en auto del centro de Colón, sus playas y las Termas, permitiéndote disfrutar de lo mejor de ambos mundos: la serenidad del campo y el acceso a las atracciones urbanas y turísticas.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "info@refugiomaravillosocabana.com.ar",
@@ -131,14 +133,6 @@
             "escape"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad con alto valor por su privacidad y vistas. Interesante para turismo romántico.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "cabin",
@@ -148,19 +142,6 @@
         "private",
         "swimming-pool"
     ],
-    "faqs": [
-        {
-            "question": "¿Qué tipo de piscina tiene?",
-            "answer": "Cuenta con una pequeña piscina exterior tipo 'plunge pool' o un hot tub, dependiendo de la temporada. Consulta al reservar.",
-            "category": "amenities"
-        },
-        {
-            "question": "¿Hay señal de celular?",
-            "answer": "La señal puede ser limitada debido a la ubicación rural. Recomendamos disfrutar de la desconexión.",
-            "category": "facilities"
-        }
-    ],
-    "iaData": [],
     "featureIds": [
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
         "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
@@ -177,5 +158,18 @@
         "8305de52-109d-48bb-8781-c7e837443809",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿Qué tipo de piscina tiene?",
+            "answer": "Cuenta con una pequeña piscina exterior tipo 'plunge pool' o un hot tub, dependiendo de la temporada. Consulta al reservar.",
+            "category": "amenities"
+        },
+        {
+            "question": "¿Hay señal de celular?",
+            "answer": "La señal puede ser limitada debido a la ubicación rural. Recomendamos disfrutar de la desconexión.",
+            "category": "facilities"
+        }
+    ],
+    "iaData": []
 }

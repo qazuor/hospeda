@@ -6,9 +6,6 @@
     "description": "Recorrido por plantaciones y aprendizaje sobre la citricultura",
     "icon": "tour",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

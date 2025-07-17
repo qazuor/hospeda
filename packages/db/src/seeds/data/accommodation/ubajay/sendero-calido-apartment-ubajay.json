@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-calido-apartment-ubajay",
     "name": "sendero-calido-apartment",
-    "displayName": "Sendero Cálido Apartamento",
+    "summary": "Disfruta de la calidez y el confort en Sendero Cálido Apartamento, un espacio moderno ubicado en un barrio residencial de Ubajay.",
     "type": "APARTMENT",
     "description": "Disfruta de la calidez y el confort en Sendero Cálido Apartamento, un espacio moderno ubicado en un barrio residencial de Ubajay. Ideal para parejas o viajeros que buscan un lugar tranquilo y bien equipado para descansar, con fácil acceso al centro y al Parque Nacional El Palmar.\n\nEl apartamento cuenta con un dormitorio principal con cama doble, un baño completo, y un área de living-comedor integrada con cocina equipada (heladera, microondas, anafe). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es acogedora y funcional.\n\nSituado en un edificio moderno, ofrece un refugio cómodo. Estás a pocos minutos en auto del centro de Ubajay y del Parque Nacional El Palmar. Es una base práctica y confortable para tu visita, ofreciendo la paz de un barrio residencial con la cercanía a los puntos de interés.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@senderocalidoapartment.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "hola@senderocalidoapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/senderocalidoapartment",
+        "instagram": "https://instagram.com/senderocalidoapartment",
+        "twitter": "https://twitter.com/senderocalidoapartment"
     },
     "price": {
         "basePrice": {
@@ -109,25 +116,6 @@
             "equipado"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple y funcional en zona residencial. Buena para estancias cortas. Relevante para turismo de El Palmar.",
-        "favorite": false,
-        "tags": [
-            "ubajay",
-            "apartment",
-            "ubajay-apartment",
-            "seed-example",
-            "nature",
-            "quiet"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/senderocalidoapartment",
-        "instagram": "https://instagram.com/senderocalidoapartment",
-        "twitter": "https://twitter.com/senderocalidoapartment"
-    },
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "bdc8b938-9599-428c-92a8-0bf932005ed7",
@@ -143,5 +131,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

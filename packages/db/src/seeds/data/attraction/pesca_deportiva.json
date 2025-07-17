@@ -6,7 +6,6 @@
     "description": "Zona habilitada para pesca deportiva con especies autóctonas del río",
     "icon": "fishing",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
     "tagIds": [
         "tag-pesca",
         "tag-deportes-034",
@@ -14,8 +13,5 @@
         "tag-rio-parana-009",
         "tag-aventura-005"
     ],
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE"
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "cabana-del-rio-colon",
     "name": "cabana-del-rio",
-    "displayName": "Cabaña del Río",
+    "summary": "Disfruta de la tranquilidad y la belleza del río Uruguay en esta hermosa cabaña ubicada a solo 300 metros de la costanera de Colón.",
     "type": "CABIN",
     "description": "Disfruta de la tranquilidad y la belleza del río Uruguay en esta hermosa cabaña ubicada a solo 300 metros de la costanera de Colón. Con una arquitectura cálida que combina madera y piedra, Cabaña del Río ofrece el refugio perfecto para parejas y familias pequeñas que buscan conectar con la naturaleza sin renunciar a la comodidad.\n\nLa cabaña, de construcción reciente, cuenta con un dormitorio principal con cama queen y un entrepiso con dos camas individuales, ideal para alojar hasta 4 personas. El diseño interior prioriza los espacios abiertos, con una sala de estar que se integra a la cocina equipada, creando un ambiente acogedor perfecto para compartir momentos en familia. Los amplios ventanales permiten disfrutar de la luz natural y las vistas al jardín arbolado.\n\nEl verdadero encanto de Cabaña del Río se encuentra en su galería exterior techada con asador tradicional, donde podrás disfrutar de comidas al aire libre mientras escuchas el suave murmullo del río cercano. El jardín privado, con una pequeña fuente y espacios de sombra, invita al descanso en las hamacas paraguayas disponibles para los huéspedes. A pocos minutos caminando encontrarás las playas del río Uruguay, reconocidas por su arena fina y aguas tranquilas.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "hola@cabanadelrio.com.ar",
@@ -147,10 +149,6 @@
             "vacaciones"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad con buena ocupación en temporada alta. Propietario muy atento y colaborador.",
-        "favorite": true
-    },
     "tags": [
         "colon",
         "cabin",
@@ -158,6 +156,27 @@
         "family-friendly",
         "couples",
         "bbq"
+    ],
+    "featureIds": [
+        "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "03080e07-50f9-4752-a2c6-7502eaacf733"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "a14dc9e1-6290-4fda-8078-2e5112716b45",
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -207,26 +226,5 @@
             "content": "Cabaña del Río fue construida en 2017 por la familia Rodríguez, artesanos locales que utilizaron técnicas tradicionales combinadas con comodidades modernas. La madera principal usada en su construcción es el eucalipto, abundante en la región, tratada naturalmente para mayor durabilidad. Los detalles en piedra provienen de canteras locales de la zona de Villa Elisa. Los muebles fueron diseñados y fabricados por artesanos de Colón, utilizando maderas recuperadas de antiguas casas de la zona, brindando autenticidad y sostenibilidad a la propiedad. Desde su inauguración, la cabaña ha sido un refugio preferido tanto por turistas argentinos como uruguayos que buscan conectar con la naturaleza en un entorno tranquilo.",
             "category": "history"
         }
-    ],
-    "featureIds": [
-        "8d6f6c9d-8f13-4efd-aeb9-4447397ab2a8",
-        "45973def-bdc7-47cd-8997-11d649dc3a4f",
-        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
-        "03080e07-50f9-4752-a2c6-7502eaacf733"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "a14dc9e1-6290-4fda-8078-2e5112716b45",
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "8305de52-109d-48bb-8781-c7e837443809",
-        "191fac6f-b553-404b-8463-a7281bc52ef9",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ]
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-natural-apartment-concepcion_del_uruguay",
     "name": "rio-natural-apartment",
-    "displayName": "Rio Natural Apartamento",
+    "summary": "Sumérgete en un ambiente relajado con un toque natural en Rio Natural Apartamento, ubicado en una zona tranquila de Concepción del Uruguay, cerca del río.",
     "type": "APARTMENT",
     "description": "Sumérgete en un ambiente relajado con un toque natural en Rio Natural Apartamento, ubicado en una zona tranquila de Concepción del Uruguay, cerca del río. Este apartamento moderno es ideal para quienes buscan comodidad y un acceso conveniente a espacios verdes y la costanera, sin estar en el bullicio del centro.\n\nEl apartamento ofrece un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (anafe, microondas, heladera). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, con detalles que evocan la naturaleza cercana.\n\nAunque no tiene vistas directas al río, su proximidad permite llegar caminando a la costanera en pocos minutos y disfrutar del entorno natural que ofrece el río Uruguay. El edificio es moderno y seguro. Es una excelente base para explorar las playas, la Isla del Puerto y el centro de Concepción del Uruguay en auto o bicicleta.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@rionaturalapartment.com.ar",
@@ -12,6 +14,10 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "info@rionaturalapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/rionaturalapartment",
+        "twitter": "https://twitter.com/rionaturalapartment"
     },
     "price": {
         "basePrice": {
@@ -110,14 +116,6 @@
             "parejas"
         ]
     },
-    "adminInfo": {
-        "notes": "Buena ubicación para turismo de relax y río. Propiedad simple.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "apartment",
@@ -126,12 +124,6 @@
         "riverside",
         "quiet"
     ],
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/rionaturalapartment",
-        "twitter": "https://twitter.com/rionaturalapartment"
-    },
     "featureIds": [
         "45973def-bdc7-47cd-8997-11d649dc3a4f",
         "4e01f576-29f6-42e0-adb2-beeb790d77bf"
@@ -147,5 +139,7 @@
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c",
         "4bad848b-16de-488c-a673-91172ff620f3"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

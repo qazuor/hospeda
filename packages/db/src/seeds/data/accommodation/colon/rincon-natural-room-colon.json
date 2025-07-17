@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-natural-room-colon",
     "name": "rincon-natural-room",
-    "displayName": "Rincón Natural Habitación Privada",
+    "summary": "Descansa en un ambiente sereno en Rincón Natural, una habitación privada dentro de una casa con jardín en un barrio tranquilo de Colón.",
     "type": "ROOM",
     "description": "Descansa en un ambiente sereno en Rincón Natural, una habitación privada dentro de una casa con jardín en un barrio tranquilo de Colón. Ideal para viajeros individuales o parejas que buscan un lugar cómodo y apacible para alojarse, con acceso a espacios verdes y a poca distancia de las atracciones.\n\nLa habitación privada es confortable, cuenta con cama matrimonial, ropa de cama, toallas y ventilador/calefactor. Tendrás acceso a un baño completo que puede ser privado o compartido dependiendo de la disponibilidad y la configuración de la casa. Los huéspedes tienen acceso a áreas comunes de la casa, incluyendo la cocina básica para preparar café/té o comidas sencillas, y el comedor.\n\nEl mayor atractivo es el jardín, un espacio verde donde podrás relajarte, leer o disfrutar del aire libre. La casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, pero a una distancia conveniente en auto o bicicleta del centro de Colón, la costanera y las Termas. Es una opción económica y agradable para quienes valoran un entorno natural y una atmósfera hogareña.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@rinconnaturalroom.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "reservas@rinconnaturalroom.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/rinconnaturalroom",
+        "instagram": "https://instagram.com/rinconnaturalroom",
+        "twitter": "https://twitter.com/rinconnaturalroom"
     },
     "price": {
         "basePrice": {
@@ -101,14 +108,6 @@
             "jardín"
         ]
     },
-    "adminInfo": {
-        "notes": "Buena opción de bajo costo para viajeros independientes. Trato directo con propietarios.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "room",
@@ -116,6 +115,19 @@
         "seed-example",
         "budget",
         "nature"
+    ],
+    "featureIds": [
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "0ddae569-fe9b-42cc-a800-d5f39e82196f"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -140,23 +152,5 @@
             "content": "Para moverte por Colón, puedes utilizar taxis o servicios de remis. También hay un sistema de transporte público de colectivos urbanos que conecta el centro con diferentes barrios y la zona de playas más alejada. Si no vienes en vehículo propio, es conveniente conocer los horarios de los colectivos o tener números de taxis a mano. Desde el centro, muchos puntos de interés son accesibles a pie.",
             "category": "transport"
         }
-    ],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/rinconnaturalroom",
-        "instagram": "https://instagram.com/rinconnaturalroom",
-        "twitter": "https://twitter.com/rinconnaturalroom"
-    },
-    "featureIds": [
-        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
-        "0ddae569-fe9b-42cc-a800-d5f39e82196f"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "8305de52-109d-48bb-8781-c7e837443809",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ]
 }

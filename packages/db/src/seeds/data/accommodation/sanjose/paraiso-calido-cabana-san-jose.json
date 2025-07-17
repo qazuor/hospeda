@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-calido-cabana-san_jose",
     "name": "paraiso-calido-cabana",
-    "displayName": "Paraíso Cálido Cabaña",
+    "summary": "Encuentra un rincón cálido y acogedor en Paraíso Cálido, una encantadora cabaña de madera ubicada en un entorno tranquilo de San José.",
     "type": "CABIN",
     "description": "Encuentra un rincón cálido y acogedor en Paraíso Cálido, una encantadora cabaña de madera ubicada en un entorno tranquilo de San José. Ideal para parejas o familias pequeñas que buscan un refugio confortable, rodeado de naturaleza y con fácil acceso al Parque Nacional El Palmar y al centro de la ciudad.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es cálida y rústica, creando un ambiente hogareño.\n\nEl exterior ofrece una galería techada con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y árboles, un espacio agradable para relajarse. La ubicación en un barrio tranquilo de San José permite un rápido acceso en auto al Parque Nacional El Palmar, al centro de la ciudad y a las playas del río Uruguay cercanas. Paraíso Cálido es tu base ideal para disfrutar de la naturaleza y la tranquilidad.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "info@paraisocalidocabana.com.ar",
@@ -13,6 +15,11 @@
         "preferredPhone": "MOBILE",
         "homeEmail": "reservas@paraisocalidocabana.com.ar",
         "website": "https://www.paraisocalidocabana.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/paraisocalidocabanaok",
+        "instagram": "https://instagram.com/paraisocalidocabanaok",
+        "twitter": "https://twitter.com/paraisocalidocabanaok"
     },
     "price": {
         "basePrice": {
@@ -116,25 +123,6 @@
             "parrilla"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple pero agradable. Énfasis en cercanía a El Palmar.",
-        "favorite": false,
-        "tags": [
-            "san-jose",
-            "cabin",
-            "san-jose-cabin",
-            "seed-example",
-            "nature",
-            "family-friendly"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/paraisocalidocabanaok",
-        "instagram": "https://instagram.com/paraisocalidocabanaok",
-        "twitter": "https://twitter.com/paraisocalidocabanaok"
-    },
     "featureIds": [
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
         "a471118f-48f7-4ae4-b6f4-963281900517"
@@ -149,5 +137,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-citricultura-035",
     "name": "Citricultura",
     "slug": "citricultura",
-    "description": "Actividades relacionadas con la producción citrícola",
-    "type": "experience",
-    "category": "secondary",
-    "color": "#FFA500",
+    "color": "ORANGE",
     "icon": "citrus",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para actividades relacionadas con cítricos",
-        "favorite": false
-    }
+    "notes": "Actividades relacionadas con la producción citrícola",
+    "lifecycleState": "ACTIVE"
 }

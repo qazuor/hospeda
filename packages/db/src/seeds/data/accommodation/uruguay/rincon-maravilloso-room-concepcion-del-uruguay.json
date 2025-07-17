@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-maravilloso-room-concepcion_del_uruguay",
     "name": "rincon-maravilloso-room",
-    "displayName": "Rincón Maravilloso Habitación",
+    "summary": "Descubre un rincón especial en Concepción del Uruguay en Rincón Maravilloso, una habitación privada dentro de una casa familiar con un ambiente acogedor.",
     "type": "ROOM",
     "description": "Descubre un rincón especial en Concepción del Uruguay en Rincón Maravilloso, una habitación privada dentro de una casa familiar con un ambiente acogedor. Ideal para viajeros que buscan una experiencia auténtica y un trato cercano, a poca distancia del centro y con fácil acceso a la costanera.\n\nLa habitación es cómoda y luminosa, equipada con cama doble o individual (a elección, consultar disponibilidad), placard y ventilador. Tendrás acceso a un baño compartido, mantenido con limpieza diaria. Los huéspedes pueden hacer uso de un pequeño espacio común con heladera y microondas, ideal para preparar un desayuno rápido o calentar algo sencillo.\n\nLa casa se encuentra en un barrio residencial tranquilo y seguro, a pocas cuadras de avenidas principales que conectan con el centro, la Terminal de Ómnibus y la costanera. Es una excelente base para explorar la ciudad y sus atractivos, como el Palacio San José (requiere transporte). Disfruta de la hospitalidad local en este rincón maravilloso.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@rinconmaravillosoroom.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "hola@rinconmaravillosoroom.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/rinconmaravillosoroom",
+        "instagram": "https://instagram.com/rinconmaravillosoroom",
+        "twitter": "https://twitter.com/rinconmaravillosoroom"
     },
     "price": {
         "basePrice": {
@@ -101,20 +108,23 @@
             "compartido"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción básica y económica para viajeros solos o parejas. Potencial para interacción con anfitriones.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "room",
         "concepcion-del-uruguay-room",
         "seed-example",
         "budget"
+    ],
+    "featureIds": [
+        "0ddae569-fe9b-42cc-a800-d5f39e82196f"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -128,21 +138,5 @@
             "category": "facilities"
         }
     ],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/rinconmaravillosoroom",
-        "instagram": "https://instagram.com/rinconmaravillosoroom",
-        "twitter": "https://twitter.com/rinconmaravillosoroom"
-    },
-    "featureIds": [
-        "0ddae569-fe9b-42cc-a800-d5f39e82196f"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    "iaData": []
 }

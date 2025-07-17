@@ -4,8 +4,12 @@
     "title": "Destination Seed Schema",
     "description": "Schema for destination seed data",
     "properties": {
-        "schema": {
+        "$schema": {
             "type": "string"
+        },
+        "id": {
+            "type": "string",
+            "description": "Destination ID (UUID)"
         },
         "slug": {
             "type": "string",
@@ -28,6 +32,21 @@
             "default": false,
             "description": "Whether the destination is featured"
         },
+        "visibility": {
+            "type": "string",
+            "enum": ["PUBLIC", "PRIVATE", "RESTRICTED"],
+            "description": "Destination visibility level"
+        },
+        "accommodationsCount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Number of accommodations in this destination"
+        },
+        "lifecycleState": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "ARCHIVED"],
+            "description": "Lifecycle state of the destination"
+        },
         "location": {
             "$ref": "common.schema.json#/definitions/location"
         },
@@ -37,88 +56,26 @@
         "seo": {
             "$ref": "common.schema.json#/definitions/seo"
         },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
-        },
-        "tags": {
-            "type": "array",
-            "items": { "type": "string" },
-            "description": "Array of tag names"
-        },
         "tagIds": {
             "type": "array",
             "items": { "type": "string" },
             "description": "Array of tag IDs (UUIDs)"
         },
-        "attractions": {
+        "attractionIds": {
             "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": { "type": "string" },
-                    "slug": { "type": "string" },
-                    "description": { "type": "string" },
-                    "icon": { "type": "string" }
-                },
-                "required": ["name", "slug"],
-                "additionalProperties": false
-            }
-        },
-        "reviews": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "title": { "type": "string" },
-                    "content": { "type": "string" },
-                    "rating": {
-                        "type": "object",
-                        "properties": {
-                            "landscape": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "attractions": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "accessibility": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "safety": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "cleanliness": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "hospitality": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "culturalOffer": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "gastronomy": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "affordability": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "nightlife": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "infrastructure": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "environmentalCare": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "wifiAvailability": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "shopping": { "type": "number", "minimum": 0, "maximum": 5 },
-                            "familyFriendly": { "type": "number", "minimum": 0, "maximum": 5 }
-                        },
-                        "required": [
-                            "landscape",
-                            "attractions",
-                            "accessibility",
-                            "safety",
-                            "cleanliness",
-                            "hospitality",
-                            "culturalOffer",
-                            "gastronomy",
-                            "affordability",
-                            "nightlife",
-                            "infrastructure",
-                            "environmentalCare",
-                            "wifiAvailability",
-                            "shopping",
-                            "familyFriendly"
-                        ],
-                        "additionalProperties": false
-                    },
-                    "userId": {
-                        "type": "string",
-                        "description": "ID of the user who wrote the review"
-                    }
-                },
-                "required": ["title", "content", "rating", "userId"],
-                "additionalProperties": false
-            }
+            "items": { "type": "string" },
+            "description": "Array of attraction IDs (UUIDs)"
         }
     },
-    "required": ["slug", "name", "summary", "description"],
+    "required": [
+        "id",
+        "slug",
+        "name",
+        "summary",
+        "description",
+        "visibility",
+        "accommodationsCount",
+        "lifecycleState"
+    ],
     "additionalProperties": true
 }

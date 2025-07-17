@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/eventOrganizer.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d505",
     "name": "Asociación de Productores Rurales",
     "logo": "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=200&h=200&fit=crop",
@@ -13,8 +14,5 @@
         "facebook": "https://facebook.com/productoresruraleser",
         "instagram": "https://instagram.com/productores_rurales_er"
     },
-    "adminInfo": {
-        "notes": "Asociación organizadora de eventos agropecuarios y gastronómicos",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE"
 }

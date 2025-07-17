@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-tranquilo-country-house-concepcion_del_uruguay",
     "name": "paraiso-tranquilo-country-house",
-    "displayName": "Paraíso Tranquilo Country House",
+    "summary": "Buscas paz y naturaleza? Encuéntralas en Paraíso Tranquilo, una hermosa casa de campo en las cercanías de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
     "description": "Buscas paz y naturaleza? Encuéntralas en Paraíso Tranquilo, una hermosa casa de campo en las cercanías de Concepción del Uruguay. Rodeada de un entorno natural apacible, esta propiedad es el lugar ideal para desconectar, relajarse y disfrutar de la serenidad del campo entrerriano. Perfecta para familias o grupos pequeños que valoran la privacidad y el espacio al aire libre.\n\nLa casa ofrece un diseño funcional y acogedor, con dos dormitorios cómodos y dos baños completos. El living-comedor es un espacio luminoso con vistas al parque, ideal para descansar. La cocina está semi-integrada y equipada con los electrodomésticos básicos para tu estadía. La capacidad es para 5 personas.\n\nEl exterior es el corazón de Paraíso Tranquilo. Un amplio parque arbolado te invita a caminar, leer o simplemente disfrutar del aire fresco. Cuenta con una piscina para refrescarse en los días cálidos y un sector de parrilla para disfrutar de asados al aire libre. Es un entorno seguro y tranquilo para disfrutar de la naturaleza. Aunque ofrece privacidad, la casa está a una distancia razonable en auto del centro de Concepción del Uruguay, permitiéndote acceder a comercios y atracciones fácilmente. Un verdadero paraíso para quienes buscan tranquilidad.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@paraisotranquilocountryhouse.com.ar",
@@ -120,14 +122,6 @@
             "familiar"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple y acogedora. Potencial para fines de semana de relax.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "country-house",
@@ -137,8 +131,6 @@
         "nature",
         "family-friendly"
     ],
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
         "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
@@ -154,5 +146,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

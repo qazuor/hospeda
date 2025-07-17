@@ -6,9 +6,6 @@
     "description": "Talleres donde se confeccionan trajes y carros alegóricos para el carnaval",
     "icon": "palette",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

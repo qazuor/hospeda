@@ -6,9 +6,6 @@
     "description": "Monumento conmemorativo de eventos o personalidades históricas",
     "icon": "monument",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

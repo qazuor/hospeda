@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-calmado-hostel-gualeguaychu",
     "name": "sueno-calmado-hostel",
-    "displayName": "Sueño Calmado Hostel",
+    "summary": "Encuentra un espacio para descansar en Sueño Calmado Hostel, ubicado en una zona serena de Gualeguaychú.",
     "type": "HOSTEL",
     "description": "Encuentra un espacio para descansar en Sueño Calmado Hostel, ubicado en una zona serena de Gualeguaychú. Ideal para viajeros que buscan un lugar apacible y económico para alojarse, con acceso conveniente al centro y al Carnaval.\n\nEl hostel ofrece dormitorios compartidos (4 y 6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes incluyen una cocina equipada para uso de los huéspedes, un comedor social y un living sencillo. Dispone de un pequeño patio.\n\nLa ubicación en un barrio tranquilo te garantiza un buen descanso. Estás a poca distancia en auto o transporte público de los principales puntos de interés de Gualeguaychú, incluyendo el centro, la costanera y el Corsódromo. Es una base práctica y económica para explorar la ciudad y disfrutar de su famoso Carnaval.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@suenocalmadohostel.com.ar",
@@ -13,6 +15,11 @@
         "preferredPhone": "MOBILE",
         "homeEmail": "hola@suenocalmadohostel.com.ar",
         "website": "https://www.suenocalmadohostel.net.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/suenocalmadohostel",
+        "instagram": "https://instagram.com/suenocalmadohostel",
+        "twitter": "https://twitter.com/suenocalmadohostel"
     },
     "price": {
         "basePrice": {
@@ -110,26 +117,6 @@
             "carnaval gualeguaychu"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción de bajo costo en zona tranquila. Atrae principalmente a mochileros que visitan el Carnaval.",
-        "favorite": false,
-        "tags": [
-            "gualeguaychu",
-            "hostel",
-            "gualeguaychu-hostel",
-            "seed-example",
-            "budget",
-            "carnival",
-            "quiet"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/suenocalmadohostel",
-        "instagram": "https://instagram.com/suenocalmadohostel",
-        "twitter": "https://twitter.com/suenocalmadohostel"
-    },
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "dcf472e4-9275-47c2-8140-e9352de928c0"
@@ -142,5 +129,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

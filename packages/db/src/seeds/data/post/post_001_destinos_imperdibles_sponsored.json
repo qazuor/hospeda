@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/post.schema.json",
     "id": "post-001-destinos-imperdibles-er",
     "slug": "destinos-imperdibles-entre-rios-2024",
     "category": "TOURISM",
@@ -41,15 +42,6 @@
     "shares": 67,
     "isFeatured": true,
     "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "featuredUntil": "2024-12-31T23:59:59Z",
-        "promotionLevel": "HIGH",
-        "moderationNotes": "Contenido promocional aprobado con sponsor oficial"
-    },
-    "createdAt": "2024-01-15T10:00:00Z",
-    "updatedAt": "2024-01-15T10:00:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
     "moderationState": "APPROVED",
     "seo": {
         "title": "Los 10 Destinos Imperdibles de Entre Ríos en 2024 | Hospeda",
@@ -72,13 +64,5 @@
             "type": "article"
         }
     },
-    "tagIds": [
-        "tag-turismo-001",
-        "tag-entre-rios-002",
-        "tag-termas-003",
-        "tag-delta-004",
-        "tag-naturaleza-005",
-        "tag-historia-006",
-        "tag-familia-007"
-    ]
+    "lifecycleState": "ACTIVE"
 }

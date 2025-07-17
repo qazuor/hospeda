@@ -43,11 +43,6 @@
             "ecoturismo"
         ]
     },
-    "adminInfo": {
-        "notes": "Destino delta en Entre Ríos",
-        "favorite": false
-    },
-    "tags": ["delta", "naturaleza", "aventura", "pesca", "ecoturismo"],
     "tagIds": [
         "tag-naturaleza-002",
         "tag-aventura-005",
@@ -58,35 +53,15 @@
         "tag-entre-rios-003",
         "tag-delta-036"
     ],
-    "reviews": [
-        {
-            "title": "Experiencia tranquila y auténtica",
-            "content": "Un lugar muy tranquilo y auténtico. Perfecto para desconectar y disfrutar de la naturaleza. La gente es muy cálida y hospitalaria.",
-            "rating": {
-                "landscape": 4.0,
-                "attractions": 3.5,
-                "accessibility": 3.5,
-                "safety": 4.5,
-                "cleanliness": 4.0,
-                "hospitality": 4.5,
-                "culturalOffer": 3.5,
-                "gastronomy": 4.0,
-                "affordability": 4.5,
-                "nightlife": 2.5,
-                "infrastructure": 3.5,
-                "environmentalCare": 4.5,
-                "wifiAvailability": 3.0,
-                "shopping": 3.0,
-                "familyFriendly": 4.0
-            },
-            "userId": "user-nature-lover"
-        }
-    ],
     "attractionIds": [
         "71ba3202-089f-488a-9a66-d98b7a5fec58",
         "96a2de59-4015-4800-b0d0-9e6f2ed5a1d7",
         "6f176460-9aa8-4b79-b7f8-3c8dedf6e86a",
         "6f2c20b4-909b-4b17-9a84-59de4c55434e",
         "7db4be2a-2715-4e7d-a184-15c207fcceed"
-    ]
+    ],
+    "id": "c6cc51eb-5de2-5610-8aa0-50050d645a8c",
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
 }

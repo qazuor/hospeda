@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-030-cabana-del-rio-colon-ana_business",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
     "accommodationId": "cabana-del-rio-colon",
@@ -11,5 +12,6 @@
         "accuracy": 3,
         "communication": 3,
         "location": 5
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

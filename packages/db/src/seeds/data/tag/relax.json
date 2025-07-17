@@ -1,7 +1,8 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag_relax",
     "name": "Relax",
-    "description": "Experiencias de relajación y descanso",
-    "color": "#87CEEB",
-    "category": "bienestar"
+    "slug": "relax",
+    "color": "LIGHT_BLUE",
+    "notes": "Experiencias de relajación y descanso"
 }

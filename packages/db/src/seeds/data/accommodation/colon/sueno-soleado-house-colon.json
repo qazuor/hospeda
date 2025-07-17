@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-soleado-house-colon",
     "name": "sueno-soleado-house",
-    "displayName": "Sueño Soleado House",
+    "summary": "Disfruta de la luz y el confort en Sueño Soleado House, una espaciosa propiedad ubicada en un tranquilo barrio de Colón, ideal para quienes buscan amplitud y un ambiente luminoso para sus vacaciones.",
     "type": "HOUSE",
     "description": "Disfruta de la luz y el confort en Sueño Soleado House, una espaciosa propiedad ubicada en un tranquilo barrio de Colón, ideal para quienes buscan amplitud y un ambiente luminoso para sus vacaciones. Esta casa es perfecta para familias numerosas o grupos que desean espacio y comodidad cerca de las principales atracciones.\n\nLa casa cuenta con cuatro dormitorios bien equipados y tres baños completos, ofreciendo privacidad para todos los huéspedes. El living-comedor es muy amplio y luminoso, con grandes ventanales que dan al jardín, creando un ambiente acogedor para compartir. La cocina es independiente, totalmente equipada con horno, heladera con freezer y todos los electrodomésticos necesarios para preparar cualquier tipo de comida.\n\nEl exterior dispone de un gran jardín parquizado, ideal para que los niños jueguen o simplemente para relajarse al sol. Cuenta con una galería techada con asador y una mesa grande para disfrutar de comidas al aire libre. La propiedad ofrece espacio para estacionar varios vehículos dentro del predio. Su ubicación permite un rápido acceso en auto a la costanera, las playas y las Termas de Colón, combinando la serenidad del barrio con la cercanía a la diversión y el relax.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "contacto@suenosoleadohouse.com.ar",
@@ -139,14 +141,6 @@
             "jardín"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad con buena capacidad. Muy solicitada por familias grandes en vacaciones.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "house",
@@ -155,19 +149,6 @@
         "family-friendly",
         "bbq",
         "garden"
-    ],
-    "faqs": [],
-    "iaData": [
-        {
-            "title": "Playas y actividades acuáticas en Colón",
-            "content": "Colón es famosa por sus playas sobre el río Uruguay, con arena fina y aguas tranquilas, ideales para familias. La playa \"Paso Vera\" y \"Santiago Inkier\" son opciones populares. Se pueden realizar actividades como kayak, stand-up paddle, y paseos en lancha. El río también es un buen lugar para la pesca deportiva.",
-            "category": "activities"
-        },
-        {
-            "title": "Centro de Colón: compras y gastronomía",
-            "content": "El centro de Colón ofrece una variada propuesta comercial con tiendas, boutiques y artesanías. La peatonal es un paseo agradable. Encontrarás numerosos restaurantes y cafés para disfrutar de la gastronomía local, con énfasis en pescados de río y cocina regional. También hay supermercados para abastecerse durante la estadía.",
-            "category": "city-life"
-        }
     ],
     "featureIds": [
         "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
@@ -189,5 +170,18 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "Playas y actividades acuáticas en Colón",
+            "content": "Colón es famosa por sus playas sobre el río Uruguay, con arena fina y aguas tranquilas, ideales para familias. La playa \"Paso Vera\" y \"Santiago Inkier\" son opciones populares. Se pueden realizar actividades como kayak, stand-up paddle, y paseos en lancha. El río también es un buen lugar para la pesca deportiva.",
+            "category": "activities"
+        },
+        {
+            "title": "Centro de Colón: compras y gastronomía",
+            "content": "El centro de Colón ofrece una variada propuesta comercial con tiendas, boutiques y artesanías. La peatonal es un paseo agradable. Encontrarás numerosos restaurantes y cafés para disfrutar de la gastronomía local, con énfasis en pescados de río y cocina regional. También hay supermercados para abastecerse durante la estadía.",
+            "category": "city-life"
+        }
     ]
 }

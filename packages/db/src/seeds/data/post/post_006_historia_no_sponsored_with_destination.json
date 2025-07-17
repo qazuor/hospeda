@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/post.schema.json",
     "id": "post-006-historia-colon-palacio",
     "slug": "historia-colon-palacio-san-jose-urquiza",
     "category": "HISTORY",
@@ -43,13 +44,6 @@
     "shares": 45,
     "isFeatured": false,
     "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "moderationNotes": "Contenido histórico educativo sin sponsor"
-    },
-    "createdAt": "2024-02-15T13:20:00Z",
-    "updatedAt": "2024-02-15T13:20:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
     "moderationState": "APPROVED",
     "seo": {
         "title": "Historia Viva en Colón: El Palacio San José y el Legado de Urquiza | Hospeda",
@@ -72,13 +66,5 @@
             "type": "article"
         }
     },
-    "tagIds": [
-        "tag-historia-001",
-        "tag-cultura-002",
-        "tag-arquitectura-003",
-        "tag-entre-rios-004",
-        "tag-museos-005",
-        "tag-turismo-006",
-        "tag-familia-007"
-    ]
+    "lifecycleState": "ACTIVE"
 }

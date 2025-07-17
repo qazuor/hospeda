@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/postSponsorship.schema.json",
     "id": "psp-cultura-post-005",
     "sponsorId": "ps-cultura-entrerriana-005",
     "postId": "post-patrimonio-cultural-005",
@@ -12,8 +13,5 @@
     "fromDate": "2024-11-01T00:00:00Z",
     "toDate": "2024-12-01T23:59:59Z",
     "isHighlighted": false,
-    "adminInfo": {
-        "notes": "Patrocinio para contenido cultural e histórico",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE"
 }

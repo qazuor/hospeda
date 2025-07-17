@@ -5,6 +5,9 @@
     "description": "JSON schema for EventLocation entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "EventLocation ID (UUID)"
@@ -28,12 +31,12 @@
                     "type": "string",
                     "description": "Latitude"
                 },
-                "lng": {
+                "long": {
                     "type": "string",
                     "description": "Longitude"
                 }
             },
-            "required": ["lat", "lng"],
+            "required": ["lat", "long"],
             "additionalProperties": false
         },
         "street": {
@@ -68,10 +71,12 @@
             "type": "string",
             "description": "Place name"
         },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
+        "lifecycleState": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "ARCHIVED"],
+            "description": "Lifecycle state of the event location"
         }
     },
-    "required": ["id", "city"],
+    "required": ["id", "state", "zipCode", "country", "city", "lifecycleState"],
     "additionalProperties": false
 }

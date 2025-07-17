@@ -5,6 +5,9 @@
     "description": "JSON schema for UserBookmark entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "UserBookmark ID (UUID)"
@@ -15,56 +18,27 @@
         },
         "entityType": {
             "type": "string",
-            "enum": ["accommodation", "destination", "post", "event", "attraction"],
+            "enum": ["ACCOMMODATION", "DESTINATION", "POST", "EVENT", "USER"],
             "description": "Type of bookmarked entity"
         },
         "entityId": {
             "type": "string",
             "description": "ID of bookmarked entity"
         },
-        "collection": {
+        "name": {
             "type": "string",
-            "description": "Bookmark collection name"
+            "description": "Optional bookmark name"
         },
-        "notes": {
+        "description": {
             "type": "string",
-            "description": "User notes about the bookmark"
+            "description": "Optional bookmark description"
         },
-        "rating": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 5,
-            "description": "User rating for the bookmarked item"
-        },
-        "tags": {
-            "type": "array",
-            "items": {
-                "type": "string"
-            },
-            "description": "User-defined tags for the bookmark"
-        },
-        "isPublic": {
-            "type": "boolean",
-            "description": "Whether bookmark is public"
-        },
-        "isActive": {
-            "type": "boolean",
-            "description": "Whether bookmark is active"
-        },
-        "priority": {
+        "lifecycleState": {
             "type": "string",
-            "enum": ["low", "medium", "high"],
-            "description": "Bookmark priority"
-        },
-        "visitDate": {
-            "type": "string",
-            "format": "date",
-            "description": "Planned or actual visit date"
-        },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
+            "enum": ["DRAFT", "ACTIVE", "ARCHIVED"],
+            "description": "Lifecycle state of the bookmark"
         }
     },
-    "required": ["id", "userId", "entityType", "entityId"],
+    "required": ["id", "userId", "entityType", "entityId", "lifecycleState"],
     "additionalProperties": false
 }

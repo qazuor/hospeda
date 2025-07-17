@@ -1,7 +1,8 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag_fotografia",
     "name": "Fotografía",
-    "description": "Lugares ideales para la fotografía",
-    "color": "#2F4F4F",
-    "category": "arte"
+    "slug": "fotograf-a",
+    "color": "GREEN",
+    "notes": "Lugares ideales para la fotografía"
 }

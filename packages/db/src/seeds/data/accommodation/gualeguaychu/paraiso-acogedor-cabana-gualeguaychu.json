@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-acogedor-cabana-gualeguaychu",
     "name": "paraiso-acogedor-cabana",
-    "displayName": "Paraíso Acogedor Cabaña",
+    "summary": "Encuentra un rincón acogedor en Paraíso Acogedor, una encantadora cabaña de madera ubicada en un entorno tranquilo de Gualeguaychú.",
     "type": "CABIN",
     "description": "Encuentra un rincón acogedor en Paraíso Acogedor, una encantadora cabaña de madera ubicada en un entorno tranquilo de Gualeguaychú. Ideal para parejas o familias que buscan un refugio confortable, rodeado de naturaleza y con fácil acceso a las playas, la ciudad y el Carnaval.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es cálida y rústica, creando un ambiente hogareño.\n\nEl exterior ofrece una galería techada con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y árboles, un espacio agradable para relajarse. La ubicación en las afueras de Gualeguaychú permite un rápido acceso en auto a las playas del río Uruguay, al centro de la ciudad y al Corsódromo. Paraíso Acogedor es tu base ideal para disfrutar de la playa y la tranquilidad de Gualeguaychú.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "alquiler@paraisoacogedorcabana.com.ar",
@@ -12,6 +14,9 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "alquiler@paraisoacogedorcabana.com.ar"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/paraisoacogedorcabana"
     },
     "price": {
         "basePrice": {
@@ -114,24 +119,6 @@
             "escapada"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple pero agradable. Énfasis en cercanía a playas y Carnaval.",
-        "favorite": false,
-        "tags": [
-            "gualeguaychu",
-            "cabin",
-            "gualeguaychu-cabin",
-            "seed-example",
-            "beach",
-            "carnival",
-            "family-friendly"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
-    "socialNetworks": {
-        "twitter": "https://twitter.com/paraisoacogedorcabana"
-    },
     "featureIds": [
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
         "8ddd3e6e-0e56-4786-8975-d7431b812912"
@@ -146,5 +133,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-soleado-cabana-concepcion_del_uruguay",
     "name": "sueno-soleado-cabana",
-    "displayName": "Sueño Soleado Cabaña",
+    "summary": "Disfruta de la luminosidad y un ambiente encantador en Sueño Soleado, una cabaña de madera ubicada en un entorno tranquilo cerca de Concepción del Uruguay.",
     "type": "CABIN",
     "description": "Disfruta de la luminosidad y un ambiente encantador en Sueño Soleado, una cabaña de madera ubicada en un entorno tranquilo cerca de Concepción del Uruguay. Ideal para parejas o familias que buscan un espacio acogedor, rodeado de naturaleza y con fácil acceso a las atracciones de la ciudad y el río.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, pudiendo alojar hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada con heladera, anafe, microondas y utensilios básicos. Los grandes ventanales permiten la entrada de mucha luz natural.\n\nEl exterior ofrece una galería techada con parrilla, perfecta para disfrutar de asados. Está rodeada de un jardín con césped y árboles, un espacio agradable para relajarse. La ubicación permite un acceso rápido en auto al centro de Concepción del Uruguay, la costanera y las playas. Un lugar simple y luminoso para una escapada relajante.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "alquiler@suenosoleadocabana.com.ar",
@@ -12,6 +14,10 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "contacto@suenosoleadocabana.com.ar"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/suenosoleadocabana",
+        "facebook": "https://facebook.com/suenosoleadocabana"
     },
     "price": {
         "basePrice": {
@@ -113,14 +119,6 @@
             "parrilla"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple pero agradable. El punto fuerte es la luminosidad y parrilla.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "cabin",
@@ -129,23 +127,6 @@
         "family-friendly",
         "bbq"
     ],
-    "faqs": [
-        {
-            "question": "¿La cabaña tiene aire acondicionado?",
-            "answer": "Sí, la cabaña cuenta con aire acondicionado.",
-            "category": "amenities"
-        },
-        {
-            "question": "¿Se admiten mascotas?",
-            "answer": "No, lamentablemente no admitimos mascotas.",
-            "category": "policies"
-        }
-    ],
-    "iaData": [],
-    "socialNetworks": {
-        "twitter": "https://twitter.com/suenosoleadocabana",
-        "facebook": "https://facebook.com/suenosoleadocabana"
-    },
     "featureIds": [
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
         "6814812b-f278-494e-84cd-c10d3b541eea"
@@ -160,5 +141,18 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿La cabaña tiene aire acondicionado?",
+            "answer": "Sí, la cabaña cuenta con aire acondicionado.",
+            "category": "amenities"
+        },
+        {
+            "question": "¿Se admiten mascotas?",
+            "answer": "No, lamentablemente no admitimos mascotas.",
+            "category": "policies"
+        }
+    ],
+    "iaData": []
 }

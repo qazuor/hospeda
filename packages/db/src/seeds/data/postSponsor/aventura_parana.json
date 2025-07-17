@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/postSponsor.schema.json",
     "id": "ps-aventura-parana-004",
     "name": "Aventura Paraná",
     "type": "POST_SPONSOR",
@@ -21,9 +22,5 @@
         "facebook": "https://facebook.com/aventuraparana",
         "instagram": "https://instagram.com/aventura_parana",
         "youtube": "https://youtube.com/aventuraparana"
-    },
-    "adminInfo": {
-        "notes": "Sponsor para contenido de turismo aventura y deportes acuáticos",
-        "favorite": false
     }
 }

@@ -5,6 +5,9 @@
     "description": "JSON schema for EventOrganizer entity seeds",
     "type": "object",
     "properties": {
+        "$schema": {
+            "type": "string"
+        },
         "id": {
             "type": "string",
             "description": "EventOrganizer ID (UUID)"
@@ -23,10 +26,12 @@
         "social": {
             "$ref": "common.schema.json#/definitions/socialNetworks"
         },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
+        "lifecycleState": {
+            "type": "string",
+            "enum": ["DRAFT", "ACTIVE", "ARCHIVED"],
+            "description": "Lifecycle state of the event organizer"
         }
     },
-    "required": ["id", "name"],
+    "required": ["id", "name", "lifecycleState"],
     "additionalProperties": false
 }

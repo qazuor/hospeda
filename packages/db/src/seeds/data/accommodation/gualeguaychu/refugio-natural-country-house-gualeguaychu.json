@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-natural-country-house-gualeguaychu",
     "name": "refugio-natural-country-house",
-    "displayName": "Refugio Natural Country House",
+    "summary": "Adéntrate en la serenidad del campo entrerriano en Refugio Natural, una cómoda casa de campo ubicada en un entorno natural apacible cerca de Gualeguaychú.",
     "type": "COUNTRY_HOUSE",
     "description": "Adéntrate en la serenidad del campo entrerriano en Refugio Natural, una cómoda casa de campo ubicada en un entorno natural apacible cerca de Gualeguaychú. Ideal para familias y grupos que buscan un retiro tranquilo, rodeado de naturaleza, con amplios espacios para relajarse y disfrutar al aire libre.\n\nLa casa cuenta con tres dormitorios y dos baños completos, ofreciendo espacio y privacidad para hasta 8 personas. El living-comedor es amplio, integrado con una cocina bien equipada. La decoración es sencilla y funcional, pensada para una estancia relajada.\n\nEl exterior dispone de un amplio jardín con césped y árboles, una galería con asador y una mesa grande, perfecta para disfrutar de comidas al aire libre. También cuenta con una piscina para refrescarse en verano. Es un entorno seguro y tranquilo para relajarse. Aunque ofrece privacidad, la casa está a una distancia razonable en auto del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. Un lugar ideal para combinar la paz del campo con la diversión de la ciudad.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "contacto@refugionaturalcountryhouse.com.ar",
@@ -12,6 +14,10 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "hola@refugionaturalcountryhouse.com.ar"
+    },
+    "socialNetworks": {
+        "twitter": "https://twitter.com/refugionaturalcountryhouse",
+        "facebook": "https://facebook.com/refugionaturalcountryhouse"
     },
     "price": {
         "basePrice": {
@@ -133,37 +139,6 @@
             "carnaval gualeguaychu"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad atractiva para familias/grupos. Piscina y asador son puntos fuertes. Relevante en temporada de Carnaval.",
-        "favorite": true,
-        "tags": [
-            "gualeguaychu",
-            "country-house",
-            "gualeguaychu-country-house",
-            "seed-example",
-            "swimming-pool",
-            "family-friendly",
-            "bbq",
-            "carnival"
-        ]
-    },
-    "faqs": [
-        {
-            "question": "¿A qué distancia está el Corsódromo?",
-            "answer": "El Corsódromo se encuentra a unos 10-15 minutos en auto desde la casa.",
-            "category": "location"
-        },
-        {
-            "question": "¿La piscina es climatizada?",
-            "answer": "No, la piscina es exterior y no está climatizada.",
-            "category": "amenities"
-        }
-    ],
-    "iaData": [],
-    "socialNetworks": {
-        "twitter": "https://twitter.com/refugionaturalcountryhouse",
-        "facebook": "https://facebook.com/refugionaturalcountryhouse"
-    },
     "featureIds": [
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
         "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
@@ -180,5 +155,18 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿A qué distancia está el Corsódromo?",
+            "answer": "El Corsódromo se encuentra a unos 10-15 minutos en auto desde la casa.",
+            "category": "location"
+        },
+        {
+            "question": "¿La piscina es climatizada?",
+            "answer": "No, la piscina es exterior y no está climatizada.",
+            "category": "amenities"
+        }
+    ],
+    "iaData": []
 }

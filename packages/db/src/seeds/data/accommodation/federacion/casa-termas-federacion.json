@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "casa-termas-federacion",
     "name": "casa-termas",
-    "displayName": "Casa Termas",
+    "summary": "Casa Termas es una acogedora propiedad ubicada estratégicamente a solo 400 metros del Parque Termal de Federación, el principal atractivo de esta renovada ciudad entrerriana.",
     "type": "HOUSE",
     "description": "Casa Termas es una acogedora propiedad ubicada estratégicamente a solo 400 metros del Parque Termal de Federación, el principal atractivo de esta renovada ciudad entrerriana. Esta casa de estilo contemporáneo con toques regionales ofrece el equilibrio perfecto entre proximidad a las atracciones turísticas y la privacidad de un hogar completo para disfrutar en familia o con amigos.\n\nCon una superficie de 120 metros cuadrados, la propiedad se distribuye en una sola planta facilitando la accesibilidad. Cuenta con tres dormitorios cómodamente amueblados: el principal con cama queen y baño en suite, y dos dormitorios adicionales, uno con cama matrimonial y otro con dos camas individuales, ideales para niños o adultos. Un segundo baño completo da servicio a estas habitaciones. La casa puede alojar confortablemente hasta 6 personas.\n\nEl área social incluye un luminoso living-comedor con grandes ventanas que dan al jardín, equipado con cómodos sillones, smart TV y mesa para 6 comensales. La cocina integrada está completamente equipada con electrodomésticos modernos y utensilios necesarios para preparar desde un desayuno hasta una cena completa. El diseño interior prioriza los espacios amplios, la luz natural y utiliza una paleta de colores neutros con acentos en tonos turquesa que evocan las aguas termales de la zona.\n\nEl exterior es uno de los puntos fuertes de Casa Termas, con un jardín cuidadosamente mantenido, una galería cubierta con juego de sillones y hamacas para relajarse, y el infaltable asador argentino para disfrutar de tradicionales parrilladas. Una ducha exterior permite refrescarse después de un día de playa en el lago de Salto Grande, ubicado a solo 10 minutos en auto. El estacionamiento techado tiene capacidad para dos vehículos, brindando comodidad adicional a los huéspedes que llegan en auto.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "hola@casatermas.com.ar",
@@ -160,11 +162,46 @@
             "cerca termas"
         ]
     },
-    "adminInfo": {
-        "notes": "Casa muy solicitada en temporada alta (enero y julio). Los propietarios viven cerca y están siempre disponibles para asistir a los huéspedes.",
-        "favorite": true
-    },
-    "tags": ["federacion", "house", "thermal", "family-friendly", "garden", "bbq"],
+    "tags": [
+        "federacion",
+        "house",
+        "thermal",
+        "family-friendly",
+        "garden",
+        "bbq"
+    ],
+    "featureIds": [
+        "45973def-bdc7-47cd-8997-11d649dc3a4f",
+        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
+        "03080e07-50f9-4752-a2c6-7502eaacf733"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "0d73b0be-30c1-4cbb-8b21-90d2bde3d412",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "a14dc9e1-6290-4fda-8078-2e5112716b45",
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
+        "8305de52-109d-48bb-8781-c7e837443809",
+        "5df75b3e-1f48-40fe-ad77-3cae754982ab",
+        "191fac6f-b553-404b-8463-a7281bc52ef9",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
+    "tagIds": [
+        "tag-termas-012",
+        "tag-aguas-termales-017",
+        "tag-familia-004",
+        "tag-relax",
+        "tag-spa-027",
+        "tag-entre-rios-003",
+        "tag-naturaleza-002"
+    ],
     "faqs": [
         {
             "question": "¿Qué distancia hay entre la casa y el Parque Termal?",
@@ -213,37 +250,5 @@
             "content": "La gastronomía de Federación destaca por sus pescados de río y la influencia de la cocina italiana y española. En Casa Termas encontrará una carpeta con nuestras recomendaciones gastronómicas, pero no puede dejar de visitar 'El Embarcadero', especializado en pescados locales con hermosa vista al lago; 'La Parrilla de Don Pedro', con excelentes cortes de carne; y 'Sabores Termales', que ofrece platos innovadores utilizando productos regionales. Para opciones más económicas, la zona de food trucks en la costanera ofrece alternativas informales de buena calidad. Los amantes del dulce deben probar los alfajores de Federación, rellenos con dulce de naranja alusivos a la principal producción frutícola de la región. La vida nocturna es tranquila y familiar, centrada en bares y restaurantes más que en discotecas. En verano, la costanera cobra vida con espectáculos musicales al aire libre y ferias artesanales que funcionan hasta la medianoche. Para quienes buscan actividad nocturna más animada, el Casino de Federación, a 15 minutos caminando desde la casa, ofrece juegos y shows en vivo los fines de semana.",
             "category": "dining"
         }
-    ],
-    "featureIds": [
-        "45973def-bdc7-47cd-8997-11d649dc3a4f",
-        "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
-        "03080e07-50f9-4752-a2c6-7502eaacf733"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "0d73b0be-30c1-4cbb-8b21-90d2bde3d412",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "a14dc9e1-6290-4fda-8078-2e5112716b45",
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
-        "8305de52-109d-48bb-8781-c7e837443809",
-        "5df75b3e-1f48-40fe-ad77-3cae754982ab",
-        "191fac6f-b553-404b-8463-a7281bc52ef9",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ],
-    "tagIds": [
-        "tag-termas-012",
-        "tag-aguas-termales-017",
-        "tag-familia-004",
-        "tag-relax",
-        "tag-spa-027",
-        "tag-entre-rios-003",
-        "tag-naturaleza-002"
     ]
 }

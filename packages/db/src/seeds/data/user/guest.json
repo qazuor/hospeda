@@ -1,19 +1,17 @@
 {
+    "$schema": "../../schemas/user.schema.json",
     "id": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
-    "email": "guest@hospeda.com",
-    "username": "guest_user",
+    "slug": "usuario-invitado",
+    "role": "GUEST",
+    "permissions": [],
     "firstName": "Usuario",
     "lastName": "Invitado",
-    "avatar": "https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=150&h=150&fit=crop&crop=face",
-    "bio": "Usuario invitado para navegación pública del sitio web. Acceso limitado a funcionalidades básicas de consulta y visualización de contenido.",
-    "role": "GUEST",
-    "isVerified": false,
+    "displayName": "Usuario Invitado",
     "contactInfo": {
         "personalEmail": "guest@hospeda.com",
         "preferredEmail": "PERSONAL",
         "preferredPhone": "MOBILE"
     },
-    "socialNetworks": {},
     "location": {
         "state": "Entre Ríos",
         "city": "Paraná",
@@ -24,17 +22,6 @@
             "lng": "-60.5333"
         }
     },
-    "preferences": {
-        "language": "es",
-        "currency": "ARS",
-        "notifications": {
-            "email": false,
-            "push": false,
-            "marketing": false
-        }
-    },
-    "adminInfo": {
-        "notes": "Usuario invitado para acceso público",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

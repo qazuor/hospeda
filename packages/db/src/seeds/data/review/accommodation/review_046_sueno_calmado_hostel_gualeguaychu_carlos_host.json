@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-046-sueno-calmado-hostel-gualeguaychu-carlos_host",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d485",
     "accommodationId": "sueno-calmado-hostel-gualeguaychu",
@@ -11,5 +12,6 @@
         "accuracy": 3,
         "communication": 4,
         "location": 3
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

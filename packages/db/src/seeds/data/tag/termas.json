@@ -1,15 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-termas-003",
     "name": "Termas",
     "slug": "termas",
-    "description": "Contenido relacionado con complejos termales y turismo de bienestar",
-    "type": "activity",
-    "category": "primary",
-    "color": "#FF9800",
+    "color": "RED",
     "icon": "spa",
-    "isActive": true,
-    "adminInfo": {
-        "notes": "Tag para turismo termal y de bienestar",
-        "favorite": true
-    }
+    "notes": "Contenido relacionado con complejos termales y turismo de bienestar",
+    "lifecycleState": "ACTIVE"
 }

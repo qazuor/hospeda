@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-soleado-cabana-federacion",
     "name": "nido-soleado-cabana",
-    "displayName": "Nido Soleado Cabaña",
+    "summary": "Disfruta de la luz y la paz en Nido Soleado, una cabaña moderna ubicada en un entorno tranquilo de Federación, ideal para parejas o familias pequeñas que buscan un refugio luminoso y confortable cerca del parque termal.",
     "type": "CABIN",
     "description": "Disfruta de la luz y la paz en Nido Soleado, una cabaña moderna ubicada en un entorno tranquilo de Federación, ideal para parejas o familias pequeñas que buscan un refugio luminoso y confortable cerca del parque termal. Un espacio pensado para el relax y el disfrute.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). Los amplios ventanales llenan el interior de luz natural y ofrecen vistas al jardín.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación. La ubicación en un barrio tranquilo de Federación permite un rápido acceso en auto al famoso Parque Termal, al centro de la ciudad y a la costanera del lago. Nido Soleado es tu base ideal para disfrutar de las aguas termales y la tranquilidad de Federación.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@nidosoleadocabana.com.ar",
@@ -12,6 +14,11 @@
         "preferredEmail": "HOME",
         "preferredPhone": "MOBILE",
         "homeEmail": "info@nidosoleadocabana.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/nidosoleadocabanaok",
+        "instagram": "https://instagram.com/nidosoleadocabanaok",
+        "twitter": "https://twitter.com/nidosoleadocabanaok"
     },
     "price": {
         "basePrice": {
@@ -114,14 +121,6 @@
             "escapada"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple pero bien ubicada para turismo termal. Énfasis en la luz natural.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "federacion",
         "cabin",
@@ -129,6 +128,22 @@
         "seed-example",
         "thermal",
         "family-friendly"
+    ],
+    "featureIds": [
+        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
+        "6814812b-f278-494e-84cd-c10d3b541eea",
+        "1fb29901-701e-4f9d-ab30-942e11dadb4c"
+    ],
+    "amenityIds": [
+        "84fb4c84-942d-4682-8cbd-5e0229697670",
+        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
+        "dd386c1d-790a-4c32-ab8f-995829c2af59",
+        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "e5fa69c0-b8e8-431a-b508-14a211a54740",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ],
     "faqs": [
         {
@@ -148,26 +163,5 @@
             "content": "El Parque Termal de Federación es uno de los principales atractivos de Entre Ríos. Cuenta con un gran número de piscinas de diferentes temperaturas y profundidades, tanto cubiertas como al aire libre, con aguas mineromedicinales beneficiosas para la salud. También ofrece un parque acuático con toboganes y juegos para niños, ideal para la diversión familiar.",
             "category": "thermal"
         }
-    ],
-    "socialNetworks": {
-        "facebook": "https://facebook.com/nidosoleadocabanaok",
-        "instagram": "https://instagram.com/nidosoleadocabanaok",
-        "twitter": "https://twitter.com/nidosoleadocabanaok"
-    },
-    "featureIds": [
-        "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
-        "6814812b-f278-494e-84cd-c10d3b541eea",
-        "1fb29901-701e-4f9d-ab30-942e11dadb4c"
-    ],
-    "amenityIds": [
-        "84fb4c84-942d-4682-8cbd-5e0229697670",
-        "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-        "dd386c1d-790a-4c32-ab8f-995829c2af59",
-        "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "e5fa69c0-b8e8-431a-b508-14a211a54740",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c"
     ]
 }

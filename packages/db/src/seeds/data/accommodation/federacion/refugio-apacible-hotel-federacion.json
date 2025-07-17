@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-apacible-hotel-federacion",
     "name": "refugio-apacible-hotel",
-    "displayName": "Refugio Apacible Hotel",
+    "summary": "Encuentra un ambiente apacible y relajante en Refugio Apacible Hotel, ubicado en una zona tranquila de Federación, ideal para quienes visitan la ciudad por sus termas y buscan un lugar sereno para descansar.",
     "type": "HOTEL",
     "description": "Encuentra un ambiente apacible y relajante en Refugio Apacible Hotel, ubicado en una zona tranquila de Federación, ideal para quienes visitan la ciudad por sus termas y buscan un lugar sereno para descansar. Ofrece un ambiente calmado y servicios orientados al bienestar termal.\n\nEl hotel cuenta con 25 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto al Parque Termal de Federación, el Lago de Salto Grande y el centro de la ciudad. Refugio Apacible es la opción ideal para una estancia dedicada al descanso y al bienestar en Federación.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "workEmail": "hola@refugioapaciblehotel.com.ar",
@@ -12,6 +14,10 @@
         "homePhone": "+543456618631",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/refugioapaciblehotel",
+        "facebook": "https://facebook.com/refugioapaciblehotel"
     },
     "price": {
         "basePrice": {
@@ -114,14 +120,6 @@
             "alojamiento"
         ]
     },
-    "adminInfo": {
-        "notes": "Hotel con enfoque en relax y termas. Bien ubicado.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "federacion",
         "hotel",
@@ -131,18 +129,6 @@
         "thermal",
         "quiet"
     ],
-    "faqs": [
-        {
-            "question": "¿Está incluida la entrada a las Termas?",
-            "answer": "No, la entrada al Parque Termal de Federación no está incluida en la tarifa del hotel.",
-            "category": "services"
-        }
-    ],
-    "iaData": [],
-    "socialNetworks": {
-        "instagram": "https://instagram.com/refugioapaciblehotel",
-        "facebook": "https://facebook.com/refugioapaciblehotel"
-    },
     "featureIds": [
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
         "bdc8b938-9599-428c-92a8-0bf932005ed7",
@@ -158,5 +144,13 @@
         "191fac6f-b553-404b-8463-a7281bc52ef9",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿Está incluida la entrada a las Termas?",
+            "answer": "No, la entrada al Parque Termal de Federación no está incluida en la tarifa del hotel.",
+            "category": "services"
+        }
+    ],
+    "iaData": []
 }

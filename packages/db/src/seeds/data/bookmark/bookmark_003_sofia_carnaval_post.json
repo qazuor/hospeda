@@ -1,18 +1,10 @@
 {
+    "$schema": "../../schemas/userBookmark.schema.json",
     "id": "bookmark-003-sofia-carnaval-post",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
     "entityId": "post-003-carnaval-gualeguaychu",
     "entityType": "POST",
     "name": "Carnaval de Gualeguaychú",
     "description": "Excelente guía sobre el Carnaval, la tengo guardada para planificar mi viaje",
-    "lifecycle": "ACTIVE",
-    "adminInfo": {
-        "notes": "Post muy útil para planificación de viaje"
-    },
-    "createdAt": "2024-02-01T09:15:00Z",
-    "updatedAt": "2024-02-01T09:15:00Z",
-    "createdById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
-    "updatedById": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
-    "deletedAt": null,
-    "deletedById": null
+    "lifecycleState": "ACTIVE"
 }

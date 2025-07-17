@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-acogedor-room-concepcion_del_uruguay",
     "name": "refugio-acogedor-room",
-    "displayName": "Refugio Acogedor Habitación",
+    "summary": "Siéntete bienvenido en Refugio Acogedor, una habitación privada en una casa familiar en un barrio tradicional de Concepción del Uruguay.",
     "type": "ROOM",
     "description": "Siéntete bienvenido en Refugio Acogedor, una habitación privada en una casa familiar en un barrio tradicional de Concepción del Uruguay. Ofrece un ambiente cálido, trato amable y la comodidad de un hogar, ideal para viajeros solos o parejas que buscan una base acogedora para explorar la ciudad.\n\nLa habitación es sencilla pero cómoda, con cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido con los anfitriones. Los huéspedes pueden utilizar una pequeña área de cocina básica con microondas y heladera para infusiones o comidas simples. El ambiente es muy hogareño.\n\nUbicado en un barrio residencial tranquilo, permite un buen descanso. Estás a una distancia razonable en auto o transporte público del centro, la costanera y otras atracciones. La hospitalidad de los anfitriones es un punto fuerte de este refugio acogedor.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "contacto@refugioacogedorroom.com.ar",
@@ -101,14 +103,6 @@
             "compartido"
         ]
     },
-    "adminInfo": {
-        "notes": "Opción muy económica. Atrae a viajeros que buscan interacción con locales.",
-        "favorite": false,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "concepcion-del-uruguay",
         "room",
@@ -117,8 +111,6 @@
         "budget",
         "social"
     ],
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "0ddae569-fe9b-42cc-a800-d5f39e82196f",
         "be30904b-8750-4561-b5e2-0ec228a5e6b4"
@@ -130,5 +122,7 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-tranquilo-house-ubajay",
     "name": "refugio-tranquilo-house",
-    "displayName": "Refugio Tranquilo House",
+    "summary": "Encuentra la calma y el espacio en Refugio Tranquilo House, una cómoda casa ubicada en un barrio sereno de Ubajay.",
     "type": "HOUSE",
     "description": "Encuentra la calma y el espacio en Refugio Tranquilo House, una cómoda casa ubicada en un barrio sereno de Ubajay. Ideal para familias o grupos de amigos que buscan un lugar propio para descansar y disfrutar de la tranquilidad del pueblo, con fácil acceso al centro y al Parque Nacional El Palmar.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio funcional. Está equipada con lo esencial para una estadía confortable, incluyendo aire acondicionado. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con césped y un sector de parrilla, perfecto para disfrutar de asados al aire libre. La ubicación en un barrio residencial garantiza serenidad. Estás a una distancia conveniente en auto o caminando del centro de Ubajay y del Parque Nacional El Palmar. Una opción práctica y apacible para tu estadía.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "reservas@refugiotranquilohouse.com.ar",
@@ -114,22 +116,6 @@
             "parrilla"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad simple y funcional. Atrae familias que buscan tranquilidad y cercanía a El Palmar.",
-        "favorite": false,
-        "tags": [
-            "ubajay",
-            "house",
-            "ubajay-house",
-            "seed-example",
-            "family-friendly",
-            "bbq",
-            "quiet",
-            "nature"
-        ]
-    },
-    "faqs": [],
-    "iaData": [],
     "featureIds": [
         "20e2f309-ce52-476f-92bc-a1352bfd5ce4",
         "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
@@ -144,5 +130,7 @@
         "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [],
+    "iaData": []
 }

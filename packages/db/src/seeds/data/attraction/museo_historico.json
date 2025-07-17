@@ -6,7 +6,6 @@
     "description": "Museo dedicado a la historia local y regional con colecciones permanentes",
     "icon": "museum",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
     "tagIds": [
         "tag-historia-013",
         "tag-museos",
@@ -14,8 +13,5 @@
         "tag-familia-004",
         "tag-turismo-001"
     ],
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE"
 }

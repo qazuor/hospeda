@@ -1,16 +1,10 @@
 {
+    "$schema": "../../schemas/tag.schema.json",
     "id": "tag-deportes-acuaticos-018",
     "name": "Deportes Acuáticos",
     "slug": "deportes-acuaticos",
-    "description": "Actividades deportivas en agua",
-    "type": "activity",
-    "category": "primary",
-    "color": "#4169E1",
+    "color": "BLUE",
     "icon": "water-sports",
-    "isActive": true,
-    "usageCount": 0,
-    "adminInfo": {
-        "notes": "Tag para deportes y actividades acuáticas",
-        "favorite": false
-    }
+    "notes": "Actividades deportivas en agua",
+    "lifecycleState": "ACTIVE"
 }

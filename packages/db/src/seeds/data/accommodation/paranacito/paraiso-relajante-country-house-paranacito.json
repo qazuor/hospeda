@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-relajante-country-house-villa_paranacito",
     "name": "paraiso-relajante-country-house",
-    "displayName": "Paraíso Relajante Country House",
+    "summary": "Encuentra tu paraíso de relax en Paraíso Relajante, una espaciosa casa de campo ubicada en un entorno sereno cerca de Paranacito.",
     "type": "COUNTRY_HOUSE",
     "description": "Encuentra tu paraíso de relax en Paraíso Relajante, una espaciosa casa de campo ubicada en un entorno sereno cerca de Paranacito. Ideal para familias y grupos que buscan desconectar, disfrutar de la tranquilidad del campo y el Delta, y pasar tiempo de calidad en amplios espacios.\n\nLa casa cuenta con tres dormitorios y dos baños completos, ofreciendo privacidad y espacio para hasta 8 personas. El living-comedor es amplio y luminoso, integrado con una cocina bien equipada. La decoración es sencilla y funcional, pensada para una estancia relajada.\n\nEl exterior dispone de un gran jardín parquizado, ideal para actividades al aire libre. Cuenta con una galería techada con asador y una mesa grande, perfecta para disfrutar de comidas. También cuenta con una piscina para refrescarse en verano. Es un entorno seguro y tranquilo para relajarse. Aunque ofrece privacidad, la casa está a una distancia razonable en auto de Paranacito y del acceso al Delta y sus actividades.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": true,
     "contactInfo": {
         "personalEmail": "info@paraisorelajantecountryhouse.com.ar",
@@ -133,28 +135,6 @@
             "asador"
         ]
     },
-    "adminInfo": {
-        "notes": "Propiedad atractiva para familias/grupos. Piscina y asador son puntos fuertes.",
-        "favorite": true,
-        "tags": [
-            "paranacito",
-            "country-house",
-            "paranacito-country-house",
-            "seed-example",
-            "swimming-pool",
-            "family-friendly",
-            "bbq",
-            "nature"
-        ]
-    },
-    "faqs": [
-        {
-            "question": "¿Está cerca del río?",
-            "answer": "Estamos en zona rural cercana al río, a pocos minutos en auto se accede a puntos de embarque o pesca.",
-            "category": "location"
-        }
-    ],
-    "iaData": [],
     "featureIds": [
         "7b302e1b-6cf4-4e96-a41a-4ba95f27a33d",
         "a2c69258-f5eb-4ed0-b8fe-9766f08e4bab",
@@ -171,5 +151,13 @@
         "e5fa69c0-b8e8-431a-b508-14a211a54740",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
-    ]
+    ],
+    "faqs": [
+        {
+            "question": "¿Está cerca del río?",
+            "answer": "Estamos en zona rural cercana al río, a pocos minutos en auto se accede a puntos de embarque o pesca.",
+            "category": "location"
+        }
+    ],
+    "iaData": []
 }

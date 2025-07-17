@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-encantado-camping-liebig",
     "name": "refugio-encantado-camping",
-    "displayName": "Refugio Encantado Camping",
+    "summary": "Descubre la magia de acampar en Refugio Encantado Camping, un espacio único ubicado en un entorno natural exuberante cerca de Liebig, a orillas de un arroyo.",
     "type": "CAMPING",
     "description": "Descubre la magia de acampar en Refugio Encantado Camping, un espacio único ubicado en un entorno natural exuberante cerca de Liebig, a orillas de un arroyo. Ideal para campistas y amantes de la pesca, la tranquilidad y la naturaleza que buscan una experiencia auténtica.\n\nEl camping ofrece parcelas amplias con sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, pensado para disfrutar del arroyo y el entorno.\n\nSu ubicación sobre un arroyo ofrece acceso directo al agua, ideal para pesca y simplemente disfrutar del sonido. El entorno es muy tranquilo y natural. Estás a poca distancia del pueblo de Liebig y los restos del antiguo Frigorífico. Un lugar encantador para una aventura en la naturaleza.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "camping@refugioencantadocamping.com.ar",
@@ -108,28 +110,6 @@
             "historia"
         ]
     },
-    "adminInfo": {
-        "notes": "Camping con enfoque en pesca y tranquilidad. Atrae campistas interesados en el entorno natural y la historia.",
-        "favorite": false,
-        "tags": [
-            "liebig",
-            "camping",
-            "liebig-camping",
-            "seed-example",
-            "nature",
-            "fishing",
-            "riverside",
-            "history"
-        ]
-    },
-    "faqs": [],
-    "iaData": [
-        {
-            "title": "El arroyo y su entorno",
-            "content": "El arroyo que bordea el camping es ideal para la pesca deportiva de especies de menor porte. Su entorno ofrece senderos naturales para caminatas cortas y la posibilidad de avistar aves de la zona. Es un espacio para relajarse y disfrutar del sonido del agua y la naturaleza.",
-            "category": "nature"
-        }
-    ],
     "featureIds": [
         "4e01f576-29f6-42e0-adb2-beeb790d77bf",
         "81c25058-1006-4d13-9c71-bc293f051e28",
@@ -140,5 +120,13 @@
         "55196c2d-3fa4-4797-ae33-798ca841f832",
         "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
         "68987dfa-0982-4783-877e-3979d0a5ad1c"
+    ],
+    "faqs": [],
+    "iaData": [
+        {
+            "title": "El arroyo y su entorno",
+            "content": "El arroyo que bordea el camping es ideal para la pesca deportiva de especies de menor porte. Su entorno ofrece senderos naturales para caminatas cortas y la posibilidad de avistar aves de la zona. Es un espacio para relajarse y disfrutar del sonido del agua y la naturaleza.",
+            "category": "nature"
+        }
     ]
 }

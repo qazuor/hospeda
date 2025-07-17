@@ -2,9 +2,11 @@
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-encantado-camping-colon",
     "name": "retiro-encantado-camping",
-    "displayName": "Retiro Encantado Camping",
+    "summary": "Descubre un rincón mágico en Retiro Encantado Camping, ubicado en un entorno arbolado a pocos kilómetros de Colón.",
     "type": "CAMPING",
     "description": "Descubre un rincón mágico en Retiro Encantado Camping, ubicado en un entorno arbolado a pocos kilómetros de Colón. Este camping ofrece una experiencia tranquila y natural, ideal para desconectar, disfrutar del aire libre y crear recuerdos inolvidables en familia o con amigos. Su atmósfera relajada y sus instalaciones lo convierten en un lugar encantador para tu escapada.\n\nEl camping cuenta con amplias parcelas delimitadas con abundante sombra natural, perfectas para carpas y rodantes. Cada parcela dispone de fogón individual y mesa con bancos. Las instalaciones incluyen baños completos con duchas de agua caliente las 24hs, una cocina comunitaria equipada con heladeras y anafes, y un área de quincho techado para encuentros grupales.\n\nOfrecemos diversas actividades para complementar tu estadía, como senderos para caminatas, alquiler de bicicletas para explorar los alrededores y un sector de juegos infantiles. Estamos cerca de un brazo del río, ideal para pesca de orilla o simplemente para disfrutar del paisaje. Por las noches, organizamos fogones comunitarios o proyecciones de películas al aire libre en temporada alta.\n\nLa distancia al centro de Colón es corta en auto, lo que te permite acceder fácilmente a supermercados, restaurantes y tiendas, así como a la costanera y las Termas de Colón. Retiro Encantado es el equilibrio perfecto entre la serenidad del campo y la conveniencia de tener la ciudad a mano.",
+    "ownerId": "owner-placeholder-id",
+    "destinationId": "destination-placeholder-id",
     "isFeatured": false,
     "contactInfo": {
         "personalEmail": "administracion@retiroencantadocamping.com.ar",
@@ -125,14 +127,6 @@
             "río"
         ]
     },
-    "adminInfo": {
-        "notes": "Buen ambiente familiar y organizado. Potencial para eventos pequeños.",
-        "favorite": true,
-        "tags": [
-            "admin",
-            "seed"
-        ]
-    },
     "tags": [
         "colon",
         "camping",
@@ -141,6 +135,18 @@
         "nature",
         "family-friendly",
         "fishing"
+    ],
+    "featureIds": [
+        "62c3f134-85ec-49fe-8b18-2df83eb974c8",
+        "03080e07-50f9-4752-a2c6-7502eaacf733"
+    ],
+    "amenityIds": [
+        "55196c2d-3fa4-4797-ae33-798ca841f832",
+        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
+        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
+        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+        "68987dfa-0982-4783-877e-3979d0a5ad1c",
+        "860df8e3-d746-4500-890f-9d1aafaec446"
     ],
     "faqs": [
         {
@@ -159,17 +165,5 @@
             "category": "location"
         }
     ],
-    "iaData": [],
-    "featureIds": [
-        "62c3f134-85ec-49fe-8b18-2df83eb974c8",
-        "03080e07-50f9-4752-a2c6-7502eaacf733"
-    ],
-    "amenityIds": [
-        "55196c2d-3fa4-4797-ae33-798ca841f832",
-        "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-        "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-        "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
-        "68987dfa-0982-4783-877e-3979d0a5ad1c",
-        "860df8e3-d746-4500-890f-9d1aafaec446"
-    ]
+    "iaData": []
 }

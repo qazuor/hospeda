@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-022-sueno-natural-apartment-federacion-guest",
     "userId": "guest-user-12345",
     "accommodationId": "sueno-natural-apartment-federacion",
@@ -11,5 +12,6 @@
         "accuracy": 4,
         "communication": 5,
         "location": 3
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

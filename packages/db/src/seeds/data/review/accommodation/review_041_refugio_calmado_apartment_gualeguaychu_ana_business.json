@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "review-041-refugio-calmado-apartment-gualeguaychu-ana_business",
     "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
     "accommodationId": "refugio-calmado-apartment-gualeguaychu",
@@ -11,5 +12,6 @@
         "accuracy": 3,
         "communication": 5,
         "location": 3
-    }
+    },
+    "lifecycleState": "ACTIVE"
 }

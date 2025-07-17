@@ -6,9 +6,6 @@
     "description": "Centro integral de bienestar con servicios de spa, masajes y tratamientos de relajación",
     "icon": "self_care",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }

@@ -6,9 +6,6 @@
     "description": "Balneario público con servicios básicos y acceso controlado al río",
     "icon": "pool",
     "isBuiltin": true,
-    "lifecycleState": "PUBLISHED",
-    "adminInfo": {
-        "notes": "Atracción genérica del sistema",
-        "favorite": false
-    }
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
 }
