@@ -62,8 +62,6 @@ type Brand<K, T> = K & { __brand: T };
 
 ```typescript
 type UserId = Brand<string, 'UserId'>;
-type RoleId = Brand<string, 'RoleId'>;
-type PermissionId = Brand<string, 'PermissionId'>;
 type UserBookmarkId = Brand<string, 'UserBookmarkId'>;
 type TagId = Brand<string, 'TagId'>;
 type AccommodationId = Brand<string, 'AccommodationId'>;
