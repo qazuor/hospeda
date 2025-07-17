@@ -1,0 +1,239 @@
+{
+    "id": "052-accommodation-paranacito-camping-camping-rio-vida-villa_paranacito",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "camping-rio-vida-villa_paranacito",
+    "name": "camping-rio-vida",
+    "summary": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza.",
+    "type": "CAMPING",
+    "description": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza. A diferencia de los campings tradicionales, Río Vida se encuentra en una isla de tres hectáreas rodeada por los arroyos Paranacito, Las Tintas y una pequeña bahía que forma un entorno natural protegido, accesible únicamente por lancha.\n\nEl camping cuenta con amplios espacios para acampar bajo la sombra de sauces, ceibos y timbos autóctonos, con parcelas demarcadas que respetan la privacidad sin perder la esencia natural del lugar. Cada sitio para carpas dispone de mesa con bancos, parrilla individual, agua potable y toma de luz, distribuidos estratégicamente para aprovechar las mejores vistas al agua. Para quienes prefieren mayor comodidad, ofrecemos un sector de domos equipados con colchones que pueden alojar entre 2 y 6 personas, una opción perfecta para quienes se inician en la experiencia del camping o desean un mayor confort.\n\nLas instalaciones incluyen sanitarios limpios y modernos, duchas con agua caliente, una proveeduría básica para artículos esenciales, y un salón comunitario techado con cocina compartida, ideal para días lluviosos o para socializar con otros campistas. El muelle principal permite la pesca directamente desde la costa, siendo un punto privilegiado para la captura de dorados, bogas y bagres. También contamos con servicio de alquiler de kayaks, canoas y tablas de stand-up paddle para explorar los arroyos circundantes.\n\nCamping Río Vida es un refugio para la observación de aves, con más de 50 especies identificadas en el predio, y ofrece rutas de senderismo que recorren la isla mostrando la rica biodiversidad local. Por las noches, organizamos fogones comunitarios donde se comparten historias, música y, a veces, un típico guiso de pescado preparado por los anfitriones. La experiencia se completa con los impresionantes amaneceres y atardeceres sobre el agua, que pintan el cielo con colores que quedarán grabados en la memoria de los visitantes.",
+    "ownerId": "023-user-beatriz-sanchez",
+    "destinationId": "008-destination-paranacito",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "info@campingriovida.com.ar",
+        "mobilePhone": "+549344615910510",
+        "website": "https://www.campingriovida.net.ar",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "contacto@campingriovida.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/campingriovida",
+        "instagram": "https://instagram.com/campingriovida",
+        "twitter": "https://twitter.com/campingriovida"
+    },
+    "price": {
+        "basePrice": {
+            "price": 7500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "taxPercent": 21
+        },
+        "discounts": {
+            "weekly": 20,
+            "monthly": 35,
+            "lastMinute": 15
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2826",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-33.7048",
+            "lng": "-58.6491"
+        },
+        "street": "Isla Los Sauces",
+        "number": "s/n",
+        "city": "Paranacito",
+        "neighborhood": "Delta Entrerriano"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
+            "caption": "Vista del camping",
+            "description": "Área de acampe con vista a los arroyos del Delta",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
+                "caption": "Zona de carpas",
+                "description": "Espacios para acampar bajo árboles nativos",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
+                "caption": "Domos equipados",
+                "description": "Alojamiento en domos para mayor comodidad",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/803226/pexels-photo-803226.jpeg",
+                "caption": "Atardecer en el río",
+                "description": "Espectacular puesta de sol desde el muelle principal",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5476440/pexels-photo-5476440.jpeg",
+                "caption": "Fogón comunitario",
+                "description": "Área central para fogones y reuniones nocturnas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5473180/pexels-photo-5473180.jpeg",
+                "caption": "Cocina comunitaria",
+                "description": "Espacio compartido para preparación de comidas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
+                "caption": "Sanitarios",
+                "description": "Instalaciones de baños y duchas",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg",
+                "caption": "Kayak en los arroyos",
+                "description": "Actividad de kayak por los canales del delta",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
+                "caption": "Pesca desde el muelle",
+                "description": "Pesca en los arroyos que rodean la isla",
+                "state": "ACTIVE"
+            }
+        ],
+        "videos": [
+            {
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "caption": "Recorrido por el camping",
+                "description": "Tour virtual por las instalaciones y alrededores",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "12:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "10:00",
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "18:00",
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "12:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 70,
+        "minNights": 2,
+        "maxNights": 30,
+        "bedrooms": 8,
+        "beds": 20,
+        "bathrooms": 6,
+        "smokingAllowed": true,
+        "extraInfo": [
+            "Traslados en lancha desde el muelle principal de Villa Paranacito incluidos en la tarifa",
+            "Se permiten mascotas con previo aviso, deben estar atadas en las áreas comunes",
+            "Energía eléctrica disponible en horarios específicos: 7:00-9:00, 12:00-14:00 y 18:00-23:00",
+            "Proveeduría básica en el camping, para compras mayores se recomienda abastecerse en Villa Paranacito",
+            "Servicio de wifi solo en el área del salón comunitario"
+        ]
+    },
+    "seo": {
+        "title": "Camping Río Vida - Experiencia única en el Delta de Villa Paranacito | Entre Ríos",
+        "description": "Camping en isla exclusiva del Delta entrerriano. Carpas, domos equipados, kayak, pesca y naturaleza. Acceso en lancha y experiencia inmersiva en el ecosistema isleño.",
+        "keywords": [
+            "camping",
+            "villa paranacito",
+            "delta",
+            "entre ríos",
+            "islas",
+            "ecoturismo",
+            "pesca",
+            "kayak",
+            "naturaleza",
+            "domos"
+        ]
+    },
+    "featureIds": [
+        "028-feature-river_view",
+        "023-feature-private_garden",
+        "020-feature-pet_friendly",
+        "009-feature-eco_friendly"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "003-amenity-bbq_grill",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit",
+        "004-amenity-board_games"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo llego al camping?",
+            "answer": "El camping se encuentra en una isla accesible solo por lancha. Ofrecemos traslados gratuitos desde el muelle principal de Villa Paranacito en horarios específicos: 10:00, 14:00 y 18:00. Es necesario coordinar su llegada con anticipación. El viaje en lancha dura aproximadamente 15 minutos.",
+            "category": "location"
+        },
+        {
+            "question": "¿Qué debo llevar para acampar?",
+            "answer": "Para quienes traen su carpa: carpa, bolsas de dormir, colchonetas/aislantes, linterna, repelente, protector solar y artículos personales. Para quienes se alojan en domos: solo necesitan traer bolsas de dormir o sábanas y artículos personales, ya que proporcionamos colchones. Recomendamos traer calzado impermeable, ropa para cambios de clima y productos biodegradables para el cuidado del entorno.",
+            "category": "information"
+        },
+        {
+            "question": "¿Tengo que llevar comida o hay restaurante?",
+            "answer": "No contamos con servicio de restaurante. Disponemos de una proveeduría básica con alimentos no perecederos y algunos frescos, pero recomendamos traer sus propios víveres, especialmente para estadías largas. La cocina comunitaria está equipada con utensilios básicos, anafes, heladeras compartidas y parrillas. Los fines de semana organizamos asados comunitarios opcionales con costo adicional.",
+            "category": "services"
+        },
+        {
+            "question": "¿Es seguro para niños?",
+            "answer": "El camping es adecuado para familias, pero recomendamos supervisión constante de los niños ya que estamos rodeados de agua. Ofrecemos chalecos salvavidas infantiles para actividades acuáticas y contamos con personal capacitado en primeros auxilios. El área de camping está delimitada con cercos naturales para mayor seguridad.",
+            "category": "safety"
+        },
+        {
+            "question": "¿Hay señal de celular en la isla?",
+            "answer": "La cobertura de telefonía móvil es limitada y depende del proveedor (Claro suele tener mejor señal). Recomendamos avisar a sus contactos que estará en una zona con conectividad reducida. Para emergencias, contamos con radio y teléfono satelital.",
+            "category": "facilities"
+        },
+        {
+            "question": "¿Qué actividades ofrecen?",
+            "answer": "Ofrecemos alquiler de kayaks, canoas y tablas de stand-up paddle. Organizamos caminatas guiadas por senderos naturales, talleres de reconocimiento de flora y fauna, salidas de observación de aves, pesca guiada y, por las noches, fogones con música y relatos. También contamos con actividades especiales como recorridos nocturnos por los arroyos y talleres de cocina regional con productos locales.",
+            "category": "activities"
+        }
+    ],
+    "iaData": [
+        {
+            "title": "Flora y fauna del Delta Entrerriano",
+            "content": "El Delta de Villa Paranacito alberga un ecosistema único donde confluyen especies de la selva en galería, el espinal y el pastizal pampeano. Entre la vegetación destacan los ceibos (flor nacional argentina) que tiñen de rojo los humedales entre noviembre y marzo, sauces criollos, timbos y una variedad de plantas acuáticas como camalotes y juncos. La fauna es excepcionalmente diversa: aves como el martín pescador, garzas blancas y bruja, biguás, horneros y cardenales son fáciles de avistar desde nuestros miradores. Los mamíferos incluyen carpinchos (el roedor más grande del mundo), nutrias, coipos y ocasionalmente zorros de monte. En cuanto a la vida acuática, además de las especies de interés para la pesca deportiva como dorados y bogas, se pueden encontrar tortugas acuáticas y yacarés en las zonas más remotas. Nuestro camping participa en programas de conservación y monitoreo de especies, y los huéspedes pueden colaborar reportando avistamientos en nuestra bitácora de biodiversidad. Los mejores horarios para la observación son el amanecer y el atardecer, y contamos con guías de identificación disponibles para los interesados en una experiencia más educativa.",
+            "category": "nature"
+        },
+        {
+            "title": "El Delta y su cultura isleña",
+            "content": "La vida en las islas del Delta tiene características únicas que se reflejan en la cultura local. Las familias isleñas, muchas descendientes de inmigrantes europeos que llegaron a principios del siglo XX, desarrollaron un modo de vida adaptado al entorno fluvial donde el río es a la vez sustento, vía de comunicación y amenaza durante las crecientes. La arquitectura tradicional elevada sobre pilotes, las embarcaciones como medio principal de transporte, y técnicas de pesca y caza transmitidas por generaciones forman parte de este patrimonio cultural. La música tradicional incluye chamamés y chamarritas que narran historias de crecientes, amores isleños y la rica biodiversidad. La gastronomía isleña destaca por sus guisos de pescado, el 'mbaipy' (polenta con queso) de herencia guaraní, y dulces caseros de frutas locales. Durante su estadía en Camping Río Vida, puede interactuar con isleños que comparten saberes tradicionales como la cestería con juncos, la construcción de canoas y la identificación de plantas medicinales. Los sábados por la noche, nuestro fogón a veces cuenta con la participación de músicos locales que interpretan el cancionero del litoral, brindando una experiencia cultural auténtica alejada del turismo masivo.",
+            "category": "culture"
+        },
+        {
+            "title": "Pesca en el Delta",
+            "content": "El Delta del Paraná, y específicamente los arroyos que rodean nuestro camping, constituyen un destino privilegiado para los aficionados a la pesca deportiva. Las aguas de esta región albergan más de 200 especies de peces, siendo las más cotizadas para la pesca deportiva el dorado (Salminus brasiliensis), considerado el \"tigre del río\" por su agresividad y resistencia; el surubí (Pseudoplatystoma corruscans), que puede alcanzar grandes dimensiones; la boga (Leporinus obtusidens), apreciada por su carne; y el patí (Luciopimelodus pati), típico de zonas de pozones. La temporada de pesca se extiende de marzo a octubre, siendo abril-mayo y septiembre-octubre los meses más productivos por las temperaturas moderadas y los niveles de agua estables. En nuestro camping ofrecemos servicio de guías locales con amplio conocimiento de los mejores sitios según la época y especie deseada, así como alquiler de equipos básicos. Practicamos y promovemos la pesca con devolución para garantizar la sostenibilidad del recurso. Los pescadores experimentados aprecian especialmente los canales internos accesibles en canoa, donde se pueden encontrar ejemplares de mayor tamaño en zonas poco presionadas por la pesca comercial.",
+            "category": "activities"
+        },
+        {
+            "title": "El clima y las crecientes",
+            "content": "El Delta entrerriano presenta un clima subtropical húmedo sin estación seca. Las temperaturas medias oscilan entre 25°C y 32°C en verano (diciembre-marzo) y entre 10°C y 18°C en invierno (junio-septiembre). Las precipitaciones se distribuyen durante todo el año, con un promedio de 1200mm anuales, siendo algo más frecuentes en otoño y primavera. Un fenómeno característico de este ecosistema son las crecientes periódicas, originadas tanto por lluvias locales como por las que ocurren en la cuenca alta de los ríos Paraná y Uruguay. Las crecientes son parte natural del ciclo del delta y moldean constantemente el paisaje, renovando nutrientes y manteniendo la biodiversidad. Nuestras instalaciones están diseñadas considerando estos ciclos naturales, con estructuras elevadas y protocoles de seguridad bien establecidos. Normalmente, las crecientes más importantes ocurren entre febrero y abril, aunque el fenómeno de El Niño puede alterar estos patrones. Recomendamos consultar las previsiones hidrológicas antes de su visita, especialmente si planea venir entre febrero y mayo. Nuestro camping cierra temporalmente solo cuando se producen crecientes extraordinarias que superan ciertos niveles de seguridad.",
+            "category": "information"
+        }
+    ],
+    "tagIds": [
+        "027-tag-naturaleza",
+        "017-tag-familia",
+        "005-tag-aventura",
+        "012-tag-delta",
+        "015-tag-ecoturismo",
+        "016-tag-entre-rios"
+    ]
+}

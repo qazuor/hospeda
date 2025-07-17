@@ -1,0 +1,154 @@
+{
+    "id": "015-accommodation-colon-apartment-sueno-calido-apartment-colon",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "sueno-calido-apartment-colon",
+    "name": "sueno-calido-apartment",
+    "summary": "Descubre el confort y la calidez en Sueño Cálido Apartamento, ubicado en una zona tranquila de Colón, a solo minutos del centro y de las playas.",
+    "type": "APARTMENT",
+    "description": "Descubre el confort y la calidez en Sueño Cálido Apartamento, ubicado en una zona tranquila de Colón, a solo minutos del centro y de las playas. Este apartamento moderno y totalmente equipado es ideal para disfrutar de una estadía relajante, ya sea en pareja o en familia.\n\nEl apartamento cuenta con un dormitorio principal con cama queen y placard, y un área de estar luminosa con sofá cama y TV Smart. La cocina semi-integrada está equipada con horno, anafe, microondas, heladera con freezer y todos los utensilios necesarios para una estadía cómoda. Dispone de un baño completo con ducha.\n\nPodrás disfrutar de un pequeño balcón con vista lateral a un área verde. El edificio cuenta con acceso por escalera (no tiene ascensor). La ubicación te permite acceder fácilmente a supermercados, panaderías y a las vías de acceso para visitar las Termas de Colón o el Parque Nacional El Palmar. Un espacio diseñado para ofrecer una experiencia hogareña durante tus vacaciones o escapadas de fin de semana.",
+    "ownerId": "011-user-carmen-silva",
+    "destinationId": "002-destination-colon",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "contacto@suenocalidoapartment.com.ar",
+        "mobilePhone": "+549344715317620",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@suenocalidoapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/suenocalidoapartment",
+        "instagram": "https://instagram.com/suenocalidoapartment",
+        "twitter": "https://twitter.com/suenocalidoapartment"
+    },
+    "price": {
+        "basePrice": {
+            "price": 12500,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2500,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2840",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.2185",
+            "lng": "-58.1465"
+        },
+        "street": "Calle San Martín",
+        "number": "1230",
+        "floor": "1",
+        "apartment": "A",
+        "city": "Colón",
+        "neighborhood": "Barrio Tranquilo"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del living y dormitorio",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg",
+                "caption": "Ambiente principal",
+                "description": "Espacio integrado de living y dormitorio",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062430/pexels-photo-2062430.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada con horno",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "15:00",
+        "checkoutTime": "11:00",
+        "earlyCheckinAccepted": true,
+        "earlyCheckinTime": "13:00",
+        "lateCheckinAccepted": false,
+        "lateCheckoutAccepted": true,
+        "lateCheckoutTime": "12:00",
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 4,
+        "minNights": 2,
+        "maxNights": 20,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Edificio sin ascensor",
+            "Ideal para familias pequeñas",
+            "Cerca de supermercados"
+        ]
+    },
+    "seo": {
+        "title": "Sueño Cálido Apartamento - Cómodo alojamiento en Colón, Entre Ríos",
+        "description": "Apartamento cálido y equipado para 4 personas en Colón. Ubicación tranquila cerca del centro y las termas. Wifi, A/C.",
+        "keywords": [
+            "apartamento",
+            "colón",
+            "entre ríos",
+            "vacaciones",
+            "familiar",
+            "equipado",
+            "cómodo"
+        ]
+    },
+    "featureIds": [
+        "022-feature-private_entrance",
+        "006-feature-city_view"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "021-amenity-streaming_service",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "016-amenity-oven",
+        "011-amenity-hair_dryer",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [
+        {
+            "question": "¿El apartamento tiene lavarropas?",
+            "answer": "No, el apartamento no cuenta con lavarropas. Hay lavanderías en las cercanías.",
+            "category": "amenities"
+        },
+        {
+            "question": "¿Está permitido fumar?",
+            "answer": "No, está estrictamente prohibido fumar dentro del apartamento y en el balcón.",
+            "category": "policies"
+        }
+    ],
+    "iaData": [],
+    "tagIds": [
+        "033-tag-rio-parana",
+        "027-tag-naturaleza",
+        "017-tag-familia",
+        "039-tag-turismo",
+        "011-tag-cultura",
+        "016-tag-entre-rios"
+    ]
+}

@@ -1,0 +1,145 @@
+{
+    "id": "098-accommodation-uruguay-apartment-rio-natural-apartment-concepcion_del_uruguay",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "rio-natural-apartment-concepcion_del_uruguay",
+    "name": "rio-natural-apartment",
+    "summary": "Sumérgete en un ambiente relajado con un toque natural en Rio Natural Apartamento, ubicado en una zona tranquila de Concepción del Uruguay, cerca del río.",
+    "type": "APARTMENT",
+    "description": "Sumérgete en un ambiente relajado con un toque natural en Rio Natural Apartamento, ubicado en una zona tranquila de Concepción del Uruguay, cerca del río. Este apartamento moderno es ideal para quienes buscan comodidad y un acceso conveniente a espacios verdes y la costanera, sin estar en el bullicio del centro.\n\nEl apartamento ofrece un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (anafe, microondas, heladera). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, con detalles que evocan la naturaleza cercana.\n\nAunque no tiene vistas directas al río, su proximidad permite llegar caminando a la costanera en pocos minutos y disfrutar del entorno natural que ofrece el río Uruguay. El edificio es moderno y seguro. Es una excelente base para explorar las playas, la Isla del Puerto y el centro de Concepción del Uruguay en auto o bicicleta.",
+    "ownerId": "023-user-beatriz-sanchez",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@rionaturalapartment.com.ar",
+        "mobilePhone": "+549344215277585",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "info@rionaturalapartment.com.ar"
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/rionaturalapartment",
+        "twitter": "https://twitter.com/rionaturalapartment"
+    },
+    "price": {
+        "basePrice": {
+            "price": 12800,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 2100,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4826",
+            "lng": "-58.2352"
+        },
+        "street": "Calle Los Ceibos",
+        "number": "120",
+        "floor": "2",
+        "apartment": "C",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Zona Costanera"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+            "caption": "Interior del apartamento",
+            "description": "Vista del área de estar y cocina",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
+                "caption": "Living",
+                "description": "Espacio integrado de living y cocina",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
+                "caption": "Dormitorio",
+                "description": "Dormitorio con cama doble",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
+                "caption": "Baño",
+                "description": "Baño completo",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "21:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": true,
+        "selfCheckout": true
+    },
+    "extraInfo": {
+        "capacity": 3,
+        "minNights": 1,
+        "maxNights": 10,
+        "bedrooms": 1,
+        "beds": 2,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Cerca de la costanera",
+            "Barrio tranquilo",
+            "Ideal para parejas",
+            "Edificio con ascensor"
+        ]
+    },
+    "seo": {
+        "title": "Rio Natural - Apartamento cerca del río en Concepción del Uruguay",
+        "description": "Apartamento moderno y tranquilo en Concepción del Uruguay. Cerca de la costanera. Ideal para parejas. Equipado y cómodo.",
+        "keywords": [
+            "apartamento",
+            "concepción del uruguay",
+            "entre ríos",
+            "río uruguay",
+            "costanera",
+            "tranquilo",
+            "parejas"
+        ]
+    },
+    "featureIds": [
+        "022-feature-private_entrance",
+        "026-feature-river_access"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "015-amenity-microwave",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit",
+        "007-amenity-elevator"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "017-tag-familia",
+        "039-tag-turismo",
+        "011-tag-cultura",
+        "032-tag-relax",
+        "016-tag-entre-rios"
+    ]
+}

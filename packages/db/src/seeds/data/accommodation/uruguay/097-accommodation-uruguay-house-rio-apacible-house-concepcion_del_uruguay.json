@@ -1,0 +1,141 @@
+{
+    "id": "097-accommodation-uruguay-house-rio-apacible-house-concepcion_del_uruguay",
+    "$schema": "../../../schemas/accommodation.schema.json",
+    "slug": "rio-apacible-house-concepcion_del_uruguay",
+    "name": "rio-apacible-house",
+    "summary": "Disfruta de la tranquilidad del río en Rio Apacible House, una cómoda casa ubicada en una zona serena de Concepción del Uruguay, con acceso cercano a la costanera.",
+    "type": "HOUSE",
+    "description": "Disfruta de la tranquilidad del río en Rio Apacible House, una cómoda casa ubicada en una zona serena de Concepción del Uruguay, con acceso cercano a la costanera. Ideal para familias o grupos que buscan un espacio privado y relajado para sus vacaciones, a poca distancia de las playas y el movimiento de la ciudad.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio social funcional y luminoso. Está equipada con lo básico para una estadía confortable. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con parrilla, ideal para disfrutar de asados al aire libre. La cercanía a la costanera permite acceder fácilmente a pie a zonas verdes y con vistas al río Uruguay. Un lugar simple y apacible para descansar y disfrutar del entorno fluvial de Concepción del Uruguay.",
+    "ownerId": "032-user-raul-molina",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "reservas@rioapaciblehouse.com.ar",
+        "mobilePhone": "+549344215870391",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE",
+        "homeEmail": "hola@rioapaciblehouse.com.ar"
+    },
+    "price": {
+        "basePrice": {
+            "price": 19000,
+            "currency": "ARS"
+        },
+        "additionalFees": {
+            "cleaning": 3500,
+            "taxPercent": 21
+        }
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3260",
+        "country": "Argentina",
+        "coordinates": {
+            "lat": "-32.4839",
+            "lng": "-58.2254"
+        },
+        "street": "Calle del Puerto",
+        "number": "180",
+        "city": "Concepción del Uruguay",
+        "neighborhood": "Zona Costanera"
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+            "caption": "Casa simple y acogedora",
+            "description": "Vista exterior de Rio Apacible House",
+            "state": "ACTIVE"
+        },
+        "gallery": [
+            {
+                "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
+                "caption": "Exterior",
+                "description": "Fachada de la casa",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
+                "caption": "Living comedor",
+                "description": "Espacio integrado de living y comedor",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
+                "caption": "Cocina",
+                "description": "Cocina equipada",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
+                "caption": "Dormitorio",
+                "description": "Uno de los dormitorios",
+                "state": "ACTIVE"
+            },
+            {
+                "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
+                "caption": "Parrilla",
+                "description": "Parrilla exterior",
+                "state": "ACTIVE"
+            }
+        ]
+    },
+    "schedule": {
+        "checkinTime": "14:00",
+        "checkoutTime": "10:00",
+        "earlyCheckinAccepted": false,
+        "lateCheckinAccepted": true,
+        "lateCheckinTime": "20:00",
+        "lateCheckoutAccepted": false,
+        "selfCheckin": false,
+        "selfCheckout": false
+    },
+    "extraInfo": {
+        "capacity": 5,
+        "minNights": 2,
+        "maxNights": 15,
+        "bedrooms": 2,
+        "beds": 3,
+        "bathrooms": 1,
+        "smokingAllowed": false,
+        "extraInfo": [
+            "Cerca de la costanera",
+            "Parrilla exterior",
+            "Ideal para familias"
+        ]
+    },
+    "seo": {
+        "title": "Rio Apacible House - Casa tranquila cerca del río en Concepción del Uruguay",
+        "description": "Casa cómoda para 5 personas cerca de la costanera en Concepción del Uruguay. Entorno apacible, parrilla. Ideal vacaciones familiares.",
+        "keywords": [
+            "casa",
+            "concepción del uruguay",
+            "entre ríos",
+            "río uruguay",
+            "costanera",
+            "tranquilo",
+            "familiar"
+        ]
+    },
+    "featureIds": [
+        "001-feature-bbq_area",
+        "026-feature-river_access"
+    ],
+    "amenityIds": [
+        "025-amenity-wifi",
+        "001-amenity-air_conditioning",
+        "012-amenity-heating",
+        "022-amenity-tv",
+        "014-amenity-kitchen",
+        "018-amenity-refrigerator",
+        "008-amenity-fire_extinguisher",
+        "010-amenity-first_aid_kit"
+    ],
+    "faqs": [],
+    "iaData": [],
+    "tagIds": [
+        "017-tag-familia",
+        "027-tag-naturaleza",
+        "032-tag-relax",
+        "016-tag-entre-rios"
+    ]
+}

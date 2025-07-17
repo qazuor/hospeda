@@ -7,6 +7,10 @@
         "$schema": {
             "type": "string"
         },
+        "id": {
+            "type": "string",
+            "description": "Accommodation ID (UUID)"
+        },
         "slug": {
             "type": "string",
             "description": "URL-friendly identifier"
