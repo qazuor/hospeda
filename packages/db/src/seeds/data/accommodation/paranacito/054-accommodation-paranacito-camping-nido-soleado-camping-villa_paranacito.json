@@ -116,13 +116,11 @@
         "018-feature-nature_proximity"
     ],
     "amenityIds": [
-        "003-amenity-bbq_grill",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "003-amenity-outdoors-bbq_grill",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["016-tag-entre-rios"]
 }

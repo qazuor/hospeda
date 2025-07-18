@@ -160,18 +160,18 @@
         "020-feature-pet_friendly"
     ],
     "amenityIds": [
-        "025-amenity-wifi",
-        "001-amenity-air_conditioning",
-        "012-amenity-heating",
-        "014-amenity-kitchen",
-        "022-amenity-tv",
-        "003-amenity-bbq_grill",
-        "024-amenity-washer",
-        "011-amenity-hair_dryer",
-        "013-amenity-iron",
-        "010-amenity-first_aid_kit",
-        "008-amenity-fire_extinguisher",
-        "020-amenity-smoke_detector"
+        "025-amenity-connectivity-wifi",
+        "001-amenity-climate-control-air_conditioning",
+        "012-amenity-climate-control-heating",
+        "014-amenity-kitchen-kitchen",
+        "022-amenity-connectivity-tv",
+        "003-amenity-outdoors-bbq_grill",
+        "024-amenity-bed-and-bath-washer",
+        "011-amenity-climate-control-hair_dryer",
+        "013-amenity-bed-and-bath-iron",
+        "010-amenity-safety-first_aid_kit",
+        "008-amenity-safety-fire_extinguisher",
+        "020-amenity-safety-smoke_detector"
     ],
     "faqs": [
         {

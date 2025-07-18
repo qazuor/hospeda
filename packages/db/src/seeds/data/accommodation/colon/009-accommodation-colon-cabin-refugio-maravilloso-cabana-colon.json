@@ -140,16 +140,16 @@
         "019-feature-panoramic_view"
     ],
     "amenityIds": [
-        "025-amenity-wifi",
-        "001-amenity-air_conditioning",
-        "012-amenity-heating",
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "015-amenity-microwave",
-        "003-amenity-bbq_grill",
-        "011-amenity-hair_dryer",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "025-amenity-connectivity-wifi",
+        "001-amenity-climate-control-air_conditioning",
+        "012-amenity-climate-control-heating",
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "015-amenity-kitchen-microwave",
+        "003-amenity-outdoors-bbq_grill",
+        "011-amenity-climate-control-hair_dryer",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [
         {

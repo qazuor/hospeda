@@ -134,15 +134,15 @@
         "019-feature-panoramic_view"
     ],
     "amenityIds": [
-        "025-amenity-wifi",
-        "001-amenity-air_conditioning",
-        "012-amenity-heating",
-        "022-amenity-tv",
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "015-amenity-microwave",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "025-amenity-connectivity-wifi",
+        "001-amenity-climate-control-air_conditioning",
+        "012-amenity-climate-control-heating",
+        "022-amenity-connectivity-tv",
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "015-amenity-kitchen-microwave",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [
         {
@@ -158,7 +158,5 @@
             "category": "nature"
         }
     ],
-    "tagIds": [
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["016-tag-entre-rios"]
 }

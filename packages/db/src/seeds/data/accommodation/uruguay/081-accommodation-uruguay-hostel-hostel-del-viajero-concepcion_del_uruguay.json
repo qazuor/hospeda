@@ -148,22 +148,19 @@
             "viajeros"
         ]
     },
-    "featureIds": [
-        "013-feature-historic_property",
-        "023-feature-private_garden"
-    ],
+    "featureIds": ["013-feature-historic_property", "023-feature-private_garden"],
     "amenityIds": [
-        "025-amenity-wifi",
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "015-amenity-microwave",
-        "006-amenity-coffee_maker",
-        "005-amenity-ceiling_fan",
-        "004-amenity-board_games",
-        "024-amenity-washer",
-        "020-amenity-smoke_detector",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "025-amenity-connectivity-wifi",
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "015-amenity-kitchen-microwave",
+        "006-amenity-kitchen-coffee_maker",
+        "005-amenity-climate-control-ceiling_fan",
+        "004-amenity-entertainment-board_games",
+        "024-amenity-bed-and-bath-washer",
+        "020-amenity-safety-smoke_detector",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [
         {
@@ -219,10 +216,5 @@
             "category": "events"
         }
     ],
-    "tagIds": [
-        "017-tag-familia",
-        "039-tag-turismo",
-        "011-tag-cultura",
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"]
 }

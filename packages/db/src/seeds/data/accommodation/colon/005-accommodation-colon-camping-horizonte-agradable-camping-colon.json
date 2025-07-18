@@ -114,16 +114,13 @@
             "acampar"
         ]
     },
-    "featureIds": [
-        "028-feature-river_view",
-        "021-feature-private_beach_access"
-    ],
+    "featureIds": ["028-feature-river_view", "021-feature-private_beach_access"],
     "amenityIds": [
-        "003-amenity-bbq_grill",
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "003-amenity-outdoors-bbq_grill",
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [
         {
