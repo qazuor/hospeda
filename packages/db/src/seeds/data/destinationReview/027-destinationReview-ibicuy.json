@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "027-destinationReview-ibicuy",
+    "userId": "005-user-miguel-torres",
+    "destinationId": "ibicuy",
+    "title": "Muy buena experiencia familiar",
+    "content": "Viajamos en familia y todos quedamos encantados. Hay actividades para todas las edades, los espacios son seguros y la infraestructura está bien mantenida. Los precios son razonables y el servicio es cordial.",
+    "rating": {
+        "landscape": 4,
+        "attractions": 3,
+        "accessibility": 5,
+        "safety": 5,
+        "cleanliness": 3,
+        "hospitality": 4,
+        "culturalOffer": 4,
+        "gastronomy": 4,
+        "affordability": 3,
+        "nightlife": 3,
+        "infrastructure": 3,
+        "environmentalCare": 3,
+        "wifiAvailability": 3,
+        "shopping": 3,
+        "beaches": 4,
+        "greenSpaces": 3,
+        "localEvents": 2,
+        "weatherSatisfaction": 3
+    }
+}

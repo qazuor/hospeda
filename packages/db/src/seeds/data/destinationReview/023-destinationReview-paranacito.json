@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "023-destinationReview-paranacito",
+    "userId": "008-user-lucas-fernandez",
+    "destinationId": "paranacito",
+    "title": "Experiencia cultural enriquecedora",
+    "content": "Un destino que sorprende por su riqueza cultural e histórica. Los museos y sitios de interés están bien conservados. La oferta gastronómica es variada y los eventos locales son muy interesantes.",
+    "rating": {
+        "landscape": 4,
+        "attractions": 5,
+        "accessibility": 5,
+        "safety": 4,
+        "cleanliness": 4,
+        "hospitality": 3,
+        "culturalOffer": 5,
+        "gastronomy": 5,
+        "affordability": 4,
+        "nightlife": 2,
+        "infrastructure": 4,
+        "environmentalCare": 5,
+        "wifiAvailability": 3,
+        "shopping": 4,
+        "beaches": 3,
+        "greenSpaces": 3,
+        "localEvents": 5,
+        "weatherSatisfaction": 5
+    }
+}

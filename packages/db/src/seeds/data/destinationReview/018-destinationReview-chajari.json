@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "018-destinationReview-chajari",
+    "userId": "006-user-laura-vega",
+    "destinationId": "chajari",
+    "title": "Perfecto para turismo de naturaleza",
+    "content": "Si buscas conectar con la naturaleza, este es tu Chajarí. Los paisajes son espectaculares, hay muchas actividades al aire libre y el ambiente es muy tranquilo. Ideal para fotografía y senderismo.",
+    "rating": {
+        "landscape": 5,
+        "attractions": 5,
+        "accessibility": 3,
+        "safety": 5,
+        "cleanliness": 4,
+        "hospitality": 4,
+        "culturalOffer": 3,
+        "gastronomy": 5,
+        "affordability": 5,
+        "nightlife": 2,
+        "infrastructure": 3,
+        "environmentalCare": 4,
+        "wifiAvailability": 2,
+        "shopping": 1,
+        "beaches": 4,
+        "greenSpaces": 5,
+        "localEvents": 4,
+        "weatherSatisfaction": 5
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "025-destinationReview-chajari",
+    "userId": "003-user-usuario-invitado",
+    "destinationId": "chajari",
+    "title": "Muy buena experiencia familiar",
+    "content": "Viajamos en familia y todos quedamos encantados. Hay actividades para todas las edades, los espacios son seguros y la infraestructura está bien mantenida. Los precios son razonables y el servicio es cordial.",
+    "rating": {
+        "landscape": 5,
+        "attractions": 5,
+        "accessibility": 5,
+        "safety": 5,
+        "cleanliness": 5,
+        "hospitality": 5,
+        "culturalOffer": 4,
+        "gastronomy": 5,
+        "affordability": 3,
+        "nightlife": 1,
+        "infrastructure": 5,
+        "environmentalCare": 3,
+        "wifiAvailability": 4,
+        "shopping": 2,
+        "beaches": 4,
+        "greenSpaces": 3,
+        "localEvents": 2,
+        "weatherSatisfaction": 5
+    }
+}

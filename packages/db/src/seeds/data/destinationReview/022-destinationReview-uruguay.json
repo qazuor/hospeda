@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "022-destinationReview-uruguay",
+    "userId": "005-user-miguel-torres",
+    "destinationId": "uruguay",
+    "title": "Perfecto para turismo de naturaleza",
+    "content": "Si buscas conectar con la naturaleza, este es tu Uruguay. Los paisajes son espectaculares, hay muchas actividades al aire libre y el ambiente es muy tranquilo. Ideal para fotografía y senderismo.",
+    "rating": {
+        "landscape": 4,
+        "attractions": 5,
+        "accessibility": 4,
+        "safety": 3,
+        "cleanliness": 4,
+        "hospitality": 3,
+        "culturalOffer": 2,
+        "gastronomy": 3,
+        "affordability": 5,
+        "nightlife": 2,
+        "infrastructure": 2,
+        "environmentalCare": 5,
+        "wifiAvailability": 2,
+        "shopping": 2,
+        "beaches": 5,
+        "greenSpaces": 5,
+        "localEvents": 3,
+        "weatherSatisfaction": 3
+    }
+}
