@@ -105,21 +105,16 @@
             "compartido"
         ]
     },
-    "featureIds": [
-        "030-feature-shared_kitchen",
-        "018-feature-nature_proximity"
-    ],
+    "featureIds": ["030-feature-shared_kitchen", "018-feature-nature_proximity"],
     "amenityIds": [
-        "025-amenity-wifi",
-        "012-amenity-heating",
-        "018-amenity-refrigerator",
-        "015-amenity-microwave",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "025-amenity-connectivity-wifi",
+        "012-amenity-climate-control-heating",
+        "018-amenity-kitchen-refrigerator",
+        "015-amenity-kitchen-microwave",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["016-tag-entre-rios"]
 }

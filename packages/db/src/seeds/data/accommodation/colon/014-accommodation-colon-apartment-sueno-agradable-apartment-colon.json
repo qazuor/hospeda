@@ -107,18 +107,15 @@
             "costanera"
         ]
     },
-    "featureIds": [
-        "022-feature-private_entrance",
-        "006-feature-city_view"
-    ],
+    "featureIds": ["022-feature-private_entrance", "006-feature-city_view"],
     "amenityIds": [
-        "025-amenity-wifi",
-        "001-amenity-air_conditioning",
-        "012-amenity-heating",
-        "022-amenity-tv",
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "015-amenity-microwave"
+        "025-amenity-connectivity-wifi",
+        "001-amenity-climate-control-air_conditioning",
+        "012-amenity-climate-control-heating",
+        "022-amenity-connectivity-tv",
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "015-amenity-kitchen-microwave"
     ],
     "faqs": [
         {

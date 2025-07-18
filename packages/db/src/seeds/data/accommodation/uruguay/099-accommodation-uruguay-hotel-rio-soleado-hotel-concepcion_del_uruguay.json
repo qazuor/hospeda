@@ -124,20 +124,17 @@
             "alojamiento"
         ]
     },
-    "featureIds": [
-        "028-feature-river_view",
-        "005-feature-city_center"
-    ],
+    "featureIds": ["028-feature-river_view", "005-feature-city_center"],
     "amenityIds": [
-        "025-amenity-wifi",
-        "001-amenity-air_conditioning",
-        "012-amenity-heating",
-        "022-amenity-tv",
-        "018-amenity-refrigerator",
-        "011-amenity-hair_dryer",
-        "020-amenity-smoke_detector",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "025-amenity-connectivity-wifi",
+        "001-amenity-climate-control-air_conditioning",
+        "012-amenity-climate-control-heating",
+        "022-amenity-connectivity-tv",
+        "018-amenity-kitchen-refrigerator",
+        "011-amenity-climate-control-hair_dryer",
+        "020-amenity-safety-smoke_detector",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [
         {
@@ -152,10 +149,5 @@
         }
     ],
     "iaData": [],
-    "tagIds": [
-        "017-tag-familia",
-        "039-tag-turismo",
-        "011-tag-cultura",
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"]
 }

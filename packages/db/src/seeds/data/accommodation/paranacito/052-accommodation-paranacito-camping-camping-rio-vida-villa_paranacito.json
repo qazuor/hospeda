@@ -166,13 +166,13 @@
         "009-feature-eco_friendly"
     ],
     "amenityIds": [
-        "025-amenity-wifi",
-        "003-amenity-bbq_grill",
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit",
-        "004-amenity-board_games"
+        "025-amenity-connectivity-wifi",
+        "003-amenity-outdoors-bbq_grill",
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit",
+        "004-amenity-entertainment-board_games"
     ],
     "faqs": [
         {

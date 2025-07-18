@@ -163,20 +163,20 @@
         "034-feature-unique_design"
     ],
     "amenityIds": [
-        "025-amenity-wifi",
-        "001-amenity-air_conditioning",
-        "012-amenity-heating",
-        "022-amenity-tv",
-        "021-amenity-streaming_service",
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "015-amenity-microwave",
-        "006-amenity-coffee_maker",
-        "011-amenity-hair_dryer",
-        "013-amenity-iron",
-        "007-amenity-elevator",
-        "026-amenity-workspace",
-        "023-amenity-usb_outlets"
+        "025-amenity-connectivity-wifi",
+        "001-amenity-climate-control-air_conditioning",
+        "012-amenity-climate-control-heating",
+        "022-amenity-connectivity-tv",
+        "021-amenity-connectivity-streaming_service",
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "015-amenity-kitchen-microwave",
+        "006-amenity-kitchen-coffee_maker",
+        "011-amenity-climate-control-hair_dryer",
+        "013-amenity-bed-and-bath-iron",
+        "007-amenity-accessibility-elevator",
+        "026-amenity-services-workspace",
+        "023-amenity-connectivity-usb_outlets"
     ],
     "faqs": [
         {

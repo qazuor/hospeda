@@ -129,10 +129,10 @@
         "009-feature-eco_friendly"
     ],
     "amenityIds": [
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [
         {

@@ -119,16 +119,12 @@
             "senderismo"
         ]
     },
-    "featureIds": [
-        "029-feature-shaded_area",
-        "001-feature-bbq_area",
-        "020-feature-pet_friendly"
-    ],
+    "featureIds": ["029-feature-shaded_area", "001-feature-bbq_area", "020-feature-pet_friendly"],
     "amenityIds": [
-        "003-amenity-bbq_grill",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit",
-        "017-amenity-playground"
+        "003-amenity-outdoors-bbq_grill",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit",
+        "017-amenity-outdoors-playground"
     ],
     "faqs": [
         {

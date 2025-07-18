@@ -97,11 +97,7 @@
         "beds": 3,
         "bathrooms": 1,
         "smokingAllowed": false,
-        "extraInfo": [
-            "Cerca de la costanera",
-            "Parrilla exterior",
-            "Ideal para familias"
-        ]
+        "extraInfo": ["Cerca de la costanera", "Parrilla exterior", "Ideal para familias"]
     },
     "seo": {
         "title": "Rio Apacible House - Casa tranquila cerca del río en Concepción del Uruguay",
@@ -116,26 +112,18 @@
             "familiar"
         ]
     },
-    "featureIds": [
-        "001-feature-bbq_area",
-        "026-feature-river_access"
-    ],
+    "featureIds": ["001-feature-bbq_area", "026-feature-river_access"],
     "amenityIds": [
-        "025-amenity-wifi",
-        "001-amenity-air_conditioning",
-        "012-amenity-heating",
-        "022-amenity-tv",
-        "014-amenity-kitchen",
-        "018-amenity-refrigerator",
-        "008-amenity-fire_extinguisher",
-        "010-amenity-first_aid_kit"
+        "025-amenity-connectivity-wifi",
+        "001-amenity-climate-control-air_conditioning",
+        "012-amenity-climate-control-heating",
+        "022-amenity-connectivity-tv",
+        "014-amenity-kitchen-kitchen",
+        "018-amenity-kitchen-refrigerator",
+        "008-amenity-safety-fire_extinguisher",
+        "010-amenity-safety-first_aid_kit"
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "017-tag-familia",
-        "027-tag-naturaleza",
-        "032-tag-relax",
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["017-tag-familia", "027-tag-naturaleza", "032-tag-relax", "016-tag-entre-rios"]
 }
