@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/eventOrganizer.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d504",
+    "id": "001-eventOrganizer-turismo-de-gualeguaychu",
     "name": "Cámara de Turismo de Gualeguaychú",
     "logo": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop",
     "contactInfo": {
