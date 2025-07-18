@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "029-feature-shaded_area",
+    "name": "shaded_area",
+    "slug": "shaded_area",
+    "description": "Sombra natural",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

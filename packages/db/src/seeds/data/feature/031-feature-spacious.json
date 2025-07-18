@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "031-feature-spacious",
+    "name": "spacious",
+    "slug": "spacious",
+    "description": "Ambientes amplios",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

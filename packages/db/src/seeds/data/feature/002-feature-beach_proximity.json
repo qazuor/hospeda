@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "002-feature-beach_proximity",
+    "name": "beach_proximity",
+    "slug": "beach_proximity",
+    "description": "Cerca de la playa",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

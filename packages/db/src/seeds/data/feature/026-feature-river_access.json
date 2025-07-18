@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "026-feature-river_access",
+    "name": "river_access",
+    "slug": "river_access",
+    "description": "Acceso directo al arroyo",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

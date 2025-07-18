@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "034-feature-unique_design",
+    "name": "unique_design",
+    "slug": "unique_design",
+    "description": "Diseño industrial-minimalista",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

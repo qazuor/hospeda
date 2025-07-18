@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "019-feature-panoramic_view",
+    "name": "panoramic_view",
+    "slug": "panoramic_view",
+    "description": "Vistas espectaculares",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

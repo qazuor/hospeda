@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "024-feature-private_pool",
+    "name": "private_pool",
+    "slug": "private_pool",
+    "description": "Piscina amplia con solarium",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}
