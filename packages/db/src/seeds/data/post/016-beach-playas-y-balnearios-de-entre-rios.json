@@ -1,0 +1,42 @@
+{
+    "$schema": "../../schemas/post.schema.json",
+    "id": "016-beach-playas-y-balnearios-de-entre-rios",
+    "slug": "playas-y-balnearios-de-entre-rios",
+    "category": "BEACH",
+    "title": "Playas y Balnearios de Entre Ríos",
+    "summary": "Disfruta de las mejores playas fluviales de la provincia en verano.",
+    "content": "Las playas entrerrianas ofrecen un refrescante escape durante el verano. Desde las playas de Colón hasta los balnearios de Gualeguaychú, las opciones para disfrutar del sol y el agua son abundantes.",
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1542154723?w=1200&h=600&fit=crop",
+            "caption": "Imagen de Playas y Balnearios de Entre Ríos"
+        }
+    },
+    "authorId": "012-user-fernando-lopez",
+    "sponsorshipId": null,
+    "relatedDestinationId": "011-destination-concepcion-del-uruguay",
+    "relatedAccommodationId": null,
+    "relatedEventId": null,
+    "visibility": "PUBLIC",
+    "isNews": false,
+    "isFeaturedInWebsite": true,
+    "expiresAt": null,
+    "likes": 135,
+    "comments": 63,
+    "shares": 140,
+    "isFeatured": true,
+    "seo": {
+        "title": "Playas y Balnearios de Entre Ríos | Hospeda",
+        "description": "Disfruta de las mejores playas fluviales de la provincia en verano.",
+        "keywords": ["beach", "entre rios", "turismo"]
+    },
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "tags": [
+        "026-tag-musica",
+        "013-tag-deportes",
+        "040-tag-verano",
+        "001-tag-aguas-termales",
+        "036-tag-spa"
+    ]
+}

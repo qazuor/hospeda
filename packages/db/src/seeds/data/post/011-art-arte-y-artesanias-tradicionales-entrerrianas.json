@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schemas/post.schema.json",
+  "id": "011-art-arte-y-artesanias-tradicionales-entrerrianas",
+  "slug": "arte-y-artesanias-tradicionales-entrerrianas",
+  "category": "ART",
+  "title": "Arte y Artesanías Tradicionales Entrerrianas",
+  "summary": "Conoce el trabajo artesanal local: desde la cerámica hasta los tejidos tradicionales.",
+  "content": "El arte entrerriano tiene profundas raíces en las tradiciones locales. Los artesanos trabajan con materiales autóctonos como el junco, la totora y las maderas del delta, creando piezas únicas que reflejan la identidad regional.",
+  "media": {
+    "featuredImage": {
+      "url": "https://images.unsplash.com/photo-1582253541?w=1200&h=600&fit=crop",
+      "caption": "Imagen de Arte y Artesanías Tradicionales Entrerrianas"
+    }
+  },
+  "authorId": "001-user-maría-gonzález",
+  "sponsorshipId": "021-postSponsorship-destinos-imperdibles-001",
+  "relatedDestinationId": "002-destination-colon",
+  "relatedAccommodationId": null,
+  "relatedEventId": null,
+  "visibility": "PUBLIC",
+  "isNews": true,
+  "isFeaturedInWebsite": false,
+  "expiresAt": null,
+  "likes": 216,
+  "comments": 54,
+  "shares": 123,
+  "isFeatured": false,
+  "seo": {
+    "title": "Arte y Artesanías Tradicionales Entrerrianas | Hospeda",
+    "description": "Conoce el trabajo artesanal local: desde la cerámica hasta los tejidos tradicionales.",
+    "keywords": [
+      "art",
+      "entre rios",
+      "turismo"
+    ]
+  },
+  "lifecycleState": "ACTIVE",
+  "moderationState": "APPROVED",
+  "tags": [
+    "028-tag-observacion-fauna",
+    "038-tag-termas",
+    "027-tag-naturaleza",
+    "026-tag-musica",
+    "022-tag-historia"
+  ]
+}

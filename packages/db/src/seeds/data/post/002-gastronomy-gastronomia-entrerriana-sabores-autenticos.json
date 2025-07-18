@@ -1,0 +1,61 @@
+{
+  "$schema": "../../schemas/post.schema.json",
+  "id": "002-gastronomy-gastronomia-entrerriana-sabores-autenticos",
+  "slug": "gastronomia-entrerriana-sabores-autenticos",
+  "category": "GASTRONOMY",
+  "title": "Gastronomía Entrerriana: Sabores Auténticos del Litoral",
+  "summary": "Un recorrido por los sabores más representativos de Entre Ríos: desde el famoso asado a la parrilla hasta las delicias del río. Descubre restaurantes imperdibles y recetas tradicionales.",
+  "content": "La gastronomía entrerriana es un reflejo fiel de la identidad cultural de la provincia. Con influencias guaraníes, criollas y europeas, la cocina local ofrece una experiencia culinaria única que combina productos del río con tradiciones del campo.\n\n**Platos Típicos Imperdibles:**\n\n**Pacú a la parrilla**\nPescado de río por excelencia, el pacú se prepara tradicionalmente a la parrilla con limón y chimichurri. Su carne blanca y suave lo convierte en el favorito de locales y visitantes.\n\n**Surubí en salsa**\nOtro tesoro del río Paraná, el surubí se prepara con diversas salsas, siendo la más popular la salsa criolla con tomate, cebolla y pimientos.\n\n**Dorado al horno**\nEl dorado, conocido como el 'tigre del río', se cocina al horno con hierbas aromáticas y es considerado uno de los pescados más sabrosos del litoral.\n\n**Dulces y Postres:**\n\n**Dulce de mamón**\nElaborado con la papaya local, es un dulce tradicional que se sirve con queso fresco.\n\n**Dulce de batata**\nEspecialidad regional que se combina perfectamente con queso cremoso.\n\n**Restaurantes Recomendados:**\n\n- **La Casona del Río** (Federación): Especializado en pescados de río con vista al lago\n- **El Quincho de Juancho** (Colón): Parrilla tradicional con ambiente familiar\n- **Sabores del Litoral** (Gualeguaychú): Cocina fusión con ingredientes locales\n\nLa gastronomía entrerriana es una invitación a descubrir sabores auténticos que conectan con la historia y la naturaleza de esta hermosa provincia.",
+  "media": {
+    "gallery": [
+      {
+        "url": "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop",
+        "caption": "Parrilla con pescado"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1563379091339-03246963d51a?w=800&h=600&fit=crop",
+        "caption": "Dulce de mamón"
+      }
+    ],
+    "featuredImage": {
+      "url": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1200&h=600&fit=crop",
+      "caption": "Plato típico de pescado del río"
+    }
+  },
+  "authorId": "008-user-lucas-fernandez",
+  "sponsorshipId": "021-postSponsorship-destinos-imperdibles-001",
+  "relatedDestinationId": null,
+  "relatedEventId": null,
+  "visibility": "PUBLIC",
+  "isNews": false,
+  "isFeaturedInWebsite": false,
+  "expiresAt": null,
+  "likes": 189,
+  "comments": 45,
+  "shares": 23,
+  "isFeatured": false,
+  "seo": {
+    "title": "Gastronomía Entrerriana: Sabores Auténticos del Litoral | Hospeda",
+    "description": "Descubre los sabores más representativos de Entre Ríos: pescados del río, dulces tradicionales y restaurantes recomendados. Guía gastronómica completa.",
+    "keywords": [
+      "gastronomía",
+      "Entre Ríos",
+      "pescados",
+      "comida regional",
+      "restaurantes",
+      "pacú",
+      "surubí",
+      "dorado",
+      "dulces"
+    ]
+  },
+  "lifecycleState": "ACTIVE",
+  "moderationState": "APPROVED",
+  "tags": [
+    "041-tag-vida-nocturna",
+    "029-tag-pareja",
+    "038-tag-termas",
+    "031-tag-playas"
+  ],
+  "relatedAccommodationId": null
+}

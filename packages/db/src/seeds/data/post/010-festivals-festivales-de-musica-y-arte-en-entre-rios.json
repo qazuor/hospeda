@@ -1,0 +1,43 @@
+{
+  "$schema": "../../schemas/post.schema.json",
+  "id": "010-festivals-festivales-de-musica-y-arte-en-entre-rios",
+  "slug": "festivales-de-musica-y-arte-en-entre-rios",
+  "category": "FESTIVALS",
+  "title": "Festivales de Música y Arte en Entre Ríos",
+  "summary": "Descubre los festivales más importantes de la provincia, desde el rock hasta la música folclórica.",
+  "content": "La escena musical entrerriana es vibrante y diversa. Los festivales de música atraen a miles de visitantes cada año, ofreciendo desde rock nacional hasta folclore tradicional. El Festival del Río en Colón y el Festival de Cosquín Chico son solo algunos ejemplos.",
+  "media": {
+    "featuredImage": {
+      "url": "https://images.unsplash.com/photo-1514751599?w=1200&h=600&fit=crop",
+      "caption": "Imagen de Festivales de Música y Arte en Entre Ríos"
+    }
+  },
+  "authorId": "008-user-lucas-fernandez",
+  "sponsorshipId": "017-postSponsorship-aventura-parana-004",
+  "relatedDestinationId": "002-destination-colon",
+  "relatedAccommodationId": null,
+  "relatedEventId": null,
+  "visibility": "PUBLIC",
+  "isNews": false,
+  "isFeaturedInWebsite": true,
+  "expiresAt": null,
+  "likes": 426,
+  "comments": 69,
+  "shares": 142,
+  "isFeatured": false,
+  "seo": {
+    "title": "Festivales de Música y Arte en Entre Ríos | Hospeda",
+    "description": "Descubre los festivales más importantes de la provincia, desde el rock hasta la música folclórica.",
+    "keywords": [
+      "festivals",
+      "entre rios",
+      "turismo"
+    ]
+  },
+  "lifecycleState": "ACTIVE",
+  "moderationState": "APPROVED",
+  "tags": [
+    "026-tag-musica",
+    "029-tag-pareja"
+  ]
+}

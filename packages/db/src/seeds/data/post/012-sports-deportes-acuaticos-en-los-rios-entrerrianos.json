@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schemas/post.schema.json",
+  "id": "012-sports-deportes-acuaticos-en-los-rios-entrerrianos",
+  "slug": "deportes-acuaticos-en-los-rios-entrerrianos",
+  "category": "SPORTS",
+  "title": "Deportes Acuáticos en los Ríos Entrerrianos",
+  "summary": "Practica deportes acuáticos en los ríos Uruguay y Paraná: kayak, windsurf, pesca deportiva y más.",
+  "content": "Los ríos de Entre Ríos ofrecen condiciones ideales para deportes acuáticos. Desde kayak en el delta hasta windsurf en el lago Salto Grande, las opciones son infinitas para los amantes de los deportes acuáticos.",
+  "media": {
+    "featuredImage": {
+      "url": "https://images.unsplash.com/photo-1550311161?w=1200&h=600&fit=crop",
+      "caption": "Imagen de Deportes Acuáticos en los Ríos Entrerrianos"
+    }
+  },
+  "authorId": "006-user-laura-vega",
+  "sponsorshipId": "019-postSponsorship-gastronomia-regional-003",
+  "relatedDestinationId": null,
+  "relatedAccommodationId": null,
+  "relatedEventId": null,
+  "visibility": "PUBLIC",
+  "isNews": true,
+  "isFeaturedInWebsite": false,
+  "expiresAt": null,
+  "likes": 145,
+  "comments": 18,
+  "shares": 42,
+  "isFeatured": true,
+  "seo": {
+    "title": "Deportes Acuáticos en los Ríos Entrerrianos | Hospeda",
+    "description": "Practica deportes acuáticos en los ríos Uruguay y Paraná: kayak, windsurf, pesca deportiva y más.",
+    "keywords": [
+      "sports",
+      "entre rios",
+      "turismo"
+    ]
+  },
+  "lifecycleState": "ACTIVE",
+  "moderationState": "APPROVED",
+  "tags": [
+    "011-tag-cultura",
+    "001-tag-aguas-termales",
+    "015-tag-ecoturismo",
+    "010-tag-compras",
+    "043-tag-yoga"
+  ]
+}
