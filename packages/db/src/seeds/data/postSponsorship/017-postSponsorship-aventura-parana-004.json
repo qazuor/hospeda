@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/postSponsorship.schema.json",
-    "id": "psp-aventura-post-004",
-    "sponsorId": "ps-aventura-parana-004",
+    "id": "017-postSponsorship-aventura-parana-004",
+    "sponsorId": "012-postSponsor-postSponsor-aventura-paran",
     "postId": "post-aventura-parana-004",
     "message": "Viví la aventura en el río Paraná",
     "description": "Experiencia única: 25% de descuento en excursiones de kayak y deportes acuáticos para lectores que reserven mencionando este artículo.",

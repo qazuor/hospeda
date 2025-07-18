@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/postSponsorship.schema.json",
-    "id": "psp-termas-post-002",
-    "sponsorId": "ps-termas-unidas-002",
+    "id": "020-postSponsorship-termas-bienestar-002",
+    "sponsorId": "015-postSponsor-postSponsor-termas-unidas",
     "postId": "post-termas-bienestar-002",
     "message": "Relájate en las mejores termas de Entre Ríos",
     "description": "Oferta especial para visitantes: 20% de descuento en servicios termales presentando este artículo en cualquiera de nuestros complejos asociados.",

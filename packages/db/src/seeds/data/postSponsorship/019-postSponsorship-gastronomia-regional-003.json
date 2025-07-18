@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/postSponsorship.schema.json",
-    "id": "psp-sabores-post-003",
-    "sponsorId": "ps-sabores-litoral-003",
+    "id": "019-postSponsorship-gastronomia-regional-003",
+    "sponsorId": "014-postSponsor-postSponsor-sabores-del-litoral",
     "postId": "post-gastronomia-regional-003",
     "message": "Saboreá lo mejor de la gastronomía entrerriana",
     "description": "Descuento especial del 10% en restaurantes asociados presentando este artículo. Válido en más de 20 establecimientos gastronómicos de la provincia.",
