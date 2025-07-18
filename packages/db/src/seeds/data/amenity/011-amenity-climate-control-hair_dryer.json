@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "fea7a5dd-00b7-49c3-a52d-58596c337587",
-    "name": "ceiling_fan",
-    "slug": "ceiling_fan",
-    "description": "Ceiling Fan",
+    "id": "011-amenity-climate-control-hair_dryer",
+    "name": "hair_dryer",
+    "slug": "hair_dryer",
+    "description": "Hair Dryer",
     "type": "CLIMATE_CONTROL",
     "icon": "amenity",
     "isBuiltin": false,

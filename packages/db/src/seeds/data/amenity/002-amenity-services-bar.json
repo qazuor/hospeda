@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "3d826d2d-3895-415f-bab7-6148abca5434",
+    "id": "002-amenity-services-bar",
     "name": "bar",
     "slug": "bar",
     "description": "Bar",

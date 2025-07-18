@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "5df75b3e-1f48-40fe-ad77-3cae754982ab",
+    "id": "013-amenity-bed-and-bath-iron",
     "name": "iron",
     "slug": "iron",
     "description": "Iron",

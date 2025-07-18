@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "d525fc8e-d5e8-4425-8936-3bcd9dfa6897",
+    "id": "008-amenity-safety-fire_extinguisher",
     "name": "fire_extinguisher",
     "slug": "fire_extinguisher",
     "description": "Fire Extinguisher",

@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "a14dc9e1-6290-4fda-8078-2e5112716b45",
-    "name": "coffee_maker",
-    "slug": "coffee_maker",
-    "description": "Coffee Maker",
+    "id": "014-amenity-kitchen-kitchen",
+    "name": "kitchen",
+    "slug": "kitchen",
+    "description": "Kitchen",
     "type": "KITCHEN",
     "icon": "amenity",
     "isBuiltin": false,

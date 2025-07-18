@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "dd386c1d-790a-4c32-ab8f-995829c2af59",
-    "name": "heating",
-    "slug": "heating",
-    "description": "Heating",
+    "id": "005-amenity-climate-control-ceiling_fan",
+    "name": "ceiling_fan",
+    "slug": "ceiling_fan",
+    "description": "Ceiling Fan",
     "type": "CLIMATE_CONTROL",
     "icon": "amenity",
     "isBuiltin": false,

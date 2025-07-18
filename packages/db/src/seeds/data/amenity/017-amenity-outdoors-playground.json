@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "55196c2d-3fa4-4797-ae33-798ca841f832",
-    "name": "bbq_grill",
-    "slug": "bbq_grill",
-    "description": "Bbq Grill",
+    "id": "017-amenity-outdoors-playground",
+    "name": "playground",
+    "slug": "playground",
+    "description": "Playground",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,

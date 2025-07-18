@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "d1ab58f3-0f1b-4217-864d-3b11926d5a69",
-    "name": "refrigerator",
-    "slug": "refrigerator",
-    "description": "Refrigerator",
+    "id": "015-amenity-kitchen-microwave",
+    "name": "microwave",
+    "slug": "microwave",
+    "description": "Microwave",
     "type": "KITCHEN",
     "icon": "amenity",
     "isBuiltin": false,

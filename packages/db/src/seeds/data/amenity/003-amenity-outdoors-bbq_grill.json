@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "d03cf19f-e2cc-4949-99fc-e669b64c867d",
-    "name": "fireplace",
-    "slug": "fireplace",
-    "description": "Fireplace",
+    "id": "003-amenity-outdoors-bbq_grill",
+    "name": "bbq_grill",
+    "slug": "bbq_grill",
+    "description": "Bbq Grill",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,
