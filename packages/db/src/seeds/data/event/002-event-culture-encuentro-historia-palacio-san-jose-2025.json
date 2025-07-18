@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/event.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d705",
+    "id": "002-event-culture-encuentro-historia-palacio-san-jose-2025",
     "slug": "encuentro-historia-palacio-san-jose-2025",
     "name": "Encuentro de Historia en Palacio San José 2025",
     "summary": "Jornadas culturales e históricas en la residencia histórica de Justo José de Urquiza",
@@ -10,9 +10,9 @@
         "start": "2025-06-14T10:00:00-03:00",
         "end": "2025-06-15T18:00:00-03:00"
     },
-    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d605",
-    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d502",
+    "authorId": "001-user-maría-gonzález",
+    "locationId": "006-eventLocation-concordia-teatro-pedro-barbero",
+    "organizerId": "002-eventOrganizer-concordia",
     "pricing": {
         "isFree": false,
         "price": 3500,
@@ -42,13 +42,7 @@
     "seo": {
         "title": "Encuentro de Historia Palacio San José 2025 - Cultura e Historia - Hospeda",
         "description": "Jornadas culturales e históricas en el Palacio San José. Conferencias y exposiciones en un marco histórico único.",
-        "keywords": [
-            "historia",
-            "palacio-san-jose",
-            "cultura",
-            "urquiza",
-            "patrimonio"
-        ]
+        "keywords": ["historia", "palacio-san-jose", "cultura", "urquiza", "patrimonio"]
     },
     "lifecycleState": "ACTIVE",
     "tagIds": []

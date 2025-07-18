@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/event.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d701",
+    "id": "001-event-festival-carnaval-del-pais-2025",
     "slug": "carnaval-del-pais-2025",
     "name": "Carnaval del País 2025",
     "summary": "El carnaval más importante de Argentina llega a Gualeguaychú con espectáculos únicos",
@@ -10,9 +10,9 @@
         "start": "2025-02-01T20:00:00-03:00",
         "end": "2025-02-23T02:00:00-03:00"
     },
-    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d602",
-    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d504",
+    "authorId": "002-user-carlos-martínez",
+    "locationId": "004-eventLocation-concepción-del-uruguay-palacio-san-josé",
+    "organizerId": "003-eventOrganizer-cultural-entre-rios",
     "pricing": {
         "isFree": false,
         "price": 15000,
@@ -22,12 +22,12 @@
     "isFeatured": true,
     "tagIds": [
         "tag-festivales",
-        "tag-musica-023",
-        "tag-cultura-006",
+        "026-tag-musica",
+        "011-tag-cultura",
         "tag-familia-004",
         "tag-vida-nocturna",
         "tag-entre-rios-003",
-        "tag-teatro-024"
+        "037-tag-teatro"
     ],
     "media": {
         "featuredImage": {
@@ -51,13 +51,7 @@
     "seo": {
         "title": "Carnaval del País 2025 - Gualeguaychú - Hospeda",
         "description": "Vive el carnaval más importante de Argentina. Tres fines de semana de espectáculos únicos en el Corsódromo de Gualeguaychú.",
-        "keywords": [
-            "carnaval",
-            "gualeguaychu",
-            "festival",
-            "entre rios",
-            "argentina"
-        ]
+        "keywords": ["carnaval", "gualeguaychu", "festival", "entre rios", "argentina"]
     },
     "lifecycleState": "ACTIVE"
 }

@@ -1,0 +1,32 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "020-event-business-mercado-itinerante",
+    "slug": "mercado-itinerante",
+    "name": "Mercado Itinerante",
+    "summary": "Evento business - Mercado Itinerante",
+    "description": "Descripción detallada del evento Mercado Itinerante. Este es un evento de categoría BUSINESS que se desarrolla en Entre Ríos.",
+    "category": "OTHER",
+    "authorId": "002-user-carlos-martínez",
+    "pricing": {
+        "isFree": true
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1512540427036?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Mercado Itinerante",
+            "description": "Descripción de la imagen del evento Mercado Itinerante"
+        }
+    },
+    "seo": {
+        "title": "Mercado Itinerante - Entre Ríos - Hospeda",
+        "description": "Participa en Mercado Itinerante, un evento imperdible en Entre Ríos.",
+        "keywords": ["business", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-12-21T00:00:00-03:00"
+    }
+}

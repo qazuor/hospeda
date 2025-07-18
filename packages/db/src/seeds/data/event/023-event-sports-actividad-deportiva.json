@@ -1,0 +1,34 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "023-event-sports-actividad-deportiva",
+    "slug": "actividad-deportiva",
+    "name": "Actividad Deportiva",
+    "summary": "Evento sports - Actividad Deportiva",
+    "description": "Descripción detallada del evento Actividad Deportiva. Este es un evento de categoría SPORTS que se desarrolla en Entre Ríos.",
+    "category": "SPORTS",
+    "authorId": "007-user-super-administrator",
+    "pricing": {
+        "isFree": false,
+        "price": 7122,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1696539946355?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Actividad Deportiva",
+            "description": "Descripción de la imagen del evento Actividad Deportiva"
+        }
+    },
+    "seo": {
+        "title": "Actividad Deportiva - Entre Ríos - Hospeda",
+        "description": "Participa en Actividad Deportiva, un evento imperdible en Entre Ríos.",
+        "keywords": ["sports", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-12-25T00:00:00-03:00"
+    }
+}

@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/event.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d704",
+    "id": "004-event-gastronomy-festival-gastronomico-termas-federacion-2025",
     "slug": "festival-gastronomico-termas-federacion-2025",
     "name": "Festival Gastronómico Termas de Federación 2025",
     "summary": "Festival gastronómico con productos locales y wellness en las termas de Federación",
@@ -10,9 +10,9 @@
         "start": "2025-05-10T11:00:00-03:00",
         "end": "2025-05-11T22:00:00-03:00"
     },
-    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d604",
-    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d505",
+    "authorId": "002-user-carlos-martínez",
+    "locationId": "002-eventLocation-federacion-complejo-termal-federación",
+    "organizerId": "005-eventOrganizer-productores-rurales",
     "pricing": {
         "isFree": false,
         "price": 8000,
@@ -49,13 +49,7 @@
     "seo": {
         "title": "Festival Gastronómico Termas de Federación 2025 - Gastronomía y Wellness - Hospeda",
         "description": "Festival gastronómico con productos locales y experiencia termal en Federación. Gastronomía y relajación en un mismo lugar.",
-        "keywords": [
-            "gastronomia",
-            "federacion",
-            "termas",
-            "wellness",
-            "productos-locales"
-        ]
+        "keywords": ["gastronomia", "federacion", "termas", "wellness", "productos-locales"]
     },
     "lifecycleState": "ACTIVE"
 }

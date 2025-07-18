@@ -1,0 +1,33 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "015-event-education-charla-turismo",
+    "slug": "charla-turismo",
+    "name": "Charla de Turismo",
+    "summary": "Evento education - Charla de Turismo",
+    "description": "Descripción detallada del evento Charla de Turismo. Este es un evento de categoría EDUCATION que se desarrolla en Entre Ríos.",
+    "category": "OTHER",
+    "authorId": "006-user-laura-vega",
+    "pricing": {
+        "isFree": true
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1651069644073?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Charla de Turismo",
+            "description": "Descripción de la imagen del evento Charla de Turismo"
+        }
+    },
+    "seo": {
+        "title": "Charla de Turismo - Entre Ríos - Hospeda",
+        "description": "Participa en Charla de Turismo, un evento imperdible en Entre Ríos.",
+        "keywords": ["education", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "organizerId": "003-eventOrganizer-cultural-entre-rios",
+    "date": {
+        "start": "2026-04-10T00:00:00-03:00"
+    }
+}

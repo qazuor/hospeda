@@ -1,0 +1,36 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "008-event-culture-exposicion-arte",
+    "slug": "exposicion-arte",
+    "name": "Exposición de Arte",
+    "summary": "Evento culture - Exposición de Arte",
+    "description": "Descripción detallada del evento Exposición de Arte. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
+    "category": "CULTURE",
+    "authorId": "007-user-super-administrator",
+    "pricing": {
+        "isFree": false,
+        "price": 16520,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": true,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1514030403714?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Exposición de Arte",
+            "description": "Descripción de la imagen del evento Exposición de Arte"
+        }
+    },
+    "seo": {
+        "title": "Exposición de Arte - Entre Ríos - Hospeda",
+        "description": "Participa en Exposición de Arte, un evento imperdible en Entre Ríos.",
+        "keywords": ["culture", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-04-22T00:00:00-03:00",
+        "end": "2025-04-25T00:00:00-03:00"
+    },
+    "locationId": "004-eventLocation-concepción-del-uruguay-palacio-san-josé"
+}

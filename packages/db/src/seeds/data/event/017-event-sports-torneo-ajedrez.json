@@ -1,0 +1,36 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "017-event-sports-torneo-ajedrez",
+    "slug": "torneo-ajedrez",
+    "name": "Torneo de Ajedrez",
+    "summary": "Evento sports - Torneo de Ajedrez",
+    "description": "Descripción detallada del evento Torneo de Ajedrez. Este es un evento de categoría SPORTS que se desarrolla en Entre Ríos.",
+    "category": "SPORTS",
+    "authorId": "006-user-laura-vega",
+    "pricing": {
+        "isFree": false,
+        "price": 8955,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": true,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1674759369799?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Torneo de Ajedrez",
+            "description": "Descripción de la imagen del evento Torneo de Ajedrez"
+        }
+    },
+    "seo": {
+        "title": "Torneo de Ajedrez - Entre Ríos - Hospeda",
+        "description": "Participa en Torneo de Ajedrez, un evento imperdible en Entre Ríos.",
+        "keywords": ["sports", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-12-05T00:00:00-03:00",
+        "end": "2025-12-08T00:00:00-03:00"
+    },
+    "organizerId": "003-eventOrganizer-cultural-entre-rios"
+}
