@@ -1,0 +1,47 @@
+{
+    "id": "021-user-gabriela-medina",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "gabriela-medina",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Gabriela",
+        "lastName": "Medina",
+        "displayName": "Gabriela Medina",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Chajarí",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "gabriela.medina@hospeda.com.ar",
+            "mobilePhone": "+549347293195",
+            "website": "https://www.hospeda.com.ar/host/gabriela-medina",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

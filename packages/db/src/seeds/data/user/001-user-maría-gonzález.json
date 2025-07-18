@@ -1,56 +1,56 @@
 {
     "$schema": "../../schemas/user.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    "slug": "super-administrator",
-    "role": "SUPER_ADMIN",
+    "id": "001-user-maría-gonzález",
+    "slug": "maría-gonzález",
+    "role": "ADMIN",
     "permissions": [
         "accommodation.create",
         "accommodation.update.any",
         "accommodation.delete.any",
-        "accommodation.restore.any",
         "destination.create",
         "destination.update.any",
         "destination.delete.any",
-        "destination.restore.any",
         "event.create",
         "event.update.any",
         "event.delete.any",
-        "event.restore.any",
         "post.create",
         "post.update.any",
         "post.delete.any",
-        "post.restore.any",
         "user.create",
         "user.update.any",
-        "user.delete.any",
-        "user.restore.any"
+        "user.delete.any"
     ],
-    "firstName": "Super",
-    "lastName": "Administrator",
-    "displayName": "Super Administrator",
+    "firstName": "María",
+    "lastName": "González",
+    "displayName": "María González",
     "contactInfo": {
-        "personalEmail": "superadmin@hospeda.com",
+        "personalEmail": "maria.gonzalez@gmail.com",
         "workEmail": "admin@hospeda.com",
-        "mobilePhone": "+54 11 5555-0001",
+        "mobilePhone": "+54 11 5555-0002",
+        "homePhone": "+54 11 4444-0002",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
     },
     "location": {
         "state": "Entre Ríos",
-        "city": "Paraná",
+        "city": "Gualeguaychú",
         "country": "Argentina",
-        "zipCode": "3100",
+        "zipCode": "2840",
+        "street": "Av. Costanera",
+        "number": "1500",
         "coordinates": {
-            "lat": "-31.7333",
-            "lng": "-60.5333"
+            "lat": "-33.0089",
+            "lng": "-58.5133"
         }
     },
     "socialNetworks": {
-        "linkedin": "https://linkedin.com/in/superadmin-hospeda"
+        "facebook": "https://facebook.com/maria.gonzalez.hospeda",
+        "instagram": "https://instagram.com/maria_hospeda",
+        "linkedin": "https://linkedin.com/in/maria-gonzalez-hospeda"
     },
     "profile": {
-        "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-        "bio": "Super administrador del sistema con acceso completo a todas las funcionalidades. Responsable de la gestión general de la plataforma y configuraciones del sistema."
+        "avatar": "https://images.unsplash.com/photo-1494790108755-2616b9db54ad?w=150&h=150&fit=crop&crop=face",
+        "bio": "Administradora del sistema con permisos para gestionar usuarios, contenido y configuraciones. Especialista en gestión de comunidades y moderación de contenido."
     },
     "settings": {
         "language": "es",

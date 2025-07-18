@@ -1,0 +1,47 @@
+{
+    "id": "017-user-silvia-moreno",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "silvia-moreno",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Silvia",
+        "lastName": "Moreno",
+        "displayName": "Silvia Moreno",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Villa Paranacito",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "silvia.moreno@hospeda.com.ar",
+            "mobilePhone": "+549345097961",
+            "website": "https://www.hospeda.com.ar/host/silvia-moreno",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

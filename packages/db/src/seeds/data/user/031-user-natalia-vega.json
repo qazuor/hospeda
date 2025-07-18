@@ -1,0 +1,47 @@
+{
+    "id": "031-user-natalia-vega",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "natalia-vega",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Natalia",
+        "lastName": "Vega",
+        "displayName": "Natalia Vega",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Concepción del Uruguay, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Concepción del Uruguay",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "natalia.vega@hospeda.com.ar",
+            "mobilePhone": "+5493447058327",
+            "website": "https://www.hospeda.com.ar/host/natalia-vega",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

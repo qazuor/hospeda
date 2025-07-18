@@ -1,0 +1,47 @@
+{
+    "id": "020-user-sergio-vargas",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "sergio-vargas",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Sergio",
+        "lastName": "Vargas",
+        "displayName": "Sergio Vargas",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Concepción del Uruguay, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Concepción del Uruguay",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "sergio.vargas@hospeda.com.ar",
+            "mobilePhone": "+549344091018",
+            "website": "https://www.hospeda.com.ar/host/sergio-vargas",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

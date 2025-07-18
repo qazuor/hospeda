@@ -1,0 +1,47 @@
+{
+    "id": "022-user-ricardo-delgado",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "ricardo-delgado",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Ricardo",
+        "lastName": "Delgado",
+        "displayName": "Ricardo Delgado",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Colón",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "ricardo.delgado@hospeda.com.ar",
+            "mobilePhone": "+5493446874265",
+            "website": "https://www.hospeda.com.ar/host/ricardo-delgado",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}
