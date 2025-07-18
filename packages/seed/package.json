@@ -1,0 +1,45 @@
+{
+    "name": "@repo/seed",
+    "version": "0.1.0",
+    "description": "Database seeding package",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "require": "./src/index.ts"
+        }
+    },
+    "files": ["dist"],
+    "scripts": {
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules dist",
+        "seed": "pnpm run db:seed:required && pnpm run db:seed:example",
+        "seed:required": "tsx ./src/seeds/required.seed.ts",
+        "seed:example": "tsx ./src/seeds/example.seed.ts",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@repo/config": "workspace:*",
+        "@repo/logger": "workspace:*",
+        "@repo/schemas": "workspace:*",
+        "@repo/types": "workspace:*",
+        "@repo/utils": "workspace:*",
+        "@repo/db": "workspace:*",
+        "@repo/service-core": "workspace:*",
+        "bcryptjs": "^3.0.2",
+        "drizzle-orm": "^0.29.5",
+        "zod": "^3.24.2"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^22.15.3",
+        "tsup": "^8.4.0",
+        "tsx": "^4.19.4",
+        "typescript": "^5.8.3"
+    }
+}
