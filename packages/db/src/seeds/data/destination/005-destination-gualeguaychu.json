@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "005-destination-gualeguaychu",
     "slug": "gualeguaychu",
     "name": "Gualeguaychú",
     "summary": "Capital Nacional del Carnaval y puerta de entrada a las termas de Entre Ríos",
@@ -37,32 +38,24 @@
     "seo": {
         "title": "Gualeguaychú - Capital Nacional del Carnaval | Entre Ríos",
         "description": "Descubre Gualeguaychú, la capital del carnaval argentino. Termas, cultura, gastronomía y entretenimiento en Entre Ríos.",
-        "keywords": [
-            "Gualeguaychú",
-            "Carnaval",
-            "Entre Ríos",
-            "Termas",
-            "Argentina",
-            "Turismo"
-        ]
+        "keywords": ["Gualeguaychú", "Carnaval", "Entre Ríos", "Termas", "Argentina", "Turismo"]
     },
     "tagIds": [
         "tag-festivales",
         "tag-termas-012",
-        "tag-cultura-006",
+        "011-tag-cultura",
         "tag-familia-004",
         "tag-vida-nocturna",
         "tag-entre-rios-003",
-        "tag-musica-023"
+        "026-tag-musica"
     ],
     "attractionIds": [
-        "0688804f-3ac2-43a3-acfb-fe135d77710d",
-        "008dd069-a106-40b0-83c2-0416ef6557a5",
-        "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
-        "43190ef3-90a5-404a-a1f4-28496687d51f",
-        "17fc943f-3d02-41d6-abd6-1d9de50ac06b"
+        "030-attraction-corsodromo",
+        "028-attraction-complejo_termal_principal",
+        "018-attraction-centro_historico",
+        "031-attraction-costanera",
+        "015-attraction-centro_cultural"
     ],
-    "id": "4fbcc6ee-a862-5e3b-8426-bfdf89f61dc9",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE"

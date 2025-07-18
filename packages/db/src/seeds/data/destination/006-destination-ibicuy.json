@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "006-destination-ibicuy",
     "slug": "ibicuy",
     "name": "Ibicuy",
     "summary": "Destino de naturaleza y aventura en el delta entrerriano",
@@ -45,22 +46,21 @@
     },
     "tagIds": [
         "tag-naturaleza-002",
-        "tag-aventura-005",
+        "005-tag-aventura",
         "tag-pesca",
-        "tag-ecoturismo-015",
-        "tag-observacion-fauna-019",
-        "tag-kayak-030",
+        "015-tag-ecoturismo",
+        "028-tag-observacion-fauna",
+        "024-tag-kayak",
         "tag-entre-rios-003",
-        "tag-delta-036"
+        "012-tag-delta"
     ],
     "attractionIds": [
-        "71ba3202-089f-488a-9a66-d98b7a5fec58",
-        "96a2de59-4015-4800-b0d0-9e6f2ed5a1d7",
-        "6f176460-9aa8-4b79-b7f8-3c8dedf6e86a",
-        "6f2c20b4-909b-4b17-9a84-59de4c55434e",
-        "7db4be2a-2715-4e7d-a184-15c207fcceed"
+        "032-attraction-delta_explorer",
+        "044-attraction-humedales",
+        "058-attraction-observacion_aves",
+        "007-attraction-canal_navegable",
+        "065-attraction-pesca_deportiva"
     ],
-    "id": "c6cc51eb-5de2-5610-8aa0-50050d645a8c",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE"

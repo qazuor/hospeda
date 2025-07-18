@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "007-destination-liebig",
     "slug": "liebig",
     "name": "Liebig",
     "summary": "Histórica ciudad industrial con patrimonio del frigorífico anglo",
@@ -44,12 +45,11 @@
         ]
     },
     "attractionIds": [
-        "1fcf5ea2-d720-41e0-8705-67d41a5c68ce",
-        "408c65c8-cadd-4597-a362-4001da9a2c35",
-        "0a7dedae-1667-4313-b741-5d10d75292b6",
-        "2a5e7172-bed0-4f9d-9610-c9e53921006b"
+        "037-attraction-estancia_turistica",
+        "082-attraction-sitio_arqueologico",
+        "013-attraction-centro_agropecuario",
+        "081-attraction-sendero_ecologico"
     ],
-    "id": "2cce4f03-9cb5-5f91-ac06-a75b11c3d1c2",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE",

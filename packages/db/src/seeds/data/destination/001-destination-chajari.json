@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "001-destination-chajari",
     "slug": "chajari",
     "name": "Chajarí",
     "summary": "Pintoresca ciudad citrícola con encanto rural y tradiciones gauchas",
@@ -33,31 +34,23 @@
     "seo": {
         "title": "Chajarí - Tradición Rural y Citricultura | Entre Ríos",
         "description": "Descubre Chajarí, ciudad rural con tradición gaucha y producción citrícola en Entre Ríos.",
-        "keywords": [
-            "Chajarí",
-            "Entre Ríos",
-            "Rural",
-            "Citricultura",
-            "Tradición Gaucha",
-            "Campo"
-        ]
+        "keywords": ["Chajarí", "Entre Ríos", "Rural", "Citricultura", "Tradición Gaucha", "Campo"]
     },
     "tagIds": [
-        "tag-citricultura-035",
+        "009-tag-citricultura",
         "tag-naturaleza-002",
-        "tag-cultura-006",
+        "011-tag-cultura",
         "tag-familia-004",
         "tag-entre-rios-003",
-        "tag-ecoturismo-015"
+        "015-tag-ecoturismo"
     ],
     "attractionIds": [
-        "1fcf5ea2-d720-41e0-8705-67d41a5c68ce",
-        "0a7dedae-1667-4313-b741-5d10d75292b6",
-        "500990b6-74ae-40d1-addb-a8440af5a3b7",
-        "833bdb5e-35c9-4350-b786-e5ad292997b8",
-        "866d6611-d2ec-47f5-b223-546cc11c2707"
+        "037-attraction-estancia_turistica",
+        "013-attraction-centro_agropecuario",
+        "043-attraction-granja_educativa",
+        "049-attraction-mercado_agricola",
+        "062-attraction-parque_municipal"
     ],
-    "id": "f2d9f211-de4f-5e2f-b94c-5a0717745cc4",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE"
