@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/eventLocation.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d606",
+    "id": "005-eventLocation-victoria-puerto-victoria",
     "state": "Entre Ríos",
     "city": "Victoria",
     "country": "Argentina",
