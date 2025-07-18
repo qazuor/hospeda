@@ -22,6 +22,8 @@ export * from './utils';
  * Exports all concrete service implementations.
  */
 export * from './services/accommodation/accommodation.service';
+export * from './services/destination/destination.service';
+export * from './services/user/user.service';
 
 /**
  * --- ENUMS (re-exported to prevent warnings and expose them to consumers) ---

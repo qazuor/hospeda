@@ -21,7 +21,7 @@ import { mockActor, mockAdminActor } from '../base/base/base.service.mockData';
 /**
  * Test suite for permission helper functions.
  *
- * Esta suite verifica:
+ * This suite verifies:
  * - Correct permission checks for all relevant scenarios
  * - Description generation for permissions
  * - Robustness against edge cases and error propagation

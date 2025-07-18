@@ -44,8 +44,8 @@ describe('generatePostSlug', () => {
         expect(slug).toContain('post-1-the-beginning');
     });
 
-    // Si la función requiere un cuarto argumento, agrégalo aquí:
+    // If the function requires a fourth argument, add it here:
     // expect(generatePostSlug('Title', dummyName, dummyCategory, dummyId)).toBe(...);
 
-    // Agrega aquí más tests para otros helpers si existen
+    // Add more tests for other helpers if they exist
 });

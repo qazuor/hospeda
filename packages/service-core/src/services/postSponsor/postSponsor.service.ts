@@ -91,7 +91,7 @@ export class PostSponsorService extends BaseCrudService<
                 where.name = { $ilike: `%${filters.name}%` };
             }
             if (filters.q) {
-                // Buscar por nombre o descripción (case-insensitive)
+                // Search by name or description (case-insensitive)
                 where.$or = [
                     { name: { $ilike: `%${filters.q}%` } },
                     { description: { $ilike: `%${filters.q}%` } }

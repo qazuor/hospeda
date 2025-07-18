@@ -1,13 +1,27 @@
+/**
+ * @fileoverview Helper functions for Tag operations.
+ * Contains utility functions for slug generation and tag-related business logic.
+ */
+
 import { TagModel } from '@repo/db';
 import { createUniqueSlug } from '@repo/utils';
 
 /**
  * Generates a unique slug for a tag based on its name.
- * Ensures uniqueness in the database by checking against existing tags.
- * If a generated slug already exists, it appends a unique suffix.
+ * Uses the tag name to create a URL-friendly slug, ensuring uniqueness
+ * by checking against existing tags in the database. If a collision occurs,
+ * a numeric suffix is automatically appended.
  *
- * @param name The name of the tag.
- * @returns A promise that resolves to a unique slug string.
+ * @param name - The display name of the tag (e.g., "Travel Photography")
+ * @returns A promise that resolves to a unique slug string (e.g., "travel-photography" or "travel-photography-2")
+ *
+ * @example
+ * ```typescript
+ * const slug = await generateTagSlug("Travel Photography");
+ * // Returns: "travel-photography" (if unique) or "travel-photography-2" (if collision)
+ * ```
+ *
+ * @throws {Error} When database operations fail
  */
 export async function generateTagSlug(name: string): Promise<string> {
     const baseString = name;

@@ -58,8 +58,8 @@ describe('DestinationService.list', () => {
     });
 
     it.skip('should return FORBIDDEN if actor lacks permission', async () => {
-        // Este test está skippeado porque cualquier actor puede listar destinations según la política de negocio.
-        // Si la política cambia, descomentar y ajustar el test.
+        // This test is skipped because any actor can list destinations according to business policy.
+        // If the policy changes, uncomment and adjust the test.
         const noPermsActor = createActor({ permissions: [] });
         vi.spyOn(permissionHelpers, 'checkCanListDestinations').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');

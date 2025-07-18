@@ -111,7 +111,7 @@ export class DestinationService extends BaseCrudService<
         checkCanUpdateDestinationVisibility(actor, entity);
     }
 
-    // --- Métodos abstractos requeridos por BaseService ---
+    // --- Abstract methods required by BaseService ---
     /**
      * Executes a paginated search for destinations using provided filters and pagination options.
      * @param params - Validated search parameters (filters, pagination, etc.)
@@ -142,7 +142,7 @@ export class DestinationService extends BaseCrudService<
         return this.model.countByFilters({ filters });
     }
 
-    // --- Métodos específicos de dominio ---
+    // --- Domain-specific methods ---
     /**
      * Returns all accommodations for a given destination.
      * @param actor - The actor performing the action

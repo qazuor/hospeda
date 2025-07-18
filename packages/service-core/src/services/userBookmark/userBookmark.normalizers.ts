@@ -9,7 +9,7 @@ import type {
     UpdateUserBookmarkInput
 } from './userBookmark.schemas';
 
-// Tipo para input de creación/actualización (sin campos server-generated)
+// Type for create/update input (without server-generated fields)
 export type UserBookmarkCreateInput = Omit<
     z.infer<typeof UserBookmarkSchema>,
     | 'id'

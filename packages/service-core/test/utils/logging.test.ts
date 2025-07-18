@@ -43,7 +43,7 @@ afterEach(() => {
 /**
  * Test suite for logging utility functions.
  *
- * Esta suite verifica:
+ * This suite verifies:
  * - Correct logging for method lifecycle, errors, permissions, grants, and denials
  * - Use of a fully mocked logger for assertions
  * - Robustness against edge cases and log message formatting

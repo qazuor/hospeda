@@ -1,13 +1,28 @@
+/**
+ * @fileoverview Normalization functions for EventOrganizer entities.
+ * Contains functions to clean, validate, and standardize input data for event organizers.
+ */
+
 import type { EventOrganizerType, UpdateEventOrganizerInputType } from '@repo/types';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo } from '../../utils';
 
 /**
  * Normalizes the input data for creating an event organizer.
- * Trims and cleans all string fields, normalizes adminInfo, contactInfo, and social.
- * @param data The original input data for creation.
- * @param _actor The actor performing the action (unused in this normalization).
- * @returns The normalized data.
+ * Performs data cleaning and standardization including:
+ * - Trims whitespace from string fields
+ * - Normalizes admin information
+ * - Prepares contact info and social media data for future normalization
+ *
+ * @param data - The original input data for creation
+ * @param _actor - The actor performing the action (unused in this normalization)
+ * @returns The normalized event organizer data
+ *
+ * @example
+ * ```typescript
+ * const normalized = normalizeCreateInput(rawData, actor);
+ * // Returns data with trimmed strings and normalized admin info
+ * ```
  */
 export const normalizeCreateInput = (
     data: EventOrganizerType,
@@ -18,8 +33,8 @@ export const normalizeCreateInput = (
         id: data.id,
         name: data.name.trim(),
         logo: data.logo?.trim(),
-        contactInfo: data.contactInfo, // TODO: normalizeContactInfo si existe
-        social: data.social, // TODO: normalizeSocial si existe
+        contactInfo: data.contactInfo, // TODO: normalizeContactInfo if exists
+        social: data.social, // TODO: normalizeSocial if exists
         lifecycleState: data.lifecycleState,
         adminInfo,
         createdAt: data.createdAt,
@@ -33,10 +48,20 @@ export const normalizeCreateInput = (
 
 /**
  * Normalizes the input data for updating an event organizer.
- * Trims and cleans all updatable string fields.
- * @param data The original input data for update.
- * @param _actor The actor performing the action (unused in this normalization).
- * @returns The normalized data.
+ * Performs selective data cleaning and standardization for update operations including:
+ * - Trims whitespace from string fields when present
+ * - Normalizes admin information if provided
+ * - Handles partial updates by only processing provided fields
+ *
+ * @param data - The original input data for update (partial fields)
+ * @param _actor - The actor performing the action (unused in this normalization)
+ * @returns The normalized update data with only provided fields processed
+ *
+ * @example
+ * ```typescript
+ * const normalized = normalizeUpdateInput({ name: ' Updated Name ' }, actor);
+ * // Returns: { name: 'Updated Name' }
+ * ```
  */
 export const normalizeUpdateInput = (
     data: UpdateEventOrganizerInputType,

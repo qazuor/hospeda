@@ -11,7 +11,7 @@ import { ServiceError } from '../../types';
 export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookmarkType): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
     if (actor.id !== bookmark.userId /* && actor.role !== 'ADMIN' */) {
-        // TODO: Permitir acceso a admin si la política lo requiere
+        // TODO: Allow admin access if policy requires
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'FORBIDDEN: Only owner can access bookmark'
