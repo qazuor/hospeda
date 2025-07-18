@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "002-accommodationReview-hotel-plaza-gualeguaychu",
+    "userId": "008-user-lucas-fernandez",
+    "accommodationId": "033-accommodation-gualeguaychu-hotel-hotel-plaza-gualeguaychu",
+    "title": "Muy buen hotel para base de operaciones",
+    "content": "Elegí este hotel por su ubicación estratégica para recorrer Gualeguaychú y alrededores. Las instalaciones están bien mantenidas y el servicio es correcto. La habitación tenía todo lo necesario, aunque el baño podría ser un poco más amplio. El desayuno es abundante y el restaurante del hotel sirve platos regionales muy sabrosos. Ideal para quienes quieren explorar la ciudad a pie.",
+    "rating": {
+        "cleanliness": 4,
+        "hospitality": 4,
+        "services": 4,
+        "accuracy": 4,
+        "communication": 4,
+        "location": 5
+    },
+    "lifecycleState": "ACTIVE"
+}

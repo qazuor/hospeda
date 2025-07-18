@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "010-accommodationReview-casa-termas-federacion",
+    "userId": "009-user-sofia-morales",
+    "accommodationId": "025-accommodation-federacion-house-casa-termas-federacion",
+    "title": "Un refugio perfecto para desconectar",
+    "content": "Necesitaba un lugar para descansar y desconectar del trabajo, y la Casa Termas fue la elección perfecta. El ambiente es muy relajante, la decoración es encantadora y los anfitriones te hacen sentir como en casa. La proximidad a las termas es ideal para ir y venir las veces que quieras. Las habitaciones son muy confortables y el jardín es precioso para leer o simplemente relajarse. Fue exactamente lo que necesitaba.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 4,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 5
+    },
+    "lifecycleState": "ACTIVE"
+}

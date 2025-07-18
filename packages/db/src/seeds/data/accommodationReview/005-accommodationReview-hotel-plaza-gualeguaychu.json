@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "005-accommodationReview-hotel-plaza-gualeguaychu",
+    "userId": "002-user-carlos-martínez",
+    "accommodationId": "033-accommodation-gualeguaychu-hotel-hotel-plaza-gualeguaychu",
+    "title": "Correcto pero mejorable",
+    "content": "El hotel cumple con lo básico pero hay varios aspectos que podrían mejorarse. La ubicación es buena y las habitaciones están limpias, pero el servicio es un poco lento y las instalaciones necesitan renovación. El desayuno es aceptable pero podría ser más variado. Para el precio que se paga, esperaba un poco más de calidad en algunos detalles.",
+    "rating": {
+        "cleanliness": 3,
+        "hospitality": 3,
+        "services": 3,
+        "accuracy": 3,
+        "communication": 3,
+        "location": 3
+    },
+    "lifecycleState": "ACTIVE"
+}

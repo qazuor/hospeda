@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "030-accommodationReview-house-refugio-natural-country-house-gualeguaychu",
+    "userId": "moderator-user-67890",
+    "accommodationId": "040-accommodation-gualeguaychu-country-house-refugio-natural-country-house-gualeguaychu",
+    "title": "Excelente alojamiento, muy recomendable",
+    "content": "Mi estadía fue perfecta. Las instalaciones están impecables, la atención es excelente y la ubicación es muy conveniente. El desayuno es delicioso y las habitaciones muy cómodas. Sin duda regresaré.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 4,
+        "services": 5,
+        "accuracy": 4,
+        "communication": 5,
+        "location": 5
+    },
+    "lifecycleState": "ACTIVE"
+}
