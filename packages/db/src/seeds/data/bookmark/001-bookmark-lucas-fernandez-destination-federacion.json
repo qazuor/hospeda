@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-001-lucas-federacion",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "id": "001-bookmark-lucas-fernandez-destination-federacion",
+    "userId": "008-user-lucas-fernandez",
     "entityId": "dest-federacion-001",
     "entityType": "DESTINATION",
     "name": "Federación - Destino termal",

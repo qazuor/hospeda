@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-014-host-destinos-post",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "id": "014-bookmark-ana-rodríguez-post-destinos-imperdibles-er",
+    "userId": "004-user-ana-rodríguez",
     "entityId": "post-001-destinos-imperdibles-er",
     "entityType": "POST",
     "name": "Destinos Imperdibles de Entre Ríos",

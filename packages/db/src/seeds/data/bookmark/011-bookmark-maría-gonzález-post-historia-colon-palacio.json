@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-011-admin-historia-post",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+    "id": "011-bookmark-maría-gonzález-post-historia-colon-palacio",
+    "userId": "001-user-maría-gonzález",
     "entityId": "post-006-historia-colon-palacio",
     "entityType": "POST",
     "name": "Historia Viva en Colón",

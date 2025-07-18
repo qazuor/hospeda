@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-009-sofia-termas-post",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "id": "009-bookmark-sofia-morales-post-termas-federacion-relax",
+    "userId": "009-user-sofia-morales",
     "entityId": "post-004-termas-federacion-relax",
     "entityType": "POST",
     "name": "Termas de Federación",

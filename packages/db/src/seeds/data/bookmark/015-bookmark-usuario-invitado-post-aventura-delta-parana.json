@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-015-guest-delta-post",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d484",
+    "id": "015-bookmark-usuario-invitado-post-aventura-delta-parana",
+    "userId": "003-user-usuario-invitado",
     "entityId": "post-005-aventura-delta-parana",
     "entityType": "POST",
     "name": "Aventura en el Delta",

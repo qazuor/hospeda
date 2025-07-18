@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-013-host-gastronomia-post",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "id": "013-bookmark-ana-rodríguez-post-gastronomia-entrerriana",
+    "userId": "004-user-ana-rodríguez",
     "entityId": "post-002-gastronomia-entrerriana",
     "entityType": "POST",
     "name": "Gastronomía Entrerriana",

@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-017-lucas-chajari-destination",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "id": "017-bookmark-lucas-fernandez-destination-chajari",
+    "userId": "008-user-lucas-fernandez",
     "entityId": "chajari",
     "entityType": "DESTINATION",
     "name": "Chajarí",

@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-012-host-federacion-termas",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d482",
+    "id": "012-bookmark-ana-rodríguez-accommodation-casa-termas-federacion",
+    "userId": "004-user-ana-rodríguez",
     "entityId": "casa-termas-federacion",
     "entityType": "ACCOMMODATION",
     "name": "Casa Termas Federación",

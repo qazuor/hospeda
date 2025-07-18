@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-007-sofia-user-lucas",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "id": "007-bookmark-sofia-morales-user-f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "userId": "009-user-sofia-morales",
     "entityId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
     "entityType": "USER",
     "name": "Lucas Fernández",

@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-002-sofia-accommodation",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "id": "002-bookmark-sofia-morales-accommodation-hotel-plaza-gualeguaychu",
+    "userId": "009-user-sofia-morales",
     "entityId": "hotel-plaza-gualeguaychu",
     "entityType": "ACCOMMODATION",
     "name": "Hotel Plaza Gualeguaychú",
