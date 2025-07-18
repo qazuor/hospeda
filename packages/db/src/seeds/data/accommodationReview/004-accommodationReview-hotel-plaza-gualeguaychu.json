@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "004-accommodationReview-hotel-plaza-gualeguaychu",
+    "userId": "003-user-usuario-invitado",
+    "accommodationId": "033-accommodation-gualeguaychu-hotel-hotel-plaza-gualeguaychu",
+    "title": "Perfecta experiencia familiar",
+    "content": "Visitamos Gualeguaychú en familia y el Hotel Plaza superó nuestras expectativas. Los niños estuvieron muy cómodos, el desayuno tenía opciones para todos los gustos y la ubicación nos permitió caminar a todos lados. El personal fue extremadamente amable con los niños y nos dieron excelentes recomendaciones de actividades familiares. Definitivamente regresaremos.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 4,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 5
+    },
+    "lifecycleState": "ACTIVE"
+}

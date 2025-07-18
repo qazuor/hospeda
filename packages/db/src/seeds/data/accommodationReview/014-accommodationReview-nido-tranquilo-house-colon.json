@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "014-accommodationReview-nido-tranquilo-house-colon",
+    "userId": "005-user-miguel-torres",
+    "accommodationId": "007-accommodation-colon-house-nido-tranquilo-house-colon",
+    "title": "Buena experiencia en general",
+    "content": "Tuve una estadía agradable. Las instalaciones son adecuadas, el personal es profesional y la limpieza es buena. Hay WiFi disponible y la comunicación con el host fue fluida. Recomendado para una estadía cómoda.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 3,
+        "accuracy": 3,
+        "communication": 3,
+        "location": 5
+    },
+    "lifecycleState": "ACTIVE"
+}

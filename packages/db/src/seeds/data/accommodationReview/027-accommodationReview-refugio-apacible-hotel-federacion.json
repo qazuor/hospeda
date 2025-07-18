@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "027-accommodationReview-refugio-apacible-hotel-federacion",
+    "userId": "009-user-sofia-morales",
+    "accommodationId": "028-accommodation-federacion-hotel-refugio-apacible-hotel-federacion",
+    "title": "Excelente alojamiento, muy recomendable",
+    "content": "Mi estadía fue perfecta. Las instalaciones están impecables, la atención es excelente y la ubicación es muy conveniente. El desayuno es delicioso y las habitaciones muy cómodas. Sin duda regresaré.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 4,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 5
+    },
+    "lifecycleState": "ACTIVE"
+}

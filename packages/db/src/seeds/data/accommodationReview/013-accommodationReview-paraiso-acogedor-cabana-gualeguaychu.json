@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "013-accommodationReview-paraiso-acogedor-cabana-gualeguaychu",
+    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d488",
+    "accommodationId": "037-accommodation-gualeguaychu-cabin-paraiso-acogedor-cabana-gualeguaychu",
+    "title": "Perfecto para descansar",
+    "content": "Exactamente lo que necesitaba. Un lugar tranquilo, limpio y cómodo. La atención personalizada hace la diferencia. Las instalaciones están bien mantenidas y el ambiente es muy relajante.",
+    "rating": {
+        "cleanliness": 4,
+        "hospitality": 4,
+        "services": 5,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 3
+    },
+    "lifecycleState": "ACTIVE"
+}

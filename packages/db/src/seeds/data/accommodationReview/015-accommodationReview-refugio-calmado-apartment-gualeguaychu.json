@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "015-accommodationReview-refugio-calmado-apartment-gualeguaychu",
+    "userId": "003-user-usuario-invitado",
+    "accommodationId": "039-accommodation-gualeguaychu-apartment-refugio-calmado-apartment-gualeguaychu",
+    "title": "Muy buena opción calidad-precio",
+    "content": "Para el precio que pagué, obtuve un servicio muy bueno. Las habitaciones son cómodas, el personal es amable y la limpieza es correcta. Hay algunos detalles que podrían mejorarse, pero en general estoy satisfecho.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 4,
+        "services": 3,
+        "accuracy": 4,
+        "communication": 4,
+        "location": 4
+    },
+    "lifecycleState": "ACTIVE"
+}

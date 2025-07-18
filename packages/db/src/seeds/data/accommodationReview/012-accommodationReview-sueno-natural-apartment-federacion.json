@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "012-accommodationReview-sueno-natural-apartment-federacion",
+    "userId": "guest-user-12345",
+    "accommodationId": "032-accommodation-federacion-apartment-sueno-natural-apartment-federacion",
+    "title": "Buena experiencia en general",
+    "content": "Tuve una estadía agradable. Las instalaciones son adecuadas, el personal es profesional y la limpieza es buena. Hay WiFi disponible y la comunicación con el host fue fluida. Recomendado para una estadía cómoda.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 4,
+        "accuracy": 4,
+        "communication": 5,
+        "location": 3
+    },
+    "lifecycleState": "ACTIVE"
+}

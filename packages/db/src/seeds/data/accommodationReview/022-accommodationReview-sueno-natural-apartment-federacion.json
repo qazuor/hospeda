@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "022-accommodationReview-sueno-natural-apartment-federacion",
+    "userId": "moderator-user-67890",
+    "accommodationId": "032-accommodation-federacion-apartment-sueno-natural-apartment-federacion",
+    "title": "Perfecto para descansar",
+    "content": "Exactamente lo que necesitaba. Un lugar tranquilo, limpio y cómodo. La atención personalizada hace la diferencia. Las instalaciones están bien mantenidas y el ambiente es muy relajante.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 4,
+        "services": 4,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 4
+    },
+    "lifecycleState": "ACTIVE"
+}

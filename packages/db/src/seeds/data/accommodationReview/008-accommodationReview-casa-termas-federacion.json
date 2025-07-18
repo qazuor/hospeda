@@ -1,0 +1,17 @@
+{
+    "$schema": "../../../schemas/accommodationReview.schema.json",
+    "id": "008-accommodationReview-casa-termas-federacion",
+    "userId": "008-user-lucas-fernandez",
+    "accommodationId": "025-accommodation-federacion-house-casa-termas-federacion",
+    "title": "Perfecto para descansar en las termas",
+    "content": "La Casa Termas superó todas mis expectativas. La ubicación es perfecta, a solo 5 minutos caminando del complejo termal. La casa es muy acogedora, con una decoración rústica que transmite mucha calidez. Las habitaciones son amplias y cómodas, y el jardín es un oasis de tranquilidad. Los anfitriones son excelentes, siempre atentos y con muy buenas recomendaciones. Sin duda el lugar ideal para una escapada relajante.",
+    "rating": {
+        "cleanliness": 5,
+        "hospitality": 5,
+        "services": 4,
+        "accuracy": 5,
+        "communication": 5,
+        "location": 5
+    },
+    "lifecycleState": "ACTIVE"
+}
