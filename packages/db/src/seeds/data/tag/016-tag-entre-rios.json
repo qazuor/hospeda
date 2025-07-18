@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "016-tag-entre-rios",
+    "name": "Entre Ríos",
+    "slug": "entre-rios",
+    "color": "BLUE",
+    "icon": "location",
+    "notes": "Contenido específico de la provincia de Entre Ríos",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "014-tag-deportes-acuaticos",
+    "name": "Deportes Acuáticos",
+    "slug": "deportes-acuaticos",
+    "color": "BLUE",
+    "icon": "water-sports",
+    "notes": "Actividades deportivas en agua",
+    "lifecycleState": "ACTIVE"
+}

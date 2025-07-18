@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "023-tag-invierno",
+    "name": "Invierno",
+    "slug": "invierno",
+    "color": "GREY",
+    "icon": "snowflake",
+    "notes": "Actividades y destinos para disfrutar en invierno",
+    "lifecycleState": "ACTIVE"
+}

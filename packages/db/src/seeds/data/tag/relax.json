@@ -1,8 +1,0 @@
-{
-    "$schema": "../../schemas/tag.schema.json",
-    "id": "tag_relax",
-    "name": "Relax",
-    "slug": "relax",
-    "color": "LIGHT_BLUE",
-    "notes": "Experiencias de relajación y descanso"
-}

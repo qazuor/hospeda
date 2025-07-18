@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "031-tag-playas",
+    "name": "Playas",
+    "slug": "playas",
+    "color": "YELLOW",
+    "icon": "beach",
+    "notes": "Playas fluviales y costeras",
+    "lifecycleState": "ACTIVE"
+}

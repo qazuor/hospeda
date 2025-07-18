@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "027-tag-naturaleza",
+    "name": "Naturaleza",
+    "slug": "naturaleza",
+    "color": "GREY",
+    "icon": "nature",
+    "notes": "Espacios naturales, fauna, flora y ecoturismo",
+    "lifecycleState": "ACTIVE"
+}

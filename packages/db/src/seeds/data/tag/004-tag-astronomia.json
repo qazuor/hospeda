@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "004-tag-astronomia",
+    "name": "Astronomía",
+    "slug": "astronomia",
+    "color": "BLUE",
+    "icon": "stars",
+    "notes": "Observación astronómica y planetarios",
+    "lifecycleState": "ACTIVE"
+}

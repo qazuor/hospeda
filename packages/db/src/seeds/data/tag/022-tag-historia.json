@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "022-tag-historia",
+    "name": "Historia",
+    "slug": "historia",
+    "color": "BROWN",
+    "icon": "history",
+    "notes": "Sitios y experiencias con significado histórico",
+    "lifecycleState": "ACTIVE"
+}

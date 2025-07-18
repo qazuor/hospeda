@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "010-tag-compras",
+    "name": "Compras",
+    "slug": "compras",
+    "color": "PINK",
+    "icon": "shopping",
+    "notes": "Centros comerciales y tiendas",
+    "lifecycleState": "ACTIVE"
+}

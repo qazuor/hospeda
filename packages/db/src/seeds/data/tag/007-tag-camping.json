@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "007-tag-camping",
+    "name": "Camping",
+    "slug": "camping",
+    "color": "GREY",
+    "icon": "camping",
+    "notes": "Sitios para acampar y camping",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "042-tag-vinos",
+    "name": "Vinos",
+    "slug": "vinos",
+    "color": "PURPLE",
+    "icon": "wine",
+    "notes": "Bodegas y degustación de vinos",
+    "lifecycleState": "ACTIVE"
+}

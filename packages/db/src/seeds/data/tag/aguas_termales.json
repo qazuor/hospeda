@@ -1,8 +1,0 @@
-{
-    "$schema": "../../schemas/tag.schema.json",
-    "id": "tag-aguas-termales-017",
-    "name": "Aguas Termales",
-    "slug": "aguas-termales",
-    "color": "CYAN",
-    "icon": "hot-springs"
-}

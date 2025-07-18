@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "028-tag-observacion-fauna",
+    "name": "Observación de Fauna",
+    "slug": "observacion-fauna",
+    "color": "GREY",
+    "icon": "wildlife",
+    "notes": "Actividades de avistamiento de animales",
+    "lifecycleState": "ACTIVE"
+}

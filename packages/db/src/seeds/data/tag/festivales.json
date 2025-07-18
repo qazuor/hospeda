@@ -1,8 +1,0 @@
-{
-    "$schema": "../../schemas/tag.schema.json",
-    "id": "tag_festivales",
-    "name": "Festivales",
-    "slug": "festivales",
-    "color": "PINK",
-    "notes": "Eventos culturales y celebraciones"
-}

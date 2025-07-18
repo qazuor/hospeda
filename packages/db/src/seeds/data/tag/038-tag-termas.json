@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "038-tag-termas",
+    "name": "Termas",
+    "slug": "termas",
+    "color": "RED",
+    "icon": "spa",
+    "notes": "Contenido relacionado con complejos termales y turismo de bienestar",
+    "lifecycleState": "ACTIVE"
+}

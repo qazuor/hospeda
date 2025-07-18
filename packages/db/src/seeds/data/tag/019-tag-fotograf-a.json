@@ -1,0 +1,8 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "019-tag-fotograf-a",
+    "name": "Fotografía",
+    "slug": "fotograf-a",
+    "color": "GREEN",
+    "notes": "Lugares ideales para la fotografía"
+}

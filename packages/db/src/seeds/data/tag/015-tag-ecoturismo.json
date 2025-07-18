@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "015-tag-ecoturismo",
+    "name": "Ecoturismo",
+    "slug": "ecoturismo",
+    "color": "GREEN",
+    "icon": "eco",
+    "notes": "Turismo sostenible y responsable con el ambiente",
+    "lifecycleState": "ACTIVE"
+}

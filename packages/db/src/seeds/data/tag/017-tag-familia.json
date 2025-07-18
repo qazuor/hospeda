@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "017-tag-familia",
+    "name": "Familia",
+    "slug": "familia",
+    "color": "ORANGE",
+    "icon": "family",
+    "notes": "Actividades y alojamientos aptos para familias con niños",
+    "lifecycleState": "ACTIVE"
+}

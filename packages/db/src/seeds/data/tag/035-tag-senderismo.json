@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "035-tag-senderismo",
+    "name": "Senderismo",
+    "slug": "senderismo",
+    "color": "GREY",
+    "icon": "hiking",
+    "notes": "Rutas y senderos para caminatas",
+    "lifecycleState": "ACTIVE"
+}
