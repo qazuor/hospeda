@@ -1,44 +1,36 @@
 {
-  "$schema": "../../schemas/post.schema.json",
-  "id": "017-rural-turismo-rural-en-entre-rios",
-  "slug": "turismo-rural-en-entre-rios",
-  "category": "RURAL",
-  "title": "Turismo Rural en Entre Ríos",
-  "summary": "Vive la experiencia rural entrerriana: estancias, turismo agropecuario y vida de campo.",
-  "content": "El turismo rural entrerriano permite conectar con las tradiciones gauchescas y la vida de campo. Las estancias ofrecen experiencias auténticas donde los visitantes pueden participar en actividades rurales tradicionales.",
-  "media": {
-    "featuredImage": {
-      "url": "https://images.unsplash.com/photo-1554518996?w=1200&h=600&fit=crop",
-      "caption": "Imagen de Turismo Rural en Entre Ríos"
-    }
-  },
-  "authorId": "003-user-usuario-invitado",
-  "sponsorshipId": "019-postSponsorship-gastronomia-regional-003",
-  "relatedDestinationId": null,
-  "relatedAccommodationId": null,
-  "relatedEventId": null,
-  "visibility": "PUBLIC",
-  "isNews": false,
-  "isFeaturedInWebsite": false,
-  "expiresAt": null,
-  "likes": 160,
-  "comments": 68,
-  "shares": 130,
-  "isFeatured": false,
-  "seo": {
-    "title": "Turismo Rural en Entre Ríos | Hospeda",
-    "description": "Vive la experiencia rural entrerriana: estancias, turismo agropecuario y vida de campo.",
-    "keywords": [
-      "rural",
-      "entre rios",
-      "turismo"
-    ]
-  },
-  "lifecycleState": "ACTIVE",
-  "moderationState": "APPROVED",
-  "tags": [
-    "017-tag-familia",
-    "019-tag-fotograf-a",
-    "016-tag-entre-rios"
-  ]
+    "$schema": "../../schemas/post.schema.json",
+    "id": "017-rural-turismo-rural-en-entre-rios",
+    "slug": "turismo-rural-en-entre-rios",
+    "category": "RURAL",
+    "title": "Turismo Rural en Entre Ríos",
+    "summary": "Vive la experiencia rural entrerriana: estancias, turismo agropecuario y vida de campo.",
+    "content": "El turismo rural entrerriano permite conectar con las tradiciones gauchescas y la vida de campo. Las estancias ofrecen experiencias auténticas donde los visitantes pueden participar en actividades rurales tradicionales.",
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1554518996?w=1200&h=600&fit=crop",
+            "caption": "Imagen de Turismo Rural en Entre Ríos"
+        }
+    },
+    "authorId": "003-user-usuario-invitado",
+    "sponsorshipId": "019-postSponsorship-gastronomia-regional-003",
+    "relatedDestinationId": null,
+    "relatedAccommodationId": null,
+    "relatedEventId": null,
+    "visibility": "PUBLIC",
+    "isNews": false,
+    "isFeaturedInWebsite": false,
+    "expiresAt": null,
+    "likes": 160,
+    "comments": 68,
+    "shares": 130,
+    "isFeatured": false,
+    "seo": {
+        "title": "Turismo Rural en Entre Ríos | Hospeda",
+        "description": "Vive la experiencia rural entrerriana: estancias, turismo agropecuario y vida de campo.",
+        "keywords": ["rural", "entre rios", "turismo"]
+    },
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "tags": ["017-tag-familia", "019-tag-fotograf-a", "016-tag-entre-rios"]
 }

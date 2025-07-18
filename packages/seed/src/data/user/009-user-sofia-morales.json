@@ -3,12 +3,7 @@
     "id": "009-user-sofia-morales",
     "slug": "sofia-morales",
     "role": "USER",
-    "permissions": [
-        "post.create",
-        "post.update.own",
-        "post.delete.own",
-        "user.update.own"
-    ],
+    "permissions": ["post.create", "post.update.own", "post.delete.own", "user.update.own"],
     "firstName": "Sofía",
     "lastName": "Morales",
     "displayName": "Sofía Morales",
