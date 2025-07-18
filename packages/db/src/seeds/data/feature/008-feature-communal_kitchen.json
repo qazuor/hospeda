@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "008-feature-communal_kitchen",
+    "name": "communal_kitchen",
+    "slug": "communal_kitchen",
+    "description": "Cocina compartida completa",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

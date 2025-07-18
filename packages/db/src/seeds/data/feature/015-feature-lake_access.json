@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "015-feature-lake_access",
+    "name": "lake_access",
+    "slug": "lake_access",
+    "description": "Cerca del Lago",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

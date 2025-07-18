@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "007-feature-communal_area",
+    "name": "communal_area",
+    "slug": "communal_area",
+    "description": "Espacios sociales luminosos",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

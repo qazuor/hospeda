@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "032-feature-sunny_area",
+    "name": "sunny_area",
+    "slug": "sunny_area",
+    "description": "Amplias zonas soleadas",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "022-feature-private_entrance",
+    "name": "private_entrance",
+    "slug": "private_entrance",
+    "description": "private_entrance",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}
