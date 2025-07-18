@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/event.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d706",
+    "id": "005-event-nature-festival-naturaleza-victoria-2025",
     "slug": "festival-naturaleza-victoria-2025",
     "name": "Festival de la Naturaleza Victoria 2025",
     "summary": "Festival de naturaleza y ecoturismo en el Puerto de Victoria con actividades al aire libre",
@@ -10,9 +10,9 @@
         "start": "2025-07-25T08:00:00-03:00",
         "end": "2025-07-27T18:00:00-03:00"
     },
-    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d606",
-    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d502",
+    "authorId": "001-user-maría-gonzález",
+    "locationId": "001-eventLocation-colon-anfiteatro-colón",
+    "organizerId": "004-eventOrganizer-colon",
     "pricing": {
         "isFree": false,
         "price": 5000,
@@ -42,13 +42,7 @@
     "seo": {
         "title": "Festival de la Naturaleza Victoria 2025 - Ecoturismo y Naturaleza - Hospeda",
         "description": "Festival de naturaleza y ecoturismo en Victoria. Actividades al aire libre y conservación en el delta del Paraná.",
-        "keywords": [
-            "naturaleza",
-            "ecoturismo",
-            "victoria",
-            "delta",
-            "conservacion"
-        ]
+        "keywords": ["naturaleza", "ecoturismo", "victoria", "delta", "conservacion"]
     },
     "lifecycleState": "ACTIVE",
     "tagIds": []

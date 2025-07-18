@@ -1,0 +1,32 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "021-event-family-picnic-familiar",
+    "slug": "picnic-familiar",
+    "name": "Picnic Familiar",
+    "summary": "Evento family - Picnic Familiar",
+    "description": "Descripción detallada del evento Picnic Familiar. Este es un evento de categoría FAMILY que se desarrolla en Entre Ríos.",
+    "category": "OTHER",
+    "authorId": "001-user-maría-gonzález",
+    "pricing": {
+        "isFree": true
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1565573552890?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Picnic Familiar",
+            "description": "Descripción de la imagen del evento Picnic Familiar"
+        }
+    },
+    "seo": {
+        "title": "Picnic Familiar - Entre Ríos - Hospeda",
+        "description": "Participa en Picnic Familiar, un evento imperdible en Entre Ríos.",
+        "keywords": ["family", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-11-06T00:00:00-03:00"
+    }
+}

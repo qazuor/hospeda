@@ -1,0 +1,33 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "007-event-workshop-taller-artesanias",
+    "slug": "taller-artesanias",
+    "name": "Taller de Artesanías",
+    "summary": "Evento workshop - Taller de Artesanías",
+    "description": "Descripción detallada del evento Taller de Artesanías. Este es un evento de categoría WORKSHOP que se desarrolla en Entre Ríos.",
+    "category": "WORKSHOP",
+    "authorId": "006-user-laura-vega",
+    "pricing": {
+        "isFree": true
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1544267014220?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Taller de Artesanías",
+            "description": "Descripción de la imagen del evento Taller de Artesanías"
+        }
+    },
+    "seo": {
+        "title": "Taller de Artesanías - Entre Ríos - Hospeda",
+        "description": "Participa en Taller de Artesanías, un evento imperdible en Entre Ríos.",
+        "keywords": ["workshop", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-11-02T00:00:00-03:00"
+    },
+    "locationId": "003-eventLocation-gualeguaychu-corsódromo-gualeguaychú"
+}

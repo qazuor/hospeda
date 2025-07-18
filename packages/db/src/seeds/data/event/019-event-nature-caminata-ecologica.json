@@ -1,0 +1,33 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "019-event-nature-caminata-ecologica",
+    "slug": "caminata-ecologica",
+    "name": "Caminata Ecológica",
+    "summary": "Evento nature - Caminata Ecológica",
+    "description": "Descripción detallada del evento Caminata Ecológica. Este es un evento de categoría NATURE que se desarrolla en Entre Ríos.",
+    "category": "NATURE",
+    "authorId": "007-user-super-administrator",
+    "pricing": {
+        "isFree": true
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1565528920228?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Caminata Ecológica",
+            "description": "Descripción de la imagen del evento Caminata Ecológica"
+        }
+    },
+    "seo": {
+        "title": "Caminata Ecológica - Entre Ríos - Hospeda",
+        "description": "Participa en Caminata Ecológica, un evento imperdible en Entre Ríos.",
+        "keywords": ["nature", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-01-23T00:00:00-03:00",
+        "end": "2025-01-27T00:00:00-03:00"
+    }
+}

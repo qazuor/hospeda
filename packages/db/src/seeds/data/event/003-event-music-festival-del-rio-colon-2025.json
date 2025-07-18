@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/event.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d702",
+    "id": "003-event-music-festival-del-rio-colon-2025",
     "slug": "festival-del-rio-colon-2025",
     "name": "Festival del Río Colón 2025",
     "summary": "Festival cultural y musical en el Anfiteatro Municipal con vista al río Uruguay",
@@ -10,9 +10,9 @@
         "start": "2025-03-15T19:00:00-03:00",
         "end": "2025-03-17T23:00:00-03:00"
     },
-    "authorId": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
-    "locationId": "f47ac10b-58cc-4372-a567-0e02b2c3d601",
-    "organizerId": "f47ac10b-58cc-4372-a567-0e02b2c3d501",
+    "authorId": "001-user-maría-gonzález",
+    "locationId": "003-eventLocation-gualeguaychu-corsódromo-gualeguaychú",
+    "organizerId": "001-eventOrganizer-turismo-de-gualeguaychu",
     "pricing": {
         "isFree": true
     },
@@ -20,12 +20,12 @@
     "isFeatured": true,
     "tagIds": [
         "tag-festivales",
-        "tag-musica-023",
-        "tag-cultura-006",
+        "026-tag-musica",
+        "011-tag-cultura",
         "tag-rio-parana-009",
         "tag-familia-004",
         "tag-entre-rios-003",
-        "tag-teatro-024"
+        "037-tag-teatro"
     ],
     "media": {
         "featuredImage": {
@@ -49,13 +49,7 @@
     "seo": {
         "title": "Festival del Río Colón 2025 - Música y Cultura - Hospeda",
         "description": "Festival cultural gratuito en el Anfiteatro Municipal de Colón con música, arte y vista al río Uruguay.",
-        "keywords": [
-            "festival",
-            "colon",
-            "musica",
-            "rio uruguay",
-            "cultura"
-        ]
+        "keywords": ["festival", "colon", "musica", "rio uruguay", "cultura"]
     },
     "lifecycleState": "ACTIVE"
 }

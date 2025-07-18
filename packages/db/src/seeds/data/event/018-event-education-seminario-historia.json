@@ -1,0 +1,33 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "018-event-education-seminario-historia",
+    "slug": "seminario-historia",
+    "name": "Seminario de Historia",
+    "summary": "Evento education - Seminario de Historia",
+    "description": "Descripción detallada del evento Seminario de Historia. Este es un evento de categoría EDUCATION que se desarrolla en Entre Ríos.",
+    "category": "OTHER",
+    "authorId": "007-user-super-administrator",
+    "pricing": {
+        "isFree": true
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": true,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1666055938295?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Seminario de Historia",
+            "description": "Descripción de la imagen del evento Seminario de Historia"
+        }
+    },
+    "seo": {
+        "title": "Seminario de Historia - Entre Ríos - Hospeda",
+        "description": "Participa en Seminario de Historia, un evento imperdible en Entre Ríos.",
+        "keywords": ["education", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-01-09T00:00:00-03:00"
+    },
+    "organizerId": "003-eventOrganizer-cultural-entre-rios"
+}

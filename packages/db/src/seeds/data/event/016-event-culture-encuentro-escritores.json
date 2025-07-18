@@ -1,0 +1,36 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "016-event-culture-encuentro-escritores",
+    "slug": "encuentro-escritores",
+    "name": "Encuentro de Escritores",
+    "summary": "Evento culture - Encuentro de Escritores",
+    "description": "Descripción detallada del evento Encuentro de Escritores. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
+    "category": "CULTURE",
+    "authorId": "002-user-carlos-martínez",
+    "pricing": {
+        "isFree": false,
+        "price": 15026,
+        "currency": "ARS"
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1593223000991?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Encuentro de Escritores",
+            "description": "Descripción de la imagen del evento Encuentro de Escritores"
+        }
+    },
+    "seo": {
+        "title": "Encuentro de Escritores - Entre Ríos - Hospeda",
+        "description": "Participa en Encuentro de Escritores, un evento imperdible en Entre Ríos.",
+        "keywords": ["culture", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-06-26T00:00:00-03:00",
+        "end": "2025-06-28T00:00:00-03:00"
+    },
+    "organizerId": "004-eventOrganizer-colon"
+}

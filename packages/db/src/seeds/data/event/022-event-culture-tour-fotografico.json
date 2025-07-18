@@ -1,0 +1,33 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "022-event-culture-tour-fotografico",
+    "slug": "tour-fotografico",
+    "name": "Tour Fotográfico",
+    "summary": "Evento culture - Tour Fotográfico",
+    "description": "Descripción detallada del evento Tour Fotográfico. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
+    "category": "CULTURE",
+    "authorId": "006-user-laura-vega",
+    "pricing": {
+        "isFree": true
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1645955498923?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Tour Fotográfico",
+            "description": "Descripción de la imagen del evento Tour Fotográfico"
+        }
+    },
+    "seo": {
+        "title": "Tour Fotográfico - Entre Ríos - Hospeda",
+        "description": "Participa en Tour Fotográfico, un evento imperdible en Entre Ríos.",
+        "keywords": ["culture", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-09-04T00:00:00-03:00",
+        "end": "2025-09-07T00:00:00-03:00"
+    }
+}

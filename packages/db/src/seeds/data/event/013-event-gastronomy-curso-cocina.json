@@ -1,0 +1,33 @@
+{
+    "$schema": "../../schemas/event.schema.json",
+    "id": "013-event-gastronomy-curso-cocina",
+    "slug": "curso-cocina",
+    "name": "Curso de Cocina",
+    "summary": "Evento gastronomy - Curso de Cocina",
+    "description": "Descripción detallada del evento Curso de Cocina. Este es un evento de categoría GASTRONOMY que se desarrolla en Entre Ríos.",
+    "category": "GASTRONOMY",
+    "authorId": "002-user-carlos-martínez",
+    "pricing": {
+        "isFree": true
+    },
+    "visibility": "PUBLIC",
+    "isFeatured": false,
+    "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1629187869023?w=800&h=600&fit=crop",
+            "caption": "Imagen del evento Curso de Cocina",
+            "description": "Descripción de la imagen del evento Curso de Cocina"
+        }
+    },
+    "seo": {
+        "title": "Curso de Cocina - Entre Ríos - Hospeda",
+        "description": "Participa en Curso de Cocina, un evento imperdible en Entre Ríos.",
+        "keywords": ["gastronomy", "entre rios", "evento", "cultura"]
+    },
+    "lifecycleState": "ACTIVE",
+    "date": {
+        "start": "2025-10-06T00:00:00-03:00"
+    },
+    "organizerId": "005-eventOrganizer-productores-rurales"
+}
