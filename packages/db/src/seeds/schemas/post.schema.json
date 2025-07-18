@@ -60,19 +60,19 @@
             "description": "Author user ID"
         },
         "sponsorshipId": {
-            "type": "string",
+            "type": ["string", "null"],
             "description": "Post sponsorship ID"
         },
         "relatedDestinationId": {
-            "type": "string",
+            "type": ["string", "null"],
             "description": "Related destination ID"
         },
         "relatedAccommodationId": {
-            "type": "string",
+            "type": ["string", "null"],
             "description": "Related accommodation ID"
         },
         "relatedEventId": {
-            "type": "string",
+            "type": ["string", "null"],
             "description": "Related event ID"
         },
         "visibility": {
@@ -93,7 +93,7 @@
             "description": "Whether post is featured in website"
         },
         "expiresAt": {
-            "type": "string",
+            "type": ["string", "null"],
             "format": "date-time",
             "description": "Post expiration date"
         },
@@ -114,11 +114,20 @@
             "enum": ["DRAFT", "ACTIVE", "ARCHIVED"],
             "description": "Lifecycle state of the post"
         },
+        "moderationState": {
+            "type": "string",
+            "enum": ["PENDING", "APPROVED", "REJECTED"],
+            "description": "Moderation state of the post"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Array of tag IDs"
+        },
         "seo": {
             "$ref": "common.schema.json#/definitions/seo"
-        },
-        "adminInfo": {
-            "$ref": "common.schema.json#/definitions/adminInfo"
         }
     },
     "required": [
@@ -137,7 +146,8 @@
         "likes",
         "comments",
         "shares",
-        "lifecycleState"
+        "lifecycleState",
+        "moderationState"
     ],
     "additionalProperties": false
 }

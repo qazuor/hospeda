@@ -48,52 +48,95 @@
             "description": "User role"
         },
         "permissions": {
-            "type": "array",
-            "items": {
-                "type": "string",
-                "enum": [
-                    "accommodation.create",
-                    "accommodation.update.own",
-                    "accommodation.update.any",
-                    "accommodation.delete.own",
-                    "accommodation.delete.any",
-                    "accommodation.restore.own",
-                    "accommodation.restore.any",
-                    "destination.create",
-                    "destination.update.own",
-                    "destination.update.any",
-                    "destination.delete.own",
-                    "destination.delete.any",
-                    "destination.restore.own",
-                    "destination.restore.any",
-                    "event.create",
-                    "event.update.own",
-                    "event.update.any",
-                    "event.delete.own",
-                    "event.delete.any",
-                    "event.restore.own",
-                    "event.restore.any",
-                    "post.create",
-                    "post.update.own",
-                    "post.update.any",
-                    "post.delete.own",
-                    "post.delete.any",
-                    "post.restore.own",
-                    "post.restore.any",
-                    "user.create",
-                    "user.update.own",
-                    "user.update.any",
-                    "user.delete.own",
-                    "user.delete.any",
-                    "user.restore.own",
-                    "user.restore.any"
-                ]
-            },
-            "description": "Array of user permissions"
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "accommodation.create",
+                            "accommodation.update.own",
+                            "accommodation.update.any",
+                            "accommodation.delete.own",
+                            "accommodation.delete.any",
+                            "accommodation.restore.own",
+                            "accommodation.restore.any",
+                            "destination.create",
+                            "destination.update.own",
+                            "destination.update.any",
+                            "destination.delete.own",
+                            "destination.delete.any",
+                            "destination.restore.own",
+                            "destination.restore.any",
+                            "event.create",
+                            "event.update.own",
+                            "event.update.any",
+                            "event.delete.own",
+                            "event.delete.any",
+                            "event.restore.own",
+                            "event.restore.any",
+                            "post.create",
+                            "post.update.own",
+                            "post.update.any",
+                            "post.delete.own",
+                            "post.delete.any",
+                            "post.restore.own",
+                            "post.restore.any",
+                            "user.create",
+                            "user.update.own",
+                            "user.update.any",
+                            "user.delete.own",
+                            "user.delete.any",
+                            "user.restore.own",
+                            "user.restore.any"
+                        ]
+                    },
+                    "description": "Array of user permissions"
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "canManageOwnAccommodations": {
+                            "type": "boolean",
+                            "description": "Can manage own accommodations"
+                        },
+                        "canViewReservations": {
+                            "type": "boolean",
+                            "description": "Can view reservations"
+                        },
+                        "canRespondToReviews": {
+                            "type": "boolean",
+                            "description": "Can respond to reviews"
+                        },
+                        "canCreatePosts": {
+                            "type": "boolean",
+                            "description": "Can create posts"
+                        },
+                        "canViewAnalytics": {
+                            "type": "boolean",
+                            "description": "Can view analytics"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "description": "Object with permission flags"
+                }
+            ]
         },
         "profile": {
             "type": "object",
             "properties": {
+                "firstName": {
+                    "type": "string",
+                    "description": "User first name"
+                },
+                "lastName": {
+                    "type": "string",
+                    "description": "User last name"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "User display name"
+                },
                 "avatar": {
                     "type": "string",
                     "description": "Avatar URL"
@@ -109,6 +152,12 @@
                 "occupation": {
                     "type": "string",
                     "description": "User occupation"
+                },
+                "location": {
+                    "$ref": "common.schema.json#/definitions/location"
+                },
+                "contactInfo": {
+                    "$ref": "common.schema.json#/definitions/contactInfo"
                 }
             },
             "additionalProperties": false
@@ -116,6 +165,11 @@
         "settings": {
             "type": "object",
             "properties": {
+                "theme": {
+                    "type": "string",
+                    "enum": ["AUTO", "LIGHT", "DARK"],
+                    "description": "Theme preference"
+                },
                 "darkMode": {
                     "type": "boolean",
                     "description": "Dark mode preference"
@@ -123,6 +177,10 @@
                 "language": {
                     "type": "string",
                     "description": "Preferred language"
+                },
+                "timezone": {
+                    "type": "string",
+                    "description": "User timezone"
                 },
                 "notifications": {
                     "type": "object",
@@ -142,9 +200,39 @@
                         "allowPush": {
                             "type": "boolean",
                             "description": "Push notifications enabled"
+                        },
+                        "email": {
+                            "type": "boolean",
+                            "description": "Email notifications enabled"
+                        },
+                        "push": {
+                            "type": "boolean",
+                            "description": "Push notifications enabled"
+                        },
+                        "sms": {
+                            "type": "boolean",
+                            "description": "SMS notifications enabled"
                         }
                     },
-                    "required": ["enabled", "allowEmails", "allowSms", "allowPush"],
+                    "additionalProperties": false
+                },
+                "privacy": {
+                    "type": "object",
+                    "properties": {
+                        "profileVisibility": {
+                            "type": "string",
+                            "enum": ["PUBLIC", "PRIVATE", "FRIENDS_ONLY"],
+                            "description": "Profile visibility level"
+                        },
+                        "showEmail": {
+                            "type": "boolean",
+                            "description": "Show email in profile"
+                        },
+                        "showPhone": {
+                            "type": "boolean",
+                            "description": "Show phone in profile"
+                        }
+                    },
                     "additionalProperties": false
                 }
             },
