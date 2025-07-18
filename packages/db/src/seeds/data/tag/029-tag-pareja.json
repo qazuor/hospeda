@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "029-tag-pareja",
+    "name": "Pareja",
+    "slug": "pareja",
+    "color": "GREY",
+    "icon": "heart",
+    "notes": "Experiencias románticas y actividades para parejas",
+    "lifecycleState": "ACTIVE"
+}

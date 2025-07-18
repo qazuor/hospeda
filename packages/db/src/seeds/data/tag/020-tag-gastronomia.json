@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "020-tag-gastronomia",
+    "name": "Gastronomía",
+    "slug": "gastronomia",
+    "color": "GREY",
+    "icon": "restaurant",
+    "notes": "Contenido sobre cocina regional, restaurantes y experiencias gastronómicas",
+    "lifecycleState": "ACTIVE"
+}

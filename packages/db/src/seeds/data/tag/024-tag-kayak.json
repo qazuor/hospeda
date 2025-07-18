@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "024-tag-kayak",
+    "name": "Kayak",
+    "slug": "kayak",
+    "color": "GREEN",
+    "icon": "kayak",
+    "notes": "Actividades de kayak y canoa",
+    "lifecycleState": "ACTIVE"
+}

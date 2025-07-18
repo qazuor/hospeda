@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "036-tag-spa",
+    "name": "Spa",
+    "slug": "spa",
+    "color": "MAGENTA",
+    "icon": "spa",
+    "notes": "Servicios de spa y relajación",
+    "lifecycleState": "ACTIVE"
+}

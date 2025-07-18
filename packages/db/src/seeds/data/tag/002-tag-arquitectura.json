@@ -1,0 +1,8 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "002-tag-arquitectura",
+    "name": "Arquitectura",
+    "slug": "arquitectura",
+    "color": "GREY",
+    "notes": "Edificaciones y construcciones destacadas"
+}

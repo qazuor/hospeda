@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "009-tag-citricultura",
+    "name": "Citricultura",
+    "slug": "citricultura",
+    "color": "ORANGE",
+    "icon": "citrus",
+    "notes": "Actividades relacionadas con la producción citrícola",
+    "lifecycleState": "ACTIVE"
+}

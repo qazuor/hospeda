@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "033-tag-rio-parana",
+    "name": "Río Paraná",
+    "slug": "rio-parana",
+    "color": "GREEN",
+    "icon": "water",
+    "notes": "Actividades relacionadas con el río Paraná y sus costas",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "026-tag-musica",
+    "name": "Música",
+    "slug": "musica",
+    "color": "RED",
+    "icon": "music",
+    "notes": "Eventos musicales y experiencias sonoras",
+    "lifecycleState": "ACTIVE"
+}

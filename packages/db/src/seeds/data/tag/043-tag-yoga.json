@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "043-tag-yoga",
+    "name": "Yoga",
+    "slug": "yoga",
+    "color": "PURPLE",
+    "icon": "yoga",
+    "notes": "Clases y retiros de yoga",
+    "lifecycleState": "ACTIVE"
+}

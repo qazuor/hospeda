@@ -1,0 +1,8 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "041-tag-vida-nocturna",
+    "name": "Vida Nocturna",
+    "slug": "vida-nocturna",
+    "color": "GREY",
+    "notes": "Entretenimiento y actividades nocturnas"
+}

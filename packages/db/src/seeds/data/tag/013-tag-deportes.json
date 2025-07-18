@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "013-tag-deportes",
+    "name": "Deportes",
+    "slug": "deportes",
+    "color": "ORANGE",
+    "icon": "sports",
+    "notes": "Actividades deportivas y competencias",
+    "lifecycleState": "ACTIVE"
+}

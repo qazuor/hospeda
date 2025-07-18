@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "039-tag-turismo",
+    "name": "Turismo",
+    "slug": "turismo",
+    "color": "GREEN",
+    "icon": "map",
+    "notes": "Contenido general relacionado con actividades turísticas",
+    "lifecycleState": "ACTIVE"
+}

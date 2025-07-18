@@ -1,0 +1,8 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "032-tag-relax",
+    "name": "Relax",
+    "slug": "relax",
+    "color": "LIGHT_BLUE",
+    "notes": "Experiencias de relajación y descanso"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "012-tag-delta",
+    "name": "Delta",
+    "slug": "delta",
+    "color": "GREEN",
+    "icon": "delta",
+    "notes": "Experiencias en el delta del río Paraná",
+    "lifecycleState": "ACTIVE"
+}

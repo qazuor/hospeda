@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "021-tag-golf",
+    "name": "Golf",
+    "slug": "golf",
+    "color": "GREEN",
+    "icon": "golf",
+    "notes": "Campos de golf y actividades relacionadas",
+    "lifecycleState": "ACTIVE"
+}

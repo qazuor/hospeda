@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "003-tag-artesanias",
+    "name": "Artesanías",
+    "slug": "artesanias",
+    "color": "BROWN",
+    "icon": "craft",
+    "notes": "Productos y talleres artesanales locales",
+    "lifecycleState": "ACTIVE"
+}

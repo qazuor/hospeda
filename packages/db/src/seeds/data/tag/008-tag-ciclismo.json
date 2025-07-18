@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "008-tag-ciclismo",
+    "name": "Ciclismo",
+    "slug": "ciclismo",
+    "color": "ORANGE",
+    "icon": "bicycle",
+    "notes": "Rutas y actividades ciclísticas",
+    "lifecycleState": "ACTIVE"
+}

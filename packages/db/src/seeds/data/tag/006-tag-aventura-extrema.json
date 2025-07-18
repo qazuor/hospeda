@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "006-tag-aventura-extrema",
+    "name": "Aventura Extrema",
+    "slug": "aventura-extrema",
+    "color": "RED",
+    "icon": "extreme",
+    "notes": "Actividades de alto riesgo y adrenalina",
+    "lifecycleState": "ACTIVE"
+}

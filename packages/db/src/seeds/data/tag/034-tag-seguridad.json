@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/tag.schema.json",
+    "id": "034-tag-seguridad",
+    "name": "Seguridad",
+    "slug": "seguridad",
+    "color": "GREY",
+    "icon": "security",
+    "notes": "Lugares seguros y medidas de seguridad",
+    "lifecycleState": "ACTIVE"
+}
