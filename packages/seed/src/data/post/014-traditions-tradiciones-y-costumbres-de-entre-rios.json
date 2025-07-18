@@ -1,45 +1,36 @@
 {
-  "$schema": "../../schemas/post.schema.json",
-  "id": "014-traditions-tradiciones-y-costumbres-de-entre-rios",
-  "slug": "tradiciones-y-costumbres-de-entre-rios",
-  "category": "TRADITIONS",
-  "title": "Tradiciones y Costumbres de Entre Ríos",
-  "summary": "Explora las tradiciones más arraigadas de la provincia: desde la mate hasta las festividades patronales.",
-  "content": "Las tradiciones entrerrianas son el corazón de su identidad cultural. El mate, las empanadas, las festividades patronales y las celebraciones familiares forman parte del ADN provincial que se transmite de generación en generación.",
-  "media": {
-    "featuredImage": {
-      "url": "https://images.unsplash.com/photo-1516799556?w=1200&h=600&fit=crop",
-      "caption": "Imagen de Tradiciones y Costumbres de Entre Ríos"
-    }
-  },
-  "authorId": "007-user-super-administrator",
-  "sponsorshipId": "018-postSponsorship-patrimonio-cultural-005",
-  "relatedDestinationId": "008-destination-paranacito",
-  "relatedAccommodationId": null,
-  "relatedEventId": null,
-  "visibility": "PUBLIC",
-  "isNews": false,
-  "isFeaturedInWebsite": false,
-  "expiresAt": null,
-  "likes": 211,
-  "comments": 9,
-  "shares": 140,
-  "isFeatured": true,
-  "seo": {
-    "title": "Tradiciones y Costumbres de Entre Ríos | Hospeda",
-    "description": "Explora las tradiciones más arraigadas de la provincia: desde la mate hasta las festividades patronales.",
-    "keywords": [
-      "traditions",
-      "entre rios",
-      "turismo"
-    ]
-  },
-  "lifecycleState": "ACTIVE",
-  "moderationState": "APPROVED",
-  "tags": [
-    "031-tag-playas",
-    "015-tag-ecoturismo",
-    "027-tag-naturaleza",
-    "039-tag-turismo"
-  ]
+    "$schema": "../../schemas/post.schema.json",
+    "id": "014-traditions-tradiciones-y-costumbres-de-entre-rios",
+    "slug": "tradiciones-y-costumbres-de-entre-rios",
+    "category": "TRADITIONS",
+    "title": "Tradiciones y Costumbres de Entre Ríos",
+    "summary": "Explora las tradiciones más arraigadas de la provincia: desde la mate hasta las festividades patronales.",
+    "content": "Las tradiciones entrerrianas son el corazón de su identidad cultural. El mate, las empanadas, las festividades patronales y las celebraciones familiares forman parte del ADN provincial que se transmite de generación en generación.",
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1516799556?w=1200&h=600&fit=crop",
+            "caption": "Imagen de Tradiciones y Costumbres de Entre Ríos"
+        }
+    },
+    "authorId": "007-user-super-administrator",
+    "sponsorshipId": "018-postSponsorship-patrimonio-cultural-005",
+    "relatedDestinationId": "008-destination-paranacito",
+    "relatedAccommodationId": null,
+    "relatedEventId": null,
+    "visibility": "PUBLIC",
+    "isNews": false,
+    "isFeaturedInWebsite": false,
+    "expiresAt": null,
+    "likes": 211,
+    "comments": 9,
+    "shares": 140,
+    "isFeatured": true,
+    "seo": {
+        "title": "Tradiciones y Costumbres de Entre Ríos | Hospeda",
+        "description": "Explora las tradiciones más arraigadas de la provincia: desde la mate hasta las festividades patronales.",
+        "keywords": ["traditions", "entre rios", "turismo"]
+    },
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "tags": ["031-tag-playas", "015-tag-ecoturismo", "027-tag-naturaleza", "039-tag-turismo"]
 }

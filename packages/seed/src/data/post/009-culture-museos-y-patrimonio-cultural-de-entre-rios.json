@@ -1,44 +1,36 @@
 {
-  "$schema": "../../schemas/post.schema.json",
-  "id": "009-culture-museos-y-patrimonio-cultural-de-entre-rios",
-  "slug": "museos-y-patrimonio-cultural-de-entre-rios",
-  "category": "CULTURE",
-  "title": "Museos y Patrimonio Cultural de Entre Ríos",
-  "summary": "Recorre los museos más importantes de la provincia y descubre su rico patrimonio cultural e histórico.",
-  "content": "Entre Ríos posee un invaluable patrimonio cultural que se refleja en sus numerosos museos, sitios históricos y centros culturales. Desde el Museo Histórico Regional de Gualeguaychú hasta el Palacio San José, cada espacio cuenta una historia única de la provincia.",
-  "media": {
-    "featuredImage": {
-      "url": "https://images.unsplash.com/photo-1501245757?w=1200&h=600&fit=crop",
-      "caption": "Imagen de Museos y Patrimonio Cultural de Entre Ríos"
-    }
-  },
-  "authorId": "001-user-maría-gonzález",
-  "sponsorshipId": "018-postSponsorship-patrimonio-cultural-005",
-  "relatedDestinationId": "007-destination-liebig",
-  "relatedAccommodationId": null,
-  "relatedEventId": null,
-  "visibility": "PUBLIC",
-  "isNews": false,
-  "isFeaturedInWebsite": false,
-  "expiresAt": null,
-  "likes": 449,
-  "comments": 96,
-  "shares": 11,
-  "isFeatured": true,
-  "seo": {
-    "title": "Museos y Patrimonio Cultural de Entre Ríos | Hospeda",
-    "description": "Recorre los museos más importantes de la provincia y descubre su rico patrimonio cultural e histórico.",
-    "keywords": [
-      "culture",
-      "entre rios",
-      "turismo"
-    ]
-  },
-  "lifecycleState": "ACTIVE",
-  "moderationState": "APPROVED",
-  "tags": [
-    "003-tag-artesanias",
-    "033-tag-rio-parana",
-    "007-tag-camping"
-  ]
+    "$schema": "../../schemas/post.schema.json",
+    "id": "009-culture-museos-y-patrimonio-cultural-de-entre-rios",
+    "slug": "museos-y-patrimonio-cultural-de-entre-rios",
+    "category": "CULTURE",
+    "title": "Museos y Patrimonio Cultural de Entre Ríos",
+    "summary": "Recorre los museos más importantes de la provincia y descubre su rico patrimonio cultural e histórico.",
+    "content": "Entre Ríos posee un invaluable patrimonio cultural que se refleja en sus numerosos museos, sitios históricos y centros culturales. Desde el Museo Histórico Regional de Gualeguaychú hasta el Palacio San José, cada espacio cuenta una historia única de la provincia.",
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1501245757?w=1200&h=600&fit=crop",
+            "caption": "Imagen de Museos y Patrimonio Cultural de Entre Ríos"
+        }
+    },
+    "authorId": "001-user-maría-gonzález",
+    "sponsorshipId": "018-postSponsorship-patrimonio-cultural-005",
+    "relatedDestinationId": "007-destination-liebig",
+    "relatedAccommodationId": null,
+    "relatedEventId": null,
+    "visibility": "PUBLIC",
+    "isNews": false,
+    "isFeaturedInWebsite": false,
+    "expiresAt": null,
+    "likes": 449,
+    "comments": 96,
+    "shares": 11,
+    "isFeatured": true,
+    "seo": {
+        "title": "Museos y Patrimonio Cultural de Entre Ríos | Hospeda",
+        "description": "Recorre los museos más importantes de la provincia y descubre su rico patrimonio cultural e histórico.",
+        "keywords": ["culture", "entre rios", "turismo"]
+    },
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "tags": ["003-tag-artesanias", "033-tag-rio-parana", "007-tag-camping"]
 }
