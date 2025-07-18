@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "035-destinationReview-liebig",
+    "userId": "003-user-usuario-invitado",
+    "destinationId": "liebig",
+    "title": "Muy buena experiencia familiar",
+    "content": "Viajamos en familia y todos quedamos encantados. Hay actividades para todas las edades, los espacios son seguros y la infraestructura está bien mantenida. Los precios son razonables y el servicio es cordial.",
+    "rating": {
+        "landscape": 5,
+        "attractions": 5,
+        "accessibility": 4,
+        "safety": 4,
+        "cleanliness": 3,
+        "hospitality": 3,
+        "culturalOffer": 3,
+        "gastronomy": 3,
+        "affordability": 4,
+        "nightlife": 3,
+        "infrastructure": 3,
+        "environmentalCare": 3,
+        "wifiAvailability": 3,
+        "shopping": 2,
+        "beaches": 4,
+        "greenSpaces": 3,
+        "localEvents": 3,
+        "weatherSatisfaction": 5
+    }
+}

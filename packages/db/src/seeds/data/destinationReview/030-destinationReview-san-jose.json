@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "030-destinationReview-san-jose",
+    "userId": "005-user-miguel-torres",
+    "destinationId": "san-jose",
+    "title": "Destino con mucho potencial",
+    "content": "Es un San José con características únicas, aunque creo que podría mejorarse en algunos aspectos. La belleza natural es indiscutible, pero falta un poco más de desarrollo en servicios. Aún así, vale la pena visitarlo.",
+    "rating": {
+        "landscape": 5,
+        "attractions": 5,
+        "accessibility": 4,
+        "safety": 3,
+        "cleanliness": 4,
+        "hospitality": 5,
+        "culturalOffer": 4,
+        "gastronomy": 3,
+        "affordability": 2,
+        "nightlife": 2,
+        "infrastructure": 4,
+        "environmentalCare": 4,
+        "wifiAvailability": 3,
+        "shopping": 2,
+        "beaches": 3,
+        "greenSpaces": 3,
+        "localEvents": 2,
+        "weatherSatisfaction": 5
+    }
+}

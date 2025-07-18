@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "008-destinationReview-federacion",
+    "userId": "009-user-sofia-morales",
+    "destinationId": "federacion",
+    "title": "Perfecto para desconectar y relajarse",
+    "content": "Federación es exactamente lo que necesitaba para desconectar del trabajo y la rutina. Las termas son fantásticas, con diferentes piscinas y tratamientos. La ciudad es pequeña pero tiene todo lo necesario. Me encantó caminar por la costanera y disfrutar de los atardeceres. El ambiente es muy relajante y la gente es amable. La única pega es que puede resultar un poco monótono para estadías largas, pero para un fin de semana es perfecto.",
+    "rating": {
+        "landscape": 4,
+        "attractions": 4,
+        "accessibility": 3,
+        "safety": 4,
+        "cleanliness": 4,
+        "hospitality": 4,
+        "culturalOffer": 4,
+        "gastronomy": 4,
+        "affordability": 3,
+        "nightlife": 3,
+        "infrastructure": 3,
+        "environmentalCare": 4,
+        "wifiAvailability": 3,
+        "shopping": 3,
+        "beaches": 3,
+        "greenSpaces": 4,
+        "localEvents": 4,
+        "weatherSatisfaction": 4
+    }
+}

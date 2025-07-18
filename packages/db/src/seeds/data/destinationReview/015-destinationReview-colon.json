@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "015-destinationReview-colon",
+    "userId": "009-user-sofia-morales",
+    "destinationId": "colon",
+    "title": "Destino con mucho potencial",
+    "content": "Es un Colón con características únicas, aunque creo que podría mejorarse en algunos aspectos. La belleza natural es indiscutible, pero falta un poco más de desarrollo en servicios. Aún así, vale la pena visitarlo.",
+    "rating": {
+        "landscape": 5,
+        "attractions": 5,
+        "accessibility": 2,
+        "safety": 5,
+        "cleanliness": 2,
+        "hospitality": 3,
+        "culturalOffer": 2,
+        "gastronomy": 3,
+        "affordability": 3,
+        "nightlife": 2,
+        "infrastructure": 2,
+        "environmentalCare": 4,
+        "wifiAvailability": 2,
+        "shopping": 3,
+        "beaches": 4,
+        "greenSpaces": 5,
+        "localEvents": 2,
+        "weatherSatisfaction": 3
+    }
+}

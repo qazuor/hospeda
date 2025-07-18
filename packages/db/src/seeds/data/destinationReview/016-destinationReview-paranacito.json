@@ -1,0 +1,28 @@
+{
+    "$schema": "../../../schemas/destinationReview.schema.json",
+    "id": "016-destinationReview-paranacito",
+    "userId": "moderator-user-67890",
+    "destinationId": "paranacito",
+    "title": "Muy buena experiencia familiar",
+    "content": "Viajamos en familia y todos quedamos encantados. Hay actividades para todas las edades, los espacios son seguros y la infraestructura está bien mantenida. Los precios son razonables y el servicio es cordial.",
+    "rating": {
+        "landscape": 5,
+        "attractions": 3,
+        "accessibility": 5,
+        "safety": 5,
+        "cleanliness": 3,
+        "hospitality": 5,
+        "culturalOffer": 2,
+        "gastronomy": 4,
+        "affordability": 4,
+        "nightlife": 2,
+        "infrastructure": 3,
+        "environmentalCare": 3,
+        "wifiAvailability": 5,
+        "shopping": 2,
+        "beaches": 5,
+        "greenSpaces": 4,
+        "localEvents": 3,
+        "weatherSatisfaction": 5
+    }
+}
