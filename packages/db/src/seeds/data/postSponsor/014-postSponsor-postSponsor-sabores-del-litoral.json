@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/postSponsor.schema.json",
-    "id": "ps-sabores-litoral-003",
+    "id": "014-postSponsor-postSponsor-sabores-del-litoral",
     "name": "Sabores del Litoral",
     "type": "POST_SPONSOR",
     "description": "Red de restaurantes y productores gastronómicos de Entre Ríos que busca promover la cocina regional y los sabores auténticos del litoral argentino.",

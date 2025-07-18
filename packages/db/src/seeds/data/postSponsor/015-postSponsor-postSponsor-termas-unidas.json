@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/postSponsor.schema.json",
-    "id": "ps-termas-unidas-002",
+    "id": "015-postSponsor-postSponsor-termas-unidas",
     "name": "Termas Unidas",
     "type": "POST_SPONSOR",
     "description": "Asociación de complejos termales de Entre Ríos que promueve el turismo termal y de bienestar en la región. Agrupa los principales centros termales de la provincia.",

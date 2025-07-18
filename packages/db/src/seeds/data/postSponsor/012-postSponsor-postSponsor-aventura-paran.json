@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/postSponsor.schema.json",
-    "id": "ps-aventura-parana-004",
+    "id": "012-postSponsor-postSponsor-aventura-paran",
     "name": "Aventura Paraná",
     "type": "POST_SPONSOR",
     "description": "Operadora turística especializada en actividades de aventura y deportes acuáticos en el río Paraná y sus afluentes. Ofrece experiencias únicas en la naturaleza entrerriana.",
