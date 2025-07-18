@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "055-attraction-museo_historico",
+    "name": "Museo Histórico",
+    "slug": "museo_historico",
+    "description": "Museo dedicado a la historia local y regional con colecciones permanentes",
+    "icon": "museum",
+    "isBuiltin": true,
+    "tagIds": [
+        "022-tag-historia",
+        "tag-museos",
+        "011-tag-cultura",
+        "tag-familia-004",
+        "039-tag-turismo"
+    ],
+    "lifecycleState": "ACTIVE"
+}

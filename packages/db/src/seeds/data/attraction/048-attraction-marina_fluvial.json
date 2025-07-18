@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "048-attraction-marina_fluvial",
+    "name": "Marina Fluvial",
+    "slug": "marina_fluvial",
+    "description": "Marina con servicios completos para embarcaciones y deportes náuticos",
+    "icon": "marina",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

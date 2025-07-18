@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "056-attraction-museo_regional",
+    "name": "Museo Regional",
+    "slug": "museo_regional",
+    "description": "Museo que exhibe la cultura y tradiciones de la región",
+    "icon": "museum",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

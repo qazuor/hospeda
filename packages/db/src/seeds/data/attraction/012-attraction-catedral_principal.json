@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "012-attraction-catedral_principal",
+    "name": "Catedral Principal",
+    "slug": "catedral_principal",
+    "description": "Catedral principal de la ciudad con arquitectura destacada y valor histórico",
+    "icon": "church",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

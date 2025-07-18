@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "068-attraction-plantacion_citricos",
+    "name": "Plantación de Cítricos",
+    "slug": "plantacion_citricos",
+    "description": "Plantación de naranjas, mandarinas y otros cítricos con tours educativos",
+    "icon": "agriculture",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

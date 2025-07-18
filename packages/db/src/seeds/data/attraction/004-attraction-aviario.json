@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "004-attraction-aviario",
+    "name": "Aviario",
+    "slug": "aviario",
+    "description": "Aviario con aves regionales y exóticas",
+    "icon": "flutter_dash",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

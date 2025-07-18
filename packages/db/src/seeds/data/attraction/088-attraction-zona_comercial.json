@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "088-attraction-zona_comercial",
+    "name": "Zona Comercial",
+    "slug": "zona_comercial",
+    "description": "Área comercial con variedad de tiendas y servicios",
+    "icon": "storefront",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "039-attraction-fabrica_dulces",
+    "name": "Fábrica de Dulces",
+    "slug": "fabrica_dulces",
+    "description": "Fábrica artesanal de dulces regionales con visitas y degustaciones",
+    "icon": "cake",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

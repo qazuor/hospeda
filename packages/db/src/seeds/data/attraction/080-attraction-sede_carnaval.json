@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "080-attraction-sede_carnaval",
+    "name": "Sede del Carnaval",
+    "slug": "sede_carnaval",
+    "description": "Lugar principal donde se desarrollan los eventos del carnaval",
+    "icon": "celebration",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

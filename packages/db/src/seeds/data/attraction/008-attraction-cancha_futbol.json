@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "008-attraction-cancha_futbol",
+    "name": "Cancha de Fútbol",
+    "slug": "cancha_futbol",
+    "description": "Cancha de fútbol para prácticas deportivas y eventos locales",
+    "icon": "sports_soccer",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

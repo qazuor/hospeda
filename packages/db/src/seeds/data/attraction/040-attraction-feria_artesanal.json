@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "040-attraction-feria_artesanal",
+    "name": "Feria Artesanal",
+    "slug": "feria_artesanal",
+    "description": "Feria de artesanos locales con productos únicos",
+    "icon": "handyman",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

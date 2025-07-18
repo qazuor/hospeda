@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "018-attraction-centro_historico",
+    "name": "Centro Histórico",
+    "slug": "centro_historico",
+    "description": "Casco histórico de la ciudad con arquitectura colonial y sitios de interés patrimonial",
+    "icon": "account_balance",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

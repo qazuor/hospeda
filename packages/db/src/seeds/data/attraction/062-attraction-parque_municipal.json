@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "062-attraction-parque_municipal",
+    "name": "Parque Municipal",
+    "slug": "parque_municipal",
+    "description": "Parque urbano con espacios verdes, senderos y recreación",
+    "icon": "park",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "009-attraction-casa_comidas",
+    "name": "Casa de Comidas",
+    "slug": "casa_comidas",
+    "description": "Restaurante familiar con comidas caseras y ambiente acogedor",
+    "icon": "restaurant",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "064-attraction-paseo_peatonal",
+    "name": "Paseo Peatonal",
+    "slug": "paseo_peatonal",
+    "description": "Calle peatonal con comercios, restaurantes y entretenimiento",
+    "icon": "directions_walk",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

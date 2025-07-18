@@ -1,0 +1,17 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "065-attraction-pesca_deportiva",
+    "name": "Pesca Deportiva",
+    "slug": "pesca_deportiva",
+    "description": "Zona habilitada para pesca deportiva con especies autóctonas del río",
+    "icon": "fishing",
+    "isBuiltin": true,
+    "tagIds": [
+        "tag-pesca",
+        "013-tag-deportes",
+        "tag-naturaleza-002",
+        "tag-rio-parana-009",
+        "005-tag-aventura"
+    ],
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "052-attraction-monumento_historico",
+    "name": "Monumento Histórico",
+    "slug": "monumento_historico",
+    "description": "Monumento conmemorativo de eventos o personalidades históricas",
+    "icon": "monument",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

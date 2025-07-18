@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "063-attraction-parrilla_tradicional",
+    "name": "Parrilla Tradicional",
+    "slug": "parrilla_tradicional",
+    "description": "Parrilla argentina con carnes a la parrilla y ambiente tradicional",
+    "icon": "restaurant",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

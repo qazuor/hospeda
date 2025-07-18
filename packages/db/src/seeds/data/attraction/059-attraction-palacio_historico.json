@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "059-attraction-palacio_historico",
+    "name": "Palacio Histórico",
+    "slug": "palacio_historico",
+    "description": "Palacio de importancia histórica con arquitectura colonial y visitas guiadas",
+    "icon": "castle",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

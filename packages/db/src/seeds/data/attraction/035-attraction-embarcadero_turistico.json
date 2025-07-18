@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "035-attraction-embarcadero_turistico",
+    "name": "Embarcadero Turístico",
+    "slug": "embarcadero_turistico",
+    "description": "Punto de partida para excursiones fluviales y paseos en barco",
+    "icon": "sailing",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

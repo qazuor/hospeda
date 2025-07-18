@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "066-attraction-piscinas_termales",
+    "name": "Piscinas Termales",
+    "slug": "piscinas_termales",
+    "description": "Piscinas termales al aire libre con diferentes temperaturas y propiedades terapéuticas",
+    "icon": "pool",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

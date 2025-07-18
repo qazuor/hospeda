@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "013-attraction-centro_agropecuario",
+    "name": "Centro Agropecuario",
+    "slug": "centro_agropecuario",
+    "description": "Centro de exhibición y venta de productos agropecuarios locales",
+    "icon": "store",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

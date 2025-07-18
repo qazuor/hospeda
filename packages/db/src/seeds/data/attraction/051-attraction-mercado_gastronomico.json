@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "051-attraction-mercado_gastronomico",
+    "name": "Mercado Gastronómico",
+    "slug": "mercado_gastronomico",
+    "description": "Mercado con variedad de comidas y productos gastronómicos",
+    "icon": "restaurant",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

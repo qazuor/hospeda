@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "071-attraction-plaza_juegos",
+    "name": "Plaza de Juegos",
+    "slug": "plaza_juegos",
+    "description": "Plaza con juegos infantiles y espacios recreativos",
+    "icon": "toys",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

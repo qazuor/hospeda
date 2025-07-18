@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "006-attraction-bodegon_criollo",
+    "name": "Bodegón Criollo",
+    "slug": "bodegon_criollo",
+    "description": "Bodegón tradicional con comidas criollas y ambiente típico",
+    "icon": "restaurant",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

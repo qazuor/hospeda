@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "037-attraction-estancia_turistica",
+    "name": "Estancia Turística",
+    "slug": "estancia_turistica",
+    "description": "Estancia con actividades rurales y turismo rural",
+    "icon": "cottage",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

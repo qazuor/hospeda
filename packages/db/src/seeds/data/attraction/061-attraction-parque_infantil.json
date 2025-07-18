@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "061-attraction-parque_infantil",
+    "name": "Parque Infantil",
+    "slug": "parque_infantil",
+    "description": "Parque con juegos y actividades para niños",
+    "icon": "playground",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

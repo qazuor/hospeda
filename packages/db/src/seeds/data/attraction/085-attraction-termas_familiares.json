@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "085-attraction-termas_familiares",
+    "name": "Termas Familiares",
+    "slug": "termas_familiares",
+    "description": "Complejo termal diseñado especialmente para familias con niños y actividades para todas las edades",
+    "icon": "family_restroom",
+    "isBuiltin": true,
+    "tagIds": ["tag-termas-012", "tag-familia-004", "001-tag-aguas-termales", "tag-relax"],
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "027-attraction-complejo_deportivo",
+    "name": "Complejo Deportivo",
+    "slug": "complejo_deportivo",
+    "description": "Complejo con múltiples instalaciones deportivas",
+    "icon": "sports",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

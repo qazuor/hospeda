@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "069-attraction-playa_fluvial",
+    "name": "Playa Fluvial",
+    "slug": "playa_fluvial",
+    "description": "Playa natural a orillas del río con servicios para visitantes",
+    "icon": "beach_access",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

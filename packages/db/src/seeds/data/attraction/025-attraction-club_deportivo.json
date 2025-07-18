@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "025-attraction-club_deportivo",
+    "name": "Club Deportivo",
+    "slug": "club_deportivo",
+    "description": "Club con instalaciones deportivas y actividades recreativas",
+    "icon": "fitness_center",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

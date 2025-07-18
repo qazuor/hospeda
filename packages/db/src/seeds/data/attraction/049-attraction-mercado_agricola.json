@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "049-attraction-mercado_agricola",
+    "name": "Mercado Agrícola",
+    "slug": "mercado_agricola",
+    "description": "Mercado de productos agrícolas frescos y regionales",
+    "icon": "storefront",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

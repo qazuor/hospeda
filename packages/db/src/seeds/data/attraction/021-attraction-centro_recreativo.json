@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "021-attraction-centro_recreativo",
+    "name": "Centro Recreativo",
+    "slug": "centro_recreativo",
+    "description": "Centro con actividades recreativas para toda la familia",
+    "icon": "sports_esports",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "022-attraction-centro_spa_termal",
+    "name": "Centro Spa Termal",
+    "slug": "centro_spa_termal",
+    "description": "Centro especializado en tratamientos de spa con aguas termales y terapias de relajación",
+    "icon": "spa",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}
