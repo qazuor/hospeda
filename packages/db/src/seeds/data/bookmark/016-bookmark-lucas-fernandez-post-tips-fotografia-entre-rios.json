@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-016-lucas-fotografia-post",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d483",
+    "id": "016-bookmark-lucas-fernandez-post-tips-fotografia-entre-rios",
+    "userId": "008-user-lucas-fernandez",
     "entityId": "post-007-tips-fotografia-entre-rios",
     "entityType": "POST",
     "name": "Tips de Fotografía",

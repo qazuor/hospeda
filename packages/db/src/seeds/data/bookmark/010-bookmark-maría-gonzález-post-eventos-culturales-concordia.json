@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-010-admin-eventos-post",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+    "id": "010-bookmark-maría-gonzález-post-eventos-culturales-concordia",
+    "userId": "001-user-maría-gonzález",
     "entityId": "post-008-eventos-culturales-concordia",
     "entityType": "POST",
     "name": "Eventos Culturales Concordia",

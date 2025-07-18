@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/userBookmark.schema.json",
-    "id": "bookmark-003-sofia-carnaval-post",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "id": "003-bookmark-sofia-morales-post-carnaval-gualeguaychu",
+    "userId": "009-user-sofia-morales",
     "entityId": "post-003-carnaval-gualeguaychu",
     "entityType": "POST",
     "name": "Carnaval de Gualeguaychú",
