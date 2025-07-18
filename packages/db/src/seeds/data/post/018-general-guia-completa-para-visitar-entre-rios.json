@@ -1,0 +1,43 @@
+{
+  "$schema": "../../schemas/post.schema.json",
+  "id": "018-general-guia-completa-para-visitar-entre-rios",
+  "slug": "guia-completa-para-visitar-entre-rios",
+  "category": "GENERAL",
+  "title": "Guía Completa para Visitar Entre Ríos",
+  "summary": "Todo lo que necesitas saber para planificar tu viaje a Entre Ríos: consejos, recomendaciones y más.",
+  "content": "Planificar un viaje a Entre Ríos requiere conocer sus secretos mejor guardados. Esta guía completa te ayudará a descubrir los mejores lugares, la mejor época para visitar y consejos prácticos para aprovechar al máximo tu estadía.",
+  "media": {
+    "featuredImage": {
+      "url": "https://images.unsplash.com/photo-1503394525?w=1200&h=600&fit=crop",
+      "caption": "Imagen de Guía Completa para Visitar Entre Ríos"
+    }
+  },
+  "authorId": "010-user-roberto-mendoza",
+  "sponsorshipId": "020-postSponsorship-termas-bienestar-002",
+  "relatedDestinationId": "003-destination-concordia",
+  "relatedAccommodationId": null,
+  "relatedEventId": null,
+  "visibility": "PUBLIC",
+  "isNews": true,
+  "isFeaturedInWebsite": true,
+  "expiresAt": null,
+  "likes": 166,
+  "comments": 100,
+  "shares": 113,
+  "isFeatured": true,
+  "seo": {
+    "title": "Guía Completa para Visitar Entre Ríos | Hospeda",
+    "description": "Todo lo que necesitas saber para planificar tu viaje a Entre Ríos: consejos, recomendaciones y más.",
+    "keywords": [
+      "general",
+      "entre rios",
+      "turismo"
+    ]
+  },
+  "lifecycleState": "ACTIVE",
+  "moderationState": "APPROVED",
+  "tags": [
+    "006-tag-aventura-extrema",
+    "010-tag-compras"
+  ]
+}

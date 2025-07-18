@@ -1,0 +1,45 @@
+{
+  "$schema": "../../schemas/post.schema.json",
+  "id": "015-family-actividades-familiares-en-entre-rios",
+  "slug": "actividades-familiares-en-entre-rios",
+  "category": "FAMILY",
+  "title": "Actividades Familiares en Entre Ríos",
+  "summary": "Planes perfectos para disfrutar en familia: parques, actividades al aire libre y entretenimiento.",
+  "content": "Entre Ríos es un destino ideal para las familias. Con parques temáticos, actividades al aire libre, playas aptas para niños y espacios recreativos, la provincia ofrece opciones para todos los integrantes de la familia.",
+  "media": {
+    "featuredImage": {
+      "url": "https://images.unsplash.com/photo-1562167133?w=1200&h=600&fit=crop",
+      "caption": "Imagen de Actividades Familiares en Entre Ríos"
+    }
+  },
+  "authorId": "004-user-ana-rodríguez",
+  "sponsorshipId": "021-postSponsorship-destinos-imperdibles-001",
+  "relatedDestinationId": null,
+  "relatedAccommodationId": null,
+  "relatedEventId": null,
+  "visibility": "PUBLIC",
+  "isNews": true,
+  "isFeaturedInWebsite": false,
+  "expiresAt": null,
+  "likes": 56,
+  "comments": 90,
+  "shares": 42,
+  "isFeatured": false,
+  "seo": {
+    "title": "Actividades Familiares en Entre Ríos | Hospeda",
+    "description": "Planes perfectos para disfrutar en familia: parques, actividades al aire libre y entretenimiento.",
+    "keywords": [
+      "family",
+      "entre rios",
+      "turismo"
+    ]
+  },
+  "lifecycleState": "ACTIVE",
+  "moderationState": "APPROVED",
+  "tags": [
+    "029-tag-pareja",
+    "028-tag-observacion-fauna",
+    "041-tag-vida-nocturna",
+    "027-tag-naturaleza"
+  ]
+}
