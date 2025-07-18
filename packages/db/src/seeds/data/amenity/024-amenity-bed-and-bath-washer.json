@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "4d4afabb-3f6c-413a-bfa8-5be8f9749058",
+    "id": "024-amenity-bed-and-bath-washer",
     "name": "washer",
     "slug": "washer",
     "description": "Washer",

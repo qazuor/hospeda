@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "ba67af27-5e90-44b6-b0ca-23fd5576092f",
+    "id": "004-amenity-entertainment-board_games",
     "name": "board_games",
     "slug": "board_games",
     "description": "Board Games",

@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "860df8e3-d746-4500-890f-9d1aafaec446",
-    "name": "playground",
-    "slug": "playground",
-    "description": "Playground",
+    "id": "009-amenity-outdoors-fireplace",
+    "name": "fireplace",
+    "slug": "fireplace",
+    "description": "Fireplace",
     "type": "OUTDOORS",
     "icon": "amenity",
     "isBuiltin": false,

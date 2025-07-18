@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "8c8cc325-bd60-4de1-a961-edc232c8e03b",
-    "name": "air_conditioning",
-    "slug": "air_conditioning",
-    "description": "Air Conditioning",
+    "id": "012-amenity-climate-control-heating",
+    "name": "heating",
+    "slug": "heating",
+    "description": "Heating",
     "type": "CLIMATE_CONTROL",
     "icon": "amenity",
     "isBuiltin": false,

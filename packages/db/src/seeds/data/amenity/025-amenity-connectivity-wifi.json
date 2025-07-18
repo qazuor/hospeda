@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "92b8c95b-264e-4bfc-86b5-23f1692f45af",
-    "name": "usb_outlets",
-    "slug": "usb_outlets",
-    "description": "Usb Outlets",
+    "id": "025-amenity-connectivity-wifi",
+    "name": "wifi",
+    "slug": "wifi",
+    "description": "Wifi",
     "type": "CONNECTIVITY",
     "icon": "amenity",
     "isBuiltin": false,

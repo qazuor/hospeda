@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "0d73b0be-30c1-4cbb-8b21-90d2bde3d412",
+    "id": "021-amenity-connectivity-streaming_service",
     "name": "streaming_service",
     "slug": "streaming_service",
     "description": "Streaming Service",

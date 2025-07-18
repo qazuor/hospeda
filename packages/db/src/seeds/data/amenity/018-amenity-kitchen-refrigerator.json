@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "aa5b2f0b-2dbe-43af-96b3-a1d3202c4419",
-    "name": "kitchen",
-    "slug": "kitchen",
-    "description": "Kitchen",
+    "id": "018-amenity-kitchen-refrigerator",
+    "name": "refrigerator",
+    "slug": "refrigerator",
+    "description": "Refrigerator",
     "type": "KITCHEN",
     "icon": "amenity",
     "isBuiltin": false,

@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "c7ecb8a1-5edb-4ed5-83c0-4c4b54bf4957",
+    "id": "016-amenity-kitchen-oven",
     "name": "oven",
     "slug": "oven",
     "description": "Oven",

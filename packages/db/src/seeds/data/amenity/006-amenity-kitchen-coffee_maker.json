@@ -1,9 +1,9 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "e5fa69c0-b8e8-431a-b508-14a211a54740",
-    "name": "microwave",
-    "slug": "microwave",
-    "description": "Microwave",
+    "id": "006-amenity-kitchen-coffee_maker",
+    "name": "coffee_maker",
+    "slug": "coffee_maker",
+    "description": "Coffee Maker",
     "type": "KITCHEN",
     "icon": "amenity",
     "isBuiltin": false,

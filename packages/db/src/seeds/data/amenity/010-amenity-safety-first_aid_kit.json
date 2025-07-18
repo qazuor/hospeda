@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "68987dfa-0982-4783-877e-3979d0a5ad1c",
+    "id": "010-amenity-safety-first_aid_kit",
     "name": "first_aid_kit",
     "slug": "first_aid_kit",
     "description": "First Aid Kit",

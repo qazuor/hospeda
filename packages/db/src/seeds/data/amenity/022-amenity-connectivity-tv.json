@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "a0d0d566-3d4a-4bf4-8dbd-c23f54433ed3",
+    "id": "022-amenity-connectivity-tv",
     "name": "tv",
     "slug": "tv",
     "description": "Tv",

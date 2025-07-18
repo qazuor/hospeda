@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "4bad848b-16de-488c-a673-91172ff620f3",
+    "id": "007-amenity-accessibility-elevator",
     "name": "elevator",
     "slug": "elevator",
     "description": "Elevator",

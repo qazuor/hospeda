@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
-    "id": "191fac6f-b553-404b-8463-a7281bc52ef9",
+    "id": "020-amenity-safety-smoke_detector",
     "name": "smoke_detector",
     "slug": "smoke_detector",
     "description": "Smoke Detector",
