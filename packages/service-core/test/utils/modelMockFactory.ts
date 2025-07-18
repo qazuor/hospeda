@@ -93,7 +93,7 @@ export function createLoggerMock(): ServiceLogger {
  *
  * @example
  * const mock = createTypedModelMock(DestinationModel, ['findWithRelations']);
- * // Para acceder a métodos de Vitest como .mockResolvedValue():
+ * // To access Vitest methods like .mockResolvedValue():
  * const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
  * asMock(mock.findById).mockResolvedValue(...);
  */

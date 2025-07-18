@@ -1002,7 +1002,7 @@ export abstract class BaseCrudService<
                 }
                 validateEntity(entity, this.entityName);
 
-                // 2. Permission check (solo esta línea en try/catch)
+                // 2. Permission check (only this line in try/catch)
                 try {
                     await this._canUpdateVisibility(
                         validActor,

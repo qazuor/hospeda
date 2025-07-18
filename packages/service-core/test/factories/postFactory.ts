@@ -63,7 +63,7 @@ export const createMockPost = (fields: Partial<PostType> = {}): PostType =>
  * Generates a unique title by default to avoid collisions in tests.
  */
 export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): PostCreateInput => {
-    // Genera un sufijo único para el título si no se provee uno
+    // Generate a unique suffix for the title if none is provided
     const uniqueSuffix = Math.random().toString(36).substring(2, 8);
     return {
         title: `Test Post ${uniqueSuffix}`,

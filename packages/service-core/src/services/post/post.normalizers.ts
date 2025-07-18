@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Normalization functions for Post entities.
+ * Contains functions to clean, validate, and standardize input data for posts,
+ * including media content, images, and metadata normalization.
+ */
+
 import type { ImageType, MediaType, VideoType } from '@repo/types';
 import { ModerationStatusEnum as ModerationStatusEnumType } from '@repo/types';
 import type { z } from 'zod';
@@ -6,6 +12,19 @@ import type { PostCreateInput, PostUpdateSchema } from './post.schemas';
 
 const DEFAULT_MODERATION_STATE: ModerationStatusEnumType = ModerationStatusEnumType.PENDING;
 
+/**
+ * Normalizes image data for posts.
+ * Validates image structure and applies default moderation status if needed.
+ *
+ * @param input - Raw image data (potentially malformed or incomplete)
+ * @returns Normalized ImageType object or undefined if invalid
+ *
+ * @example
+ * ```typescript
+ * const image = normalizeImage({ url: 'https://example.com/image.jpg', caption: 'Test' });
+ * // Returns: { url: '...', caption: 'Test', moderationState: 'PENDING', ... }
+ * ```
+ */
 export function normalizeImage(input: unknown): ImageType | undefined {
     if (!input || typeof input !== 'object') return undefined;
     const img = input as Partial<ImageType>;
@@ -20,6 +39,22 @@ export function normalizeImage(input: unknown): ImageType | undefined {
     };
 }
 
+/**
+ * Normalizes media data for posts.
+ * Validates media structure including featured image and gallery arrays.
+ * Ensures all media content follows proper format and moderation status.
+ *
+ * @param input - Raw media data (potentially malformed or incomplete)
+ * @returns Normalized MediaType object or undefined if invalid
+ *
+ * @example
+ * ```typescript
+ * const media = normalizeMedia({
+ *   featuredImage: { url: 'featured.jpg' },
+ *   gallery: [{ url: 'gallery1.jpg' }]
+ * });
+ * ```
+ */
 export function normalizeMedia(input: unknown): MediaType | undefined {
     if (!input || typeof input !== 'object') return undefined;
     const media = input as Partial<MediaType>;

@@ -1,7 +1,10 @@
 import type { BaseModel } from '@repo/db';
 /**
  * @fileoverview
- * Test suite for the `restore` method of BaseService and its derivatives.
+ * Test suite for the `res    it('should handle errors from the _afterRestore lifecycle hook', async () => {
+        const hookError = new Error('fail');
+        // biome-ignore lint/suspicious/noExplicitAny: Necessary to mock protected method in test
+        vi.spyOn(service as any, '_afterRestore').mockRejectedValue(hookError);` method of BaseService and its derivatives.
  * Ensures robust, type-safe, and homogeneous handling of restore logic, including:
  * - Successful entity restoration
  * - Input validation and error handling
@@ -63,7 +66,7 @@ describe('BaseService: restore', () => {
 
     it('should handle errors from the _beforeRestore lifecycle hook', async () => {
         const hookError = new Error('fail');
-        // biome-ignore lint/suspicious/noExplicitAny: Necesario para mockear método protegido en test
+        // biome-ignore lint/suspicious/noExplicitAny: Necessary to mock protected method in test
         vi.spyOn(service as any, '_beforeRestore').mockRejectedValue(hookError);
         asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
         const result = await service.restore(mockAdminActor, MOCK_ENTITY_ID);
@@ -90,7 +93,7 @@ describe('BaseService: restore', () => {
 
     it('should handle errors from the _afterRestore hook', async () => {
         const hookError = new Error('fail');
-        // biome-ignore lint/suspicious/noExplicitAny: Necesario para mockear método protegido en test
+        // biome-ignore lint/suspicious/noExplicitAny: Necessary to mock protected method in test
         vi.spyOn(service as any, '_afterRestore').mockRejectedValue(hookError);
         asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
         asMock(modelMock.restore).mockResolvedValue(1);

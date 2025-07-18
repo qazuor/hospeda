@@ -16,9 +16,9 @@ export const normalizeCreateInput = (
         ...data,
         name: data.name.trim(),
         description: data.description.trim(),
-        logo: data.logo, // TODO: normalizar imagen si es necesario
-        contact: data.contact, // TODO: normalizar contacto si es necesario
-        social: data.social, // TODO: normalizar social si es necesario
+        logo: data.logo, // TODO: normalize image if necessary
+        contact: data.contact, // TODO: normalize contact if necessary
+        social: data.social, // TODO: normalize social if necessary
         type: data.type
     };
 };
@@ -37,6 +37,6 @@ export const normalizeUpdateInput = (
     const normalized: UpdatePostSponsorInput = { ...data };
     if (typeof data.name === 'string') normalized.name = data.name.trim();
     if (typeof data.description === 'string') normalized.description = data.description.trim();
-    // TODO: normalizar logo/contact/social si es necesario
+    // TODO: normalize logo/contact/social if necessary
     return normalized;
 };

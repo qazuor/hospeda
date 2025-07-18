@@ -13,8 +13,8 @@ describe('AccommodationService.updateVisibility', () => {
 
     beforeEach(() => {
         model = createModelMock();
-        // No se crean entity ni actor aquí, se crean en cada test
-        // Por defecto, findById devolverá undefined/null, los tests lo sobreescriben según el caso
+        // Entity and actor are not created here, they are created in each test
+        // By default, findById will return undefined/null, tests override as needed
     });
 
     it('should update visibility if actor has permission', async () => {

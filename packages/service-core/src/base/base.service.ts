@@ -5,9 +5,9 @@ import { ServiceError } from '../types';
 import { logError, logMethodEnd, logMethodStart, validateActor, validateEntity } from '../utils';
 
 /**
- * BaseService: lógica y dependencias genéricas para todos los servicios.
- * No incluye métodos CRUD ni hooks de entidades.
- * @template TNormalizers - Tipo de normalizadores que puede usar el servicio (por defecto, Record<string, unknown>)
+ * BaseService: generic logic and dependencies for all services.
+ * Does not include CRUD methods or entity hooks.
+ * @template TNormalizers - Type of normalizers that the service can use (default: Record<string, unknown>)
  */
 export abstract class BaseService<TNormalizers = Record<string, unknown>> {
     /** Logger para el servicio */
@@ -89,13 +89,13 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
     }
 
     /**
-     * Fetches an entity by ID, validates its existence, y checks permissions.
+     * Fetches an entity by ID, validates its existence, and checks permissions.
      * Utility for update/delete/restore operations.
-     * @param model - ORM model con método findById
-     * @param id - ID de la entidad
-     * @param actor - Actor que ejecuta la acción
-     * @param entityName - Nombre de la entidad para logs/errores
-     * @param permissionCheck - Función de permisos (opcional)
+     * @param model - ORM model with findById method
+     * @param id - Entity ID
+     * @param actor - Actor performing the action
+     * @param entityName - Entity name for logs/errors
+     * @param permissionCheck - Permission function (optional)
      */
     protected async _getAndValidateEntity<
         TEntity,
@@ -109,11 +109,11 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
             Promise.resolve()
     ): Promise<TEntity> {
         const entityOrNull = await model.findById(id);
-        // validateEntity lanza si no existe, así que entity nunca es null
+        // validateEntity throws if not exists, so entity is never null
         const entity = validateEntity(entityOrNull, entityName);
         await Promise.resolve(permissionCheck(actor, entity));
         return entity;
     }
 
-    // Métodos utilitarios comunes a todos los servicios pueden agregarse aquí
+    // Common utility methods for all services can be added here
 }

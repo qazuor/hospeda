@@ -102,7 +102,7 @@ export class EventOrganizerService extends BaseCrudService<
         const where: Record<string, unknown> = {};
         if (filters.name) where.name = filters.name;
         if (filters.q) {
-            // Búsqueda parcial por nombre (case-insensitive)
+            // Partial search by name (case-insensitive)
             where.name = { $ilike: `%${filters.q}%` };
         }
         return this.model.findAll(where, { page, pageSize });
