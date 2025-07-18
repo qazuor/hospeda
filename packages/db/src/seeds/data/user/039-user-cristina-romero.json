@@ -1,0 +1,47 @@
+{
+    "id": "039-user-cristina-romero",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "cristina-romero",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Cristina",
+        "lastName": "Romero",
+        "displayName": "Cristina Romero",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Villa Paranacito",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "cristina.romero@hospeda.com.ar",
+            "mobilePhone": "+549345704627",
+            "website": "https://www.hospeda.com.ar/host/cristina-romero",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

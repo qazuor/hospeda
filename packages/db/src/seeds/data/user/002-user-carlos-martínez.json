@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/user.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d481",
+    "id": "002-user-carlos-martínez",
     "slug": "carlos-martínez",
     "role": "EDITOR",
     "permissions": [
@@ -21,12 +21,7 @@
     "lastName": "Martínez",
     "displayName": "Carlos Martínez",
     "contactInfo": {
-        "personalEmail": "carlos.martinez@gmail.com",
-        "workEmail": "editor@hospeda.com",
-        "mobilePhone": "+54 11 5555-0003",
-        "website": "https://carlosmartinez.com",
-        "preferredEmail": "WORK",
-        "preferredPhone": "MOBILE"
+        "website": "https://carlosmartinez.com"
     },
     "location": {
         "state": "Entre Ríos",

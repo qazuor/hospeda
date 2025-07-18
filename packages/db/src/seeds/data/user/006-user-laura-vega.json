@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/user.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d487",
+    "id": "006-user-laura-vega",
     "slug": "laura-vega",
     "role": "ADMIN",
     "permissions": [

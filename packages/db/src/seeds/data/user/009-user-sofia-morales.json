@@ -1,19 +1,19 @@
 {
     "$schema": "../../schemas/user.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d486",
+    "id": "009-user-sofia-morales",
     "slug": "sofia-morales",
     "role": "USER",
-    "permissions": ["post.create", "post.update.own", "post.delete.own", "user.update.own"],
+    "permissions": [
+        "post.create",
+        "post.update.own",
+        "post.delete.own",
+        "user.update.own"
+    ],
     "firstName": "Sofía",
     "lastName": "Morales",
     "displayName": "Sofía Morales",
     "contactInfo": {
-        "personalEmail": "sofia.travel@gmail.com",
-        "workEmail": "sofia@viajesyfotos.com",
-        "mobilePhone": "+54 11 5555-0007",
-        "website": "https://viajesyfotos.com",
-        "preferredEmail": "WORK",
-        "preferredPhone": "MOBILE"
+        "website": "https://viajesyfotos.com"
     },
     "location": {
         "state": "Santa Fe",

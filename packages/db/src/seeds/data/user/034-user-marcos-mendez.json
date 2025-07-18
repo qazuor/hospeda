@@ -1,0 +1,47 @@
+{
+    "id": "034-user-marcos-mendez",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "marcos-mendez",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Marcos",
+        "lastName": "Mendez",
+        "displayName": "Marcos Mendez",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Concordia, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Concordia",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "marcos.mendez@hospeda.com.ar",
+            "mobilePhone": "+549347799560",
+            "website": "https://www.hospeda.com.ar/host/marcos-mendez",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

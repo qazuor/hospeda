@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/user.schema.json",
-    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d485",
+    "id": "005-user-miguel-torres",
     "slug": "miguel-torres",
     "role": "HOST",
     "permissions": [
@@ -15,13 +15,7 @@
     "lastName": "Torres",
     "displayName": "Miguel Torres",
     "contactInfo": {
-        "personalEmail": "miguel.torres@gmail.com",
-        "workEmail": "host2@hospeda.com",
-        "mobilePhone": "+54 11 5555-0006",
-        "homePhone": "+54 3436 421-567",
-        "website": "https://cabanasmiguel.com",
-        "preferredEmail": "WORK",
-        "preferredPhone": "MOBILE"
+        "website": "https://cabanasmiguel.com"
     },
     "location": {
         "state": "Entre Ríos",

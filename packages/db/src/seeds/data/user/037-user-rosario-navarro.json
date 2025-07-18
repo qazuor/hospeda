@@ -1,0 +1,47 @@
+{
+    "id": "037-user-rosario-navarro",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "rosario-navarro",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Rosario",
+        "lastName": "Navarro",
+        "displayName": "Rosario Navarro",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Ibicuy",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "rosario.navarro@hospeda.com.ar",
+            "mobilePhone": "+5493447936990",
+            "website": "https://www.hospeda.com.ar/host/rosario-navarro",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

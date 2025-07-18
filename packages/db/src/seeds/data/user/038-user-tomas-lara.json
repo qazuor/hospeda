@@ -1,0 +1,47 @@
+{
+    "id": "038-user-tomas-lara",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "tomas-lara",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Tomás",
+        "lastName": "Lara",
+        "displayName": "Tomás Lara",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Liebig, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Liebig",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "tomas.lara@hospeda.com.ar",
+            "mobilePhone": "+549347877108",
+            "website": "https://www.hospeda.com.ar/host/tomas-lara",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}
