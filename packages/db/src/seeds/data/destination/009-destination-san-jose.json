@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "009-destination-san-jose",
     "slug": "san-jose",
     "name": "San José",
     "summary": "Tranquila ciudad colonial con arquitectura histórica y tradición",
@@ -44,12 +45,11 @@
         ]
     },
     "attractionIds": [
-        "acc99474-2779-4e5d-8e0a-9d49484d7543",
-        "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
-        "d759d447-8322-4260-b16b-fe8892843edc",
-        "a4351fda-6122-4e8a-8a19-bf97467c1b49"
+        "045-attraction-iglesia_colonial",
+        "018-attraction-centro_historico",
+        "072-attraction-plaza_principal",
+        "050-attraction-mercado_central"
     ],
-    "id": "cee65ddf-22b2-5403-a649-b1fc407b7c0b",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE",

@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "002-destination-colon",
     "slug": "colon",
     "name": "Colón",
     "summary": "Ciudad histórica con arquitectura colonial y portal de entrada a las termas",
@@ -47,20 +48,19 @@
         ]
     },
     "attractionIds": [
-        "31f6ed13-d9d9-4422-ae8f-0d9450634f5e",
-        "737e1b35-3436-422a-88c6-5ae1569c0d6f",
-        "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
-        "6125c3ad-7af7-4f43-bd9f-556870d8fbc5",
-        "d759d447-8322-4260-b16b-fe8892843edc"
+        "059-attraction-palacio_historico",
+        "066-attraction-piscinas_termales",
+        "018-attraction-centro_historico",
+        "055-attraction-museo_historico",
+        "072-attraction-plaza_principal"
     ],
     "tagIds": [
-        "tag-historia-013",
+        "022-tag-historia",
         "tag-termas-012",
         "tag-arquitectura",
         "tag-familia-004",
         "tag-entre-rios-003"
     ],
-    "id": "20ec7e64-dab8-570c-8be8-dc8be827e8b5",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE"

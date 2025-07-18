@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "003-destination-concordia",
     "slug": "concordia",
     "name": "Concordia",
     "summary": "Capital de la citricultura argentina con termas y rica vida cultural",
@@ -37,32 +38,24 @@
     "seo": {
         "title": "Concordia - Capital de la Citricultura | Termas Entre Ríos",
         "description": "Descubre Concordia, capital de la citricultura argentina. Termas, cultura y naturaleza en Entre Ríos.",
-        "keywords": [
-            "Concordia",
-            "Entre Ríos",
-            "Citricultura",
-            "Termas",
-            "Naranjas",
-            "Cultura"
-        ]
+        "keywords": ["Concordia", "Entre Ríos", "Citricultura", "Termas", "Naranjas", "Cultura"]
     },
     "tagIds": [
         "tag-termas-012",
-        "tag-cultura-006",
+        "011-tag-cultura",
         "tag-naturaleza-002",
         "tag-familia-004",
         "tag-entre-rios-003",
-        "tag-aguas-termales-017",
-        "tag-citricultura-035"
+        "001-tag-aguas-termales",
+        "009-tag-citricultura"
     ],
     "attractionIds": [
-        "783ded3b-060a-4abc-b623-2be0d7002133",
-        "9bea0bbf-1c7b-4472-9e14-f5236743d43e",
-        "e89f7034-ffca-4b86-8b13-edc7d02ac48a",
-        "866d6611-d2ec-47f5-b223-546cc11c2707",
-        "90b073e2-0675-447c-bee6-b6eecd0dbfbe"
+        "068-attraction-plantacion_citricos",
+        "022-attraction-centro_spa_termal",
+        "038-attraction-fabrica_citricos",
+        "062-attraction-parque_municipal",
+        "019-attraction-centro_interpretacion_citricola"
     ],
-    "id": "50edeec6-c33a-508c-9155-6c134d3b6a2c",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE"

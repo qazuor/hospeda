@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "004-destination-federacion",
     "slug": "federacion",
     "name": "Federación",
     "summary": "Destino termal por excelencia con el complejo termal más grande de Argentina",
@@ -37,32 +38,24 @@
     "seo": {
         "title": "Federación - Complejo Termal Más Grande de Argentina | Entre Ríos",
         "description": "Descubre Federación, el destino termal más importante de Argentina. Relax y bienestar en Entre Ríos.",
-        "keywords": [
-            "Federación",
-            "Termas",
-            "Entre Ríos",
-            "Complejo Termal",
-            "Relax",
-            "Bienestar"
-        ]
+        "keywords": ["Federación", "Termas", "Entre Ríos", "Complejo Termal", "Relax", "Bienestar"]
     },
     "tagIds": [
         "tag-termas-012",
         "tag-relax",
-        "tag-aguas-termales-017",
+        "001-tag-aguas-termales",
         "tag-familia-004",
         "tag-naturaleza-002",
-        "tag-spa-027",
+        "036-tag-spa",
         "tag-entre-rios-003"
     ],
     "attractionIds": [
-        "008dd069-a106-40b0-83c2-0416ef6557a5",
-        "c15d26f3-edad-4cd3-83cf-d8c8569373d3",
-        "d5f4e3d0-ef01-4289-a8c0-7127b37dcca5",
-        "a01e1820-2b00-4ec6-9079-09cf0dc8880a",
-        "5083044b-f9ea-4bce-bbba-8e7a72ae41dc"
+        "028-attraction-complejo_termal_principal",
+        "002-attraction-aqua_parque_termal",
+        "023-attraction-centro_wellness",
+        "083-attraction-spa_natural",
+        "085-attraction-termas_familiares"
     ],
-    "id": "ec7cd664-fee4-5645-af1d-f5e62736f899",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE"

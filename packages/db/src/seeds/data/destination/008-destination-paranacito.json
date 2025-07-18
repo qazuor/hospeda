@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "008-destination-paranacito",
     "slug": "paranacito",
     "name": "Villa Paranacito",
     "summary": "Única ciudad insular de Argentina rodeada de naturaleza y delta",
@@ -44,12 +45,11 @@
         ]
     },
     "attractionIds": [
-        "71ba3202-089f-488a-9a66-d98b7a5fec58",
-        "96a2de59-4015-4800-b0d0-9e6f2ed5a1d7",
-        "7db4be2a-2715-4e7d-a184-15c207fcceed",
-        "b2342613-4fc0-4250-8328-bcb3a5adea66"
+        "032-attraction-delta_explorer",
+        "044-attraction-humedales",
+        "065-attraction-pesca_deportiva",
+        "035-attraction-embarcadero_turistico"
     ],
-    "id": "716130ad-5bda-5db6-9a48-ba12bbfb8fcb",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE",

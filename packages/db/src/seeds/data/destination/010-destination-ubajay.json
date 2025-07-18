@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "010-destination-ubajay",
     "slug": "ubajay",
     "name": "Ubajay",
     "summary": "Pequeña ciudad rural con encanto campestre y tradición agropecuaria",
@@ -44,12 +45,11 @@
         ]
     },
     "attractionIds": [
-        "0a7dedae-1667-4313-b741-5d10d75292b6",
-        "500990b6-74ae-40d1-addb-a8440af5a3b7",
-        "1fcf5ea2-d720-41e0-8705-67d41a5c68ce",
-        "2a5e7172-bed0-4f9d-9610-c9e53921006b"
+        "013-attraction-centro_agropecuario",
+        "043-attraction-granja_educativa",
+        "037-attraction-estancia_turistica",
+        "081-attraction-sendero_ecologico"
     ],
-    "id": "f8058cb6-282c-564a-8fe5-7b471182efd5",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE",

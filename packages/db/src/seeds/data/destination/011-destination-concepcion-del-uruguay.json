@@ -1,5 +1,6 @@
 {
     "$schema": "../../schemas/destination.schema.json",
+    "id": "011-destination-concepcion-del-uruguay",
     "slug": "concepcion-del-uruguay",
     "name": "Concepción del Uruguay",
     "summary": "Primera capital histórica de Entre Ríos con rica arquitectura y tradición cultural",
@@ -47,21 +48,20 @@
         ]
     },
     "tagIds": [
-        "tag-historia-013",
+        "022-tag-historia",
         "tag-arquitectura",
-        "tag-cultura-006",
-        "tag-turismo-001",
+        "011-tag-cultura",
+        "039-tag-turismo",
         "tag-entre-rios-003",
         "tag-museos"
     ],
     "attractionIds": [
-        "6d4c0de8-e5e4-4f1b-8aaf-14966ca269c7",
-        "9a0598b0-0aae-4dff-a021-77fd9ca52662",
-        "6125c3ad-7af7-4f43-bd9f-556870d8fbc5",
-        "d759d447-8322-4260-b16b-fe8892843edc",
-        "bf013bf8-b096-4fa1-b376-4c60938bb5c8"
+        "018-attraction-centro_historico",
+        "012-attraction-catedral_principal",
+        "055-attraction-museo_historico",
+        "072-attraction-plaza_principal",
+        "034-attraction-edificio_gubernamental"
     ],
-    "id": "3f0562e3-d703-5dc6-800f-5bc424bacacf",
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
     "lifecycleState": "ACTIVE"
