@@ -26,5 +26,5 @@
         }
     },
     "include": ["src", "test", "../schemas/src", "../types/src"],
-    "exclude": ["dist", "node_modules", "src/seeds"]
+    "exclude": ["dist", "node_modules"]
 }

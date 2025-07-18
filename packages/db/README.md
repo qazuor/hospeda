@@ -14,7 +14,7 @@ This package provides a fully-typed, modular, and extensible database layer for 
 - **Comprehensive utilities** for error handling, logging, enum management, and query building
 - **Barrel exports** for easy import of all models, helpers, and schemas
 - **Test utilities** for mocking Drizzle relations
-- **Migration and seeding scripts** for robust DB lifecycle management
+- **Migration scripts** for robust DB lifecycle management
 - **Strict TypeScript** and JSDoc documentation throughout
 
 ---
@@ -217,23 +217,6 @@ This package includes a test to ensure all TypeScript enums are in sync with the
   pnpm db:studio
   ```
 
-### Seeding
-
-- **Seed required data:**
-  ```sh
-  pnpm db:seed:required
-  ```
-- **Seed example data:**
-  ```sh
-  pnpm db:seed:example
-  ```
-- **Full regeneration (migrate + seed):**
-  ```sh
-  pnpm db:regenerate
-  ```
-
-Seed scripts are located in `src/seeds/`. You can customize or extend them for your own data.
-
 ---
 
 ## Exports
@@ -273,7 +256,6 @@ src/
   utils/          # Utilities (error, enums, logging, query helpers)
   client.ts       # Drizzle client initialization and access
   index.ts        # Barrel export for all public API
-  seeds/          # Seed scripts (see below)
 ```
 
 ---
