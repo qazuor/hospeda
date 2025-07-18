@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "036-attraction-estadio_municipal",
+    "name": "Estadio Municipal",
+    "slug": "estadio_municipal",
+    "description": "Estadio principal para eventos deportivos y espectáculos",
+    "icon": "stadium",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "074-attraction-pub_tradicional",
+    "name": "Pub Tradicional",
+    "slug": "pub_tradicional",
+    "description": "Pub con ambiente relajado y música en vivo",
+    "icon": "sports_bar",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

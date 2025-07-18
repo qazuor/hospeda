@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "044-attraction-humedales",
+    "name": "Humedales",
+    "slug": "humedales",
+    "description": "Ecosistema de humedales con flora y fauna características",
+    "icon": "water",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

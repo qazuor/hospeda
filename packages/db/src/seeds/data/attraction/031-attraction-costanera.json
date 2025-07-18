@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "031-attraction-costanera",
+    "name": "Costanera",
+    "slug": "costanera",
+    "description": "Paseo costero con vistas al río, ideal para caminatas y actividades al aire libre",
+    "icon": "directions_walk",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

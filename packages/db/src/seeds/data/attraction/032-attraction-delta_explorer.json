@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "032-attraction-delta_explorer",
+    "name": "Exploración del Delta",
+    "slug": "delta_explorer",
+    "description": "Excursiones y tours por el delta del río",
+    "icon": "explore",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

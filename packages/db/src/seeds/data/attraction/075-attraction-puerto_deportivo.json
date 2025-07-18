@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "075-attraction-puerto_deportivo",
+    "name": "Puerto Deportivo",
+    "slug": "puerto_deportivo",
+    "description": "Puerto con embarcaciones deportivas y servicios náuticos para actividades recreativas",
+    "icon": "directions_boat",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

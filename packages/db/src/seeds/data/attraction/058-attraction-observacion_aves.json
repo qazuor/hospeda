@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "058-attraction-observacion_aves",
+    "name": "Observación de Aves",
+    "slug": "observacion_aves",
+    "description": "Punto de observación de aves autóctonas y migratorias",
+    "icon": "flutter_dash",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

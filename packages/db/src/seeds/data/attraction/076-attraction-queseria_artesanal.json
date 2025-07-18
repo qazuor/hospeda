@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "076-attraction-queseria_artesanal",
+    "name": "Quesería Artesanal",
+    "slug": "queseria_artesanal",
+    "description": "Quesería con producción artesanal y degustación de quesos",
+    "icon": "cheese",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

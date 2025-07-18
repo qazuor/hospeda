@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "082-attraction-sitio_arqueologico",
+    "name": "Sitio Arqueológico",
+    "slug": "sitio_arqueologico",
+    "description": "Sitio de interés arqueológico con restos y evidencias históricas",
+    "icon": "archaeology",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

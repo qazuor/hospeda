@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "047-attraction-laguna_natural",
+    "name": "Laguna Natural",
+    "slug": "laguna_natural",
+    "description": "Laguna natural con posibilidades de pesca y observación",
+    "icon": "water_body",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

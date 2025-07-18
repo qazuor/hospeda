@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "050-attraction-mercado_central",
+    "name": "Mercado Central",
+    "slug": "mercado_central",
+    "description": "Mercado tradicional con productos locales y artesanías",
+    "icon": "store",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

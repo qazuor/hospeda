@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "086-attraction-tour_citricola",
+    "name": "Tour Citrícola",
+    "slug": "tour_citricola",
+    "description": "Recorrido por plantaciones y aprendizaje sobre la citricultura",
+    "icon": "tour",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

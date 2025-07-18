@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "081-attraction-sendero_ecologico",
+    "name": "Sendero Ecológico",
+    "slug": "sendero_ecologico",
+    "description": "Sendero interpretativo para conocer la flora y fauna local",
+    "icon": "hiking",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

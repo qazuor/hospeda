@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "079-attraction-salon_baile",
+    "name": "Salón de Baile",
+    "slug": "salon_baile",
+    "description": "Salón para bailes tradicionales y eventos sociales",
+    "icon": "music_note",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

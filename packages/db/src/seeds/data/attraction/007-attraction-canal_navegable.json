@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "007-attraction-canal_navegable",
+    "name": "Canal Navegable",
+    "slug": "canal_navegable",
+    "description": "Canal natural o artificial para navegación recreativa",
+    "icon": "water_body",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

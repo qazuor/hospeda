@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "011-attraction-casino",
+    "name": "Casino",
+    "slug": "casino",
+    "description": "Casino con juegos de azar y entretenimiento nocturno",
+    "icon": "casino",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

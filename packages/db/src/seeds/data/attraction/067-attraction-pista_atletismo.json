@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "067-attraction-pista_atletismo",
+    "name": "Pista de Atletismo",
+    "slug": "pista_atletismo",
+    "description": "Pista para atletismo y deportes de pista y campo",
+    "icon": "directions_run",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "010-attraction-casa_historica",
+    "name": "Casa Histórica",
+    "slug": "casa_historica",
+    "description": "Casa histórica conservada con valor patrimonial y cultural",
+    "icon": "home",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

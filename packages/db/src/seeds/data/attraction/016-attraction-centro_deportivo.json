@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "016-attraction-centro_deportivo",
+    "name": "Centro Deportivo",
+    "slug": "centro_deportivo",
+    "description": "Centro con instalaciones deportivas variadas",
+    "icon": "sports",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

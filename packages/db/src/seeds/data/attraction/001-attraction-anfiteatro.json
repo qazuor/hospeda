@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "001-attraction-anfiteatro",
+    "name": "Anfiteatro",
+    "slug": "anfiteatro",
+    "description": "Anfiteatro al aire libre para espectáculos y eventos culturales",
+    "icon": "theater_comedy",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

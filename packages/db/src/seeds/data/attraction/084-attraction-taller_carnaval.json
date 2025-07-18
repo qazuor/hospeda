@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "084-attraction-taller_carnaval",
+    "name": "Taller de Carnaval",
+    "slug": "taller_carnaval",
+    "description": "Talleres donde se confeccionan trajes y carros alegóricos para el carnaval",
+    "icon": "palette",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

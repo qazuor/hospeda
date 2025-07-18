@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "077-attraction-reserva_natural",
+    "name": "Reserva Natural",
+    "slug": "reserva_natural",
+    "description": "Área protegida con flora y fauna autóctona",
+    "icon": "nature_reserve",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

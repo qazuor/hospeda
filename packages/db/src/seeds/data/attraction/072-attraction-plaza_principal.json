@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "072-attraction-plaza_principal",
+    "name": "Plaza Principal",
+    "slug": "plaza_principal",
+    "description": "Plaza central de la ciudad con valor histórico y social",
+    "icon": "location_city",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "002-attraction-aqua_parque_termal",
+    "name": "Aqua Parque Termal",
+    "slug": "aqua_parque_termal",
+    "description": "Parque acuático con piscinas termales, toboganes y juegos acuáticos",
+    "icon": "water_slide",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

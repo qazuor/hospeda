@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "087-attraction-vivero_municipal",
+    "name": "Vivero Municipal",
+    "slug": "vivero_municipal",
+    "description": "Vivero con plantas nativas y proyectos de reforestación",
+    "icon": "local_florist",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

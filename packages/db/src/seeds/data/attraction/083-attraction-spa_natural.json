@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "083-attraction-spa_natural",
+    "name": "Spa Natural",
+    "slug": "spa_natural",
+    "description": "Spa en entorno natural con tratamientos orgánicos y terapias alternativas",
+    "icon": "nature_people",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

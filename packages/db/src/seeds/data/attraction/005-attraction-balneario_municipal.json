@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "005-attraction-balneario_municipal",
+    "name": "Balneario Municipal",
+    "slug": "balneario_municipal",
+    "description": "Balneario público con servicios básicos y acceso controlado al río",
+    "icon": "pool",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

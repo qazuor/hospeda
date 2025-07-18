@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "073-attraction-polideportivo",
+    "name": "Polideportivo",
+    "slug": "polideportivo",
+    "description": "Complejo deportivo con múltiples disciplinas y actividades",
+    "icon": "sports",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

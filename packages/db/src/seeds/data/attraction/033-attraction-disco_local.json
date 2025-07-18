@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "033-attraction-disco_local",
+    "name": "Disco Local",
+    "slug": "disco_local",
+    "description": "Discoteca con música moderna y ambiente nocturno",
+    "icon": "nightlife",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

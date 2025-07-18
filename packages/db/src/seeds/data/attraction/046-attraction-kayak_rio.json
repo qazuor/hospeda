@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "046-attraction-kayak_rio",
+    "name": "Kayak en el Río",
+    "slug": "kayak_rio",
+    "description": "Alquiler de kayaks y excursiones guiadas por el río",
+    "icon": "kayaking",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

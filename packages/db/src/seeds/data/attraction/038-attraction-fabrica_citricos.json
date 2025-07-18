@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "038-attraction-fabrica_citricos",
+    "name": "Fábrica de Cítricos",
+    "slug": "fabrica_citricos",
+    "description": "Planta procesadora de cítricos con visitas guiadas y degustaciones",
+    "icon": "factory",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

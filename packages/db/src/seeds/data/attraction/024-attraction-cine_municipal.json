@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "024-attraction-cine_municipal",
+    "name": "Cine Municipal",
+    "slug": "cine_municipal",
+    "description": "Cine local con cartelera comercial y eventos culturales",
+    "icon": "movie",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

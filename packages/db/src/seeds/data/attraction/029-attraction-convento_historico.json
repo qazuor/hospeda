@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "029-attraction-convento_historico",
+    "name": "Convento Histórico",
+    "slug": "convento_historico",
+    "description": "Convento histórico con arquitectura colonial y valor patrimonial",
+    "icon": "temple_buddhist",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

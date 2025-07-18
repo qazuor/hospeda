@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "014-attraction-centro_comercial",
+    "name": "Centro Comercial",
+    "slug": "centro_comercial",
+    "description": "Centro comercial con tiendas, servicios y entretenimiento",
+    "icon": "shopping_mall",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "017-attraction-centro_eventos",
+    "name": "Centro de Eventos",
+    "slug": "centro_eventos",
+    "description": "Centro para la realización de eventos, convenciones y espectáculos",
+    "icon": "event",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

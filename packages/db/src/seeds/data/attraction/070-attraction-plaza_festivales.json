@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "070-attraction-plaza_festivales",
+    "name": "Plaza de Festivales",
+    "slug": "plaza_festivales",
+    "description": "Plaza principal donde se realizan festivales y eventos al aire libre",
+    "icon": "festival",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

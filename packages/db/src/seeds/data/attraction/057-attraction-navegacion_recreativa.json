@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "057-attraction-navegacion_recreativa",
+    "name": "Navegación Recreativa",
+    "slug": "navegacion_recreativa",
+    "description": "Actividades de navegación recreativa y paseos en embarcaciones",
+    "icon": "directions_boat_filled",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

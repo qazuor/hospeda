@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "003-attraction-area_protegida",
+    "name": "Área Protegida",
+    "slug": "area_protegida",
+    "description": "Zona de conservación de ecosistemas naturales",
+    "icon": "shield",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

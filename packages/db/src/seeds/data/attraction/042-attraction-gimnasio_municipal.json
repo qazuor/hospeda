@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "042-attraction-gimnasio_municipal",
+    "name": "Gimnasio Municipal",
+    "slug": "gimnasio_municipal",
+    "description": "Gimnasio público con equipamiento para ejercicio físico",
+    "icon": "fitness_center",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

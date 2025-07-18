@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "078-attraction-restaurante_regional",
+    "name": "Restaurante Regional",
+    "slug": "restaurante_regional",
+    "description": "Restaurante especializado en comida típica de Entre Ríos",
+    "icon": "restaurant",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

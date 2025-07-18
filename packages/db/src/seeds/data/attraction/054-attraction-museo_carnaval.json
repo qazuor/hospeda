@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "054-attraction-museo_carnaval",
+    "name": "Museo del Carnaval",
+    "slug": "museo_carnaval",
+    "description": "Museo dedicado a la historia y tradición del carnaval local",
+    "icon": "museum",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}

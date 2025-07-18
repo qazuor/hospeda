@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/attraction.schema.json",
+    "id": "053-attraction-muelle_pesquero",
+    "name": "Muelle Pesquero",
+    "slug": "muelle_pesquero",
+    "description": "Muelle tradicional para pesca deportiva y recreativa en el río",
+    "icon": "phishing",
+    "isBuiltin": true,
+    "lifecycleState": "ACTIVE",
+    "tagIds": []
+}
