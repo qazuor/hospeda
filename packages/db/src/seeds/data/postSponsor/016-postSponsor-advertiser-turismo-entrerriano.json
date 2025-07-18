@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/postSponsor.schema.json",
-    "id": "ps-turismo-entrerriano-001",
+    "id": "016-postSponsor-advertiser-turismo-entrerriano",
     "name": "Turismo Entrerriano",
     "type": "ADVERTISER",
     "description": "Agencia oficial de promoción turística de Entre Ríos, especializada en promover los destinos más hermosos de la provincia y conectar viajeros con experiencias auténticas.",

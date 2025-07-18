@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/postSponsor.schema.json",
-    "id": "ps-cultura-entrerriana-005",
+    "id": "013-postSponsor-postSponsor-cultura-entrerriana",
     "name": "Cultura Entrerriana",
     "type": "POST_SPONSOR",
     "description": "Fundación cultural sin fines de lucro dedicada a preservar y promover el patrimonio cultural, artístico e histórico de Entre Ríos a través de eventos y programas educativos.",
