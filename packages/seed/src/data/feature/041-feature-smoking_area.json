@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "041-feature-smoking_area",
+    "name": "Sector para fumadores",
+    "slug": "smoking_area",
+    "description": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

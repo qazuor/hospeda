@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "022-feature-renewable_energy",
+    "name": "Uso de energías renovables",
+    "slug": "renewable_energy",
+    "description": "Sistema energético basado en fuentes renovables como solar, eólica o hidroeléctrica para un funcionamiento sustentable",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

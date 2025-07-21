@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "071-feature-covered_barbecue_area",
+    "name": "Sector de barbacoa techado",
+    "slug": "covered_barbecue_area",
+    "description": "Área de asado protegida de la intemperie con equipamiento completo y espacios para reuniones",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

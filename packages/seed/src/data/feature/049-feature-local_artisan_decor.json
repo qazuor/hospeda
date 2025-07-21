@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "049-feature-local_artisan_decor",
+    "name": "Decoración local artesanal",
+    "slug": "local_artisan_decor",
+    "description": "Ambientación con arte y artesanías tradicionales de la región creadas por artistas locales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

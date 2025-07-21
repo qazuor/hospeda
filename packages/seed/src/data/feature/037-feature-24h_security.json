@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "037-feature-24h_security",
+    "name": "Seguridad 24 horas",
+    "slug": "24h_security",
+    "description": "Vigilancia y seguridad permanente las 24 horas con personal capacitado y sistemas de monitoreo",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

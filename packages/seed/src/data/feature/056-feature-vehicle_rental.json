@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "056-feature-vehicle_rental",
+    "name": "Alquiler de vehículos",
+    "slug": "vehicle_rental",
+    "description": "Servicio de renta de automóviles, bicicletas, motos o vehículos todo terreno para explorar la zona",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

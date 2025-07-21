@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "075-feature-waste_recycling",
+    "name": "Reciclado de residuos",
+    "slug": "waste_recycling",
+    "description": "Sistema completo de separación y reciclado de residuos como parte del compromiso ambiental del establecimiento",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

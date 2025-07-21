@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "078-feature-no_cell_signal",
+    "name": "Sin señal de celular",
+    "slug": "no_cell_signal",
+    "description": "Ubicación naturalmente desconectada de redes móviles para una experiencia de desconexión digital total",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

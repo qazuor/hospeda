@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "073-feature-permanent_professional_staff",
+    "name": "Staff profesional permanente",
+    "slug": "permanent_professional_staff",
+    "description": "Equipo de trabajo estable y capacitado disponible durante toda la estadía para atención personalizada",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

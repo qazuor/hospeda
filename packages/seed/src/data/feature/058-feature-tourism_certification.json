@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "058-feature-tourism_certification",
+    "name": "Certificación turística",
+    "slug": "tourism_certification",
+    "description": "Reconocimiento oficial de calidad turística otorgado por organismos nacionales o internacionales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

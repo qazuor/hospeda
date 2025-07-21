@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "059-feature-event_suitable",
+    "name": "Apto para eventos",
+    "slug": "event_suitable",
+    "description": "Instalaciones y servicios apropiados para realizar celebraciones, conferencias o eventos sociales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

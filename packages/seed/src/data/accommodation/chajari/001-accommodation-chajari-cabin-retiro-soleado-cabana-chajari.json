@@ -155,10 +155,12 @@
         ]
     },
     "featureIds": [
-        "023-feature-private_garden",
-        "022-feature-private_entrance",
-        "020-feature-pet_friendly",
-        "009-feature-eco_friendly"
+        "030-feature-full_rental",
+        "004-feature-natural_environment",
+        "008-feature-silent_environment",
+        "005-feature-rural_area",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

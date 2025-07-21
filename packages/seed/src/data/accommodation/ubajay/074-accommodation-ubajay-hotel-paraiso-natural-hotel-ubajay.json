@@ -125,9 +125,13 @@
         ]
     },
     "featureIds": [
-        "024-feature-private_pool",
-        "018-feature-nature_proximity",
-        "017-feature-national_park_proximity"
+        "031-feature-room_rental",
+        "073-feature-permanent_professional_staff",
+        "047-feature-laundry_service",
+        "005-feature-rural_area",
+        "008-feature-silent_environment",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

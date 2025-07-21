@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "008-feature-silent_environment",
+    "name": "Entorno silencioso",
+    "slug": "silent_environment",
+    "description": "Ambiente de completa tranquilidad sonora, alejado de ruidos urbanos, tráfico o actividades ruidosas",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

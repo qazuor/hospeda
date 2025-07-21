@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "035-feature-private_grill",
+    "name": "Parrilla privada",
+    "slug": "private_grill",
+    "description": "Zona de asado exclusiva para el alojamiento con parrilla completa, utensilios y área de preparación",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

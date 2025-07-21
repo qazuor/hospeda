@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "025-feature-wifi_full_property",
+    "name": "Wi-Fi en todo el predio",
+    "slug": "wifi_full_property",
+    "description": "Cobertura completa de internet inalámbrico de alta velocidad en todas las áreas interiores y exteriores de la propiedad",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

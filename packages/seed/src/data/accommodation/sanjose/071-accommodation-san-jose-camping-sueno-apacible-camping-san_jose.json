@@ -113,10 +113,11 @@
         ]
     },
     "featureIds": [
-        "026-feature-river_access",
-        "029-feature-shaded_area",
-        "001-feature-bbq_area",
-        "018-feature-nature_proximity"
+        "032-feature-camping_area",
+        "033-feature-fire_pit_area",
+        "004-feature-natural_environment",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

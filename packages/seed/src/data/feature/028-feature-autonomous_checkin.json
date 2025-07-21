@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "028-feature-autonomous_checkin",
+    "name": "Check-in autónomo",
+    "slug": "autonomous_checkin",
+    "description": "Sistema de ingreso independiente sin necesidad de personal, mediante códigos, llaves inteligentes o aplicaciones móviles",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "054-feature-no_tv_area",
+    "name": "Área sin televisión",
+    "slug": "no_tv_area",
+    "description": "Espacios libres de televisores para promover la interacción social y el disfrute del entorno natural",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

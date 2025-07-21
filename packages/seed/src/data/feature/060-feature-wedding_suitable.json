@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "060-feature-wedding_suitable",
+    "name": "Apto para bodas",
+    "slug": "wedding_suitable",
+    "description": "Espacios románticos y servicios especializados para ceremonias y celebraciones matrimoniales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

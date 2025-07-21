@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "013-feature-couple_suitable",
+    "name": "Apto para parejas",
+    "slug": "couple_suitable",
+    "description": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

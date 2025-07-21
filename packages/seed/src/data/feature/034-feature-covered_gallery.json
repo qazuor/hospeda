@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "034-feature-covered_gallery",
+    "name": "Galería techada",
+    "slug": "covered_gallery",
+    "description": "Espacio cubierto al aire libre ideal para relajarse, comer o socializar protegido de las inclemencias del tiempo",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

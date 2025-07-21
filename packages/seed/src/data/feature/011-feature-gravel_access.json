@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "011-feature-gravel_access",
+    "name": "Acceso de ripio",
+    "slug": "gravel_access",
+    "description": "Camino de acceso de grava o ripio bien mantenido, transitable con vehículos convencionales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

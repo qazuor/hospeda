@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "050-feature-own_production",
+    "name": "Producción propia",
+    "slug": "own_production",
+    "description": "Elaboración in-situ de productos gastronómicos como dulces caseros, vinos, quesos o conservas",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

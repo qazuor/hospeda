@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "052-feature-educational_farm",
+    "name": "Granja educativa",
+    "slug": "educational_farm",
+    "description": "Espacio didáctico donde los huéspedes pueden aprender sobre agricultura, ganadería y vida rural",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

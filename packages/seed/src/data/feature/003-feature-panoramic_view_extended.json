@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "003-feature-panoramic_view_extended",
+    "name": "Vista panorámica",
+    "slug": "panoramic_view_extended",
+    "description": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

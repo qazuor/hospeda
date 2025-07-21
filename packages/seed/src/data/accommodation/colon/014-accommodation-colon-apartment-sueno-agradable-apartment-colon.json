@@ -108,8 +108,11 @@
         ]
     },
     "featureIds": [
-        "022-feature-private_entrance",
-        "006-feature-city_view"
+        "030-feature-full_rental",
+        "043-feature-internal_parking",
+        "001-feature-river_front",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

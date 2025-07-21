@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "057-feature-sustainable_accommodation",
+    "name": "Alojamiento sustentable",
+    "slug": "sustainable_accommodation",
+    "description": "Operación completamente eco-friendly con prácticas sustentables en todas las actividades y servicios",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

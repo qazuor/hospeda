@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "010-feature-paved_access",
+    "name": "Acceso pavimentado",
+    "slug": "paved_access",
+    "description": "Camino de acceso completamente asfaltado o pavimentado, apto para cualquier tipo de vehículo en todas las condiciones climáticas",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

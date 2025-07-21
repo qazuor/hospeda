@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "006-feature-central_area",
+    "name": "Zona céntrica",
+    "slug": "central_area",
+    "description": "Posición estratégica en el centro de la ciudad o pueblo, con fácil acceso a servicios, comercios y atracciones principales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

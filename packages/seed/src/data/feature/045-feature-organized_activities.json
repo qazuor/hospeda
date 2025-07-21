@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "045-feature-organized_activities",
+    "name": "Actividades organizadas",
+    "slug": "organized_activities",
+    "description": "Programación regular de actividades recreativas, culturales o deportivas organizadas por el establecimiento",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

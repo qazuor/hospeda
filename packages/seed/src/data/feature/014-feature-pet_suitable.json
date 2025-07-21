@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "014-feature-pet_suitable",
+    "name": "Apto para mascotas",
+    "slug": "pet_suitable",
+    "description": "Instalaciones preparadas para recibir mascotas con áreas seguras, servicios veterinarios cercanos y políticas pet-friendly",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

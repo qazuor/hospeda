@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "076-feature-rainwater_harvesting",
+    "name": "Captación de agua de lluvia",
+    "slug": "rainwater_harvesting",
+    "description": "Sistema de recolección y aprovechamiento de agua pluvial para uso sustentable en la propiedad",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

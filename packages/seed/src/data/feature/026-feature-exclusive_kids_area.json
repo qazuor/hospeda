@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "026-feature-exclusive_kids_area",
+    "name": "Sector exclusivo para niños",
+    "slug": "exclusive_kids_area",
+    "description": "Área especialmente diseñada y equipada solo para niños con juegos, seguridad y supervisión apropiada",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

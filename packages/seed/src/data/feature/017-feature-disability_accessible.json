@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "017-feature-disability_accessible",
+    "name": "Apto para personas con discapacidad",
+    "slug": "disability_accessible",
+    "description": "Completamente accesible con rampas, baños adaptados, puertas amplias y todas las facilidades para personas con movilidad reducida",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

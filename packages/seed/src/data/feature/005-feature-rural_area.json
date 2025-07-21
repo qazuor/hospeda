@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "005-feature-rural_area",
+    "name": "Zona rural",
+    "slug": "rural_area",
+    "description": "Ubicado en área campestre alejada de centros urbanos, ideal para desconectar y disfrutar de la tranquilidad del campo",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

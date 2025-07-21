@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "030-feature-full_rental",
+    "name": "Alquiler completo",
+    "slug": "full_rental",
+    "description": "Renta de toda la propiedad de forma exclusiva, sin compartir espacios con otros huéspedes o propietarios",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

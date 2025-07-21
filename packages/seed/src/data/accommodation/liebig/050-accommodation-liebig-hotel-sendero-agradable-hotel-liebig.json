@@ -112,8 +112,13 @@
         ]
     },
     "featureIds": [
-        "014-feature-historical_proximity",
-        "027-feature-river_proximity"
+        "031-feature-room_rental",
+        "073-feature-permanent_professional_staff",
+        "047-feature-laundry_service",
+        "005-feature-rural_area",
+        "019-feature-rustic_style",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

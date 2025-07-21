@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "009-feature-isolated_no_neighbors",
+    "name": "Aislado sin vecinos",
+    "slug": "isolated_no_neighbors",
+    "description": "Propiedad completamente privada sin construcciones cercanas, garantizando máxima privacidad y exclusividad",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

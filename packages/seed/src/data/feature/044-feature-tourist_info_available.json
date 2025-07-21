@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "044-feature-tourist_info_available",
+    "name": "Información turística disponible",
+    "slug": "tourist_info_available",
+    "description": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}
