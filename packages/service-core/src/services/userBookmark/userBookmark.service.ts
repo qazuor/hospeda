@@ -3,7 +3,7 @@ import type { UserBookmarkType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
+import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
 import { canAccessBookmark, canCreateBookmark } from './userBookmark.permissions';
@@ -36,7 +36,7 @@ export class UserBookmarkService extends BaseCrudService<
     static readonly ENTITY_NAME = 'userBookmark';
     protected readonly entityName = UserBookmarkService.ENTITY_NAME;
     protected readonly model: UserBookmarkModel;
-    protected readonly logger: ServiceLogger;
+
     protected readonly createSchema = CreateUserBookmarkSchema;
     protected readonly updateSchema = UpdateUserBookmarkSchema;
     protected readonly searchSchema = ListBookmarksByUserInputSchema;
@@ -47,7 +47,6 @@ export class UserBookmarkService extends BaseCrudService<
 
     constructor(ctx: ServiceContext, model?: UserBookmarkModel) {
         super(ctx, UserBookmarkService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = model ?? new UserBookmarkModel();
     }
 

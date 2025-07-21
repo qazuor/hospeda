@@ -18,13 +18,7 @@ import type {
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
-import {
-    type Actor,
-    type ServiceContext,
-    ServiceError,
-    type ServiceLogger,
-    type ServiceOutput
-} from '../../types';
+import { type Actor, type ServiceContext, ServiceError, type ServiceOutput } from '../../types';
 import { generateAttractionSlug } from './attraction.helpers';
 import {
     normalizeCreateInput,
@@ -55,7 +49,7 @@ export class AttractionService extends BaseCrudRelatedService<
     static readonly ENTITY_NAME = 'attraction';
     protected readonly entityName = AttractionService.ENTITY_NAME;
     public readonly model: AttractionModel;
-    public readonly logger: ServiceLogger;
+
     public readonly createSchema = CreateAttractionSchema;
     public readonly updateSchema = UpdateAttractionSchema;
     public readonly searchSchema = SearchAttractionSchema;
@@ -74,7 +68,6 @@ export class AttractionService extends BaseCrudRelatedService<
         destinationModel?: DestinationModel
     ) {
         super(ctx, AttractionService.ENTITY_NAME, relatedModel);
-        this.logger = ctx.logger;
         this.model = model ?? new AttractionModel();
         this.destinationModel = destinationModel ?? new DestinationModel();
     }

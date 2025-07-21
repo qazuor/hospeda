@@ -8,7 +8,7 @@ import type {
 import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
+import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { DestinationService } from '../destination/destination.service';
 import {
@@ -67,7 +67,6 @@ export class AccommodationService extends BaseCrudService<
     /**
      * @inheritdoc
      */
-    protected readonly logger: ServiceLogger;
 
     /**
      * @inheritdoc
@@ -103,7 +102,6 @@ export class AccommodationService extends BaseCrudService<
      */
     constructor(ctx: ServiceContext, model?: AccommodationModel) {
         super(ctx, AccommodationService.ENTITY_NAME);
-        this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new AccommodationModel();
         this.destinationService = new DestinationService(ctx);
     }

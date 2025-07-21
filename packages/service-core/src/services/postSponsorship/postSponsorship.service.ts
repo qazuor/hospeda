@@ -2,7 +2,7 @@ import type { PostSponsorshipModel } from '@repo/db';
 import { PostSponsorshipModel as RealPostSponsorshipModel } from '@repo/db';
 import { BaseCrudService } from '@repo/service-core';
 import type { PostSponsorshipType } from '@repo/types';
-import type { Actor, ServiceContext, ServiceLogger } from '../../types';
+import type { Actor, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsorship.normalizers';
 import {
     checkCanCountPostSponsorship,
@@ -33,7 +33,7 @@ export class PostSponsorshipService extends BaseCrudService<
     static readonly ENTITY_NAME = 'postSponsorship';
     protected readonly entityName = PostSponsorshipService.ENTITY_NAME;
     public readonly model: PostSponsorshipModel;
-    public readonly logger: ServiceLogger;
+
     public readonly createSchema = CreatePostSponsorshipSchema;
     public readonly updateSchema = UpdatePostSponsorshipSchema;
     public readonly searchSchema = SearchPostSponsorshipSchema;
@@ -44,7 +44,6 @@ export class PostSponsorshipService extends BaseCrudService<
 
     constructor(ctx: ServiceContext, model?: PostSponsorshipModel) {
         super(ctx, PostSponsorshipService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = model ?? new RealPostSponsorshipModel();
     }
 

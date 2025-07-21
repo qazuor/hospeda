@@ -11,7 +11,7 @@ import type { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
-import { type Actor, type ServiceContext, ServiceError, type ServiceLogger } from '../../types';
+import { type Actor, type ServiceContext, ServiceError } from '../../types';
 import { generateAmenitySlug } from './amenity.helpers';
 import {
     checkCanAddAmenityToAccommodation,
@@ -53,7 +53,7 @@ export class AmenityService extends BaseCrudRelatedService<
     static readonly ENTITY_NAME = 'amenity';
     protected readonly entityName = AmenityService.ENTITY_NAME;
     protected readonly model: AmenityModel;
-    protected readonly logger: ServiceLogger;
+
     protected readonly createSchema = CreateAmenitySchema;
     protected readonly updateSchema = UpdateAmenitySchema;
     protected readonly searchSchema = SearchAmenitySchema;
@@ -66,7 +66,6 @@ export class AmenityService extends BaseCrudRelatedService<
         accommodationModel?: AccommodationModel
     ) {
         super(ctx, AmenityService.ENTITY_NAME, relatedModel);
-        this.logger = ctx.logger;
         this.model = model ?? new AmenityModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();
     }

@@ -2,7 +2,7 @@ import { EventOrganizerModel } from '@repo/db/models/event/eventOrganizer.model'
 import type { EventOrganizerType, VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, PaginatedListOutput, ServiceContext, ServiceLogger } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import * as helpers from './eventOrganizer.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventOrganizer.normalizers';
 import {
@@ -30,7 +30,7 @@ export class EventOrganizerService extends BaseCrudService<
     static readonly ENTITY_NAME = 'eventOrganizer';
     protected readonly entityName = EventOrganizerService.ENTITY_NAME;
     protected readonly model: EventOrganizerModel;
-    protected readonly logger: ServiceLogger;
+
     protected readonly createSchema = CreateEventOrganizerSchema;
     protected readonly updateSchema = UpdateEventOrganizerSchema;
     protected readonly searchSchema = SearchEventOrganizerSchema;
@@ -48,7 +48,6 @@ export class EventOrganizerService extends BaseCrudService<
 
     constructor(ctx: ServiceContext, model?: EventOrganizerModel) {
         super(ctx, EventOrganizerService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = model ?? new EventOrganizerModel();
     }
 

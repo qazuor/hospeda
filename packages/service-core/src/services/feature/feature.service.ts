@@ -10,7 +10,7 @@ import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
-import { type Actor, type ServiceContext, ServiceError, type ServiceLogger } from '../../types';
+import { type Actor, type ServiceContext, ServiceError } from '../../types';
 import { generateFeatureSlug } from './feature.helpers';
 import {
     checkCanAddFeatureToAccommodation,
@@ -47,7 +47,7 @@ export class FeatureService extends BaseCrudRelatedService<
     static readonly ENTITY_NAME = 'feature';
     protected readonly entityName = FeatureService.ENTITY_NAME;
     public readonly model: FeatureModel;
-    public readonly logger: ServiceLogger;
+
     public readonly createSchema = CreateFeatureSchema;
     public readonly updateSchema = UpdateFeatureSchema;
     public readonly searchSchema = SearchFeatureSchema;
@@ -60,7 +60,6 @@ export class FeatureService extends BaseCrudRelatedService<
         accommodationModel?: AccommodationModel
     ) {
         super(ctx, FeatureService.ENTITY_NAME, relatedModel);
-        this.logger = ctx.logger;
         this.model = model ?? new FeatureModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();
     }

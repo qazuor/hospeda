@@ -71,7 +71,7 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
                 const errorMessages = [];
 
                 for (const [field, errors] of Object.entries(fieldErrors)) {
-                    if (errors && errors.length > 0) {
+                    if (Array.isArray(errors) && errors.length > 0) {
                         errorMessages.push(`${field}: ${errors.join(', ')}`);
                     }
                 }
