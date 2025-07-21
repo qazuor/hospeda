@@ -1,22 +1,22 @@
-import { logger } from './logger.ts';
+import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
 
-type SeedRunnerOptions<T> = {
+export interface SeedRunnerOptions<T> {
     entityName: string;
     items: T[];
     process: (item: T, index: number) => Promise<void>;
     onError?: (item: T, index: number, error: Error) => void;
     context: SeedContext;
     getEntityInfo?: (item: T) => string;
-};
+}
 
 // Iconos por tipo de entidad
 const entityIcons: Record<string, string> = {
-    Users: '👤',
-    Destinations: '🗺️',
-    Amenities: '🏠',
-    Features: '⭐',
-    Accommodations: '🏨',
+    Users: '👨‍💻',
+    Destinations: '🌍',
+    Amenities: '✨',
+    Features: '💎',
+    Accommodations: '🏠',
     Tags: '🏷️',
     Posts: '📝',
     Events: '🎉',
@@ -24,12 +24,13 @@ const entityIcons: Record<string, string> = {
     Reviews: '⭐',
     Bookmarks: '🔖',
     Sponsors: '💼',
-    Organizers: '👥',
+    Organizers: '👨‍💼',
     Locations: '📍'
 };
 
-// Separador visual
-const separator = '─'.repeat(60);
+// Separadores visuales consistentes
+const SECTION_SEPARATOR = '#'.repeat(90);
+const SUBSECTION_SEPARATOR = '─'.repeat(90);
 
 export async function seedRunner<T>({
     entityName,
@@ -40,14 +41,17 @@ export async function seedRunner<T>({
     getEntityInfo
 }: SeedRunnerOptions<T>): Promise<void> {
     const icon = entityIcons[entityName] || '📦';
+    const totalItems = items.length;
 
-    // Separador antes de cada tipo de entidad
-    logger.info(`\n${separator}`);
-    logger.info(`${icon} Inicializando carga de ${entityName} (${items.length} ítems)...`);
-    logger.info(`${separator}`);
+    // Separador de sección principal
+    logger.info(`${SECTION_SEPARATOR}`);
+    logger.info(`${icon}  INICIALIZANDO CARGA DE ${entityName.toUpperCase()}`);
+    logger.info(`${icon}  Total de ítems: ${totalItems}`);
+    logger.info(`${SUBSECTION_SEPARATOR}`);
 
     for (let i = 0; i < items.length; i++) {
         const item = items[i];
+        const currentIndex = i + 1;
 
         try {
             if (item !== undefined) {
@@ -56,8 +60,8 @@ export async function seedRunner<T>({
                 // Información de la entidad cargada
                 const entityInfo = getEntityInfo ? getEntityInfo(item) : '';
                 const successMessage = entityInfo
-                    ? `   ${icon} ${entityName} cargado [${i + 1}/${items.length}]: ${entityInfo}`
-                    : `   ${icon} ${entityName} cargado [${i + 1}/${items.length}]`;
+                    ? `${icon} ${entityInfo}`
+                    : `${icon} ${entityName} #${currentIndex}`;
 
                 logger.success(successMessage);
             }
@@ -76,5 +80,10 @@ export async function seedRunner<T>({
         }
     }
 
-    logger.info(`✅ Finalizada carga de ${entityName}\n`);
+    // Separador de finalización
+    logger.info(`${SUBSECTION_SEPARATOR}`);
+    logger.success(`✅ ${entityName}: ${totalItems} ítems procesados exitosamente`);
+    logger.info(`${SECTION_SEPARATOR}`);
+    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+    console.log('\n');
 }

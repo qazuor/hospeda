@@ -1,3 +1,5 @@
+import { logger } from './logger.js';
+
 /**
  * Utility class for mapping seed IDs to real database IDs.
  * This is essential for handling relationships between entities during seeding.
@@ -95,31 +97,74 @@ export class IdMapper {
     }
 
     /**
-     * Gets statistics about the mappings for a specific entity type.
-     * @param entityType - The type of entity
-     * @returns Object with mapping statistics
+     * Get mapping statistics for a specific entity type
      */
-    getMappingStats(entityType: string): {
-        totalMappings: number;
-        entityType: string;
-    } {
-        const entityMappings = this.mappings.get(entityType);
-        return {
-            totalMappings: entityMappings?.size ?? 0,
-            entityType
-        };
+    getMappingStats(entityType: string): { count: number; examples: string[] } {
+        const mappings = this.mappings.get(entityType);
+        if (!mappings) {
+            return { count: 0, examples: [] };
+        }
+
+        const count = mappings.size;
+        const examples = Array.from(mappings.entries())
+            .slice(0, 3) // Show first 3 examples
+            .map(([seedId, realId]) => `${seedId} → ${realId.slice(0, 8)}...`);
+
+        return { count, examples };
     }
 
     /**
-     * Gets all mapping statistics for all entity types.
-     * @returns Object with statistics for all entity types
+     * Get comprehensive mapping statistics for all entity types
      */
-    getAllMappingStats(): Record<string, number> {
-        const stats: Record<string, number> = {};
-        for (const [entityType, mappings] of this.mappings.entries()) {
-            stats[entityType] = mappings.size;
+    getAllMappingStats(): Record<string, { count: number; examples: string[] }> {
+        const stats: Record<string, { count: number; examples: string[] }> = {};
+
+        for (const [entityType] of this.mappings) {
+            stats[entityType] = this.getMappingStats(entityType);
         }
+
         return stats;
+    }
+
+    /**
+     * Print mapping statistics in a beautiful format
+     */
+    printMappingStats(entityType: string): void {
+        const stats = this.getMappingStats(entityType);
+        const { count, examples } = stats;
+
+        if (count === 0) {
+            logger.info(`📊 ${entityType}: Sin mapeos`);
+            return;
+        }
+
+        logger.info(`📊 ${entityType}: ${count} IDs mapeados`);
+
+        if (examples.length > 0) {
+            const examplesText = examples.join(', ');
+            logger.info(`   Ejemplos: ${examplesText}`);
+        }
+    }
+
+    /**
+     * Print all mapping statistics in a beautiful format
+     */
+    printAllMappingStats(): void {
+        const allStats = this.getAllMappingStats();
+        const totalMappings = Object.values(allStats).reduce((sum, stat) => sum + stat.count, 0);
+
+        if (totalMappings === 0) {
+            logger.info('   📊 Sin mapeos de IDs');
+            return;
+        }
+
+        logger.info(`📊 Total de mapeos: ${totalMappings} IDs`);
+
+        for (const [entityType, stats] of Object.entries(allStats)) {
+            if (stats.count > 0) {
+                logger.info(`   ${entityType}: ${stats.count} IDs`);
+            }
+        }
     }
 
     /**

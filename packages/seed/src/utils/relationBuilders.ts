@@ -137,7 +137,7 @@ export const createCustomRelationBuilder = (
             if (context.continueOnError) {
                 console.warn(`⚠️ ${errorMessage}`);
                 console.warn(
-                    `   Continuing with ${validation.validIds.length} valid ${targetEntity}s`
+                    `Continuing with ${validation.validIds.length} valid ${targetEntity}s`
                 );
             } else {
                 throw new Error(errorMessage);

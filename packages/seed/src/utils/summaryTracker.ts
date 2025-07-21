@@ -1,61 +1,99 @@
 import { logger } from './logger.js';
 
-type SummaryItem = {
-    entity: string;
+interface SummaryStats {
     success: number;
-    errors: { file: string; message: string }[];
-};
+    errors: number;
+    errorDetails: Array<{
+        file: string;
+        message: string;
+    }>;
+}
 
-const summary: SummaryItem[] = [];
+class SummaryTracker {
+    private stats = new Map<string, SummaryStats>();
 
-export const summaryTracker = {
-    trackSuccess(entity: string) {
-        let item = summary.find((s) => s.entity === entity);
-        if (!item) {
-            item = { entity, success: 0, errors: [] };
-            summary.push(item);
-        }
-        item.success++;
-    },
-
-    trackError(entity: string, file: string, message: string) {
-        let item = summary.find((s) => s.entity === entity);
-        if (!item) {
-            item = { entity, success: 0, errors: [] };
-            summary.push(item);
-        }
-        item.errors.push({ file, message });
-    },
-
-    print() {
-        logger.info('\n📊 Summary Final:');
-        for (const item of summary) {
-            logger.info(
-                `- ${item.entity}: ${item.success} cargados, ${item.errors.length} errores`
-            );
-        }
-
-        if (summary.some((s) => s.errors.length > 0)) {
-            logger.warn('\n⚠️ Errores:');
-            for (const item of summary) {
-                for (const err of item.errors) {
-                    logger.error(`- ${item.entity} → ${err.file} → ${err.message}`);
-                }
-            }
-        }
-    },
-
-    showErrors() {
-        if (summary.some((s) => s.errors.length > 0)) {
-            // 🔍 LOG DISTINTIVO: summary tracker
-            console.error('🔍 [SUMMARY_TRACKER] Mostrando resumen de errores');
-
-            logger.error('\n❌ Errores encontrados:');
-            for (const item of summary) {
-                for (const err of item.errors) {
-                    logger.error(`- ${item.entity} → ${err.file} → ${err.message}`);
-                }
-            }
-        }
+    trackSuccess(entityName: string): void {
+        const current = this.stats.get(entityName) || { success: 0, errors: 0, errorDetails: [] };
+        current.success++;
+        this.stats.set(entityName, current);
     }
-};
+
+    trackError(entityName: string, file: string, message: string): void {
+        const current = this.stats.get(entityName) || { success: 0, errors: 0, errorDetails: [] };
+        current.errors++;
+        current.errorDetails.push({ file, message });
+        this.stats.set(entityName, current);
+    }
+
+    print(): void {
+        const separator = '#'.repeat(90);
+        const subSeparator = '─'.repeat(90);
+
+        // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+        console.log('\n');
+        logger.info('📊  SUMMARY FINAL');
+        logger.info(`${subSeparator}`);
+
+        if (this.stats.size === 0) {
+            logger.info('   No hay estadísticas disponibles');
+            logger.info(`${separator}`);
+            return;
+        }
+
+        let totalSuccess = 0;
+        let totalErrors = 0;
+
+        // Print entity summaries
+        for (const [entityName, stats] of this.stats.entries()) {
+            const icon = this.getEntityIcon(entityName);
+            const status = stats.errors === 0 ? '✅' : '⚠️';
+
+            logger.info(
+                `${status} ${icon} ${entityName}: ${stats.success} cargados, ${stats.errors} errores`
+            );
+            totalSuccess += stats.success;
+            totalErrors += stats.errors;
+        }
+
+        // Print totals
+        logger.info(`${subSeparator}`);
+        logger.info(`📈 Total: ${totalSuccess} exitosos, ${totalErrors} errores`);
+
+        // Print error details if any
+        if (totalErrors > 0) {
+            logger.info('\n   ❌ Detalles de errores:');
+            for (const [entityName, stats] of this.stats.entries()) {
+                if (stats.errors > 0) {
+                    logger.info(`   ${entityName}:`);
+                    for (const error of stats.errorDetails) {
+                        logger.info(`      • ${error.file}: ${error.message}`);
+                    }
+                }
+            }
+        }
+
+        logger.info(`${separator}`);
+    }
+
+    private getEntityIcon(entityName: string): string {
+        const iconMap: Record<string, string> = {
+            Users: '👤',
+            Destinations: '🗺️ ',
+            Amenities: '🏠',
+            Features: '⭐',
+            Accommodations: '🏨',
+            Tags: '🏷️',
+            Posts: '📝',
+            Events: '🎉',
+            Attractions: '🎯',
+            Reviews: '⭐',
+            Bookmarks: '🔖',
+            Sponsors: '💼',
+            Organizers: '👥',
+            Locations: '📍'
+        };
+        return iconMap[entityName] || '📦';
+    }
+}
+
+export const summaryTracker = new SummaryTracker();
