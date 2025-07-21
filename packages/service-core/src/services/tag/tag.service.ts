@@ -13,7 +13,7 @@ import type {
 import { ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
-import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
+import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
 import {
@@ -61,7 +61,7 @@ export class TagService extends BaseCrudRelatedService<
     /**
      * Logger instance for service actions.
      */
-    protected readonly logger: ServiceLogger;
+
     /**
      * Zod schema for tag creation.
      */
@@ -88,7 +88,6 @@ export class TagService extends BaseCrudRelatedService<
      */
     constructor(ctx: ServiceContext, model?: TagModel, relatedModel?: REntityTagModel) {
         super(ctx, TagService.ENTITY_NAME, relatedModel);
-        this.logger = ctx.logger;
         this.model = model ?? new TagModel();
     }
 

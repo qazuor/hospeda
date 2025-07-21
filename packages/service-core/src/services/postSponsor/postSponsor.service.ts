@@ -2,7 +2,7 @@ import type { PostSponsorModel } from '@repo/db';
 import { PostSponsorModel as RealPostSponsorModel } from '@repo/db';
 import { BaseCrudService } from '@repo/service-core';
 import type { PostSponsorType } from '@repo/types';
-import type { Actor, PaginatedListOutput, ServiceContext, ServiceLogger } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsor.normalizers';
 import { checkCanManagePostSponsor } from './postSponsor.permissions';
 import type { CreatePostSponsorInput, SearchPostSponsorInput } from './postSponsor.schemas';
@@ -26,7 +26,7 @@ export class PostSponsorService extends BaseCrudService<
     static readonly ENTITY_NAME = 'postSponsor';
     protected readonly entityName = PostSponsorService.ENTITY_NAME;
     public readonly model: PostSponsorModel;
-    public readonly logger: ServiceLogger;
+
     public readonly createSchema = CreatePostSponsorSchema;
     public readonly updateSchema = UpdatePostSponsorSchema;
     public readonly searchSchema = SearchPostSponsorSchema;
@@ -37,7 +37,6 @@ export class PostSponsorService extends BaseCrudService<
 
     constructor(ctx: ServiceContext, model?: PostSponsorModel) {
         super(ctx, PostSponsorService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = model ?? new RealPostSponsorModel();
     }
 

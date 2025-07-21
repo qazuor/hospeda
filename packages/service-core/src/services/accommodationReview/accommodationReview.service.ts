@@ -2,7 +2,7 @@ import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
 import type { AccommodationReviewType, NewAccommodationReviewInputType } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, ServiceLogger } from '../../types';
+import type { Actor, ServiceContext } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { calculateStatsFromReviews } from './accommodationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
@@ -31,7 +31,7 @@ export class AccommodationReviewService extends BaseCrudService<
     static readonly ENTITY_NAME = 'accommodationReview';
     protected readonly entityName = AccommodationReviewService.ENTITY_NAME;
     protected readonly model: AccommodationReviewModel;
-    protected readonly logger: ServiceLogger;
+
     protected readonly createSchema = CreateAccommodationReviewSchema;
     protected readonly updateSchema = UpdateAccommodationReviewSchema;
     protected readonly searchSchema = UpdateAccommodationReviewSchema; // TODO: Replace if needed
@@ -44,7 +44,6 @@ export class AccommodationReviewService extends BaseCrudService<
 
     constructor(ctx: ServiceContext) {
         super(ctx, AccommodationReviewService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = new AccommodationReviewModel();
         this.accommodationService = new AccommodationService(ctx);
     }

@@ -11,7 +11,7 @@ import { type EventType, PermissionEnum, ServiceErrorCode, VisibilityEnum } from
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
-import { type Actor, ServiceError, type ServiceLogger } from '../../types';
+import { type Actor, ServiceError } from '../../types';
 import { generateEventSlug } from './event.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './event.normalizers';
 import {
@@ -52,14 +52,13 @@ export class EventService extends BaseCrudService<
     static readonly ENTITY_NAME = 'event';
     protected readonly entityName = EventService.ENTITY_NAME;
     protected readonly model: EventModel;
-    protected readonly logger: ServiceLogger;
+
     protected readonly createSchema = EventCreateSchema;
     protected readonly updateSchema = EventUpdateSchema;
     protected readonly searchSchema = EventFilterInputSchema;
 
     constructor(ctx: ServiceContext & { model?: EventModel }) {
         super(ctx, EventService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = ctx.model ?? new EventModel();
     }
 

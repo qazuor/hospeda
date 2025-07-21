@@ -3,7 +3,7 @@ import { BaseCrudService, ServiceError } from '@repo/service-core';
 import type { EventLocationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
-import type { Actor, PaginatedListOutput, ServiceContext, ServiceLogger } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventLocation.normalizers';
 import {
     checkCanCreateEventLocation,
@@ -32,7 +32,7 @@ export class EventLocationService extends BaseCrudService<
     static readonly ENTITY_NAME = 'eventLocation';
     protected readonly entityName = EventLocationService.ENTITY_NAME;
     protected readonly model: EventLocationModel;
-    protected readonly logger: ServiceLogger;
+
     protected readonly createSchema = CreateEventLocationSchema;
     protected readonly updateSchema = UpdateEventLocationSchema;
     protected readonly searchSchema = SearchEventLocationSchema;
@@ -49,7 +49,6 @@ export class EventLocationService extends BaseCrudService<
 
     constructor(ctx: ServiceContext, model?: EventLocationModel) {
         super(ctx, EventLocationService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = model ?? new EventLocationModel();
     }
 

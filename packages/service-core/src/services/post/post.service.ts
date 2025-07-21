@@ -3,7 +3,7 @@ import type { PostType, VisibilityEnum } from '@repo/types';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
+import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { generatePostSlug } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
@@ -57,7 +57,7 @@ export class PostService extends BaseCrudService<
     static readonly ENTITY_NAME = 'post';
     protected readonly entityName = PostService.ENTITY_NAME;
     public readonly model: PostModel;
-    public readonly logger: ServiceLogger;
+
     public readonly createSchema = PostCreateInputSchema;
     public readonly updateSchema = PostUpdateSchema;
     public readonly filterSchema = PostFilterInputSchema;
@@ -75,7 +75,6 @@ export class PostService extends BaseCrudService<
      */
     constructor(ctx: ServiceContext, model?: PostModel) {
         super(ctx, PostService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = model ?? new PostModel();
     }
 

@@ -2,7 +2,7 @@ import { DestinationModel, DestinationReviewModel } from '@repo/db';
 import type { DestinationReviewType, NewDestinationReviewInputType } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, ServiceLogger } from '../../types';
+import type { Actor, ServiceContext } from '../../types';
 import { DestinationService } from '../destination/destination.service';
 import { calculateStatsFromReviews } from './destinationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './destinationReview.normalizers';
@@ -31,7 +31,7 @@ export class DestinationReviewService extends BaseCrudService<
     static readonly ENTITY_NAME = 'destinationReview';
     protected readonly entityName = DestinationReviewService.ENTITY_NAME;
     protected readonly model: DestinationReviewModel;
-    protected readonly logger: ServiceLogger;
+
     protected readonly createSchema = CreateDestinationReviewSchema;
     protected readonly updateSchema = UpdateDestinationReviewSchema;
     protected readonly searchSchema = UpdateDestinationReviewSchema; // TODO: Replace if needed
@@ -44,7 +44,6 @@ export class DestinationReviewService extends BaseCrudService<
 
     constructor(ctx: ServiceContext) {
         super(ctx, DestinationReviewService.ENTITY_NAME);
-        this.logger = ctx.logger;
         this.model = new DestinationReviewModel();
         this.destinationService = new DestinationService(ctx);
     }
