@@ -511,8 +511,13 @@ export abstract class BaseCrudService<
 
                 const processedData = await this._beforeCreate(normalizedData, validatedActor);
 
+                // Fusionar los datos normalizados con los datos procesados del hook
+                const finalData = { ...normalizedData, ...processedData };
+
                 // Remove 'bookmarks' if present to avoid type errors in model.create
-                const { bookmarks, ...payload } = processedData as Record<string, unknown>;
+                const { bookmarks, ...payload } = finalData as Record<string, unknown> & {
+                    bookmarks?: unknown;
+                };
                 payload.createdById = validatedActor.id as UserId;
                 payload.updatedById = validatedActor.id as UserId;
 
