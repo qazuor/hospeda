@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "daniel-jimenez",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Daniel",
+        "lastName": "Jiménez",
+        "displayName": "Daniel Jiménez",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Liebig, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Liebig",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "daniel.jimenez@hospeda.com.ar",
+            "mobilePhone": "+549344422921",
+            "website": "https://www.hospeda.com.ar/host/daniel-jimenez",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

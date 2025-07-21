@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "gustavo-pena",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Gustavo",
+        "lastName": "Peña",
+        "displayName": "Gustavo Peña",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Ibicuy",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "gustavo.pena@hospeda.com.ar",
+            "mobilePhone": "+549347050076",
+            "website": "https://www.hospeda.com.ar/host/gustavo-pena",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

@@ -6,7 +6,7 @@
     "summary": "Evento sports - Actividad Deportiva",
     "description": "Descripción detallada del evento Actividad Deportiva. Este es un evento de categoría SPORTS que se desarrolla en Entre Ríos.",
     "category": "SPORTS",
-    "authorId": "007-user-super-administrator",
+    "authorId": "super-admin-user",
     "pricing": {
         "isFree": false,
         "price": 7122,

@@ -6,37 +6,47 @@
     "summary": "Destino termal por excelencia con el complejo termal más grande de Argentina",
     "description": "Federación es una pequeña pero encantadora ciudad ubicada en el norte de Entre Ríos, mundialmente reconocida por albergar el complejo termal más grande de Argentina. Con sus aguas termales naturales, modernas instalaciones y un entorno natural privilegiado, Federación se ha convertido en el destino termal más popular del país. La ciudad ofrece una perfecta combinación de relajación, entretenimiento y contacto con la naturaleza, con actividades para toda la familia en un ambiente tranquilo y revitalizante.",
     "isFeatured": true,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3186",
         "country": "Argentina",
+        "street": "Av. Termas",
+        "number": "321",
+        "city": "Federación",
         "coordinates": {
             "lat": "-31.0167",
-            "lng": "-57.8833"
+            "long": "-57.8833"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-            "caption": "Complejo termal de Federación"
+            "caption": "Complejo termal de Federación",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-                "caption": "Piscinas termales de Federación"
+                "caption": "Piscinas termales de Federación",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
-                "caption": "Instalaciones del complejo termal"
+                "caption": "Instalaciones del complejo termal",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Entorno natural de Federación"
+                "caption": "Entorno natural de Federación",
+                "moderationState": "PENDING"
             }
         ]
     },
     "seo": {
-        "title": "Federación - Complejo Termal Más Grande de Argentina | Entre Ríos",
+        "title": "Federación - Complejo Termal Más Grande de Argentina",
         "description": "Descubre Federación, el destino termal más importante de Argentina. Relax y bienestar en Entre Ríos.",
         "keywords": ["Federación", "Termas", "Entre Ríos", "Complejo Termal", "Relax", "Bienestar"]
     },

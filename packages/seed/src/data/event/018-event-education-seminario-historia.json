@@ -6,7 +6,7 @@
     "summary": "Evento education - Seminario de Historia",
     "description": "Descripción detallada del evento Seminario de Historia. Este es un evento de categoría EDUCATION que se desarrolla en Entre Ríos.",
     "category": "OTHER",
-    "authorId": "007-user-super-administrator",
+    "authorId": "super-admin-user",
     "pricing": {
         "isFree": true
     },

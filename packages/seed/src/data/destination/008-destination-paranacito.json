@@ -6,43 +6,44 @@
     "summary": "Única ciudad insular de Argentina rodeada de naturaleza y delta",
     "description": "Villa Paranacito es una única ciudad insular ubicada en el Delta del Paraná, en el extremo sur de Entre Ríos. Conocida como la única ciudad insular de Argentina, ofrece una experiencia única rodeada de naturaleza salvaje, canales, islas y fauna autóctona. Es el destino perfecto para el turismo de naturaleza, pesca, avistamiento de aves y aventuras en el delta. Su paisaje único y su tranquilidad la convierten en un escape perfecto de la vida urbana.",
     "isFeatured": false,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
+        "street": "Av. Insular",
+        "number": "777",
+        "city": "Villa Paranacito",
         "coordinates": {
             "lat": "-33.7167",
-            "lng": "-58.6500"
+            "long": "-58.6500"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Villa Paranacito"
+            "caption": "Vista panorámica de Villa Paranacito",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Villa Paranacito"
+                "caption": "Paisajes de Villa Paranacito",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Villa Paranacito"
+                "caption": "Naturaleza en Villa Paranacito",
+                "moderationState": "PENDING"
             }
         ]
     },
     "seo": {
-        "title": "Villa Paranacito - Única ciudad insular de Argentina rodeada de naturaleza y delta | Entre Ríos",
+        "title": "Villa Paranacito - Única ciudad insular de Argentina",
         "description": "Descubre Villa Paranacito en Entre Ríos. Única ciudad insular de Argentina rodeada de naturaleza y delta",
-        "keywords": [
-            "Villa Paranacito",
-            "Entre Ríos",
-            "delta",
-            "naturaleza",
-            "islas",
-            "pesca",
-            "aventura"
-        ]
+        "keywords": ["Villa Paranacito", "Entre Ríos", "insular", "delta", "naturaleza", "río"]
     },
     "attractionIds": [
         "032-attraction-delta_explorer",

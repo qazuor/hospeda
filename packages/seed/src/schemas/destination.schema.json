@@ -32,6 +32,24 @@
             "default": false,
             "description": "Whether the destination is featured"
         },
+        "moderationState": {
+            "type": "string",
+            "enum": ["PENDING", "APPROVED", "REJECTED"],
+            "default": "PENDING",
+            "description": "Moderation status of the destination"
+        },
+        "reviewsCount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Number of reviews for this destination"
+        },
+        "averageRating": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Average rating for this destination"
+        },
         "visibility": {
             "type": "string",
             "enum": ["PUBLIC", "PRIVATE", "RESTRICTED"],
@@ -73,9 +91,14 @@
         "name",
         "summary",
         "description",
+        "moderationState",
+        "reviewsCount",
+        "averageRating",
         "visibility",
         "accommodationsCount",
-        "lifecycleState"
+        "lifecycleState",
+        "location",
+        "media"
     ],
     "additionalProperties": true
 }

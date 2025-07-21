@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "carmen-silva",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Carmen",
+        "lastName": "Silva",
+        "displayName": "Carmen Silva",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Colón",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "carmen.silva@hospeda.com.ar",
+            "mobilePhone": "+549347401308",
+            "website": "https://www.hospeda.com.ar/host/carmen-silva",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

@@ -6,33 +6,42 @@
     "summary": "Destino de naturaleza y aventura en el delta entrerriano",
     "description": "Ibicuy es una localidad ubicada en el extremo sur de Entre Ríos, conocida por su ubicación estratégica en el delta del Paraná. Rodeada de naturaleza exuberante, canales y fauna autóctona, Ibicuy es el destino perfecto para el turismo de aventura y naturaleza. Ofrece actividades como pesca, navegación, avistamiento de aves y ecoturismo en un entorno natural único y preservado.",
     "isFeatured": false,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
+        "street": "Av. Delta",
+        "number": "987",
+        "city": "Ibicuy",
         "coordinates": {
             "lat": "-33.7500",
-            "lng": "-58.8333"
+            "long": "-58.8333"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Ibicuy"
+            "caption": "Vista panorámica de Ibicuy",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Ibicuy"
+                "caption": "Paisajes de Ibicuy",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Ibicuy"
+                "caption": "Naturaleza en Ibicuy",
+                "moderationState": "PENDING"
             }
         ]
     },
     "seo": {
-        "title": "Ibicuy - Destino de naturaleza y aventura en el delta entrerriano | Entre Ríos",
+        "title": "Ibicuy - Destino de naturaleza y aventura en el delta",
         "description": "Descubre Ibicuy en Entre Ríos. Destino de naturaleza y aventura en el delta entrerriano",
         "keywords": [
             "Ibicuy",

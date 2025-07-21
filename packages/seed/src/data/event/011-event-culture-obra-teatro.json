@@ -6,7 +6,7 @@
     "summary": "Evento culture - Obra de Teatro",
     "description": "Descripción detallada del evento Obra de Teatro. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
     "category": "CULTURE",
-    "authorId": "007-user-super-administrator",
+    "authorId": "super-admin-user",
     "pricing": {
         "isFree": true
     },

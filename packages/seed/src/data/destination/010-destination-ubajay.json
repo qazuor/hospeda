@@ -6,43 +6,44 @@
     "summary": "Pequeña ciudad rural con encanto campestre y tradición agropecuaria",
     "description": "Ubajay es una pequeña y encantadora ciudad rural ubicada en el centro-este de Entre Ríos, conocida por su ambiente campestre y su fuerte tradición agropecuaria. Con sus paisajes rurales, estancias tradicionales y la calidez de su gente, Ubajay ofrece una experiencia auténtica de la vida rural entrerriana. Es el destino perfecto para quienes buscan tranquilidad, contacto con la naturaleza y conocer las tradiciones del campo argentino.",
     "isFeatured": false,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3271",
         "country": "Argentina",
+        "street": "Av. Rural",
+        "number": "999",
+        "city": "Ubajay",
         "coordinates": {
             "lat": "-31.8000",
-            "lng": "-58.3167"
+            "long": "-58.3167"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Ubajay"
+            "caption": "Vista panorámica de Ubajay",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Ubajay"
+                "caption": "Paisajes de Ubajay",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Ubajay"
+                "caption": "Naturaleza en Ubajay",
+                "moderationState": "PENDING"
             }
         ]
     },
     "seo": {
-        "title": "Ubajay - Pequeña ciudad rural con encanto campestre y tradición agropecuaria | Entre Ríos",
+        "title": "Ubajay - Pequeña ciudad rural con encanto campestre",
         "description": "Descubre Ubajay en Entre Ríos. Pequeña ciudad rural con encanto campestre y tradición agropecuaria",
-        "keywords": [
-            "Ubajay",
-            "Entre Ríos",
-            "rural",
-            "agropecuario",
-            "campo",
-            "tradición",
-            "tranquilidad"
-        ]
+        "keywords": ["Ubajay", "Entre Ríos", "rural", "campestre", "agropecuario", "tranquilidad"]
     },
     "attractionIds": [
         "013-attraction-centro_agropecuario",

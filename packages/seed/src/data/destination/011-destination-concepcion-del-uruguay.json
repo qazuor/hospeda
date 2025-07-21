@@ -6,37 +6,47 @@
     "summary": "Primera capital histórica de Entre Ríos con rica arquitectura y tradición cultural",
     "description": "Concepción del Uruguay es una histórica ciudad situada en el centro-oeste de Entre Ríos, conocida por ser la primera capital histórica de la provincia. Esta hermosa ciudad combina historia, arquitectura y tradición, ofreciendo desde magníficos edificios coloniales hasta un rico patrimonio cultural. Con su ubicación privilegiada sobre el río Uruguay, la ciudad se destaca por sus instituciones educativas, su arquitectura histórica, sus tradicionales festivales y su importante papel en la historia argentina. Es un destino perfecto para quienes buscan cultura, historia y contacto con las tradiciones entrerrianas.",
     "isFeatured": false,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
+        "street": "Av. Histórica",
+        "number": "111",
+        "city": "Concepción del Uruguay",
         "coordinates": {
             "lat": "-32.4833",
-            "lng": "-58.2333"
+            "long": "-58.2333"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-            "caption": "Centro histórico de Concepción del Uruguay"
+            "caption": "Centro histórico de Concepción del Uruguay",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Arquitectura colonial de Concepción del Uruguay"
+                "caption": "Arquitectura colonial de Concepción del Uruguay",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
-                "caption": "Costanera de Concepción del Uruguay"
+                "caption": "Costanera de Concepción del Uruguay",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-                "caption": "Plaza principal de la ciudad"
+                "caption": "Plaza principal de la ciudad",
+                "moderationState": "PENDING"
             }
         ]
     },
     "seo": {
-        "title": "Concepción del Uruguay - Primera Capital Histórica | Entre Ríos",
+        "title": "Concepción del Uruguay - Primera Capital Histórica",
         "description": "Descubre Concepción del Uruguay, primera capital histórica de Entre Ríos. Historia, arquitectura y tradición.",
         "keywords": [
             "Concepción del Uruguay",

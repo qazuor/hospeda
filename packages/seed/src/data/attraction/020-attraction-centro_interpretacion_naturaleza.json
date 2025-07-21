@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/attraction.schema.json",
     "id": "020-attraction-centro_interpretacion_naturaleza",
-    "name": "Centro de Interpretación de la Naturaleza",
+    "name": "Centro Interpretación Natural",
     "slug": "centro_interpretacion_naturaleza",
     "description": "Centro educativo sobre ecosistemas locales y biodiversidad",
     "icon": "eco",

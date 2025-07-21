@@ -6,32 +6,42 @@
     "summary": "Ciudad histórica con arquitectura colonial y portal de entrada a las termas",
     "description": "Colón es una encantadora ciudad histórica situada en el centro-este de Entre Ríos, famosa por su impresionante arquitectura colonial y su importancia como puerto fluvial. Con sus calles empedradas, edificios históricos y el majestuoso Palacio San José, Colón ofrece un viaje al pasado argentino. La ciudad es conocida por sus termas, su rica tradición gastronómica y como punto de partida para explorar las termas de la región. Su ubicación estratégica sobre el río Uruguay la convierte en un destino perfecto para quienes buscan historia, cultura y relajación.",
     "isFeatured": true,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
+        "street": "Av. Costanera",
+        "number": "456",
+        "city": "Colón",
         "coordinates": {
             "lat": "-32.2167",
-            "lng": "-58.1414"
+            "long": "-58.1414"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-            "caption": "Vista del centro histórico de Colón"
+            "caption": "Vista del centro histórico de Colón",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Palacio San José"
+                "caption": "Palacio San José",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-                "caption": "Termas de Colón"
+                "caption": "Termas de Colón",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Arquitectura colonial de Colón"
+                "caption": "Arquitectura colonial de Colón",
+                "moderationState": "PENDING"
             }
         ]
     },

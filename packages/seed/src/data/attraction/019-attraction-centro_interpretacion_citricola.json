@@ -1,7 +1,7 @@
 {
     "$schema": "../../schemas/attraction.schema.json",
     "id": "019-attraction-centro_interpretacion_citricola",
-    "name": "Centro de Interpretación Citrícola",
+    "name": "Centro Interpret. Citrícola",
     "slug": "centro_interpretacion_citricola",
     "description": "Centro educativo sobre la producción citrícola regional",
     "icon": "school",

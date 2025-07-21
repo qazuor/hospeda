@@ -1,0 +1,26 @@
+{
+    "$schema": "../../schemas/user.schema.json",
+    "slug": "usuario-invitado",
+    "role": "GUEST",
+    "permissions": [],
+    "firstName": "Usuario",
+    "lastName": "Invitado",
+    "displayName": "Usuario Invitado",
+    "contactInfo": {
+        "personalEmail": "guest@hospeda.com",
+        "preferredEmail": "PERSONAL",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "city": "Paraná",
+        "country": "Argentina",
+        "zipCode": "3100",
+        "coordinates": {
+            "lat": "-31.7333",
+            "long": "-60.5333"
+        }
+    },
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
+}

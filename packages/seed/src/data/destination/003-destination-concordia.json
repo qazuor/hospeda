@@ -6,37 +6,47 @@
     "summary": "Capital de la citricultura argentina con termas y rica vida cultural",
     "description": "Concordia es una vibrante ciudad ubicada en el noreste de Entre Ríos, reconocida como la capital nacional de la citricultura. Esta hermosa ciudad combina historia, cultura y naturaleza, ofreciendo desde sus famosas termas hasta un rico patrimonio arquitectónico. Con su ubicación privilegiada sobre el río Uruguay, Concordia se destaca por sus parques, su producción citrícola, su festival nacional de la citricultura y su cálida hospitalidad. Es un destino perfecto para quienes buscan relajación en las termas, cultura urbana y contacto con la naturaleza.",
     "isFeatured": true,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3200",
         "country": "Argentina",
+        "street": "Av. San Martín",
+        "number": "789",
+        "city": "Concordia",
         "coordinates": {
             "lat": "-31.3939",
-            "lng": "-58.0206"
+            "long": "-58.0206"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-            "caption": "Termas de Concordia"
+            "caption": "Termas de Concordia",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
-                "caption": "Complejo termal de Concordia"
+                "caption": "Complejo termal de Concordia",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
-                "caption": "Plantaciones cítricas de Concordia"
+                "caption": "Plantaciones cítricas de Concordia",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
-                "caption": "Centro urbano de Concordia"
+                "caption": "Centro urbano de Concordia",
+                "moderationState": "PENDING"
             }
         ]
     },
     "seo": {
-        "title": "Concordia - Capital de la Citricultura | Termas Entre Ríos",
+        "title": "Concordia - Capital de la Citricultura Argentina",
         "description": "Descubre Concordia, capital de la citricultura argentina. Termas, cultura y naturaleza en Entre Ríos.",
         "keywords": ["Concordia", "Entre Ríos", "Citricultura", "Termas", "Naranjas", "Cultura"]
     },
