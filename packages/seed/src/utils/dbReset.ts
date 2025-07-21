@@ -58,36 +58,47 @@ const tableNameMap = new Map([
     [schema.users, 'users']
 ]);
 
-// Tablas que no se deben borrar (protegidas)
-const protectedTableNames = new Set(['role_permission', 'user_permission']);
+/**
+ * Resets the database by deleting all data from all tables in the correct order.
+ * Tables are deleted from children to parents to avoid foreign key constraint violations.
+ * @param exclude - Array of table names to exclude from deletion
+ */
+export async function resetDatabase(exclude: string[] = []): Promise<void> {
+    const separator = '#'.repeat(90);
+    const subSeparator = '─'.repeat(90);
 
-export async function resetDatabase(exclude: string[] = []) {
-    logger.warn('⚠️ Reseteando base de datos...');
+    logger.info(`${separator}`);
+    logger.info('🧹 RESETEANDO BASE DE DATOS');
+    logger.info(`${subSeparator}`);
 
-    const excludeSet = new Set([...protectedTableNames, ...exclude]);
     const db = getDb();
+    let deletedCount = 0;
+    let skippedCount = 0;
 
     for (const table of allTables) {
-        // Obtener el nombre de la tabla desde el mapeo
         const tableName = tableNameMap.get(table);
-
         if (!tableName) {
-            logger.error(`❌ Nombre de tabla no encontrado para: ${table}`);
+            logger.warn(`⚠️ Tabla sin mapeo: ${table}`);
             continue;
         }
 
-        if (excludeSet.has(tableName)) {
-            logger.dim(`↪️  Skipping table: ${tableName}`);
+        if (exclude.includes(tableName)) {
+            logger.info(`↪️ Saltando tabla: ${tableName}`);
+            skippedCount++;
             continue;
         }
 
         try {
             await db.delete(table);
             logger.info(`🧹 Borrado: ${tableName}`);
+            deletedCount++;
         } catch (error) {
-            logger.error(`❌ Error borrando tabla ${tableName}: ${(error as Error).message}`);
+            logger.error(`❌ Error al borrar ${tableName}: ${(error as Error).message}`);
         }
     }
 
+    logger.info(`${subSeparator}`);
     logger.success('✅ Base de datos reseteada');
+    logger.info(`📊 Tablas borradas: ${deletedCount}, Saltadas: ${skippedCount}`);
+    logger.info(`${separator}`);
 }

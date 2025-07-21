@@ -9,11 +9,10 @@ import { seedFeatures } from './features.seed.js';
 import { seedUsers } from './users.seed.js';
 
 export async function runRequiredSeeds(context: SeedContext) {
-    const separator = '═'.repeat(60);
+    const separator = '#'.repeat(90);
 
-    logger.info(`\n${separator}`);
-    logger.info('🌱 INICIALIZANDO CARGA DE DATOS REQUERIDOS');
-    logger.info(`${separator}\n`);
+    logger.info(`${separator}`);
+    logger.info('🌱  INICIALIZANDO CARGA DE DATOS REQUERIDOS');
 
     // 1. Primero cargar el super admin y obtener su ID real
     const superAdminActor = await loadSuperAdminAndGetActor();
@@ -37,8 +36,9 @@ export async function runRequiredSeeds(context: SeedContext) {
     await seedDestinations(context);
 
     logger.info(`${separator}`);
-    logger.success('✅ CARGA DE DATOS REQUERIDOS COMPLETADA');
-    logger.info(`${separator}\n`);
+    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+    console.log('\n\n');
+    logger.success('✅  CARGA DE DATOS REQUERIDOS COMPLETADA');
 
     summaryTracker.print();
 }

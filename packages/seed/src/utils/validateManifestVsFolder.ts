@@ -1,36 +1,69 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { logger } from './logger.js';
+
+/**
+ * Mapeo de nombres de entidades a rutas de folders
+ */
+const ENTITY_FOLDER_MAP: Record<string, string> = {
+    users: 'user',
+    destinations: 'destination',
+    amenities: 'amenity',
+    features: 'feature',
+    attractions: 'attraction',
+    accommodations: 'accommodation',
+    tags: 'tag',
+    posts: 'post',
+    events: 'event',
+    accommodationReviews: 'accommodationReview',
+    destinationReviews: 'destinationReview',
+    postSponsorships: 'postSponsorship',
+    postSponsors: 'postSponsor',
+    eventOrganizers: 'eventOrganizer',
+    eventLocations: 'eventLocation',
+    bookmarks: 'bookmark'
+};
 
 /**
  * Valida que los archivos listados en el manifest existan en el folder,
  * y que no haya archivos JSON huérfanos en el folder no declarados en el manifest.
  *
- * @param folderPath - Ruta del folder a validar
+ * @param entityName - Nombre de la entidad para validar
  * @param declaredFiles - Lista de archivos declarados en el manifest
- * @param entityName - Nombre de la entidad para logging
- * @param continueOnError - Si continuar en caso de error
- * @param recursive - Si buscar recursivamente en subfolders
+ * @param type - Tipo de manifest ('required' o 'example')
  */
 export async function validateManifestVsFolder(
-    folderPath: string,
-    declaredFiles: string[],
     entityName: string,
-    continueOnError = false,
-    recursive = false
+    declaredFiles: string[],
+    type: 'required' | 'example'
 ): Promise<void> {
-    const fullDeclared = new Set(declaredFiles);
+    // Determinar la ruta del folder y si usar búsqueda recursiva
+    const isRecursive = ['accommodations', 'attractions', 'events', 'posts'].includes(entityName);
+    const folderName = ENTITY_FOLDER_MAP[entityName] || entityName;
 
-    // Debug logging
-    logger.dim(`🔍 Validando ${entityName} en ${folderPath} (recursive: ${recursive})`);
+    let folderPath: string;
+    if (type === 'required') {
+        // Para required, algunos folders tienen subfolders específicos
+        if (entityName === 'users') {
+            folderPath = path.resolve(`src/data/${folderName}/required`);
+        } else {
+            folderPath = path.resolve(`src/data/${folderName}`);
+        }
+    } else {
+        // Para example, algunos folders tienen subfolders específicos
+        if (entityName === 'users') {
+            folderPath = path.resolve(`src/data/${folderName}/example`);
+        } else {
+            folderPath = path.resolve(`src/data/${folderName}`);
+        }
+    }
+
+    const fullDeclared = new Set(declaredFiles);
 
     // Función para obtener todos los archivos JSON del folder
     const getJsonFiles = async (dir: string): Promise<string[]> => {
-        if (!recursive) {
+        if (!isRecursive) {
             const folderFiles = await fs.readdir(dir);
-            const jsonFiles = folderFiles.filter((f) => f.endsWith('.json'));
-            logger.dim(`📁 Búsqueda plana: encontré ${jsonFiles.length} archivos JSON`);
-            return jsonFiles;
+            return folderFiles.filter((f) => f.endsWith('.json'));
         }
 
         // Búsqueda recursiva
@@ -51,10 +84,6 @@ export async function validateManifestVsFolder(
         };
 
         await scanDirectory(dir, dir);
-        logger.dim(`📁 Búsqueda recursiva: encontré ${allFiles.length} archivos JSON`);
-        if (allFiles.length > 0) {
-            logger.dim(`📁 Primeros archivos encontrados: ${allFiles.slice(0, 3).join(', ')}`);
-        }
         return allFiles;
     };
 
@@ -64,22 +93,16 @@ export async function validateManifestVsFolder(
     const orphaned = jsonFiles.filter((f) => !fullDeclared.has(f));
 
     if (missing.length > 0) {
-        for (const file of missing) {
-            logger.error(
-                `❌ ${entityName}: el archivo declarado '${file}' no existe en ${folderPath}`
-            );
-        }
-        if (!continueOnError) {
-            throw new Error(
-                `Faltan archivos declarados en ${entityName}. Corrige el manifest o el folder.`
-            );
-        }
+        const missingFiles = missing.join(', ');
+        throw new Error(`Archivos faltantes: ${missingFiles}`);
     }
 
     if (orphaned.length > 0) {
-        logger.warn(`⚠️ Archivos no declarados en manifest para '${entityName}':`);
-        for (const file of orphaned) {
-            logger.dim(`- ${file}`);
+        // Solo lanzar error si hay archivos huérfanos en required
+        if (type === 'required') {
+            const orphanedFiles = orphaned.slice(0, 3).join(', ');
+            const moreText = orphaned.length > 3 ? ` y ${orphaned.length - 3} más` : '';
+            throw new Error(`Archivos no declarados: ${orphanedFiles}${moreText}`);
         }
     }
 }

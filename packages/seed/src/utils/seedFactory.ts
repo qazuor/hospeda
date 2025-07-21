@@ -228,10 +228,5 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
 
             onError: config.errorHandler
         });
-
-        // Show mapping statistics
-        const stats = context.idMapper.getMappingStats(config.entityName.toLowerCase());
-        // biome-ignore lint/suspicious/noConsoleLog: Seed statistics logging
-        console.log(`📊 Mapeo de ${config.entityName}: ${stats.totalMappings} IDs mapeados`);
     };
 };

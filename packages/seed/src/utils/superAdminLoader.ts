@@ -1,8 +1,7 @@
-import path from 'node:path';
 import { UserModel } from '@repo/db';
 import type { Actor } from '@repo/service-core';
-import type { PermissionEnum, RoleEnum } from '@repo/types';
-import { loadJsonFiles } from './loadJsonFile.js';
+import { type PermissionEnum, RoleEnum } from '@repo/types';
+import superAdminInput from '../data/user/required/super-admin-user.json';
 import { logger } from './logger.js';
 
 /**
@@ -14,52 +13,63 @@ const normalizeUserData = (userData: Record<string, unknown>) => {
 };
 
 /**
- * Loads the super admin user first and returns its real ID from the database.
- * This function should be called before any other seeding operations.
- *
- * @returns Promise<Actor> The super admin actor with the real ID from the database
+ * Loads the super admin user and returns its actor information.
+ * This function creates the super admin user directly using the model to bypass
+ * foreign key validation issues during initial seeding.
  */
 export async function loadSuperAdminAndGetActor(): Promise<Actor> {
-    const separator = '─'.repeat(60);
+    const separator = '#'.repeat(90);
+    const subSeparator = '─'.repeat(90);
 
-    logger.info(`\n${separator}`);
-    logger.info('👑 CARGANDO SUPER ADMINISTRADOR');
     logger.info(`${separator}`);
+    logger.info('👑  CARGANDO SUPER ADMINISTRADOR');
+    logger.info(`${subSeparator}`);
 
-    const folder = path.resolve('src/data/user/required');
-    const files = ['super-admin-user.json'];
+    try {
+        const userModel = new UserModel();
 
-    // Load only the super admin user file
-    const users = await loadJsonFiles(folder, files);
+        // Check if super admin already exists
+        const existingSuperAdmin = await userModel.findOne({
+            role: RoleEnum.SUPER_ADMIN
+        });
 
-    if (users.length === 0) {
-        throw new Error('No se encontró el archivo super-admin-user.json');
+        if (existingSuperAdmin) {
+            logger.success(
+                `👑 Super admin encontrado: "${existingSuperAdmin.displayName || 'Super Admin'}" (ID: ${existingSuperAdmin.id})`
+            );
+            logger.info(`${subSeparator}`);
+
+            return {
+                id: existingSuperAdmin.id,
+                role: existingSuperAdmin.role as RoleEnum,
+                permissions: existingSuperAdmin.permissions
+            };
+        }
+
+        // Create super admin user
+        const normalizedSuperAdminInput = normalizeUserData(superAdminInput);
+        const createdUser = await userModel.create(
+            normalizedSuperAdminInput as Record<string, unknown>
+        );
+
+        if (!createdUser) {
+            throw new Error('Failed to create super admin user');
+        }
+
+        const realSuperAdminId = createdUser.id;
+
+        logger.success(
+            `👑 Super admin creado: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
+        );
+        logger.info(`${subSeparator}`);
+
+        return {
+            id: realSuperAdminId,
+            role: superAdminInput.role as RoleEnum,
+            permissions: superAdminInput.permissions as PermissionEnum[]
+        };
+    } catch (error) {
+        logger.error(`❌ Error al cargar super admin: ${(error as Error).message}`);
+        throw error;
     }
-
-    const userModel = new UserModel();
-    const superAdminInput = users[0] as Record<string, unknown>;
-
-    // Normalize the user data by removing schema and ID fields
-    const normalizedSuperAdminInput = normalizeUserData(superAdminInput);
-
-    // Create the super admin user directly using the model to avoid foreign key constraints
-    // biome-ignore lint/suspicious/noExplicitAny: Service input type is complex, using any for now
-    const createdUser = await userModel.create(normalizedSuperAdminInput as any);
-
-    if (!createdUser?.id) {
-        throw new Error('❌ Super admin created but no ID returned');
-    }
-
-    const realSuperAdminId = createdUser.id;
-    const displayName = superAdminInput.displayName as string;
-
-    logger.success(`   👑 Super admin cargado: "${displayName}" (ID: ${realSuperAdminId})`);
-    logger.info(`${separator}\n`);
-
-    // Return the real actor with the actual ID from the database
-    return {
-        id: realSuperAdminId,
-        role: superAdminInput.role as RoleEnum,
-        permissions: superAdminInput.permissions as PermissionEnum[]
-    };
 }

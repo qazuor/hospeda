@@ -1,4 +1,3 @@
-import path from 'node:path';
 import exampleManifest from '../manifest-example.json';
 import requiredManifest from '../manifest-required.json';
 import { logger } from './logger.js';
@@ -19,145 +18,59 @@ import { validateManifestVsFolder } from './validateManifestVsFolder.js';
  * await validateAllManifests(false);
  * ```
  */
-export async function validateAllManifests(continueOnError: boolean): Promise<void> {
-    logger.info('🔍 Validando manifests contra archivos...\n');
+export async function validateAllManifests(continueOnError = false): Promise<void> {
+    const separator = '#'.repeat(90);
+    const subSeparator = '─'.repeat(90);
 
-    const validations = [
-        // Required manifests
-        {
-            name: 'Users (Required)',
-            folder: path.resolve('src/data/user/required'),
-            files: requiredManifest.users,
-            manifest: 'manifest-required.json'
-        },
-        {
-            name: 'Destinations (Required)',
-            folder: path.resolve('src/data/destination'),
-            files: requiredManifest.destinations,
-            manifest: 'manifest-required.json'
-        },
-        {
-            name: 'Amenities (Required)',
-            folder: path.resolve('src/data/amenity'),
-            files: requiredManifest.amenities,
-            manifest: 'manifest-required.json'
-        },
-        {
-            name: 'Features (Required)',
-            folder: path.resolve('src/data/feature'),
-            files: requiredManifest.features,
-            manifest: 'manifest-required.json'
-        },
-        // Example manifests
-        {
-            name: 'Users (Example)',
-            folder: path.resolve('src/data/user/example'),
-            files: exampleManifest.users,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Accommodations (Example)',
-            folder: path.resolve('src/data/accommodation'),
-            files: exampleManifest.accommodations,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Tags (Example)',
-            folder: path.resolve('src/data/tag'),
-            files: exampleManifest.tags,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Posts (Example)',
-            folder: path.resolve('src/data/post'),
-            files: exampleManifest.posts,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Events (Example)',
-            folder: path.resolve('src/data/event'),
-            files: exampleManifest.events,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Accommodation Reviews (Example)',
-            folder: path.resolve('src/data/accommodationReview'),
-            files: exampleManifest.accommodationReviews,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Destination Reviews (Example)',
-            folder: path.resolve('src/data/destinationReview'),
-            files: exampleManifest.destinationReviews,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Post Sponsorships (Example)',
-            folder: path.resolve('src/data/postSponsorship'),
-            files: exampleManifest.postSponsorships,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Post Sponsors (Example)',
-            folder: path.resolve('src/data/postSponsor'),
-            files: exampleManifest.postSponsors,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Event Organizers (Example)',
-            folder: path.resolve('src/data/eventOrganizer'),
-            files: exampleManifest.eventOrganizers,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Event Locations (Example)',
-            folder: path.resolve('src/data/eventLocation'),
-            files: exampleManifest.eventLocations,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Attractions (Example)',
-            folder: path.resolve('src/data/attraction'),
-            files: exampleManifest.attractions,
-            manifest: 'manifest-example.json'
-        },
-        {
-            name: 'Bookmarks (Example)',
-            folder: path.resolve('src/data/bookmark'),
-            files: exampleManifest.bookmarks,
-            manifest: 'manifest-example.json'
-        }
+    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+    console.log('\n');
+    logger.info(`${separator}`);
+    logger.info('🔍 VALIDANDO MANIFESTS CONTRA ARCHIVOS');
+    logger.info(`${subSeparator}`);
+
+    const manifests = [
+        { name: 'Required', manifest: requiredManifest, type: 'required' },
+        { name: 'Example', manifest: exampleManifest, type: 'example' }
     ];
 
-    let hasErrors = false;
+    let totalValidations = 0;
+    let totalErrors = 0;
 
-    for (const validation of validations) {
-        try {
-            // Determinar si usar búsqueda recursiva basado en el tipo de entidad
-            const useRecursive =
-                validation.name.includes('Accommodations') ||
-                validation.name.includes('Attractions') ||
-                validation.name.includes('Events') ||
-                validation.name.includes('Posts');
+    for (const { name, manifest, type } of manifests) {
+        logger.info(`📁 Validando ${name} (${Object.keys(manifest).length} entidades)`);
 
-            await validateManifestVsFolder(
-                validation.folder,
-                validation.files,
-                validation.name,
-                continueOnError,
-                useRecursive
-            );
-        } catch (error) {
-            hasErrors = true;
-            if (!continueOnError) {
-                throw error;
+        for (const [entityName, files] of Object.entries(manifest)) {
+            totalValidations++;
+
+            try {
+                // Ensure 'type' is correctly typed as 'required' | 'example'
+                if (type !== 'required' && type !== 'example') {
+                    throw new Error(`Invalid manifest type: ${type}`);
+                }
+                await validateManifestVsFolder(entityName, files, type);
+                logger.success(`✅ ${entityName}: ${files.length} archivos validados`);
+            } catch (error) {
+                totalErrors++;
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logger.error(`❌ ${entityName}: ${errorMessage}`);
+
+                if (!continueOnError) {
+                    throw error;
+                }
             }
         }
+        logger.info(`${subSeparator}`);
     }
 
-    if (hasErrors && continueOnError) {
-        logger.warn('⚠️ Se encontraron errores de validación, pero continuando...\n');
-    } else if (!hasErrors) {
-        logger.success('✅ Todos los manifests validados correctamente.\n');
+    logger.info(`${subSeparator}`);
+
+    if (totalErrors === 0) {
+        logger.success('✅ Todos los manifests validados correctamente');
+    } else {
+        logger.warn(
+            `⚠️  ${totalValidations - totalErrors} validaciones exitosas, ${totalErrors} errores`
+        );
     }
+
+    logger.info(`${separator}\n`);
 }

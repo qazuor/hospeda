@@ -43,7 +43,7 @@ export const seedDestinations = createSeedFactory({
         const locationInfo = location
             ? ` (${location.city || 'Unknown'}, ${location.country || 'Unknown'})`
             : '';
-        return `"${destination.name}"${locationInfo}`;
+        return ` "${destination.name}"${locationInfo}`;
     },
 
     // Custom relation builder for attractions
