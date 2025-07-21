@@ -38,14 +38,18 @@ export const WithLifecycleStateSchema = z.object({
 });
 
 export const WithReviewStateSchema = z.object({
-    reviewsCount: z.number({
-        required_error: 'zodError.common.reviewsCount.required',
-        invalid_type_error: 'zodError.common.reviewsCount.invalidType'
-    }),
-    averageRating: z.number({
-        required_error: 'zodError.common.averageRating.required',
-        invalid_type_error: 'zodError.common.averageRating.invalidType'
-    })
+    reviewsCount: z
+        .number({
+            required_error: 'zodError.common.reviewsCount.required',
+            invalid_type_error: 'zodError.common.reviewsCount.invalidType'
+        })
+        .optional(),
+    averageRating: z
+        .number({
+            required_error: 'zodError.common.averageRating.required',
+            invalid_type_error: 'zodError.common.averageRating.invalidType'
+        })
+        .optional()
 });
 
 export const WithSeoSchema = z.object({

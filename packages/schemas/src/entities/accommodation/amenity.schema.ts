@@ -48,7 +48,7 @@ export const AmenitySchema = z.object({
         .optional(),
     name: z
         .string()
-        .min(3, { message: 'zodError.amenity.name.min' })
+        .min(2, { message: 'zodError.amenity.name.min' })
         .max(100, { message: 'zodError.amenity.name.max' }),
     description: z
         .string()

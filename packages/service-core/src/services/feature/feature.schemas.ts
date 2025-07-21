@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const CreateFeatureSchema = z
     .object({
-        name: z.string().min(3),
+        name: z.string().min(2),
         description: z.string().optional(),
         icon: z.string().optional(),
         isBuiltin: z.boolean().optional(),

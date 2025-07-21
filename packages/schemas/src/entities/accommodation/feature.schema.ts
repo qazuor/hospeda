@@ -12,7 +12,7 @@ export const FeatureSchema = WithIdSchema.merge(WithAuditSchema)
     .extend({
         name: z
             .string()
-            .min(3, { message: 'zodError.feature.name.min' })
+            .min(2, { message: 'zodError.feature.name.min' })
             .max(100, { message: 'zodError.feature.name.max' }),
         description: z
             .string()
