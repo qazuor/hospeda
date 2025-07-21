@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "055-amenity-family-friendly-playground",
+    "name": "playground",
+    "slug": "playground",
+    "description": "Parque infantil",
+    "type": "FAMILY_FRIENDLY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

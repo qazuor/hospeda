@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "040-amenity-safety-smoke-detector",
+    "name": "smoke_detector",
+    "slug": "smoke_detector",
+    "description": "Detector de humo",
+    "type": "SAFETY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

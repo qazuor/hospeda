@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "051-amenity-services-grocery-service",
+    "name": "grocery_service",
+    "slug": "grocery_service",
+    "description": "Proveeduría",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

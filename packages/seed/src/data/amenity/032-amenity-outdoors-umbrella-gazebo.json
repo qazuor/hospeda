@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "032-amenity-outdoors-umbrella-gazebo",
+    "name": "umbrella_gazebo",
+    "slug": "umbrella_gazebo",
+    "description": "Sombrilla / Gazebo",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

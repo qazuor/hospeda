@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "019-amenity-bed-and-bath-dryer",
+    "name": "dryer",
+    "slug": "dryer",
+    "description": "Secarropas",
+    "type": "BED_AND_BATH",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

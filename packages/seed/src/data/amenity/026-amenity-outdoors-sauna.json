@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "026-amenity-outdoors-sauna",
+    "name": "sauna",
+    "slug": "sauna",
+    "description": "Sauna",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

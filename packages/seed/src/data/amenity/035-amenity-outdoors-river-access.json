@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "035-amenity-outdoors-river-access",
+    "name": "river_access",
+    "slug": "river_access",
+    "description": "Acceso al río",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "048-amenity-services-laundry-service",
+    "name": "laundry_service",
+    "slug": "laundry_service",
+    "description": "Servicio de lavandería",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

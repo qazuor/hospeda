@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "012-amenity-connectivity-cable-tv",
+    "name": "cable_tv",
+    "slug": "cable_tv",
+    "description": "TV por cable",
+    "type": "CONNECTIVITY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

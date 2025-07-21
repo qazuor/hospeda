@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "083-amenity-services-bar",
+    "name": "bar",
+    "slug": "bar",
+    "description": "Bar",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

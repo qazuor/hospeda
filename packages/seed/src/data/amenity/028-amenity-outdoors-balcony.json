@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "028-amenity-outdoors-balcony",
+    "name": "balcony",
+    "slug": "balcony",
+    "description": "Balcón",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

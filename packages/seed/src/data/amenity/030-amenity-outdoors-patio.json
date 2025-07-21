@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "030-amenity-outdoors-patio",
+    "name": "patio",
+    "slug": "patio",
+    "description": "Patio interno",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

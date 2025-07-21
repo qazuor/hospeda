@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "079-amenity-services-luggage-storage",
+    "name": "luggage_storage",
+    "slug": "luggage_storage",
+    "description": "Servicio de guardado de equipaje",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

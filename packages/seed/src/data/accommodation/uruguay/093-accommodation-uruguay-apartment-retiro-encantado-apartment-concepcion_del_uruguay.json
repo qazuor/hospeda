@@ -94,7 +94,11 @@
         "beds": 2,
         "bathrooms": 1,
         "smokingAllowed": false,
-        "extraInfo": ["Ubicación céntrica", "Ideal para parejas", "Check-in autónomo disponible"]
+        "extraInfo": [
+            "Ubicación céntrica",
+            "Ideal para parejas",
+            "Check-in autónomo disponible"
+        ]
     },
     "seo": {
         "title": "Retiro Encantado - Apartamento Céntrico en Concepción del Uruguay",
@@ -109,17 +113,27 @@
             "parejas"
         ]
     },
-    "featureIds": ["022-feature-private_entrance"],
+    "featureIds": [
+        "022-feature-private_entrance"
+    ],
     "amenityIds": [
-        "025-amenity-connectivity-wifi",
-        "001-amenity-climate-control-air_conditioning",
-        "012-amenity-climate-control-heating",
-        "022-amenity-connectivity-tv",
-        "014-amenity-kitchen-kitchen",
-        "018-amenity-kitchen-refrigerator",
-        "015-amenity-kitchen-microwave",
-        "008-amenity-safety-fire_extinguisher",
-        "010-amenity-safety-first_aid_kit"
+        "001-amenity-connectivity-wifi",
+        "002-amenity-climate-control-air-conditioning",
+        "003-amenity-climate-control-heating",
+        "004-amenity-kitchen-full-kitchen",
+        "005-amenity-kitchen-refrigerator-freezer",
+        "006-amenity-kitchen-microwave",
+        "007-amenity-kitchen-coffee-maker",
+        "010-amenity-bed-and-bath-bed-linens",
+        "011-amenity-bed-and-bath-towels",
+        "012-amenity-connectivity-cable-tv",
+        "013-amenity-connectivity-smart-tv",
+        "018-amenity-bed-and-bath-washer",
+        "021-amenity-climate-control-hair-dryer",
+        "038-amenity-accessibility-elevator",
+        "040-amenity-safety-smoke-detector",
+        "042-amenity-safety-first-aid-kit",
+        "043-amenity-safety-fire-extinguisher"
     ],
     "faqs": [],
     "iaData": [
@@ -134,5 +148,10 @@
             "category": "nature"
         }
     ],
-    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"]
+    "tagIds": [
+        "017-tag-familia",
+        "039-tag-turismo",
+        "011-tag-cultura",
+        "016-tag-entre-rios"
+    ]
 }

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "043-amenity-safety-fire-extinguisher",
+    "name": "fire_extinguisher",
+    "slug": "fire_extinguisher",
+    "description": "Extintor",
+    "type": "SAFETY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

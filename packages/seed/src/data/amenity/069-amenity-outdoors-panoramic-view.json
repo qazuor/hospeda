@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "069-amenity-outdoors-panoramic-view",
+    "name": "panoramic_view",
+    "slug": "panoramic_view",
+    "description": "Vista panorámica",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

@@ -125,19 +125,37 @@
             "céntrico"
         ]
     },
-    "featureIds": ["024-feature-private_pool", "005-feature-city_center"],
+    "featureIds": [
+        "024-feature-private_pool",
+        "005-feature-city_center"
+    ],
     "amenityIds": [
-        "025-amenity-connectivity-wifi",
-        "001-amenity-climate-control-air_conditioning",
-        "012-amenity-climate-control-heating",
-        "022-amenity-connectivity-tv",
-        "018-amenity-kitchen-refrigerator",
-        "011-amenity-climate-control-hair_dryer",
-        "020-amenity-safety-smoke_detector",
-        "008-amenity-safety-fire_extinguisher",
-        "010-amenity-safety-first_aid_kit"
+        "001-amenity-connectivity-wifi",
+        "002-amenity-climate-control-air-conditioning",
+        "003-amenity-climate-control-heating",
+        "005-amenity-kitchen-refrigerator-freezer",
+        "010-amenity-bed-and-bath-bed-linens",
+        "011-amenity-bed-and-bath-towels",
+        "012-amenity-connectivity-cable-tv",
+        "013-amenity-connectivity-smart-tv",
+        "021-amenity-climate-control-hair-dryer",
+        "038-amenity-accessibility-elevator",
+        "040-amenity-safety-smoke-detector",
+        "042-amenity-safety-first-aid-kit",
+        "043-amenity-safety-fire-extinguisher",
+        "045-amenity-services-breakfast",
+        "047-amenity-services-daily-cleaning",
+        "049-amenity-services-24h-reception",
+        "050-amenity-services-room-service",
+        "083-amenity-services-bar",
+        "084-amenity-services-restaurant"
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"]
+    "tagIds": [
+        "017-tag-familia",
+        "039-tag-turismo",
+        "011-tag-cultura",
+        "016-tag-entre-rios"
+    ]
 }

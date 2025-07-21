@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "065-amenity-general-appliances-relaxation-area",
+    "name": "relaxation_area",
+    "slug": "relaxation_area",
+    "description": "Zona de relax",
+    "type": "GENERAL_APPLIANCES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

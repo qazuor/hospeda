@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "076-amenity-kitchen-water-dispenser",
+    "name": "water_dispenser",
+    "slug": "water_dispenser",
+    "description": "Dispenser de agua fría/caliente",
+    "type": "KITCHEN",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

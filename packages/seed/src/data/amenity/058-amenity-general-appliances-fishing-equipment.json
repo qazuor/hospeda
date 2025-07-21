@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "058-amenity-general-appliances-fishing-equipment",
+    "name": "fishing_equipment",
+    "slug": "fishing_equipment",
+    "description": "Equipamiento de pesca",
+    "type": "GENERAL_APPLIANCES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

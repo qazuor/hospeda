@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "034-amenity-outdoors-solarium",
+    "name": "solarium",
+    "slug": "solarium",
+    "description": "Solárium",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

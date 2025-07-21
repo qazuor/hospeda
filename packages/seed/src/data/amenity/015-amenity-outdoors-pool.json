@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "015-amenity-outdoors-pool",
+    "name": "pool",
+    "slug": "pool",
+    "description": "Piscina",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

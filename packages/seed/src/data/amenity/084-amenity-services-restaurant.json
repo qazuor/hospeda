@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "084-amenity-services-restaurant",
+    "name": "restaurant",
+    "slug": "restaurant",
+    "description": "Restaurante",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

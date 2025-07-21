@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "009-amenity-kitchen-utensils",
+    "name": "kitchen_utensils",
+    "slug": "kitchen_utensils",
+    "description": "Utensilios de cocina",
+    "type": "KITCHEN",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "077-amenity-kitchen-gas-electric-stove",
+    "name": "gas_electric_stove",
+    "slug": "gas_electric_stove",
+    "description": "Cocina a gas / eléctrica",
+    "type": "KITCHEN",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

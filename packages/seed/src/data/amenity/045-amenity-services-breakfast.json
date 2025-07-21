@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "045-amenity-services-breakfast",
+    "name": "breakfast",
+    "slug": "breakfast",
+    "description": "Provisión de desayuno",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

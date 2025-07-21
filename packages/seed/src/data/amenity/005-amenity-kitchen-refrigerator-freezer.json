@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "005-amenity-kitchen-refrigerator-freezer",
+    "name": "refrigerator_freezer",
+    "slug": "refrigerator_freezer",
+    "description": "Heladera con freezer",
+    "type": "KITCHEN",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

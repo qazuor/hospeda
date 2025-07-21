@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "010-amenity-bed-and-bath-bed-linens",
+    "name": "bed_linens",
+    "slug": "bed_linens",
+    "description": "Ropa de cama",
+    "type": "BED_AND_BATH",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

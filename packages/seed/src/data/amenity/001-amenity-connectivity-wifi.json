@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "001-amenity-connectivity-wifi",
+    "name": "wifi",
+    "slug": "wifi",
+    "description": "Wi-Fi",
+    "type": "CONNECTIVITY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

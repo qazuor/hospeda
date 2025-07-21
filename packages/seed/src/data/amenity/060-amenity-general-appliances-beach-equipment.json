@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "060-amenity-general-appliances-beach-equipment",
+    "name": "beach_equipment",
+    "slug": "beach_equipment",
+    "description": "Equipo de playa",
+    "type": "GENERAL_APPLIANCES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "049-amenity-services-24h-reception",
+    "name": "24h_reception",
+    "slug": "24h_reception",
+    "description": "Recepción 24h",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

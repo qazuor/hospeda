@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "050-amenity-services-room-service",
+    "name": "room_service",
+    "slug": "room_service",
+    "description": "Room service",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}
