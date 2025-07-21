@@ -42,6 +42,8 @@ export async function seedRunner<T>({
 }: SeedRunnerOptions<T>): Promise<void> {
     const icon = entityIcons[entityName] || '📦';
     const totalItems = items.length;
+    let successCount = 0;
+    let errorCount = 0;
 
     // Separador de sección principal
     logger.info(`${SECTION_SEPARATOR}`);
@@ -64,9 +66,16 @@ export async function seedRunner<T>({
                     : `${icon} ${entityName} #${currentIndex}`;
 
                 logger.success(successMessage);
+                successCount++;
             }
         } catch (err) {
             const error = err as Error;
+            errorCount++;
+
+            // Información del error
+            const entityInfo =
+                getEntityInfo && item ? getEntityInfo(item) : `${entityName} #${currentIndex}`;
+            logger.error(`   ❌ Error en ${entityInfo}: ${error.message}`);
 
             // Call error handler first if available
             if (item !== undefined && onError) {
@@ -82,7 +91,13 @@ export async function seedRunner<T>({
 
     // Separador de finalización
     logger.info(`${SUBSECTION_SEPARATOR}`);
-    logger.success(`✅ ${entityName}: ${totalItems} ítems procesados exitosamente`);
+
+    if (errorCount === 0) {
+        logger.success(`✅ ${entityName}: ${successCount} ítems procesados exitosamente`);
+    } else {
+        logger.warn(`⚠️  ${entityName}: ${successCount} exitosos, ${errorCount} errores`);
+    }
+
     logger.info(`${SECTION_SEPARATOR}`);
     // biome-ignore lint/suspicious/noConsoleLog: <explanation>
     console.log('\n');

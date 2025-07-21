@@ -9,8 +9,16 @@ interface SummaryStats {
     }>;
 }
 
+interface ProcessStep {
+    name: string;
+    status: 'success' | 'error' | 'warning';
+    message: string;
+    details?: string;
+}
+
 class SummaryTracker {
     private stats = new Map<string, SummaryStats>();
+    private processSteps: ProcessStep[] = [];
 
     trackSuccess(entityName: string): void {
         const current = this.stats.get(entityName) || { success: 0, errors: 0, errorDetails: [] };
@@ -25,6 +33,15 @@ class SummaryTracker {
         this.stats.set(entityName, current);
     }
 
+    trackProcessStep(
+        name: string,
+        status: 'success' | 'error' | 'warning',
+        message: string,
+        details?: string
+    ): void {
+        this.processSteps.push({ name, status, message, details });
+    }
+
     print(): void {
         const separator = '#'.repeat(90);
         const subSeparator = '─'.repeat(90);
@@ -34,8 +51,29 @@ class SummaryTracker {
         logger.info('📊  SUMMARY FINAL');
         logger.info(`${subSeparator}`);
 
+        // Print process steps first
+        if (this.processSteps.length > 0) {
+            logger.info('🔄 Pasos del proceso:');
+            for (const step of this.processSteps) {
+                const statusIcon =
+                    step.status === 'success' ? '✅' : step.status === 'error' ? '❌' : '⚠️';
+                if (step.status === 'error') {
+                    logger.error(`${statusIcon} ${step.name}: ${step.message}`);
+                    if (step.details) {
+                        logger.error(`  ${step.details}`);
+                    }
+                } else {
+                    logger.info(`${statusIcon} ${step.name}: ${step.message}`);
+                    if (step.details) {
+                        logger.info(`  ${step.details}`);
+                    }
+                }
+            }
+            logger.info(`${subSeparator}`);
+        }
+
         if (this.stats.size === 0) {
-            logger.info('   No hay estadísticas disponibles');
+            logger.info('   No hay estadísticas de entidades disponibles');
             logger.info(`${separator}`);
             return;
         }

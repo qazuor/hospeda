@@ -3,6 +3,7 @@ import type { Actor } from '@repo/service-core';
 import { type PermissionEnum, RoleEnum } from '@repo/types';
 import superAdminInput from '../data/user/required/super-admin-user.json';
 import { logger } from './logger.js';
+import { summaryTracker } from './summaryTracker.js';
 
 /**
  * Normalizes user data by removing schema and ID fields that shouldn't be sent to the service
@@ -39,6 +40,12 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
             );
             logger.info(`${subSeparator}`);
 
+            summaryTracker.trackProcessStep(
+                'Super Admin',
+                'success',
+                'Super admin encontrado existente'
+            );
+
             return {
                 id: existingSuperAdmin.id,
                 role: existingSuperAdmin.role as RoleEnum,
@@ -63,6 +70,12 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         );
         logger.info(`${subSeparator}`);
 
+        summaryTracker.trackProcessStep(
+            'Super Admin',
+            'success',
+            'Super admin creado exitosamente'
+        );
+
         return {
             id: realSuperAdminId,
             role: superAdminInput.role as RoleEnum,
@@ -70,6 +83,12 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         };
     } catch (error) {
         logger.error(`❌ Error al cargar super admin: ${(error as Error).message}`);
+        summaryTracker.trackProcessStep(
+            'Super Admin',
+            'error',
+            'Error al cargar super admin',
+            (error as Error).message
+        );
         throw error;
     }
 }
