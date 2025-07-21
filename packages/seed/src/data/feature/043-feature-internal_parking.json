@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "043-feature-internal_parking",
+    "name": "Estacionamiento interno",
+    "slug": "internal_parking",
+    "description": "Plaza de estacionamiento segura dentro de la propiedad, protegida y de uso exclusivo",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

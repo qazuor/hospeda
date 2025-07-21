@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "038-feature-perimeter_lighting",
+    "name": "Iluminación perimetral",
+    "slug": "perimeter_lighting",
+    "description": "Sistema de iluminación completo alrededor de toda la propiedad para seguridad y orientación nocturna",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

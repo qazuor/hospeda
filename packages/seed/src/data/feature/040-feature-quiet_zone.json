@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "040-feature-quiet_zone",
+    "name": "Zona de silencio",
+    "slug": "quiet_zone",
+    "description": "Área específicamente designada para descanso y relajación donde se mantiene absoluto silencio",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "080-feature-workshop_training_space",
+    "name": "Espacio para talleres y capacitaciones",
+    "slug": "workshop_training_space",
+    "description": "Instalaciones equipadas para realizar cursos, talleres y actividades de aprendizaje grupal",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

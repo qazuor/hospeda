@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "018-feature-modern_style",
+    "name": "Estilo moderno",
+    "slug": "modern_style",
+    "description": "Arquitectura contemporánea con líneas limpias, materiales modernos y diseño minimalista actual",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

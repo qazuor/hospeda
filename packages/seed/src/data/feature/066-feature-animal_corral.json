@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "066-feature-animal_corral",
+    "name": "Corral de animales",
+    "slug": "animal_corral",
+    "description": "Instalaciones para el cuidado y exhibición de animales de granja en ambiente seguro y educativo",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

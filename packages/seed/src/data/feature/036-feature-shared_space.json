@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "036-feature-shared_space",
+    "name": "Espacio compartido",
+    "slug": "shared_space",
+    "description": "Áreas comunes diseñadas para la interacción social entre huéspedes, como salones, cocinas o jardines",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

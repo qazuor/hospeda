@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "047-feature-laundry_service",
+    "name": "Servicio de lavandería",
+    "slug": "laundry_service",
+    "description": "Facilidad de lavado, secado y planchado de ropa disponible para los huéspedes",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "027-feature-adults_only_area",
+    "name": "Sector solo adultos",
+    "slug": "adults_only_area",
+    "description": "Zona restringida exclusivamente para huéspedes adultos, garantizando tranquilidad y ambiente sofisticado",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

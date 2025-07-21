@@ -125,8 +125,11 @@
         ]
     },
     "featureIds": [
-        "028-feature-river_view",
-        "005-feature-city_center"
+        "031-feature-room_rental",
+        "073-feature-permanent_professional_staff",
+        "047-feature-laundry_service",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

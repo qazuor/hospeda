@@ -143,10 +143,11 @@
         ]
     },
     "featureIds": [
-        "024-feature-private_pool",
-        "023-feature-private_garden",
-        "001-feature-bbq_area",
-        "018-feature-nature_proximity"
+        "030-feature-full_rental",
+        "009-feature-isolated_no_neighbors",
+        "003-feature-panoramic_view_extended",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

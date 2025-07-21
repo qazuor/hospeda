@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "004-feature-natural_environment",
+    "name": "Entorno natural",
+    "slug": "natural_environment",
+    "description": "Rodeado completamente por naturaleza preservada, bosques, montañas o ecosistemas nativos sin intervención urbana",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "061-feature-spiritual_retreat_suitable",
+    "name": "Apto para retiros espirituales",
+    "slug": "spiritual_retreat_suitable",
+    "description": "Ambiente de paz y tranquilidad ideal para meditación, yoga y actividades de crecimiento personal",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

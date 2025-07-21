@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "021-feature-ecological_construction",
+    "name": "Construcción ecológica",
+    "slug": "ecological_construction",
+    "description": "Edificación sustentable con materiales ecológicos, técnicas de bioconstrucción y mínimo impacto ambiental",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

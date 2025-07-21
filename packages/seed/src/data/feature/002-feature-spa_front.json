@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "002-feature-spa_front",
+    "name": "Frente al balneario",
+    "slug": "spa_front",
+    "description": "Ubicación privilegiada frente a balnearios termales o spas naturales, con acceso directo a las instalaciones de relajación",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

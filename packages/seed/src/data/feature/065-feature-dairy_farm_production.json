@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "065-feature-dairy_farm_production",
+    "name": "Tambo y producción de campo",
+    "slug": "dairy_farm_production",
+    "description": "Instalación agrícola activa donde se puede observar y participar en la producción láctea y agrícola",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

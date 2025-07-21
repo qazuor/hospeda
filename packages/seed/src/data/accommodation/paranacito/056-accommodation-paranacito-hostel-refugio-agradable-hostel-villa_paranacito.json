@@ -116,9 +116,13 @@
         ]
     },
     "featureIds": [
-        "030-feature-shared_kitchen",
-        "005-feature-city_center",
-        "018-feature-nature_proximity"
+        "031-feature-room_rental",
+        "036-feature-shared_space",
+        "015-feature-ideal_for_groups",
+        "001-feature-river_front",
+        "004-feature-natural_environment",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "051-feature-animal_activities",
+    "name": "Actividades con animales",
+    "slug": "animal_activities",
+    "description": "Experiencias de interacción directa con animales de granja, cabalgatas o actividades ecuestres",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

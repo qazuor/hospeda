@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "039-feature-perimeter_fence",
+    "name": "Cerco perimetral",
+    "slug": "perimeter_fence",
+    "description": "Cercado completo de la propiedad que garantiza privacidad, seguridad y delimitación clara del espacio",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

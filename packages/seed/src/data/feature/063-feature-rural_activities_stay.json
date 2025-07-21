@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "063-feature-rural_activities_stay",
+    "name": "Estancia con actividades rurales",
+    "slug": "rural_activities_stay",
+    "description": "Experiencia completa de vida rural con participación en actividades agrícolas y ganaderas",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

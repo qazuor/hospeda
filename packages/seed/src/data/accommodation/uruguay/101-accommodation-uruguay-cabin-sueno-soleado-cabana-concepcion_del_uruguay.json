@@ -121,8 +121,11 @@
         ]
     },
     "featureIds": [
-        "001-feature-bbq_area",
-        "003-feature-bright"
+        "030-feature-full_rental",
+        "004-feature-natural_environment",
+        "008-feature-silent_environment",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

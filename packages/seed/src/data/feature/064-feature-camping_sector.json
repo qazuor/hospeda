@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "064-feature-camping_sector",
+    "name": "Sector para acampar",
+    "slug": "camping_sector",
+    "description": "Área natural acondicionada para camping con servicios básicos y respeto por el medio ambiente",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

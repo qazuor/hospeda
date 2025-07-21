@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "077-feature-plastic_free_policy",
+    "name": "Política sin plásticos",
+    "slug": "plastic_free_policy",
+    "description": "Compromiso ambiental de operación libre de plásticos desechables utilizando alternativas biodegradables",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

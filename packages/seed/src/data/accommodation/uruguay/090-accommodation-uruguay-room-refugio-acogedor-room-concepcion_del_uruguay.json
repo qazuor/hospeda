@@ -105,8 +105,10 @@
         ]
     },
     "featureIds": [
-        "030-feature-shared_kitchen",
-        "010-feature-family_friendly"
+        "031-feature-room_rental",
+        "036-feature-shared_space",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

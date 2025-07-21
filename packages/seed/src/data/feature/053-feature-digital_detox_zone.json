@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "053-feature-digital_detox_zone",
+    "name": "Zona sin conexión digital",
+    "slug": "digital_detox_zone",
+    "description": "Área libre de dispositivos electrónicos y señales digitales para desconexión total y relajación",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

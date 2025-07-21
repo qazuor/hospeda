@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "023-feature-smart_home",
+    "name": "Casa inteligente",
+    "slug": "smart_home",
+    "description": "Tecnología domótica avanzada con automatización de luces, climatización, seguridad y control remoto desde dispositivos móviles",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "031-feature-room_rental",
+    "name": "Alquiler por habitación",
+    "slug": "room_rental",
+    "description": "Modalidad de hospedaje donde se alquilan habitaciones individuales compartiendo algunas áreas comunes",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -110,8 +110,11 @@
         ]
     },
     "featureIds": [
-        "023-feature-private_garden",
-        "030-feature-shared_kitchen"
+        "031-feature-room_rental",
+        "036-feature-shared_space",
+        "001-feature-river_front",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

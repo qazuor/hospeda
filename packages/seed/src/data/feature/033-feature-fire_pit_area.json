@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "033-feature-fire_pit_area",
+    "name": "Espacio de fogón",
+    "slug": "fire_pit_area",
+    "description": "Área segura y acondicionada para hacer fogatas con asientos alrededor y medidas de seguridad contra incendios",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

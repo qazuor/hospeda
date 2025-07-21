@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "068-feature-walking_circuit",
+    "name": "Circuito de caminatas",
+    "slug": "walking_circuit",
+    "description": "Senderos señalizados y mantenidos para caminatas recreativas y contacto con la naturaleza",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

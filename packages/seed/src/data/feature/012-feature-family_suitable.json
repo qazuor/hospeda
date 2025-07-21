@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "012-feature-family_suitable",
+    "name": "Apto para familias",
+    "slug": "family_suitable",
+    "description": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

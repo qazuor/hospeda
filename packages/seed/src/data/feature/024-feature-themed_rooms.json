@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "024-feature-themed_rooms",
+    "name": "Habitaciones temáticas",
+    "slug": "themed_rooms",
+    "description": "Cada habitación diseñada con temática única y decoración especializada para crear experiencias diferenciadas",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

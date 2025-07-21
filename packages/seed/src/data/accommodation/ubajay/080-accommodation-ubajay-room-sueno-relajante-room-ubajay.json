@@ -106,9 +106,12 @@
         ]
     },
     "featureIds": [
-        "030-feature-shared_kitchen",
-        "025-feature-quiet_location",
-        "017-feature-national_park_proximity"
+        "031-feature-room_rental",
+        "036-feature-shared_space",
+        "005-feature-rural_area",
+        "008-feature-silent_environment",
+        "025-feature-wifi_full_property",
+        "044-feature-tourist_info_available"
     ],
     "amenityIds": [
         "001-amenity-connectivity-wifi",

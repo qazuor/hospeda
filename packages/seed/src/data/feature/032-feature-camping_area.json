@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "032-feature-camping_area",
+    "name": "Sector de camping",
+    "slug": "camping_area",
+    "description": "Área específicamente acondicionada para acampar con carpas, con servicios básicos y espacios naturales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

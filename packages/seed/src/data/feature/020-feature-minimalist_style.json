@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "020-feature-minimalist_style",
+    "name": "Estilo minimalista",
+    "slug": "minimalist_style",
+    "description": "Diseño despojado y funcional con espacios limpios, colores neutros y decoración esencial",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

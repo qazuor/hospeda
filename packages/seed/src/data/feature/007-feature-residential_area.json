@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "007-feature-residential_area",
+    "name": "Zona residencial",
+    "slug": "residential_area",
+    "description": "Situado en barrio tranquilo y seguro, rodeado de viviendas familiares y ambiente hogareño",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "029-feature-minimum_stay_required",
+    "name": "Estancia mínima requerida",
+    "slug": "minimum_stay_required",
+    "description": "Política de reserva que establece una cantidad mínima de noches de alojamiento para garantizar mejor experiencia",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

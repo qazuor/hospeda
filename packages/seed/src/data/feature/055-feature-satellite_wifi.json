@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "055-feature-satellite_wifi",
+    "name": "Wi-Fi satelital",
+    "slug": "satellite_wifi",
+    "description": "Conexión a internet de alta velocidad mediante tecnología satelital, ideal para zonas remotas",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

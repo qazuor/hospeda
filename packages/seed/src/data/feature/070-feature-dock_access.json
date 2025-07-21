@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "070-feature-dock_access",
+    "name": "Acceso a muelle",
+    "slug": "dock_access",
+    "description": "Facilidad de acceso directo a embarcadero privado para actividades náuticas y deportes acuáticos",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

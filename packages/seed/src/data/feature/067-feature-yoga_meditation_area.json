@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "067-feature-yoga_meditation_area",
+    "name": "Área de yoga y meditación",
+    "slug": "yoga_meditation_area",
+    "description": "Espacio especialmente diseñado para prácticas de yoga, meditación y ejercicios de relajación",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

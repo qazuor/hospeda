@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "046-feature-transfer_service",
+    "name": "Servicio de traslado",
+    "slug": "transfer_service",
+    "description": "Transporte privado desde y hacia aeropuertos, terminales o puntos de interés coordinado por el alojamiento",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "072-feature-bilingual_services",
+    "name": "Servicios bilingües",
+    "slug": "bilingual_services",
+    "description": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}

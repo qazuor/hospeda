@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "062-feature-remote_coworking_suitable",
+    "name": "Apto para trabajo remoto",
+    "slug": "remote_coworking_suitable",
+    "description": "Espacios de trabajo equipados con internet de alta velocidad, escritorios y ambiente profesional",
+    "icon": "feature",
+    "isBuiltin": true,
+    "isFeatured": false,
+    "lifecycleState": "ACTIVE"
+}
