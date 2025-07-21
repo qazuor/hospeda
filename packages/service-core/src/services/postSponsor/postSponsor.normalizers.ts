@@ -1,4 +1,5 @@
 import type { Actor } from '../../types';
+import { normalizeContactInfo } from '../../utils';
 import type { CreatePostSponsorInput, UpdatePostSponsorInput } from './postSponsor.schemas';
 
 /**
@@ -12,12 +13,17 @@ export const normalizeCreateInput = (
     data: CreatePostSponsorInput,
     _actor: Actor
 ): CreatePostSponsorInput => {
+    // Normalize contact info if present
+    const normalizedContact = data.contact
+        ? (normalizeContactInfo(data.contact) as typeof data.contact)
+        : undefined;
+
     return {
         ...data,
         name: data.name.trim(),
         description: data.description.trim(),
         logo: data.logo, // TODO: normalize image if necessary
-        contact: data.contact, // TODO: normalize contact if necessary
+        contact: normalizedContact,
         social: data.social, // TODO: normalize social if necessary
         type: data.type
     };
@@ -34,9 +40,16 @@ export const normalizeUpdateInput = (
     data: UpdatePostSponsorInput,
     _actor: Actor
 ): UpdatePostSponsorInput => {
-    const normalized: UpdatePostSponsorInput = { ...data };
-    if (typeof data.name === 'string') normalized.name = data.name.trim();
-    if (typeof data.description === 'string') normalized.description = data.description.trim();
-    // TODO: normalize logo/contact/social if necessary
-    return normalized;
+    const result: UpdatePostSponsorInput = {};
+
+    if (data.name) result.name = data.name.trim();
+    if (data.description) result.description = data.description.trim();
+    if (data.logo) result.logo = data.logo; // TODO: normalize image if necessary
+    if (data.contact) {
+        result.contact = normalizeContactInfo(data.contact) as typeof data.contact;
+    }
+    if (data.social) result.social = data.social; // TODO: normalize social if necessary
+    if (data.type) result.type = data.type;
+
+    return result;
 };
