@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "033-amenity-outdoors-quincho",
+    "name": "quincho",
+    "slug": "quincho",
+    "description": "Quincho",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

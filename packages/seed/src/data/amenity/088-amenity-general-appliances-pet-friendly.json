@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "088-amenity-general-appliances-pet-friendly",
+    "name": "pet_friendly",
+    "slug": "pet_friendly",
+    "description": "Espacio pet friendly",
+    "type": "GENERAL_APPLIANCES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

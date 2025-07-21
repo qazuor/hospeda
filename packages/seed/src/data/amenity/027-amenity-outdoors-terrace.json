@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "027-amenity-outdoors-terrace",
+    "name": "terrace",
+    "slug": "terrace",
+    "description": "Terraza",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

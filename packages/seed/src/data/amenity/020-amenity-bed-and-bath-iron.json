@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "020-amenity-bed-and-bath-iron",
+    "name": "iron",
+    "slug": "iron",
+    "description": "Plancha",
+    "type": "BED_AND_BATH",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

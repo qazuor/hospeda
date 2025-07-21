@@ -97,7 +97,11 @@
         "beds": 3,
         "bathrooms": 1,
         "smokingAllowed": false,
-        "extraInfo": ["Cerca de la costanera", "Parrilla exterior", "Ideal para familias"]
+        "extraInfo": [
+            "Cerca de la costanera",
+            "Parrilla exterior",
+            "Ideal para familias"
+        ]
     },
     "seo": {
         "title": "Rio Apacible House - Casa tranquila cerca del río en Concepción del Uruguay",
@@ -112,18 +116,31 @@
             "familiar"
         ]
     },
-    "featureIds": ["001-feature-bbq_area", "026-feature-river_access"],
+    "featureIds": [
+        "001-feature-bbq_area",
+        "026-feature-river_access"
+    ],
     "amenityIds": [
-        "025-amenity-connectivity-wifi",
-        "001-amenity-climate-control-air_conditioning",
-        "012-amenity-climate-control-heating",
-        "022-amenity-connectivity-tv",
-        "014-amenity-kitchen-kitchen",
-        "018-amenity-kitchen-refrigerator",
-        "008-amenity-safety-fire_extinguisher",
-        "010-amenity-safety-first_aid_kit"
+        "001-amenity-connectivity-wifi",
+        "002-amenity-climate-control-air-conditioning",
+        "003-amenity-climate-control-heating",
+        "004-amenity-kitchen-full-kitchen",
+        "005-amenity-kitchen-refrigerator-freezer",
+        "006-amenity-kitchen-microwave",
+        "007-amenity-kitchen-coffee-maker",
+        "010-amenity-bed-and-bath-bed-linens",
+        "011-amenity-bed-and-bath-towels",
+        "012-amenity-connectivity-cable-tv",
+        "040-amenity-safety-smoke-detector",
+        "042-amenity-safety-first-aid-kit",
+        "043-amenity-safety-fire-extinguisher"
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": ["017-tag-familia", "027-tag-naturaleza", "032-tag-relax", "016-tag-entre-rios"]
+    "tagIds": [
+        "017-tag-familia",
+        "027-tag-naturaleza",
+        "032-tag-relax",
+        "016-tag-entre-rios"
+    ]
 }

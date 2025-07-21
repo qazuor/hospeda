@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "022-amenity-climate-control-fan",
+    "name": "fan",
+    "slug": "fan",
+    "description": "Ventilador",
+    "type": "CLIMATE_CONTROL",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

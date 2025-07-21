@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "025-amenity-outdoors-jacuzzi",
+    "name": "jacuzzi",
+    "slug": "jacuzzi",
+    "description": "Jacuzzi / hidromasaje",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

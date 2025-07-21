@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "008-amenity-kitchen-electric-kettle",
+    "name": "electric_kettle",
+    "slug": "electric_kettle",
+    "description": "Pava eléctrica",
+    "type": "KITCHEN",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

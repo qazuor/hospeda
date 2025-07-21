@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "038-amenity-accessibility-elevator",
+    "name": "elevator",
+    "slug": "elevator",
+    "description": "Ascensor",
+    "type": "ACCESSIBILITY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

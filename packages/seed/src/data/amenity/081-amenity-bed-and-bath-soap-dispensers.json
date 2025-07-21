@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "081-amenity-bed-and-bath-soap-dispensers",
+    "name": "soap_dispensers",
+    "slug": "soap_dispensers",
+    "description": "Dispensador de gel y jabón",
+    "type": "BED_AND_BATH",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

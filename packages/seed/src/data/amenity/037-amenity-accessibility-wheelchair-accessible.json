@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "037-amenity-accessibility-wheelchair-accessible",
+    "name": "wheelchair_accessible",
+    "slug": "wheelchair_accessible",
+    "description": "Acceso para personas con movilidad reducida",
+    "type": "ACCESSIBILITY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

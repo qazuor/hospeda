@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "080-amenity-bed-and-bath-electric-blankets",
+    "name": "electric_blankets",
+    "slug": "electric_blankets",
+    "description": "Sábanas térmicas o eléctricas",
+    "type": "BED_AND_BATH",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

@@ -148,19 +148,26 @@
             "viajeros"
         ]
     },
-    "featureIds": ["013-feature-historic_property", "023-feature-private_garden"],
+    "featureIds": [
+        "013-feature-historic_property",
+        "023-feature-private_garden"
+    ],
     "amenityIds": [
-        "025-amenity-connectivity-wifi",
-        "014-amenity-kitchen-kitchen",
-        "018-amenity-kitchen-refrigerator",
-        "015-amenity-kitchen-microwave",
-        "006-amenity-kitchen-coffee_maker",
-        "005-amenity-climate-control-ceiling_fan",
-        "004-amenity-entertainment-board_games",
-        "024-amenity-bed-and-bath-washer",
-        "020-amenity-safety-smoke_detector",
-        "008-amenity-safety-fire_extinguisher",
-        "010-amenity-safety-first_aid_kit"
+        "001-amenity-connectivity-wifi",
+        "002-amenity-climate-control-air-conditioning",
+        "003-amenity-climate-control-heating",
+        "004-amenity-kitchen-full-kitchen",
+        "005-amenity-kitchen-refrigerator-freezer",
+        "006-amenity-kitchen-microwave",
+        "007-amenity-kitchen-coffee-maker",
+        "010-amenity-bed-and-bath-bed-linens",
+        "011-amenity-bed-and-bath-towels",
+        "018-amenity-bed-and-bath-washer",
+        "022-amenity-climate-control-fan",
+        "040-amenity-safety-smoke-detector",
+        "042-amenity-safety-first-aid-kit",
+        "043-amenity-safety-fire-extinguisher",
+        "052-amenity-entertainment-board-games"
     ],
     "faqs": [
         {
@@ -216,5 +223,10 @@
             "category": "events"
         }
     ],
-    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"]
+    "tagIds": [
+        "017-tag-familia",
+        "039-tag-turismo",
+        "011-tag-cultura",
+        "016-tag-entre-rios"
+    ]
 }

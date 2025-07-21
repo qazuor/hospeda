@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "006-amenity-kitchen-microwave",
+    "name": "microwave",
+    "slug": "microwave",
+    "description": "Microondas",
+    "type": "KITCHEN",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

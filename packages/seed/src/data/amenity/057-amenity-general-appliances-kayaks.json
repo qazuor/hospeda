@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "057-amenity-general-appliances-kayaks",
+    "name": "kayaks",
+    "slug": "kayaks",
+    "description": "Kayaks disponibles",
+    "type": "GENERAL_APPLIANCES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

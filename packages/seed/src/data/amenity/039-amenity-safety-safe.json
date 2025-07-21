@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "039-amenity-safety-safe",
+    "name": "safe",
+    "slug": "safe",
+    "description": "Caja fuerte",
+    "type": "SAFETY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "067-amenity-general-appliances-gym",
+    "name": "gym",
+    "slug": "gym",
+    "description": "Gimnasio",
+    "type": "GENERAL_APPLIANCES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

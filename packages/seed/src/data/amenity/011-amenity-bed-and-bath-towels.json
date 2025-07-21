@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "011-amenity-bed-and-bath-towels",
+    "name": "towels",
+    "slug": "towels",
+    "description": "Toallas",
+    "type": "BED_AND_BATH",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

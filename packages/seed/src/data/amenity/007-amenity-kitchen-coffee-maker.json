@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "007-amenity-kitchen-coffee-maker",
+    "name": "coffee_maker",
+    "slug": "coffee_maker",
+    "description": "Cafetera",
+    "type": "KITCHEN",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

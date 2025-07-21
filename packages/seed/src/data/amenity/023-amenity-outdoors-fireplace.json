@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "023-amenity-outdoors-fireplace",
+    "name": "fireplace",
+    "slug": "fireplace",
+    "description": "Chimenea",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

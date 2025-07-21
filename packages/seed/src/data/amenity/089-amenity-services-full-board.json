@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "089-amenity-services-full-board",
+    "name": "full_board",
+    "slug": "full_board",
+    "description": "Pensión completa opcional",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

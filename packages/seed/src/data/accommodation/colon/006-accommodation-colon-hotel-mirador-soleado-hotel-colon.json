@@ -130,20 +130,31 @@
             "alojamiento"
         ]
     },
-    "featureIds": ["028-feature-river_view", "024-feature-private_pool", "006-feature-city_view"],
+    "featureIds": [
+        "028-feature-river_view",
+        "024-feature-private_pool",
+        "006-feature-city_view"
+    ],
     "amenityIds": [
-        "025-amenity-connectivity-wifi",
-        "001-amenity-climate-control-air_conditioning",
-        "012-amenity-climate-control-heating",
-        "022-amenity-connectivity-tv",
-        "018-amenity-kitchen-refrigerator",
-        "011-amenity-climate-control-hair_dryer",
-        "007-amenity-accessibility-elevator",
-        "020-amenity-safety-smoke_detector",
-        "008-amenity-safety-fire_extinguisher",
-        "010-amenity-safety-first_aid_kit",
-        "019-amenity-services-restaurant",
-        "002-amenity-services-bar"
+        "001-amenity-connectivity-wifi",
+        "002-amenity-climate-control-air-conditioning",
+        "003-amenity-climate-control-heating",
+        "005-amenity-kitchen-refrigerator-freezer",
+        "010-amenity-bed-and-bath-bed-linens",
+        "011-amenity-bed-and-bath-towels",
+        "012-amenity-connectivity-cable-tv",
+        "013-amenity-connectivity-smart-tv",
+        "021-amenity-climate-control-hair-dryer",
+        "038-amenity-accessibility-elevator",
+        "040-amenity-safety-smoke-detector",
+        "042-amenity-safety-first-aid-kit",
+        "043-amenity-safety-fire-extinguisher",
+        "045-amenity-services-breakfast",
+        "047-amenity-services-daily-cleaning",
+        "049-amenity-services-24h-reception",
+        "050-amenity-services-room-service",
+        "083-amenity-services-bar",
+        "084-amenity-services-restaurant"
     ],
     "tagIds": [
         "033-tag-rio-parana",

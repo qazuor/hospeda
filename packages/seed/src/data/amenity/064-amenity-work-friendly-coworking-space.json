@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "064-amenity-work-friendly-coworking-space",
+    "name": "coworking_space",
+    "slug": "coworking_space",
+    "description": "Espacio de coworking",
+    "type": "WORK_FRIENDLY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

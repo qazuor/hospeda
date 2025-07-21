@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "041-amenity-safety-carbon-monoxide-detector",
+    "name": "carbon_monoxide_detector",
+    "slug": "carbon_monoxide_detector",
+    "description": "Detector de monóxido",
+    "type": "SAFETY",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "061-amenity-general-appliances-outdoor-lighting",
+    "name": "outdoor_lighting",
+    "slug": "outdoor_lighting",
+    "description": "Iluminación nocturna exterior",
+    "type": "GENERAL_APPLIANCES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

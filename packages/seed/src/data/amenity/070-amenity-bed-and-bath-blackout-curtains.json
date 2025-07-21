@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "070-amenity-bed-and-bath-blackout-curtains",
+    "name": "blackout_curtains",
+    "slug": "blackout_curtains",
+    "description": "Cortinas blackout",
+    "type": "BED_AND_BATH",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}

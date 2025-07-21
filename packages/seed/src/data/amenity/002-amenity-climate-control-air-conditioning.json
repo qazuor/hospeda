@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "002-amenity-climate-control-air-conditioning",
+    "name": "air_conditioning",
+    "slug": "air_conditioning",
+    "description": "Aire acondicionado",
+    "type": "CLIMATE_CONTROL",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "090-amenity-services-half-board",
+    "name": "half_board",
+    "slug": "half_board",
+    "description": "Media pensión opcional",
+    "type": "SERVICES",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

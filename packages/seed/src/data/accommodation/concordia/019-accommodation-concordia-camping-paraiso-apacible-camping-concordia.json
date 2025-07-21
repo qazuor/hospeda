@@ -113,11 +113,25 @@
             "pesca"
         ]
     },
-    "featureIds": ["029-feature-shaded_area", "001-feature-bbq_area", "015-feature-lake_access"],
+    "featureIds": [
+        "029-feature-shaded_area",
+        "001-feature-bbq_area",
+        "015-feature-lake_access"
+    ],
     "amenityIds": [
-        "003-amenity-outdoors-bbq_grill",
-        "008-amenity-safety-fire_extinguisher",
-        "010-amenity-safety-first_aid_kit"
+        "001-amenity-connectivity-wifi",
+        "002-amenity-climate-control-air-conditioning",
+        "003-amenity-climate-control-heating",
+        "004-amenity-kitchen-full-kitchen",
+        "005-amenity-kitchen-refrigerator-freezer",
+        "006-amenity-kitchen-microwave",
+        "007-amenity-kitchen-coffee-maker",
+        "010-amenity-bed-and-bath-bed-linens",
+        "011-amenity-bed-and-bath-towels",
+        "014-amenity-outdoors-bbq-grill",
+        "040-amenity-safety-smoke-detector",
+        "042-amenity-safety-first-aid-kit",
+        "043-amenity-safety-fire-extinguisher"
     ],
     "faqs": [
         {

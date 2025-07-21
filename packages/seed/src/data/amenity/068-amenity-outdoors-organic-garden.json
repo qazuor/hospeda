@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "068-amenity-outdoors-organic-garden",
+    "name": "organic_garden",
+    "slug": "organic_garden",
+    "description": "Huerta orgánica",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

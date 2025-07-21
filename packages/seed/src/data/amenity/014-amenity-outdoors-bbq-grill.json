@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "014-amenity-outdoors-bbq-grill",
+    "name": "bbq_grill",
+    "slug": "bbq_grill",
+    "description": "Parrilla",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": true
+}

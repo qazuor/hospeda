@@ -1,0 +1,11 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "059-amenity-outdoors-beach-chairs-umbrellas",
+    "name": "beach_chairs_umbrellas",
+    "slug": "beach_chairs_umbrellas",
+    "description": "Reposeras y sombrillas",
+    "type": "OUTDOORS",
+    "icon": "amenity",
+    "isBuiltin": false,
+    "isFeatured": false
+}
