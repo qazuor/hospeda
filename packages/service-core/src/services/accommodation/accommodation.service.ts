@@ -103,7 +103,7 @@ export class AccommodationService extends BaseCrudService<
      */
     constructor(ctx: ServiceContext, model?: AccommodationModel) {
         super(ctx, AccommodationService.ENTITY_NAME);
-        this.logger = ctx.logger;
+        this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new AccommodationModel();
         this.destinationService = new DestinationService(ctx);
     }

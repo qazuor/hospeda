@@ -2,7 +2,14 @@ import { ServiceErrorCode } from '@repo/types';
 import type { ZodTypeAny, z } from 'zod';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../types';
 import { ServiceError } from '../types';
-import { logError, logMethodEnd, logMethodStart, validateActor, validateEntity } from '../utils';
+import {
+    logError,
+    logMethodEnd,
+    logMethodStart,
+    serviceLogger,
+    validateActor,
+    validateEntity
+} from '../utils';
 
 /**
  * BaseService: generic logic and dependencies for all services.
@@ -16,7 +23,7 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
     protected readonly entityName: string;
 
     constructor(ctx: ServiceContext, entityName: string) {
-        this.logger = ctx.logger;
+        this.logger = ctx.logger ?? serviceLogger;
         this.entityName = entityName;
     }
 
@@ -57,11 +64,33 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
                 return { error };
             }
             if (!validationResult.success) {
-                const error = new ServiceError(
-                    ServiceErrorCode.VALIDATION_ERROR,
-                    'Invalid input data provided.',
-                    validationResult.error.flatten()
-                );
+                const zodError = validationResult.error;
+                const fieldErrors = zodError.flatten().fieldErrors;
+                const formErrors = zodError.flatten().formErrors;
+
+                const errorMessages = [];
+
+                for (const [field, errors] of Object.entries(fieldErrors)) {
+                    if (errors && errors.length > 0) {
+                        errorMessages.push(`${field}: ${errors.join(', ')}`);
+                    }
+                }
+
+                if (formErrors.length > 0) {
+                    errorMessages.push(`Form errors: ${formErrors.join(', ')}`);
+                }
+
+                const detailedMessage =
+                    errorMessages.length > 0
+                        ? `Validation failed: ${errorMessages.join('; ')}`
+                        : 'Invalid input data provided.';
+
+                const error = new ServiceError(ServiceErrorCode.VALIDATION_ERROR, detailedMessage, {
+                    fieldErrors,
+                    formErrors,
+                    issues: zodError.issues,
+                    input: params
+                });
                 logError(`${this.entityName}.${methodName}`, error, params, actor);
                 return { error };
             }
@@ -76,7 +105,7 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
             }
             const serviceError = new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
-                'An unexpected error occurred.',
+                `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
                 error
             );
             logError(`${this.entityName}.${methodName}`, serviceError, params, actor);
