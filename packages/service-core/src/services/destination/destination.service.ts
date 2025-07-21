@@ -11,6 +11,7 @@ import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { serviceLogger } from '../../utils';
 import { generateDestinationSlug } from './destination.helpers';
 import {
     normalizeCreateInput,
@@ -71,7 +72,7 @@ export class DestinationService extends BaseCrudService<
 
     constructor(ctx: ServiceContext, model?: DestinationModel) {
         super(ctx, DestinationService.ENTITY_NAME);
-        this.logger = ctx.logger;
+        this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new DestinationModel();
     }
 

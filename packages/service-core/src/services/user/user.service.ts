@@ -1,5 +1,6 @@
 import { UserModel } from '@repo/db';
 import {
+    CreateUserSchema,
     UpdateUserSchema,
     UserFilterInputSchema,
     UserSchema
@@ -10,6 +11,7 @@ import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { serviceLogger } from '../../utils';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -36,7 +38,7 @@ import {
 export class UserService extends BaseCrudService<
     UserType,
     UserModel,
-    typeof UserSchema,
+    typeof CreateUserSchema,
     typeof UpdateUserSchema,
     typeof UserFilterInputSchema
 > {
@@ -52,13 +54,13 @@ export class UserService extends BaseCrudService<
         view: normalizeViewInput
     } as const;
     protected readonly logger: ServiceLogger;
-    protected readonly createSchema = UserSchema;
+    protected readonly createSchema = CreateUserSchema;
     protected readonly updateSchema = UpdateUserSchema;
     protected readonly searchSchema = UserFilterInputSchema;
 
     constructor(ctx: ServiceContext, model?: UserModel) {
         super(ctx, UserService.ENTITY_NAME);
-        this.logger = ctx.logger;
+        this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new UserModel();
     }
 
@@ -190,15 +192,12 @@ export class UserService extends BaseCrudService<
 
     /**
      * Normalizes and generates slug before creating a user.
-     * Bookmarks are always omitted from the result (even if type allows).
      */
     protected async _beforeCreate(
-        data: z.infer<typeof UserSchema>,
+        data: z.infer<typeof CreateUserSchema>,
         _actor: Actor
     ): Promise<Partial<UserType>> {
-        // Remove bookmarks before normalization to avoid type errors
-        const { bookmarks, ...rest } = data;
-        return normalizeUserInput(rest) as Partial<UserType>;
+        return normalizeUserInput(data) as Partial<UserType>;
     }
 
     /**

@@ -20,7 +20,7 @@ export type { ServiceLogger };
  * @property {ServiceLogger} logger - The logger instance.
  */
 export type ServiceContext = {
-    logger: ServiceLogger;
+    logger?: ServiceLogger;
 };
 
 /**
