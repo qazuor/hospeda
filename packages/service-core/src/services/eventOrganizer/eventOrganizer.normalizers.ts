@@ -5,14 +5,14 @@
 
 import type { EventOrganizerType, UpdateEventOrganizerInputType } from '@repo/types';
 import type { Actor } from '../../types';
-import { normalizeAdminInfo } from '../../utils';
+import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
 
 /**
  * Normalizes the input data for creating an event organizer.
  * Performs data cleaning and standardization including:
  * - Trims whitespace from string fields
  * - Normalizes admin information
- * - Prepares contact info and social media data for future normalization
+ * - Normalizes contact info and social media data
  *
  * @param data - The original input data for creation
  * @param _actor - The actor performing the action (unused in this normalization)
@@ -29,11 +29,17 @@ export const normalizeCreateInput = (
     _actor: Actor
 ): EventOrganizerType => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
+
+    // Normalize contact info if present
+    const normalizedContactInfo = data.contactInfo
+        ? (normalizeContactInfo(data.contactInfo) as typeof data.contactInfo)
+        : undefined;
+
     return {
         id: data.id,
         name: data.name.trim(),
         logo: data.logo?.trim(),
-        contactInfo: data.contactInfo, // TODO: normalizeContactInfo if exists
+        contactInfo: normalizedContactInfo,
         social: data.social, // TODO: normalizeSocial if exists
         lifecycleState: data.lifecycleState,
         adminInfo,
@@ -51,6 +57,7 @@ export const normalizeCreateInput = (
  * Performs selective data cleaning and standardization for update operations including:
  * - Trims whitespace from string fields when present
  * - Normalizes admin information if provided
+ * - Normalizes contact info if provided
  * - Handles partial updates by only processing provided fields
  *
  * @param data - The original input data for update (partial fields)
@@ -71,7 +78,9 @@ export const normalizeUpdateInput = (
     if (data.id) result.id = data.id;
     if (data.name) result.name = data.name.trim();
     if (data.logo) result.logo = data.logo.trim();
-    if (data.contactInfo) result.contactInfo = data.contactInfo; // TODO: normalizeContactInfo
+    if (data.contactInfo) {
+        result.contactInfo = normalizeContactInfo(data.contactInfo) as typeof data.contactInfo;
+    }
     if (data.social) result.social = data.social; // TODO: normalizeSocial
     if (data.lifecycleState) result.lifecycleState = data.lifecycleState;
     if (data.adminInfo) result.adminInfo = normalizeAdminInfo(data.adminInfo);

@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import type { Actor } from '../../types';
-import { normalizeAdminInfo } from '../../utils';
+import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
 import type { CreateAccommodationSchema, UpdateAccommodationSchema } from './';
 
 /**
@@ -17,9 +17,16 @@ export const normalizeCreateInput = (
 ): z.infer<typeof CreateAccommodationSchema> => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
+
+    // Normalize contact info if present
+    const normalizedContactInfo = data.contactInfo
+        ? (normalizeContactInfo(data.contactInfo) as typeof data.contactInfo)
+        : undefined;
+
     return {
         ...rest,
         ...(adminInfo ? { adminInfo } : {}),
+        ...(normalizedContactInfo ? { contactInfo: normalizedContactInfo } : {}),
         visibility: data.visibility ?? 'PRIVATE'
     };
 };
@@ -38,9 +45,16 @@ export const normalizeUpdateInput = (
 ): z.infer<typeof UpdateAccommodationSchema> => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
+
+    // Normalize contact info if present
+    const normalizedContactInfo = data.contactInfo
+        ? (normalizeContactInfo(data.contactInfo) as typeof data.contactInfo)
+        : undefined;
+
     return {
         ...rest,
-        ...(adminInfo ? { adminInfo } : {})
+        ...(adminInfo ? { adminInfo } : {}),
+        ...(normalizedContactInfo ? { contactInfo: normalizedContactInfo } : {})
     };
 };
 

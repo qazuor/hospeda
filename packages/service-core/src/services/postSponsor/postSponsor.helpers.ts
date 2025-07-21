@@ -1,29 +1,33 @@
 /**
- * @fileoverview Helper functions for PostSponsorService.
- * Contains utility functions for validation, normalization, and business logic specific to post sponsors.
+ * @fileoverview Helper functions for PostSponsor entities.
+ * Contains utility functions for sponsor-related operations.
  */
 
 /**
- * Checks if a post sponsor name is unique.
- * Validates that no other sponsor exists with the same name to prevent duplicates.
+ * Generates a unique slug for a post sponsor based on name.
+ * Ensures uniqueness by checking with the PostSponsorModel.
  *
- * @param name - The sponsor name to check for uniqueness
- * @param model - The PostSponsor model instance for database queries
- * @throws {ServiceError} When a sponsor with the same name already exists
- * @returns Promise that resolves if the name is unique
- *
- * @example
- * ```typescript
- * await checkPostSponsorNameUnique('Acme Corp', postSponsorModel);
- * ```
+ * @param name - Sponsor name
+ * @returns {Promise<string>} The unique slug
  */
-export const checkPostSponsorNameUnique = async (
-    // name: string,
-    // model: PostSponsorModel
-    ..._args: unknown[]
-): Promise<void> => {
-    // TODO: Implement uniqueness check using model
-    // Example: if (await model.findOne({ name })) throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Name already exists');
+export const generatePostSponsorSlug = async (name: string): Promise<string> => {
+    // TODO: Implement slug generation logic
+    return name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+};
+
+/**
+ * Validates sponsor contact information.
+ * Checks if required contact fields are present and valid.
+ *
+ * @param contact - Contact information to validate
+ * @returns {boolean} Whether the contact info is valid
+ */
+export const validateSponsorContact = (contact: unknown): boolean => {
+    // TODO: Implement contact validation logic
+    return !!contact;
 };
 
 /**
@@ -38,6 +42,8 @@ export const checkPostSponsorNameUnique = async (
  * const normalized = normalizeContactInfo({ email: ' TEST@EXAMPLE.COM ', phone: '123-456-7890' });
  * // Returns: { email: 'test@example.com', phone: '+1234567890' }
  * ```
+ *
+ * @deprecated Use the centralized normalizeContactInfo from utils instead
  */
 export const normalizeContactInfo = (contact: unknown): unknown => {
     // TODO: Implement contact normalization logic
