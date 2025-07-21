@@ -39,7 +39,10 @@ export const EntityTypePgEnum = pgEnum('entity_type_enum', enumToTuple(EntityTyp
 
 export const EventCategoryPgEnum = pgEnum('event_category_enum', enumToTuple(EventCategoryEnum));
 
-export const LifecycleStatusPgEnum = pgEnum('lifecycle_state', enumToTuple(LifecycleStatusEnum));
+export const LifecycleStatusPgEnum = pgEnum(
+    'lifecycle_status_enum',
+    enumToTuple(LifecycleStatusEnum)
+);
 
 export const PermissionPgEnum = pgEnum('permission_enum', enumToTuple(PermissionEnum));
 
