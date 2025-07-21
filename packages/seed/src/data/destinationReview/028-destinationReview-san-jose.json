@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "028-destinationReview-san-jose",
-    "userId": "super-admin-12345",
+    "userId": "super-admin-user",
     "destinationId": "san-jose",
     "title": "Muy buena experiencia familiar",
     "content": "Viajamos en familia y todos quedamos encantados. Hay actividades para todas las edades, los espacios son seguros y la infraestructura está bien mantenida. Los precios son razonables y el servicio es cordial.",

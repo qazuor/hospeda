@@ -6,28 +6,37 @@
     "summary": "Pintoresca ciudad citrícola con encanto rural y tradiciones gauchas",
     "description": "Chajarí es una encantadora ciudad ubicada en el nordeste de Entre Ríos, conocida por su producción citrícola y su fuerte tradición rural. Esta pintoresca ciudad combina el encanto del campo entrerriano con la calidez de su gente, ofreciendo una experiencia auténtica de la vida rural argentina. Con sus estancias, festivales folklóricos y paisajes rurales, Chajarí es el destino perfecto para quienes buscan tranquilidad, contacto con la naturaleza y conocer las tradiciones gauchas de Entre Ríos.",
     "isFeatured": false,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3237",
         "country": "Argentina",
+        "street": "Av. San Martín",
+        "number": "123",
+        "city": "Chajarí",
         "coordinates": {
             "lat": "-30.7500",
-            "lng": "-57.9833"
+            "long": "-57.9833"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
-            "caption": "Paisajes rurales de Chajarí"
+            "caption": "Paisajes rurales de Chajarí",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
-                "caption": "Campo y citricultura en Chajarí"
+                "caption": "Campo y citricultura en Chajarí",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Estancias rurales de Chajarí"
+                "caption": "Estancias rurales de Chajarí",
+                "moderationState": "PENDING"
             }
         ]
     },

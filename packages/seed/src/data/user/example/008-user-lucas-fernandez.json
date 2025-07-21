@@ -1,0 +1,39 @@
+{
+    "$schema": "../../schemas/user.schema.json",
+    "slug": "lucas-fernandez",
+    "role": "USER",
+    "permissions": [
+        "post.create",
+        "post.update.own",
+        "post.delete.own",
+        "user.update.own"
+    ],
+    "firstName": "Lucas",
+    "lastName": "Fernández",
+    "displayName": "Lucas Fernández",
+    "contactInfo": {
+        "personalEmail": "lucas.fernandez@gmail.com",
+        "mobilePhone": "+54 11 5555-0005",
+        "preferredEmail": "PERSONAL",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "state": "Buenos Aires",
+        "city": "Buenos Aires",
+        "country": "Argentina",
+        "zipCode": "1425",
+        "street": "Av. Corrientes",
+        "number": "3456",
+        "neighborhood": "Almagro",
+        "coordinates": {
+            "lat": "-34.6037",
+            "long": "-58.3816"
+        }
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/lucas_viajero",
+        "facebook": "https://facebook.com/lucas.fernandez.viajero"
+    },
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
+}

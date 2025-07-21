@@ -87,11 +87,11 @@
                         "lat": {
                             "type": "string"
                         },
-                        "lng": {
+                        "long": {
                             "type": "string"
                         }
                     },
-                    "required": ["lat", "lng"],
+                    "required": ["lat", "long"],
                     "additionalProperties": false
                 },
                 "street": {
@@ -119,6 +119,7 @@
                     "type": "string"
                 }
             },
+            "required": ["state", "zipCode", "country", "street", "number", "city"],
             "additionalProperties": false
         },
         "image": {
@@ -134,13 +135,18 @@
                 "description": {
                     "type": "string"
                 },
+                "moderationState": {
+                    "type": "string",
+                    "enum": ["PENDING", "APPROVED", "REJECTED"],
+                    "default": "PENDING"
+                },
                 "state": {
                     "type": "string",
                     "enum": ["ACTIVE", "INACTIVE"],
                     "default": "ACTIVE"
                 }
             },
-            "required": ["url"],
+            "required": ["url", "moderationState"],
             "additionalProperties": false
         },
         "media": {
@@ -156,6 +162,7 @@
                     }
                 }
             },
+            "required": ["featuredImage"],
             "additionalProperties": false
         },
         "price": {

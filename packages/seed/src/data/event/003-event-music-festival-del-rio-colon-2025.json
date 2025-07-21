@@ -10,7 +10,7 @@
         "start": "2025-03-15T19:00:00-03:00",
         "end": "2025-03-17T23:00:00-03:00"
     },
-    "authorId": "001-user-maría-gonzález",
+    "authorId": "admin-user",
     "locationId": "003-eventLocation-gualeguaychu-corsódromo-gualeguaychú",
     "organizerId": "001-eventOrganizer-turismo-de-gualeguaychu",
     "pricing": {

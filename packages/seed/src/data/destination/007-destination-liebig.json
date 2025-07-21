@@ -6,33 +6,42 @@
     "summary": "Histórica ciudad industrial con patrimonio del frigorífico anglo",
     "description": "Liebig es una histórica ciudad ubicada en el este de Entre Ríos, conocida por su importante patrimonio industrial relacionado con el antiguo frigorífico Liebig's. Esta ciudad conserva la memoria de la época dorada de la industria frigorífica argentina, con edificios históricos y testimonios del pasado industrial. Es un destino interesante para quienes buscan conocer la historia industrial argentina y disfrutar de un ambiente tranquilo junto al río Uruguay.",
     "isFeatured": false,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3283",
         "country": "Argentina",
+        "street": "Av. Industrial",
+        "number": "555",
+        "city": "Liebig",
         "coordinates": {
             "lat": "-32.0667",
-            "lng": "-58.2000"
+            "long": "-58.2000"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de Liebig"
+            "caption": "Vista panorámica de Liebig",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de Liebig"
+                "caption": "Paisajes de Liebig",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en Liebig"
+                "caption": "Naturaleza en Liebig",
+                "moderationState": "PENDING"
             }
         ]
     },
     "seo": {
-        "title": "Liebig - Histórica ciudad industrial con patrimonio del frigorífico anglo | Entre Ríos",
+        "title": "Liebig - Histórica ciudad industrial con patrimonio anglo",
         "description": "Descubre Liebig en Entre Ríos. Histórica ciudad industrial con patrimonio del frigorífico anglo",
         "keywords": [
             "Liebig",

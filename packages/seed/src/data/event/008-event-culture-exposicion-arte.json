@@ -6,7 +6,7 @@
     "summary": "Evento culture - Exposición de Arte",
     "description": "Descripción detallada del evento Exposición de Arte. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
     "category": "CULTURE",
-    "authorId": "007-user-super-administrator",
+    "authorId": "super-admin-user",
     "pricing": {
         "isFree": false,
         "price": 16520,

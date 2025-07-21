@@ -6,7 +6,7 @@
     "summary": "Evento sports - Competencia de Pesca",
     "description": "Descripción detallada del evento Competencia de Pesca. Este es un evento de categoría SPORTS que se desarrolla en Entre Ríos.",
     "category": "SPORTS",
-    "authorId": "007-user-super-administrator",
+    "authorId": "super-admin-user",
     "pricing": {
         "isFree": true
     },

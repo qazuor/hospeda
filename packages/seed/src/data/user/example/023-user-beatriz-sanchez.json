@@ -1,0 +1,46 @@
+{
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "beatriz-sanchez",
+    "lifecycleState": "ACTIVE",
+    "profile": {
+        "firstName": "Beatriz",
+        "lastName": "Sánchez",
+        "displayName": "Beatriz Sánchez",
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Concordia, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
+        "location": {
+            "city": "Concordia",
+            "state": "Entre Ríos",
+            "country": "Argentina"
+        },
+        "contactInfo": {
+            "personalEmail": "beatriz.sanchez@hospeda.com.ar",
+            "mobilePhone": "+549345384829",
+            "website": "https://www.hospeda.com.ar/host/beatriz-sanchez",
+            "preferredEmail": "PERSONAL",
+            "preferredPhone": "MOBILE"
+        }
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "email": true,
+            "push": true,
+            "sms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": {
+        "canManageOwnAccommodations": true,
+        "canViewReservations": true,
+        "canRespondToReviews": true,
+        "canCreatePosts": true,
+        "canViewAnalytics": true
+    }
+}

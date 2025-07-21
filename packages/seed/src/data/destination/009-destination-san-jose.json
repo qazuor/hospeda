@@ -6,42 +6,50 @@
     "summary": "Tranquila ciudad colonial con arquitectura histórica y tradición",
     "description": "San José es una apacible ciudad colonial ubicada en el centro de Entre Ríos, conocida por su arquitectura histórica y sus tradiciones bien preservadas. Con sus calles tranquilas, edificios coloniales y ambiente familiar, San José ofrece una experiencia auténtica de la vida en el interior argentino. Es ideal para quienes buscan tranquilidad, historia local y contacto con las tradiciones entrerrianas en un ambiente relajado.",
     "isFeatured": false,
+    "moderationState": "PENDING",
+    "reviewsCount": 0,
+    "averageRating": 0,
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3264",
         "country": "Argentina",
+        "street": "Av. Colonial",
+        "number": "888",
+        "city": "San José",
         "coordinates": {
             "lat": "-32.0500",
-            "lng": "-58.7667"
+            "long": "-58.7667"
         }
     },
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-            "caption": "Vista panorámica de San José"
+            "caption": "Vista panorámica de San José",
+            "moderationState": "PENDING"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
-                "caption": "Paisajes de San José"
+                "caption": "Paisajes de San José",
+                "moderationState": "PENDING"
             },
             {
                 "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
-                "caption": "Naturaleza en San José"
+                "caption": "Naturaleza en San José",
+                "moderationState": "PENDING"
             }
         ]
     },
     "seo": {
-        "title": "San José - Tranquila ciudad colonial con arquitectura histórica y tradición | Entre Ríos",
+        "title": "San José - Tranquila ciudad colonial con historia",
         "description": "Descubre San José en Entre Ríos. Tranquila ciudad colonial con arquitectura histórica y tradición",
         "keywords": [
             "San José",
             "Entre Ríos",
             "colonial",
-            "tradición",
             "historia",
-            "tranquilidad",
-            "familia"
+            "arquitectura",
+            "tranquilidad"
         ]
     },
     "attractionIds": [

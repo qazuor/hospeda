@@ -6,7 +6,7 @@
     "summary": "Evento nature - Caminata Ecológica",
     "description": "Descripción detallada del evento Caminata Ecológica. Este es un evento de categoría NATURE que se desarrolla en Entre Ríos.",
     "category": "NATURE",
-    "authorId": "007-user-super-administrator",
+    "authorId": "super-admin-user",
     "pricing": {
         "isFree": true
     },

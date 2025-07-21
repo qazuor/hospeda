@@ -6,7 +6,7 @@
     "summary": "Evento family - Picnic Familiar",
     "description": "Descripción detallada del evento Picnic Familiar. Este es un evento de categoría FAMILY que se desarrolla en Entre Ríos.",
     "category": "OTHER",
-    "authorId": "001-user-maría-gonzález",
+    "authorId": "admin-user",
     "pricing": {
         "isFree": true
     },

@@ -6,7 +6,7 @@
     "summary": "Evento festival - Festival de Danza",
     "description": "Descripción detallada del evento Festival de Danza. Este es un evento de categoría FESTIVAL que se desarrolla en Entre Ríos.",
     "category": "FESTIVAL",
-    "authorId": "007-user-super-administrator",
+    "authorId": "super-admin-user",
     "pricing": {
         "isFree": true
     },

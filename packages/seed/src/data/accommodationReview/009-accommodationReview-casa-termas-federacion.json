@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "009-accommodationReview-casa-termas-federacion",
-    "userId": "001-user-maría-gonzález",
+    "userId": "admin-user",
     "accommodationId": "025-accommodation-federacion-house-casa-termas-federacion",
     "title": "Excelente opción para turismo termal",
     "content": "Como administradora de la plataforma, visité este alojamiento para verificar su calidad. La Casa Termas es realmente un lugar especial, con una propuesta auténtica y familiar. Las instalaciones están bien mantenidas y la atención es personalizada. El desayuno casero es delicioso y los anfitriones conocen muy bien la zona. Es un alojamiento que definitivamente recomendaría a usuarios que buscan una experiencia más íntima y relajante.",
