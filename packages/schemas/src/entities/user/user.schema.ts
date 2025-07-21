@@ -66,6 +66,21 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
         bookmarks: z.array(UserBookmarkSchema).optional()
     });
 
+/**
+ * Schema for creating a new user.
+ * Omits server-generated fields like id, audit fields, etc.
+ */
+export const CreateUserSchema = UserSchema.omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    deletedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedById: true,
+    bookmarks: true
+}).strict();
+
 // Input para filtros de búsqueda de usuarios
 export const UserFilterInputSchema = BaseSearchSchema.extend({
     filters: z
