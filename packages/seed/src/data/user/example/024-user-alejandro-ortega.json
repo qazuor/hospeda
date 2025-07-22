@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "alejandro-ortega",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Alejandro",
-        "lastName": "Ortega",
-        "displayName": "Alejandro Ortega",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Federación",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "alejandro.ortega@hospeda.com.ar",
-            "mobilePhone": "+5493446333550",
-            "website": "https://www.hospeda.com.ar/host/alejandro-ortega",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Alejandro",
+    "lastName": "Ortega",
+    "displayName": "Alejandro Ortega",
+    "contactInfo": {
+        "personalEmail": "alejandro.ortega@hospeda.com.ar",
+        "mobilePhone": "+5493446333550",
+        "website": "https://www.hospeda.com.ar/host/alejandro-ortega",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Federación",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3206",
+        "street": "Entre Ríos",
+        "number": "789",
+        "coordinates": {
+            "lat": "-30.9833",
+            "long": "-57.9000"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

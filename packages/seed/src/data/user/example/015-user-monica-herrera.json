@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "monica-herrera",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Mónica",
-        "lastName": "Herrera",
-        "displayName": "Mónica Herrera",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Ibicuy",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "monica.herrera@hospeda.com.ar",
-            "mobilePhone": "+5493446236688",
-            "website": "https://www.hospeda.com.ar/host/monica-herrera",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Mónica",
+    "lastName": "Herrera",
+    "displayName": "Mónica Herrera",
+    "contactInfo": {
+        "personalEmail": "monica.herrera@hospeda.com.ar",
+        "mobilePhone": "+5493446236688",
+        "website": "https://www.hospeda.com.ar/host/monica-herrera",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Ibicuy",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "2840",
+        "street": "Rivadavia",
+        "number": "345",
+        "coordinates": {
+            "lat": "-33.7333",
+            "long": "-59.1833"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

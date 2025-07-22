@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "hector-cabrera",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Héctor",
-        "lastName": "Cabrera",
-        "displayName": "Héctor Cabrera",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Ubajay, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Ubajay",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "hector.cabrera@hospeda.com.ar",
-            "mobilePhone": "+549344110119",
-            "website": "https://www.hospeda.com.ar/host/hector-cabrera",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Héctor",
+    "lastName": "Cabrera",
+    "displayName": "Héctor Cabrera",
+    "contactInfo": {
+        "personalEmail": "hector.cabrera@hospeda.com.ar",
+        "mobilePhone": "+549344110119",
+        "website": "https://www.hospeda.com.ar/host/hector-cabrera",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Ubajay",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3260",
+        "street": "Entre Ríos",
+        "number": "369",
+        "coordinates": {
+            "lat": "-31.7833",
+            "long": "-58.3167"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Ubajay, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

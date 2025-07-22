@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "silvia-moreno",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Silvia",
-        "lastName": "Moreno",
-        "displayName": "Silvia Moreno",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Villa Paranacito",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "silvia.moreno@hospeda.com.ar",
-            "mobilePhone": "+549345097961",
-            "website": "https://www.hospeda.com.ar/host/silvia-moreno",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Silvia",
+    "lastName": "Moreno",
+    "displayName": "Silvia Moreno",
+    "contactInfo": {
+        "personalEmail": "silvia.moreno@hospeda.com.ar",
+        "mobilePhone": "+549345097961",
+        "website": "https://www.hospeda.com.ar/host/silvia-moreno",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Villa Paranacito",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "2840",
+        "street": "Belgrano",
+        "number": "789",
+        "coordinates": {
+            "lat": "-33.7000",
+            "long": "-58.6500"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

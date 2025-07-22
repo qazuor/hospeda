@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "natalia-vega",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Natalia",
-        "lastName": "Vega",
-        "displayName": "Natalia Vega",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Concepción del Uruguay, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Concepción del Uruguay",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "natalia.vega@hospeda.com.ar",
-            "mobilePhone": "+5493447058327",
-            "website": "https://www.hospeda.com.ar/host/natalia-vega",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Natalia",
+    "lastName": "Vega",
+    "displayName": "Natalia Vega",
+    "contactInfo": {
+        "personalEmail": "natalia.vega@hospeda.com.ar",
+        "mobilePhone": "+5493447058327",
+        "website": "https://www.hospeda.com.ar/host/natalia-vega",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Concepción del Uruguay",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3260",
+        "street": "Entre Ríos",
+        "number": "159",
+        "coordinates": {
+            "lat": "-32.4833",
+            "long": "-58.2333"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Concepción del Uruguay, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

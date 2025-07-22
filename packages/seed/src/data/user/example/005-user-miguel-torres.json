@@ -2,19 +2,16 @@
     "$schema": "../../schemas/user.schema.json",
     "slug": "miguel-torres",
     "role": "HOST",
-    "permissions": [
-        "accommodation.create",
-        "accommodation.update.own",
-        "accommodation.delete.own",
-        "event.create",
-        "event.update.own",
-        "event.delete.own"
-    ],
+    "permissions": [],
     "firstName": "Miguel",
     "lastName": "Torres",
     "displayName": "Miguel Torres",
     "contactInfo": {
-        "website": "https://cabanasmiguel.com"
+        "personalEmail": "miguel.torres@hospeda.com.ar",
+        "mobilePhone": "+549343556677",
+        "website": "https://cabanasmiguel.com",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
     "location": {
         "state": "Entre Ríos",
@@ -31,7 +28,7 @@
     "socialNetworks": {
         "facebook": "https://facebook.com/cabanas.miguel",
         "instagram": "https://instagram.com/cabanas_miguel",
-        "whatsapp": "+54 11 5555-0006",
+        "whatsapp": "+541155550006",
         "youtube": "https://youtube.com/c/cabanasmiguel"
     },
     "profile": {

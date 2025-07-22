@@ -2,17 +2,16 @@
     "$schema": "../../schemas/user.schema.json",
     "slug": "sofia-morales",
     "role": "USER",
-    "permissions": [
-        "post.create",
-        "post.update.own",
-        "post.delete.own",
-        "user.update.own"
-    ],
+    "permissions": [],
     "firstName": "Sofía",
     "lastName": "Morales",
     "displayName": "Sofía Morales",
     "contactInfo": {
-        "website": "https://viajesyfotos.com"
+        "personalEmail": "sofia.morales@hospeda.com.ar",
+        "mobilePhone": "+549341998877",
+        "website": "https://viajesyfotos.com",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
     "location": {
         "state": "Santa Fe",
@@ -34,7 +33,24 @@
         "youtube": "https://youtube.com/c/sofiaviajes"
     },
     "profile": {
-        "website": "https://viajesyfotos.com"
+        "website": "https://viajesyfotos.com",
+        "bio": "Fotógrafa y bloguera de viajes, apasionada por capturar momentos únicos."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
     },
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC"

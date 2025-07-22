@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "ernesto-flores",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Ernesto",
-        "lastName": "Flores",
-        "displayName": "Ernesto Flores",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Villa Paranacito",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "ernesto.flores@hospeda.com.ar",
-            "mobilePhone": "+549347674747",
-            "website": "https://www.hospeda.com.ar/host/ernesto-flores",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Ernesto",
+    "lastName": "Flores",
+    "displayName": "Ernesto Flores",
+    "contactInfo": {
+        "personalEmail": "ernesto.flores@hospeda.com.ar",
+        "mobilePhone": "+549347674747",
+        "website": "https://www.hospeda.com.ar/host/ernesto-flores",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Villa Paranacito",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "2829",
+        "street": "Entre Ríos",
+        "number": "147",
+        "coordinates": {
+            "lat": "-33.7167",
+            "long": "-58.6500"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

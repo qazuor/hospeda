@@ -8,7 +8,8 @@
     "displayName": "Usuario Invitado",
     "contactInfo": {
         "personalEmail": "guest@hospeda.com",
-        "preferredEmail": "PERSONAL",
+        "mobilePhone": "+549343000000",
+        "preferredEmail": "HOME",
         "preferredPhone": "MOBILE"
     },
     "location": {
@@ -16,9 +17,30 @@
         "city": "Paraná",
         "country": "Argentina",
         "zipCode": "3100",
+        "street": "San Martín",
+        "number": "123",
         "coordinates": {
             "lat": "-31.7333",
             "long": "-60.5333"
+        }
+    },
+    "profile": {
+        "bio": "Usuario invitado del sistema"
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowSms": false,
+            "allowPush": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": false
         }
     },
     "lifecycleState": "ACTIVE",
