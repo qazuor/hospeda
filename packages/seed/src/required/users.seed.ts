@@ -1,5 +1,6 @@
 import { UserService } from '@repo/service-core/index.js';
 import requiredManifest from '../manifest-required.json';
+import { STATUS_ICONS } from '../utils/icons.js';
 import { createDateTransformer, createSeedFactory } from '../utils/index.js';
 
 /**
@@ -32,7 +33,12 @@ export const seedUsers = createSeedFactory({
         const user = item as { displayName?: string; role?: string };
         const displayName = user.displayName || 'Unknown';
         const role = user.role || 'USER';
-        const roleIcon = role === 'SUPER_ADMIN' ? ' 👑' : role === 'ADMIN' ? ' 🔧' : ' 👤';
+        const roleIcon =
+            role === 'SUPER_ADMIN'
+                ? ` ${STATUS_ICONS.Crown}`
+                : role === 'ADMIN'
+                  ? ` ${STATUS_ICONS.Tool}`
+                  : ` ${STATUS_ICONS.User}`;
         return `"${displayName}" (${role})${roleIcon}`;
     },
 

@@ -1,4 +1,5 @@
 import { getDb, schema } from '@repo/db';
+import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 
 // Definir todas las tablas en el orden correcto (hijos antes que padres)
@@ -68,7 +69,7 @@ export async function resetDatabase(exclude: string[] = []): Promise<void> {
     const subSeparator = '─'.repeat(90);
 
     logger.info(`${separator}`);
-    logger.info('🧹 RESETEANDO BASE DE DATOS');
+    logger.info(`${STATUS_ICONS.Reset} RESETEANDO BASE DE DATOS`);
     logger.info(`${subSeparator}`);
 
     const db = getDb();
@@ -78,27 +79,29 @@ export async function resetDatabase(exclude: string[] = []): Promise<void> {
     for (const table of allTables) {
         const tableName = tableNameMap.get(table);
         if (!tableName) {
-            logger.warn(`⚠️ Tabla sin mapeo: ${table}`);
+            logger.warn(`${STATUS_ICONS.Warning} Tabla sin mapeo: ${table}`);
             continue;
         }
 
         if (exclude.includes(tableName)) {
-            logger.info(`↪️ Saltando tabla: ${tableName}`);
+            logger.info(`${STATUS_ICONS.Skip} Saltando tabla: ${tableName}`);
             skippedCount++;
             continue;
         }
 
         try {
             await db.delete(table);
-            logger.info(`🧹 Borrado: ${tableName}`);
+            logger.info(`${STATUS_ICONS.Reset} Borrado: ${tableName}`);
             deletedCount++;
         } catch (error) {
-            logger.error(`❌ Error al borrar ${tableName}: ${(error as Error).message}`);
+            logger.error(
+                `${STATUS_ICONS.Error} Error al borrar ${tableName}: ${(error as Error).message}`
+            );
         }
     }
 
     logger.info(`${subSeparator}`);
-    logger.success('✅ Base de datos reseteada');
-    logger.info(`📊 Tablas borradas: ${deletedCount}, Saltadas: ${skippedCount}`);
+    logger.success(`${STATUS_ICONS.Success} Base de datos reseteada`);
+    logger.info(`${STATUS_ICONS.Info} Tablas borradas: ${deletedCount}, Saltadas: ${skippedCount}`);
     logger.info(`${separator}`);
 }

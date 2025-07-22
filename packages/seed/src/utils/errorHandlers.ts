@@ -1,3 +1,4 @@
+import { STATUS_ICONS } from './icons.js';
 import type { SeedContext } from './seedContext.js';
 import { summaryTracker } from './summaryTracker.js';
 
@@ -25,7 +26,7 @@ export const createRetryErrorHandler = (maxRetries = 3) => {
             const fileName = context.currentFile || 'unknown';
 
             console.warn(
-                `⚠️ Retrying ${entityName} (${fileName}) - Attempt ${retryCount + 1}/${maxRetries}`
+                `${STATUS_ICONS.Warning} Retrying ${entityName} (${fileName}) - Attempt ${retryCount + 1}/${maxRetries}`
             );
         } else {
             defaultErrorHandler(error, item, context);
@@ -45,7 +46,7 @@ export const createContinueOnErrorHandler = (continueOnCodes: string[]) => {
             const fileName = context.currentFile || 'unknown';
 
             console.warn(
-                `⚠️ Continuing on ${err.code} for ${entityName} (${fileName}): ${err.message}`
+                `${STATUS_ICONS.Warning} Continuing on ${err.code} for ${entityName} (${fileName}): ${err.message}`
             );
             return;
         }
@@ -60,11 +61,13 @@ export const createContinueOnErrorHandler = (continueOnCodes: string[]) => {
 export const createDetailedErrorHandler = (entityName: string) => {
     return (item: unknown, index: number, error: unknown) => {
         // 🔍 LOG DISTINTIVO: detailed error handler
-        console.error('🔍 [DETAILED_ERROR_HANDLER] Reportando error con detalles completos');
+        console.error(
+            `${STATUS_ICONS.Debug} [DETAILED_ERROR_HANDLER] Reportando error con detalles completos`
+        );
 
         const fileName = `item-${index}`;
 
-        console.error(`❌ Detailed error for ${entityName} (${fileName}):`);
+        console.error(`${STATUS_ICONS.Error} Detailed error for ${entityName} (${fileName}):`);
         console.error(`Error: ${(error as Error).message}`);
         console.error(`Stack: ${(error as Error).stack}`);
 
@@ -119,7 +122,7 @@ export const defaultErrorHandler = (error: unknown, _item: unknown, context: See
     const entityName = context.currentEntity || 'Unknown';
     const fileName = context.currentFile || 'unknown';
 
-    console.error(`❌ Error details for ${fileName}:`);
+    console.error(`${STATUS_ICONS.Error} Error details for ${fileName}:`);
     console.error(`Message: ${(error as Error).message}`);
     console.error(`Stack: ${(error as Error).stack}`);
     if ((error as Error).cause) {
@@ -165,11 +168,11 @@ function isRetryableError(error: unknown): boolean {
 export const createBasicErrorHandler = () => {
     return (_item: unknown, index: number, error: unknown) => {
         // 🔍 LOG DISTINTIVO: basic error handler
-        console.error('🔍 [BASIC_ERROR_HANDLER] Reportando error básico');
+        console.error(`${STATUS_ICONS.Debug} [BASIC_ERROR_HANDLER] Reportando error básico`);
 
         const fileName = `item-${index}`;
 
-        console.error(`❌ Error details for ${fileName}:`);
+        console.error(`${STATUS_ICONS.Error} Error details for ${fileName}:`);
         console.error(`Message: ${(error as Error).message}`);
         console.error(`Stack: ${(error as Error).stack}`);
 

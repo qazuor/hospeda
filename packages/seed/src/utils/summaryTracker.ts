@@ -1,3 +1,4 @@
+import { STATUS_ICONS, getEntityIcon, getStatusIcon } from './icons.js';
 import { logger } from './logger.js';
 
 interface SummaryStats {
@@ -48,15 +49,14 @@ class SummaryTracker {
 
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>
         console.log('\n');
-        logger.info('📊  SUMMARY FINAL');
+        logger.info(`${STATUS_ICONS.Info}  SUMMARY FINAL`);
         logger.info(`${subSeparator}`);
 
         // Print process steps first
         if (this.processSteps.length > 0) {
-            logger.info('🔄 Pasos del proceso:');
+            logger.info(`${STATUS_ICONS.Process} Pasos del proceso:`);
             for (const step of this.processSteps) {
-                const statusIcon =
-                    step.status === 'success' ? '✅' : step.status === 'error' ? '❌' : '⚠️';
+                const statusIcon = getStatusIcon(step.status);
                 if (step.status === 'error') {
                     logger.error(`${statusIcon} ${step.name}: ${step.message}`);
                     if (step.details) {
@@ -83,8 +83,8 @@ class SummaryTracker {
 
         // Print entity summaries
         for (const [entityName, stats] of this.stats.entries()) {
-            const icon = this.getEntityIcon(entityName);
-            const status = stats.errors === 0 ? '✅' : '⚠️';
+            const icon = getEntityIcon(entityName);
+            const status = stats.errors === 0 ? STATUS_ICONS.Success : STATUS_ICONS.Warning;
 
             logger.info(
                 `${status} ${icon} ${entityName}: ${stats.success} cargados, ${stats.errors} errores`
@@ -99,7 +99,7 @@ class SummaryTracker {
 
         // Print error details if any
         if (totalErrors > 0) {
-            logger.info('\n   ❌ Detalles de errores:');
+            logger.info(`\n   ${STATUS_ICONS.Error} Detalles de errores:`);
             for (const [entityName, stats] of this.stats.entries()) {
                 if (stats.errors > 0) {
                     logger.info(`   ${entityName}:`);
@@ -111,26 +111,6 @@ class SummaryTracker {
         }
 
         logger.info(`${separator}`);
-    }
-
-    private getEntityIcon(entityName: string): string {
-        const iconMap: Record<string, string> = {
-            Users: '👤',
-            Destinations: '🗺️ ',
-            Amenities: '🏠',
-            Features: '⭐',
-            Accommodations: '🏨',
-            Tags: '🏷️',
-            Posts: '📝',
-            Events: '🎉',
-            Attractions: '🎯',
-            Reviews: '⭐',
-            Bookmarks: '🔖',
-            Sponsors: '💼',
-            Organizers: '👥',
-            Locations: '📍'
-        };
-        return iconMap[entityName] || '📦';
     }
 }
 

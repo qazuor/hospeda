@@ -1,3 +1,4 @@
+import { STATUS_ICONS, getEntityIcon } from './icons.js';
 import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
 
@@ -9,24 +10,6 @@ export interface SeedRunnerOptions<T> {
     context: SeedContext;
     getEntityInfo?: (item: T) => string;
 }
-
-// Iconos por tipo de entidad
-const entityIcons: Record<string, string> = {
-    Users: '👨‍💻',
-    Destinations: '🌍',
-    Amenities: '✨',
-    Features: '💎',
-    Accommodations: '🏠',
-    Tags: '🏷️',
-    Posts: '📝',
-    Events: '🎉',
-    Attractions: '🎯',
-    Reviews: '⭐',
-    Bookmarks: '🔖',
-    Sponsors: '💼',
-    Organizers: '👨‍💼',
-    Locations: '📍'
-};
 
 // Separadores visuales consistentes
 const SECTION_SEPARATOR = '#'.repeat(90);
@@ -40,7 +23,7 @@ export async function seedRunner<T>({
     context,
     getEntityInfo
 }: SeedRunnerOptions<T>): Promise<void> {
-    const icon = entityIcons[entityName] || '📦';
+    const icon = getEntityIcon(entityName);
     const totalItems = items.length;
     let successCount = 0;
     let errorCount = 0;
@@ -75,7 +58,7 @@ export async function seedRunner<T>({
             // Información del error
             const entityInfo =
                 getEntityInfo && item ? getEntityInfo(item) : `${entityName} #${currentIndex}`;
-            logger.error(`   ❌ Error en ${entityInfo}: ${error.message}`);
+            logger.error(`   ${STATUS_ICONS.Error} Error en ${entityInfo}: ${error.message}`);
 
             // Call error handler first if available
             if (item !== undefined && onError) {
@@ -93,9 +76,13 @@ export async function seedRunner<T>({
     logger.info(`${SUBSECTION_SEPARATOR}`);
 
     if (errorCount === 0) {
-        logger.success(`✅ ${entityName}: ${successCount} ítems procesados exitosamente`);
+        logger.success(
+            `${STATUS_ICONS.Success} ${entityName}: ${successCount} ítems procesados exitosamente`
+        );
     } else {
-        logger.warn(`⚠️  ${entityName}: ${successCount} exitosos, ${errorCount} errores`);
+        logger.warn(
+            `${STATUS_ICONS.Warning}  ${entityName}: ${successCount} exitosos, ${errorCount} errores`
+        );
     }
 
     logger.info(`${SECTION_SEPARATOR}`);

@@ -1,4 +1,5 @@
 import type { Actor } from '@repo/service-core';
+import { STATUS_ICONS } from './icons.js';
 import { loadJsonFiles } from './loadJsonFile.js';
 import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
@@ -49,7 +50,7 @@ export interface SeedFactoryConfig<T = unknown, R = unknown> {
 const validateActor = (context: SeedContext): Actor => {
     if (!context.actor) {
         throw new Error(
-            '❌ Actor no disponible en el contexto. El super admin debe cargarse primero.'
+            `${STATUS_ICONS.Error} Actor no disponible en el contexto. El super admin debe cargarse primero.`
         );
     }
     return context.actor;
@@ -130,7 +131,7 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                 // Handle creation errors
                 if (result?.error) {
                     const error = result.error;
-                    let errorMessage = `❌ ${config.entityName} creation failed:\n`;
+                    let errorMessage = `${STATUS_ICONS.Error} ${config.entityName} creation failed:\n`;
                     errorMessage += `Error: ${error.message}\n`;
 
                     // Add detailed error information
@@ -188,7 +189,9 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                     );
 
                     // 🔍 LOG DISTINTIVO: seedFactory
-                    console.error('🔍 [SEED_FACTORY] Lanzando error con detalles completos');
+                    console.error(
+                        `${STATUS_ICONS.Debug} [SEED_FACTORY] Lanzando error con detalles completos`
+                    );
 
                     throw new Error(errorMessage);
                 }
