@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "beatriz-sanchez",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Beatriz",
-        "lastName": "Sánchez",
-        "displayName": "Beatriz Sánchez",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Concordia, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Concordia",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "beatriz.sanchez@hospeda.com.ar",
-            "mobilePhone": "+549345384829",
-            "website": "https://www.hospeda.com.ar/host/beatriz-sanchez",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Beatriz",
+    "lastName": "Sánchez",
+    "displayName": "Beatriz Sánchez",
+    "contactInfo": {
+        "personalEmail": "beatriz.sanchez@hospeda.com.ar",
+        "mobilePhone": "+549345384829",
+        "website": "https://www.hospeda.com.ar/host/beatriz-sanchez",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Concordia",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3200",
+        "street": "Entre Ríos",
+        "number": "456",
+        "coordinates": {
+            "lat": "-31.3933",
+            "long": "-58.0208"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Concordia, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

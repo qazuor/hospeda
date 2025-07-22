@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "javier-ramirez",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Javier",
-        "lastName": "Ramírez",
-        "displayName": "Javier Ramírez",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en San José, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "San José",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "javier.ramirez@hospeda.com.ar",
-            "mobilePhone": "+549344418007",
-            "website": "https://www.hospeda.com.ar/host/javier-ramirez",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Javier",
+    "lastName": "Ramírez",
+    "displayName": "Javier Ramírez",
+    "contactInfo": {
+        "personalEmail": "javier.ramirez@hospeda.com.ar",
+        "mobilePhone": "+549344418007",
+        "website": "https://www.hospeda.com.ar/host/javier-ramirez",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "San José",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3283",
+        "street": "Independencia",
+        "number": "234",
+        "coordinates": {
+            "lat": "-32.0500",
+            "long": "-58.7500"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en San José, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

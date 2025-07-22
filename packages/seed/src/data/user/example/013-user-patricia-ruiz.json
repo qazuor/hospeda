@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "patricia-ruiz",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Patricia",
-        "lastName": "Ruiz",
-        "displayName": "Patricia Ruiz",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Federación",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "patricia.ruiz@hospeda.com.ar",
-            "mobilePhone": "+549343415030",
-            "website": "https://www.hospeda.com.ar/host/patricia-ruiz",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Patricia",
+    "lastName": "Ruiz",
+    "displayName": "Patricia Ruiz",
+    "contactInfo": {
+        "personalEmail": "patricia.ruiz@hospeda.com.ar",
+        "mobilePhone": "+549343415030",
+        "website": "https://www.hospeda.com.ar/host/patricia-ruiz",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Federación",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3230",
+        "street": "San Martín",
+        "number": "456",
+        "coordinates": {
+            "lat": "-30.9833",
+            "long": "-57.9000"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

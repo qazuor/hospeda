@@ -2,19 +2,16 @@
     "$schema": "../../schemas/user.schema.json",
     "slug": "ana-rodríguez",
     "role": "HOST",
-    "permissions": [
-        "accommodation.create",
-        "accommodation.update.own",
-        "accommodation.delete.own",
-        "event.create",
-        "event.update.own",
-        "event.delete.own"
-    ],
+    "permissions": [],
     "firstName": "Ana",
     "lastName": "Rodríguez",
     "displayName": "Ana Rodríguez",
     "contactInfo": {
-        "website": "https://alojamientosana.com"
+        "personalEmail": "ana.rodriguez@hospeda.com.ar",
+        "mobilePhone": "+549343112233",
+        "website": "https://alojamientosana.com",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
     "location": {
         "state": "Entre Ríos",
@@ -32,7 +29,7 @@
     "socialNetworks": {
         "facebook": "https://facebook.com/alojamientos.ana",
         "instagram": "https://instagram.com/alojamientos_ana",
-        "whatsapp": "+54 11 5555-0004"
+        "whatsapp": "+541155550004"
     },
     "profile": {
         "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",

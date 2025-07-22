@@ -2,33 +2,40 @@
     "$schema": "../../schemas/user.schema.json",
     "role": "HOST",
     "slug": "roberto-mendoza",
-    "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Roberto",
-        "lastName": "Mendoza",
-        "displayName": "Roberto Mendoza",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Chajarí",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "roberto.mendoza@hospeda.com.ar",
-            "mobilePhone": "+5493446244622",
-            "website": "https://www.hospeda.com.ar/host/roberto-mendoza",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Roberto",
+    "lastName": "Mendoza",
+    "displayName": "Roberto Mendoza",
+    "contactInfo": {
+        "personalEmail": "roberto.mendoza@hospeda.com.ar",
+        "mobilePhone": "+5493446244622",
+        "website": "https://www.hospeda.com.ar/host/roberto-mendoza",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Chajarí",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3237",
+        "street": "Libertad",
+        "number": "789",
+        "coordinates": {
+            "lat": "-30.7500",
+            "long": "-57.9833"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +43,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

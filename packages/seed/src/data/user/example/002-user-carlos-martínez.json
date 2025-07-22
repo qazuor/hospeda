@@ -2,25 +2,16 @@
     "$schema": "../../schemas/user.schema.json",
     "slug": "carlos-martínez",
     "role": "EDITOR",
-    "permissions": [
-        "accommodation.create",
-        "accommodation.update.own",
-        "accommodation.delete.own",
-        "destination.create",
-        "destination.update.own",
-        "destination.delete.own",
-        "event.create",
-        "event.update.own",
-        "event.delete.own",
-        "post.create",
-        "post.update.own",
-        "post.delete.own"
-    ],
+    "permissions": [],
     "firstName": "Carlos",
     "lastName": "Martínez",
     "displayName": "Carlos Martínez",
     "contactInfo": {
-        "website": "https://carlosmartinez.com"
+        "personalEmail": "carlos.martinez@hospeda.com.ar",
+        "mobilePhone": "+549342445566",
+        "website": "https://carlosmartinez.com",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
     "location": {
         "state": "Entre Ríos",

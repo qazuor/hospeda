@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "gabriela-medina",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Gabriela",
-        "lastName": "Medina",
-        "displayName": "Gabriela Medina",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Chajarí",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "gabriela.medina@hospeda.com.ar",
-            "mobilePhone": "+549347293195",
-            "website": "https://www.hospeda.com.ar/host/gabriela-medina",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Gabriela",
+    "lastName": "Medina",
+    "displayName": "Gabriela Medina",
+    "contactInfo": {
+        "personalEmail": "gabriela.medina@hospeda.com.ar",
+        "mobilePhone": "+549347293195",
+        "website": "https://www.hospeda.com.ar/host/gabriela-medina",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Chajarí",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3237",
+        "street": "Sarmiento",
+        "number": "890",
+        "coordinates": {
+            "lat": "-30.7500",
+            "long": "-57.9833"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

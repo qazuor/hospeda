@@ -2,19 +2,14 @@
     "$schema": "../../schemas/user.schema.json",
     "slug": "lucas-fernandez",
     "role": "USER",
-    "permissions": [
-        "post.create",
-        "post.update.own",
-        "post.delete.own",
-        "user.update.own"
-    ],
+    "permissions": [],
     "firstName": "Lucas",
     "lastName": "Fernández",
     "displayName": "Lucas Fernández",
     "contactInfo": {
         "personalEmail": "lucas.fernandez@gmail.com",
-        "mobilePhone": "+54 11 5555-0005",
-        "preferredEmail": "PERSONAL",
+        "mobilePhone": "+541155550005",
+        "preferredEmail": "HOME",
         "preferredPhone": "MOBILE"
     },
     "location": {
@@ -33,6 +28,25 @@
     "socialNetworks": {
         "instagram": "https://instagram.com/lucas_viajero",
         "facebook": "https://facebook.com/lucas.fernandez.viajero"
+    },
+    "profile": {
+        "bio": "Viajero apasionado por descubrir nuevos lugares y experiencias."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
     },
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC"

@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "claudia-torres",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Claudia",
-        "lastName": "Torres",
-        "displayName": "Claudia Torres",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Ubajay, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Ubajay",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "claudia.torres@hospeda.com.ar",
-            "mobilePhone": "+5493446655627",
-            "website": "https://www.hospeda.com.ar/host/claudia-torres",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Claudia",
+    "lastName": "Torres",
+    "displayName": "Claudia Torres",
+    "contactInfo": {
+        "personalEmail": "claudia.torres@hospeda.com.ar",
+        "mobilePhone": "+5493446655627",
+        "website": "https://www.hospeda.com.ar/host/claudia-torres",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Ubajay",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3260",
+        "street": "Moreno",
+        "number": "456",
+        "coordinates": {
+            "lat": "-32.4333",
+            "long": "-58.3167"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Ubajay, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

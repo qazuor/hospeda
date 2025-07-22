@@ -3,32 +3,40 @@
     "role": "HOST",
     "slug": "andres-castro",
     "lifecycleState": "ACTIVE",
-    "profile": {
-        "firstName": "Andrés",
-        "lastName": "Castro",
-        "displayName": "Andrés Castro",
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Gualeguaychú, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
-        "location": {
-            "city": "Gualeguaychú",
-            "state": "Entre Ríos",
-            "country": "Argentina"
-        },
-        "contactInfo": {
-            "personalEmail": "andres.castro@hospeda.com.ar",
-            "mobilePhone": "+5493446585706",
-            "website": "https://www.hospeda.com.ar/host/andres-castro",
-            "preferredEmail": "PERSONAL",
-            "preferredPhone": "MOBILE"
+    "firstName": "Andrés",
+    "lastName": "Castro",
+    "displayName": "Andrés Castro",
+    "contactInfo": {
+        "personalEmail": "andres.castro@hospeda.com.ar",
+        "mobilePhone": "+5493446585706",
+        "website": "https://www.hospeda.com.ar/host/andres-castro",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "city": "Gualeguaychú",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "2840",
+        "street": "San Martín",
+        "number": "987",
+        "coordinates": {
+            "lat": "-33.0092",
+            "long": "-58.5125"
         }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Gualeguaychú, Entre Ríos. Apasionado por el turismo y la hospitalidad."
     },
     "settings": {
         "theme": "AUTO",
         "language": "es-AR",
         "timezone": "America/Argentina/Buenos_Aires",
         "notifications": {
-            "email": true,
-            "push": true,
-            "sms": false
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
         },
         "privacy": {
             "profileVisibility": "PUBLIC",
@@ -36,11 +44,7 @@
             "showPhone": true
         }
     },
-    "permissions": {
-        "canManageOwnAccommodations": true,
-        "canViewReservations": true,
-        "canRespondToReviews": true,
-        "canCreatePosts": true,
-        "canViewAnalytics": true
-    }
+    "permissions": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }
