@@ -1,55 +1,55 @@
 import path from 'node:path';
 import { UserService } from '@repo/service-core/index.js';
 import exampleManifest from '../manifest-example.json';
-import { getSuperAdminActor } from '../utils/actor.js';
-import { loadJsonFiles } from '../utils/loadJsonFile.js';
-import type { SeedContext } from '../utils/seedContext.js';
-import { seedRunner } from '../utils/seedRunner.js';
-import { summaryTracker } from '../utils/summaryTracker.js';
+import { STATUS_ICONS } from '../utils/icons.js';
+import { createSeedFactory } from '../utils/seedFactory.js';
 
-const getNormalizedUser = (userData: Record<string, unknown>) => {
+/**
+ * Normalizer for user data
+ */
+const userNormalizer = (data: Record<string, unknown>) => {
     return {
-        slug: userData.slug as string,
-        displayName: userData.displayName as string | undefined,
-        firstName: userData.firstName as string | undefined,
-        lastName: userData.lastName as string | undefined,
-        birthDate: userData.birthDate ? new Date(userData.birthDate as string) : undefined,
-        contactInfo: userData.contactInfo,
-        location: userData.location,
-        socialNetworks: userData.socialNetworks,
-        role: userData.role,
-        permissions: userData.permissions,
-        profile: userData.profile,
-        settings: userData.settings,
-        lifecycleState: userData.lifecycleState,
-        visibility: userData.visibility
+        slug: data.slug as string,
+        displayName: data.displayName as string | undefined,
+        firstName: data.firstName as string | undefined,
+        lastName: data.lastName as string | undefined,
+        birthDate: data.birthDate ? new Date(data.birthDate as string) : undefined,
+        contactInfo: data.contactInfo,
+        location: data.location,
+        socialNetworks: data.socialNetworks,
+        role: data.role,
+        permissions: data.permissions,
+        profile: data.profile,
+        settings: data.settings,
+        lifecycleState: data.lifecycleState,
+        visibility: data.visibility
     };
 };
 
-export async function seedUsers(context: SeedContext) {
-    const entity = 'Users';
-    const folder = path.resolve('src/data/user/example');
-    const files = exampleManifest.users;
+/**
+ * Get entity info for user
+ */
+const getUserInfo = (item: unknown) => {
+    const userData = item as Record<string, unknown>;
+    const displayName = userData.displayName as string;
+    const role = userData.role as string;
+    const roleIcon =
+        role === 'SUPER_ADMIN'
+            ? ` ${STATUS_ICONS.Crown}`
+            : role === 'ADMIN'
+              ? ` ${STATUS_ICONS.Tool}`
+              : ` ${STATUS_ICONS.User}`;
+    return `"${displayName}" (${role})${roleIcon}`;
+};
 
-    // Carga de los archivos listados
-    const users = await loadJsonFiles(folder, files);
-
-    await seedRunner({
-        entityName: entity,
-        items: users,
-        context,
-        async process(user: unknown, _i) {
-            const userService = new UserService({});
-
-            // Convertir el usuario del JSON a la estructura esperada por el servicio
-            const userInput = getNormalizedUser(user as Record<string, unknown>);
-
-            // biome-ignore lint/suspicious/noExplicitAny: Service input type is complex, using any for now
-            await userService.create(getSuperAdminActor(), userInput as any);
-            summaryTracker.trackSuccess(entity);
-        },
-        onError(_item, i, err) {
-            summaryTracker.trackError(entity, files[i] || 'unknown', err.message);
-        }
-    });
-}
+/**
+ * Users seed using Seed Factory
+ */
+export const seedUsers = createSeedFactory({
+    entityName: 'Users',
+    serviceClass: UserService,
+    folder: path.resolve('src/data/user/example'),
+    files: exampleManifest.users,
+    normalizer: userNormalizer,
+    getEntityInfo: getUserInfo
+});
