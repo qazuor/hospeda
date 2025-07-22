@@ -1,3 +1,4 @@
+import { STATUS_ICONS } from './icons.js';
 import type { SeedContext } from './seedContext.js';
 
 /**
@@ -47,10 +48,10 @@ export const createManyToManyRelation = (
                         continue;
                     }
 
-                    const errorMessage = `❌ Failed to create ${targetEntity} relationship: ${err.message}`;
+                    const errorMessage = `${STATUS_ICONS.Error} Failed to create ${targetEntity} relationship: ${err.message}`;
 
                     if (context.continueOnError) {
-                        console.warn(`⚠️ ${errorMessage}`);
+                        console.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
                     } else {
                         throw new Error(errorMessage);
                     }
@@ -97,10 +98,10 @@ export const createOneToManyRelation = (
                 } catch (error: unknown) {
                     const err = error as { code?: string; message?: string };
 
-                    const errorMessage = `❌ Failed to update ${targetEntity} relationship: ${err.message}`;
+                    const errorMessage = `${STATUS_ICONS.Error} Failed to update ${targetEntity} relationship: ${err.message}`;
 
                     if (context.continueOnError) {
-                        console.warn(`⚠️ ${errorMessage}`);
+                        console.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
                     } else {
                         throw new Error(errorMessage);
                     }
@@ -132,10 +133,10 @@ export const createCustomRelationBuilder = (
 
         if (!validation.isValid) {
             const missingIdsList = validation.missingIds.map((id) => `  • ${id}`).join('\n');
-            const errorMessage = `❌ Missing ${targetEntity} mappings:\n${missingIdsList}`;
+            const errorMessage = `${STATUS_ICONS.Error} Missing ${targetEntity} mappings:\n${missingIdsList}`;
 
             if (context.continueOnError) {
-                console.warn(`⚠️ ${errorMessage}`);
+                console.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
                 console.warn(
                     `Continuing with ${validation.validIds.length} valid ${targetEntity}s`
                 );

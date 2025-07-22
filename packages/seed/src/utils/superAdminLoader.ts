@@ -2,6 +2,7 @@ import { UserModel } from '@repo/db';
 import type { Actor } from '@repo/service-core';
 import { type PermissionEnum, RoleEnum } from '@repo/types';
 import superAdminInput from '../data/user/required/super-admin-user.json';
+import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 import { summaryTracker } from './summaryTracker.js';
 
@@ -23,7 +24,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
     const subSeparator = '─'.repeat(90);
 
     logger.info(`${separator}`);
-    logger.info('👑  CARGANDO SUPER ADMINISTRADOR');
+    logger.info(`${STATUS_ICONS.Crown}  CARGANDO SUPER ADMINISTRADOR`);
     logger.info(`${subSeparator}`);
 
     try {
@@ -36,7 +37,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
         if (existingSuperAdmin) {
             logger.success(
-                `👑 Super admin encontrado: "${existingSuperAdmin.displayName || 'Super Admin'}" (ID: ${existingSuperAdmin.id})`
+                `${STATUS_ICONS.Crown} Super admin encontrado: "${existingSuperAdmin.displayName || 'Super Admin'}" (ID: ${existingSuperAdmin.id})`
             );
             logger.info(`${subSeparator}`);
 
@@ -66,7 +67,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         const realSuperAdminId = createdUser.id;
 
         logger.success(
-            `👑 Super admin creado: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
+            `${STATUS_ICONS.Crown} Super admin creado: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
         );
         logger.info(`${subSeparator}`);
 
@@ -82,7 +83,9 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
             permissions: superAdminInput.permissions as PermissionEnum[]
         };
     } catch (error) {
-        logger.error(`❌ Error al cargar super admin: ${(error as Error).message}`);
+        logger.error(
+            `${STATUS_ICONS.Error} Error al cargar super admin: ${(error as Error).message}`
+        );
         summaryTracker.trackProcessStep(
             'Super Admin',
             'error',

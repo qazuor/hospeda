@@ -1,5 +1,6 @@
 import exampleManifest from '../manifest-example.json';
 import requiredManifest from '../manifest-required.json';
+import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 import { validateManifestVsFolder } from './validateManifestVsFolder.js';
 
@@ -25,7 +26,7 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
     // biome-ignore lint/suspicious/noConsoleLog: <explanation>
     console.log('\n');
     logger.info(`${separator}`);
-    logger.info('🔍 VALIDANDO MANIFESTS CONTRA ARCHIVOS');
+    logger.info(`${STATUS_ICONS.Debug} VALIDANDO MANIFESTS CONTRA ARCHIVOS`);
     logger.info(`${subSeparator}`);
 
     const manifests = [
@@ -48,11 +49,13 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
                     throw new Error(`Invalid manifest type: ${type}`);
                 }
                 await validateManifestVsFolder(entityName, files, type);
-                logger.success(`✅ ${entityName}: ${files.length} archivos validados`);
+                logger.success(
+                    `${STATUS_ICONS.Success} ${entityName}: ${files.length} archivos validados`
+                );
             } catch (error) {
                 totalErrors++;
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                logger.error(`❌ ${entityName}: ${errorMessage}`);
+                logger.error(`${STATUS_ICONS.Error} ${entityName}: ${errorMessage}`);
 
                 if (!continueOnError) {
                     throw error;
@@ -65,10 +68,10 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
     logger.info(`${subSeparator}`);
 
     if (totalErrors === 0) {
-        logger.success('✅ Todos los manifests validados correctamente');
+        logger.success(`${STATUS_ICONS.Success} Todos los manifests validados correctamente`);
     } else {
         logger.warn(
-            `⚠️  ${totalValidations - totalErrors} validaciones exitosas, ${totalErrors} errores`
+            `${STATUS_ICONS.Warning}  ${totalValidations - totalErrors} validaciones exitosas, ${totalErrors} errores`
         );
     }
 

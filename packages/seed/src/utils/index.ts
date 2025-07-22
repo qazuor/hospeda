@@ -6,6 +6,7 @@ export * from './actor';
 export * from './logger';
 export * from './seedContext';
 export * from './validateAllManifests';
+export * from './icons';
 
 // Core utilities
 export { IdMapper } from './idMapper.js';

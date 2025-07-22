@@ -1,5 +1,6 @@
 import { AttractionService, DestinationService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
+import { STATUS_ICONS } from '../utils/icons.js';
 import { createSeedFactory } from '../utils/index.js';
 
 /**
@@ -77,16 +78,16 @@ export const seedDestinations = createSeedFactory({
                         continue;
                     }
 
-                    const errorMessage = `❌ Failed to create attraction relationship: ${err.message}`;
+                    const errorMessage = `${STATUS_ICONS.Error} Failed to create attraction relationship: ${err.message}`;
 
                     if (context.continueOnError) {
-                        console.warn(`⚠️ ${errorMessage}`);
+                        console.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
                     } else {
                         throw new Error(errorMessage);
                     }
                 }
             } else {
-                console.warn(`⚠️ No mapping found for attraction ${seedId}`);
+                console.warn(`${STATUS_ICONS.Warning} No mapping found for attraction ${seedId}`);
             }
         }
     }

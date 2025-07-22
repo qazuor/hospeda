@@ -1,3 +1,4 @@
+import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 
 /**
@@ -134,11 +135,11 @@ export class IdMapper {
         const { count, examples } = stats;
 
         if (count === 0) {
-            logger.info(`📊 ${entityType}: Sin mapeos`);
+            logger.info(`${STATUS_ICONS.Info} ${entityType}: Sin mapeos`);
             return;
         }
 
-        logger.info(`📊 ${entityType}: ${count} IDs mapeados`);
+        logger.info(`${STATUS_ICONS.Info} ${entityType}: ${count} IDs mapeados`);
 
         if (examples.length > 0) {
             const examplesText = examples.join(', ');
@@ -154,11 +155,11 @@ export class IdMapper {
         const totalMappings = Object.values(allStats).reduce((sum, stat) => sum + stat.count, 0);
 
         if (totalMappings === 0) {
-            logger.info('   📊 Sin mapeos de IDs');
+            logger.info(`   ${STATUS_ICONS.Info} Sin mapeos de IDs`);
             return;
         }
 
-        logger.info(`📊 Total de mapeos: ${totalMappings} IDs`);
+        logger.info(`${STATUS_ICONS.Info} Total de mapeos: ${totalMappings} IDs`);
 
         for (const [entityType, stats] of Object.entries(allStats)) {
             if (stats.count > 0) {

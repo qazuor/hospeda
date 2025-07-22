@@ -3,9 +3,11 @@ import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
 import { closeSeedDb, initSeedDb } from './utils/db.js';
 import { resetDatabase } from './utils/dbReset';
+import { STATUS_ICONS } from './utils/icons.js';
 import { logger } from './utils/logger.js';
 import { createSeedContext } from './utils/seedContext.js';
 import { summaryTracker } from './utils/summaryTracker.js';
+import { loadSuperAdminAndGetActor } from './utils/superAdminLoader.js';
 import { validateAllManifests } from './utils/validateAllManifests.js';
 // import { runMigrations } from './utils/migrateRunner.js';
 
@@ -44,7 +46,7 @@ export async function runSeed(options: SeedOptions) {
     try {
         if (reset) {
             logger.info(
-                `🧹 Ejecutando reset${exclude.length > 0 ? ` (excluyendo: ${exclude.join(', ')})` : ''}`
+                `${STATUS_ICONS.Reset} Ejecutando reset${exclude.length > 0 ? ` (excluyendo: ${exclude.join(', ')})` : ''}`
             );
             try {
                 await resetDatabase(exclude);
@@ -67,7 +69,7 @@ export async function runSeed(options: SeedOptions) {
         if (migrate) {
             // TODO: Implement migration runner
             // await runMigrations();
-            logger.warn('⚠️ Migration runner not implemented yet');
+            logger.warn(`${STATUS_ICONS.Warning} Migration runner not implemented yet`);
             summaryTracker.trackProcessStep(
                 'Migrations',
                 'warning',
@@ -97,6 +99,27 @@ export async function runSeed(options: SeedOptions) {
             }
         }
 
+        // Cargar super admin si es necesario (para example seeds o si no existe)
+        if (example || required) {
+            try {
+                const superAdminActor = await loadSuperAdminAndGetActor();
+                seedContext.actor = superAdminActor;
+                summaryTracker.trackProcessStep(
+                    'Super Admin',
+                    'success',
+                    'Super admin cargado/creado exitosamente'
+                );
+            } catch (error) {
+                summaryTracker.trackProcessStep(
+                    'Super Admin',
+                    'error',
+                    'Error al cargar super admin',
+                    (error as Error).message
+                );
+                throw error;
+            }
+        }
+
         if (required) {
             await runRequiredSeeds(seedContext);
         }
@@ -105,7 +128,7 @@ export async function runSeed(options: SeedOptions) {
             await runExampleSeeds(seedContext);
         }
 
-        logger.success('🎉 Proceso de seed completo.');
+        logger.success(`${STATUS_ICONS.Complete} Proceso de seed completo.`);
         summaryTracker.trackProcessStep(
             'Proceso Completo',
             'success',
