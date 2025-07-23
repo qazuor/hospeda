@@ -5,10 +5,11 @@
     "logo": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&h=200&fit=crop",
     "contactInfo": {
         "workEmail": "info@clubconcordia.com.ar",
-        "workPhone": "+54 345 421-3000",
+        "workPhone": "+543454213000",
         "website": "https://www.clubconcordia.com.ar",
         "preferredEmail": "WORK",
-        "preferredPhone": "WORK"
+        "preferredPhone": "WORK",
+        "mobilePhone": "+543454213000"
     },
     "social": {
         "facebook": "https://facebook.com/clubconcordia",
