@@ -13,6 +13,7 @@ import { z } from 'zod';
  */
 export const CreateAccommodationSchema = AccommodationSchema.omit({
     id: true,
+    slug: true,
     createdAt: true,
     updatedAt: true,
     deletedAt: true,
@@ -25,6 +26,7 @@ export const CreateAccommodationSchema = AccommodationSchema.omit({
     amenities: true,
     reviews: true,
     rating: true,
+    averageRating: true,
     schedule: true,
     extraInfo: true,
     faqs: true,
