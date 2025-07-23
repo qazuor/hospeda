@@ -15,6 +15,9 @@ export async function runRequiredSeeds(context: SeedContext) {
     logger.info(`${STATUS_ICONS.Seed}  INICIALIZANDO CARGA DE DATOS REQUERIDOS`);
 
     try {
+        // TODO: Add seed for role permissions
+        // TODO: Add seed for user permissions
+
         // El super admin ya fue cargado en el contexto principal
         // 1. Cargar el resto de usuarios (excluyendo super admin)
         await seedUsers(context);
