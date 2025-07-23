@@ -1,8 +1,8 @@
 {
     "$schema": "../../schemas/postSponsorship.schema.json",
-    "id": "018-postSponsorship-patrimonio-cultural-005",
+    "id": "018-postSponsorship-patrimonio-cultural",
     "sponsorId": "013-postSponsor-postSponsor-cultura-entrerriana",
-    "postId": "post-patrimonio-cultural-005",
+    "postId": "005-nature-aventura-delta-parana-ecoturismo",
     "message": "Conocé el patrimonio cultural de Entre Ríos",
     "description": "Entrada gratuita a museos y centros culturales participantes presentando este artículo. Descubrí la riqueza histórica y artística de nuestra provincia.",
     "paid": {
