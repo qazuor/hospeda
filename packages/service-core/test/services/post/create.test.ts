@@ -1,8 +1,15 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
-import { PermissionEnum } from '@repo/types';
+import type { PostId, UserId } from '@repo/types';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    PostCategoryEnum,
+    VisibilityEnum
+} from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/post/post.helpers';
+import type { PostCreateInput } from '../../../src/services/post/post.schemas';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
@@ -52,7 +59,28 @@ describe('PostService.create (custom business logic)', () => {
 
     it('should return validation error if expiresAt is missing for news', async () => {
         (modelMock.findOne as Mock).mockResolvedValue(null);
-        const data = createNewPostInput({ isNews: true });
+        // Don't mock create method - validation should fail before it's called
+        // Create input manually to bypass factory logic that auto-adds expiresAt
+        const data: PostCreateInput = {
+            title: 'Test Post without expiresAt',
+            summary: 'A valid summary for the post.',
+            content: 'A valid content for the post, at least 10 chars.',
+            media: {
+                featuredImage: {
+                    url: 'https://example.com/image.jpg',
+                    moderationState: ModerationStatusEnum.APPROVED
+                }
+            },
+            category: PostCategoryEnum.GENERAL,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            isFeatured: false,
+            visibility: VisibilityEnum.PUBLIC,
+            isNews: true,
+            isFeaturedInWebsite: false,
+            authorId: getMockId('user') as UserId
+            // expiresAt is intentionally omitted
+        };
         const result = await service.create(actor, data);
         expectValidationError(result);
     });

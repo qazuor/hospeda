@@ -1,8 +1,11 @@
 import {
     type ImageType,
+    LifecycleStatusEnum,
     type MediaType,
     ModerationStatusEnum,
-    PostCategoryEnum
+    PostCategoryEnum,
+    type UserId,
+    VisibilityEnum
 } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
@@ -14,6 +17,7 @@ import {
 } from '../../../src/services/post/post.normalizers';
 import type { PostCreateInput, PostUpdateSchema } from '../../../src/services/post/post.schemas';
 import { TagFactoryBuilder } from '../../factories/tagFactory';
+import { getMockId } from '../../factories/utilsFactory';
 
 const validTag = TagFactoryBuilder.create();
 
@@ -92,7 +96,14 @@ describe('normalizeCreateInput', () => {
             summary: '  Summary  ',
             content: '  Content  ',
             media: validMedia,
-            category: PostCategoryEnum.GENERAL
+            category: PostCategoryEnum.GENERAL,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            isFeatured: false,
+            visibility: VisibilityEnum.PUBLIC,
+            isNews: true,
+            isFeaturedInWebsite: false,
+            authorId: getMockId('user') as UserId
         };
         const result = normalizeCreateInput(input);
         expect(result.title).toBe('Hello');
@@ -109,7 +120,14 @@ describe('normalizeCreateInput', () => {
                 10
             ),
             media: validMedia,
-            category: PostCategoryEnum.GENERAL
+            category: PostCategoryEnum.GENERAL,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            isFeatured: false,
+            visibility: VisibilityEnum.PUBLIC,
+            isNews: true,
+            isFeaturedInWebsite: false,
+            authorId: getMockId('user') as UserId
         };
         const result = normalizeCreateInput(input);
         expect(result.summary?.length).toBeLessThanOrEqual(200);

@@ -59,9 +59,9 @@ export const createNewPostSponsorshipInput = (
         message: 'Sponsored message',
         description: 'A valid sponsorship description',
         paid: { price: 100, currency: PriceCurrencyEnum.USD } as BasePriceType,
-        paidAt: new Date().toISOString(),
-        fromDate: new Date().toISOString(),
-        toDate: new Date().toISOString(),
+        paidAt: new Date(),
+        fromDate: new Date(),
+        toDate: new Date(),
         isHighlighted: false,
         ...overrides
     };
