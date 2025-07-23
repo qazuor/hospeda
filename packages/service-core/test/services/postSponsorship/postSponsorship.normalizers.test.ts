@@ -22,9 +22,9 @@ describe('postSponsorship.normalizers', () => {
                 message: '  Sponsored message  ',
                 description: '  Some description  ',
                 paid: { price: 100, currency: PriceCurrencyEnum.USD },
-                paidAt: '2024-01-01T00:00:00.000Z',
-                fromDate: '2024-01-01T00:00:00.000Z',
-                toDate: '2024-01-02T00:00:00.000Z',
+                paidAt: new Date('2024-01-01T00:00:00.000Z'),
+                fromDate: new Date('2024-01-01T00:00:00.000Z'),
+                toDate: new Date('2024-01-02T00:00:00.000Z'),
                 isHighlighted: true
             };
             // Act

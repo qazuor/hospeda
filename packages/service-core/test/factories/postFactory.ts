@@ -65,7 +65,7 @@ export const createMockPost = (fields: Partial<PostType> = {}): PostType =>
 export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): PostCreateInput => {
     // Generate a unique suffix for the title if none is provided
     const uniqueSuffix = Math.random().toString(36).substring(2, 8);
-    return {
+    const baseInput = {
         title: `Test Post ${uniqueSuffix}`,
         summary: 'A valid summary for the post.',
         content: 'A valid content for the post, at least 10 chars.',
@@ -76,8 +76,22 @@ export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): Po
             }
         },
         category: PostCategoryEnum.GENERAL,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        moderationState: ModerationStatusEnum.APPROVED,
+        isFeatured: false,
+        visibility: VisibilityEnum.PUBLIC,
+        isNews: false,
+        isFeaturedInWebsite: false,
+        authorId: getMockId('user') as UserId,
         ...overrides
     };
+
+    // If isNews is true and no expiresAt is provided, add a future expiresAt
+    if (baseInput.isNews && !baseInput.expiresAt) {
+        baseInput.expiresAt = new Date(Date.now() + 86400000); // 24 hours from now
+    }
+
+    return baseInput;
 };
 
 export const getMockPostId = (id?: string): PostId => getMockId('post', id) as PostId;
