@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { runSeed } from './index.js';
+import { STATUS_ICONS } from './utils/icons.js';
 import { logger } from './utils/logger.js';
 
 // Parseo básico de argumentos CLI
@@ -17,7 +18,9 @@ const options = {
 
 // Validación de flags incompatibles
 if (options.rollbackOnError && options.continueOnError) {
-    logger.error('❌ No se puede usar --rollbackOnError y --continueOnError al mismo tiempo.');
+    logger.error(
+        `${STATUS_ICONS.Error} No se puede usar --rollbackOnError y --continueOnError al mismo tiempo.`
+    );
     process.exit(1);
 }
 
@@ -32,7 +35,7 @@ try {
     runSeed(options);
 } catch (err) {
     // 🔍 LOG DISTINTIVO: cli principal
-    console.error('🔍 [CLI_PRINCIPAL] Error en el nivel principal del proceso');
+    console.error(`${STATUS_ICONS.Debug} [CLI_PRINCIPAL] Error en el nivel principal del proceso`);
 
     logger.error('🧨 Error durante el proceso de seed:');
     logger.error(String(err));
