@@ -20,27 +20,31 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
+    "moderationState": "APPROVED",
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
             "caption": "Palacio San José - Residencia histórica",
-            "description": "Palacio San José, antigua residencia de Justo José de Urquiza"
+            "description": "Palacio San José, antigua residencia de Justo José de Urquiza",
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1568667256549-094345857637?w=800&h=600&fit=crop",
                 "caption": "Conferencia de historia",
-                "description": "Historiadores presentando en el evento"
+                "description": "Historiadores presentando en el evento",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&h=600&fit=crop",
                 "caption": "Jardines del palacio",
-                "description": "Jardines históricos del Palacio San José"
+                "description": "Jardines históricos del Palacio San José",
+                "moderationState": "APPROVED"
             }
         ]
     },
     "seo": {
-        "title": "Encuentro de Historia Palacio San José 2025 - Cultura e Historia - Hospeda",
+        "title": "Encuentro Historia Palacio San José 2025 - Hospeda",
         "description": "Jornadas culturales e históricas en el Palacio San José. Conferencias y exposiciones en un marco histórico único.",
         "keywords": ["historia", "palacio-san-jose", "cultura", "urquiza", "patrimonio"]
     },

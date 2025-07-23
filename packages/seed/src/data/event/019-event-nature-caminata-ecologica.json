@@ -6,23 +6,25 @@
     "summary": "Evento nature - Caminata Ecológica",
     "description": "Descripción detallada del evento Caminata Ecológica. Este es un evento de categoría NATURE que se desarrolla en Entre Ríos.",
     "category": "NATURE",
-    "authorId": "super-admin-user",
+    "authorId": "admin-user",
     "pricing": {
         "isFree": true
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1565528920228?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Caminata Ecológica",
-            "description": "Descripción de la imagen del evento Caminata Ecológica"
+            "description": "Descripción de la imagen del evento Caminata Ecológica",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Caminata Ecológica - Entre Ríos - Hospeda",
-        "description": "Participa en Caminata Ecológica, un evento imperdible en Entre Ríos.",
+        "title": "Caminata Ecológica 2025 - Entre Ríos - Hospeda",
+        "description": "Participa en la Caminata Ecológica 2025 en Entre Ríos. Cinco días de senderismo y contacto con la naturaleza en paisajes únicos.",
         "keywords": ["nature", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",

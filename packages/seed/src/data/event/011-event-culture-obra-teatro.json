@@ -6,23 +6,25 @@
     "summary": "Evento culture - Obra de Teatro",
     "description": "Descripción detallada del evento Obra de Teatro. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
     "category": "CULTURE",
-    "authorId": "super-admin-user",
+    "authorId": "admin-user",
     "pricing": {
         "isFree": true
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1539430962631?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Obra de Teatro",
-            "description": "Descripción de la imagen del evento Obra de Teatro"
+            "description": "Descripción de la imagen del evento Obra de Teatro",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Obra de Teatro - Entre Ríos - Hospeda",
-        "description": "Participa en Obra de Teatro, un evento imperdible en Entre Ríos.",
+        "title": "Obra de Teatro 2025 - Entre Ríos - Hospeda",
+        "description": "Disfruta de la Obra de Teatro 2025 en Entre Ríos. Una experiencia cultural única con actores locales y nacionales en un ambiente mágico.",
         "keywords": ["culture", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",
@@ -30,5 +32,5 @@
         "start": "2025-04-20T00:00:00-03:00",
         "end": "2025-04-25T00:00:00-03:00"
     },
-    "locationId": "003-eventLocation-gualeguaychu-corsódromo-gualeguaychú"
+    "locationId": "003-eventLocation-gualeguaychu-corsodromo-gualeguaychu"
 }

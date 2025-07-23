@@ -12,17 +12,19 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1651069644073?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Charla de Turismo",
-            "description": "Descripción de la imagen del evento Charla de Turismo"
+            "description": "Descripción de la imagen del evento Charla de Turismo",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Charla de Turismo - Entre Ríos - Hospeda",
-        "description": "Participa en Charla de Turismo, un evento imperdible en Entre Ríos.",
+        "title": "Charla de Turismo 2026 - Entre Ríos - Hospeda",
+        "description": "Asiste a la Charla de Turismo 2026 en Entre Ríos. Conoce los destinos turísticos y las mejores prácticas del sector turístico local.",
         "keywords": ["education", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",

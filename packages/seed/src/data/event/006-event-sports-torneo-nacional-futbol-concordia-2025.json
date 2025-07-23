@@ -20,28 +20,32 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["013-tag-deportes", "tag-familia-004", "tag-entre-rios-003", "005-tag-aventura"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=600&fit=crop",
             "caption": "Torneo de fútbol en Concordia",
-            "description": "Jugadores compitiendo en el estadio del club"
+            "description": "Jugadores compitiendo en el estadio del club",
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&h=600&fit=crop",
                 "caption": "Equipos en competencia",
-                "description": "Equipos amateur compitiendo en el torneo"
+                "description": "Equipos amateur compitiendo en el torneo",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&h=600&fit=crop",
                 "caption": "Celebración de gol",
-                "description": "Jugadores celebrando un gol en el torneo"
+                "description": "Jugadores celebrando un gol en el torneo",
+                "moderationState": "APPROVED"
             }
         ]
     },
     "seo": {
-        "title": "Torneo Nacional de Fútbol Concordia 2025 - Deporte Amateur - Hospeda",
+        "title": "Torneo Nacional Fútbol Concordia 2025 - Hospeda",
         "description": "Torneo nacional de fútbol amateur en Concordia. Una semana de competencia deportiva con equipos de todo el país.",
         "keywords": ["futbol", "concordia", "torneo", "deporte", "amateur"]
     },

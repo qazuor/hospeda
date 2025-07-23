@@ -6,27 +6,29 @@
     "summary": "Evento business - Feria de Emprendedores",
     "description": "Descripción detallada del evento Feria de Emprendedores. Este es un evento de categoría BUSINESS que se desarrolla en Entre Ríos.",
     "category": "OTHER",
-    "authorId": "super-admin-user",
+    "authorId": "admin-user",
     "pricing": {
         "isFree": true
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1641487006049?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Feria de Emprendedores",
-            "description": "Descripción de la imagen del evento Feria de Emprendedores"
+            "description": "Descripción de la imagen del evento Feria de Emprendedores",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Feria de Emprendedores - Entre Ríos - Hospeda",
-        "description": "Participa en Feria de Emprendedores, un evento imperdible en Entre Ríos.",
+        "title": "Feria de Emprendedores 2026 - Entre Ríos - Hospeda",
+        "description": "Conecta con emprendedores en la Feria de Emprendedores 2026 en Entre Ríos. Networking, charlas y oportunidades de negocio en un evento único.",
         "keywords": ["business", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",
-    "locationId": "004-eventLocation-concepción-del-uruguay-palacio-san-josé",
+    "locationId": "004-eventLocation-concepcion-del-uruguay-palacio-san-jose",
     "date": {
         "start": "2026-03-27T00:00:00-03:00"
     }

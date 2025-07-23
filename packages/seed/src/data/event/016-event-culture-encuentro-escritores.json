@@ -14,17 +14,19 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1593223000991?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Encuentro de Escritores",
-            "description": "Descripción de la imagen del evento Encuentro de Escritores"
+            "description": "Descripción de la imagen del evento Encuentro de Escritores",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Encuentro de Escritores - Entre Ríos - Hospeda",
-        "description": "Participa en Encuentro de Escritores, un evento imperdible en Entre Ríos.",
+        "title": "Encuentro de Escritores 2025 - Entre Ríos - Hospeda",
+        "description": "Participa en el Encuentro de Escritores 2025 en Entre Ríos. Tres días de literatura, charlas y networking con autores locales y nacionales.",
         "keywords": ["culture", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",
