@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/eventLocation.schema.json",
-    "id": "002-eventLocation-federacion-complejo-termal-federación",
+    "id": "002-eventLocation-federacion-complejo-termal-federacion",
     "state": "Entre Ríos",
     "city": "Federación",
     "country": "Argentina",

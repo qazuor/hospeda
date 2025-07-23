@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/eventLocation.schema.json",
-    "id": "001-eventLocation-colon-anfiteatro-colón",
+    "id": "001-eventLocation-colon-anfiteatro-colon",
     "state": "Entre Ríos",
     "city": "Colón",
     "country": "Argentina",
