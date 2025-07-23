@@ -35,9 +35,9 @@ const getUserInfo = (item: unknown) => {
     const role = userData.role as string;
     const roleIcon =
         role === 'SUPER_ADMIN'
-            ? ` ${STATUS_ICONS.Crown}`
+            ? ` ${STATUS_ICONS.UserSuperAdmin}`
             : role === 'ADMIN'
-              ? ` ${STATUS_ICONS.Tool}`
+              ? ` ${STATUS_ICONS.UserAdmin}`
               : ` ${STATUS_ICONS.User}`;
     return `"${displayName}" (${role})${roleIcon}`;
 };
