@@ -10,26 +10,29 @@
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&h=600&fit=crop",
-                "caption": "Spa y masajes"
+                "caption": "Spa y masajes",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&h=600&fit=crop",
-                "caption": "Familia en termas"
+                "caption": "Familia en termas",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-                "caption": "Lago de Salto Grande"
+                "caption": "Lago de Salto Grande",
+                "moderationState": "APPROVED"
             }
         ],
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200&h=600&fit=crop",
-            "caption": "Piscinas termales de Federación"
+            "caption": "Piscinas termales de Federación",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "006-user-laura-vega",
-    "sponsorshipId": null,
     "relatedDestinationId": null,
-    "relatedAccommodationId": "004-accommodation-termas-villa-elisa",
+    "relatedAccommodationId": "025-accommodation-federacion-house-casa-termas-federacion",
     "visibility": "PUBLIC",
     "isNews": false,
     "isFeaturedInWebsite": true,
@@ -39,7 +42,7 @@
     "shares": 89,
     "isFeatured": true,
     "seo": {
-        "title": "Termas de Federación: Tu Refugio de Relax y Bienestar | Hospeda",
+        "title": "Termas de Federación: Tu Refugio de Relax y Bienestar",
         "description": "Descubre las mejores termas de Argentina. Propiedades terapéuticas, servicios de spa y consejos para una experiencia perfecta en Federación.",
         "keywords": [
             "termas",
@@ -55,6 +58,6 @@
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["041-tag-vida-nocturna", "039-tag-turismo", "040-tag-verano"],
+    "tagIds": ["041-tag-vida-nocturna", "039-tag-turismo", "040-tag-verano"],
     "relatedEventId": null
 }

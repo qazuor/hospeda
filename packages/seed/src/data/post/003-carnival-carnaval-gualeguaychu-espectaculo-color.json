@@ -10,36 +10,39 @@
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1554213352-5ffe6534af08?w=800&h=600&fit=crop",
-                "caption": "Comparsa en el corsódromo"
+                "caption": "Comparsa en el corsódromo",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&h=600&fit=crop",
-                "caption": "Vestuarios de carnaval"
+                "caption": "Vestuarios de carnaval",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=600&fit=crop",
-                "caption": "Público en el carnaval"
+                "caption": "Público en el carnaval",
+                "moderationState": "APPROVED"
             }
         ],
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=600&fit=crop",
-            "caption": "Carnaval de Gualeguaychú con bailarines"
+            "caption": "Carnaval de Gualeguaychú con bailarines",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "012-user-fernando-lopez",
-    "sponsorshipId": null,
     "relatedDestinationId": "005-destination-gualeguaychu",
     "relatedEventId": null,
     "visibility": "PUBLIC",
     "isNews": true,
     "isFeaturedInWebsite": true,
-    "expiresAt": null,
+    "expiresAt": "2025-03-31T23:59:59Z",
     "likes": 532,
     "comments": 89,
     "shares": 156,
     "isFeatured": true,
     "seo": {
-        "title": "El Carnaval de Gualeguaychú: Un Espectáculo de Color y Tradición | Hospeda",
+        "title": "Carnaval de Gualeguaychú: Color y Tradición",
         "description": "Vive la magia del carnaval más famoso de Argentina. Historia, comparsas destacadas y consejos para disfrutar al máximo esta celebración única.",
         "keywords": [
             "Carnaval",
@@ -55,6 +58,6 @@
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["038-tag-termas", "012-tag-delta", "006-tag-aventura-extrema"],
+    "tagIds": ["038-tag-termas", "012-tag-delta", "006-tag-aventura-extrema"],
     "relatedAccommodationId": null
 }

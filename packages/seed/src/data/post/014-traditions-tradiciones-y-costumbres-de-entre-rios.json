@@ -9,11 +9,11 @@
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1516799556?w=1200&h=600&fit=crop",
-            "caption": "Imagen de Tradiciones y Costumbres de Entre Ríos"
+            "caption": "Imagen de Tradiciones y Costumbres de Entre Ríos",
+            "moderationState": "APPROVED"
         }
     },
-    "authorId": "super-admin-user",
-    "sponsorshipId": "018-postSponsorship-patrimonio-cultural-005",
+    "authorId": "admin-user",
     "relatedDestinationId": "008-destination-paranacito",
     "relatedAccommodationId": null,
     "relatedEventId": null,
@@ -26,11 +26,11 @@
     "shares": 140,
     "isFeatured": true,
     "seo": {
-        "title": "Tradiciones y Costumbres de Entre Ríos | Hospeda",
+        "title": "Tradiciones y Costumbres de Entre Ríos",
         "description": "Explora las tradiciones más arraigadas de la provincia: desde la mate hasta las festividades patronales.",
         "keywords": ["traditions", "entre rios", "turismo"]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["031-tag-playas", "015-tag-ecoturismo", "027-tag-naturaleza", "039-tag-turismo"]
+    "tagIds": ["031-tag-playas", "015-tag-ecoturismo", "027-tag-naturaleza", "039-tag-turismo"]
 }

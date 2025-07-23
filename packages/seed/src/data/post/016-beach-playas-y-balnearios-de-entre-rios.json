@@ -9,11 +9,11 @@
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1542154723?w=1200&h=600&fit=crop",
-            "caption": "Imagen de Playas y Balnearios de Entre Ríos"
+            "caption": "Imagen de Playas y Balnearios de Entre Ríos",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "012-user-fernando-lopez",
-    "sponsorshipId": null,
     "relatedDestinationId": "011-destination-concepcion-del-uruguay",
     "relatedAccommodationId": null,
     "relatedEventId": null,
@@ -26,13 +26,13 @@
     "shares": 140,
     "isFeatured": true,
     "seo": {
-        "title": "Playas y Balnearios de Entre Ríos | Hospeda",
-        "description": "Disfruta de las mejores playas fluviales de la provincia en verano.",
+        "title": "Playas y Balnearios de Entre Ríos",
+        "description": "Descubre las mejores playas fluviales de Entre Ríos. Balnearios, actividades acuáticas y destinos perfectos para el verano en la provincia.",
         "keywords": ["beach", "entre rios", "turismo"]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": [
+    "tagIds": [
         "026-tag-musica",
         "013-tag-deportes",
         "040-tag-verano",

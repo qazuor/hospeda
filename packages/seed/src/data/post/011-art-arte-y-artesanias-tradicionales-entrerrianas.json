@@ -9,30 +9,30 @@
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1582253541?w=1200&h=600&fit=crop",
-            "caption": "Imagen de Arte y Artesanías Tradicionales Entrerrianas"
+            "caption": "Imagen de Arte y Artesanías Tradicionales Entrerrianas",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "admin-user",
-    "sponsorshipId": "021-postSponsorship-destinos-imperdibles-001",
     "relatedDestinationId": "002-destination-colon",
     "relatedAccommodationId": null,
     "relatedEventId": null,
     "visibility": "PUBLIC",
     "isNews": true,
     "isFeaturedInWebsite": false,
-    "expiresAt": null,
+    "expiresAt": "2025-06-30T23:59:59Z",
     "likes": 216,
     "comments": 54,
     "shares": 123,
     "isFeatured": false,
     "seo": {
-        "title": "Arte y Artesanías Tradicionales Entrerrianas | Hospeda",
+        "title": "Arte y Artesanías Tradicionales Entrerrianas",
         "description": "Conoce el trabajo artesanal local: desde la cerámica hasta los tejidos tradicionales.",
         "keywords": ["art", "entre rios", "turismo"]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": [
+    "tagIds": [
         "028-tag-observacion-fauna",
         "038-tag-termas",
         "027-tag-naturaleza",

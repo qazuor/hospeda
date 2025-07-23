@@ -10,24 +10,27 @@
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1553688738-a278b9f063e0?w=800&h=600&fit=crop",
-                "caption": "Salón del palacio"
+                "caption": "Salón del palacio",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1541854212457-207587e60d31?w=800&h=600&fit=crop",
-                "caption": "Jardines del palacio"
+                "caption": "Jardines del palacio",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=800&h=600&fit=crop",
-                "caption": "Biblioteca histórica"
+                "caption": "Biblioteca histórica",
+                "moderationState": "APPROVED"
             }
         ],
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&h=600&fit=crop",
-            "caption": "Palacio San José en Colón"
+            "caption": "Palacio San José en Colón",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "011-user-carmen-silva",
-    "sponsorshipId": null,
     "relatedDestinationId": null,
     "relatedAccommodationId": null,
     "relatedEventId": null,
@@ -40,7 +43,7 @@
     "shares": 45,
     "isFeatured": false,
     "seo": {
-        "title": "Historia Viva en Colón: El Palacio San José y el Legado de Urquiza | Hospeda",
+        "title": "Historia Viva en Colón: Palacio San José y Urquiza",
         "description": "Descubre la rica historia de Colón a través del Palacio San José. Un recorrido por la vida de Justo José de Urquiza y los sitios históricos argentinos.",
         "keywords": [
             "Colón",
@@ -56,5 +59,5 @@
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["026-tag-musica", "002-tag-arquitectura", "015-tag-ecoturismo"]
+    "tagIds": ["026-tag-musica", "002-tag-arquitectura", "015-tag-ecoturismo"]
 }

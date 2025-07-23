@@ -9,11 +9,11 @@
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1514751599?w=1200&h=600&fit=crop",
-            "caption": "Imagen de Festivales de Música y Arte en Entre Ríos"
+            "caption": "Imagen de Festivales de Música y Arte en Entre Ríos",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "008-user-lucas-fernandez",
-    "sponsorshipId": "017-postSponsorship-aventura-parana-004",
     "relatedDestinationId": "002-destination-colon",
     "relatedAccommodationId": null,
     "relatedEventId": null,
@@ -26,11 +26,11 @@
     "shares": 142,
     "isFeatured": false,
     "seo": {
-        "title": "Festivales de Música y Arte en Entre Ríos | Hospeda",
+        "title": "Festivales de Música y Arte en Entre Ríos",
         "description": "Descubre los festivales más importantes de la provincia, desde el rock hasta la música folclórica.",
         "keywords": ["festivals", "entre rios", "turismo"]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["026-tag-musica", "029-tag-pareja"]
+    "tagIds": ["026-tag-musica", "029-tag-pareja"]
 }

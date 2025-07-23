@@ -10,20 +10,22 @@
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop",
-                "caption": "Parrilla con pescado"
+                "caption": "Parrilla con pescado",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1563379091339-03246963d51a?w=800&h=600&fit=crop",
-                "caption": "Dulce de mamón"
+                "caption": "Dulce de mamón",
+                "moderationState": "APPROVED"
             }
         ],
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1200&h=600&fit=crop",
-            "caption": "Plato típico de pescado del río"
+            "caption": "Plato típico de pescado del río",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "008-user-lucas-fernandez",
-    "sponsorshipId": "021-postSponsorship-destinos-imperdibles-001",
     "relatedDestinationId": null,
     "relatedEventId": null,
     "visibility": "PUBLIC",
@@ -35,7 +37,7 @@
     "shares": 23,
     "isFeatured": false,
     "seo": {
-        "title": "Gastronomía Entrerriana: Sabores Auténticos del Litoral | Hospeda",
+        "title": "Gastronomía Entrerriana: Sabores Auténticos del Litoral",
         "description": "Descubre los sabores más representativos de Entre Ríos: pescados del río, dulces tradicionales y restaurantes recomendados. Guía gastronómica completa.",
         "keywords": [
             "gastronomía",
@@ -51,6 +53,6 @@
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["041-tag-vida-nocturna", "029-tag-pareja", "038-tag-termas", "031-tag-playas"],
+    "tagIds": ["041-tag-vida-nocturna", "029-tag-pareja", "038-tag-termas", "031-tag-playas"],
     "relatedAccommodationId": null
 }

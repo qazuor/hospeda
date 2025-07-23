@@ -9,28 +9,28 @@
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1538803837?w=1200&h=600&fit=crop",
-            "caption": "Imagen de Vida Nocturna en las Ciudades Entrerrianas"
+            "caption": "Imagen de Vida Nocturna en las Ciudades Entrerrianas",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "009-user-sofia-morales",
-    "sponsorshipId": null,
     "relatedDestinationId": null,
     "relatedAccommodationId": null,
     "relatedEventId": null,
     "visibility": "PUBLIC",
     "isNews": true,
     "isFeaturedInWebsite": false,
-    "expiresAt": null,
+    "expiresAt": "2025-05-31T23:59:59Z",
     "likes": 50,
     "comments": 32,
     "shares": 10,
     "isFeatured": false,
     "seo": {
-        "title": "Vida Nocturna en las Ciudades Entrerrianas | Hospeda",
+        "title": "Vida Nocturna en las Ciudades Entrerrianas",
         "description": "Descubre la vida nocturna en Gualeguaychú, Concordia y otras ciudades de Entre Ríos.",
         "keywords": ["nightlife", "entre rios", "turismo"]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["002-tag-arquitectura", "009-tag-citricultura", "025-tag-museos"]
+    "tagIds": ["002-tag-arquitectura", "009-tag-citricultura", "025-tag-museos"]
 }
