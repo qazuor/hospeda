@@ -5,10 +5,11 @@
     "logo": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop",
     "contactInfo": {
         "workEmail": "info@turismogualeaguaychu.com",
-        "workPhone": "+54 3446 427-000",
+        "workPhone": "+543446427000",
         "website": "https://www.turismogualeaguaychu.com",
         "preferredEmail": "WORK",
-        "preferredPhone": "WORK"
+        "preferredPhone": "WORK",
+        "mobilePhone": "+543446427000"
     },
     "social": {
         "facebook": "https://facebook.com/turismogualeaguaychu",

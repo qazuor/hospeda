@@ -5,10 +5,11 @@
     "logo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop",
     "contactInfo": {
         "workEmail": "info@fundacionculturaentrerios.org",
-        "workPhone": "+54 343 423-5000",
+        "workPhone": "+543434235000",
         "website": "https://www.fundacionculturaentrerios.org",
         "preferredEmail": "WORK",
-        "preferredPhone": "WORK"
+        "preferredPhone": "WORK",
+        "mobilePhone": "+543434235000"
     },
     "social": {
         "facebook": "https://facebook.com/fundacionculturaentrerios",

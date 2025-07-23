@@ -5,10 +5,11 @@
     "logo": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=200&h=200&fit=crop",
     "contactInfo": {
         "workEmail": "cultura@colon.gob.ar",
-        "workPhone": "+54 3447 421-000",
+        "workPhone": "+543447421000",
         "website": "https://www.colon.gob.ar",
         "preferredEmail": "WORK",
-        "preferredPhone": "WORK"
+        "preferredPhone": "WORK",
+        "mobilePhone": "+543447421000"
     },
     "social": {
         "facebook": "https://facebook.com/municipalidadcolon",
