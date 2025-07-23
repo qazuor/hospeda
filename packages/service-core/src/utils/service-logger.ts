@@ -7,7 +7,8 @@
 import logger, { type ILogger, LoggerColors, LogLevel } from '@repo/logger';
 
 const serviceLogger = logger.registerCategory('Service', 'SERVICE', {
-    color: LoggerColors.GREEN
+    color: LoggerColors.GREEN,
+    truncateLongText: false
 });
 
 /**
