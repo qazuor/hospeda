@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "071-bookmark-008-user-lucas-fernandez-post-010-festivals-festivales-de-musica-y-arte-en-entre-rios",
+    "userId": "008-user-lucas-fernandez",
+    "entityId": "010-festivals-festivales-de-musica-y-arte-en-entre-rios",
+    "entityType": "POST",
+    "name": "Festivales de Música y Arte",
+    "description": "Arte y música",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "041-bookmark-013-user-patricia-ruiz-destination-011-destination-concepcion-del-uruguay",
+    "userId": "013-user-patricia-ruiz",
+    "entityId": "011-destination-concepcion-del-uruguay",
+    "entityType": "DESTINATION",
+    "name": "Concepción del Uruguay",
+    "description": "Historia y cultura",
+    "lifecycleState": "ACTIVE"
+}

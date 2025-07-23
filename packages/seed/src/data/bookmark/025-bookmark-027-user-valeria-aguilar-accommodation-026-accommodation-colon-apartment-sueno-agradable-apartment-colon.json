@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "025-bookmark-027-user-valeria-aguilar-accommodation-026-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "027-user-valeria-aguilar",
+  "entityId": "011-accommodation-colon-cabin-retiro-agradable-cabana-colon",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Excelente atención",
+  "lifecycleState": "ACTIVE"
+}

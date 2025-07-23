@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "067-bookmark-003-user-usuario-invitado-post-002-gastronomy-gastronomia-entrerriana-sabores-autenticos",
+    "userId": "003-user-usuario-invitado",
+    "entityId": "002-gastronomy-gastronomia-entrerriana-sabores-autenticos",
+    "entityType": "POST",
+    "name": "Gastronomía Entrerriana: Sabores Auténticos",
+    "description": "Recetas tradicionales",
+    "lifecycleState": "ACTIVE"
+}

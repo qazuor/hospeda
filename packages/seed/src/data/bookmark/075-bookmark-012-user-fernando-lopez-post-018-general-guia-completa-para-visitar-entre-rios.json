@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "075-bookmark-012-user-fernando-lopez-post-018-general-guia-completa-para-visitar-entre-rios",
+    "userId": "012-user-fernando-lopez",
+    "entityId": "018-general-guia-completa-para-visitar-entre-rios",
+    "entityType": "POST",
+    "name": "Guía Completa para Visitar Entre Ríos",
+    "description": "Guía esencial",
+    "lifecycleState": "ACTIVE"
+} 

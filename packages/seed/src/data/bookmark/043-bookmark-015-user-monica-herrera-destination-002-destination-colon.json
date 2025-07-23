@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "043-bookmark-015-user-monica-herrera-destination-002-destination-colon",
+    "userId": "015-user-monica-herrera",
+    "entityId": "002-destination-colon",
+    "entityType": "DESTINATION",
+    "name": "Colón",
+    "description": "Hermosas playas",
+    "lifecycleState": "ACTIVE"
+}

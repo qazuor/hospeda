@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "022-bookmark-024-user-alejandro-ortega-accommodation-023-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "024-user-alejandro-ortega",
+  "entityId": "008-accommodation-colon-country-house-paraiso-calido-country-house-colon",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Cerca de todo",
+  "lifecycleState": "ACTIVE"
+}

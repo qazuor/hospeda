@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "034-bookmark-005-user-miguel-torres-destination-004-destination-federacion",
+    "userId": "005-user-miguel-torres",
+    "entityId": "004-destination-federacion",
+    "entityType": "DESTINATION",
+    "name": "Federación",
+    "description": "Termas y relax",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "054-bookmark-026-user-gustavo-pena-destination-002-destination-colon",
+    "userId": "026-user-gustavo-pena",
+    "entityId": "002-destination-colon",
+    "entityType": "DESTINATION",
+    "name": "Colón",
+    "description": "Gastronomía excelente",
+    "lifecycleState": "ACTIVE"
+}

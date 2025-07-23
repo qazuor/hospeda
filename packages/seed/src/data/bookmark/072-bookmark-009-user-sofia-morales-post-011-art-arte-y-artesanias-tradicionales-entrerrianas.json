@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "072-bookmark-009-user-sofia-morales-post-011-art-arte-y-artesanias-tradicionales-entrerrianas",
+    "userId": "009-user-sofia-morales",
+    "entityId": "011-art-arte-y-artesanias-tradicionales-entrerrianas",
+    "entityType": "POST",
+    "name": "Arte y Artesanías Tradicionales",
+    "description": "Artesanías locales",
+    "lifecycleState": "ACTIVE"
+}

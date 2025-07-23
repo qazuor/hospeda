@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "002-bookmark-003-user-usuario-invitado-accommodation-002-accommodation-chajari-cabin-rio-soleado-cabana-chajari",
+    "userId": "003-user-usuario-invitado",
+    "entityId": "002-accommodation-chajari-cabin-rio-soleado-cabana-chajari",
+    "entityType": "ACCOMMODATION",
+    "name": "rio-soleado-cabana",
+    "description": "Vistas al río increíbles",
+    "lifecycleState": "ACTIVE"
+}

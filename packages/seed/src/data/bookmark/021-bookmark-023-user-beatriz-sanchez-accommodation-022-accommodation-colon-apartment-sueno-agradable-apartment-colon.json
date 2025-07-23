@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "021-bookmark-023-user-beatriz-sanchez-accommodation-022-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "023-user-beatriz-sanchez",
+  "entityId": "007-accommodation-colon-house-nido-tranquilo-house-colon",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Muy tranquilo y seguro",
+  "lifecycleState": "ACTIVE"
+}

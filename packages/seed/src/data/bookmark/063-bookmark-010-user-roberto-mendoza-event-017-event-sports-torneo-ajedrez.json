@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "063-bookmark-010-user-roberto-mendoza-event-017-event-sports-torneo-ajedrez",
+    "userId": "010-user-roberto-mendoza",
+    "entityId": "017-event-sports-torneo-ajedrez",
+    "entityType": "EVENT",
+    "name": "Torneo de Ajedrez",
+    "description": "Estrategia mental",
+    "lifecycleState": "ACTIVE"
+}

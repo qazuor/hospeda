@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "074-bookmark-011-user-carmen-silva-post-013-nightlife-vida-nocturna-en-las-ciudades-entrerrianas",
+    "userId": "011-user-carmen-silva",
+    "entityId": "013-nightlife-vida-nocturna-en-las-ciudades-entrerrianas",
+    "entityType": "POST",
+    "name": "Vida Nocturna en las Ciudades",
+    "description": "Noche entrerriana",
+    "lifecycleState": "ACTIVE"
+}

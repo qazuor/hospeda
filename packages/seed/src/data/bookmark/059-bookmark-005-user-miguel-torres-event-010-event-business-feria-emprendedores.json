@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "059-bookmark-005-user-miguel-torres-event-010-event-business-feria-emprendedores",
+    "userId": "005-user-miguel-torres",
+    "entityId": "010-event-business-feria-emprendedores",
+    "entityType": "EVENT",
+    "name": "Feria de Emprendedores",
+    "description": "Negocios locales",
+    "lifecycleState": "ACTIVE"
+}

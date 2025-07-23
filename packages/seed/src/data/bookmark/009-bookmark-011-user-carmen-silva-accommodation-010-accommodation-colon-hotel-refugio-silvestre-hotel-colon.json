@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "009-bookmark-011-user-carmen-silva-accommodation-010-accommodation-colon-hotel-refugio-silvestre-hotel-colon",
+    "userId": "011-user-carmen-silva",
+    "entityId": "010-accommodation-colon-hotel-refugio-silvestre-hotel-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "refugio-silvestre-hotel",
+    "description": "Hotel con ambiente silvestre",
+    "lifecycleState": "ACTIVE"
+}

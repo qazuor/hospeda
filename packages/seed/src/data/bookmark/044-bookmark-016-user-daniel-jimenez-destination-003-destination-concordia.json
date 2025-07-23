@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "044-bookmark-016-user-daniel-jimenez-destination-003-destination-concordia",
+    "userId": "016-user-daniel-jimenez",
+    "entityId": "003-destination-concordia",
+    "entityType": "DESTINATION",
+    "name": "Concordia",
+    "description": "Salto Grande impresionante",
+    "lifecycleState": "ACTIVE"
+}

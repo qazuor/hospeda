@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "004-bookmark-005-user-miguel-torres-accommodation-004-accommodation-colon-cabin-cabana-del-rio-colon",
+    "userId": "005-user-miguel-torres",
+    "entityId": "004-accommodation-colon-cabin-cabana-del-rio-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "cabana-del-rio",
+    "description": "Ubicación perfecta en Colón",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "069-bookmark-005-user-miguel-torres-post-006-history-historia-colon-palacio-san-jose-urquiza",
+    "userId": "005-user-miguel-torres",
+    "entityId": "006-history-historia-colon-palacio-san-jose-urquiza",
+    "entityType": "POST",
+    "name": "Historia de Colón y Palacio San José",
+    "description": "Historia fascinante",
+    "lifecycleState": "ACTIVE"
+}

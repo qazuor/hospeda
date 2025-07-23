@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "052-bookmark-024-user-alejandro-ortega-destination-011-destination-concepcion-del-uruguay",
+    "userId": "024-user-alejandro-ortega",
+    "entityId": "011-destination-concepcion-del-uruguay",
+    "entityType": "DESTINATION",
+    "name": "Concepción del Uruguay",
+    "description": "Patrimonio histórico",
+    "lifecycleState": "ACTIVE"
+} 

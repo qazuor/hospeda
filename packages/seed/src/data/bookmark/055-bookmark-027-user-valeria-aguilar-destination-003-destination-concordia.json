@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "055-bookmark-027-user-valeria-aguilar-destination-003-destination-concordia",
+    "userId": "027-user-valeria-aguilar",
+    "entityId": "003-destination-concordia",
+    "entityType": "DESTINATION",
+    "name": "Concordia",
+    "description": "Pesca y naturaleza",
+    "lifecycleState": "ACTIVE"
+}

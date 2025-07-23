@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "015-bookmark-017-user-silvia-moreno-accommodation-016-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "017-user-silvia-moreno",
+  "entityId": "001-accommodation-chajari-cabin-retiro-soleado-cabana-chajari",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Apartamento muy agradable",
+  "lifecycleState": "ACTIVE"
+}

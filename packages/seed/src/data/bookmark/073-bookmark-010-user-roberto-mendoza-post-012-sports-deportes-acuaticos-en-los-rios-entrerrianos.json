@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "073-bookmark-010-user-roberto-mendoza-post-012-sports-deportes-acuaticos-en-los-rios-entrerrianos",
+    "userId": "010-user-roberto-mendoza",
+    "entityId": "012-sports-deportes-acuaticos-en-los-rios-entrerrianos",
+    "entityType": "POST",
+    "name": "Deportes Acuáticos en los Ríos",
+    "description": "Deportes acuáticos",
+    "lifecycleState": "ACTIVE"
+}

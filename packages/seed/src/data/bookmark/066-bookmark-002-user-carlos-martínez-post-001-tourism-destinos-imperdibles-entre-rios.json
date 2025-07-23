@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "066-bookmark-002-user-carlos-martínez-post-001-tourism-destinos-imperdibles-entre-rios",
+    "userId": "002-user-carlos-martínez",
+    "entityId": "001-tourism-destinos-imperdibles-entre-rios",
+    "entityType": "POST",
+    "name": "Destinos Imperdibles de Entre Ríos",
+    "description": "Guía completa",
+    "lifecycleState": "ACTIVE"
+}

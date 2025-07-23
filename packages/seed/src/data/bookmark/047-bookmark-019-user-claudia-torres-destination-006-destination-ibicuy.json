@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "047-bookmark-019-user-claudia-torres-destination-006-destination-ibicuy",
+    "userId": "019-user-claudia-torres",
+    "entityId": "006-destination-ibicuy",
+    "entityType": "DESTINATION",
+    "name": "Ibicuy",
+    "description": "Pesca deportiva",
+    "lifecycleState": "ACTIVE"
+}

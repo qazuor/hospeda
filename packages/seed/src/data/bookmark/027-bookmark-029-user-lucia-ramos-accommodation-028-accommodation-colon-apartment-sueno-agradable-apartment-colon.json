@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "027-bookmark-029-user-lucia-ramos-accommodation-028-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "029-user-lucia-ramos",
+  "entityId": "013-accommodation-colon-room-rincon-natural-room-colon",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Ideal para parejas",
+  "lifecycleState": "ACTIVE"
+}

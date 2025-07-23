@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "013-bookmark-015-user-monica-herrera-accommodation-014-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "userId": "015-user-monica-herrera",
+    "entityId": "014-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "sueno-agradable-apartment",
+    "description": "Sueño agradable garantizado",
+    "lifecycleState": "ACTIVE"
+}

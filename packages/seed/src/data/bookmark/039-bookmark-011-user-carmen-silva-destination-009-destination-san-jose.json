@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "039-bookmark-011-user-carmen-silva-destination-009-destination-san-jose",
+    "userId": "011-user-carmen-silva",
+    "entityId": "009-destination-san-jose",
+    "entityType": "DESTINATION",
+    "name": "San José",
+    "description": "Palacio histórico",
+    "lifecycleState": "ACTIVE"
+}
