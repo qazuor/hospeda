@@ -80,7 +80,7 @@ const defaultGetEntityInfo = (item: unknown) => {
 export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryConfig<T, R>) => {
     return async (context: SeedContext) => {
         // Validate actor
-        const actor = validateActor(context);
+        validateActor(context);
 
         // Set current entity for error tracking
         context.currentEntity = config.entityName;
@@ -124,7 +124,7 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                     create: (actor: Actor, data: unknown) => Promise<ServiceResult>;
                 };
                 const result = await service.create(
-                    actor,
+                    context.actor as Actor,
                     normalizedData as Record<string, unknown>
                 );
 
@@ -206,13 +206,16 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                 if (serviceResult?.data?.id) {
                     const itemData = item as Record<string, unknown>;
                     const seedId = itemData.id as string;
-                    if (seedId) {
-                        context.idMapper.setMapping(
-                            config.entityName.toLowerCase(),
-                            seedId,
-                            serviceResult.data.id
+                    if (!seedId) {
+                        throw new Error(
+                            `${STATUS_ICONS.Error} [SEED_FACTORY] No se pudo obtener el ID del item ${itemData.id}`
                         );
                     }
+                    context.idMapper.setMapping(
+                        config.entityName.toLowerCase(),
+                        seedId,
+                        serviceResult.data.id
+                    );
                 }
 
                 // Post-process callback
