@@ -100,7 +100,9 @@ describe('BaseService: list', () => {
         expect(result.data).toBeUndefined();
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-        expect(result.error?.message).toBe('An unexpected error occurred.');
+        expect(result.error?.message).toBe(
+            'An unexpected error occurred: Database connection lost'
+        );
     });
 
     it('should return an INTERNAL_ERROR if _beforeList hook fails', async () => {

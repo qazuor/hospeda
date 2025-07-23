@@ -4,7 +4,7 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import * as helpers from '../../../src/services/event/event.helpers';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createMockEvent, createMockEventInput } from '../../factories/eventFactory';
+import { createEventInput, createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
 import {
     expectForbiddenError,
@@ -24,7 +24,7 @@ describe('EventService.create', () => {
     let loggerMock: ServiceLogger;
     const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_CREATE] });
     const actorNoPerm = createUser();
-    const rawInput = createMockEventInput({ visibility: VisibilityEnum.PUBLIC });
+    const rawInput = createEventInput({ visibility: VisibilityEnum.PUBLIC });
     const validInput = {
         ...rawInput,
         date: {
@@ -89,12 +89,12 @@ describe('EventService.create', () => {
             Promise.resolve({ ...createdEvent, slug: 'music-jazz-2024-07-01' })
         );
         const input = {
-            ...createMockEventInput(),
+            ...createEventInput(),
             category: EventCategoryEnum.MUSIC,
             name: 'Jazz Night',
             date: { start: '2024-07-01', end: '2024-07-01' },
-            locationId: String(createMockEventInput().locationId),
-            organizerId: String(createMockEventInput().organizerId)
+            locationId: String(createEventInput().locationId),
+            organizerId: String(createEventInput().organizerId)
         };
         const result = await service.create(actorWithPerm, input);
         expect(helpers.generateEventSlug).toHaveBeenCalledWith(
@@ -112,11 +112,11 @@ describe('EventService.create', () => {
             );
         });
         const input = {
-            ...createMockEventInput(),
+            ...createEventInput(),
             name: '',
             date: { start: '', end: '' },
-            locationId: String(createMockEventInput().locationId),
-            organizerId: String(createMockEventInput().organizerId)
+            locationId: String(createEventInput().locationId),
+            organizerId: String(createEventInput().organizerId)
         };
         const result = await service.create(actorWithPerm, input);
         expectValidationError(result);

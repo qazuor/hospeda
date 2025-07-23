@@ -3,10 +3,10 @@ import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import * as helpers from '../../../src/services/event/event.helpers';
-import type { EventCreateSchema } from '../../../src/services/event/event.schemas';
+import type { EventUpdateSchema } from '../../../src/services/event/event.schemas';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createMockEvent, createMockEventInput } from '../../factories/eventFactory';
+import { createEventUpdateInput, createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
 import {
     expectForbiddenError,
@@ -25,15 +25,9 @@ describe('EventService.update', () => {
     const actorNoPerm = createUser();
     const existingEvent = createMockEvent({ visibility: VisibilityEnum.PUBLIC });
     const eventId = existingEvent.id;
-    const rawInput = createMockEventInput({ visibility: VisibilityEnum.PUBLIC });
-    const updateInput: z.infer<typeof EventCreateSchema> = {
-        ...rawInput,
-        date: {
-            start: (rawInput.date.start as Date).toISOString(),
-            end: (rawInput.date.end as Date).toISOString()
-        },
-        locationId: String(rawInput.locationId),
-        organizerId: String(rawInput.organizerId)
+    const updateInput: z.infer<typeof EventUpdateSchema> = {
+        id: eventId,
+        ...createEventUpdateInput({ visibility: VisibilityEnum.PUBLIC })
     };
 
     beforeEach(() => {
@@ -54,10 +48,7 @@ describe('EventService.update', () => {
             id: eventId,
             slug: 'festival-fiesta-nacional-2025-07-01'
         });
-        const result = await service.update(actorWithPerm, eventId, {
-            id: eventId,
-            ...updateInput
-        });
+        const result = await service.update(actorWithPerm, eventId, updateInput);
         expectSuccess(result);
         expect(result.data).toMatchObject({
             ...existingEvent,
@@ -68,7 +59,7 @@ describe('EventService.update', () => {
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
-        const result = await service.update(actorNoPerm, eventId, { id: eventId, ...updateInput });
+        const result = await service.update(actorNoPerm, eventId, updateInput);
         expectForbiddenError(result);
     });
 
@@ -81,20 +72,14 @@ describe('EventService.update', () => {
 
     it('should return NOT_FOUND if event does not exist', async () => {
         (modelMock.findById as Mock).mockResolvedValue(null);
-        const result = await service.update(actorWithPerm, eventId, {
-            id: eventId,
-            ...updateInput
-        });
+        const result = await service.update(actorWithPerm, eventId, updateInput);
         expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.update(actorWithPerm, eventId, {
-            id: eventId,
-            ...updateInput
-        });
+        const result = await service.update(actorWithPerm, eventId, updateInput);
         expectInternalError(result);
     });
 
@@ -108,13 +93,12 @@ describe('EventService.update', () => {
             slug: 'new-cat-name-date'
         });
         const input = {
-            ...createMockEventInput(),
-            category: EventCategoryEnum.FESTIVAL,
-            date: { start: '2024-01-01', end: '2024-01-01' },
-            locationId: String(createMockEventInput().locationId),
-            organizerId: String(createMockEventInput().organizerId)
+            id: eventId,
+            ...createEventUpdateInput({
+                category: EventCategoryEnum.FESTIVAL
+            })
         };
-        const result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
+        const result = await service.update(actorWithPerm, eventId, input);
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('new-cat-name-date');
     });
@@ -129,13 +113,12 @@ describe('EventService.update', () => {
             slug: 'cat-newname-date'
         });
         const input = {
-            ...createMockEventInput(),
-            name: 'newname',
-            date: { start: '2024-01-01', end: '2024-01-01' },
-            locationId: String(createMockEventInput().locationId),
-            organizerId: String(createMockEventInput().organizerId)
+            id: eventId,
+            ...createEventUpdateInput({
+                name: 'newname'
+            })
         };
-        const result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
+        const result = await service.update(actorWithPerm, eventId, input);
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('cat-newname-date');
     });
@@ -150,12 +133,17 @@ describe('EventService.update', () => {
             slug: 'cat-name-newdate'
         });
         const input = {
-            ...createMockEventInput(),
-            date: { start: '2024-09-01', end: '2024-09-01' },
-            locationId: String(createMockEventInput().locationId),
-            organizerId: String(createMockEventInput().organizerId)
+            id: eventId,
+            ...createEventUpdateInput({
+                date: {
+                    start: new Date('2024-09-01'),
+                    end: new Date('2024-09-01'),
+                    isAllDay: false,
+                    recurrence: undefined
+                }
+            })
         };
-        const result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
+        const result = await service.update(actorWithPerm, eventId, input);
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('cat-name-newdate');
     });
@@ -166,11 +154,10 @@ describe('EventService.update', () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockResolvedValue({ ...existingEvent, id: eventId });
         const input = {
-            isFeatured: true,
-            locationId: String(createMockEventInput().locationId),
-            organizerId: String(createMockEventInput().organizerId)
+            id: eventId,
+            isFeatured: true
         };
-        const _result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
+        const _result = await service.update(actorWithPerm, eventId, input);
         expect(helpers.generateEventSlug).not.toHaveBeenCalled();
         // ...assert slug remains unchanged or as expected...
     });
@@ -185,13 +172,18 @@ describe('EventService.update', () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockResolvedValue(existingEvent);
         const input = {
-            ...createMockEventInput(),
-            name: '',
-            date: { start: '', end: '' },
-            locationId: String(createMockEventInput().locationId),
-            organizerId: String(createMockEventInput().organizerId)
+            id: eventId,
+            ...createEventUpdateInput({
+                name: '',
+                date: {
+                    start: new Date('2024-01-01'),
+                    end: new Date('2024-01-01'),
+                    isAllDay: false,
+                    recurrence: undefined
+                }
+            })
         };
-        const result = await service.update(actorWithPerm, eventId, { id: eventId, ...input });
+        const result = await service.update(actorWithPerm, eventId, input);
         expectValidationError(result);
     });
 });

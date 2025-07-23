@@ -3,6 +3,7 @@ import {
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
+    type RecurrenceTypeEnum,
     VisibilityEnum
 } from '@repo/types';
 import { getMockId } from './utilsFactory';
@@ -55,6 +56,82 @@ export const createMockEventInput = (
 ): Omit<EventType, 'id' | 'createdAt' | 'updatedAt'> => {
     const { id, createdAt, updatedAt, ...input } = getMockEvent();
     return { ...input, ...overrides };
+};
+
+/**
+ * Returns a valid input for EventService.create (matches EventCreateSchema).
+ * Only includes fields allowed by the Zod schema (no id, slug, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById).
+ * @param overrides - Partial fields to override in the input.
+ */
+export const createEventInput = (overrides: Partial<ReturnType<typeof getMockEvent>> = {}) => {
+    const {
+        id,
+        slug,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        createdById,
+        updatedById,
+        deletedById,
+        ...rest
+    } = getMockEvent();
+    return { ...rest, ...overrides };
+};
+
+/**
+ * Returns a valid input for EventService.update (matches EventUpdateSchema).
+ * Only includes fields allowed by the Zod schema (no slug, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById).
+ * The id field is handled separately in the update method.
+ * @param overrides - Partial fields to override in the input.
+ */
+export const createEventUpdateInput = (
+    overrides: Partial<ReturnType<typeof getMockEvent>> = {}
+) => {
+    const {
+        id,
+        slug,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        createdById,
+        updatedById,
+        deletedById,
+        ...rest
+    } = getMockEvent();
+
+    // Convert date objects to ISO strings for schema validation
+    const normalizedDate = {
+        start: rest.date.start.toISOString(),
+        end: rest.date.end?.toISOString(),
+        isAllDay: rest.date.isAllDay,
+        recurrence: rest.date.recurrence
+    };
+
+    // Handle date overrides if provided
+    let finalDate = normalizedDate;
+    if (overrides.date) {
+        const overrideDate = overrides.date as {
+            start: Date;
+            end?: Date;
+            isAllDay?: boolean;
+            recurrence?: RecurrenceTypeEnum;
+        };
+        finalDate = {
+            start: overrideDate.start.toISOString(),
+            end: overrideDate.end?.toISOString(),
+            isAllDay: overrideDate.isAllDay,
+            recurrence: overrideDate.recurrence
+        };
+    }
+
+    // Remove date from overrides to avoid conflicts
+    const { date: _date, ...restOverrides } = overrides;
+
+    return {
+        ...rest,
+        date: finalDate,
+        ...restOverrides
+    };
 };
 
 export const getMockEventId = (id?: string): EventId => {
