@@ -17,7 +17,8 @@ export type IdTypes =
     | 'post'
     | 'event'
     | 'tag'
-    | 'feature';
+    | 'feature'
+    | 'iaData';
 
 function generateValidUuidFromLabel(label: string): string {
     const rawUuid = crypto.randomUUID();
@@ -32,7 +33,8 @@ const idTypeStrings: Record<IdTypes, string> = {
     post: generateValidUuidFromLabel('post'),
     event: generateValidUuidFromLabel('event'),
     tag: generateValidUuidFromLabel('tag'),
-    feature: generateValidUuidFromLabel('feature')
+    feature: generateValidUuidFromLabel('feature'),
+    iaData: generateValidUuidFromLabel('iaData')
 };
 
 /**
@@ -74,3 +76,14 @@ export const getMockId = (type: IdTypes, id?: string): string => {
  * const customFaqId = getMockFaqId('faq-123');
  */
 export const getMockFaqId = (id?: string): string => getMockId('feature', id);
+
+/**
+ * Returns a mock AI data ID for use in tests, using the 'iaData' entity type.
+ * @param id - Optional custom string to hash into a UUID, or an explicit UUID.
+ * @returns {string} A valid UUID string for an AI data entity.
+ *
+ * @example
+ * const iaDataId = getMockIaDataId();
+ * const customIaDataId = getMockIaDataId('ia-data-123');
+ */
+export const getMockIaDataId = (id?: string): string => getMockId('iaData', id);
