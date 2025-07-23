@@ -276,21 +276,35 @@ export const seedAccommodations = createSeedFactory({
                 if (!aiEntry) continue;
 
                 try {
-                    // Note: AI data methods are not implemented yet, so we'll log this for now
-                    logger.info(
-                        `[${i + 1} of ${iaData.length}] - AI data entry: "${aiEntry.title}" (not implemented yet)`
+                    if (!context.actor) {
+                        throw new Error('Actor not available in context');
+                    }
+                    await service.addIAData(
+                        {
+                            accommodationId,
+                            iaData: {
+                                title: aiEntry.title,
+                                content: aiEntry.content,
+                                category: aiEntry.category,
+                                accommodationId
+                            }
+                        },
+                        context.actor
                     );
-                    // TODO: Implement when AI data service methods are available
-                    // await service.addIAData(context.actor!, {
-                    //     accommodationId,
-                    //     title: aiEntry.title,
-                    //     content: aiEntry.content,
-                    //     category: aiEntry.category
-                    // });
+                    logger.success(
+                        `[${i + 1} of ${iaData.length}] - Created AI data: "${aiEntry.title}"`
+                    );
                 } catch (error) {
-                    logger.error(`Error creating AI data: ${(error as Error).message}`);
-                    if (!context.continueOnError) {
-                        throw error;
+                    const err = error as { code?: string; message?: string };
+                    if (err.code === 'ALREADY_EXISTS') {
+                        logger.info(
+                            `[${i + 1} of ${iaData.length}] - AI data already exists: "${aiEntry.title}"`
+                        );
+                    } else {
+                        logger.error(`Error creating AI data: ${err.message}`);
+                        if (!context.continueOnError) {
+                            throw error;
+                        }
                     }
                 }
             }
