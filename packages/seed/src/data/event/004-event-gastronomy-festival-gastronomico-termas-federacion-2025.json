@@ -11,7 +11,7 @@
         "end": "2025-05-11T22:00:00-03:00"
     },
     "authorId": "002-user-carlos-martínez",
-    "locationId": "002-eventLocation-federacion-complejo-termal-federación",
+    "locationId": "002-eventLocation-federacion-complejo-termal-federacion",
     "organizerId": "005-eventOrganizer-productores-rurales",
     "pricing": {
         "isFree": false,
@@ -20,6 +20,7 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
+    "moderationState": "APPROVED",
     "tagIds": [
         "tag-gastronomia-007",
         "tag-termas-012",
@@ -31,23 +32,26 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=600&fit=crop",
             "caption": "Festival gastronómico en las termas",
-            "description": "Platos gourmet con productos locales"
+            "description": "Platos gourmet con productos locales",
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800&h=600&fit=crop",
                 "caption": "Chefs preparando especialidades",
-                "description": "Chefs locales cocinando con productos regionales"
+                "description": "Chefs locales cocinando con productos regionales",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
                 "caption": "Termas de Federación",
-                "description": "Aguas termales del complejo termal"
+                "description": "Aguas termales del complejo termal",
+                "moderationState": "APPROVED"
             }
         ]
     },
     "seo": {
-        "title": "Festival Gastronómico Termas de Federación 2025 - Gastronomía y Wellness - Hospeda",
+        "title": "Festival Gastronómico Termas Federación 2025 - Hospeda",
         "description": "Festival gastronómico con productos locales y experiencia termal en Federación. Gastronomía y relajación en un mismo lugar.",
         "keywords": ["gastronomia", "federacion", "termas", "wellness", "productos-locales"]
     },

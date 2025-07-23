@@ -12,17 +12,19 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1565573552890?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Picnic Familiar",
-            "description": "Descripción de la imagen del evento Picnic Familiar"
+            "description": "Descripción de la imagen del evento Picnic Familiar",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Picnic Familiar - Entre Ríos - Hospeda",
-        "description": "Participa en Picnic Familiar, un evento imperdible en Entre Ríos.",
+        "title": "Picnic Familiar 2025 - Entre Ríos - Hospeda",
+        "description": "Disfruta del Picnic Familiar 2025 en Entre Ríos. Una jornada al aire libre con actividades para toda la familia y juegos infantiles.",
         "keywords": ["family", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",

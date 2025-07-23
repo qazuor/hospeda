@@ -11,7 +11,7 @@
         "end": "2025-07-27T18:00:00-03:00"
     },
     "authorId": "admin-user",
-    "locationId": "001-eventLocation-colon-anfiteatro-colón",
+    "locationId": "001-eventLocation-colon-anfiteatro-colon",
     "organizerId": "004-eventOrganizer-colon",
     "pricing": {
         "isFree": false,
@@ -20,27 +20,31 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop",
             "caption": "Festival de la Naturaleza en Victoria",
-            "description": "Actividades de ecoturismo en el delta del Paraná"
+            "description": "Actividades de ecoturismo en el delta del Paraná",
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
                 "caption": "Avistamiento de aves",
-                "description": "Actividad de birdwatching en el delta"
+                "description": "Actividad de birdwatching en el delta",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
                 "caption": "Navegación por el delta",
-                "description": "Embarcaciones navegando por el delta del Paraná"
+                "description": "Embarcaciones navegando por el delta del Paraná",
+                "moderationState": "APPROVED"
             }
         ]
     },
     "seo": {
-        "title": "Festival de la Naturaleza Victoria 2025 - Ecoturismo y Naturaleza - Hospeda",
+        "title": "Festival Naturaleza Victoria 2025 - Ecoturismo - Hospeda",
         "description": "Festival de naturaleza y ecoturismo en Victoria. Actividades al aire libre y conservación en el delta del Paraná.",
         "keywords": ["naturaleza", "ecoturismo", "victoria", "delta", "conservacion"]
     },

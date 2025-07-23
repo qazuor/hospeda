@@ -6,27 +6,29 @@
     "summary": "Evento music - Concierto de Jazz",
     "description": "Descripción detallada del evento Concierto de Jazz. Este es un evento de categoría MUSIC que se desarrolla en Entre Ríos.",
     "category": "MUSIC",
-    "authorId": "super-admin-user",
+    "authorId": "admin-user",
     "pricing": {
         "isFree": true
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1633351507667?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Concierto de Jazz",
-            "description": "Descripción de la imagen del evento Concierto de Jazz"
+            "description": "Descripción de la imagen del evento Concierto de Jazz",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Concierto de Jazz - Entre Ríos - Hospeda",
-        "description": "Participa en Concierto de Jazz, un evento imperdible en Entre Ríos.",
+        "title": "Concierto de Jazz 2025 - Entre Ríos - Hospeda",
+        "description": "Disfruta del Concierto de Jazz 2025 en Entre Ríos. Una noche de música en vivo con los mejores artistas de jazz locales y nacionales.",
         "keywords": ["music", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",
-    "locationId": "003-eventLocation-gualeguaychu-corsódromo-gualeguaychú",
+    "locationId": "003-eventLocation-gualeguaychu-corsodromo-gualeguaychu",
     "date": {
         "start": "2025-09-07T00:00:00-03:00"
     }

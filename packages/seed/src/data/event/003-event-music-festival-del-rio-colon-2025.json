@@ -11,13 +11,14 @@
         "end": "2025-03-17T23:00:00-03:00"
     },
     "authorId": "admin-user",
-    "locationId": "003-eventLocation-gualeguaychu-corsódromo-gualeguaychú",
+    "locationId": "003-eventLocation-gualeguaychu-corsodromo-gualeguaychu",
     "organizerId": "001-eventOrganizer-turismo-de-gualeguaychu",
     "pricing": {
         "isFree": true
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
+    "moderationState": "APPROVED",
     "tagIds": [
         "tag-festivales",
         "026-tag-musica",
@@ -31,18 +32,21 @@
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=600&fit=crop",
             "caption": "Festival del Río en el Anfiteatro Municipal",
-            "description": "Espectáculo musical al aire libre con vista al río"
+            "description": "Espectáculo musical al aire libre con vista al río",
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&h=600&fit=crop",
                 "caption": "Artistas en el escenario",
-                "description": "Músicos locales presentando en el festival"
+                "description": "Músicos locales presentando en el festival",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&h=600&fit=crop",
                 "caption": "Anfiteatro al atardecer",
-                "description": "Vista del anfiteatro durante la puesta del sol"
+                "description": "Vista del anfiteatro durante la puesta del sol",
+                "moderationState": "APPROVED"
             }
         ]
     },

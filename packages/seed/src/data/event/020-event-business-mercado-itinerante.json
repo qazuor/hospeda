@@ -12,17 +12,19 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1512540427036?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Mercado Itinerante",
-            "description": "Descripción de la imagen del evento Mercado Itinerante"
+            "description": "Descripción de la imagen del evento Mercado Itinerante",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Mercado Itinerante - Entre Ríos - Hospeda",
-        "description": "Participa en Mercado Itinerante, un evento imperdible en Entre Ríos.",
+        "title": "Mercado Itinerante 2025 - Entre Ríos - Hospeda",
+        "description": "Visita el Mercado Itinerante 2025 en Entre Ríos. Productos locales, artesanías y gastronomía regional en un evento único.",
         "keywords": ["business", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",

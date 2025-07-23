@@ -14,17 +14,19 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1674759369799?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Torneo de Ajedrez",
-            "description": "Descripción de la imagen del evento Torneo de Ajedrez"
+            "description": "Descripción de la imagen del evento Torneo de Ajedrez",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Torneo de Ajedrez - Entre Ríos - Hospeda",
-        "description": "Participa en Torneo de Ajedrez, un evento imperdible en Entre Ríos.",
+        "title": "Torneo de Ajedrez 2025 - Entre Ríos - Hospeda",
+        "description": "Participa en el Torneo de Ajedrez 2025 en Entre Ríos. Cuatro días de competencia estratégica con jugadores de todos los niveles.",
         "keywords": ["sports", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",

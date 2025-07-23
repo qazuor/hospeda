@@ -6,23 +6,25 @@
     "summary": "Evento sports - Competencia de Pesca",
     "description": "Descripción detallada del evento Competencia de Pesca. Este es un evento de categoría SPORTS que se desarrolla en Entre Ríos.",
     "category": "SPORTS",
-    "authorId": "super-admin-user",
+    "authorId": "admin-user",
     "pricing": {
         "isFree": true
     },
     "visibility": "PUBLIC",
     "isFeatured": true,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1669560419115?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Competencia de Pesca",
-            "description": "Descripción de la imagen del evento Competencia de Pesca"
+            "description": "Descripción de la imagen del evento Competencia de Pesca",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Competencia de Pesca - Entre Ríos - Hospeda",
-        "description": "Participa en Competencia de Pesca, un evento imperdible en Entre Ríos.",
+        "title": "Competencia de Pesca 2025 - Entre Ríos - Hospeda",
+        "description": "Participa en la Competencia de Pesca 2025 en Entre Ríos. Una jornada de pesca deportiva con premios y actividades para toda la familia.",
         "keywords": ["sports", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",

@@ -12,17 +12,19 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1629187869023?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Curso de Cocina",
-            "description": "Descripción de la imagen del evento Curso de Cocina"
+            "description": "Descripción de la imagen del evento Curso de Cocina",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Curso de Cocina - Entre Ríos - Hospeda",
-        "description": "Participa en Curso de Cocina, un evento imperdible en Entre Ríos.",
+        "title": "Curso de Cocina 2025 - Entre Ríos - Hospeda",
+        "description": "Aprende técnicas culinarias en el Curso de Cocina 2025 en Entre Ríos. Talleres prácticos con chefs expertos y productos locales.",
         "keywords": ["gastronomy", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",

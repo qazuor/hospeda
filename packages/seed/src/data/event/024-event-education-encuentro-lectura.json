@@ -12,17 +12,19 @@
     },
     "visibility": "PUBLIC",
     "isFeatured": false,
+    "moderationState": "APPROVED",
     "tagIds": ["tag-festivales", "011-tag-cultura", "tag-familia-004", "tag-entre-rios-003"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1525202140757?w=800&h=600&fit=crop",
             "caption": "Imagen del evento Encuentro de Lectura",
-            "description": "Descripción de la imagen del evento Encuentro de Lectura"
+            "description": "Descripción de la imagen del evento Encuentro de Lectura",
+            "moderationState": "APPROVED"
         }
     },
     "seo": {
-        "title": "Encuentro de Lectura - Entre Ríos - Hospeda",
-        "description": "Participa en Encuentro de Lectura, un evento imperdible en Entre Ríos.",
+        "title": "Encuentro de Lectura 2025 - Entre Ríos - Hospeda",
+        "description": "Participa en el Encuentro de Lectura 2025 en Entre Ríos. Tres días de literatura, talleres y charlas con escritores locales.",
         "keywords": ["education", "entre rios", "evento", "cultura"]
     },
     "lifecycleState": "ACTIVE",
