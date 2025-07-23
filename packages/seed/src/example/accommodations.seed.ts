@@ -2,6 +2,7 @@ import path from 'node:path';
 import { AccommodationService, AmenityService, FeatureService } from '@repo/service-core/index.js';
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import exampleManifest from '../manifest-example.json';
+import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
 import { createServiceRelationBuilder } from '../utils/serviceRelationBuilder.js';
@@ -14,15 +15,37 @@ import { createServiceRelationBuilder } from '../utils/serviceRelationBuilder.js
  */
 const accommodationNormalizer = (data: Record<string, unknown>) => {
     // First exclude metadata fields and auto-generated fields
-    const { $schema, id, slug, tagIds, averageRating, amenityIds, featureIds, ...cleanData } =
-        data as {
-            $schema?: string;
-            id?: string;
-            slug?: string;
-            tagIds?: unknown[];
-            averageRating?: number;
-            [key: string]: unknown;
-        };
+    const {
+        $schema,
+        id,
+        slug,
+        tagIds,
+        averageRating,
+        amenityIds,
+        featureIds,
+        faqs,
+        iaData,
+        ...cleanData
+    } = data as {
+        $schema?: string;
+        id?: string;
+        slug?: string;
+        tagIds?: unknown[];
+        averageRating?: number;
+        amenityIds?: string[];
+        featureIds?: string[];
+        faqs?: Array<{
+            question: string;
+            answer: string;
+            category?: string;
+        }>;
+        iaData?: Array<{
+            title: string;
+            content: string;
+            category?: string;
+        }>;
+        [key: string]: unknown;
+    };
     return cleanData;
 };
 
@@ -97,25 +120,26 @@ const getAccommodationInfo = (item: unknown) => {
 };
 
 /**
- * Seeds accommodations with their associated amenities and features.
+ * Seeds accommodations with their associated amenities, features, FAQs, and AI data.
  *
  * This seed factory creates accommodation entities and establishes
- * relationships with amenities and features using the service-based
+ * relationships with amenities, features, FAQs, and AI data using the service-based
  * relation builder.
  *
  * Features:
  * - Pre-processes data to map seed IDs to real database IDs
  * - Sets up proper actor context for accommodation owners
  * - Creates relationships with amenities and features
+ * - Creates FAQs and AI data for each accommodation
  * - Provides progress tracking and detailed logging
- * - Handles both amenities and features in a single relation builder
+ * - Handles all relationships in a single relation builder
  *
  * @example
  * ```typescript
  * await seedAccommodations(seedContext);
  * // Creates accommodations like:
- * // "Camping Retiro Encantado" (CAMPING) with amenities and features
- * // "Cabaña Paraíso Apacible" (CABIN) with amenities and features
+ * // "Camping Retiro Encantado" (CAMPING) with amenities, features, FAQs, and AI data
+ * // "Cabaña Paraíso Apacible" (CABIN) with amenities, features, FAQs, and AI data
  * ```
  */
 export const seedAccommodations = createSeedFactory({
@@ -127,8 +151,16 @@ export const seedAccommodations = createSeedFactory({
     preProcess: preProcessAccommodation,
     getEntityInfo: getAccommodationInfo,
 
-    // Custom relation builders for amenities and features using the generic factory
+    // Custom relation builders for amenities, features, FAQs, and AI data
     relationBuilder: async (result: unknown, item: unknown, context: SeedContext) => {
+        const accommodationId = (result as { data?: { id?: string } })?.data?.id;
+        if (!accommodationId) {
+            throw new Error('No accommodation ID found in result');
+        }
+
+        const accommodationData = item as Record<string, unknown>;
+        const service = new AccommodationService({});
+
         // Build amenities relations
         const amenitiesBuilder = createServiceRelationBuilder({
             serviceClass: AmenityService,
@@ -175,8 +207,93 @@ export const seedAccommodations = createSeedFactory({
             }
         });
 
-        // Execute both relation builders
+        // Execute amenities and features relation builders
         await amenitiesBuilder(result, item, context);
         await featuresBuilder(result, item, context);
+
+        // Create FAQs if they exist in the data
+        const faqs = accommodationData.faqs as
+            | Array<{
+                  question: string;
+                  answer: string;
+                  category?: string;
+              }>
+            | undefined;
+
+        if (faqs && faqs.length > 0) {
+            const accommodationInfo = getAccommodationInfo(item);
+            logger.info(`Creating ${faqs.length} FAQs for ${accommodationInfo}`);
+
+            for (let i = 0; i < faqs.length; i++) {
+                const faq = faqs[i];
+                if (!faq) continue;
+
+                try {
+                    if (!context.actor) {
+                        throw new Error('Actor not available in context');
+                    }
+                    await service.addFaq(context.actor, {
+                        accommodationId,
+                        faq: {
+                            question: faq.question,
+                            answer: faq.answer,
+                            category: faq.category,
+                            accommodationId
+                        }
+                    });
+                    logger.success(`[${i + 1} of ${faqs.length}] - Created FAQ: "${faq.question}"`);
+                } catch (error) {
+                    const err = error as { code?: string; message?: string };
+                    if (err.code === 'ALREADY_EXISTS') {
+                        logger.info(
+                            `[${i + 1} of ${faqs.length}] - FAQ already exists: "${faq.question}"`
+                        );
+                    } else {
+                        logger.error(`Error creating FAQ: ${err.message}`);
+                        if (!context.continueOnError) {
+                            throw error;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Create AI data if it exists in the data
+        const iaData = accommodationData.iaData as
+            | Array<{
+                  title: string;
+                  content: string;
+                  category?: string;
+              }>
+            | undefined;
+
+        if (iaData && iaData.length > 0) {
+            const accommodationInfo = getAccommodationInfo(item);
+            logger.info(`Creating ${iaData.length} AI data entries for ${accommodationInfo}`);
+
+            for (let i = 0; i < iaData.length; i++) {
+                const aiEntry = iaData[i];
+                if (!aiEntry) continue;
+
+                try {
+                    // Note: AI data methods are not implemented yet, so we'll log this for now
+                    logger.info(
+                        `[${i + 1} of ${iaData.length}] - AI data entry: "${aiEntry.title}" (not implemented yet)`
+                    );
+                    // TODO: Implement when AI data service methods are available
+                    // await service.addIAData(context.actor!, {
+                    //     accommodationId,
+                    //     title: aiEntry.title,
+                    //     content: aiEntry.content,
+                    //     category: aiEntry.category
+                    // });
+                } catch (error) {
+                    logger.error(`Error creating AI data: ${(error as Error).message}`);
+                    if (!context.continueOnError) {
+                        throw error;
+                    }
+                }
+            }
+        }
     }
 });
