@@ -2,9 +2,9 @@ import type { BaseModel as BaseModelDB } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import { z } from 'zod';
 import { BaseCrudService } from '../../../src/base/base.crud.service';
-import type { Actor, ServiceContext } from '../../../src/types';
+import type { Actor, ServiceContext, ServiceLogger } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
-import { serviceLogger } from '../../../src/utils/service-logger';
+import { serviceLogger } from '../../../src/utils';
 
 // Schemas and Types for testing
 export const TestEntitySchema = z.object({
@@ -46,7 +46,7 @@ export class TestService extends BaseCrudService<
     protected createSchema = CreateTestEntitySchema;
     protected updateSchema = UpdateTestEntitySchema;
     protected searchSchema = SearchTestEntitySchema;
-    protected logger = serviceLogger;
+    protected logger: ServiceLogger = serviceLogger as ServiceLogger;
 
     /**
      * Homogeneous constructor: receives ctx and model (optional), like all services.
@@ -55,7 +55,7 @@ export class TestService extends BaseCrudService<
      */
     constructor(ctx: ServiceContext, model?: BaseModelDB<TestEntity>) {
         super(ctx, 'testEntity');
-        this.logger = ctx.logger;
+        this.logger = ctx.logger ?? serviceLogger;
         if (model) {
             this.model = model;
         } else {

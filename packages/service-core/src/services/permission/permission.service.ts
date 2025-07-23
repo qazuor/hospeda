@@ -10,6 +10,7 @@ import { ServiceErrorCode } from '@repo/types';
 import { BaseService } from '../../base/base.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { serviceLogger } from '../../utils';
 import { canManagePermissions } from './permission.service.permission';
 import {
     type AssignPermissionToRoleInput,
@@ -50,7 +51,7 @@ export class PermissionService extends BaseService {
         }
     ) {
         super(ctx, PermissionService.ENTITY_NAME);
-        this.logger = ctx.logger;
+        this.logger = ctx.logger ?? serviceLogger;
         this.rolePermissionModel = models.rolePermissionModel;
         this.userPermissionModel = models.userPermissionModel;
     }
