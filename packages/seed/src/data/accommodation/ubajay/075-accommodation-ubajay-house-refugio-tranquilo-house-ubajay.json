@@ -22,7 +22,10 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 3200,
+            "cleaning": {
+                "amount": 3200,
+                "currency": "ARS"
+            },
             "taxPercent": 21
         }
     },
@@ -32,7 +35,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.3569",
-            "lng": "-58.2976"
+            "long": "-58.2976"
         },
         "street": "Calle Los Tilos",
         "number": "88",
@@ -44,38 +47,38 @@
             "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
             "caption": "Casa en Ubajay",
             "description": "Vista exterior de Refugio Tranquilo House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la propiedad",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
                 "caption": "Living comedor",
                 "description": "Espacio integrado de living y comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -105,7 +108,7 @@
         ]
     },
     "seo": {
-        "title": "Refugio Tranquilo House - Casa en Ubajay para familias | El Palmar",
+        "title": "Refugio Tranquilo House - Casa en Ubajay para familias | El",
         "description": "Casa cómoda para 5 personas en barrio tranquilo de Ubajay. Parrilla, jardín. Cerca del centro y Parque Nacional El Palmar.",
         "keywords": [
             "casa",
@@ -143,7 +146,10 @@
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["016-tag-entre-rios"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

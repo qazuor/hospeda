@@ -27,11 +27,24 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21,
-            "towelRental": 400
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "towelRental": {
+                "price": 400,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 10
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -40,7 +53,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4740",
-            "lng": "-58.2310"
+            "long": "-58.2310"
         },
         "street": "Calle Eva Perón",
         "number": "680",
@@ -52,38 +65,38 @@
             "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
             "caption": "Interior del hostel",
             "description": "Dormitorio compartido luminoso",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
                 "caption": "Dormitorio 6 camas",
                 "description": "Habitación compartida con literas y lockers",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6969518/pexels-photo-6969518.jpeg",
                 "caption": "Habitación privada",
                 "description": "Habitación doble privada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina comunitaria amplia",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6957069/pexels-photo-6957069.jpeg",
                 "caption": "Living",
                 "description": "Sala de estar luminosa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/7005428/pexels-photo-7005428.jpeg",
                 "caption": "Patio",
                 "description": "Patio interior para socializar",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -116,7 +129,7 @@
         ]
     },
     "seo": {
-        "title": "Rincón Soleado Hostel - Céntrico y luminoso en Concepción del Uruguay",
+        "title": "Rincón Soleado Hostel - Céntrico y luminoso en Concepción",
         "description": "Hostel en el centro de Concepción del Uruguay. Dormitorios y privadas, cocina equipada, ambiente social. Ideal para mochileros.",
         "keywords": [
             "hostel",
@@ -174,5 +187,10 @@
         "039-tag-turismo",
         "011-tag-cultura",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

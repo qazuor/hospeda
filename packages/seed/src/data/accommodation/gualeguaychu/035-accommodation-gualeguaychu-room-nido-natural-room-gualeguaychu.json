@@ -25,7 +25,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -34,7 +39,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.0198",
-            "lng": "-58.5196"
+            "long": "-58.5196"
         },
         "street": "Calle Los Tilos",
         "number": "110",
@@ -46,26 +51,26 @@
             "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
             "caption": "Interior de la habitación",
             "description": "Vista de la habitación privada",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
                 "caption": "Habitación",
                 "description": "Dormitorio con cama doble",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
                 "caption": "Baño",
                 "description": "Baño compartido",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
                 "caption": "Espacio común",
                 "description": "Área con heladera y microondas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -95,7 +100,7 @@
         ]
     },
     "seo": {
-        "title": "Nido Natural - Habitación privada y económica en Gualeguaychú",
+        "title": "Nido Natural - Habitación privada y económica en",
         "description": "Habitación privada en casa familiar en Gualeguaychú. Económica, baño compartido, ambiente natural. Cerca centro y Carnaval.",
         "keywords": [
             "habitación",
@@ -137,5 +142,10 @@
         "027-tag-naturaleza",
         "039-tag-turismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

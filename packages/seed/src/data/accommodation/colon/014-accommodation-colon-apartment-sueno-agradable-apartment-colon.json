@@ -23,8 +23,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 2000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -33,7 +41,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2170",
-            "lng": "-58.1462"
+            "long": "-58.1462"
         },
         "street": "Calle 12 de Abril",
         "number": "550",
@@ -47,26 +55,26 @@
             "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
             "caption": "Interior del apartamento",
             "description": "Vista del área de estar y cocina",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
                 "caption": "Ambiente principal",
                 "description": "Espacio de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio con cama matrimonial",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina compacta equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -153,5 +161,10 @@
         "039-tag-turismo",
         "011-tag-cultura",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

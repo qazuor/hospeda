@@ -33,7 +33,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.0234",
-            "lng": "-57.8982"
+            "long": "-57.8982"
         },
         "street": "Camino al Bosque S/N",
         "number": "S/N",
@@ -45,32 +45,32 @@
             "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
             "caption": "Camping arbolado",
             "description": "Vista del área de acampe con árboles",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Acampe",
                 "description": "Espacio para carpas con sombra",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Parcelas",
                 "description": "Vista de las parcelas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Baños",
                 "description": "Instalaciones sanitarias",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1268076/pexels-photo-1268076.jpeg",
                 "caption": "Entorno",
                 "description": "Naturaleza cerca del camping",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -99,7 +99,7 @@
         ]
     },
     "seo": {
-        "title": "Retiro Natural Camping - Naturaleza y paz cerca de Federación | Termas",
+        "title": "Retiro Natural Camping - Naturaleza y paz cerca de",
         "description": "Camping arbolado en Federación. Parcelas tranquilas con parrilla. Ideal para amantes del camping y la naturaleza. Cerca del Parque Termal.",
         "keywords": [
             "camping",
@@ -150,5 +150,10 @@
         "005-tag-aventura",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

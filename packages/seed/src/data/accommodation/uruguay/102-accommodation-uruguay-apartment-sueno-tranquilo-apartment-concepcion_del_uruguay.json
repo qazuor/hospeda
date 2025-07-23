@@ -25,8 +25,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 2000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -35,7 +43,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4880",
-            "lng": "-58.2337"
+            "long": "-58.2337"
         },
         "street": "Calle Los Sauces",
         "number": "789",
@@ -49,32 +57,32 @@
             "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
             "caption": "Interior del apartamento",
             "description": "Vista del área de estar y cocina",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
                 "caption": "Living",
                 "description": "Espacio de living-comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio con cama doble",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
                 "caption": "Baño",
                 "description": "Baño completo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -103,7 +111,7 @@
         ]
     },
     "seo": {
-        "title": "Sueño Tranquilo - Apartamento sereno en Concepción del Uruguay",
+        "title": "Sueño Tranquilo - Apartamento sereno en Concepción del",
         "description": "Apartamento tranquilo y confortable en Concepción del Uruguay. Ideal para descanso. Cerca del centro y atracciones.",
         "keywords": [
             "apartamento",
@@ -148,5 +156,10 @@
         "011-tag-cultura",
         "032-tag-relax",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

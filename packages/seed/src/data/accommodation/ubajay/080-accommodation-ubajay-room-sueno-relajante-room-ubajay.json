@@ -22,7 +22,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -31,7 +36,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.3648",
-            "lng": "-58.2945"
+            "long": "-58.2945"
         },
         "street": "Calle Los Fresnos",
         "number": "120",
@@ -43,26 +48,26 @@
             "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
             "caption": "Interior de la habitación",
             "description": "Vista de la habitación privada",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
                 "caption": "Habitación",
                 "description": "Dormitorio con cama doble",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
                 "caption": "Baño",
                 "description": "Baño compartido",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
                 "caption": "Espacio común",
                 "description": "Área con heladera y microondas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -92,7 +97,7 @@
         ]
     },
     "seo": {
-        "title": "Sueño Relajante - Habitación privada y tranquila en Ubajay | El Palmar",
+        "title": "Sueño Relajante - Habitación privada y tranquila en Ubajay",
         "description": "Habitación privada económica y serena en casa familiar en Ubajay. Baño compartido, acceso a cocina básica. Ideal para descansar. Cerca El Palmar.",
         "keywords": [
             "habitación",
@@ -131,5 +136,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

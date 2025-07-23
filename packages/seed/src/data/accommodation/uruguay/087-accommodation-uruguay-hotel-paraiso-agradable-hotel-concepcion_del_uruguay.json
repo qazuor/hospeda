@@ -29,7 +29,10 @@
             "taxPercent": 21
         },
         "discounts": {
-            "weekly": 10
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -38,7 +41,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4859",
-            "lng": "-58.2254"
+            "long": "-58.2254"
         },
         "street": "Calle Alem",
         "number": "350",
@@ -50,38 +53,38 @@
             "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
             "caption": "Fachada del hotel",
             "description": "Vista exterior de Paraíso Agradable Hotel",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
                 "caption": "Exterior",
                 "description": "Vista frontal del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación Standard",
                 "description": "Habitación doble standard",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación Superior",
                 "description": "Habitación superior más amplia",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Piscina",
                 "description": "Área de piscina y solárium",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Salón desayunador",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -113,7 +116,7 @@
         ]
     },
     "seo": {
-        "title": "Paraíso Agradable Hotel - Confort y piscina en Concepción del Uruguay",
+        "title": "Paraíso Agradable Hotel - Confort y piscina en Concepción",
         "description": "Hotel cómodo con piscina en Concepción del Uruguay. Habitaciones confortables, desayuno incluido. Buena ubicación cerca del centro.",
         "keywords": [
             "hotel",
@@ -155,10 +158,10 @@
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "017-tag-familia",
-        "039-tag-turismo",
-        "011-tag-cultura",
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

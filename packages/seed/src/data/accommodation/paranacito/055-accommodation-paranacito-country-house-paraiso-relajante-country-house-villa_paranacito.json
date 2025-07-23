@@ -22,11 +22,17 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 5500,
+            "cleaning": {
+                "amount": 5500,
+                "currency": "ARS"
+            },
             "taxPercent": 21
         },
         "discounts": {
-            "weekly": 15
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -35,7 +41,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.7014",
-            "lng": "-58.6602"
+            "long": "-58.6602"
         },
         "street": "Camino Rural Delta S/N",
         "number": "S/N",
@@ -47,50 +53,50 @@
             "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
             "caption": "Casa de campo con piscina",
             "description": "Vista exterior de Paraíso Relajante Country House con piscina",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
                 "caption": "Living",
                 "description": "Living-comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
                 "caption": "Piscina",
                 "description": "Piscina exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
                 "caption": "Asador",
                 "description": "Área de asador con galería",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
                 "caption": "Jardín",
                 "description": "Jardín amplio",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -123,7 +129,7 @@
         ]
     },
     "seo": {
-        "title": "Paraíso Relajante - Casa de Campo con Piscina cerca de Paranacito | Delta",
+        "title": "Paraíso Relajante - Casa de Campo con Piscina cerca de",
         "description": "Casa de campo con piscina y parque grande cerca de Paranacito. Ideal para familias y grupos. Quincho con asador. Acceso al Delta.",
         "keywords": [
             "casa de campo",
@@ -175,7 +181,10 @@
         }
     ],
     "iaData": [],
-    "tagIds": [
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["016-tag-entre-rios"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

@@ -34,7 +34,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.0080",
-            "lng": "-57.9029"
+            "long": "-57.9029"
         },
         "street": "Calle Los Robles",
         "number": "50",
@@ -46,32 +46,32 @@
             "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
             "caption": "Fachada del hostel",
             "description": "Vista exterior de Nido Tranquilo Hostel",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
                 "caption": "Exterior",
                 "description": "Entrada al hostel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
                 "caption": "Habitación compartida",
                 "description": "Dormitorio con literas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina comunitaria",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6957069/pexels-photo-6957069.jpeg",
                 "caption": "Sala común",
                 "description": "Área de estar",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -146,5 +146,10 @@
         "039-tag-turismo",
         "011-tag-cultura",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

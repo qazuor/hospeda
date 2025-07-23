@@ -28,13 +28,30 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 3500,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 3500,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 10,
-            "monthly": 25,
-            "lastMinute": 15
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 25,
+                "minNights": 30
+            },
+            "lastMinute": {
+                "percentage": 15,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -43,7 +60,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2280",
-            "lng": "-58.1590"
+            "long": "-58.1590"
         },
         "street": "Calle Los Sauces",
         "number": "258",
@@ -55,56 +72,56 @@
             "url": "https://images.pexels.com/photos/3389531/pexels-photo-3389531.jpeg",
             "caption": "Fachada principal",
             "description": "Vista frontal de la cabaña con su jardín y galería",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/3389531/pexels-photo-3389531.jpeg",
                 "caption": "Fachada",
                 "description": "Vista exterior de la cabaña",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg",
                 "caption": "Sala de estar",
                 "description": "Sala de estar con sofá y vista al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1080696/pexels-photo-1080696.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada integrada a la sala de estar",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/545012/pexels-photo-545012.jpeg",
                 "caption": "Dormitorio principal",
                 "description": "Dormitorio principal con cama queen",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6585598/pexels-photo-6585598.jpeg",
                 "caption": "Entrepiso",
                 "description": "Entrepiso con dos camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
                 "caption": "Baño",
                 "description": "Baño completo con ducha",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2253643/pexels-photo-2253643.jpeg",
                 "caption": "Galería con asador",
                 "description": "Galería exterior techada con asador y mesa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2559941/pexels-photo-2559941.jpeg",
                 "caption": "Jardín",
                 "description": "Jardín privado con hamacas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -136,7 +153,7 @@
         ]
     },
     "seo": {
-        "title": "Cabaña del Río - Alojamiento a 300m del río Uruguay en Colón, Entre Ríos",
+        "title": "Cabaña del Río - Alojamiento a 300m del río Uruguay en",
         "description": "Acogedora cabaña para 4 personas cerca del río Uruguay en Colón, con galería, asador y jardín privado. Ideal para familias y parejas.",
         "keywords": [
             "cabaña",
@@ -236,5 +253,10 @@
         "032-tag-relax",
         "029-tag-pareja",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

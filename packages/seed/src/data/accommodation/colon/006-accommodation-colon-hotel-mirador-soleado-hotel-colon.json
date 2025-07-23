@@ -22,11 +22,24 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21,
-            "parking": 2000
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "parking": {
+                "price": 2000,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "monthly": 15
+            "monthly": {
+                "percentage": 15,
+                "minNights": 30
+            }
         }
     },
     "location": {
@@ -35,7 +48,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2320",
-            "lng": "-58.1554"
+            "long": "-58.1554"
         },
         "street": "Calle Mitre",
         "number": "980",
@@ -47,44 +60,44 @@
             "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
             "caption": "Hotel moderno",
             "description": "Fachada del Mirador Soleado Hotel",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
                 "caption": "Exterior",
                 "description": "Vista frontal del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación Standard",
                 "description": "Habitación doble standard",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg",
                 "caption": "Suite con vista",
                 "description": "Suite con balcón y vista al río",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
                 "caption": "Lobby",
                 "description": "Área de recepción y estar",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104881/pexels-photo-2104881.jpeg",
                 "caption": "Piscina en rooftop",
                 "description": "Piscina en la terraza con vistas panorámicas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/244133/pexels-photo-244133.jpeg",
                 "caption": "Restaurante",
                 "description": "Salón comedor del restaurante",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -117,7 +130,7 @@
         ]
     },
     "seo": {
-        "title": "Mirador Soleado Hotel - Vistas panorámicas en Colón, Entre Ríos",
+        "title": "Mirador Soleado Hotel - Vistas panorámicas en Colón, Entre",
         "description": "Hotel moderno con rooftop y piscina en Colón. Vistas al río, habitaciones confortables, restaurante. Cerca del centro y costanera.",
         "keywords": [
             "hotel",
@@ -184,5 +197,10 @@
             "category": "amenities"
         }
     ],
-    "iaData": []
+    "iaData": [],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

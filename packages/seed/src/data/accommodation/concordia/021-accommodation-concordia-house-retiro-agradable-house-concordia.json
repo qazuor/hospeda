@@ -26,8 +26,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 3200,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 3200,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -36,7 +44,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.3980",
-            "lng": "-58.0218"
+            "long": "-58.0218"
         },
         "street": "Calle Las Rosas",
         "number": "55",
@@ -48,38 +56,38 @@
             "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
             "caption": "Fachada de la casa",
             "description": "Vista exterior de Retiro Agradable House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la propiedad",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
                 "caption": "Living comedor",
                 "description": "Espacio integrado de living y comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -158,5 +166,10 @@
         "027-tag-naturaleza",
         "032-tag-relax",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

@@ -27,8 +27,18 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21,
-            "perPerson": 1700
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "perPerson": {
+                "price": 1700,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -37,7 +47,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.3673",
-            "lng": "-58.2983"
+            "long": "-58.2983"
         },
         "street": "Camino al Arroyo S/N",
         "number": "S/N",
@@ -49,32 +59,32 @@
             "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
             "caption": "Camping junto al arroyo",
             "description": "Vista del área de acampe con acceso al arroyo",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
                 "caption": "Arroyo",
                 "description": "Acceso al arroyo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Acampe",
                 "description": "Espacio para carpas con sombra",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Parcelas",
                 "description": "Vista de las parcelas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Baños",
                 "description": "Instalaciones sanitarias",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -102,7 +112,7 @@
         ]
     },
     "seo": {
-        "title": "Rincón Agradable Camping - Naturaleza y arroyo en Ubajay | El Palmar",
+        "title": "Rincón Agradable Camping - Naturaleza y arroyo en Ubajay ",
         "description": "Camping a orillas de un arroyo en Ubajay. Ideal para pesca y relax. Parcelas con sombra y parrilla. Cerca del Parque Nacional El Palmar.",
         "keywords": [
             "camping",
@@ -143,5 +153,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

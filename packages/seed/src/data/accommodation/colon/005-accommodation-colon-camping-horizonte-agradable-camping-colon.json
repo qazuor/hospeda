@@ -36,7 +36,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2134",
-            "lng": "-58.1445"
+            "long": "-58.1445"
         },
         "street": "Ribera del Uruguay",
         "number": "S/N",
@@ -48,32 +48,32 @@
             "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
             "caption": "Vista del camping",
             "description": "Zona de acampe con vista al río",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Parcelas con sombra",
                 "description": "Espacios para carpas bajo los árboles",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Área de acampe",
                 "description": "Vista general de la zona de carpas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Sanitarios",
                 "description": "Instalaciones de baños y duchas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg",
                 "caption": "Río Uruguay",
                 "description": "Acceso a la playa del río",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -102,7 +102,7 @@
         ]
     },
     "seo": {
-        "title": "Horizonte Agradable Camping - Camping a orillas del río en Colón",
+        "title": "Horizonte Agradable Camping - Camping a orillas del río en",
         "description": "Camping tranquilo en Colón con acceso directo al río Uruguay. Parcelas con sombra, parrilla, baños. Ideal para campistas.",
         "keywords": [
             "camping",
@@ -157,5 +157,10 @@
         "005-tag-aventura",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

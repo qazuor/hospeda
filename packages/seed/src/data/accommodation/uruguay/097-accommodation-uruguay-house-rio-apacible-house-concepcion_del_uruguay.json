@@ -22,8 +22,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 3500,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 3500,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -32,7 +40,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4839",
-            "lng": "-58.2254"
+            "long": "-58.2254"
         },
         "street": "Calle del Puerto",
         "number": "180",
@@ -44,38 +52,38 @@
             "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
             "caption": "Casa simple y acogedora",
             "description": "Vista exterior de Rio Apacible House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
                 "caption": "Living comedor",
                 "description": "Espacio integrado de living y comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -104,7 +112,7 @@
         ]
     },
     "seo": {
-        "title": "Rio Apacible House - Casa tranquila cerca del río en Concepción del Uruguay",
+        "title": "Rio Apacible House - Casa tranquila cerca del río en",
         "description": "Casa cómoda para 5 personas cerca de la costanera en Concepción del Uruguay. Entorno apacible, parrilla. Ideal vacaciones familiares.",
         "keywords": [
             "casa",
@@ -145,5 +153,10 @@
         "027-tag-naturaleza",
         "032-tag-relax",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

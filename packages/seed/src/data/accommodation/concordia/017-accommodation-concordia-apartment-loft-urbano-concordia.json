@@ -26,13 +26,30 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 3000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 3000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 10,
-            "monthly": 20,
-            "lastMinute": 15
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 20,
+                "minNights": 30
+            },
+            "lastMinute": {
+                "percentage": 15,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -41,7 +58,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.3918",
-            "lng": "-58.0181"
+            "long": "-58.0181"
         },
         "street": "Calle Urquiza",
         "number": "568",
@@ -55,56 +72,56 @@
             "url": "https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg",
             "caption": "Interior del loft",
             "description": "Amplio espacio abierto con decoración moderna y luminosa",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg",
                 "caption": "Espacio principal",
                 "description": "Vista general del loft con sus diferentes ambientes",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1571458/pexels-photo-1571458.jpeg",
                 "caption": "Área de descanso",
                 "description": "Cama queen size con iluminación ambiental",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1571463/pexels-photo-1571463.jpeg",
                 "caption": "Zona de estar",
                 "description": "Sofá, TV y área de trabajo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062426/pexels-photo-2062426.jpeg",
                 "caption": "Cocina equipada",
                 "description": "Cocina completa con barra desayunador",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2111768/pexels-photo-2111768.jpeg",
                 "caption": "Baño moderno",
                 "description": "Baño con ducha y amenities",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2079249/pexels-photo-2079249.jpeg",
                 "caption": "Área de trabajo",
                 "description": "Escritorio con buena iluminación y conectividad",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2631746/pexels-photo-2631746.jpeg",
                 "caption": "Detalle decorativo",
                 "description": "Elementos de diseño industrial que caracterizan el espacio",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1001682/pexels-photo-1001682.jpeg",
                 "caption": "Vista desde la ventana",
                 "description": "Vista urbana desde el loft",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ],
         "videos": [
@@ -112,7 +129,7 @@
                 "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 "caption": "Tour virtual",
                 "description": "Recorrido completo por el loft",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -144,7 +161,7 @@
         ]
     },
     "seo": {
-        "title": "Loft Urbano Concordia | Apartamento Moderno en Centro de Concordia",
+        "title": "Loft Urbano Concordia | Apartamento Moderno en Centro de",
         "description": "Alquila este loft moderno en pleno centro de Concordia, a minutos de la peatonal y principales atracciones. Diseño contemporáneo, totalmente equipado.",
         "keywords": [
             "loft",
@@ -241,5 +258,10 @@
         "017-tag-familia",
         "039-tag-turismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

@@ -1,7 +1,7 @@
 {
     "id": "086-accommodation-uruguay-country-house-nido-silvestre-country-house-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
-    "slug": "nido-silvestre-country-house-concepcion_del_uruguay",
+    "slug": "nido-silvestre-country-house-concepcion_del_urugua",
     "name": "nido-silvestre-country-house",
     "summary": "Adéntrate en la naturaleza salvaje en Nido Silvestre, una casa de campo ubicada en un entorno más agreste y natural cerca de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
@@ -27,8 +27,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 4000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 4000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -37,7 +45,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4825",
-            "lng": "-58.2295"
+            "long": "-58.2295"
         },
         "street": "Camino a Estancia S/N",
         "number": "S/N",
@@ -49,38 +57,38 @@
             "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
             "caption": "Casa rústica en la naturaleza",
             "description": "Vista exterior de Nido Silvestre Country House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa rústica",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
                 "caption": "Interior",
                 "description": "Espacio integrado de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio simple",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla rústica",
                 "description": "Área de parrilla exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1268076/pexels-photo-1268076.jpeg",
                 "caption": "Entorno natural",
                 "description": "Paisaje rural con vegetación nativa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -110,7 +118,7 @@
         ]
     },
     "seo": {
-        "title": "Nido Silvestre - Casa de Campo aislada en Concepción del Uruguay",
+        "title": "Nido Silvestre - Casa de Campo aislada en Concepción del",
         "description": "Casa de campo rústica en entorno natural cerca de Concepción del Uruguay. Ideal para desconexión, observación de aves y tranquilidad absoluta.",
         "keywords": [
             "casa de campo",
@@ -181,5 +189,10 @@
         "032-tag-relax",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

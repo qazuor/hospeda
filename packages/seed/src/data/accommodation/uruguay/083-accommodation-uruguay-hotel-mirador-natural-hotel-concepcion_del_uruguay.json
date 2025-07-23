@@ -37,7 +37,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4912",
-            "lng": "-58.2256"
+            "long": "-58.2256"
         },
         "street": "Avenida Costanera",
         "number": "1500",
@@ -49,38 +49,38 @@
             "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
             "caption": "Fachada y entorno del hotel",
             "description": "Vista exterior del Mirador Natural Hotel con vegetación",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
                 "caption": "Exterior",
                 "description": "Vista del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Piscina",
                 "description": "Área de piscina y solárium con vista",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación con balcón",
                 "description": "Habitación con balcón y vista",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Vista desde la habitación",
                 "description": "Vista al río desde un balcón",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Salón desayunador con vista al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -112,7 +112,7 @@
         ]
     },
     "seo": {
-        "title": "Mirador Natural Hotel - Vistas al río en Concepción del Uruguay",
+        "title": "Mirador Natural Hotel - Vistas al río en Concepción del",
         "description": "Hotel con vistas panorámicas al río Uruguay en Concepción del Uruguay. Piscina, desayuno, habitaciones con balcón. Cerca de la costanera.",
         "keywords": [
             "hotel",
@@ -173,5 +173,10 @@
         "027-tag-naturaleza",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

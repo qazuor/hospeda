@@ -26,11 +26,22 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2500,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 2500,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "lastMinute": 10
+            "lastMinute": {
+                "percentage": 10,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -39,7 +50,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2213",
-            "lng": "-58.1488"
+            "long": "-58.1488"
         },
         "street": "Los Algarrobos",
         "number": "S/N",
@@ -51,32 +62,32 @@
             "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
             "caption": "Cabaña acogedora",
             "description": "Vista exterior de Retiro Agradable Cabaña",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la cabaña",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
                 "caption": "Interior",
                 "description": "Área de estar y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio principal",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -106,7 +117,7 @@
         ]
     },
     "seo": {
-        "title": "Retiro Agradable - Cabaña cerca de Colón, Entre Ríos | Escapada",
+        "title": "Retiro Agradable - Cabaña cerca de Colón, Entre Ríos ",
         "description": "Cabaña acogedora para 4 personas cerca de Colón. Ideal para una escapada tranquila. Parrilla, jardín. Rápido acceso a atracciones.",
         "keywords": [
             "cabaña",
@@ -156,5 +167,10 @@
         "032-tag-relax",
         "029-tag-pareja",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

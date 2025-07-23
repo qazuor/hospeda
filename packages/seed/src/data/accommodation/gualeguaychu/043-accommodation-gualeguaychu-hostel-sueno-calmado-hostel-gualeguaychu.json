@@ -28,7 +28,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -37,7 +42,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.0164",
-            "lng": "-58.5222"
+            "long": "-58.5222"
         },
         "street": "Calle Los Eucaliptus",
         "number": "80",
@@ -49,32 +54,32 @@
             "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
             "caption": "Fachada del hostel",
             "description": "Vista exterior de Sueño Calmado Hostel",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
                 "caption": "Exterior",
                 "description": "Entrada al hostel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
                 "caption": "Habitación compartida",
                 "description": "Dormitorio con literas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina comunitaria",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6957069/pexels-photo-6957069.jpeg",
                 "caption": "Sala común",
                 "description": "Área de estar",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -106,7 +111,7 @@
         ]
     },
     "seo": {
-        "title": "Sueño Calmado Hostel - Alojamiento económico y tranquilo en Gualeguaychú | Carnaval",
+        "title": "Sueño Calmado Hostel - Alojamiento económico y tranquilo en",
         "description": "Hostel para viajeros en Gualeguaychú. Dormitorios compartidos, habitaciones privadas, cocina comunitaria. Ambiente tranquilo, cerca Carnaval.",
         "keywords": [
             "hostel",
@@ -144,5 +149,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

@@ -26,8 +26,18 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21,
-            "perPerson": 1800
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "perPerson": {
+                "price": 1800,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -36,7 +46,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.3912",
-            "lng": "-58.0143"
+            "long": "-58.0143"
         },
         "street": "Ruta 015 Km 8",
         "number": "S/N",
@@ -48,32 +58,32 @@
             "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
             "caption": "Camping arbolado",
             "description": "Vista del área de acampe con árboles",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Acampe",
                 "description": "Espacio para carpas con sombra",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Parcelas",
                 "description": "Vista de las parcelas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Baños",
                 "description": "Instalaciones sanitarias",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
                 "caption": "Entorno",
                 "description": "Naturaleza cerca del camping",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -101,7 +111,7 @@
         ]
     },
     "seo": {
-        "title": "Paraíso Apacible Camping - Tranquilidad cerca del Lago Salto Grande, Concordia",
+        "title": "Paraíso Apacible Camping - Tranquilidad cerca del Lago",
         "description": "Camping tranquilo y arbolado cerca del Lago Salto Grande en Concordia. Parcelas con parrilla. Ideal para amantes de la pesca y actividades náuticas.",
         "keywords": [
             "camping",
@@ -158,5 +168,10 @@
         "015-tag-ecoturismo",
         "032-tag-relax",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

@@ -25,11 +25,24 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21,
-            "perPerson": 2200
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "perPerson": {
+                "price": 2200,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 10
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -38,7 +51,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.7732",
-            "lng": "-58.8313"
+            "long": "-58.8313"
         },
         "street": "Camino a Isla S/N",
         "number": "S/N",
@@ -50,32 +63,32 @@
             "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
             "caption": "Camping a orillas del río",
             "description": "Vista del camping con acceso al río",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
                 "caption": "Río",
                 "description": "Acceso al brazo del río",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Acampe",
                 "description": "Espacio para carpas con sombra",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Parcelas",
                 "description": "Vista de las parcelas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Baños",
                 "description": "Instalaciones sanitarias",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -103,7 +116,7 @@
         ]
     },
     "seo": {
-        "title": "Rio Encantado Camping - Delta entrerriano en Ibicuy | Pesca y Naturaleza",
+        "title": "Rio Encantado Camping - Delta entrerriano en Ibicuy | Pesca",
         "description": "Camping a orillas del río en Ibicuy, Delta entrerriano. Ideal para pesca y actividades náuticas. Parcelas con sombra y parrilla.",
         "keywords": [
             "camping",
@@ -166,5 +179,10 @@
     ],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

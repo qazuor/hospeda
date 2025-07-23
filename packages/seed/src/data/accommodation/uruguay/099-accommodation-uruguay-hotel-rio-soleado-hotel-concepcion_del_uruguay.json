@@ -37,7 +37,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4834",
-            "lng": "-58.2344"
+            "long": "-58.2344"
         },
         "street": "Calle Artigas",
         "number": "50",
@@ -49,38 +49,38 @@
             "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
             "caption": "Fachada del hotel",
             "description": "Vista exterior del Rio Soleado Hotel",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271623/pexels-photo-271623.jpeg",
                 "caption": "Exterior",
                 "description": "Vista frontal del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación",
                 "description": "Habitación doble",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación con vista",
                 "description": "Habitación con vista parcial al río",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Área de desayuno",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104881/pexels-photo-2104881.jpeg",
                 "caption": "Terraza",
                 "description": "Terraza con solárium",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -112,7 +112,7 @@
         ]
     },
     "seo": {
-        "title": "Rio Soleado Hotel - A una cuadra de la costanera en Concepción del Uruguay",
+        "title": "Rio Soleado Hotel - A una cuadra de la costanera en",
         "description": "Hotel moderno y luminoso cerca del río Uruguay en Concepción del Uruguay. Habitaciones con vista, desayuno incluido. Cerca de costanera y centro.",
         "keywords": [
             "hotel",
@@ -165,10 +165,10 @@
         }
     ],
     "iaData": [],
-    "tagIds": [
-        "017-tag-familia",
-        "039-tag-turismo",
-        "011-tag-cultura",
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

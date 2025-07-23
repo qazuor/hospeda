@@ -26,7 +26,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -35,7 +40,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.7056",
-            "lng": "-58.6551"
+            "long": "-58.6551"
         },
         "street": "Ribera del Paraná S/N",
         "number": "S/N",
@@ -47,38 +52,38 @@
             "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
             "caption": "Fachada y entorno del hotel",
             "description": "Vista exterior de Mirador Maravilloso Hotel con vistas al río",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
                 "caption": "Exterior",
                 "description": "Vista frontal del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Piscina",
                 "description": "Área de piscina y solárium con vista",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación con balcón",
                 "description": "Habitación con balcón y vista parcial al río",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Vista desde la habitación",
                 "description": "Vista al Delta desde un balcón",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Salón desayunador con vista",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -109,7 +114,7 @@
         ]
     },
     "seo": {
-        "title": "Mirador Maravilloso Hotel - Vistas al río en Paranacito | Delta",
+        "title": "Mirador Maravilloso Hotel - Vistas al río en Paranacito ",
         "description": "Hotel con vistas panorámicas al río y Delta en Paranacito. Piscina, desayuno, habitaciones con balcón. Ideal para amantes de la naturaleza y pesca.",
         "keywords": [
             "hotel",
@@ -162,5 +167,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }
