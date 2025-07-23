@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "021-destinationReview-paranacito",
     "userId": "008-user-lucas-fernandez",
-    "destinationId": "paranacito",
+    "destinationId": "008-destination-paranacito",
     "title": "Perfecto para turismo de naturaleza",
     "content": "Si buscas conectar con la naturaleza, este es tu Paraná Cito. Los paisajes son espectaculares, hay muchas actividades al aire libre y el ambiente es muy tranquilo. Ideal para fotografía y senderismo.",
     "rating": {

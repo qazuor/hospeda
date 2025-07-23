@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "011-destinationReview-federacion",
     "userId": "005-user-miguel-torres",
-    "destinationId": "federacion",
+    "destinationId": "004-destination-federacion",
     "title": "Excelente destino para descansar",
     "content": "Un Federación perfecto para escapar del estrés diario. La naturaleza es impresionante y las actividades son muy variadas. La gastronomía local es excelente y la gente muy amable. Definitivamente regresaré pronto.",
     "rating": {

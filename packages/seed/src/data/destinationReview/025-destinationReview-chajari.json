@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "025-destinationReview-chajari",
     "userId": "003-user-usuario-invitado",
-    "destinationId": "chajari",
+    "destinationId": "001-destination-chajari",
     "title": "Muy buena experiencia familiar",
     "content": "Viajamos en familia y todos quedamos encantados. Hay actividades para todas las edades, los espacios son seguros y la infraestructura está bien mantenida. Los precios son razonables y el servicio es cordial.",
     "rating": {

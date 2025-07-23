@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "005-destinationReview-gualeguaychu",
     "userId": "004-user-ana-rodríguez",
-    "destinationId": "gualeguaychu",
+    "destinationId": "005-destination-gualeguaychu",
     "title": "Referente turístico de Entre Ríos",
     "content": "Como profesional del turismo, puedo decir que Gualeguaychú es uno de los destinos más completos de la región. La combinación de Carnaval, termas, historia y naturaleza es única. La infraestructura turística es sólida, con buena variedad de alojamientos y restaurantes. Los eventos culturales son de alta calidad y la promoción turística es excelente. Es un modelo de desarrollo turístico que otras ciudades podrían seguir.",
     "rating": {

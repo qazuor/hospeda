@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "010-destinationReview-concordia",
     "userId": "005-user-miguel-torres",
-    "destinationId": "concordia",
+    "destinationId": "003-destination-concordia",
     "title": "Capital de la citricultura con encanto",
     "content": "Concordia me sorprendió gratamente. No esperaba encontrar una ciudad tan verde y ordenada. El festival de la citricultura es impresionante, con una organización excelente. Las termas son muy buenas, aunque no tan conocidas como las de Federación. La arquitectura del centro es interesante y los parques son hermosos. La gastronomía local, especialmente los productos cítricos, es única. Es un destino que merece más promoción turística.",
     "rating": {

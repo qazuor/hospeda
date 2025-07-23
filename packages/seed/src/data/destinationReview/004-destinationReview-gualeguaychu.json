@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "004-destinationReview-gualeguaychu",
     "userId": "002-user-carlos-martínez",
-    "destinationId": "gualeguaychu",
+    "destinationId": "005-destination-gualeguaychu",
     "title": "Buen destino pero saturado en temporada",
     "content": "Gualeguaychú tiene mucho potencial, pero la masificación durante el Carnaval afecta la experiencia. La ciudad es linda y tiene atractivos interesantes, pero la infraestructura se ve sobrepasada en los picos de temporada. Los precios se disparan y es difícil disfrutar con tranquilidad. Recomendaría visitarla fuera de temporada alta para apreciar mejor su encanto y evitar las multitudes.",
     "rating": {

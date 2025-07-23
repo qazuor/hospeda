@@ -1,8 +1,8 @@
 {
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "032-destinationReview-san-jose",
-    "userId": "moderator-user-67890",
-    "destinationId": "san-jose",
+    "userId": "003-user-usuario-invitado",
+    "destinationId": "009-destination-san-jose",
     "title": "Perfecto para turismo de naturaleza",
     "content": "Si buscas conectar con la naturaleza, este es tu San José. Los paisajes son espectaculares, hay muchas actividades al aire libre y el ambiente es muy tranquilo. Ideal para fotografía y senderismo.",
     "rating": {

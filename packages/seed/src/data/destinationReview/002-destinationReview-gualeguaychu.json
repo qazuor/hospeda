@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "002-destinationReview-gualeguaychu",
     "userId": "003-user-usuario-invitado",
-    "destinationId": "gualeguaychu",
+    "destinationId": "005-destination-gualeguaychu",
     "title": "Excelente destino familiar",
     "content": "Visitamos Gualeguaychú en familia y fue una experiencia fantástica. Los niños se divirtieron mucho en las termas y disfrutaron del Carnaval. La ciudad es muy segura para caminar con niños y hay muchas actividades para toda la familia. Los parques son hermosos y la costanera es perfecta para pasear. La única dificultad fue encontrar estacionamiento durante los eventos principales, pero en general fue un viaje muy exitoso.",
     "rating": {

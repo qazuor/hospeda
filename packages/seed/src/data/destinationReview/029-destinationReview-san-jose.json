@@ -1,8 +1,8 @@
 {
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "029-destinationReview-san-jose",
-    "userId": "guest-user-12345",
-    "destinationId": "san-jose",
+    "userId": "005-user-miguel-torres",
+    "destinationId": "009-destination-san-jose",
     "title": "Experiencia cultural enriquecedora",
     "content": "Un destino que sorprende por su riqueza cultural e histórica. Los museos y sitios de interés están bien conservados. La oferta gastronómica es variada y los eventos locales son muy interesantes.",
     "rating": {

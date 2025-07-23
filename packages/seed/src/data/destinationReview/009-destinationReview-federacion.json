@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "009-destinationReview-federacion",
     "userId": "006-user-laura-vega",
-    "destinationId": "federacion",
+    "destinationId": "004-destination-federacion",
     "title": "Destino termal de excelencia",
     "content": "Como moderadora, he visitado muchos destinos termales y Federación se destaca por su calidad. Las instalaciones termales son de primera categoría, con aguas de excelente calidad terapéutica. La infraestructura turística es adecuada y bien mantenida. El entorno natural del lago Salto Grande es impresionante. Es un destino que cumple con todas las expectativas para el turismo de salud y bienestar. Lo recomiendo especialmente para personas que buscan tratamientos termales serios.",
     "rating": {

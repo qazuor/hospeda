@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "019-destinationReview-gualeguaychu",
     "userId": "006-user-laura-vega",
-    "destinationId": "gualeguaychu",
+    "destinationId": "005-destination-gualeguaychu",
     "title": "Perfecto para turismo de naturaleza",
     "content": "Si buscas conectar con la naturaleza, este es tu Gualeguaychú. Los paisajes son espectaculares, hay muchas actividades al aire libre y el ambiente es muy tranquilo. Ideal para fotografía y senderismo.",
     "rating": {
