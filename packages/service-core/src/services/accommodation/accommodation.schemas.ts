@@ -1,5 +1,6 @@
 import {
     AccommodationFaqSchema,
+    AccommodationIaDataSchema,
     AccommodationSchema,
     BaseSearchSchema,
     UserIdSchema
@@ -240,6 +241,62 @@ export const GetFaqsInputSchema = z
     })
     .strict();
 
+/**
+ * Schema for adding AI data to an accommodation.
+ */
+export const AddIADataInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        iaData: AccommodationIaDataSchema.omit({
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            createdById: true,
+            updatedById: true,
+            lifecycleState: true,
+            adminInfo: true
+        })
+    })
+    .strict();
+
+/**
+ * Schema for removing AI data from an accommodation.
+ */
+export const RemoveIADataInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        iaDataId: z.string().uuid()
+    })
+    .strict();
+
+/**
+ * Schema for updating AI data for an accommodation.
+ */
+export const UpdateIADataInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        iaDataId: z.string().uuid(),
+        iaData: AccommodationIaDataSchema.omit({
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            createdById: true,
+            updatedById: true,
+            lifecycleState: true,
+            adminInfo: true
+        })
+    })
+    .strict();
+
+/**
+ * Schema for getting AI data for an accommodation.
+ */
+export const GetIADataInputSchema = z
+    .object({
+        accommodationId: z.string().uuid()
+    })
+    .strict();
+
 // --- Inferred Types ---
 
 /** @see SearchAccommodationFiltersSchema */
@@ -274,3 +331,8 @@ export type RemoveFaqInput = z.infer<typeof RemoveFaqInputSchema>;
 export type UpdateFaqInput = z.infer<typeof UpdateFaqInputSchema>;
 /** @see GetFaqsInputSchema */
 export type GetFaqsInput = z.infer<typeof GetFaqsInputSchema>;
+
+export type AddIADataInput = z.infer<typeof AddIADataInputSchema>;
+export type RemoveIADataInput = z.infer<typeof RemoveIADataInputSchema>;
+export type UpdateIADataInput = z.infer<typeof UpdateIADataInputSchema>;
+export type GetIADataInput = z.infer<typeof GetIADataInputSchema>;
