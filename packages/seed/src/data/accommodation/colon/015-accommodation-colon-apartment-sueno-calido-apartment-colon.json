@@ -27,8 +27,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2500,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 2500,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -37,7 +45,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2185",
-            "lng": "-58.1465"
+            "long": "-58.1465"
         },
         "street": "Calle San Martín",
         "number": "1230",
@@ -51,26 +59,26 @@
             "url": "https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg",
             "caption": "Interior del apartamento",
             "description": "Vista del living y dormitorio",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg",
                 "caption": "Ambiente principal",
                 "description": "Espacio integrado de living y dormitorio",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062430/pexels-photo-2062430.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada con horno",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
                 "caption": "Baño",
                 "description": "Baño completo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -100,7 +108,7 @@
         ]
     },
     "seo": {
-        "title": "Sueño Cálido Apartamento - Cómodo alojamiento en Colón, Entre Ríos",
+        "title": "Sueño Cálido Apartamento - Cómodo alojamiento en Colón",
         "description": "Apartamento cálido y equipado para 4 personas en Colón. Ubicación tranquila cerca del centro y las termas. Wifi, A/C.",
         "keywords": [
             "apartamento",
@@ -159,5 +167,10 @@
         "039-tag-turismo",
         "011-tag-cultura",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

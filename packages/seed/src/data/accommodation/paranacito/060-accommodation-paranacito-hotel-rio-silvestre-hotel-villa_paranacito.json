@@ -28,7 +28,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -37,7 +42,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.7069",
-            "lng": "-58.6588"
+            "long": "-58.6588"
         },
         "street": "Avenida Costanera S/N",
         "number": "S/N",
@@ -49,38 +54,38 @@
             "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
             "caption": "Fachada y entorno natural del hotel",
             "description": "Vista exterior de Rio Silvestre Hotel rodeado de vegetación",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
                 "caption": "Exterior",
                 "description": "Vista frontal del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Piscina",
                 "description": "Área de piscina y solárium con vista al entorno",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación doble",
                 "description": "Habitación con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación triple",
                 "description": "Habitación con cama matrimonial y una individual",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Salón desayunador con vista al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -112,7 +117,7 @@
         ]
     },
     "seo": {
-        "title": "Rio Silvestre Hotel - Naturaleza y piscina en Paranacito | Delta",
+        "title": "Rio Silvestre Hotel - Naturaleza y piscina en Paranacito ",
         "description": "Hotel con jardín y piscina en Paranacito. Ideal para relax, cerca del Delta. Desayuno incluido.",
         "keywords": [
             "hotel",
@@ -158,5 +163,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

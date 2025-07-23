@@ -24,12 +24,26 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15,
-            "monthly": 25,
-            "lastMinute": 10
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 25,
+                "minNights": 30
+            },
+            "lastMinute": {
+                "percentage": 10,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -38,7 +52,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.0149",
-            "lng": "-58.5242"
+            "long": "-58.5242"
         },
         "street": "Calle Alberdi",
         "number": "478",
@@ -50,56 +64,56 @@
             "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
             "caption": "Lobby del hotel",
             "description": "Elegante recepción y área de estar del Hotel Plaza",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/53464/sheraton-palace-hotel-lobby-architecture-san-francisco-53464.jpeg",
                 "caption": "Recepción",
                 "description": "Área de recepción con personal atento 24 horas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación estándar",
                 "description": "Cómodas habitaciones con decoración contemporánea",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación superior",
                 "description": "Habitaciones amplias con área de descanso",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1579253/pexels-photo-1579253.jpeg",
                 "caption": "Suite",
                 "description": "Suites elegantes con espacios separados",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/244133/pexels-photo-244133.jpeg",
                 "caption": "Restaurante El Dorado",
                 "description": "Restaurante con gastronomía regional",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Lobby bar",
                 "description": "Bar con selección de cócteles y cafetería",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/162539/architecture-building-hotel-travel-162539.jpeg",
                 "caption": "Fachada",
                 "description": "Fachada exterior del Hotel Plaza",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/189333/pexels-photo-189333.jpeg",
                 "caption": "Sala de reuniones",
                 "description": "Espacio para eventos y reuniones de negocios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -132,8 +146,8 @@
         ]
     },
     "seo": {
-        "title": "Hotel Plaza - Alojamiento 3 estrellas en centro de Gualeguaychú | Entre Ríos",
-        "description": "Hotel boutique de 3 estrellas en pleno centro de Gualeguaychú. Habitaciones confortables, restaurante, desayuno incluido y excelente ubicación cerca del Carnaval.",
+        "title": "Hotel Plaza - Alojamiento 3 estrellas en centro de",
+        "description": "Hotel boutique de 3 estrellas en pleno centro de Gualeguaychú. Habitaciones confortables, restaurante, desayuno incluido y excelente ubicación cerca del Carn...",
         "keywords": [
             "hotel",
             "gualeguaychu",
@@ -235,5 +249,10 @@
             "content": "El edificio que hoy alberga al Hotel Plaza fue construido en 1943 como residencia de la familia Méndez, importantes comerciantes locales vinculados a la exportación de productos agrícolas. La casa, ejemplo destacado de arquitectura racionalista, fue diseñada por el arquitecto italiano Gino Pompei, quien dejó su huella en varios edificios emblemáticos de la ciudad. En 1985, la propiedad fue adquirida y transformada en hotel, manteniendo elementos arquitectónicos originales como los pisos de mosaico, escaleras de mármol de Carrara y algunas aberturas de madera. La última renovación importante se realizó en 2018, actualizando completamente las instalaciones pero respetando y poniendo en valor los elementos patrimoniales. El nombre 'Plaza' hace honor a su ubicación cercana a la Plaza Principal (San Martín) y a la antigua costumbre de denominar así a los hoteles céntricos de las ciudades de provincia argentinas. A lo largo de los años, el hotel ha alojado a personalidades destacadas de la cultura, la política y el deporte que han visitado Gualeguaychú.",
             "category": "history"
         }
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

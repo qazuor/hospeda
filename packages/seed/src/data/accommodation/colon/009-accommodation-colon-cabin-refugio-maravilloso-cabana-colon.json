@@ -27,12 +27,26 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 4500,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 4500,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15,
-            "monthly": 25
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 25,
+                "minNights": 30
+            }
         }
     },
     "location": {
@@ -41,7 +55,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2267",
-            "lng": "-58.1517"
+            "long": "-58.1517"
         },
         "street": "Camino Rural F",
         "number": "S/N",
@@ -53,44 +67,44 @@
             "url": "https://images.pexels.com/photos/2351836/pexels-photo-2351836.jpeg",
             "caption": "Cabaña en la naturaleza",
             "description": "Vista exterior de la cabaña con terraza y entorno natural",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2351836/pexels-photo-2351836.jpeg",
                 "caption": "Exterior y terraza",
                 "description": "Cabaña con deck de madera y vistas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050318/pexels-photo-4050318.jpeg",
                 "caption": "Interior",
                 "description": "Vista del living-comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6775268/pexels-photo-6775268.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio principal",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062426/pexels-photo-2062426.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina integrada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
                 "caption": "Asador",
                 "description": "Área de parrilla exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
                 "caption": "Piscina pequeña",
                 "description": "Piscina exterior o hot tub en la terraza",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -121,7 +135,7 @@
         ]
     },
     "seo": {
-        "title": "Refugio Maravilloso - Cabaña privada cerca de Colón, Entre Ríos",
+        "title": "Refugio Maravilloso - Cabaña privada cerca de Colón, Entre",
         "description": "Cabaña aislada con piscina/hot tub y vistas naturales cerca de Colón. Ideal para parejas y relax. Entorno tranquilo y privado.",
         "keywords": [
             "cabaña",
@@ -183,5 +197,10 @@
         "032-tag-relax",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

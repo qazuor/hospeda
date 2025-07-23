@@ -26,7 +26,10 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2800,
+            "cleaning": {
+                "amount": 2800,
+                "currency": "ARS"
+            },
             "taxPercent": 21
         }
     },
@@ -36,7 +39,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4832",
-            "lng": "-58.2287"
+            "long": "-58.2287"
         },
         "street": "Camino Vecinal Sur S/N",
         "number": "S/N",
@@ -48,38 +51,38 @@
             "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
             "caption": "Cabaña luminosa",
             "description": "Vista exterior de la cabaña con ventanas grandes",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la cabaña",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
                 "caption": "Interior",
                 "description": "Área de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio principal",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
                 "caption": "Altillo",
                 "description": "Espacio con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior cubierta",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -101,14 +104,10 @@
         "beds": 3,
         "bathrooms": 1,
         "smokingAllowed": false,
-        "extraInfo": [
-            "Cabaña muy luminosa",
-            "Parrilla exterior",
-            "Ideal para familias pequeñas"
-        ]
+        "extraInfo": ["Cabaña muy luminosa", "Parrilla exterior", "Ideal para familias pequeñas"]
     },
     "seo": {
-        "title": "Sueño Soleado - Cabaña luminosa cerca de Concepción del Uruguay",
+        "title": "Sueño Soleado - Cabaña luminosa cerca de Concepción del",
         "description": "Cabaña confortable y luminosa para 4 personas cerca de Concepción del Uruguay. Parrilla, jardín. Ideal para escapada familiar.",
         "keywords": [
             "cabaña",
@@ -161,10 +160,10 @@
         }
     ],
     "iaData": [],
-    "tagIds": [
-        "027-tag-naturaleza",
-        "017-tag-familia",
-        "032-tag-relax",
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["027-tag-naturaleza", "017-tag-familia", "032-tag-relax", "016-tag-entre-rios"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

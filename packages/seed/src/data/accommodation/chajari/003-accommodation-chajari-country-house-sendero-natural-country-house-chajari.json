@@ -22,14 +22,36 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 5000,
-            "taxPercent": 21,
-            "lateCheckout": 3000
+            "cleaning": {
+                "amount": 5000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "lateCheckout": {
+                "price": 3000,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15,
-            "monthly": 30,
-            "lastMinute": 10
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 30,
+                "minNights": 30
+            },
+            "lastMinute": {
+                "percentage": 10,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -38,7 +60,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-30.7392",
-            "lng": "-58.0387"
+            "long": "-58.0387"
         },
         "street": "Ruta Provincial 2",
         "number": "Km 15.5",
@@ -50,56 +72,56 @@
             "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
             "caption": "Fachada principal",
             "description": "Vista frontal de la casa de campo con su jardín florido",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
                 "caption": "Fachada",
                 "description": "Vista exterior de la casa de campo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
                 "caption": "Sala de estar",
                 "description": "Amplio living con sofás, chimenea y vista al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina completa con isla central y electrodomésticos modernos",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg",
                 "caption": "Dormitorio principal",
                 "description": "Habitación principal con cama king size y vista al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2631746/pexels-photo-2631746.jpeg",
                 "caption": "Baño",
                 "description": "Baño principal con ducha y bañera",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
                 "caption": "Piscina",
                 "description": "Piscina exterior con reposeras y zona de sombra",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
                 "caption": "Jardín",
                 "description": "Extenso jardín con árboles frutales y área de descanso",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
                 "caption": "Parrilla",
                 "description": "Área de asador con mesa para 10 personas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ],
         "videos": [
@@ -107,7 +129,7 @@
                 "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 "caption": "Recorrido virtual",
                 "description": "Tour completo por la casa y los alrededores",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -139,8 +161,8 @@
         ]
     },
     "seo": {
-        "title": "Sendero Natural: Casa de Campo en Chajarí, Entre Ríos | Alojamiento Rural",
-        "description": "Disfruta de la tranquilidad y la naturaleza en esta espaciosa casa de campo cerca de Chajarí, con 3 habitaciones, piscina, jardín y asador para hasta 8 personas.",
+        "title": "Sendero Natural: Casa de Campo en Chajarí, Entre Ríos ",
+        "description": "Disfruta de la tranquilidad y la naturaleza en esta espaciosa casa de campo cerca de Chajarí, con 3 habitaciones, piscina, jardín y asador para hasta 8 perso...",
         "keywords": [
             "casa de campo",
             "chajarí",
@@ -241,5 +263,10 @@
         "032-tag-relax",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

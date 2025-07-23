@@ -22,7 +22,10 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2200,
+            "cleaning": {
+                "amount": 2200,
+                "currency": "ARS"
+            },
             "taxPercent": 21
         }
     },
@@ -32,7 +35,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4780",
-            "lng": "-58.2317"
+            "long": "-58.2317"
         },
         "street": "Calle 9 de Julio",
         "number": "870",
@@ -46,32 +49,32 @@
             "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
             "caption": "Interior del apartamento",
             "description": "Vista del área de estar y cocina",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
                 "caption": "Ambiente principal",
                 "description": "Espacio de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio con cama doble",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
                 "caption": "Baño",
                 "description": "Baño completo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -94,14 +97,10 @@
         "beds": 2,
         "bathrooms": 1,
         "smokingAllowed": false,
-        "extraInfo": [
-            "Ubicación céntrica",
-            "Ideal para parejas",
-            "Check-in autónomo disponible"
-        ]
+        "extraInfo": ["Ubicación céntrica", "Ideal para parejas", "Check-in autónomo disponible"]
     },
     "seo": {
-        "title": "Retiro Encantado - Apartamento Céntrico en Concepción del Uruguay",
+        "title": "Retiro Encantado - Apartamento Céntrico en Concepción del",
         "description": "Apartamento moderno a metros del centro histórico de Concepción del Uruguay. Ideal para parejas, equipado. Cerca de atracciones.",
         "keywords": [
             "apartamento",
@@ -151,10 +150,10 @@
             "category": "nature"
         }
     ],
-    "tagIds": [
-        "017-tag-familia",
-        "039-tag-turismo",
-        "011-tag-cultura",
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

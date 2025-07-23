@@ -23,12 +23,26 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 6000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 6000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15,
-            "monthly": 25
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 25,
+                "minNights": 30
+            }
         }
     },
     "location": {
@@ -37,7 +51,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2280",
-            "lng": "-58.1540"
+            "long": "-58.1540"
         },
         "street": "Camino a Pescadores S/N",
         "number": "S/N",
@@ -49,50 +63,50 @@
             "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
             "caption": "Casa de campo con jardín",
             "description": "Vista exterior de Paraíso Cálido Country House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa y jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
                 "caption": "Living",
                 "description": "Sala de estar con chimenea",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina completa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
                 "caption": "Piscina",
                 "description": "Piscina en el parque",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
                 "caption": "Quincho y parrilla",
                 "description": "Área de asador cubierta",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
                 "caption": "Parque",
                 "description": "Amplio parque con árboles",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -124,7 +138,7 @@
         ]
     },
     "seo": {
-        "title": "Paraíso Cálido - Casa de Campo con Piscina en Colón, Entre Ríos",
+        "title": "Paraíso Cálido - Casa de Campo con Piscina en Colón, Entre",
         "description": "Casa de campo con piscina y parque grande cerca de Colón. Ideal para familias y grupos. Quincho con asador. Capacidad 8 personas.",
         "keywords": [
             "casa de campo",
@@ -194,5 +208,10 @@
         "017-tag-familia",
         "032-tag-relax",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

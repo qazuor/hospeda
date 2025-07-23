@@ -27,13 +27,30 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 5000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 5000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15,
-            "monthly": 25,
-            "lastMinute": 10
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 25,
+                "minNights": 30
+            },
+            "lastMinute": {
+                "percentage": 10,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -42,7 +59,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.0159",
-            "lng": "-57.9015"
+            "long": "-57.9015"
         },
         "street": "Calle Los Jacarandás",
         "number": "745",
@@ -54,62 +71,62 @@
             "url": "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg",
             "caption": "Fachada principal",
             "description": "Entrada principal de Casa Termas con su jardín florido",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg",
                 "caption": "Frente de la casa",
                 "description": "Vista frontal de la propiedad con jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
                 "caption": "Living comedor",
                 "description": "Amplio espacio de living comedor con vista al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg",
                 "caption": "Cocina equipada",
                 "description": "Cocina completa con electrodomésticos modernos",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1648771/pexels-photo-1648771.jpeg",
                 "caption": "Dormitorio principal",
                 "description": "Habitación principal con cama queen y baño en suite",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Segundo dormitorio",
                 "description": "Dormitorio con cama matrimonial",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/3935363/pexels-photo-3935363.jpeg",
                 "caption": "Tercer dormitorio",
                 "description": "Habitación con dos camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/3935358/pexels-photo-3935358.jpeg",
                 "caption": "Baño principal",
                 "description": "Baño en suite con ducha",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
                 "caption": "Galería con asador",
                 "description": "Espacio exterior cubierto con parrilla y mesa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997963/pexels-photo-5997963.jpeg",
                 "caption": "Jardín",
                 "description": "Área verde con reposeras y espacios de descanso",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ],
         "videos": [
@@ -117,7 +134,7 @@
                 "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 "caption": "Tour de la casa",
                 "description": "Recorrido completo por la propiedad",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -150,7 +167,7 @@
         ]
     },
     "seo": {
-        "title": "Casa Termas - Alojamiento familiar a 400m del Parque Termal de Federación",
+        "title": "Casa Termas - Alojamiento familiar a 400m del Parque Termal",
         "description": "Casa de 3 dormitorios a pasos de las Termas de Federación. Jardín privado, asador, cocina completa. Ideal para familias hasta 6 personas.",
         "keywords": [
             "casa",
@@ -246,5 +263,10 @@
             "content": "La gastronomía de Federación destaca por sus pescados de río y la influencia de la cocina italiana y española. En Casa Termas encontrará una carpeta con nuestras recomendaciones gastronómicas, pero no puede dejar de visitar 'El Embarcadero', especializado en pescados locales con hermosa vista al lago; 'La Parrilla de Don Pedro', con excelentes cortes de carne; y 'Sabores Termales', que ofrece platos innovadores utilizando productos regionales. Para opciones más económicas, la zona de food trucks en la costanera ofrece alternativas informales de buena calidad. Los amantes del dulce deben probar los alfajores de Federación, rellenos con dulce de naranja alusivos a la principal producción frutícola de la región. La vida nocturna es tranquila y familiar, centrada en bares y restaurantes más que en discotecas. En verano, la costanera cobra vida con espectáculos musicales al aire libre y ferias artesanales que funcionan hasta la medianoche. Para quienes buscan actividad nocturna más animada, el Casino de Federación, a 15 minutos caminando desde la casa, ofrece juegos y shows en vivo los fines de semana.",
             "category": "dining"
         }
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

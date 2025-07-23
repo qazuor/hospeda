@@ -26,8 +26,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2800,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 2800,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -36,7 +44,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.7056",
-            "lng": "-58.6623"
+            "long": "-58.6623"
         },
         "street": "Camino al Arroyo S/N",
         "number": "S/N",
@@ -48,38 +56,38 @@
             "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
             "caption": "Cabaña apacible",
             "description": "Vista exterior de la cabaña con entorno verde",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la cabaña",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
                 "caption": "Interior",
                 "description": "Área de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio principal",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
                 "caption": "Altillo",
                 "description": "Espacio con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior cubierta",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -109,7 +117,7 @@
         ]
     },
     "seo": {
-        "title": "Retiro Apacible - Cabaña tranquila cerca de Paranacito | Delta",
+        "title": "Retiro Apacible - Cabaña tranquila cerca de Paranacito ",
         "description": "Cabaña confortable para 4 personas cerca de Paranacito. Ideal para familias. Parrilla, jardín. Acceso al Delta.",
         "keywords": [
             "cabaña",
@@ -156,5 +164,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

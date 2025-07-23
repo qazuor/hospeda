@@ -23,8 +23,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2200,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 2200,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -33,7 +41,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.0246",
-            "lng": "-57.9007"
+            "long": "-57.9007"
         },
         "street": "Calle Paraná",
         "number": "800",
@@ -47,32 +55,32 @@
             "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
             "caption": "Interior del apartamento",
             "description": "Vista del área de estar y cocina",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
                 "caption": "Living",
                 "description": "Espacio integrado de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio con cama doble",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
                 "caption": "Baño",
                 "description": "Baño completo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -102,7 +110,7 @@
         ]
     },
     "seo": {
-        "title": "Rio Relajante - Apartamento cerca del Lago en Federación | Cerca Termas",
+        "title": "Rio Relajante - Apartamento cerca del Lago en Federación ",
         "description": "Apartamento moderno y sereno en Federación. Cerca del Lago Salto Grande y Parque Termal. Ideal para parejas. Equipado.",
         "keywords": [
             "apartamento",
@@ -155,5 +163,10 @@
         "039-tag-turismo",
         "011-tag-cultura",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

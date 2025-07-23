@@ -27,12 +27,30 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21,
-            "perPerson": 1800,
-            "electricity": 500
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "perPerson": {
+                "price": 1800,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "electricity": {
+                "price": 500,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 10
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -41,7 +59,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2323",
-            "lng": "-58.1440"
+            "long": "-58.1440"
         },
         "street": "Camino a La Balsa",
         "number": "Km 3.5",
@@ -53,38 +71,38 @@
             "url": "https://images.pexels.com/photos/5476440/pexels-photo-5476440.jpeg",
             "caption": "Área de fogón",
             "description": "Fogón comunitario en el camping",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/5476440/pexels-photo-5476440.jpeg",
                 "caption": "Fogón",
                 "description": "Zona de fogones comunitarios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Parcela",
                 "description": "Parcela con sombra y mesa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473180/pexels-photo-5473180.jpeg",
                 "caption": "Cocina comunitaria",
                 "description": "Cocina equipada para uso de campistas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Baños",
                 "description": "Instalaciones de baños y duchas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
                 "caption": "Pesca",
                 "description": "Zona de pesca de orilla cerca del camping",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -177,5 +195,10 @@
         "005-tag-aventura",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

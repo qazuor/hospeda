@@ -27,7 +27,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -36,7 +41,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.4011",
-            "lng": "-58.0299"
+            "long": "-58.0299"
         },
         "street": "Avenida Las Heras",
         "number": "2500",
@@ -48,38 +53,38 @@
             "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
             "caption": "Fachada del hotel",
             "description": "Vista exterior de Refugio Relajante Hotel",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
                 "caption": "Exterior",
                 "description": "Vista frontal del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Piscina",
                 "description": "Área de piscina y solárium",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación doble",
                 "description": "Habitación con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación triple",
                 "description": "Habitación con cama matrimonial y una individual",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Salón desayunador",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -110,7 +115,7 @@
         ]
     },
     "seo": {
-        "title": "Refugio Relajante Hotel - Tranquilidad y piscina en Concordia",
+        "title": "Refugio Relajante Hotel - Tranquilidad y piscina en",
         "description": "Hotel con jardín y piscina en zona tranquila de Concordia. Ideal para relax, cerca de Termas y Lago. Desayuno incluido.",
         "keywords": [
             "hotel",
@@ -183,5 +188,10 @@
         "038-tag-termas",
         "032-tag-relax",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

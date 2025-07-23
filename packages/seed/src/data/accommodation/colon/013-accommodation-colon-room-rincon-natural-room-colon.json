@@ -36,7 +36,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2137",
-            "lng": "-58.1410"
+            "long": "-58.1410"
         },
         "street": "Calle Los Ceibos",
         "number": "450",
@@ -48,26 +48,26 @@
             "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
             "caption": "Habitación privada",
             "description": "Interior de la habitación en Rincón Natural",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271620/pexels-photo-271620.jpeg",
                 "caption": "Habitación",
                 "description": "Vista de la habitación con cama",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
                 "caption": "Baño",
                 "description": "Baño (puede ser privado o compartido)",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
                 "caption": "Jardín",
                 "description": "Espacio de jardín de la casa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -164,5 +164,10 @@
         "011-tag-cultura",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

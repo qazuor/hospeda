@@ -25,8 +25,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 3000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 3000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -35,7 +43,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.0130",
-            "lng": "-58.5259"
+            "long": "-58.5259"
         },
         "street": "Camino a la Playa S/N",
         "number": "S/N",
@@ -47,38 +55,38 @@
             "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
             "caption": "Cabaña acogedora",
             "description": "Vista exterior de la cabaña con jardín",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la cabaña",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
                 "caption": "Interior",
                 "description": "Área de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio principal",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
                 "caption": "Altillo",
                 "description": "Espacio con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior cubierta",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -108,7 +116,7 @@
         ]
     },
     "seo": {
-        "title": "Paraíso Acogedor - Cabaña cerca de Gualeguaychú | Playas y Carnaval",
+        "title": "Paraíso Acogedor - Cabaña cerca de Gualeguaychú | Playas y",
         "description": "Cabaña confortable para 4 personas cerca de Gualeguaychú. Ideal para familias. Parrilla, jardín. Cerca de playas y Carnaval.",
         "keywords": [
             "cabaña",
@@ -153,5 +161,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

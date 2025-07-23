@@ -22,7 +22,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -31,7 +36,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.0592",
-            "lng": "-58.0997"
+            "long": "-58.0997"
         },
         "street": "Calle Las Colonias",
         "number": "120",
@@ -43,32 +48,32 @@
             "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
             "caption": "Fachada del hotel",
             "description": "Vista exterior de Sendero Agradable Hotel",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
                 "caption": "Exterior",
                 "description": "Vista frontal del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación doble",
                 "description": "Habitación con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación triple",
                 "description": "Habitación con cama matrimonial y una individual",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Salón desayunador",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -99,7 +104,7 @@
         ]
     },
     "seo": {
-        "title": "Sendero Agradable Hotel - Confort y historia en Liebig | Frigorífico",
+        "title": "Sendero Agradable Hotel - Confort y historia en Liebig ",
         "description": "Hotel cómodo en Liebig. Ideal para visitar el Frigorífico Histórico y disfrutar del río. Desayuno incluido.",
         "keywords": [
             "hotel",
@@ -145,5 +150,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

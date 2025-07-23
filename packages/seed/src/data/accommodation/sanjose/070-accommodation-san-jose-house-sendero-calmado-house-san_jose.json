@@ -22,8 +22,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 3200,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 3200,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -32,7 +40,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.1844",
-            "lng": "-58.7549"
+            "long": "-58.7549"
         },
         "street": "Calle Los Robles",
         "number": "150",
@@ -44,38 +52,38 @@
             "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
             "caption": "Casa en San José",
             "description": "Vista exterior de Sendero Calmado House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la propiedad",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
                 "caption": "Living comedor",
                 "description": "Espacio integrado de living y comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -105,7 +113,7 @@
         ]
     },
     "seo": {
-        "title": "Sendero Calmado House - Casa en San José para familias | El Palmar",
+        "title": "Sendero Calmado House - Casa en San José para familias | El",
         "description": "Casa cómoda para 5 personas en barrio tranquilo de San José. Parrilla, jardín. Cerca del centro y Parque Nacional El Palmar.",
         "keywords": [
             "casa",
@@ -143,5 +151,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

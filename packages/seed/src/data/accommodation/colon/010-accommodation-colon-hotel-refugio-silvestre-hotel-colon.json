@@ -27,7 +27,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -36,7 +41,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2269",
-            "lng": "-58.1569"
+            "long": "-58.1569"
         },
         "street": "Calle Las Retamas",
         "number": "85",
@@ -48,38 +53,38 @@
             "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
             "caption": "Hotel exterior",
             "description": "Vista de la fachada y jardín del hotel",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
                 "caption": "Fachada",
                 "description": "Exterior del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Piscina",
                 "description": "Área de piscina y solárium",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación doble",
                 "description": "Habitación con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación triple",
                 "description": "Habitación con cama matrimonial y una individual",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Salón desayunador",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -110,7 +115,7 @@
         ]
     },
     "seo": {
-        "title": "Refugio Silvestre Hotel - Tranquilidad y confort en Colón, Entre Ríos",
+        "title": "Refugio Silvestre Hotel - Tranquilidad y confort en Colón",
         "description": "Hotel con jardín y piscina en Colón. Habitaciones confortables, desayuno incluido. Ideal para relax cerca del centro y termas.",
         "keywords": [
             "hotel",
@@ -178,5 +183,10 @@
         "011-tag-cultura",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

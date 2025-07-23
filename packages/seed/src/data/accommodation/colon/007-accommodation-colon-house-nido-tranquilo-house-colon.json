@@ -27,11 +27,17 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 4000,
+            "cleaning": {
+                "amount": 4000,
+                "currency": "ARS"
+            },
             "taxPercent": 21
         },
         "discounts": {
-            "weekly": 10
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -40,7 +46,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.2167",
-            "lng": "-58.1488"
+            "long": "-58.1488"
         },
         "street": "Calle Los Aromos",
         "number": "150",
@@ -52,44 +58,44 @@
             "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
             "caption": "Fachada de la casa",
             "description": "Vista exterior de la casa con jardín",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la propiedad",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg",
                 "caption": "Living",
                 "description": "Sala de estar con sofás",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489107/pexels-photo-6489107.jpeg",
                 "caption": "Baño",
                 "description": "Baño completo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
                 "caption": "Galería y asador",
                 "description": "Espacio exterior con parrilla",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -118,7 +124,7 @@
         ]
     },
     "seo": {
-        "title": "Nido Tranquilo House - Casa para familias en Colón, Entre Ríos",
+        "title": "Nido Tranquilo House - Casa para familias en Colón, Entre",
         "description": "Casa de 3 dormitorios en zona residencial de Colón. Ideal para familias. Jardín, asador, cerca del centro y termas. Capacidad 6 personas.",
         "keywords": [
             "casa",
@@ -164,5 +170,10 @@
         "017-tag-familia",
         "032-tag-relax",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

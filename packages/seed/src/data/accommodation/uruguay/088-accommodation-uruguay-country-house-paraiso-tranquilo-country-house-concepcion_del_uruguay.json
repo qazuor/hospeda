@@ -1,7 +1,7 @@
 {
     "id": "088-accommodation-uruguay-country-house-paraiso-tranquilo-country-house-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
-    "slug": "paraiso-tranquilo-country-house-concepcion_del_uruguay",
+    "slug": "paraiso-tranquilo-country-house-concepcion_del_uru",
     "name": "paraiso-tranquilo-country-house",
     "summary": "Buscas paz y naturaleza? Encuéntralas en Paraíso Tranquilo, una hermosa casa de campo en las cercanías de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
@@ -22,8 +22,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 4000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 4000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -32,7 +40,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4906",
-            "lng": "-58.2309"
+            "long": "-58.2309"
         },
         "street": "Camino al Ñandubay S/N",
         "number": "S/N",
@@ -44,44 +52,44 @@
             "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
             "caption": "Casa de campo con jardín",
             "description": "Vista exterior de Paraíso Tranquilo Country House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
                 "caption": "Living",
                 "description": "Living-comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
                 "caption": "Piscina",
                 "description": "Piscina exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
                 "caption": "Parrilla",
                 "description": "Sector de parrilla",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
                 "caption": "Parque",
                 "description": "Amplio parque arbolado",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -111,7 +119,7 @@
         ]
     },
     "seo": {
-        "title": "Paraíso Tranquilo - Casa de Campo en Concepción del Uruguay | Piscina",
+        "title": "Paraíso Tranquilo - Casa de Campo en Concepción del Uruguay",
         "description": "Casa de campo para 5 personas cerca de Concepción del Uruguay. Entorno tranquilo, piscina, parrilla. Ideal para relax familiar.",
         "keywords": [
             "casa de campo",
@@ -160,5 +168,10 @@
         "032-tag-relax",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

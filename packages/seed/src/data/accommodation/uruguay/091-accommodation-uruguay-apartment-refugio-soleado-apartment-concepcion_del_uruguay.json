@@ -22,7 +22,10 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2300,
+            "cleaning": {
+                "amount": 2300,
+                "currency": "ARS"
+            },
             "taxPercent": 21
         }
     },
@@ -32,7 +35,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4764",
-            "lng": "-58.2284"
+            "long": "-58.2284"
         },
         "street": "Calle Galarza",
         "number": "1050",
@@ -46,32 +49,32 @@
             "url": "https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg",
             "caption": "Interior luminoso del apartamento",
             "description": "Vista del área de estar con mucha luz natural",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1457847/pexels-photo-1457847.jpeg",
                 "caption": "Living",
                 "description": "Espacio de living-comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1571458/pexels-photo-1571458.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio con cama doble",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina americana equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
                 "caption": "Baño",
                 "description": "Baño completo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -101,7 +104,7 @@
         ]
     },
     "seo": {
-        "title": "Refugio Soleado - Apartamento luminoso en Concepción del Uruguay",
+        "title": "Refugio Soleado - Apartamento luminoso en Concepción del",
         "description": "Apartamento moderno y luminoso en Concepción del Uruguay. Ideal para parejas. Cerca del centro, equipado. Luminoso y confortable.",
         "keywords": [
             "apartamento",
@@ -140,10 +143,10 @@
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "017-tag-familia",
-        "039-tag-turismo",
-        "011-tag-cultura",
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

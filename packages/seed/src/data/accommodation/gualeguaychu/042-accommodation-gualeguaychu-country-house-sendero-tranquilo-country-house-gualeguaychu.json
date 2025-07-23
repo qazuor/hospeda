@@ -27,11 +27,22 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 5000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 5000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 10
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -40,7 +51,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.0161",
-            "lng": "-58.5113"
+            "long": "-58.5113"
         },
         "street": "Camino a la Costa S/N",
         "number": "S/N",
@@ -52,44 +63,44 @@
             "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
             "caption": "Casa de campo",
             "description": "Vista exterior de Sendero Tranquilo Country House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
                 "caption": "Living",
                 "description": "Living-comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
                 "caption": "Asador",
                 "description": "Área de asador con galería",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
                 "caption": "Jardín",
                 "description": "Jardín amplio",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -121,7 +132,7 @@
         ]
     },
     "seo": {
-        "title": "Sendero Tranquilo - Casa de Campo cerca de Gualeguaychú | Carnaval",
+        "title": "Sendero Tranquilo - Casa de Campo cerca de Gualeguaychú ",
         "description": "Casa de campo cómoda para 7 personas cerca de Gualeguaychú. Entorno tranquilo, jardín, asador. Acceso a la ciudad y Carnaval.",
         "keywords": [
             "casa de campo",
@@ -185,5 +196,10 @@
         "032-tag-relax",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

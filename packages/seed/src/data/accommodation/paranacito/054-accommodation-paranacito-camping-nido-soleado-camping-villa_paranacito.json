@@ -32,7 +32,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.7065",
-            "lng": "-58.6487"
+            "long": "-58.6487"
         },
         "street": "Camino al Sol S/N",
         "number": "S/N",
@@ -44,32 +44,32 @@
             "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
             "caption": "Camping soleado",
             "description": "Vista del área de acampe con sol",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Acampe",
                 "description": "Espacio para carpas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Parcelas",
                 "description": "Vista de las parcelas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Baños",
                 "description": "Instalaciones sanitarias",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1268076/pexels-photo-1268076.jpeg",
                 "caption": "Entorno",
                 "description": "Naturaleza cerca del camping",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -98,7 +98,7 @@
         ]
     },
     "seo": {
-        "title": "Nido Soleado Camping - Luminosidad y espacio en Paranacito | Delta",
+        "title": "Nido Soleado Camping - Luminosidad y espacio en Paranacito",
         "description": "Camping amplio y soleado en Paranacito. Parcelas con parrilla. Ideal para amantes del camping y el sol. Cerca Delta.",
         "keywords": [
             "camping",
@@ -136,7 +136,10 @@
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "016-tag-entre-rios"
-    ]
+    "tagIds": ["016-tag-entre-rios"],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

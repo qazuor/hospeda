@@ -28,11 +28,22 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 5500,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 5500,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -41,7 +52,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.1988",
-            "lng": "-58.7439"
+            "long": "-58.7439"
         },
         "street": "Camino a El Palmar S/N",
         "number": "S/N",
@@ -53,50 +64,50 @@
             "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
             "caption": "Casa de campo con piscina",
             "description": "Vista exterior de Retiro Natural Country House con piscina",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
                 "caption": "Living",
                 "description": "Living-comedor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
                 "caption": "Piscina",
                 "description": "Piscina exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997967/pexels-photo-5997967.jpeg",
                 "caption": "Asador",
                 "description": "Área de asador con galería",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
                 "caption": "Jardín",
                 "description": "Jardín amplio",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -129,7 +140,7 @@
         ]
     },
     "seo": {
-        "title": "Retiro Natural - Casa de Campo con Piscina cerca de San José | El Palmar",
+        "title": "Retiro Natural - Casa de Campo con Piscina cerca de San",
         "description": "Casa de campo con piscina y parque grande cerca de San José. Ideal para familias y grupos. Quincho con asador. Cerca Parque Nacional El Palmar.",
         "keywords": [
             "casa de campo",
@@ -175,5 +186,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

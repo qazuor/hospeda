@@ -28,12 +28,26 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15,
-            "monthly": 30,
-            "lastMinute": 10
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 30,
+                "minNights": 30
+            },
+            "lastMinute": {
+                "percentage": 10,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -42,7 +56,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4913",
-            "lng": "-58.2296"
+            "long": "-58.2296"
         },
         "street": "Calle de la Constitución",
         "number": "350",
@@ -54,56 +68,56 @@
             "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
             "caption": "Fachada del hostel",
             "description": "Entrada principal del Hostel del Viajero",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/2844474/pexels-photo-2844474.jpeg",
                 "caption": "Fachada colonial",
                 "description": "Frente restaurado de la casona colonial",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2029719/pexels-photo-2029719.jpeg",
                 "caption": "Habitación compartida",
                 "description": "Dormitorio de 6 camas con lockers individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6969518/pexels-photo-6969518.jpeg",
                 "caption": "Habitación privada",
                 "description": "Habitación doble con ventana al patio",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2029731/pexels-photo-2029731.jpeg",
                 "caption": "Baños compartidos",
                 "description": "Instalaciones de baños limpias y modernas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2555635/pexels-photo-2555635.jpeg",
                 "caption": "Cocina comunitaria",
                 "description": "Cocina equipada para uso de los huéspedes",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6957069/pexels-photo-6957069.jpeg",
                 "caption": "Área común interior",
                 "description": "Sala común con libros y juegos de mesa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/7005428/pexels-photo-7005428.jpeg",
                 "caption": "Patio interno",
                 "description": "Espacio verde con hamacas y mesas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6492403/pexels-photo-6492403.jpeg",
                 "caption": "Área de desayuno",
                 "description": "Comedor donde se sirve el desayuno incluido",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -136,7 +150,7 @@
         ]
     },
     "seo": {
-        "title": "Hostel del Viajero - Alojamiento económico en Centro Histórico de Concepción del Uruguay",
+        "title": "Hostel del Viajero - Alojamiento económico en Centro",
         "description": "Hostel céntrico en casona colonial restaurada. Habitaciones compartidas y privadas, desayuno incluido, cocina comunitaria y patio con hamacas.",
         "keywords": [
             "hostel",
@@ -231,5 +245,10 @@
         "039-tag-turismo",
         "011-tag-cultura",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

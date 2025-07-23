@@ -1,7 +1,7 @@
 {
     "id": "085-accommodation-uruguay-country-house-nido-maravilloso-country-house-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
-    "slug": "nido-maravilloso-country-house-concepcion_del_uruguay",
+    "slug": "nido-maravilloso-country-house-concepcion_del_urug",
     "name": "nido-maravilloso-country-house",
     "summary": "Encuentra tu 'Nido Maravilloso' en esta encantadora casa de campo ubicada en un entorno rural sereno cerca de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
@@ -23,11 +23,22 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 5500,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 5500,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -36,7 +47,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4862",
-            "lng": "-58.2229"
+            "long": "-58.2229"
         },
         "street": "Camino Vecinal Este S/N",
         "number": "S/N",
@@ -48,50 +59,50 @@
             "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
             "caption": "Casa de campo en entorno natural",
             "description": "Vista exterior de Nido Maravilloso Country House",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la casa",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg",
                 "caption": "Living",
                 "description": "Amplio living con chimenea",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/349749/pexels-photo-349749.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina independiente equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1454806/pexels-photo-1454806.jpeg",
                 "caption": "Dormitorio",
                 "description": "Uno de los dormitorios",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2104882/pexels-photo-2104882.jpeg",
                 "caption": "Piscina",
                 "description": "Piscina exterior",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4256852/pexels-photo-4256852.jpeg",
                 "caption": "Quincho",
                 "description": "Quincho con parrilla y horno de barro",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2736388/pexels-photo-2736388.jpeg",
                 "caption": "Parque",
                 "description": "Extenso parque con árboles",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -123,7 +134,7 @@
         ]
     },
     "seo": {
-        "title": "Nido Maravilloso - Casa de Campo en Concepción del Uruguay con Piscina",
+        "title": "Nido Maravilloso - Casa de Campo en Concepción del Uruguay",
         "description": "Casa rural para 7 personas cerca de Concepción del Uruguay. Piscina, quincho, horno de barro, parque grande. Ideal familia/grupos.",
         "keywords": [
             "casa de campo",
@@ -196,5 +207,10 @@
         "032-tag-relax",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

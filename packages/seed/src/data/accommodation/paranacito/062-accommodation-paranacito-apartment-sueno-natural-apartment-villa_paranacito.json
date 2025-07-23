@@ -25,8 +25,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2100,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 2100,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -35,7 +43,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.6998",
-            "lng": "-58.6480"
+            "long": "-58.6480"
         },
         "street": "Calle Los Álamos",
         "number": "80",
@@ -49,32 +57,32 @@
             "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
             "caption": "Interior del apartamento",
             "description": "Vista del área de estar y cocina",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1011302/pexels-photo-1011302.jpeg",
                 "caption": "Living",
                 "description": "Espacio integrado de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio con cama doble",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2062431/pexels-photo-2062431.jpeg",
                 "caption": "Cocina",
                 "description": "Cocina equipada",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2111769/pexels-photo-2111769.jpeg",
                 "caption": "Baño",
                 "description": "Baño completo",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -146,5 +154,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

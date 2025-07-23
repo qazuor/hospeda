@@ -28,13 +28,30 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 3000,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 3000,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 10,
-            "monthly": 20,
-            "lastMinute": 15
+            "weekly": {
+                "percentage": 10,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 20,
+                "minNights": 30
+            },
+            "lastMinute": {
+                "percentage": 15,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -43,7 +60,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-30.7521",
-            "lng": "-58.0429"
+            "long": "-58.0429"
         },
         "street": "Ruta Provincial 3",
         "number": "Km 5",
@@ -55,62 +72,62 @@
             "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
             "caption": "Cabaña entre naranjos",
             "description": "Vista exterior de la cabaña rodeada de árboles cítricos",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
                 "caption": "Exterior de la cabaña",
                 "description": "Fachada de la cabaña de madera",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050318/pexels-photo-4050318.jpeg",
                 "caption": "Interior acogedor",
                 "description": "Sala de estar con estufa a leña",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050319/pexels-photo-4050319.jpeg",
                 "caption": "Cocina equipada",
                 "description": "Cocina con elementos artesanales y modernos",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6775268/pexels-photo-6775268.jpeg",
                 "caption": "Dormitorio principal",
                 "description": "Habitación con cama queen y vistas al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489102/pexels-photo-6489102.jpeg",
                 "caption": "Entrepiso",
                 "description": "Área con dos camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489100/pexels-photo-6489100.jpeg",
                 "caption": "Baño completo",
                 "description": "Baño con ducha y vista al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997963/pexels-photo-5997963.jpeg",
                 "caption": "Galería exterior",
                 "description": "Espacio techado con hamacas y sillones",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997974/pexels-photo-5997974.jpeg",
                 "caption": "Quincho con asador",
                 "description": "Área exterior para asados y reuniones",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1268076/pexels-photo-1268076.jpeg",
                 "caption": "Plantación de cítricos",
                 "description": "Senderos entre naranjos y mandarinos",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -142,7 +159,7 @@
         ]
     },
     "seo": {
-        "title": "Retiro Soleado - Cabaña entre naranjos en Chajarí, Entre Ríos",
+        "title": "Retiro Soleado - Cabaña entre naranjos en Chajarí, Entre",
         "description": "Acogedora cabaña de madera en plantación de cítricos cerca de Chajarí. Experiencia rural auténtica con confort moderno, para parejas y familias pequeñas.",
         "keywords": [
             "cabaña",
@@ -241,5 +258,10 @@
         "015-tag-ecoturismo",
         "029-tag-pareja",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

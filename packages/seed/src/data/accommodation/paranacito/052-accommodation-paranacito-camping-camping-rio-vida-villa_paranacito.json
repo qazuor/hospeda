@@ -5,7 +5,7 @@
     "name": "camping-rio-vida",
     "summary": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza.",
     "type": "CAMPING",
-    "description": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza. A diferencia de los campings tradicionales, Río Vida se encuentra en una isla de tres hectáreas rodeada por los arroyos Paranacito, Las Tintas y una pequeña bahía que forma un entorno natural protegido, accesible únicamente por lancha.\n\nEl camping cuenta con amplios espacios para acampar bajo la sombra de sauces, ceibos y timbos autóctonos, con parcelas demarcadas que respetan la privacidad sin perder la esencia natural del lugar. Cada sitio para carpas dispone de mesa con bancos, parrilla individual, agua potable y toma de luz, distribuidos estratégicamente para aprovechar las mejores vistas al agua. Para quienes prefieren mayor comodidad, ofrecemos un sector de domos equipados con colchones que pueden alojar entre 2 y 6 personas, una opción perfecta para quienes se inician en la experiencia del camping o desean un mayor confort.\n\nLas instalaciones incluyen sanitarios limpios y modernos, duchas con agua caliente, una proveeduría básica para artículos esenciales, y un salón comunitario techado con cocina compartida, ideal para días lluviosos o para socializar con otros campistas. El muelle principal permite la pesca directamente desde la costa, siendo un punto privilegiado para la captura de dorados, bogas y bagres. También contamos con servicio de alquiler de kayaks, canoas y tablas de stand-up paddle para explorar los arroyos circundantes.\n\nCamping Río Vida es un refugio para la observación de aves, con más de 50 especies identificadas en el predio, y ofrece rutas de senderismo que recorren la isla mostrando la rica biodiversidad local. Por las noches, organizamos fogones comunitarios donde se comparten historias, música y, a veces, un típico guiso de pescado preparado por los anfitriones. La experiencia se completa con los impresionantes amaneceres y atardeceres sobre el agua, que pintan el cielo con colores que quedarán grabados en la memoria de los visitantes.",
+    "description": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza. A diferencia de los campings tradicionales, Río Vida se encuentra en una isla de tres hectáreas rodeada por los arroyos Paranacito, Las Tintas y una pequeña bahía que forma un entorno natural protegido, accesible únicamente por lancha.\n\nEl camping cuenta con amplios espacios para acampar bajo la sombra de sauces, ceibos y timbos autóctonos, con parcelas demarcadas que respetan la privacidad sin perder la esencia natural del lugar. Cada sitio para carpas dispone de mesa con bancos, parrilla individual, agua potable y toma de luz, distribuidos estratégicamente para aprovechar las mejores vistas al agua. Para quienes prefieren mayor comodidad, ofrecemos un sector de domos equipados con colchones que pueden alojar entre 2 y 6 personas, una opción perfecta para quienes se inician en la experiencia del camping o desean un mayor confort.\n\nLas instalaciones incluyen sanitarios limpios y modernos, duchas con agua caliente, una proveeduría básica para artículos esenciales, y un salón comunitario techado con cocina compartida, ideal para días lluviosos o para socializar con otros campistas. El muelle principal permite la pesca directamente desde la costa, siendo un punto privilegiado para la captura de dorados, bogas y bagres. También contamos con servicio de alquiler de kayaks, canoas y tablas de stand-up paddle para explorar los arroyos circundantes.\n\nCamping Río Vida es un refugio para la observación de aves, con más de 50 especies identificadas en el predio, y ofrece rutas de senderismo que recorren la isla mostrando la rica biodiversidad local. Por las noches, organizamos fogones comunitarios donde se comparten historias, música y, a veces, un típico guiso de pescado preparado por los anfitriones. La experiencia se completa con los impresionantes amane...",
     "ownerId": "023-user-beatriz-sanchez",
     "destinationId": "008-destination-paranacito",
     "isFeatured": true,
@@ -28,12 +28,26 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 20,
-            "monthly": 35,
-            "lastMinute": 15
+            "weekly": {
+                "percentage": 20,
+                "minNights": 7
+            },
+            "monthly": {
+                "percentage": 35,
+                "minNights": 30
+            },
+            "lastMinute": {
+                "percentage": 15,
+                "minNights": 1
+            }
         }
     },
     "location": {
@@ -42,7 +56,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.7048",
-            "lng": "-58.6491"
+            "long": "-58.6491"
         },
         "street": "Isla Los Sauces",
         "number": "s/n",
@@ -54,56 +68,56 @@
             "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
             "caption": "Vista del camping",
             "description": "Área de acampe con vista a los arroyos del Delta",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Zona de carpas",
                 "description": "Espacios para acampar bajo árboles nativos",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Domos equipados",
                 "description": "Alojamiento en domos para mayor comodidad",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/803226/pexels-photo-803226.jpeg",
                 "caption": "Atardecer en el río",
                 "description": "Espectacular puesta de sol desde el muelle principal",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5476440/pexels-photo-5476440.jpeg",
                 "caption": "Fogón comunitario",
                 "description": "Área central para fogones y reuniones nocturnas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473180/pexels-photo-5473180.jpeg",
                 "caption": "Cocina comunitaria",
                 "description": "Espacio compartido para preparación de comidas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Sanitarios",
                 "description": "Instalaciones de baños y duchas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg",
                 "caption": "Kayak en los arroyos",
                 "description": "Actividad de kayak por los canales del delta",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
                 "caption": "Pesca desde el muelle",
                 "description": "Pesca en los arroyos que rodean la isla",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ],
         "videos": [
@@ -111,7 +125,7 @@
                 "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 "caption": "Recorrido por el camping",
                 "description": "Tour virtual por las instalaciones y alrededores",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -144,8 +158,8 @@
         ]
     },
     "seo": {
-        "title": "Camping Río Vida - Experiencia única en el Delta de Villa Paranacito | Entre Ríos",
-        "description": "Camping en isla exclusiva del Delta entrerriano. Carpas, domos equipados, kayak, pesca y naturaleza. Acceso en lancha y experiencia inmersiva en el ecosistema isleño.",
+        "title": "Camping Río Vida - Experiencia única en el Delta de Villa",
+        "description": "Camping en isla exclusiva del Delta entrerriano. Carpas, domos equipados, kayak, pesca y naturaleza. Acceso en lancha y experiencia inmersiva en el ecosistem...",
         "keywords": [
             "camping",
             "villa paranacito",
@@ -245,5 +259,10 @@
         "012-tag-delta",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

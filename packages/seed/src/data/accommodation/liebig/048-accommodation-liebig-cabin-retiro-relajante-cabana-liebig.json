@@ -23,8 +23,16 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "cleaning": 2800,
-            "taxPercent": 21
+            "cleaning": {
+                "amount": 2800,
+                "currency": "ARS"
+            },
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -33,7 +41,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.0494",
-            "lng": "-58.1027"
+            "long": "-58.1027"
         },
         "street": "Calle Los Pescadores",
         "number": "50",
@@ -45,38 +53,38 @@
             "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
             "caption": "Cabaña junto al río",
             "description": "Vista exterior de la cabaña con entorno verde",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/4048469/pexels-photo-4048469.jpeg",
                 "caption": "Exterior",
                 "description": "Fachada de la cabaña",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/4050317/pexels-photo-4050317.jpeg",
                 "caption": "Interior",
                 "description": "Área de living y cocina",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6775267/pexels-photo-6775267.jpeg",
                 "caption": "Dormitorio",
                 "description": "Dormitorio principal",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/6489103/pexels-photo-6489103.jpeg",
                 "caption": "Altillo",
                 "description": "Espacio con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5997965/pexels-photo-5997965.jpeg",
                 "caption": "Parrilla",
                 "description": "Parrilla exterior cubierta",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -106,7 +114,7 @@
         ]
     },
     "seo": {
-        "title": "Retiro Relajante - Cabaña en Liebig | Río Uruguay y Frigorífico Histórico",
+        "title": "Retiro Relajante - Cabaña en Liebig | Río Uruguay y",
         "description": "Cabaña confortable para 4 personas en Liebig. Ideal para relax. Parrilla, jardín. Cerca del río y del histórico Frigorífico.",
         "keywords": [
             "cabaña",
@@ -153,5 +161,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

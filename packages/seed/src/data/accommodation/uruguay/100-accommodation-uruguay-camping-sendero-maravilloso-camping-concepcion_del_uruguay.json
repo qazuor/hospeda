@@ -26,11 +26,24 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21,
-            "perPerson": 2000
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "perPerson": {
+                "price": 2000,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         },
         "discounts": {
-            "weekly": 15
+            "weekly": {
+                "percentage": 15,
+                "minNights": 7
+            }
         }
     },
     "location": {
@@ -39,7 +52,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-32.4856",
-            "lng": "-58.2237"
+            "long": "-58.2237"
         },
         "street": "Camino al Bosque S/N",
         "number": "S/N",
@@ -51,32 +64,32 @@
             "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
             "caption": "Zona de acampe boscosa",
             "description": "Parcelas de camping rodeadas de árboles",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Acampe",
                 "description": "Espacio para carpas con sombra",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Parcelas",
                 "description": "Vista de las parcelas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Baños",
                 "description": "Instalaciones sanitarias",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
                 "caption": "Entorno natural",
                 "description": "Bosque y senderos alrededor",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -107,7 +120,7 @@
         ]
     },
     "seo": {
-        "title": "Sendero Maravilloso Camping - Naturaleza y bosque cerca de Concepción del Uruguay",
+        "title": "Sendero Maravilloso Camping - Naturaleza y bosque cerca de",
         "description": "Camping arbolado en Concepción del Uruguay. Parcelas amplias, parrillas, baños, senderos naturales. Ideal para amantes del camping y la naturaleza.",
         "keywords": [
             "camping",
@@ -172,5 +185,10 @@
         "005-tag-aventura",
         "015-tag-ecoturismo",
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

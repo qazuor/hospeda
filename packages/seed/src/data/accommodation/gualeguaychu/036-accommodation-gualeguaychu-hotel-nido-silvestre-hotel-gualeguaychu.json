@@ -22,7 +22,12 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -31,7 +36,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-33.0075",
-            "lng": "-58.5127"
+            "long": "-58.5127"
         },
         "street": "Avenida Parque Sur",
         "number": "1500",
@@ -43,38 +48,38 @@
             "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
             "caption": "Fachada y jardín del hotel",
             "description": "Vista exterior de Nido Silvestre Hotel rodeado de verde",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg",
                 "caption": "Exterior",
                 "description": "Vista frontal del hotel",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg",
                 "caption": "Piscina",
                 "description": "Área de piscina y solárium",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg",
                 "caption": "Habitación doble",
                 "description": "Habitación con camas individuales",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/271619/pexels-photo-271619.jpeg",
                 "caption": "Habitación triple",
                 "description": "Habitación con cama matrimonial y una individual",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg",
                 "caption": "Comedor",
                 "description": "Salón desayunador con vista al jardín",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -106,7 +111,7 @@
         ]
     },
     "seo": {
-        "title": "Nido Silvestre Hotel - Naturaleza y piscina en Gualeguaychú | Carnaval",
+        "title": "Nido Silvestre Hotel - Naturaleza y piscina en Gualeguaychú",
         "description": "Hotel con jardín y piscina en Gualeguaychú. Ideal para relax, cerca de playas y Carnaval. Desayuno incluido.",
         "keywords": [
             "hotel",
@@ -157,5 +162,10 @@
     "iaData": [],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }

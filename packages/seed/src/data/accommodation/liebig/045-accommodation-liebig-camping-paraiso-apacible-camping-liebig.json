@@ -27,8 +27,18 @@
             "currency": "ARS"
         },
         "additionalFees": {
-            "taxPercent": 21,
-            "perPerson": 1600
+            "taxPercent": {
+                "price": 21,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            },
+            "perPerson": {
+                "price": 1600,
+                "currency": "ARS",
+                "isOptional": true,
+                "isPerStay": false
+            }
         }
     },
     "location": {
@@ -37,7 +47,7 @@
         "country": "Argentina",
         "coordinates": {
             "lat": "-31.0419",
-            "lng": "-58.1013"
+            "long": "-58.1013"
         },
         "street": "Ribera del Uruguay S/N",
         "number": "S/N",
@@ -49,32 +59,32 @@
             "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
             "caption": "Camping a orillas del río",
             "description": "Vista del área de acampe con acceso al río",
-            "state": "ACTIVE"
+            "moderationState": "APPROVED"
         },
         "gallery": [
             {
                 "url": "https://images.pexels.com/photos/1687844/pexels-photo-1687844.jpeg",
                 "caption": "Río",
                 "description": "Acceso al río Uruguay",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/2666598/pexels-photo-2666598.jpeg",
                 "caption": "Acampe",
                 "description": "Espacio para carpas con sombra",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5137664/pexels-photo-5137664.jpeg",
                 "caption": "Parcelas",
                 "description": "Vista de las parcelas",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.pexels.com/photos/5473182/pexels-photo-5473182.jpeg",
                 "caption": "Baños",
                 "description": "Instalaciones sanitarias",
-                "state": "ACTIVE"
+                "moderationState": "APPROVED"
             }
         ]
     },
@@ -103,7 +113,7 @@
         ]
     },
     "seo": {
-        "title": "Paraíso Apacible Camping - Tranquilidad a orillas del río en Liebig",
+        "title": "Paraíso Apacible Camping - Tranquilidad a orillas del río",
         "description": "Camping tranquilo y arbolado a orillas del río Uruguay en Liebig. Parcelas con parrilla. Ideal para amantes de la pesca y naturaleza.",
         "keywords": [
             "camping",
@@ -156,5 +166,10 @@
     ],
     "tagIds": [
         "016-tag-entre-rios"
-    ]
+    ],
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC",
+    "reviewsCount": 0,
+    "averageRating": 0.0,
+    "moderationState": "APPROVED"
 }
