@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "016-accommodationReview-sueno-agradable-apartment-colon",
-    "userId": "moderator-user-67890",
+    "userId": "020-user-sergio-vargas",
     "accommodationId": "014-accommodation-colon-apartment-sueno-agradable-apartment-colon",
     "title": "Experiencia correcta pero mejorable",
     "content": "El alojamiento cumple con lo básico, pero creo que podría ser mejor en algunos aspectos. La limpieza es aceptable y el personal es cordial. La ubicación es buena pero los servicios podrían ampliarse.",

@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "034-accommodationReview-sueno-calmado-hostel-gualeguaychu",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d488",
+    "userId": "016-user-daniel-jimenez",
     "accommodationId": "043-accommodation-gualeguaychu-hostel-sueno-calmado-hostel-gualeguaychu",
     "title": "Perfecto para descansar",
     "content": "Exactamente lo que necesitaba. Un lugar tranquilo, limpio y cómodo. La atención personalizada hace la diferencia. Las instalaciones están bien mantenidas y el ambiente es muy relajante.",

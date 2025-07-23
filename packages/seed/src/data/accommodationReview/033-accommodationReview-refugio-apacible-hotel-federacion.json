@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "033-accommodationReview-refugio-apacible-hotel-federacion",
-    "userId": "guest-user-12345",
+    "userId": "014-user-andres-castro",
     "accommodationId": "028-accommodation-federacion-hotel-refugio-apacible-hotel-federacion",
     "title": "Buena experiencia en general",
     "content": "Tuve una estadía agradable. Las instalaciones son adecuadas, el personal es profesional y la limpieza es buena. Hay WiFi disponible y la comunicación con el host fue fluida. Recomendado para una estadía cómoda.",
