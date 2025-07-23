@@ -8,7 +8,7 @@ import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
-import { createUser } from '../../factories/userFactory';
+import { createUser, createUserForCreation } from '../../factories/userFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -19,7 +19,7 @@ import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
 const getActor = (role: RoleEnum = RoleEnum.SUPER_ADMIN) => createUser({ role });
-const getUser = (overrides = {}) => createUser({ ...overrides });
+const getUserForCreation = (overrides = {}) => createUserForCreation({ ...overrides });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
 /**
@@ -30,7 +30,7 @@ describe('UserService.create', () => {
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const actor = getActor(RoleEnum.SUPER_ADMIN);
-    const input = getUser({ displayName: 'Test User', role: RoleEnum.USER });
+    const input = getUserForCreation({ displayName: 'Test User', role: RoleEnum.USER });
 
     beforeEach(() => {
         userModelMock = createTypedModelMock(UserModel, ['create']);
@@ -40,12 +40,13 @@ describe('UserService.create', () => {
 
     it('should create a user (success)', async () => {
         // Arrange
-        asMock(userModelMock.create).mockResolvedValue({ ...input, id: 'new-id' });
+        const createdUser = createUser({ displayName: 'Test User', role: RoleEnum.USER });
+        asMock(userModelMock.create).mockResolvedValue(createdUser);
         // Act
         const result = await service.create(actor, input);
         // Assert
         expectSuccess(result);
-        expect(result.data?.id).toBe('new-id');
+        expect(result.data?.id).toBe(createdUser.id);
         expect(asMock(userModelMock.create)).toHaveBeenCalledWith(
             expect.objectContaining({ displayName: 'Test User' })
         );
