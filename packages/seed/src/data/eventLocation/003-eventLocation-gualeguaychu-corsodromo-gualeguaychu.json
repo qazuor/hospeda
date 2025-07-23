@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/eventLocation.schema.json",
-    "id": "003-eventLocation-gualeguaychu-corsódromo-gualeguaychú",
+    "id": "003-eventLocation-gualeguaychu-corsodromo-gualeguaychu",
     "state": "Entre Ríos",
     "city": "Gualeguaychú",
     "country": "Argentina",

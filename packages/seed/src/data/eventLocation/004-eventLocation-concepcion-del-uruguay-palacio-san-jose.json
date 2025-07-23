@@ -1,6 +1,6 @@
 {
     "$schema": "../../schemas/eventLocation.schema.json",
-    "id": "004-eventLocation-concepción-del-uruguay-palacio-san-josé",
+    "id": "004-eventLocation-concepcion-del-uruguay-palacio-san-jose",
     "state": "Entre Ríos",
     "city": "Concepción del Uruguay",
     "country": "Argentina",
