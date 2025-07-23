@@ -1,4 +1,4 @@
-import { AccommodationFaqModel, AccommodationModel } from '@repo/db';
+import { AccommodationFaqModel, AccommodationIaDataModel, AccommodationModel } from '@repo/db';
 import type {
     AccommodationId,
     AccommodationRatingType,
@@ -30,20 +30,28 @@ import {
 import {
     type AddFaqInput,
     AddFaqInputSchema,
+    type AddIADataInput,
+    AddIADataInputSchema,
     CreateAccommodationSchema,
     GetAccommodationSchema,
     type GetByDestinationIdInput,
     GetByDestinationIdInputSchema,
     type GetFaqsInput,
     GetFaqsInputSchema,
+    type GetIADataInput,
+    GetIADataInputSchema,
     type GetTopRatedInput,
     GetTopRatedInputSchema,
     type RemoveFaqInput,
     RemoveFaqInputSchema,
+    type RemoveIADataInput,
+    RemoveIADataInputSchema,
     SearchAccommodationSchema,
     UpdateAccommodationSchema,
     type UpdateFaqInput,
-    UpdateFaqInputSchema
+    UpdateFaqInputSchema,
+    type UpdateIADataInput,
+    UpdateIADataInputSchema
 } from './accommodation.schemas';
 
 /**
@@ -562,15 +570,29 @@ export class AccommodationService extends BaseCrudService<
      * Adds IA data to an accommodation.
      * @param input - Input object for adding IA data.
      * @param actor - The actor performing the action.
-     * @returns Output object (to be defined)
+     * @returns Output object with the created IA data
      */
-    public async addIAData(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+    public async addIAData(
+        input: AddIADataInput,
+        actor: Actor
+    ): Promise<ServiceOutput<{ iaData: import('@repo/types').AccommodationIaDataType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addIAData',
-            input: { actor: _actor, ..._input },
-            schema: z.any(),
-            execute: async () => {
-                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            input: { actor: actor, ...input },
+            schema: AddIADataInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                this._canUpdate(actor, accommodation);
+                const iaDataModel = new AccommodationIaDataModel();
+                const iaDataToCreate = {
+                    ...validated.iaData,
+                    accommodationId: validated.accommodationId as AccommodationId
+                };
+                const createdIaData = await iaDataModel.create(iaDataToCreate);
+                return { iaData: createdIaData };
             }
         });
     }
@@ -579,15 +601,32 @@ export class AccommodationService extends BaseCrudService<
      * Removes IA data from an accommodation.
      * @param input - Input object for removing IA data.
      * @param actor - The actor performing the action.
-     * @returns Output object (to be defined)
+     * @returns Output object with success status
      */
-    public async removeIAData(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+    public async removeIAData(
+        input: RemoveIADataInput,
+        actor: Actor
+    ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeIAData',
-            input: { actor: _actor, ..._input },
-            schema: z.any(),
-            execute: async () => {
-                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            input: { actor: actor, ...input },
+            schema: RemoveIADataInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                this._canUpdate(actor, accommodation);
+                const iaDataModel = new AccommodationIaDataModel();
+                const iaData = await iaDataModel.findById(validated.iaDataId);
+                if (!iaData || iaData.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'IA data not found for this accommodation'
+                    );
+                }
+                await iaDataModel.hardDelete({ id: validated.iaDataId });
+                return { success: true };
             }
         });
     }
@@ -596,15 +635,44 @@ export class AccommodationService extends BaseCrudService<
      * Updates IA data for an accommodation.
      * @param input - Input object for updating IA data.
      * @param actor - The actor performing the action.
-     * @returns Output object (to be defined)
+     * @returns Output object with the updated IA data
      */
-    public async updateIAData(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+    public async updateIAData(
+        input: UpdateIADataInput,
+        actor: Actor
+    ): Promise<ServiceOutput<{ iaData: import('@repo/types').AccommodationIaDataType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'updateIAData',
-            input: { actor: _actor, ..._input },
-            schema: z.any(),
-            execute: async () => {
-                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            input: { actor: actor, ...input },
+            schema: UpdateIADataInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                this._canUpdate(actor, accommodation);
+                const iaDataModel = new AccommodationIaDataModel();
+                const iaData = await iaDataModel.findById(validated.iaDataId);
+                if (!iaData || iaData.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'IA data not found for this accommodation'
+                    );
+                }
+                const updatedIaData = await iaDataModel.update(
+                    { id: validated.iaDataId },
+                    {
+                        ...validated.iaData,
+                        accommodationId: validated.accommodationId as AccommodationId
+                    }
+                );
+                if (!updatedIaData) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update IA data'
+                    );
+                }
+                return { iaData: updatedIaData };
             }
         });
     }
@@ -613,15 +681,27 @@ export class AccommodationService extends BaseCrudService<
      * Gets all IA data for an accommodation.
      * @param input - Input object for getting all IA data.
      * @param actor - The actor performing the action.
-     * @returns Output object (to be defined)
+     * @returns Output object with the list of IA data
      */
-    public async getAllIAData(_input: object, _actor: Actor): Promise<ServiceOutput<never>> {
+    public async getAllIAData(
+        input: GetIADataInput,
+        actor: Actor
+    ): Promise<ServiceOutput<{ iaData: import('@repo/types').AccommodationIaDataType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAllIAData',
-            input: { actor: _actor, ..._input },
-            schema: z.any(),
-            execute: async () => {
-                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            input: { actor: actor, ...input },
+            schema: GetIADataInputSchema,
+            execute: async (validated, actor) => {
+                const accommodation = await this.model.findById(validated.accommodationId);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                this._canView(actor, accommodation);
+                const iaDataModel = new AccommodationIaDataModel();
+                const { items: iaData } = await iaDataModel.findAll({
+                    accommodationId: validated.accommodationId
+                });
+                return { iaData };
             }
         });
     }
