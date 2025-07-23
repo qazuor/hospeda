@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "037-bookmark-009-user-sofia-morales-destination-007-destination-liebig",
+    "userId": "009-user-sofia-morales",
+    "entityId": "007-destination-liebig",
+    "entityType": "DESTINATION",
+    "name": "Liebig",
+    "description": "Pueblo histórico",
+    "lifecycleState": "ACTIVE"
+}

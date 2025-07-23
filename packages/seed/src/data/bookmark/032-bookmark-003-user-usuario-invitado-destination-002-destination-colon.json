@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "032-bookmark-003-user-usuario-invitado-destination-002-destination-colon",
+    "userId": "003-user-usuario-invitado",
+    "entityId": "002-destination-colon",
+    "entityType": "DESTINATION",
+    "name": "Colón",
+    "description": "Perla del río Uruguay",
+    "lifecycleState": "ACTIVE"
+} 

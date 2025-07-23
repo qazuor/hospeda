@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "038-bookmark-010-user-roberto-mendoza-destination-008-destination-paranacito",
+    "userId": "010-user-roberto-mendoza",
+    "entityId": "008-destination-paranacito",
+    "entityType": "DESTINATION",
+    "name": "Paranacito",
+    "description": "Naturaleza pura",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "010-bookmark-012-user-fernando-lopez-accommodation-011-accommodation-colon-cabin-retiro-agradable-cabana-colon",
+    "userId": "012-user-fernando-lopez",
+    "entityId": "011-accommodation-colon-cabin-retiro-agradable-cabana-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "retiro-agradable-cabana",
+    "description": "Retiro agradable y tranquilo",
+    "lifecycleState": "ACTIVE"
+}

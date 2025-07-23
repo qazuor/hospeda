@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "049-bookmark-021-user-gabriela-medina-destination-008-destination-paranacito",
+    "userId": "021-user-gabriela-medina",
+    "entityId": "008-destination-paranacito",
+    "entityType": "DESTINATION",
+    "name": "Paranacito",
+    "description": "Ecoturismo puro",
+    "lifecycleState": "ACTIVE"
+}

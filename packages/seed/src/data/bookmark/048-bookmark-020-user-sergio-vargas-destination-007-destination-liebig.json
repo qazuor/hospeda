@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "048-bookmark-020-user-sergio-vargas-destination-007-destination-liebig",
+    "userId": "020-user-sergio-vargas",
+    "entityId": "007-destination-liebig",
+    "entityType": "DESTINATION",
+    "name": "Liebig",
+    "description": "Historia fascinante",
+    "lifecycleState": "ACTIVE"
+}

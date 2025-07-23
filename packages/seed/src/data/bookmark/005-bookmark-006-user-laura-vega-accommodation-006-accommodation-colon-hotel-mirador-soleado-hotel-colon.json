@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "005-bookmark-006-user-laura-vega-accommodation-006-accommodation-colon-hotel-mirador-soleado-hotel-colon",
+    "userId": "006-user-laura-vega",
+    "entityId": "006-accommodation-colon-hotel-mirador-soleado-hotel-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "mirador-soleado-hotel",
+    "description": "Vistas espectaculares del río",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "040-bookmark-012-user-fernando-lopez-destination-010-destination-ubajay",
+    "userId": "012-user-fernando-lopez",
+    "entityId": "010-destination-ubajay",
+    "entityType": "DESTINATION",
+    "name": "Ubajay",
+    "description": "Tranquilidad rural",
+    "lifecycleState": "ACTIVE"
+} 

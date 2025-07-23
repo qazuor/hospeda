@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "019-bookmark-021-user-gabriela-medina-accommodation-020-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "021-user-gabriela-medina",
+  "entityId": "005-accommodation-colon-camping-horizonte-agradable-camping-colon",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Muy buena relación precio",
+  "lifecycleState": "ACTIVE"
+}

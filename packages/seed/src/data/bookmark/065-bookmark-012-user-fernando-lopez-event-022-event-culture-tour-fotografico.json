@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "065-bookmark-012-user-fernando-lopez-event-022-event-culture-tour-fotografico",
+    "userId": "012-user-fernando-lopez",
+    "entityId": "022-event-culture-tour-fotografico",
+    "entityType": "EVENT",
+    "name": "Tour Fotográfico",
+    "description": "Fotografía artística",
+    "lifecycleState": "ACTIVE"
+}

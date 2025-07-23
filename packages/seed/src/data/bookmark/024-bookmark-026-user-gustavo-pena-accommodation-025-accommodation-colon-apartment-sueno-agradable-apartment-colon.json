@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "024-bookmark-026-user-gustavo-pena-accommodation-025-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "026-user-gustavo-pena",
+  "entityId": "010-accommodation-colon-hotel-refugio-silvestre-hotel-colon",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Muy bien equipado",
+  "lifecycleState": "ACTIVE"
+}

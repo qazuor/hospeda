@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "042-bookmark-014-user-andres-castro-destination-001-destination-chajari",
+    "userId": "014-user-andres-castro",
+    "entityId": "001-destination-chajari",
+    "entityType": "DESTINATION",
+    "name": "Chajarí",
+    "description": "Me encanta el campo",
+    "lifecycleState": "ACTIVE"
+}

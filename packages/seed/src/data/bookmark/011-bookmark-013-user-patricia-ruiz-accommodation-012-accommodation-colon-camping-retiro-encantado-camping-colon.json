@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "011-bookmark-013-user-patricia-ruiz-accommodation-012-accommodation-colon-camping-retiro-encantado-camping-colon",
+    "userId": "013-user-patricia-ruiz",
+    "entityId": "012-accommodation-colon-camping-retiro-encantado-camping-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "retiro-encantado-camping",
+    "description": "Camping encantado en Colón",
+    "lifecycleState": "ACTIVE"
+}

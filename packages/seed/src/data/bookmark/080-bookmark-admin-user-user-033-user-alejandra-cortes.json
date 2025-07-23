@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "080-bookmark-admin-user-user-033-user-alejandra-cortes",
+    "userId": "admin-user",
+    "entityId": "033-user-alejandra-cortes",
+    "entityType": "USER",
+    "name": "Alejandra Cortés",
+    "description": "Propietaria destacada",
+    "lifecycleState": "ACTIVE"
+} 

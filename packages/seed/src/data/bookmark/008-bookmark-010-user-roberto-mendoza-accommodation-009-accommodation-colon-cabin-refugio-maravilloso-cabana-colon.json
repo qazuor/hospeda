@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "008-bookmark-010-user-roberto-mendoza-accommodation-009-accommodation-colon-cabin-refugio-maravilloso-cabana-colon",
+    "userId": "010-user-roberto-mendoza",
+    "entityId": "009-accommodation-colon-cabin-refugio-maravilloso-cabana-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "refugio-maravilloso-cabana",
+    "description": "Refugio maravilloso en Colón",
+    "lifecycleState": "ACTIVE"
+}

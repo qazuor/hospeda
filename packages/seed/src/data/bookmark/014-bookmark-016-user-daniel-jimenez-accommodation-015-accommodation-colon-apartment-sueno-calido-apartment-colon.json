@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "014-bookmark-016-user-daniel-jimenez-accommodation-015-accommodation-colon-apartment-sueno-calido-apartment-colon",
+    "userId": "016-user-daniel-jimenez",
+    "entityId": "015-accommodation-colon-apartment-sueno-calido-apartment-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "sueno-calido-apartment",
+    "description": "Sueño cálido y confortable",
+    "lifecycleState": "ACTIVE"
+}

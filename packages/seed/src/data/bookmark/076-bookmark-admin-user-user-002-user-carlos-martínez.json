@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "076-bookmark-admin-user-user-002-user-carlos-martínez",
+    "userId": "admin-user",
+    "entityId": "002-user-carlos-martínez",
+    "entityType": "USER",
+    "name": "Carlos Martínez",
+    "description": "Usuario destacado",
+    "lifecycleState": "ACTIVE"
+}

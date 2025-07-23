@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "061-bookmark-008-user-lucas-fernandez-event-014-event-sports-competencia-pesca",
+    "userId": "008-user-lucas-fernandez",
+    "entityId": "014-event-sports-competencia-pesca",
+    "entityType": "EVENT",
+    "name": "Competencia de Pesca",
+    "description": "Pesca deportiva",
+    "lifecycleState": "ACTIVE"
+}

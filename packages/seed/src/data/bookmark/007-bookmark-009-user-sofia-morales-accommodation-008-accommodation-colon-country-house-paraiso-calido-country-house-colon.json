@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "007-bookmark-009-user-sofia-morales-accommodation-008-accommodation-colon-country-house-paraiso-calido-country-house-colon",
+    "userId": "009-user-sofia-morales",
+    "entityId": "008-accommodation-colon-country-house-paraiso-calido-country-house-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "paraiso-calido-country-house",
+    "description": "Paraíso cálido y confortable",
+    "lifecycleState": "ACTIVE"
+}

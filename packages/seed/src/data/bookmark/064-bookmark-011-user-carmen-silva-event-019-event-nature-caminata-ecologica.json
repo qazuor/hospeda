@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "064-bookmark-011-user-carmen-silva-event-019-event-nature-caminata-ecologica",
+    "userId": "011-user-carmen-silva",
+    "entityId": "019-event-nature-caminata-ecologica",
+    "entityType": "EVENT",
+    "name": "Caminata Ecológica",
+    "description": "Naturaleza y salud",
+    "lifecycleState": "ACTIVE"
+}

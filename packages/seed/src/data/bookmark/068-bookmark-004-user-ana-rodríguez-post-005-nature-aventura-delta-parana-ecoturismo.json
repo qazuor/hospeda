@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "068-bookmark-004-user-ana-rodríguez-post-005-nature-aventura-delta-parana-ecoturismo",
+    "userId": "004-user-ana-rodríguez",
+    "entityId": "005-nature-aventura-delta-parana-ecoturismo",
+    "entityType": "POST",
+    "name": "Aventura en el Delta del Paraná",
+    "description": "Ecoturismo puro",
+    "lifecycleState": "ACTIVE"
+}

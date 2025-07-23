@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "056-bookmark-002-user-carlos-martínez-event-002-event-culture-encuentro-historia-palacio-san-jose-2025",
+    "userId": "002-user-carlos-martínez",
+    "entityId": "002-event-culture-encuentro-historia-palacio-san-jose-2025",
+    "entityType": "EVENT",
+    "name": "Encuentro de Historia - Palacio San José 2025",
+    "description": "Historia fascinante",
+    "lifecycleState": "ACTIVE"
+}

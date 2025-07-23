@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "033-bookmark-004-user-ana-rodríguez-destination-003-destination-concordia",
+    "userId": "004-user-ana-rodríguez",
+    "entityId": "003-destination-concordia",
+    "entityType": "DESTINATION",
+    "name": "Concordia",
+    "description": "Ciudad de los naranjos",
+    "lifecycleState": "ACTIVE"
+}

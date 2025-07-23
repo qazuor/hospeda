@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "006-bookmark-008-user-lucas-fernandez-accommodation-007-accommodation-colon-house-nido-tranquilo-house-colon",
+    "userId": "008-user-lucas-fernandez",
+    "entityId": "007-accommodation-colon-house-nido-tranquilo-house-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "nido-tranquilo-house",
+    "description": "Casa tranquila y acogedora",
+    "lifecycleState": "ACTIVE"
+}

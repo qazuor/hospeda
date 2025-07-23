@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "031-bookmark-002-user-carlos-martínez-destination-001-destination-chajari",
+    "userId": "002-user-carlos-martínez",
+    "entityId": "001-destination-chajari",
+    "entityType": "DESTINATION",
+    "name": "Chajarí",
+    "description": "Ciudad citrícola encantadora",
+    "lifecycleState": "ACTIVE"
+}

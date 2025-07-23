@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "001-bookmark-002-user-carlos-martínez-accommodation-001-accommodation-chajari-cabin-retiro-soleado-cabana-chajari",
+    "userId": "002-user-carlos-martínez",
+    "entityId": "001-accommodation-chajari-cabin-retiro-soleado-cabana-chajari",
+    "entityType": "ACCOMMODATION",
+    "name": "retiro-soleado-cabana",
+    "description": "Perfecto para escapada rural",
+    "lifecycleState": "ACTIVE"
+}

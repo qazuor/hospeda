@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "062-bookmark-009-user-sofia-morales-event-015-event-education-charla-turismo",
+    "userId": "009-user-sofia-morales",
+    "entityId": "015-event-education-charla-turismo",
+    "entityType": "EVENT",
+    "name": "Charla de Turismo",
+    "description": "Información útil",
+    "lifecycleState": "ACTIVE"
+}

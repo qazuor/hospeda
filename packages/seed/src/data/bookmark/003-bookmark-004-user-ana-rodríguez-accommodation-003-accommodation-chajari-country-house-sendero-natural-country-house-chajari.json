@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "003-bookmark-004-user-ana-rodríguez-accommodation-003-accommodation-chajari-country-house-sendero-natural-country-house-chajari",
+    "userId": "004-user-ana-rodríguez",
+    "entityId": "003-accommodation-chajari-country-house-sendero-natural-country-house-chajari",
+    "entityType": "ACCOMMODATION",
+    "name": "sendero-natural-country-house",
+    "description": "Senderos naturales hermosos",
+    "lifecycleState": "ACTIVE"
+} 

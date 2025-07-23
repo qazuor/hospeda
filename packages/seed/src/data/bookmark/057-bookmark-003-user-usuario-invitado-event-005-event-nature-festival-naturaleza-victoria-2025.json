@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "057-bookmark-003-user-usuario-invitado-event-005-event-nature-festival-naturaleza-victoria-2025",
+    "userId": "003-user-usuario-invitado",
+    "entityId": "005-event-nature-festival-naturaleza-victoria-2025",
+    "entityType": "EVENT",
+    "name": "Festival de Naturaleza Victoria 2025",
+    "description": "Naturaleza pura",
+    "lifecycleState": "ACTIVE"
+}

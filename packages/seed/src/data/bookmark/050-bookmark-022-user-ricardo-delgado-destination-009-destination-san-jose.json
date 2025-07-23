@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "050-bookmark-022-user-ricardo-delgado-destination-009-destination-san-jose",
+    "userId": "022-user-ricardo-delgado",
+    "entityId": "009-destination-san-jose",
+    "entityType": "DESTINATION",
+    "name": "San José",
+    "description": "Arquitectura única",
+    "lifecycleState": "ACTIVE"
+}

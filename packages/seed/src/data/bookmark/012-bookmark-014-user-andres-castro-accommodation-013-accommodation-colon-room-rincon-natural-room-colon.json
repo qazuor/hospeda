@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "012-bookmark-014-user-andres-castro-accommodation-013-accommodation-colon-room-rincon-natural-room-colon",
+    "userId": "014-user-andres-castro",
+    "entityId": "013-accommodation-colon-room-rincon-natural-room-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "rincon-natural-room",
+    "description": "Rincón natural perfecto",
+    "lifecycleState": "ACTIVE"
+}

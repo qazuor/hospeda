@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "045-bookmark-017-user-silvia-moreno-destination-004-destination-federacion",
+    "userId": "017-user-silvia-moreno",
+    "entityId": "004-destination-federacion",
+    "entityType": "DESTINATION",
+    "name": "Federación",
+    "description": "Aguas termales",
+    "lifecycleState": "ACTIVE"
+}

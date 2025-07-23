@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "053-bookmark-025-user-mariana-guerrero-destination-001-destination-chajari",
+    "userId": "025-user-mariana-guerrero",
+    "entityId": "001-destination-chajari",
+    "entityType": "DESTINATION",
+    "name": "Chajarí",
+    "description": "Cítricos deliciosos",
+    "lifecycleState": "ACTIVE"
+}

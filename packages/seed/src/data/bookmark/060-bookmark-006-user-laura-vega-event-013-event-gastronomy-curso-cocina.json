@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "060-bookmark-006-user-laura-vega-event-013-event-gastronomy-curso-cocina",
+    "userId": "006-user-laura-vega",
+    "entityId": "013-event-gastronomy-curso-cocina",
+    "entityType": "EVENT",
+    "name": "Curso de Cocina",
+    "description": "Cocina regional",
+    "lifecycleState": "ACTIVE"
+}

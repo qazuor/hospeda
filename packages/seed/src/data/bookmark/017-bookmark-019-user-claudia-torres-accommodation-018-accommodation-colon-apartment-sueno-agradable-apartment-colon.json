@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "017-bookmark-019-user-claudia-torres-accommodation-018-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "019-user-claudia-torres",
+  "entityId": "003-accommodation-chajari-country-house-sendero-natural-country-house-chajari",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Muy cómodo y limpio",
+  "lifecycleState": "ACTIVE"
+}

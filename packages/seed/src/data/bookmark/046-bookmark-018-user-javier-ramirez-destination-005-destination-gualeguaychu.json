@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "046-bookmark-018-user-javier-ramirez-destination-005-destination-gualeguaychu",
+    "userId": "018-user-javier-ramirez",
+    "entityId": "005-destination-gualeguaychu",
+    "entityType": "DESTINATION",
+    "name": "Gualeguaychú",
+    "description": "Carnaval espectacular",
+    "lifecycleState": "ACTIVE"
+}

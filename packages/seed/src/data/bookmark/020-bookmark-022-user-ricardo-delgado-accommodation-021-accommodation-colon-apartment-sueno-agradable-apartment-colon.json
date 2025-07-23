@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/userBookmark.schema.json",
+  "id": "020-bookmark-022-user-ricardo-delgado-accommodation-021-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+  "userId": "022-user-ricardo-delgado",
+  "entityId": "006-accommodation-colon-hotel-mirador-soleado-hotel-colon",
+  "entityType": "ACCOMMODATION",
+  "name": "sueno-agradable-apartment",
+  "description": "Perfecto para familias",
+  "lifecycleState": "ACTIVE"
+}

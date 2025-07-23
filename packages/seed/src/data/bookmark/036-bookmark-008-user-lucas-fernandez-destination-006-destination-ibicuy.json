@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "036-bookmark-008-user-lucas-fernandez-destination-006-destination-ibicuy",
+    "userId": "008-user-lucas-fernandez",
+    "entityId": "006-destination-ibicuy",
+    "entityType": "DESTINATION",
+    "name": "Ibicuy",
+    "description": "Delta del Paraná",
+    "lifecycleState": "ACTIVE"
+}

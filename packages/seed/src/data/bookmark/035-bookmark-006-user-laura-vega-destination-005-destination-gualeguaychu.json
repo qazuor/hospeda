@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "035-bookmark-006-user-laura-vega-destination-005-destination-gualeguaychu",
+    "userId": "006-user-laura-vega",
+    "entityId": "005-destination-gualeguaychu",
+    "entityType": "DESTINATION",
+    "name": "Gualeguaychú",
+    "description": "Capital del Carnaval",
+    "lifecycleState": "ACTIVE"
+}

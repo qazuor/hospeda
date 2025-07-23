@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "058-bookmark-004-user-ana-rodríguez-event-008-event-culture-exposicion-arte",
+    "userId": "004-user-ana-rodríguez",
+    "entityId": "008-event-culture-exposicion-arte",
+    "entityType": "EVENT",
+    "name": "Exposición de Arte",
+    "description": "Arte local",
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,10 @@
+{
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "070-bookmark-006-user-laura-vega-post-008-events-eventos-culturales-concordia-agenda",
+    "userId": "006-user-laura-vega",
+    "entityId": "008-events-eventos-culturales-concordia-agenda",
+    "entityType": "POST",
+    "name": "Eventos Culturales en Concordia",
+    "description": "Agenda cultural",
+    "lifecycleState": "ACTIVE"
+}
