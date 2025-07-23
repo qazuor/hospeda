@@ -27,8 +27,8 @@ export const PostSponsorshipSchema = WithIdSchema.merge(WithAuditSchema)
             .min(10, { message: 'zodError.post.sponsorship.description.min' })
             .max(500, { message: 'zodError.post.sponsorship.description.max' }),
         paid: PriceSchema,
-        paidAt: z.string().optional(),
-        fromDate: z.string().optional(),
-        toDate: z.string().optional(),
+        paidAt: z.date().optional(),
+        fromDate: z.date().optional(),
+        toDate: z.date().optional(),
         isHighlighted: z.boolean().optional()
     });

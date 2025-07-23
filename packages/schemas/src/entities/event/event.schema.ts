@@ -66,14 +66,16 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
                 required_error: 'zodError.event.locationId.required',
                 invalid_type_error: 'zodError.event.locationId.invalidType'
             })
-            .uuid({ message: 'zodError.event.locationId.invalidUuid' }),
+            .uuid({ message: 'zodError.event.locationId.invalidUuid' })
+            .optional(),
         /** Event organizer (ID only) */
         organizerId: z
             .string({
                 required_error: 'zodError.event.organizerId.required',
                 invalid_type_error: 'zodError.event.organizerId.invalidType'
             })
-            .uuid({ message: 'zodError.event.organizerId.invalidUuid' }),
+            .uuid({ message: 'zodError.event.organizerId.invalidUuid' })
+            .optional(),
         /** Event price, optional */
         pricing: EventPriceSchema.optional(),
         contact: ContactInfoSchema.optional(),

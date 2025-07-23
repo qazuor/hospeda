@@ -15,6 +15,9 @@ export const UserBookmarkSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithAdminInfoSchema)
     .extend({
+        userId: z
+            .string({ required_error: 'zodError.user.bookmark.userId.required' })
+            .uuid({ message: 'zodError.user.bookmark.userId.invalidUuid' }),
         entityId: z
             .string({ required_error: 'zodError.user.bookmark.entityId.required' })
             .uuid({ message: 'zodError.user.bookmark.entityId.invalidUuid' }),
