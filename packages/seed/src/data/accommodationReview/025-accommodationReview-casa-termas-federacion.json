@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "025-accommodationReview-casa-termas-federacion",
-    "userId": "guest-user-12345",
+    "userId": "003-user-usuario-invitado",
     "accommodationId": "025-accommodation-federacion-house-casa-termas-federacion",
     "title": "Perfecto para descansar",
     "content": "Exactamente lo que necesitaba. Un lugar tranquilo, limpio y cómodo. La atención personalizada hace la diferencia. Las instalaciones están bien mantenidas y el ambiente es muy relajante.",

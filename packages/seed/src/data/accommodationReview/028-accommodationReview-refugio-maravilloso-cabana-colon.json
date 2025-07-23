@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "028-accommodationReview-refugio-maravilloso-cabana-colon",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d488",
+    "userId": "013-user-patricia-ruiz",
     "accommodationId": "009-accommodation-colon-cabin-refugio-maravilloso-cabana-colon",
     "title": "Experiencia correcta pero mejorable",
     "content": "El alojamiento cumple con lo básico, pero creo que podría ser mejor en algunos aspectos. La limpieza es aceptable y el personal es cordial. La ubicación es buena pero los servicios podrían ampliarse.",

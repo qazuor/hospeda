@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "024-accommodationReview-retiro-natural-camping-federacion",
-    "userId": "guest-user-12345",
+    "userId": "012-user-fernando-lopez",
     "accommodationId": "029-accommodation-federacion-camping-retiro-natural-camping-federacion",
     "title": "Experiencia correcta pero mejorable",
     "content": "El alojamiento cumple con lo básico, pero creo que podría ser mejor en algunos aspectos. La limpieza es aceptable y el personal es cordial. La ubicación es buena pero los servicios podrían ampliarse.",

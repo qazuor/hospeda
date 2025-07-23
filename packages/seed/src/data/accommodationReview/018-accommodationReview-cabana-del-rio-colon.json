@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "018-accommodationReview-cabana-del-rio-colon",
-    "userId": "f47ac10b-58cc-4372-a567-0e02b2c3d488",
+    "userId": "015-user-monica-herrera",
     "accommodationId": "004-accommodation-colon-cabin-cabana-del-rio-colon",
     "title": "Experiencia correcta pero mejorable",
     "content": "El alojamiento cumple con lo básico, pero creo que podría ser mejor en algunos aspectos. La limpieza es aceptable y el personal es cordial. La ubicación es buena pero los servicios podrían ampliarse.",
