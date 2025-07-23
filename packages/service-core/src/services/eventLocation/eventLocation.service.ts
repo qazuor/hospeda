@@ -37,14 +37,8 @@ export class EventLocationService extends BaseCrudService<
     protected readonly updateSchema = UpdateEventLocationSchema;
     protected readonly searchSchema = SearchEventLocationSchema;
     protected normalizers = {
-        create: normalizeCreateInput as (
-            data: EventLocationType,
-            actor: Actor
-        ) => EventLocationType,
-        update: normalizeUpdateInput as (
-            data: z.infer<typeof UpdateEventLocationSchema>,
-            actor: Actor
-        ) => z.infer<typeof UpdateEventLocationSchema>
+        create: normalizeCreateInput,
+        update: normalizeUpdateInput
     };
 
     constructor(ctx: ServiceContext, model?: EventLocationModel) {
