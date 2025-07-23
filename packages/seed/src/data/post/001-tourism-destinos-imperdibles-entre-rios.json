@@ -10,24 +10,27 @@
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
-                "caption": "Termas de Federación"
+                "caption": "Termas de Federación",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop",
-                "caption": "Palacio San José en Colón"
+                "caption": "Palacio San José en Colón",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop",
-                "caption": "Carnaval de Gualeguaychú"
+                "caption": "Carnaval de Gualeguaychú",
+                "moderationState": "APPROVED"
             }
         ],
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&h=600&fit=crop",
-            "caption": "Paisaje de Entre Ríos con río y vegetación"
+            "caption": "Paisaje de Entre Ríos con río y vegetación",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "005-user-miguel-torres",
-    "sponsorshipId": null,
     "relatedDestinationId": "001-destination-chajari",
     "visibility": "PUBLIC",
     "isNews": false,
@@ -38,7 +41,7 @@
     "shares": 67,
     "isFeatured": true,
     "seo": {
-        "title": "Los 10 Destinos Imperdibles de Entre Ríos en 2024 | Hospeda",
+        "title": "Los 10 Destinos Imperdibles de Entre Ríos en 2024",
         "description": "Descubre los rincones más hermosos de Entre Ríos: termas, delta, historia y naturaleza. Guía completa de destinos imperdibles con consejos de expertos.",
         "keywords": [
             "Entre Ríos",
@@ -54,7 +57,7 @@
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": [
+    "tagIds": [
         "008-tag-ciclismo",
         "038-tag-termas",
         "021-tag-golf",

@@ -9,30 +9,30 @@
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1562167133?w=1200&h=600&fit=crop",
-            "caption": "Imagen de Actividades Familiares en Entre Ríos"
+            "caption": "Imagen de Actividades Familiares en Entre Ríos",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "004-user-ana-rodríguez",
-    "sponsorshipId": "021-postSponsorship-destinos-imperdibles-001",
     "relatedDestinationId": null,
     "relatedAccommodationId": null,
     "relatedEventId": null,
     "visibility": "PUBLIC",
     "isNews": true,
     "isFeaturedInWebsite": false,
-    "expiresAt": null,
+    "expiresAt": "2025-07-31T23:59:59Z",
     "likes": 56,
     "comments": 90,
     "shares": 42,
     "isFeatured": false,
     "seo": {
-        "title": "Actividades Familiares en Entre Ríos | Hospeda",
+        "title": "Actividades Familiares en Entre Ríos",
         "description": "Planes perfectos para disfrutar en familia: parques, actividades al aire libre y entretenimiento.",
         "keywords": ["family", "entre rios", "turismo"]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": [
+    "tagIds": [
         "029-tag-pareja",
         "028-tag-observacion-fauna",
         "041-tag-vida-nocturna",

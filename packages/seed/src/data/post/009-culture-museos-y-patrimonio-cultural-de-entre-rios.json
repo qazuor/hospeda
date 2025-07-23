@@ -9,11 +9,11 @@
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1501245757?w=1200&h=600&fit=crop",
-            "caption": "Imagen de Museos y Patrimonio Cultural de Entre Ríos"
+            "caption": "Imagen de Museos y Patrimonio Cultural de Entre Ríos",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "admin-user",
-    "sponsorshipId": "018-postSponsorship-patrimonio-cultural-005",
     "relatedDestinationId": "007-destination-liebig",
     "relatedAccommodationId": null,
     "relatedEventId": null,
@@ -26,11 +26,11 @@
     "shares": 11,
     "isFeatured": true,
     "seo": {
-        "title": "Museos y Patrimonio Cultural de Entre Ríos | Hospeda",
+        "title": "Museos y Patrimonio Cultural de Entre Ríos",
         "description": "Recorre los museos más importantes de la provincia y descubre su rico patrimonio cultural e histórico.",
         "keywords": ["culture", "entre rios", "turismo"]
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["003-tag-artesanias", "033-tag-rio-parana", "007-tag-camping"]
+    "tagIds": ["003-tag-artesanias", "033-tag-rio-parana", "007-tag-camping"]
 }

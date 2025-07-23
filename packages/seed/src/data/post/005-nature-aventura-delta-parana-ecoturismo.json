@@ -10,28 +10,32 @@
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?w=800&h=600&fit=crop",
-                "caption": "Kayak en arroyos"
+                "caption": "Kayak en arroyos",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=600&fit=crop",
-                "caption": "Observación de aves"
+                "caption": "Observación de aves",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&h=600&fit=crop",
-                "caption": "Carpincho en el delta"
+                "caption": "Carpincho en el delta",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1548191265-cc70d3d45ba1?w=800&h=600&fit=crop",
-                "caption": "Pesca deportiva"
+                "caption": "Pesca deportiva",
+                "moderationState": "APPROVED"
             }
         ],
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=1200&h=600&fit=crop",
-            "caption": "Paisaje del delta del Paraná"
+            "caption": "Paisaje del delta del Paraná",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "004-user-ana-rodríguez",
-    "sponsorshipId": "018-postSponsorship-patrimonio-cultural-005",
     "relatedDestinationId": null,
     "relatedAccommodationId": null,
     "relatedEventId": null,
@@ -44,7 +48,7 @@
     "shares": 78,
     "isFeatured": false,
     "seo": {
-        "title": "Aventura en el Delta del Paraná: Ecoturismo en Estado Puro | Hospeda",
+        "title": "Delta del Paraná: Ecoturismo en Estado Puro",
         "description": "Explora la biodiversidad única del delta entrerriano. Actividades de ecoturismo, observación de fauna y experiencias auténticas en contacto con la naturaleza.",
         "keywords": [
             "delta",
@@ -61,5 +65,5 @@
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": ["019-tag-fotograf-a", "038-tag-termas"]
+    "tagIds": ["019-tag-fotograf-a", "038-tag-termas"]
 }

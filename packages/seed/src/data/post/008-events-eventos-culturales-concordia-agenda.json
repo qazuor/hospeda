@@ -10,36 +10,39 @@
         "gallery": [
             {
                 "url": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&h=600&fit=crop",
-                "caption": "Festival de la Citricultura"
+                "caption": "Festival de la Citricultura",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1571182662976-32c8996d5d6c?w=800&h=600&fit=crop",
-                "caption": "Presentación de tango"
+                "caption": "Presentación de tango",
+                "moderationState": "APPROVED"
             },
             {
                 "url": "https://images.unsplash.com/photo-1526652424804-b3c6ac88f9c1?w=800&h=600&fit=crop",
-                "caption": "Teatro Municipal"
+                "caption": "Teatro Municipal",
+                "moderationState": "APPROVED"
             }
         ],
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1564494238164-8b7b2b6e4f2e?w=1200&h=600&fit=crop",
-            "caption": "Festival cultural en Concordia"
+            "caption": "Festival cultural en Concordia",
+            "moderationState": "APPROVED"
         }
     },
     "authorId": "admin-user",
-    "sponsorshipId": "021-postSponsorship-destinos-imperdibles-001",
     "relatedDestinationId": "009-destination-san-jose",
     "relatedEventId": null,
     "visibility": "PUBLIC",
     "isNews": true,
     "isFeaturedInWebsite": true,
-    "expiresAt": null,
+    "expiresAt": "2025-12-31T23:59:59Z",
     "likes": 342,
     "comments": 56,
     "shares": 89,
     "isFeatured": true,
     "seo": {
-        "title": "Eventos Culturales en Concordia: Agenda Imperdible 2024 | Hospeda",
+        "title": "Eventos Culturales en Concordia: Agenda Imperdible 2024",
         "description": "Descubre la rica agenda cultural de Concordia. Festivales, exposiciones, obras de teatro y eventos que hacen de esta ciudad un centro cultural vibrante.",
         "keywords": [
             "Concordia",
@@ -55,7 +58,7 @@
     },
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "tags": [
+    "tagIds": [
         "018-tag-festivales",
         "029-tag-pareja",
         "005-tag-aventura",
