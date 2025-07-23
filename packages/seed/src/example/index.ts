@@ -75,8 +75,6 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         context.actor = oldContextActor;
         await seedTags(context);
 
-        // TODO: Add seed for accommodation faqs
-        // TODO: Add seed for accommodation ia data
         // TODO: Add seed for tag <-> entity relationships
 
         logger.success(`${STATUS_ICONS.Success} Example data load completed.`);
