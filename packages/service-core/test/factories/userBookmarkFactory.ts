@@ -54,6 +54,7 @@ export const createUserBookmark = (overrides: Partial<UserBookmarkType> = {}): U
  */
 export const createUserBookmarkInput = (
     overrides: Partial<{
+        userId: string;
         entityId: string;
         entityType: EntityTypeEnum;
         name?: string;
@@ -61,6 +62,7 @@ export const createUserBookmarkInput = (
     }> = {}
 ) => {
     return {
+        userId: getMockId('user'),
         entityId: getMockId('destination'),
         entityType: EntityTypeEnum.DESTINATION,
         name: 'My destination',

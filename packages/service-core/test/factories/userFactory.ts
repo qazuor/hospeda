@@ -71,3 +71,35 @@ export const createUser = (overrides: Partial<UserType> = {}): UserType => {
     };
     return new UserFactoryBuilder().with(safeOverrides).build();
 };
+
+/**
+ * Creates user data for creation (omits server-generated fields).
+ * Use this for testing the create method.
+ */
+export const createUserForCreation = (
+    overrides: Partial<UserType> = {}
+): Omit<
+    UserType,
+    | 'id'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'deletedAt'
+    | 'createdById'
+    | 'updatedById'
+    | 'deletedById'
+    | 'bookmarks'
+> => {
+    const user = createUser(overrides);
+    const {
+        id,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        createdById,
+        updatedById,
+        deletedById,
+        bookmarks,
+        ...userForCreation
+    } = user;
+    return userForCreation;
+};

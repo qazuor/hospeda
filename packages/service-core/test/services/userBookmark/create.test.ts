@@ -34,6 +34,7 @@ describe('UserBookmarkService.create', () => {
     it('should create a bookmark (success)', async () => {
         asMock(modelMock.create).mockResolvedValue(bookmark);
         const input = createUserBookmarkInput({
+            userId: bookmark.userId,
             entityId: bookmark.entityId,
             entityType: bookmark.entityType,
             name: bookmark.name,
@@ -53,6 +54,7 @@ describe('UserBookmarkService.create', () => {
         asMock(modelMock.create).mockResolvedValue(bookmark);
         actor = createActor({ id: bookmark.userId, permissions: [] });
         const input = createUserBookmarkInput({
+            userId: bookmark.userId,
             entityId: bookmark.entityId,
             entityType: bookmark.entityType,
             name: bookmark.name,
@@ -64,6 +66,7 @@ describe('UserBookmarkService.create', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         const { entityId, ...rest } = createUserBookmarkInput({
+            userId: bookmark.userId,
             entityId: bookmark.entityId,
             entityType: bookmark.entityType,
             name: bookmark.name,
@@ -80,6 +83,7 @@ describe('UserBookmarkService.create', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.create).mockRejectedValue(new Error('DB error'));
         const input = createUserBookmarkInput({
+            userId: bookmark.userId,
             entityId: bookmark.entityId,
             entityType: bookmark.entityType,
             name: bookmark.name,
