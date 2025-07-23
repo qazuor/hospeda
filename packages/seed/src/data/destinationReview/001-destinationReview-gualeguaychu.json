@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "001-destinationReview-gualeguaychu",
     "userId": "009-user-sofia-morales",
-    "destinationId": "gualeguaychu",
+    "destinationId": "005-destination-gualeguaychu",
     "title": "Mi destino favorito en Entre Ríos",
     "content": "Gualeguaychú es simplemente mágico. He visitado la ciudad varias veces y siempre descubro algo nuevo. El Carnaval es espectacular, pero la ciudad tiene encanto todo el año. La costanera es perfecta para caminar al atardecer, el centro histórico es hermoso y las termas son ideales para relajarse. La gastronomía local es excelente y la gente es muy cálida. Sin duda mi destino favorito para escapadas de fin de semana.",
     "rating": {

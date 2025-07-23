@@ -1,8 +1,8 @@
 {
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "014-destinationReview-colon",
-    "userId": "guest-user-12345",
-    "destinationId": "colon",
+    "userId": "005-user-miguel-torres",
+    "destinationId": "002-destination-colon",
     "title": "Destino con mucho potencial",
     "content": "Es un Colón con características únicas, aunque creo que podría mejorarse en algunos aspectos. La belleza natural es indiscutible, pero falta un poco más de desarrollo en servicios. Aún así, vale la pena visitarlo.",
     "rating": {

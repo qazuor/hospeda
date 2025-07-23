@@ -1,8 +1,8 @@
 {
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "033-destinationReview-uruguay",
-    "userId": "super-admin-user",
-    "destinationId": "uruguay",
+    "userId": "admin-user",
+    "destinationId": "011-destination-concepcion-del-uruguay",
     "title": "Destino con mucho potencial",
     "content": "Es un Uruguay con características únicas, aunque creo que podría mejorarse en algunos aspectos. La belleza natural es indiscutible, pero falta un poco más de desarrollo en servicios. Aún así, vale la pena visitarlo.",
     "rating": {

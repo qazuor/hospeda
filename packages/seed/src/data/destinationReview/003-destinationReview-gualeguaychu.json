@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "003-destinationReview-gualeguaychu",
     "userId": "008-user-lucas-fernandez",
-    "destinationId": "gualeguaychu",
+    "destinationId": "005-destination-gualeguaychu",
     "title": "Destino completo con mucha oferta",
     "content": "Gualeguaychú es una ciudad que tiene de todo. El Carnaval es impresionante, pero también hay mucho que hacer fuera de temporada. Me gustó mucho la diversidad de actividades: desde las termas hasta la vida nocturna, pasando por la historia y la cultura. La arquitectura del centro es interesante y las opciones gastronómicas son variadas. Es un destino que recomiendo para conocer lo mejor de Entre Ríos en un solo lugar.",
     "rating": {

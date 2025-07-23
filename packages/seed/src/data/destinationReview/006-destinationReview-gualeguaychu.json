@@ -2,7 +2,7 @@
     "$schema": "../../../schemas/destinationReview.schema.json",
     "id": "006-destinationReview-gualeguaychu",
     "userId": "005-user-miguel-torres",
-    "destinationId": "gualeguaychu",
+    "destinationId": "005-destination-gualeguaychu",
     "title": "Inspiración para el sector hotelero",
     "content": "Como host, visité Gualeguaychú para conocer las tendencias del turismo en la región. La ciudad ha sabido posicionarse muy bien, especialmente con el Carnaval como atractivo principal. Me impresionó la variedad de alojamientos disponibles y la profesionalización del sector. Las termas son un complemento perfecto al Carnaval, permitiendo que el destino funcione todo el año. Es una fuente de inspiración para mejorar mi propia propuesta de hospitalidad.",
     "rating": {
