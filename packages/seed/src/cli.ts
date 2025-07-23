@@ -3,41 +3,66 @@ import { runSeed } from './index.js';
 import { STATUS_ICONS } from './utils/icons.js';
 import { logger } from './utils/logger.js';
 
-// Parseo básico de argumentos CLI
+// Basic CLI argument parsing
 const args = process.argv.slice(2);
 
+/**
+ * CLI options parsed from command line arguments
+ */
 const options = {
+    /** Whether to run required seeds */
     required: args.includes('--required'),
+    /** Whether to run example seeds */
     example: args.includes('--example'),
+    /** Whether to reset database before seeding */
     reset: args.includes('--reset'),
+    /** Whether to run migrations before seeding */
     migrate: args.includes('--migrate'),
+    /** Whether to rollback on error (incompatible with continueOnError) */
     rollbackOnError: args.includes('--rollbackOnError'),
+    /** Whether to continue processing when encountering errors */
     continueOnError: args.includes('--continueOnError'),
+    /** List of entities to exclude from seeding */
     exclude: [] as string[]
 };
 
-// Validación de flags incompatibles
+// Validate incompatible flags
 if (options.rollbackOnError && options.continueOnError) {
     logger.error(
-        `${STATUS_ICONS.Error} No se puede usar --rollbackOnError y --continueOnError al mismo tiempo.`
+        `${STATUS_ICONS.Error} Cannot use --rollbackOnError and --continueOnError at the same time.`
     );
     process.exit(1);
 }
 
-// Parseo de --exclude roles,permissions
+// Parse --exclude roles,permissions
 const excludeArg = args.find((arg) => arg.startsWith('--exclude='));
 if (excludeArg) {
     const list = excludeArg.replace('--exclude=', '');
     options.exclude = list.split(',').map((s) => s.trim());
 }
 
+/**
+ * Main CLI entry point that parses arguments and executes the seed process
+ *
+ * @example
+ * ```bash
+ * # Run required seeds
+ * pnpm seed --required
+ *
+ * # Run example seeds with database reset
+ * pnpm seed --example --reset
+ *
+ * # Run with error continuation and exclusions
+ * pnpm seed --required --continueOnError --exclude=users,posts
+ * ```
+ */
 try {
     runSeed(options);
 } catch (err) {
-    // 🔍 LOG DISTINTIVO: cli principal
-    console.error(`${STATUS_ICONS.Debug} [CLI_PRINCIPAL] Error en el nivel principal del proceso`);
+    // 🔍 DISTINCTIVE LOG: main CLI
+    console.error(`${STATUS_ICONS.Debug} [MAIN_CLI] Error at the main process level`);
 
-    logger.error('🧨 Error durante el proceso de seed:');
+    logger.error('🧨 Error during seed process:');
     logger.error(String(err));
     process.exit(1);
 }

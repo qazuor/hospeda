@@ -11,29 +11,67 @@ import { loadSuperAdminAndGetActor } from './utils/superAdminLoader.js';
 import { validateAllManifests } from './utils/validateAllManifests.js';
 // import { runMigrations } from './utils/migrateRunner.js';
 
+/**
+ * Configuration options for the seed process
+ */
 type SeedOptions = {
+    /** Whether to run required seeds (core system data) */
     required?: boolean;
+    /** Whether to run example seeds (sample data) */
     example?: boolean;
+    /** Whether to reset the database before seeding */
     reset?: boolean;
+    /** Whether to run migrations before seeding */
     migrate?: boolean;
+    /** Whether to rollback on error (incompatible with continueOnError) */
     rollbackOnError?: boolean;
+    /** Whether to continue processing when encountering errors */
     continueOnError?: boolean;
+    /** List of entities to exclude from seeding */
     exclude?: string[];
 };
 
-export async function runSeed(options: SeedOptions) {
+/**
+ * Main seed execution function that orchestrates the entire seeding process.
+ *
+ * This function handles:
+ * - Database initialization and cleanup
+ * - Configuration validation
+ * - Process timing
+ * - Error handling and recovery
+ * - Summary reporting
+ *
+ * @param options - Configuration options for the seed process
+ * @returns Promise that resolves when seeding is complete
+ *
+ * @example
+ * ```typescript
+ * await runSeed({
+ *   required: true,
+ *   example: true,
+ *   reset: true,
+ *   continueOnError: false
+ * });
+ * ```
+ *
+ * @throws {Error} When seeding fails and continueOnError is false
+ */
+export async function runSeed(options: SeedOptions): Promise<void> {
     const { required, example, reset, migrate, exclude = [], continueOnError = false } = options;
 
-    // Configurar logger para mostrar logs completos durante el seed
+    // Start execution timer
+    summaryTracker.startTimer();
+
+    // Configure logger to show complete logs during seeding
     configureLogger({
         TRUNCATE_LONG_TEXT: false,
         EXPAND_OBJECT_LEVELS: 3
     });
 
-    // Inicializar la base de datos
+    // Initialize database
     initSeedDb();
 
-    // Crear el contexto de seed
+    // Create seed context
     const seedContext = createSeedContext({
         continueOnError,
         resetDatabase: reset || false,
@@ -41,25 +79,25 @@ export async function runSeed(options: SeedOptions) {
         exclude
     });
 
-    logger.info('🚀 Iniciando proceso de seed...');
+    logger.info('🚀 Starting seed process...');
 
     try {
         if (reset) {
             logger.info(
-                `${STATUS_ICONS.Reset} Ejecutando reset${exclude.length > 0 ? ` (excluyendo: ${exclude.join(', ')})` : ''}`
+                `${STATUS_ICONS.Reset} Executing reset${exclude.length > 0 ? ` (excluding: ${exclude.join(', ')})` : ''}`
             );
             try {
                 await resetDatabase(exclude);
                 summaryTracker.trackProcessStep(
                     'Reset DB',
                     'success',
-                    'Base de datos reseteada correctamente'
+                    'Database reset successfully'
                 );
             } catch (error) {
                 summaryTracker.trackProcessStep(
                     'Reset DB',
                     'error',
-                    'Error al resetear base de datos',
+                    'Error resetting database',
                     (error as Error).message
                 );
                 throw error;
@@ -73,24 +111,24 @@ export async function runSeed(options: SeedOptions) {
             summaryTracker.trackProcessStep(
                 'Migrations',
                 'warning',
-                'Migration runner no implementado'
+                'Migration runner not implemented'
             );
         }
 
-        // Validar todos los manifests una sola vez al inicio
+        // Validate all manifests once at the beginning
         if ((required || example) && seedContext.validateManifests) {
             try {
                 await validateAllManifests(continueOnError);
                 summaryTracker.trackProcessStep(
-                    'Validación Manifests',
+                    'Manifest Validation',
                     'success',
-                    'Todos los manifests validados correctamente'
+                    'All manifests validated successfully'
                 );
             } catch (error) {
                 summaryTracker.trackProcessStep(
-                    'Validación Manifests',
+                    'Manifest Validation',
                     'error',
-                    'Error en validación de manifests',
+                    'Error validating manifests',
                     (error as Error).message
                 );
                 if (!continueOnError) {
@@ -99,7 +137,7 @@ export async function runSeed(options: SeedOptions) {
             }
         }
 
-        // Cargar super admin si es necesario (para example seeds o si no existe)
+        // Load super admin if necessary (for example seeds or if it doesn't exist)
         if (example || required) {
             try {
                 const superAdminActor = await loadSuperAdminAndGetActor();
@@ -107,13 +145,13 @@ export async function runSeed(options: SeedOptions) {
                 summaryTracker.trackProcessStep(
                     'Super Admin',
                     'success',
-                    'Super admin cargado/creado exitosamente'
+                    'Super admin loaded/created successfully'
                 );
             } catch (error) {
                 summaryTracker.trackProcessStep(
                     'Super Admin',
                     'error',
-                    'Error al cargar super admin',
+                    'Error loading super admin',
                     (error as Error).message
                 );
                 throw error;
@@ -128,27 +166,30 @@ export async function runSeed(options: SeedOptions) {
             await runExampleSeeds(seedContext);
         }
 
-        logger.success(`${STATUS_ICONS.Complete} Proceso de seed completo.`);
+        logger.success(`${STATUS_ICONS.Complete} Seed process complete.`);
         summaryTracker.trackProcessStep(
-            'Proceso Completo',
+            'Complete Process',
             'success',
-            'Seed completado exitosamente'
+            'Seed completed successfully'
         );
     } catch (error) {
         summaryTracker.trackProcessStep(
-            'Proceso Completo',
+            'Complete Process',
             'error',
-            'Seed interrumpido por error',
+            'Seed interrupted by error',
             (error as Error).message
         );
 
-        // Mostrar el summary ANTES del throw final
+        // Show summary BEFORE final throw
         summaryTracker.print();
 
-        // Ahora lanzar el error
+        // Now throw the error
         throw error;
     } finally {
-        // Siempre cerrar la conexión
+        // Always close the connection
         await closeSeedDb();
+
+        // Print final summary with execution time
+        summaryTracker.print();
     }
 }

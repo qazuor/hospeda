@@ -15,11 +15,46 @@ import { seedPosts } from './posts.seed.js';
 import { seedTags } from './tags.seed.js';
 import { seedUsers } from './users.seed.js';
 
-export async function runExampleSeeds(context: SeedContext) {
-    logger.info(`${STATUS_ICONS.Seed} Inicializando carga de datos de ejemplo...\n`);
+/**
+ * Executes all example seeds in the correct order.
+ *
+ * Example seeds contain sample data that demonstrates the application's
+ * functionality and provides realistic test data. This includes:
+ * - Users (additional to required users)
+ * - Accommodations with amenities and features
+ * - Events with organizers and locations
+ * - Posts with sponsors and sponsorships
+ * - Reviews for accommodations and destinations
+ * - Bookmarks and tags
+ *
+ * The seeds are executed in a specific order to ensure that:
+ * - Dependencies are available before they're needed
+ * - Actor context is properly managed for different entity types
+ * - ID mappings are established for relationship building
+ *
+ * @param context - Seed context with configuration and utilities
+ * @returns Promise that resolves when all example seeds are complete
+ *
+ * @example
+ * ```typescript
+ * await runExampleSeeds(seedContext);
+ * // Executes in order:
+ * // 1. Users
+ * // 2. Accommodations (with amenities/features)
+ * // 3. Event organizers and locations
+ * // 4. Events
+ * // 5. Posts (with sponsors/sponsorships)
+ * // 6. Reviews
+ * // 7. Bookmarks and tags
+ * ```
+ *
+ * @throws {Error} When seeding fails and continueOnError is false
+ */
+export async function runExampleSeeds(context: SeedContext): Promise<void> {
+    logger.info(`${STATUS_ICONS.Seed} Initializing example data load...\n`);
 
     try {
-        // Accommodations modified the actore, to set the owner id as actor,
+        // Accommodations modified the actor to set the owner id as actor,
         // so we save the old actor and restore it after the seed
         const oldContextActor = context.actor;
 
@@ -40,24 +75,21 @@ export async function runExampleSeeds(context: SeedContext) {
         context.actor = oldContextActor;
         await seedTags(context);
 
-        // TODO: Add seed for destination <-> attraction relationships
         // TODO: Add seed for accommodation faqs
         // TODO: Add seed for accommodation ia data
-        // TODO: Add seed for accommodation <-> amenity relationships
-        // TODO: Add seed for accommodation <-> feature relationships
         // TODO: Add seed for tag <-> entity relationships
 
-        logger.success(`${STATUS_ICONS.Success} Finalizada carga de datos de ejemplo.`);
+        logger.success(`${STATUS_ICONS.Success} Example data load completed.`);
     } catch (error) {
-        logger.error(`${STATUS_ICONS.Error} Carga de datos de ejemplo interrumpida`);
+        logger.error(`${STATUS_ICONS.Error} Example data load interrupted`);
         logger.error(`   Error: ${(error as Error).message}`);
 
-        // Si no se debe continuar en error, relanzar la excepción
+        // If we shouldn't continue on error, re-throw the exception
         if (!context.continueOnError) {
             throw error;
         }
     } finally {
-        // Siempre mostrar el summary, sin importar si hubo errores
+        // Always show summary, regardless of errors
         summaryTracker.print();
     }
 }
