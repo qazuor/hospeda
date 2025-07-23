@@ -18,7 +18,7 @@ type SeedOptions = {
     migrate?: boolean;
     rollbackOnError?: boolean;
     continueOnError?: boolean;
-    exclude?: string[]; // 👈 nueva opción
+    exclude?: string[];
 };
 
 export async function runSeed(options: SeedOptions) {

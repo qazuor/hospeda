@@ -1,6 +1,6 @@
 import { UserModel } from '@repo/db';
 import type { Actor } from '@repo/service-core';
-import { type PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/types';
 import superAdminInput from '../data/user/required/super-admin-user.json';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
@@ -24,7 +24,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
     const subSeparator = '─'.repeat(90);
 
     logger.info(`${separator}`);
-    logger.info(`${STATUS_ICONS.Crown}  CARGANDO SUPER ADMINISTRADOR`);
+    logger.info(`${STATUS_ICONS.UserSuperAdmin}  CARGANDO SUPER ADMINISTRADOR`);
     logger.info(`${subSeparator}`);
 
     try {
@@ -37,7 +37,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
         if (existingSuperAdmin) {
             logger.success(
-                `${STATUS_ICONS.Crown} Super admin encontrado: "${existingSuperAdmin.displayName || 'Super Admin'}" (ID: ${existingSuperAdmin.id})`
+                `${STATUS_ICONS.UserSuperAdmin} Super admin encontrado: "${existingSuperAdmin.displayName || 'Super Admin'}" (ID: ${existingSuperAdmin.id})`
             );
             logger.info(`${subSeparator}`);
 
@@ -50,7 +50,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
             return {
                 id: existingSuperAdmin.id,
                 role: existingSuperAdmin.role as RoleEnum,
-                permissions: existingSuperAdmin.permissions
+                permissions: Object.values(PermissionEnum)
             };
         }
 
@@ -67,7 +67,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         const realSuperAdminId = createdUser.id;
 
         logger.success(
-            `${STATUS_ICONS.Crown} Super admin creado: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
+            `${STATUS_ICONS.UserSuperAdmin} Super admin creado: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
         );
         logger.info(`${subSeparator}`);
 
@@ -80,7 +80,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         return {
             id: realSuperAdminId,
             role: superAdminInput.role as RoleEnum,
-            permissions: superAdminInput.permissions as PermissionEnum[]
+            permissions: Object.values(PermissionEnum)
         };
     } catch (error) {
         logger.error(

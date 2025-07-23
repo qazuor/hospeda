@@ -7,7 +7,7 @@
  * Entity icons for different types of data entities
  */
 export const ENTITY_ICONS = {
-    Users: '👨‍💻‍',
+    Users: '👨‍🔧',
     Destinations: '🌍',
     Amenities: '✨',
     Features: '💎',
@@ -33,15 +33,16 @@ export const STATUS_ICONS = {
     Warning: '⚠️',
     Info: '📊',
     Process: '🔄',
-    Complete: '🎉',
+    Complete: '🏁',
     Highlight: '⭐',
     Debug: '🔍',
-    Reset: '🧹',
+    Reset: '🗑️',
     Skip: '↪️',
-    Crown: '👑',
     Seed: '🌱',
-    Tool: '🔧',
-    User: '👤'
+    UserSuperAdmin: '👑',
+    UserAdmin: '🔧',
+    User: '👤',
+    BuiltIn: '🔒'
 } as const;
 
 /**

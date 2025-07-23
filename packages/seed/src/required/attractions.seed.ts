@@ -33,7 +33,7 @@ export const seedAttractions = createSeedFactory({
     // Custom entity info for better logging
     getEntityInfo: (item) => {
         const attraction = item as { name: string; isBuiltin?: boolean };
-        const builtinIcon = attraction.isBuiltin ? ` ${STATUS_ICONS.Tool}` : '';
+        const builtinIcon = attraction.isBuiltin ? ` ${STATUS_ICONS.BuiltIn}` : '';
         return `"${attraction.name}"${builtinIcon}`;
     }
 });
