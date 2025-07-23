@@ -7,7 +7,8 @@
     "logo": {
         "url": "https://images.pexels.com/photos/3225531/pexels-photo-3225531.jpeg",
         "caption": "Logo de Termas Unidas",
-        "description": "Logotipo de la asociación de complejos termales"
+        "description": "Logotipo de la asociación de complejos termales",
+        "moderationState": "APPROVED"
     },
     "contact": {
         "personalEmail": "contacto@termasunidas.com.ar",

@@ -7,7 +7,8 @@
     "logo": {
         "url": "https://images.pexels.com/photos/1164674/pexels-photo-1164674.jpeg",
         "caption": "Logo de Cultura Entrerriana",
-        "description": "Logotipo de la fundación cultural"
+        "description": "Logotipo de la fundación cultural",
+        "moderationState": "APPROVED"
     },
     "contact": {
         "workEmail": "contacto@culturaentrerriana.org.ar",
