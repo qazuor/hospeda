@@ -7,16 +7,14 @@ import { createSeedFactory } from '../utils/seedFactory.js';
  * Normalizer for tag data
  */
 const tagNormalizer = (data: Record<string, unknown>) => {
-    return {
-        name: data.name as string,
-        description: data.description as string,
-        color: data.color as string,
-        icon: data.icon as string,
-        isBuiltin: data.isBuiltin as boolean,
-        isFeatured: data.isFeatured as boolean,
-        visibility: data.visibility,
-        lifecycleState: data.lifecycleState
+    // First exclude metadata fields and auto-generated fields
+    const { $schema, id, lifecycleState, ...cleanData } = data as {
+        $schema?: string;
+        id?: string;
+        lifecycleState?: string;
+        [key: string]: unknown;
     };
+    return cleanData;
 };
 
 /**
