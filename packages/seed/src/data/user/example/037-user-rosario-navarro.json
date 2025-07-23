@@ -1,50 +1,50 @@
 {
-    "$schema": "../../schemas/user.schema.json",
-    "role": "HOST",
-    "slug": "rosario-navarro",
-    "lifecycleState": "ACTIVE",
-    "firstName": "Rosario",
-    "lastName": "Navarro",
-    "displayName": "Rosario Navarro",
-    "contactInfo": {
-        "personalEmail": "rosario.navarro@hospeda.com.ar",
-        "mobilePhone": "+5493447936990",
-        "website": "https://www.hospeda.com.ar/host/rosario-navarro",
-        "preferredEmail": "HOME",
-        "preferredPhone": "MOBILE"
+  "id": "037-user-rosario-navarro",
+  "$schema": "../../schemas/user.schema.json",
+  "role": "HOST",
+  "slug": "rosario-navarro",
+  "lifecycleState": "ACTIVE",
+  "firstName": "Rosario",
+  "lastName": "Navarro",
+  "displayName": "Rosario Navarro",
+  "contactInfo": {
+    "personalEmail": "rosario.navarro@hospeda.com.ar",
+    "mobilePhone": "+5493447936990",
+    "website": "https://www.hospeda.com.ar/host/rosario-navarro",
+    "preferredEmail": "HOME",
+    "preferredPhone": "MOBILE"
+  },
+  "location": {
+    "city": "Ibicuy",
+    "state": "Entre Ríos",
+    "country": "Argentina",
+    "zipCode": "2847",
+    "street": "Entre Ríos",
+    "number": "147",
+    "coordinates": {
+      "lat": "-33.7333",
+      "long": "-59.1833"
+    }
+  },
+  "profile": {
+    "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+  },
+  "settings": {
+    "theme": "AUTO",
+    "language": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "notifications": {
+      "enabled": true,
+      "allowEmails": true,
+      "allowPush": true,
+      "allowSms": false
     },
-    "location": {
-        "city": "Ibicuy",
-        "state": "Entre Ríos",
-        "country": "Argentina",
-        "zipCode": "2847",
-        "street": "Entre Ríos",
-        "number": "147",
-        "coordinates": {
-            "lat": "-33.7333",
-            "long": "-59.1833"
-        }
-    },
-    "profile": {
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-    },
-    "settings": {
-        "theme": "AUTO",
-        "language": "es-AR",
-        "timezone": "America/Argentina/Buenos_Aires",
-        "notifications": {
-            "enabled": true,
-            "allowEmails": true,
-            "allowPush": true,
-            "allowSms": false
-        },
-        "privacy": {
-            "profileVisibility": "PUBLIC",
-            "showEmail": false,
-            "showPhone": true
-        }
-    },
-    "permissions": [],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC"
+    "privacy": {
+      "profileVisibility": "PUBLIC",
+      "showEmail": false,
+      "showPhone": true
+    }
+  },
+  "permissions": [],
+  "visibility": "PUBLIC"
 }

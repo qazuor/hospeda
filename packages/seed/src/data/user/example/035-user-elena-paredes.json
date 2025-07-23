@@ -1,50 +1,50 @@
 {
-    "$schema": "../../schemas/user.schema.json",
-    "role": "HOST",
-    "slug": "elena-paredes",
-    "lifecycleState": "ACTIVE",
-    "firstName": "Elena",
-    "lastName": "Paredes",
-    "displayName": "Elena Paredes",
-    "contactInfo": {
-        "personalEmail": "elena.paredes@hospeda.com.ar",
-        "mobilePhone": "+549347512456",
-        "website": "https://www.hospeda.com.ar/host/elena-paredes",
-        "preferredEmail": "HOME",
-        "preferredPhone": "MOBILE"
+  "id": "035-user-elena-paredes",
+  "$schema": "../../schemas/user.schema.json",
+  "role": "HOST",
+  "slug": "elena-paredes",
+  "lifecycleState": "ACTIVE",
+  "firstName": "Elena",
+  "lastName": "Paredes",
+  "displayName": "Elena Paredes",
+  "contactInfo": {
+    "personalEmail": "elena.paredes@hospeda.com.ar",
+    "mobilePhone": "+549347512456",
+    "website": "https://www.hospeda.com.ar/host/elena-paredes",
+    "preferredEmail": "HOME",
+    "preferredPhone": "MOBILE"
+  },
+  "location": {
+    "city": "Federación",
+    "state": "Entre Ríos",
+    "country": "Argentina",
+    "zipCode": "3206",
+    "street": "Entre Ríos",
+    "number": "741",
+    "coordinates": {
+      "lat": "-30.9833",
+      "long": "-57.9000"
+    }
+  },
+  "profile": {
+    "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+  },
+  "settings": {
+    "theme": "AUTO",
+    "language": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "notifications": {
+      "enabled": true,
+      "allowEmails": true,
+      "allowPush": true,
+      "allowSms": false
     },
-    "location": {
-        "city": "Federación",
-        "state": "Entre Ríos",
-        "country": "Argentina",
-        "zipCode": "3206",
-        "street": "Entre Ríos",
-        "number": "741",
-        "coordinates": {
-            "lat": "-30.9833",
-            "long": "-57.9000"
-        }
-    },
-    "profile": {
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-    },
-    "settings": {
-        "theme": "AUTO",
-        "language": "es-AR",
-        "timezone": "America/Argentina/Buenos_Aires",
-        "notifications": {
-            "enabled": true,
-            "allowEmails": true,
-            "allowPush": true,
-            "allowSms": false
-        },
-        "privacy": {
-            "profileVisibility": "PUBLIC",
-            "showEmail": false,
-            "showPhone": true
-        }
-    },
-    "permissions": [],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC"
+    "privacy": {
+      "profileVisibility": "PUBLIC",
+      "showEmail": false,
+      "showPhone": true
+    }
+  },
+  "permissions": [],
+  "visibility": "PUBLIC"
 }
