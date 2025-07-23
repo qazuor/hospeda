@@ -2,19 +2,54 @@ import { STATUS_ICONS, getEntityIcon } from './icons.js';
 import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
 
+/**
+ * Configuration options for the seed runner
+ */
 export interface SeedRunnerOptions<T> {
+    /** Name of the entity being processed */
     entityName: string;
+    /** Array of items to process */
     items: T[];
+    /** Function to process each item */
     process: (item: T, index: number) => Promise<void>;
+    /** Optional error handler for individual items */
     onError?: (item: T, index: number, error: Error) => void;
+    /** Seed context with configuration and utilities */
     context: SeedContext;
+    /** Optional function to get display information for an item */
     getEntityInfo?: (item: T) => string;
 }
 
-// Separadores visuales consistentes
+// Consistent visual separators
 const SECTION_SEPARATOR = '#'.repeat(90);
 const SUBSECTION_SEPARATOR = '─'.repeat(90);
 
+/**
+ * Executes the seed process for a collection of items.
+ *
+ * This function provides:
+ * - Progress tracking with counters
+ * - Error handling and recovery
+ * - Visual separators and logging
+ * - Success/error statistics
+ * - Entity-specific information display
+ *
+ * @param options - Configuration for the seed runner
+ * @returns Promise that resolves when all items are processed
+ *
+ * @example
+ * ```typescript
+ * await seedRunner({
+ *   entityName: 'Users',
+ *   items: userData,
+ *   process: async (user, index) => {
+ *     await createUser(user);
+ *   },
+ *   context: seedContext,
+ *   getEntityInfo: (user) => `${user.name} (${user.email})`
+ * });
+ * ```
+ */
 export async function seedRunner<T>({
     entityName,
     items,
@@ -28,10 +63,10 @@ export async function seedRunner<T>({
     let successCount = 0;
     let errorCount = 0;
 
-    // Separador de sección principal
+    // Main section separator
     logger.info(`${SECTION_SEPARATOR}`);
-    logger.info(`${icon}  INICIALIZANDO CARGA DE ${entityName.toUpperCase()}`);
-    logger.info(`${icon}  Total de ítems: ${totalItems}`);
+    logger.info(`${icon}  INITIALIZING ${entityName.toUpperCase()} LOAD`);
+    logger.info(`${icon}  Total items: ${totalItems}`);
     logger.info(`${SUBSECTION_SEPARATOR}`);
 
     for (let i = 0; i < items.length; i++) {
@@ -42,11 +77,11 @@ export async function seedRunner<T>({
             if (item !== undefined) {
                 await process(item, i);
 
-                // Información de la entidad cargada
+                // Entity information for loaded item
                 const entityInfo = getEntityInfo ? getEntityInfo(item) : '';
                 const successMessage = entityInfo
-                    ? `${icon} ${entityInfo}`
-                    : `${icon} ${entityName} #${currentIndex}`;
+                    ? `[${currentIndex} of ${totalItems}] - ${icon} ${entityInfo}`
+                    : `[${currentIndex} of ${totalItems}] - ${icon} ${entityName} #${currentIndex}`;
 
                 logger.success(successMessage);
                 successCount++;
@@ -55,33 +90,33 @@ export async function seedRunner<T>({
             const error = err as Error;
             errorCount++;
 
-            // Información del error
+            // Error information
             const entityInfo =
                 getEntityInfo && item ? getEntityInfo(item) : `${entityName} #${currentIndex}`;
-            logger.error(`   ${STATUS_ICONS.Error} Error en ${entityInfo}: ${error.message}`);
+            logger.error(`   ${STATUS_ICONS.Error} Error in ${entityInfo}: ${error.message}`);
 
             // Call error handler first if available
             if (item !== undefined && onError) {
                 onError(item, i, error);
             }
 
-            // Si no se debe continuar en error, lanzar la excepción para parar el proceso
+            // If we shouldn't continue on error, throw the exception to stop the process
             if (!context.continueOnError) {
                 throw err;
             }
         }
     }
 
-    // Separador de finalización
+    // Completion separator
     logger.info(`${SUBSECTION_SEPARATOR}`);
 
     if (errorCount === 0) {
         logger.success(
-            `${STATUS_ICONS.Success} ${entityName}: ${successCount} ítems procesados exitosamente`
+            `${STATUS_ICONS.Success} ${entityName}: ${successCount} items processed successfully`
         );
     } else {
         logger.warn(
-            `${STATUS_ICONS.Warning}  ${entityName}: ${successCount} exitosos, ${errorCount} errores`
+            `${STATUS_ICONS.Warning}  ${entityName}: ${successCount} successful, ${errorCount} errors`
         );
     }
 

@@ -13,56 +13,85 @@ import { summaryTracker } from './summaryTracker.js';
 type ServiceConstructor<T = unknown> = new (ctx: any, ...args: any[]) => T;
 
 /**
- * Service result type
+ * Service result type with optional data and error information
  */
 interface ServiceResult {
+    /** Result data containing the created entity */
     data?: { id?: string };
+    /** Error information if the operation failed */
     error?: { message: string; code: string; details?: Record<string, unknown> };
 }
 
 /**
- * Configuration for creating a seed factory
+ * Configuration for creating a seed factory.
+ *
+ * This interface defines all the options available for customizing
+ * the behavior of a seed factory, including callbacks for different
+ * stages of the seeding process.
  */
 export interface SeedFactoryConfig<T = unknown, R = unknown> {
     // Basic configuration
+    /** Name of the entity being seeded */
     entityName: string;
+    /** Service class to use for creating entities */
     serviceClass: ServiceConstructor;
+    /** Folder path containing the JSON files */
     folder: string;
+    /** Array of JSON file names to process */
     files: string[];
 
     // Customizable callbacks
+    /** Function to normalize data before creation */
     normalizer?: (data: Record<string, unknown>) => R;
+    /** Function to get display information for an entity */
     getEntityInfo?: (item: unknown) => string;
+    /** Function called before processing each item */
     preProcess?: (item: T, context: SeedContext) => Promise<void>;
+    /** Function called after processing each item */
     postProcess?: (result: unknown, item: T, context: SeedContext) => Promise<void>;
+    /** Custom error handler for individual items */
     errorHandler?: (item: unknown, index: number, error: Error) => void;
+    /** Function to build relationships after entity creation */
     relationBuilder?: (result: unknown, item: T, context: SeedContext) => Promise<void>;
 
     // Advanced configuration
+    /** Whether to continue processing when encountering errors */
     continueOnError?: boolean;
+    /** Function to validate data before creation */
     validateBeforeCreate?: (data: Record<string, unknown> | R) => boolean | Promise<boolean>;
+    /** Function to transform the result after creation */
     transformResult?: (result: unknown) => unknown;
 }
 
 /**
- * Validates that the actor exists in the context
+ * Validates that the actor exists in the context.
+ *
+ * @param context - Seed context containing the actor
+ * @returns The validated actor
+ * @throws {Error} When actor is not available in context
  */
 const validateActor = (context: SeedContext): Actor => {
     if (!context.actor) {
         throw new Error(
-            `${STATUS_ICONS.Error} Actor no disponible en el contexto. El super admin debe cargarse primero.`
+            `${STATUS_ICONS.Error} Actor not available in context. Super admin must be loaded first.`
         );
     }
     return context.actor;
 };
 
 /**
- * Default normalizer that passes through the data
+ * Default normalizer that passes through the data unchanged.
+ *
+ * @param data - Input data to normalize
+ * @returns The same data without modification
  */
 const defaultNormalizer = (data: Record<string, unknown>) => data;
 
 /**
- * Default entity info formatter
+ * Default entity info formatter that extracts the name field.
+ *
+ * @param item - Entity item to format
+ * @returns Formatted string with the entity name
  */
 const defaultGetEntityInfo = (item: unknown) => {
     const itemData = item as Record<string, unknown>;
@@ -71,11 +100,35 @@ const defaultGetEntityInfo = (item: unknown) => {
 };
 
 /**
- * Default error handler
- */
-
-/**
- * Creates a seed factory with customizable callbacks
+ * Creates a seed factory with customizable callbacks.
+ *
+ * This factory function provides a complete seeding solution with:
+ * - JSON file loading and processing
+ * - Progress tracking and logging
+ * - Error handling and recovery
+ * - Relationship building
+ * - Customizable data transformation
+ * - ID mapping and persistence
+ *
+ * @param config - Configuration for the seed factory
+ * @returns A function that can be called with a seed context to execute the seeding
+ *
+ * @example
+ * ```typescript
+ * const seedUsers = createSeedFactory({
+ *   entityName: 'Users',
+ *   serviceClass: UserService,
+ *   folder: 'src/data/users',
+ *   files: ['users.json'],
+ *   normalizer: (data) => ({ ...data, email: data.email.toLowerCase() }),
+ *   getEntityInfo: (user) => `${user.name} (${user.email})`,
+ *   relationBuilder: async (result, user, context) => {
+ *     // Build user relationships
+ *   }
+ * });
+ *
+ * await seedUsers(seedContext);
+ * ```
  */
 export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryConfig<T, R>) => {
     return async (context: SeedContext) => {
@@ -114,7 +167,7 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                 if (config.validateBeforeCreate) {
                     const isValid = await config.validateBeforeCreate(normalizedData);
                     if (!isValid) {
-                        throw new Error('Validación personalizada falló');
+                        throw new Error('Custom validation failed');
                     }
                 }
 
@@ -123,78 +176,9 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                 const service = new config.serviceClass(serviceContext) as {
                     create: (actor: Actor, data: unknown) => Promise<ServiceResult>;
                 };
-                const result = await service.create(
-                    context.actor as Actor,
-                    normalizedData as Record<string, unknown>
-                );
 
-                // Handle creation errors
-                if (result?.error) {
-                    const error = result.error;
-                    let errorMessage = `${STATUS_ICONS.Error} ${config.entityName} creation failed:\n`;
-                    errorMessage += `Error: ${error.message}\n`;
-
-                    // Add detailed error information
-                    if (error.details) {
-                        const details = error.details as Record<string, unknown>;
-
-                        // Field errors
-                        if (details.fieldErrors) {
-                            const fieldErrors = details.fieldErrors as Record<string, string[]>;
-                            errorMessage += '\nField Errors:\n';
-                            for (const [field, errors] of Object.entries(fieldErrors)) {
-                                errorMessage += `  • ${field}: ${errors.join(', ')}\n`;
-                            }
-                        }
-
-                        // Form errors
-                        if (details.formErrors) {
-                            const formErrors = details.formErrors as string[];
-                            if (formErrors.length > 0) {
-                                errorMessage += '\nForm Errors:\n';
-                                for (const formError of formErrors) {
-                                    errorMessage += `  • ${formError}\n`;
-                                }
-                            }
-                        }
-
-                        // Validation issues
-                        if (details.issues) {
-                            const issues = details.issues as Array<{
-                                path: string[];
-                                message: string;
-                                code: string;
-                            }>;
-                            errorMessage += '\nValidation Issues:\n';
-                            for (const issue of issues) {
-                                const path = issue.path.length > 0 ? issue.path.join('.') : 'root';
-                                errorMessage += `  • ${path}: ${issue.message} (code: ${issue.code})\n`;
-                            }
-                        }
-
-                        // Input data
-                        if (details.input) {
-                            errorMessage += '\nInput Data:\n';
-                            errorMessage += `  ${JSON.stringify(details.input, null, 2)}\n`;
-                        }
-                    }
-
-                    errorMessage += `\nError Code: ${error.code}`;
-
-                    // Track error and throw it for seedRunner to handle
-                    summaryTracker.trackError(
-                        config.entityName,
-                        context.currentFile || 'unknown',
-                        error.message
-                    );
-
-                    // 🔍 LOG DISTINTIVO: seedFactory
-                    console.error(
-                        `${STATUS_ICONS.Debug} [SEED_FACTORY] Lanzando error con detalles completos`
-                    );
-
-                    throw new Error(errorMessage);
-                }
+                const actor = validateActor(context);
+                const result = await service.create(actor, normalizedData);
 
                 // Transform result if needed
                 const finalResult = config.transformResult
@@ -208,13 +192,20 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                     const seedId = itemData.id as string;
                     if (!seedId) {
                         throw new Error(
-                            `${STATUS_ICONS.Error} [SEED_FACTORY] No se pudo obtener el ID del item ${itemData.id}`
+                            `${STATUS_ICONS.Error} [SEED_FACTORY] Could not get ID from item ${itemData.id}`
                         );
                     }
+
+                    // Get entity name for better logging
+                    const entityName = config.getEntityInfo
+                        ? config.getEntityInfo(item)
+                        : undefined;
+
                     context.idMapper.setMapping(
                         config.entityName.toLowerCase(),
                         seedId,
-                        serviceResult.data.id
+                        serviceResult.data.id,
+                        entityName
                     );
                 }
 
