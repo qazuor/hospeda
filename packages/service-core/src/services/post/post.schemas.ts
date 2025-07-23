@@ -21,21 +21,19 @@ export const PostFilterInputSchema = _PostFilterInputSchema.strict();
 /**
  * Schema for creating a post (only user-provided fields)
  */
-export const PostCreateInputSchema = z
-    .object({
-        title: z.string().min(3).max(150),
-        summary: z.string().min(10).max(200),
-        content: z.string().min(10).max(5000),
-        media: PostSchema.shape.media,
-        category: PostSchema.shape.category,
-        sponsorshipId: PostSchema.shape.sponsorshipId.optional(),
-        relatedDestinationId: PostSchema.shape.relatedDestinationId.optional(),
-        relatedAccommodationId: PostSchema.shape.relatedAccommodationId.optional(),
-        relatedEventId: PostSchema.shape.relatedEventId.optional(),
-        isNews: PostSchema.shape.isNews.optional(),
-        expiresAt: PostSchema.shape.expiresAt.optional()
-    })
-    .strict();
+export const PostCreateInputSchema = PostSchema.omit({
+    id: true,
+    slug: true,
+    comments: true,
+    shares: true,
+    likes: true,
+    createdAt: true,
+    updatedAt: true,
+    deletedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedById: true
+}).strict();
 
 export type PostCreateInput = z.infer<typeof PostCreateInputSchema>;
 export type PostUpdateInput = z.infer<typeof PostUpdateSchema>;

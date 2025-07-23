@@ -4,7 +4,16 @@ import { z } from 'zod';
 /**
  * Zod schema for creating an event location.
  */
-export const CreateEventLocationSchema = EventLocationSchema;
+export const CreateEventLocationSchema = EventLocationSchema.omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    deletedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedById: true
+});
+
 export type CreateEventLocationInput = z.infer<typeof CreateEventLocationSchema>;
 
 /**

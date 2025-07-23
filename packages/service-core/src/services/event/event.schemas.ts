@@ -93,8 +93,13 @@ export const GetFreeInputSchema = PaginationSchema;
  */
 export const EventCreateSchema = EventSchema.omit({
     id: true,
+    slug: true,
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
+    deletedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedById: true
 }).strict();
 
 /**
