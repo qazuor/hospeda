@@ -1,8 +1,8 @@
 {
     "$schema": "../../schemas/postSponsorship.schema.json",
-    "id": "021-postSponsorship-destinos-imperdibles-001",
+    "id": "021-postSponsorship-destinos-imperdibles",
     "sponsorId": "016-postSponsor-advertiser-turismo-entrerriano",
-    "postId": "post-destinos-imperdibles-001",
+    "postId": "015-family-actividades-familiares-en-entre-rios",
     "message": "Descubre los destinos más hermosos de Entre Ríos con nosotros",
     "description": "Promoción especial para lectores: 15% de descuento en paquetes turísticos oficiales mencionando este artículo en nuestra oficina de turismo.",
     "paid": {
