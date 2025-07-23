@@ -1,50 +1,50 @@
 {
-    "$schema": "../../schemas/user.schema.json",
-    "role": "HOST",
-    "slug": "alejandro-ortega",
-    "lifecycleState": "ACTIVE",
-    "firstName": "Alejandro",
-    "lastName": "Ortega",
-    "displayName": "Alejandro Ortega",
-    "contactInfo": {
-        "personalEmail": "alejandro.ortega@hospeda.com.ar",
-        "mobilePhone": "+5493446333550",
-        "website": "https://www.hospeda.com.ar/host/alejandro-ortega",
-        "preferredEmail": "HOME",
-        "preferredPhone": "MOBILE"
+  "id": "024-user-alejandro-ortega",
+  "$schema": "../../schemas/user.schema.json",
+  "role": "HOST",
+  "slug": "alejandro-ortega",
+  "lifecycleState": "ACTIVE",
+  "firstName": "Alejandro",
+  "lastName": "Ortega",
+  "displayName": "Alejandro Ortega",
+  "contactInfo": {
+    "personalEmail": "alejandro.ortega@hospeda.com.ar",
+    "mobilePhone": "+5493446333550",
+    "website": "https://www.hospeda.com.ar/host/alejandro-ortega",
+    "preferredEmail": "HOME",
+    "preferredPhone": "MOBILE"
+  },
+  "location": {
+    "city": "Federación",
+    "state": "Entre Ríos",
+    "country": "Argentina",
+    "zipCode": "3206",
+    "street": "Entre Ríos",
+    "number": "789",
+    "coordinates": {
+      "lat": "-30.9833",
+      "long": "-57.9000"
+    }
+  },
+  "profile": {
+    "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+  },
+  "settings": {
+    "theme": "AUTO",
+    "language": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "notifications": {
+      "enabled": true,
+      "allowEmails": true,
+      "allowPush": true,
+      "allowSms": false
     },
-    "location": {
-        "city": "Federación",
-        "state": "Entre Ríos",
-        "country": "Argentina",
-        "zipCode": "3206",
-        "street": "Entre Ríos",
-        "number": "789",
-        "coordinates": {
-            "lat": "-30.9833",
-            "long": "-57.9000"
-        }
-    },
-    "profile": {
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-    },
-    "settings": {
-        "theme": "AUTO",
-        "language": "es-AR",
-        "timezone": "America/Argentina/Buenos_Aires",
-        "notifications": {
-            "enabled": true,
-            "allowEmails": true,
-            "allowPush": true,
-            "allowSms": false
-        },
-        "privacy": {
-            "profileVisibility": "PUBLIC",
-            "showEmail": false,
-            "showPhone": true
-        }
-    },
-    "permissions": [],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC"
+    "privacy": {
+      "profileVisibility": "PUBLIC",
+      "showEmail": false,
+      "showPhone": true
+    }
+  },
+  "permissions": [],
+  "visibility": "PUBLIC"
 }

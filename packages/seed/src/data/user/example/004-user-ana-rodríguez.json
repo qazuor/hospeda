@@ -1,50 +1,51 @@
 {
-    "$schema": "../../schemas/user.schema.json",
-    "slug": "ana-rodríguez",
-    "role": "HOST",
-    "permissions": [],
-    "firstName": "Ana",
-    "lastName": "Rodríguez",
-    "displayName": "Ana Rodríguez",
-    "contactInfo": {
-        "personalEmail": "ana.rodriguez@hospeda.com.ar",
-        "mobilePhone": "+549343112233",
-        "website": "https://alojamientosana.com",
-        "preferredEmail": "HOME",
-        "preferredPhone": "MOBILE"
-    },
-    "location": {
-        "state": "Entre Ríos",
-        "city": "Colón",
-        "country": "Argentina",
-        "zipCode": "3280",
-        "street": "12 de Abril",
-        "number": "1234",
-        "neighborhood": "Centro",
-        "coordinates": {
-            "lat": "-32.2208",
-            "long": "-58.1431"
-        }
-    },
-    "socialNetworks": {
-        "facebook": "https://facebook.com/alojamientos.ana",
-        "instagram": "https://instagram.com/alojamientos_ana",
-        "whatsapp": "+541155550004"
-    },
-    "profile": {
-        "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-        "bio": "Propietaria de alojamientos turísticos en Colón. Especialista en hospitalidad y turismo rural. Gestiona múltiples propiedades con enfoque en la experiencia del huésped.",
-        "website": "https://alojamientosana.com"
-    },
-    "settings": {
-        "language": "es",
-        "notifications": {
-            "enabled": true,
-            "allowEmails": true,
-            "allowSms": false,
-            "allowPush": true
-        }
-    },
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC"
+  "id": "004-user-ana-rodríguez",
+  "$schema": "../../schemas/user.schema.json",
+  "slug": "ana-rodríguez",
+  "role": "HOST",
+  "permissions": [],
+  "firstName": "Ana",
+  "lastName": "Rodríguez",
+  "displayName": "Ana Rodríguez",
+  "contactInfo": {
+    "personalEmail": "ana.rodriguez@hospeda.com.ar",
+    "mobilePhone": "+549343112233",
+    "website": "https://alojamientosana.com",
+    "preferredEmail": "HOME",
+    "preferredPhone": "MOBILE"
+  },
+  "location": {
+    "state": "Entre Ríos",
+    "city": "Colón",
+    "country": "Argentina",
+    "zipCode": "3280",
+    "street": "12 de Abril",
+    "number": "1234",
+    "neighborhood": "Centro",
+    "coordinates": {
+      "lat": "-32.2208",
+      "long": "-58.1431"
+    }
+  },
+  "socialNetworks": {
+    "facebook": "https://facebook.com/alojamientos.ana",
+    "instagram": "https://instagram.com/alojamientos_ana",
+    "whatsapp": "+541155550004"
+  },
+  "profile": {
+    "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+    "bio": "Propietaria de alojamientos turísticos en Colón. Especialista en hospitalidad y turismo rural. Gestiona múltiples propiedades con enfoque en la experiencia del huésped.",
+    "website": "https://alojamientosana.com"
+  },
+  "settings": {
+    "language": "es",
+    "notifications": {
+      "enabled": true,
+      "allowEmails": true,
+      "allowSms": false,
+      "allowPush": true
+    }
+  },
+  "lifecycleState": "ACTIVE",
+  "visibility": "PUBLIC"
 }

@@ -1,50 +1,50 @@
 {
-    "$schema": "../../schemas/user.schema.json",
-    "role": "HOST",
-    "slug": "raul-molina",
-    "lifecycleState": "ACTIVE",
-    "firstName": "Raúl",
-    "lastName": "Molina",
-    "displayName": "Raúl Molina",
-    "contactInfo": {
-        "personalEmail": "raul.molina@hospeda.com.ar",
-        "mobilePhone": "+549347161879",
-        "website": "https://www.hospeda.com.ar/host/raul-molina",
-        "preferredEmail": "HOME",
-        "preferredPhone": "MOBILE"
+  "id": "032-user-raul-molina",
+  "$schema": "../../schemas/user.schema.json",
+  "role": "HOST",
+  "slug": "raul-molina",
+  "lifecycleState": "ACTIVE",
+  "firstName": "Raúl",
+  "lastName": "Molina",
+  "displayName": "Raúl Molina",
+  "contactInfo": {
+    "personalEmail": "raul.molina@hospeda.com.ar",
+    "mobilePhone": "+549347161879",
+    "website": "https://www.hospeda.com.ar/host/raul-molina",
+    "preferredEmail": "HOME",
+    "preferredPhone": "MOBILE"
+  },
+  "location": {
+    "city": "Chajarí",
+    "state": "Entre Ríos",
+    "country": "Argentina",
+    "zipCode": "3228",
+    "street": "Entre Ríos",
+    "number": "753",
+    "coordinates": {
+      "lat": "-30.7500",
+      "long": "-57.9833"
+    }
+  },
+  "profile": {
+    "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+  },
+  "settings": {
+    "theme": "AUTO",
+    "language": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "notifications": {
+      "enabled": true,
+      "allowEmails": true,
+      "allowPush": true,
+      "allowSms": false
     },
-    "location": {
-        "city": "Chajarí",
-        "state": "Entre Ríos",
-        "country": "Argentina",
-        "zipCode": "3228",
-        "street": "Entre Ríos",
-        "number": "753",
-        "coordinates": {
-            "lat": "-30.7500",
-            "long": "-57.9833"
-        }
-    },
-    "profile": {
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-    },
-    "settings": {
-        "theme": "AUTO",
-        "language": "es-AR",
-        "timezone": "America/Argentina/Buenos_Aires",
-        "notifications": {
-            "enabled": true,
-            "allowEmails": true,
-            "allowPush": true,
-            "allowSms": false
-        },
-        "privacy": {
-            "profileVisibility": "PUBLIC",
-            "showEmail": false,
-            "showPhone": true
-        }
-    },
-    "permissions": [],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC"
+    "privacy": {
+      "profileVisibility": "PUBLIC",
+      "showEmail": false,
+      "showPhone": true
+    }
+  },
+  "permissions": [],
+  "visibility": "PUBLIC"
 }

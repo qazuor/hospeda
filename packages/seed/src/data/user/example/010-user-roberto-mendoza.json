@@ -1,49 +1,50 @@
 {
-    "$schema": "../../schemas/user.schema.json",
-    "role": "HOST",
-    "slug": "roberto-mendoza",
-    "firstName": "Roberto",
-    "lastName": "Mendoza",
-    "displayName": "Roberto Mendoza",
-    "contactInfo": {
-        "personalEmail": "roberto.mendoza@hospeda.com.ar",
-        "mobilePhone": "+5493446244622",
-        "website": "https://www.hospeda.com.ar/host/roberto-mendoza",
-        "preferredEmail": "HOME",
-        "preferredPhone": "MOBILE"
+  "id": "010-user-roberto-mendoza",
+  "$schema": "../../schemas/user.schema.json",
+  "role": "HOST",
+  "slug": "roberto-mendoza",
+  "firstName": "Roberto",
+  "lastName": "Mendoza",
+  "displayName": "Roberto Mendoza",
+  "contactInfo": {
+    "personalEmail": "roberto.mendoza@hospeda.com.ar",
+    "mobilePhone": "+5493446244622",
+    "website": "https://www.hospeda.com.ar/host/roberto-mendoza",
+    "preferredEmail": "HOME",
+    "preferredPhone": "MOBILE"
+  },
+  "location": {
+    "city": "Chajarí",
+    "state": "Entre Ríos",
+    "country": "Argentina",
+    "zipCode": "3237",
+    "street": "Libertad",
+    "number": "789",
+    "coordinates": {
+      "lat": "-30.7500",
+      "long": "-57.9833"
+    }
+  },
+  "profile": {
+    "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+  },
+  "settings": {
+    "theme": "AUTO",
+    "language": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "notifications": {
+      "enabled": true,
+      "allowEmails": true,
+      "allowPush": true,
+      "allowSms": false
     },
-    "location": {
-        "city": "Chajarí",
-        "state": "Entre Ríos",
-        "country": "Argentina",
-        "zipCode": "3237",
-        "street": "Libertad",
-        "number": "789",
-        "coordinates": {
-            "lat": "-30.7500",
-            "long": "-57.9833"
-        }
-    },
-    "profile": {
-        "bio": "Anfitrión especializado en brindar experiencias únicas en Chajarí, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-    },
-    "settings": {
-        "theme": "AUTO",
-        "language": "es-AR",
-        "timezone": "America/Argentina/Buenos_Aires",
-        "notifications": {
-            "enabled": true,
-            "allowEmails": true,
-            "allowPush": true,
-            "allowSms": false
-        },
-        "privacy": {
-            "profileVisibility": "PUBLIC",
-            "showEmail": false,
-            "showPhone": true
-        }
-    },
-    "permissions": [],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC"
+    "privacy": {
+      "profileVisibility": "PUBLIC",
+      "showEmail": false,
+      "showPhone": true
+    }
+  },
+  "permissions": [],
+  "lifecycleState": "ACTIVE",
+  "visibility": "PUBLIC"
 }

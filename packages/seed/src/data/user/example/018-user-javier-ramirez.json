@@ -1,50 +1,50 @@
 {
-    "$schema": "../../schemas/user.schema.json",
-    "role": "HOST",
-    "slug": "javier-ramirez",
-    "lifecycleState": "ACTIVE",
-    "firstName": "Javier",
-    "lastName": "Ramírez",
-    "displayName": "Javier Ramírez",
-    "contactInfo": {
-        "personalEmail": "javier.ramirez@hospeda.com.ar",
-        "mobilePhone": "+549344418007",
-        "website": "https://www.hospeda.com.ar/host/javier-ramirez",
-        "preferredEmail": "HOME",
-        "preferredPhone": "MOBILE"
+  "id": "018-user-javier-ramirez",
+  "$schema": "../../schemas/user.schema.json",
+  "role": "HOST",
+  "slug": "javier-ramirez",
+  "lifecycleState": "ACTIVE",
+  "firstName": "Javier",
+  "lastName": "Ramírez",
+  "displayName": "Javier Ramírez",
+  "contactInfo": {
+    "personalEmail": "javier.ramirez@hospeda.com.ar",
+    "mobilePhone": "+549344418007",
+    "website": "https://www.hospeda.com.ar/host/javier-ramirez",
+    "preferredEmail": "HOME",
+    "preferredPhone": "MOBILE"
+  },
+  "location": {
+    "city": "San José",
+    "state": "Entre Ríos",
+    "country": "Argentina",
+    "zipCode": "3283",
+    "street": "Independencia",
+    "number": "234",
+    "coordinates": {
+      "lat": "-32.0500",
+      "long": "-58.7500"
+    }
+  },
+  "profile": {
+    "bio": "Anfitrión especializado en brindar experiencias únicas en San José, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+  },
+  "settings": {
+    "theme": "AUTO",
+    "language": "es-AR",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "notifications": {
+      "enabled": true,
+      "allowEmails": true,
+      "allowPush": true,
+      "allowSms": false
     },
-    "location": {
-        "city": "San José",
-        "state": "Entre Ríos",
-        "country": "Argentina",
-        "zipCode": "3283",
-        "street": "Independencia",
-        "number": "234",
-        "coordinates": {
-            "lat": "-32.0500",
-            "long": "-58.7500"
-        }
-    },
-    "profile": {
-        "bio": "Anfitrión especializado en brindar experiencias únicas en San José, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-    },
-    "settings": {
-        "theme": "AUTO",
-        "language": "es-AR",
-        "timezone": "America/Argentina/Buenos_Aires",
-        "notifications": {
-            "enabled": true,
-            "allowEmails": true,
-            "allowPush": true,
-            "allowSms": false
-        },
-        "privacy": {
-            "profileVisibility": "PUBLIC",
-            "showEmail": false,
-            "showPhone": true
-        }
-    },
-    "permissions": [],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC"
+    "privacy": {
+      "profileVisibility": "PUBLIC",
+      "showEmail": false,
+      "showPhone": true
+    }
+  },
+  "permissions": [],
+  "visibility": "PUBLIC"
 }
