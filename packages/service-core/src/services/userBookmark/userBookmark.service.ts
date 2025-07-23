@@ -53,9 +53,9 @@ export class UserBookmarkService extends BaseCrudService<
     /**
      * Permite solo al dueño crear bookmarks para sí mismo.
      */
-    protected _canCreate(actor: Actor, _data: CreateUserBookmarkInput): void {
+    protected _canCreate(actor: Actor, data: CreateUserBookmarkInput): void {
         if (actor && typeof actor.id === 'string') {
-            canCreateBookmark(actor, actor.id);
+            canCreateBookmark(actor, data.userId);
         } else {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
