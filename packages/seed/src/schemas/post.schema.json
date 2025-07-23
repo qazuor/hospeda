@@ -119,7 +119,7 @@
             "enum": ["PENDING", "APPROVED", "REJECTED"],
             "description": "Moderation state of the post"
         },
-        "tags": {
+        "tagIds": {
             "type": "array",
             "items": {
                 "type": "string"
