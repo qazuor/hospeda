@@ -7,7 +7,8 @@
     "logo": {
         "url": "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg",
         "caption": "Logo de Sabores del Litoral",
-        "description": "Logotipo de la red gastronómica regional"
+        "description": "Logotipo de la red gastronómica regional",
+        "moderationState": "APPROVED"
     },
     "contact": {
         "personalEmail": "info@saboresdellitoral.com.ar",
