@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 
@@ -7,6 +9,80 @@ import { logger } from './logger.js';
  */
 export class IdMapper {
     private mappings = new Map<string, Map<string, string>>();
+    private readonly mappingsFilePath: string;
+
+    constructor() {
+        // Create mappings directory if it doesn't exist
+        const mappingsDir = path.resolve(process.cwd(), 'mappings');
+        if (!fs.existsSync(mappingsDir)) {
+            fs.mkdirSync(mappingsDir, { recursive: true });
+        }
+        this.mappingsFilePath = path.join(mappingsDir, 'id-mappings.json');
+
+        // Load existing mappings on initialization
+        this.loadMappings();
+    }
+
+    /**
+     * Loads mappings from the JSON file
+     */
+    private loadMappings(): void {
+        try {
+            if (fs.existsSync(this.mappingsFilePath)) {
+                const data = fs.readFileSync(this.mappingsFilePath, 'utf8');
+                const mappingsData = JSON.parse(data) as Record<string, Record<string, string>>;
+
+                for (const [entityType, mappings] of Object.entries(mappingsData)) {
+                    const entityMap = new Map<string, string>();
+                    for (const [seedId, realId] of Object.entries(mappings)) {
+                        entityMap.set(seedId, realId);
+                    }
+                    this.mappings.set(entityType, entityMap);
+                }
+
+                logger.info(
+                    `${STATUS_ICONS.Info} Loaded ${this.getTotalMappingsCount()} existing ID mappings`
+                );
+            }
+        } catch (error) {
+            logger.warn(
+                `${STATUS_ICONS.Warning} Could not load existing mappings: ${(error as Error).message}`
+            );
+        }
+    }
+
+    /**
+     * Saves mappings to the JSON file
+     */
+    private saveMappings(): void {
+        try {
+            const mappingsData: Record<string, Record<string, string>> = {};
+
+            for (const [entityType, mappings] of this.mappings.entries()) {
+                mappingsData[entityType] = {};
+                for (const [seedId, realId] of mappings.entries()) {
+                    mappingsData[entityType][seedId] = realId;
+                }
+            }
+
+            fs.writeFileSync(this.mappingsFilePath, JSON.stringify(mappingsData, null, 2));
+        } catch (error) {
+            logger.error(
+                `${STATUS_ICONS.Error} Could not save mappings: ${(error as Error).message}`
+            );
+        }
+    }
+
+    /**
+     * Gets the total count of all mappings
+     */
+    private getTotalMappingsCount(): number {
+        let total = 0;
+        for (const mappings of this.mappings.values()) {
+            total += mappings.size;
+        }
+        return total;
+    }
 
     /**
      * Sets a mapping from seed ID to real ID for a specific entity type.
@@ -22,6 +98,9 @@ export class IdMapper {
         if (entityMappings) {
             entityMappings.set(seedId, realId);
         }
+
+        // Auto-save after each mapping
+        this.saveMappings();
     }
 
     /**
@@ -181,5 +260,135 @@ export class IdMapper {
      */
     clearAll(): void {
         this.mappings.clear();
+        this.saveMappings();
+    }
+
+    // ============================================================================
+    // SPECIFIC GETTERS FOR COMMON ENTITY TYPES
+    // ============================================================================
+
+    /**
+     * Gets the real user ID for a given seed user ID
+     * @param seedUserId - The seed user ID from JSON
+     * @returns The real user ID if found, undefined otherwise
+     */
+    getMappedUserId(seedUserId: string): string | undefined {
+        return this.getRealId('users', seedUserId);
+    }
+
+    /**
+     * Gets the real destination ID for a given seed destination ID
+     * @param seedDestinationId - The seed destination ID from JSON
+     * @returns The real destination ID if found, undefined otherwise
+     */
+    getMappedDestinationId(seedDestinationId: string): string | undefined {
+        return this.getRealId('destinations', seedDestinationId);
+    }
+
+    /**
+     * Gets the real accommodation ID for a given seed accommodation ID
+     * @param seedAccommodationId - The seed accommodation ID from JSON
+     * @returns The real accommodation ID if found, undefined otherwise
+     */
+    getMappedAccommodationId(seedAccommodationId: string): string | undefined {
+        return this.getRealId('accommodations', seedAccommodationId);
+    }
+
+    /**
+     * Gets the real attraction ID for a given seed attraction ID
+     * @param seedAttractionId - The seed attraction ID from JSON
+     * @returns The real attraction ID if found, undefined otherwise
+     */
+    getMappedAttractionId(seedAttractionId: string): string | undefined {
+        return this.getRealId('attractions', seedAttractionId);
+    }
+
+    /**
+     * Gets the real post ID for a given seed post ID
+     * @param seedPostId - The seed post ID from JSON
+     * @returns The real post ID if found, undefined otherwise
+     */
+    getMappedPostId(seedPostId: string): string | undefined {
+        return this.getRealId('posts', seedPostId);
+    }
+
+    /**
+     * Gets the real event ID for a given seed event ID
+     * @param seedEventId - The seed event ID from JSON
+     * @returns The real event ID if found, undefined otherwise
+     */
+    getMappedEventId(seedEventId: string): string | undefined {
+        return this.getRealId('events', seedEventId);
+    }
+
+    /**
+     * Gets the real tag ID for a given seed tag ID
+     * @param seedTagId - The seed tag ID from JSON
+     * @returns The real tag ID if found, undefined otherwise
+     */
+    getMappedTagId(seedTagId: string): string | undefined {
+        return this.getRealId('tags', seedTagId);
+    }
+
+    /**
+     * Gets the real amenity ID for a given seed amenity ID
+     * @param seedAmenityId - The seed amenity ID from JSON
+     * @returns The real amenity ID if found, undefined otherwise
+     */
+    getMappedAmenityId(seedAmenityId: string): string | undefined {
+        return this.getRealId('amenities', seedAmenityId);
+    }
+
+    /**
+     * Gets the real feature ID for a given seed feature ID
+     * @param seedFeatureId - The seed feature ID from JSON
+     * @returns The real feature ID if found, undefined otherwise
+     */
+    getMappedFeatureId(seedFeatureId: string): string | undefined {
+        return this.getRealId('features', seedFeatureId);
+    }
+
+    /**
+     * Gets the real sponsor ID for a given seed sponsor ID
+     * @param seedSponsorId - The seed sponsor ID from JSON
+     * @returns The real sponsor ID if found, undefined otherwise
+     */
+    getMappedSponsorId(seedSponsorId: string): string | undefined {
+        return this.getRealId('postsponsors', seedSponsorId);
+    }
+
+    /**
+     * Gets the real organizer ID for a given seed organizer ID
+     * @param seedOrganizerId - The seed organizer ID from JSON
+     * @returns The real organizer ID if found, undefined otherwise
+     */
+    getMappedEventOrganizerId(seedOrganizerId: string): string | undefined {
+        return this.getRealId('eventorganizers', seedOrganizerId);
+    }
+
+    /**
+     * Gets the real location ID for a given seed location ID
+     * @param seedLocationId - The seed location ID from JSON
+     * @returns The real location ID if found, undefined otherwise
+     */
+    getMappedEventLocationId(seedLocationId: string): string | undefined {
+        return this.getRealId('eventlocations', seedLocationId);
+    }
+
+    /**
+     * Manually saves all current mappings to the file
+     * Useful for explicit saves when auto-save is disabled
+     */
+    saveMappingsToFile(): void {
+        this.saveMappings();
+        logger.info(`${STATUS_ICONS.Info} Mappings saved to ${this.mappingsFilePath}`);
+    }
+
+    /**
+     * Gets the path where mappings are stored
+     * @returns The file path where mappings are saved
+     */
+    getMappingsFilePath(): string {
+        return this.mappingsFilePath;
     }
 }
