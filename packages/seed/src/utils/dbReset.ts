@@ -1,5 +1,6 @@
 import { getDb, schema } from '@repo/db';
 import { STATUS_ICONS } from './icons.js';
+import { IdMapper } from './idMapper.js';
 import { logger } from './logger.js';
 
 // Definir todas las tablas en el orden correcto (hijos antes que padres)
@@ -99,6 +100,9 @@ export async function resetDatabase(exclude: string[] = []): Promise<void> {
             );
         }
     }
+
+    const idMapper = new IdMapper();
+    idMapper.clearAll();
 
     logger.info(`${subSeparator}`);
     logger.success(`${STATUS_ICONS.Success} Base de datos reseteada`);
