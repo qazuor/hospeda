@@ -57,25 +57,39 @@ async function processTagRelations(
 
     logger.info(`📎 Processing tag relations for ${entityType} (${entityFiles.length} files)`);
 
-    // Create a simple service context
-    const tagService = new TagService({ logger: undefined });
-    let processedCount = 0;
+    const tagService = new TagService({ logger: undefined }); // Simplified logger for service context
     let errorCount = 0;
+    let totalRelations = 0;
+    let successfulRelations = 0;
 
+    // First pass: count total relations
     for (const fileName of entityFiles) {
         try {
-            // Get the correct directory name (singular)
-            const directoryName = ENTITY_DIRECTORY_MAP[entityType] || entityType;
+            const directoryName = ENTITY_DIRECTORY_MAP[entityType];
             const filePath = path.resolve(`src/data/${directoryName}/${fileName}`);
             const entityData = await import(filePath, { assert: { type: 'json' } });
             const entity = entityData.default as EntityWithTags;
 
-            // Skip if no tagIds
+            if (entity.tagIds && entity.tagIds.length > 0) {
+                totalRelations += entity.tagIds.length;
+            }
+        } catch (_error) {
+            // Ignore errors in counting phase
+        }
+    }
+
+    // Second pass: process relations
+    for (const fileName of entityFiles) {
+        try {
+            const directoryName = ENTITY_DIRECTORY_MAP[entityType];
+            const filePath = path.resolve(`src/data/${directoryName}/${fileName}`);
+            const entityData = await import(filePath, { assert: { type: 'json' } });
+            const entity = entityData.default as EntityWithTags;
+
             if (!entity.tagIds || entity.tagIds.length === 0) {
                 continue;
             }
 
-            // Get real entity ID
             const realEntityId = context.idMapper.getRealId(entityType, entity.id);
             if (!realEntityId) {
                 logger.warn(
@@ -107,8 +121,9 @@ async function processTagRelations(
 
                     const entityName = entity.name || entity.title || entity.id;
                     const tagName = context.idMapper.getDisplayName('tags', seedTagId);
+                    successfulRelations++;
                     logger.success(
-                        `${STATUS_ICONS.Success} Linked tag "${tagName}" to ${entityType} "${entityName}"`
+                        `[${successfulRelations} of ${totalRelations}] - ${STATUS_ICONS.Success} Linked tag "${tagName}" to ${entityType} "${entityName}"`
                     );
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -131,8 +146,6 @@ async function processTagRelations(
                     errorCount++;
                 }
             }
-
-            processedCount++;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             logger.error(
@@ -152,7 +165,7 @@ async function processTagRelations(
     }
 
     logger.info(
-        `${STATUS_ICONS.Info} ${entityType}: ${processedCount} entities processed, ${errorCount} errors`
+        `${STATUS_ICONS.Info} ${entityType}: ${successfulRelations} relations processed, ${errorCount} errors`
     );
 }
 
