@@ -59,11 +59,11 @@
     },
     "tagIds": [
         "022-tag-historia",
-        "tag-arquitectura",
+        "002-tag-arquitectura",
         "011-tag-cultura",
         "039-tag-turismo",
         "016-tag-entre-rios",
-        "tag-museos"
+        "025-tag-museos"
     ],
     "attractionIds": [
         "018-attraction-centro_historico",
