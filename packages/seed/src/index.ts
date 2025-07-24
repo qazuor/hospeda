@@ -3,13 +3,14 @@ import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
 import { closeSeedDb, initSeedDb } from './utils/db.js';
 import { resetDatabase } from './utils/dbReset';
+// import { runMigrations } from './utils/migrateRunner.js';
+import { errorHistory } from './utils/errorHistory.js';
 import { STATUS_ICONS } from './utils/icons.js';
 import { logger } from './utils/logger.js';
 import { createSeedContext } from './utils/seedContext.js';
 import { summaryTracker } from './utils/summaryTracker.js';
 import { loadSuperAdminAndGetActor } from './utils/superAdminLoader.js';
 import { validateAllManifests } from './utils/validateAllManifests.js';
-// import { runMigrations } from './utils/migrateRunner.js';
 
 /**
  * Configuration options for the seed process
@@ -59,8 +60,9 @@ type SeedOptions = {
 export async function runSeed(options: SeedOptions): Promise<void> {
     const { required, example, reset, migrate, exclude = [], continueOnError = false } = options;
 
-    // Start execution timer
+    // Start execution timer and error tracking
     summaryTracker.startTimer();
+    errorHistory.startTracking();
 
     // Configure logger to show complete logs during seeding
     configureLogger({
@@ -84,7 +86,7 @@ export async function runSeed(options: SeedOptions): Promise<void> {
     try {
         if (reset) {
             logger.info(
-                `${STATUS_ICONS.Reset} Executing reset${exclude.length > 0 ? ` (excluding: ${exclude.join(', ')})` : ''}`
+                `${STATUS_ICONS.Reset}  Executing reset${exclude.length > 0 ? ` (excluding: ${exclude.join(', ')})` : ''}`
             );
             try {
                 await resetDatabase(exclude);
@@ -94,11 +96,13 @@ export async function runSeed(options: SeedOptions): Promise<void> {
                     'Database reset successfully'
                 );
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                errorHistory.recordError('Database', 'Reset', 'Failed to reset database', error);
                 summaryTracker.trackProcessStep(
                     'Reset DB',
                     'error',
                     'Error resetting database',
-                    (error as Error).message
+                    errorMessage
                 );
                 throw error;
             }
@@ -108,6 +112,11 @@ export async function runSeed(options: SeedOptions): Promise<void> {
             // TODO: Implement migration runner
             // await runMigrations();
             logger.warn(`${STATUS_ICONS.Warning} Migration runner not implemented yet`);
+            errorHistory.recordWarning(
+                'Migrations',
+                'System',
+                'Migration runner not implemented yet'
+            );
             summaryTracker.trackProcessStep(
                 'Migrations',
                 'warning',
@@ -125,11 +134,18 @@ export async function runSeed(options: SeedOptions): Promise<void> {
                     'All manifests validated successfully'
                 );
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                errorHistory.recordError(
+                    'Validation',
+                    'Manifests',
+                    'Failed to validate manifests',
+                    error
+                );
                 summaryTracker.trackProcessStep(
                     'Manifest Validation',
                     'error',
                     'Error validating manifests',
-                    (error as Error).message
+                    errorMessage
                 );
                 if (!continueOnError) {
                     throw error;
@@ -148,11 +164,18 @@ export async function runSeed(options: SeedOptions): Promise<void> {
                     'Super admin loaded/created successfully'
                 );
             } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                errorHistory.recordError(
+                    'Users',
+                    'SuperAdmin',
+                    'Failed to load/create super admin',
+                    error
+                );
                 summaryTracker.trackProcessStep(
                     'Super Admin',
                     'error',
                     'Error loading super admin',
-                    (error as Error).message
+                    errorMessage
                 );
                 throw error;
             }
@@ -173,23 +196,35 @@ export async function runSeed(options: SeedOptions): Promise<void> {
             'Seed completed successfully'
         );
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        errorHistory.recordError(
+            'System',
+            'MainProcess',
+            'Seed process interrupted by error',
+            error
+        );
         summaryTracker.trackProcessStep(
             'Complete Process',
             'error',
             'Seed interrupted by error',
-            (error as Error).message
+            errorMessage
         );
 
         // Show summary BEFORE final throw
         summaryTracker.print();
+        errorHistory.printSummary();
 
         // Now throw the error
         throw error;
     } finally {
+        // Stop tracking
+        errorHistory.stopTracking();
+
         // Always close the connection
         await closeSeedDb();
 
-        // Print final summary with execution time
+        // Print final summary with execution time and error history
         summaryTracker.print();
+        errorHistory.printSummary();
     }
 }

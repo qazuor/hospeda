@@ -1,4 +1,5 @@
 import type { Actor } from '@repo/service-core';
+import { errorHistory } from './errorHistory.js';
 import { STATUS_ICONS } from './icons.js';
 import { loadJsonFiles } from './loadJsonFile.js';
 import { logger } from './logger.js';
@@ -44,7 +45,7 @@ export interface SeedFactoryConfig<T = unknown, R = unknown> {
     /** Function to normalize data before creation */
     normalizer?: (data: Record<string, unknown>) => R;
     /** Function to get display information for an entity */
-    getEntityInfo?: (item: unknown) => string;
+    getEntityInfo?: (item: unknown, context: SeedContext) => string;
     /** Function called before processing each item */
     preProcess?: (item: T, context: SeedContext) => Promise<void>;
     /** Function called after processing each item */
@@ -91,9 +92,10 @@ const defaultNormalizer = (data: Record<string, unknown>) => data;
  * Default entity info formatter that extracts the name field.
  *
  * @param item - Entity item to format
+ * @param context - Seed context (unused in default implementation)
  * @returns Formatted string with the entity name
  */
-const defaultGetEntityInfo = (item: unknown) => {
+const defaultGetEntityInfo = (item: unknown, _context: SeedContext) => {
     const itemData = item as Record<string, unknown>;
     const name = itemData.name as string;
     return `"${name}"`;
@@ -118,13 +120,9 @@ const defaultGetEntityInfo = (item: unknown) => {
  * const seedUsers = createSeedFactory({
  *   entityName: 'Users',
  *   serviceClass: UserService,
- *   folder: 'src/data/users',
+ *   folder: 'src/data/user',
  *   files: ['users.json'],
- *   normalizer: (data) => ({ ...data, email: data.email.toLowerCase() }),
- *   getEntityInfo: (user) => `${user.name} (${user.email})`,
- *   relationBuilder: async (result, user, context) => {
- *     // Build user relationships
- *   }
+ *   getEntityInfo: (user, context) => user.email
  * });
  *
  * await seedUsers(seedContext);
@@ -155,7 +153,17 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
 
                 // Pre-process callback
                 if (config.preProcess) {
-                    await config.preProcess(item as T, context);
+                    try {
+                        await config.preProcess(item as T, context);
+                    } catch (error) {
+                        errorHistory.recordError(
+                            config.entityName,
+                            config.files[index] || `item-${index}`,
+                            'Pre-processing failed',
+                            error
+                        );
+                        throw error;
+                    }
                 }
 
                 // Normalize data (custom or default)
@@ -165,9 +173,26 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
 
                 // Custom validation
                 if (config.validateBeforeCreate) {
-                    const isValid = await config.validateBeforeCreate(normalizedData);
-                    if (!isValid) {
-                        throw new Error('Custom validation failed');
+                    try {
+                        const isValid = await config.validateBeforeCreate(normalizedData);
+                        if (!isValid) {
+                            const error = new Error('Custom validation failed');
+                            errorHistory.recordError(
+                                config.entityName,
+                                config.files[index] || `item-${index}`,
+                                'Validation failed',
+                                error
+                            );
+                            throw error;
+                        }
+                    } catch (error) {
+                        errorHistory.recordError(
+                            config.entityName,
+                            config.files[index] || `item-${index}`,
+                            'Validation error',
+                            error
+                        );
+                        throw error;
                     }
                 }
 
@@ -180,6 +205,17 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                 const actor = validateActor(context);
                 const result = await service.create(actor, normalizedData);
 
+                if (result.error) {
+                    const error = new Error(result.error.message || 'Service creation failed');
+                    errorHistory.recordError(
+                        config.entityName,
+                        config.files[index] || `item-${index}`,
+                        `Service error: ${result.error.message}`,
+                        error
+                    );
+                    throw error;
+                }
+
                 // Transform result if needed
                 const finalResult = config.transformResult
                     ? config.transformResult(result)
@@ -191,14 +227,21 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
                     const itemData = item as Record<string, unknown>;
                     const seedId = itemData.id as string;
                     if (!seedId) {
-                        throw new Error(
+                        const error = new Error(
                             `${STATUS_ICONS.Error} [SEED_FACTORY] Could not get ID from item ${itemData.id}`
                         );
+                        errorHistory.recordError(
+                            config.entityName,
+                            config.files[index] || `item-${index}`,
+                            'ID mapping failed',
+                            error
+                        );
+                        throw error;
                     }
 
                     // Get entity name for better logging
                     const entityName = config.getEntityInfo
-                        ? config.getEntityInfo(item)
+                        ? config.getEntityInfo(item, context)
                         : undefined;
 
                     context.idMapper.setMapping(
@@ -211,12 +254,35 @@ export const createSeedFactory = <T = unknown, R = unknown>(config: SeedFactoryC
 
                 // Post-process callback
                 if (config.postProcess) {
-                    await config.postProcess(finalResult, item as T, context);
+                    try {
+                        await config.postProcess(finalResult, item as T, context);
+                    } catch (error) {
+                        errorHistory.recordError(
+                            config.entityName,
+                            config.files[index] || `item-${index}`,
+                            'Post-processing failed',
+                            error
+                        );
+                        throw error;
+                    }
                 }
 
                 // Relation builder callback
                 if (config.relationBuilder) {
-                    await config.relationBuilder(finalResult, item as T, context);
+                    try {
+                        await config.relationBuilder(finalResult, item as T, context);
+                    } catch (error) {
+                        errorHistory.recordError(
+                            config.entityName,
+                            config.files[index] || `item-${index}`,
+                            'Relation building failed',
+                            error
+                        );
+                        // Don't throw here as the main entity was created successfully
+                        logger.warn(
+                            `${STATUS_ICONS.Warning} Failed to build relations for ${config.entityName}: ${error instanceof Error ? error.message : String(error)}`
+                        );
+                    }
                 }
 
                 // Track success

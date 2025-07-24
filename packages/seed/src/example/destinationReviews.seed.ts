@@ -64,12 +64,13 @@ const preProcessReview = async (item: unknown, context: SeedContext) => {
 /**
  * Get entity info for destination review
  */
-const getDestinationReviewInfo = (item: unknown) => {
+const getDestinationReviewInfo = (item: unknown, context: SeedContext) => {
     const reviewData = item as Record<string, unknown>;
     const title = reviewData.title as string;
     const rating = reviewData.rating as number;
     const destinationId = reviewData.destinationId as string;
-    return `"${title}" (${STATUS_ICONS.Highlight}${rating}/5) → Dest: ${destinationId}`;
+    const destinationName = context.idMapper.getDisplayNameByRealId('destinations', destinationId);
+    return `"${title}" (${STATUS_ICONS.Highlight} ${rating / 5}) → Dest: ${destinationName}`;
 };
 
 /**

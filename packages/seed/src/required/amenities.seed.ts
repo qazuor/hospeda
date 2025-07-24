@@ -28,7 +28,7 @@ export const seedAmenities = createSeedFactory({
     },
 
     // Custom entity info for better logging
-    getEntityInfo: (item) => {
+    getEntityInfo: (item, _context) => {
         const amenity = item as { name: string; type?: string };
         const typeInfo = amenity.type ? ` (${amenity.type})` : '';
         return `"${amenity.name}"${typeInfo}`;

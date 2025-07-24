@@ -92,7 +92,7 @@ export async function resetDatabase(exclude: string[] = []): Promise<void> {
     const subSeparator = '─'.repeat(90);
 
     logger.info(`${separator}`);
-    logger.info(`${STATUS_ICONS.Reset} RESETTING DATABASE`);
+    logger.info(`${STATUS_ICONS.Reset}  RESETTING DATABASE`);
     logger.info(`${subSeparator}`);
 
     const db = getDb();
@@ -114,7 +114,7 @@ export async function resetDatabase(exclude: string[] = []): Promise<void> {
 
         try {
             await db.delete(table);
-            logger.info(`${STATUS_ICONS.Reset} Deleted: ${tableName}`);
+            logger.info(`${STATUS_ICONS.Reset}  Deleted: ${tableName}`);
             deletedCount++;
         } catch (error) {
             logger.error(
@@ -125,7 +125,7 @@ export async function resetDatabase(exclude: string[] = []): Promise<void> {
     }
 
     // Clear ID mappings after successful reset
-    const idMapper = new IdMapper();
+    const idMapper = new IdMapper(true);
     idMapper.clearAll();
 
     logger.info(`${subSeparator}`);

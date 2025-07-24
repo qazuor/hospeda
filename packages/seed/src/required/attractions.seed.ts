@@ -1,7 +1,6 @@
 import { AttractionService } from '@repo/service-core';
 import requiredManifest from '../manifest-required.json';
-import { STATUS_ICONS } from '../utils/icons.js';
-import { createSeedFactory } from '../utils/index.js';
+import { STATUS_ICONS, createSeedFactory } from '../utils/index.js';
 
 /**
  * Seed factory for attractions
@@ -31,7 +30,7 @@ export const seedAttractions = createSeedFactory({
     },
 
     // Custom entity info for better logging
-    getEntityInfo: (item) => {
+    getEntityInfo: (item, _context) => {
         const attraction = item as { name: string; isBuiltin?: boolean };
         const builtinIcon = attraction.isBuiltin ? ` ${STATUS_ICONS.BuiltIn}` : '';
         return `"${attraction.name}"${builtinIcon}`;

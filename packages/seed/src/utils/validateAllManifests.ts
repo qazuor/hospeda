@@ -26,7 +26,7 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
     // biome-ignore lint/suspicious/noConsoleLog: <explanation>
     console.log('\n');
     logger.info(`${separator}`);
-    logger.info(`${STATUS_ICONS.Debug} VALIDANDO MANIFESTS CONTRA ARCHIVOS`);
+    logger.info(`${STATUS_ICONS.Debug} VALIDATING MANIFESTS AGAINST FILES`);
     logger.info(`${subSeparator}`);
 
     const manifests = [
@@ -38,7 +38,7 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
     let totalErrors = 0;
 
     for (const { name, manifest, type } of manifests) {
-        logger.info(`📁 Validando ${name} (${Object.keys(manifest).length} entidades)`);
+        logger.info(`📁 Validating ${name} (${Object.keys(manifest).length} entities)`);
 
         for (const [entityName, files] of Object.entries(manifest)) {
             totalValidations++;
@@ -50,7 +50,7 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
                 }
                 await validateManifestVsFolder(entityName, files, type);
                 logger.success(
-                    `${STATUS_ICONS.Success} ${entityName}: ${files.length} archivos validados`
+                    `${STATUS_ICONS.Success} ${entityName}: ${files.length} files validated`
                 );
             } catch (error) {
                 totalErrors++;
@@ -68,10 +68,10 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
     logger.info(`${subSeparator}`);
 
     if (totalErrors === 0) {
-        logger.success(`${STATUS_ICONS.Success} Todos los manifests validados correctamente`);
+        logger.success(`${STATUS_ICONS.Success} All manifests validated successfully`);
     } else {
         logger.warn(
-            `${STATUS_ICONS.Warning}  ${totalValidations - totalErrors} validaciones exitosas, ${totalErrors} errores`
+            `${STATUS_ICONS.Warning}  ${totalValidations - totalErrors} successful validations, ${totalErrors} errors`
         );
     }
 
