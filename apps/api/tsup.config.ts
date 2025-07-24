@@ -1,15 +1,28 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-    entry: ['src/index.ts'],
+    entry: ['src/index.ts', 'src/complete.ts'],
     outDir: 'dist',
-    target: 'node20',
-    format: ['cjs'], // necesitamos commonJs por bcrypt
+    target: 'es2022',
+    format: ['esm', 'cjs'],
     splitting: false,
-    sourcemap: false,
+    sourcemap: true,
     clean: true,
-    dts: false, // no necesitamos tipos en producción
+    dts: true,
+    bundle: true,
     tsconfig: './tsconfig.json',
-    noExternal: [/@repo\/.*/],
-    external: [] // Si querés incluir absolutamente todo, dejá esto vacío
+    noExternal: [
+        /@repo\/.*/,
+        '@repo/config',
+        '@repo/db',
+        '@repo/logger',
+        '@repo/schemas',
+        '@repo/types',
+        '@repo/utils',
+        '@repo/service-core',
+        '@repo/seed'
+    ],
+    esbuildOptions(options) {
+        options.resolveExtensions = ['.ts', '.js', '.json'];
+    }
 });

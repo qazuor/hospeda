@@ -1,0 +1,29 @@
+{
+    "extends": "./base.json",
+    "compilerOptions": {
+        "emitDeclarationOnly": true,
+        "noEmit": false,
+        "paths": {
+            "@repo/config": ["../config/src/index.ts"],
+            "@repo/config/*": ["../config/src/*"],
+            "@repo/db": ["../db/src/index.ts"],
+            "@repo/db/*": ["../db/src/*"],
+            "@repo/logger": ["../logger/src/index.ts"],
+            "@repo/logger/*": ["../logger/src/*"],
+            "@repo/schemas": ["../schemas/src/index.ts"],
+            "@repo/schemas/*": ["../schemas/src/*"],
+            "@repo/types": ["../types/src/index.ts"],
+            "@repo/types/*": ["../types/src/*"],
+            "@repo/ui": ["../ui/src/index.ts"],
+            "@repo/ui/*": ["../ui/src/*"],
+            "@repo/utils": ["../utils/src/index.ts"],
+            "@repo/utils/*": ["../utils/src/*"],
+            "@repo/service-core": ["../service-core/src/index.ts"],
+            "@repo/service-core/*": ["../service-core/src/*"],
+            "@repo/seed": ["../seed/src/index.ts"],
+            "@repo/seed/*": ["../seed/src/*"]
+        }
+    },
+    "include": ["src/**/*"],
+    "exclude": ["dist", "node_modules", "**/*.test.ts", "**/*.spec.ts"]
+}

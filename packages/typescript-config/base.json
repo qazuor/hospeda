@@ -1,30 +1,29 @@
 {
     "$schema": "https://json.schemastore.org/tsconfig",
     "compilerOptions": {
-        "declaration": true,
-        "declarationMap": true,
-        "esModuleInterop": true,
         "incremental": false,
         "isolatedModules": true,
-        "lib": ["es2022", "DOM", "DOM.Iterable"],
-        "module": "NodeNext",
+        "lib": ["es2022"],
         "moduleDetection": "force",
-        "moduleResolution": "NodeNext",
         "noUncheckedIndexedAccess": true,
         "resolveJsonModule": true,
-        "skipLibCheck": true,
         "strict": true,
+        "skipLibCheck": true,
+        "allowImportingTsExtensions": false,
+        
+        "module": "ESNext",
+        "moduleResolution": "bundler",
         "target": "ES2022",
-
-        "baseUrl": "./",
-        "paths": {
-            "@repo/config/*": ["../config/src/*"],
-            "@repo/db/*": ["../db/src/*"],
-            "@repo/logger/*": ["../logger/src/*"],
-            "@repo/schemas/*": ["../schemas/src/*"],
-            "@repo/types/*": ["../types/src/*"],
-            "@repo/ui/*": ["../ui/src/*"],
-            "@repo/utils/*": ["../utils/src/*"]
-        }
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        
+        "baseUrl": ".",
+        "outDir": "dist",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        
+        "types": ["node"]
     }
 }
