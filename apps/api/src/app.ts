@@ -1,47 +1,96 @@
-import { healthRoutes } from '@/routes/health';
-import { initDb } from '@/utils/db';
-import { apiLogger } from '@/utils/logger';
-import { Hono } from 'hono';
-import { errorMiddleware } from './middleware/error';
-import { loggerMiddleware } from './middleware/logger';
-import { apiV1Routes } from './routes/v1';
+/**
+ * Main Hono application configuration
+ * Sets up the API with OpenAPI integration
+ */
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { setupMiddlewares } from './middlewares';
+import { setupRoutes } from './routes';
+import { env } from './utils/env';
 
-initDb();
+/**
+ * Create Hono app instance with OpenAPI integration
+ */
+const app = new OpenAPIHono({
+    defaultHook: (result, c) => {
+        if (!result.success) {
+            return c.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'VALIDATION_ERROR',
+                        message: 'Invalid input data',
+                        details: result.error.issues.map((issue) => ({
+                            field: issue.path.join('.'),
+                            message: issue.message,
+                            code: issue.code
+                        }))
+                    }
+                },
+                400
+            );
+        }
+    }
+});
 
-// Create the main Hono app
-const app = new Hono();
-
-// Apply global middlewares
-app.use('*', loggerMiddleware);
-app.use('*', errorMiddleware);
-
-// Base route
-app.get('/', (c) => {
-    return c.json({
-        name: 'Hospeda API',
+// Setup OpenAPI documentation
+app.doc('/openapi.json', {
+    openapi: '3.1.0',
+    info: {
+        title: 'Hospeda API',
         version: '1.0.0',
-        status: 'operational'
-    });
-});
-
-// API routes
-app.route('/api/v1', apiV1Routes);
-app.route('/health', healthRoutes);
-
-// 404 handler
-app.notFound((c) => {
-    apiLogger.warn({ location: 'API:NotFound' }, `Route not found: ${c.req.method} ${c.req.url}`);
-    return c.json(
-        {
-            success: false,
-            error: {
-                code: 'NOT_FOUND',
-                message: 'The requested resource was not found'
-            }
+        description: `
+      Complete API for the Hospeda tourism accommodation platform.
+      
+      ## Features
+      - RESTful API with public and administrative endpoints
+      - JWT authentication with Clerk
+      - Strict validation with Zod
+      - Consistent and typed responses
+      - Rate limiting and CSRF protection
+      - Internationalization support
+      
+      ## Authentication
+      For administrative endpoints, include the session token in the header:
+      \`Authorization: Bearer <token>\`
+    `,
+        contact: {
+            name: 'Hospeda Development Team',
+            email: 'dev@hospeda.com'
         },
-        404
-    );
+        license: {
+            name: 'MIT',
+            url: 'https://opensource.org/licenses/MIT'
+        }
+    },
+    servers: [
+        {
+            url: `http://${env.API_HOST}:${env.API_PORT}`,
+            description: 'Development server'
+        }
+    ]
 });
 
-// Export the app
+// Setup middlewares
+setupMiddlewares(app);
+
+// Setup routes
+setupRoutes(app);
+
+// Configure OpenAPI documentation after all routes are defined
+app.doc('/openapi.json', {
+    openapi: '3.0.0',
+    info: {
+        title: 'Hospeda API',
+        version: '1.0.0',
+        description: 'Complete API for the Hospeda tourism accommodation platform'
+    },
+    servers: [
+        {
+            url: `http://${env.API_HOST}:${env.API_PORT}`,
+            description: 'Development server'
+        }
+    ]
+});
+
+export default app;
 export { app };
