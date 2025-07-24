@@ -23,7 +23,7 @@
         "test:watch": "turbo run test:watch",
         "test:coverage": "turbo run test:coverage",
         "check": "biome check --write .",
-        "typecheck": "turbo run check-types",
+        "typecheck": "turbo run typecheck",
         "prepare": "husky install",
         "build:api": "pnpm --filter hospeda-api build",
         "prepare:api:prod": "pnpm exec tsx scripts/generate-api-prod-package.ts",
@@ -44,7 +44,11 @@
         "node": ">=18"
     },
     "dependencies": {
-        "zod": "^3.24.4"
+        "glob": "^11.0.3",
+        "zod": "^4.0.8"
     },
-    "workspaces": ["apps/*", "packages/*"]
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ]
 }

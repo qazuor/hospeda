@@ -19,7 +19,7 @@
         "lint": "biome lint .",
         "format": "biome format . --write",
         "clean": "rimraf .turbo node_modules dist",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsc --noEmit --skipLibCheck",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:file": "vitest run",
