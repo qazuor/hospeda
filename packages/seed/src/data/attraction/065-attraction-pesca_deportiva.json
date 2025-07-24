@@ -7,9 +7,9 @@
     "icon": "fishing",
     "isBuiltin": true,
     "tagIds": [
-        "tag-pesca",
+        "030-tag-pesca",
         "013-tag-deportes",
-        "tag-naturaleza-002",
+        "027-tag-naturaleza",
         "033-tag-rio-parana",
         "005-tag-aventura"
     ],
