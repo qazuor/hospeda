@@ -22,11 +22,11 @@
     "isFeatured": true,
     "moderationState": "APPROVED",
     "tagIds": [
-        "tag-gastronomia-007",
-        "tag-termas-012",
-        "tag-festivales",
-        "tag-relax",
-        "tag-entre-rios-003"
+        "020-tag-gastronomia",
+        "038-tag-termas",
+        "018-tag-festivales",
+        "032-tag-relax",
+        "016-tag-entre-rios"
     ],
     "media": {
         "featuredImage": {

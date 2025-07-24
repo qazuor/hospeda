@@ -51,11 +51,11 @@
         "keywords": ["Concordia", "Entre Ríos", "Citricultura", "Termas", "Naranjas", "Cultura"]
     },
     "tagIds": [
-        "tag-termas-012",
+        "038-tag-termas",
         "011-tag-cultura",
         "tag-naturaleza-002",
-        "tag-familia-004",
-        "tag-entre-rios-003",
+        "017-tag-familia",
+        "016-tag-entre-rios",
         "001-tag-aguas-termales",
         "009-tag-citricultura"
     ],

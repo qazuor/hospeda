@@ -6,6 +6,6 @@
     "description": "Complejo termal diseñado especialmente para familias con niños y actividades para todas las edades",
     "icon": "family_restroom",
     "isBuiltin": true,
-    "tagIds": ["tag-termas-012", "tag-familia-004", "001-tag-aguas-termales", "tag-relax"],
+    "tagIds": ["038-tag-termas", "017-tag-familia", "001-tag-aguas-termales", "032-tag-relax"],
     "lifecycleState": "ACTIVE"
 }

@@ -51,12 +51,12 @@
         "keywords": ["Gualeguaychú", "Carnaval", "Entre Ríos", "Termas", "Argentina", "Turismo"]
     },
     "tagIds": [
-        "tag-festivales",
-        "tag-termas-012",
+        "018-tag-festivales",
+        "038-tag-termas",
         "011-tag-cultura",
-        "tag-familia-004",
-        "tag-vida-nocturna",
-        "tag-entre-rios-003",
+        "017-tag-familia",
+        "041-tag-vida-nocturna",
+        "016-tag-entre-rios",
         "026-tag-musica"
     ],
     "attractionIds": [

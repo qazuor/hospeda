@@ -51,13 +51,13 @@
         "keywords": ["Federación", "Termas", "Entre Ríos", "Complejo Termal", "Relax", "Bienestar"]
     },
     "tagIds": [
-        "tag-termas-012",
-        "tag-relax",
+        "038-tag-termas",
+        "032-tag-relax",
         "001-tag-aguas-termales",
-        "tag-familia-004",
+        "017-tag-familia",
         "tag-naturaleza-002",
         "036-tag-spa",
-        "tag-entre-rios-003"
+        "016-tag-entre-rios"
     ],
     "attractionIds": [
         "028-attraction-complejo_termal_principal",
