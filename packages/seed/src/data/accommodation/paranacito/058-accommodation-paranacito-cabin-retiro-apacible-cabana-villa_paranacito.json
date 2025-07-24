@@ -135,7 +135,6 @@
         "004-feature-natural_environment",
         "008-feature-silent_environment",
         "001-feature-river_front",
-        "004-feature-natural_environment",
         "025-feature-wifi_full_property",
         "044-feature-tourist_info_available"
     ],
@@ -162,9 +161,7 @@
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "016-tag-entre-rios"
-    ],
+    "tagIds": ["016-tag-entre-rios"],
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
