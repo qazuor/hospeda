@@ -12,6 +12,7 @@ import { seedEvents } from './events.seed.js';
 import { seedPostSponsors } from './postSponsors.seed.js';
 import { seedPostSponsorships } from './postSponsorships.seed.js';
 import { seedPosts } from './posts.seed.js';
+import { seedTagRelations } from './tagRelations.seed.js';
 import { seedTags } from './tags.seed.js';
 import { seedUsers } from './users.seed.js';
 
@@ -31,6 +32,7 @@ import { seedUsers } from './users.seed.js';
  * - Dependencies are available before they're needed
  * - Actor context is properly managed for different entity types
  * - ID mappings are established for relationship building
+ * - Tag relations are created after all entities exist
  *
  * @param context - Seed context with configuration and utilities
  * @returns Promise that resolves when all example seeds are complete
@@ -46,6 +48,7 @@ import { seedUsers } from './users.seed.js';
  * // 5. Posts (with sponsors/sponsorships)
  * // 6. Reviews
  * // 7. Bookmarks and tags
+ * // 8. Tag relations (connecting tags to entities)
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -74,8 +77,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedBookmarks(context);
         context.actor = oldContextActor;
         await seedTags(context);
-
-        // TODO: Add seed for tag <-> entity relationships
+        await seedTagRelations(context);
 
         logger.success(`${STATUS_ICONS.Success} Example data load completed.`);
     } catch (error) {

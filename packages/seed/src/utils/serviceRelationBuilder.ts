@@ -1,4 +1,6 @@
 import type { ServiceContext } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/types';
+import { errorHistory } from './errorHistory.js';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
@@ -133,7 +135,7 @@ export const createServiceRelationBuilder = <TEntity>(
                 const err = error as { code?: string; message?: string };
 
                 // Handle specific error cases
-                if (err.code === 'ALREADY_EXISTS') {
+                if (err.code === ServiceErrorCode.ALREADY_EXISTS) {
                     // Relationship already exists, this is fine
                     skippedCount++;
                     logger.info(
@@ -150,6 +152,15 @@ export const createServiceRelationBuilder = <TEntity>(
                     `${mainEntityInfo}-${relatedEntityInfo}`,
                     err.message || 'Unknown error'
                 );
+
+                // Track error in error history
+                errorHistory.recordError(
+                    `${config.relationType} Relations`,
+                    `${mainEntityInfo}-${relatedEntityInfo}`,
+                    `Failed to create ${config.relationType} relation: ${err.message}`,
+                    error
+                );
+
                 errorCount++;
 
                 // Use custom error handler if provided
