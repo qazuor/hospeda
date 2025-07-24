@@ -87,12 +87,26 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
 /**
  * Get entity info for bookmark
  */
-const getBookmarkInfo = (item: unknown) => {
+const getBookmarkInfo = (item: unknown, context: SeedContext) => {
     const bookmarkData = item as Record<string, unknown>;
     const userId = bookmarkData.userId as string;
     const entityType = bookmarkData.entityType as string;
     const entityId = bookmarkData.entityId as string;
-    return `User: ${userId} → ${entityType}: ${entityId}`;
+    const entityTypeMap = {
+        DESTINATION: 'destinations',
+        ACCOMMODATION: 'accommodations',
+        EVENT: 'events',
+        POST: 'posts',
+        USER: 'users'
+    } as const;
+
+    const userIdName = context.idMapper.getDisplayNameByRealId('users', userId);
+    const entityTypeKey = entityTypeMap[entityType as keyof typeof entityTypeMap];
+    const entityName = context.idMapper.getDisplayNameByRealId(
+        entityTypeKey || 'unknown',
+        entityId
+    );
+    return `User: ${userIdName} → ${entityType}: ${entityName}`;
 };
 
 /**

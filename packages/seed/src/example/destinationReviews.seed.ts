@@ -67,10 +67,25 @@ const preProcessReview = async (item: unknown, context: SeedContext) => {
 const getDestinationReviewInfo = (item: unknown, context: SeedContext) => {
     const reviewData = item as Record<string, unknown>;
     const title = reviewData.title as string;
-    const rating = reviewData.rating as number;
+    const rating = reviewData.rating as Record<string, number> | number;
     const destinationId = reviewData.destinationId as string;
+
+    // Calculate average rating
+    let averageRating: number;
+    if (typeof rating === 'object' && rating !== null) {
+        const ratingValues = Object.values(rating);
+        averageRating = ratingValues.reduce((sum, val) => sum + val, 0) / ratingValues.length;
+    } else if (typeof rating === 'number') {
+        averageRating = rating;
+    } else {
+        averageRating = 0;
+    }
+
+    // Round to 1 decimal place
+    const roundedRating = Math.round(averageRating * 10) / 10;
+
     const destinationName = context.idMapper.getDisplayNameByRealId('destinations', destinationId);
-    return `"${title}" (${STATUS_ICONS.Highlight} ${rating / 5}) → Dest: ${destinationName}`;
+    return `"${title}" (${STATUS_ICONS.Highlight} ${roundedRating}) → Dest: ${destinationName}`;
 };
 
 /**
