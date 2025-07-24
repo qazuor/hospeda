@@ -53,7 +53,7 @@ export const seedDestinations = createSeedFactory({
     },
 
     // Custom entity info for better logging
-    getEntityInfo: (item) => {
+    getEntityInfo: (item, _context) => {
         const destination = item as { name: string; location?: { city?: string } };
         const cityInfo = destination.location?.city ? ` (${destination.location.city})` : '';
         return `"${destination.name}"${cityInfo}`;
@@ -74,8 +74,7 @@ export const seedDestinations = createSeedFactory({
         // Use the same getEntityInfo for main entity
         getMainEntityInfo: (destination) => {
             const dest = destination as { name: string; location?: { city?: string } };
-            const cityInfo = dest.location?.city ? ` (${dest.location.city})` : '';
-            return `"${dest.name}"${cityInfo}`;
+            return `"${dest.name}"`;
         },
         // Get attraction info for related entities
         getRelatedEntityInfo: (seedId, context) => {

@@ -1,7 +1,6 @@
 import { UserService } from '@repo/service-core/index.js';
 import requiredManifest from '../manifest-required.json';
-import { STATUS_ICONS } from '../utils/icons.js';
-import { createDateTransformer, createSeedFactory } from '../utils/index.js';
+import { STATUS_ICONS, createDateTransformer, createSeedFactory } from '../utils/index.js';
 
 /**
  * Seed factory for users
@@ -29,7 +28,7 @@ export const seedUsers = createSeedFactory({
     },
 
     // Custom entity info for better logging
-    getEntityInfo: (item) => {
+    getEntityInfo: (item, _context) => {
         const user = item as { displayName?: string; role?: string };
         const displayName = user.displayName || 'Unknown';
         const role = user.role || 'USER';

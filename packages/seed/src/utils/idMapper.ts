@@ -19,7 +19,7 @@ export class IdMapper {
     private mappings = new Map<string, Map<string, MappingData>>();
     private readonly mappingsFilePath: string;
 
-    constructor() {
+    constructor(dontLoadSavedMappings = false) {
         // Create mappings directory if it doesn't exist
         const mappingsDir = path.resolve(process.cwd(), 'mappings');
         if (!fs.existsSync(mappingsDir)) {
@@ -28,7 +28,9 @@ export class IdMapper {
         this.mappingsFilePath = path.join(mappingsDir, 'id-mappings.json');
 
         // Load existing mappings on initialization
-        this.loadMappings();
+        if (!dontLoadSavedMappings) {
+            this.loadMappings();
+        }
     }
 
     /**
@@ -149,6 +151,30 @@ export class IdMapper {
     getDisplayName(entityType: string, seedId: string): string {
         const mappingData = this.getMappingData(entityType, seedId);
         return mappingData?.name || seedId;
+    }
+
+    /**
+     * Gets a display name for an entity using the real ID.
+     * This method performs a reverse lookup to find the seed ID and then returns the display name.
+     * @param entityType - The type of entity
+     * @param realId - The real ID to look up
+     * @returns A display name for the entity, or the real ID if not found
+     */
+    getDisplayNameByRealId(entityType: string, realId: string): string {
+        const entityMappings = this.mappings.get(entityType);
+        if (!entityMappings) {
+            return realId;
+        }
+
+        // Find the mapping entry that has this real ID
+        for (const [seedId, mappingData] of entityMappings.entries()) {
+            if (mappingData.id === realId) {
+                return mappingData.name || seedId;
+            }
+        }
+
+        // If not found, return the real ID as fallback
+        return realId;
     }
 
     /**
@@ -411,6 +437,91 @@ export class IdMapper {
      */
     getMappedEventLocationId(seedLocationId: string): string | undefined {
         return this.getRealId('eventlocations', seedLocationId);
+    }
+
+    // ============================================================================
+    // DISPLAY NAME GETTERS BY REAL ID FOR COMMON ENTITY TYPES
+    // ============================================================================
+
+    /**
+     * Gets the display name for a user using the real user ID
+     * @param realUserId - The real user ID from database
+     * @returns The display name for the user, or the real ID if not found
+     */
+    getDisplayNameByRealUserId(realUserId: string): string {
+        return this.getDisplayNameByRealId('users', realUserId);
+    }
+
+    /**
+     * Gets the display name for a destination using the real destination ID
+     * @param realDestinationId - The real destination ID from database
+     * @returns The display name for the destination, or the real ID if not found
+     */
+    getDisplayNameByRealDestinationId(realDestinationId: string): string {
+        return this.getDisplayNameByRealId('destinations', realDestinationId);
+    }
+
+    /**
+     * Gets the display name for an accommodation using the real accommodation ID
+     * @param realAccommodationId - The real accommodation ID from database
+     * @returns The display name for the accommodation, or the real ID if not found
+     */
+    getDisplayNameByRealAccommodationId(realAccommodationId: string): string {
+        return this.getDisplayNameByRealId('accommodations', realAccommodationId);
+    }
+
+    /**
+     * Gets the display name for an attraction using the real attraction ID
+     * @param realAttractionId - The real attraction ID from database
+     * @returns The display name for the attraction, or the real ID if not found
+     */
+    getDisplayNameByRealAttractionId(realAttractionId: string): string {
+        return this.getDisplayNameByRealId('attractions', realAttractionId);
+    }
+
+    /**
+     * Gets the display name for a post using the real post ID
+     * @param realPostId - The real post ID from database
+     * @returns The display name for the post, or the real ID if not found
+     */
+    getDisplayNameByRealPostId(realPostId: string): string {
+        return this.getDisplayNameByRealId('posts', realPostId);
+    }
+
+    /**
+     * Gets the display name for an event using the real event ID
+     * @param realEventId - The real event ID from database
+     * @returns The display name for the event, or the real ID if not found
+     */
+    getDisplayNameByRealEventId(realEventId: string): string {
+        return this.getDisplayNameByRealId('events', realEventId);
+    }
+
+    /**
+     * Gets the display name for a tag using the real tag ID
+     * @param realTagId - The real tag ID from database
+     * @returns The display name for the tag, or the real ID if not found
+     */
+    getDisplayNameByRealTagId(realTagId: string): string {
+        return this.getDisplayNameByRealId('tags', realTagId);
+    }
+
+    /**
+     * Gets the display name for an amenity using the real amenity ID
+     * @param realAmenityId - The real amenity ID from database
+     * @returns The display name for the amenity, or the real ID if not found
+     */
+    getDisplayNameByRealAmenityId(realAmenityId: string): string {
+        return this.getDisplayNameByRealId('amenities', realAmenityId);
+    }
+
+    /**
+     * Gets the display name for a feature using the real feature ID
+     * @param realFeatureId - The real feature ID from database
+     * @returns The display name for the feature, or the real ID if not found
+     */
+    getDisplayNameByRealFeatureId(realFeatureId: string): string {
+        return this.getDisplayNameByRealId('features', realFeatureId);
     }
 
     /**

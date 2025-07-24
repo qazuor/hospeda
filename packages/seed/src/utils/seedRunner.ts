@@ -1,3 +1,4 @@
+import { errorHistory } from './errorHistory.js';
 import { STATUS_ICONS, getEntityIcon } from './icons.js';
 import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
@@ -17,7 +18,7 @@ export interface SeedRunnerOptions<T> {
     /** Seed context with configuration and utilities */
     context: SeedContext;
     /** Optional function to get display information for an item */
-    getEntityInfo?: (item: T) => string;
+    getEntityInfo?: (item: T, context: SeedContext) => string;
 }
 
 // Consistent visual separators
@@ -33,6 +34,7 @@ const SUBSECTION_SEPARATOR = '─'.repeat(90);
  * - Visual separators and logging
  * - Success/error statistics
  * - Entity-specific information display
+ * - Integration with error history system
  *
  * @param options - Configuration for the seed runner
  * @returns Promise that resolves when all items are processed
@@ -46,7 +48,7 @@ const SUBSECTION_SEPARATOR = '─'.repeat(90);
  *     await createUser(user);
  *   },
  *   context: seedContext,
- *   getEntityInfo: (user) => `${user.name} (${user.email})`
+ *   getEntityInfo: (user, context) => `${user.name} (${user.email})`
  * });
  * ```
  */
@@ -78,7 +80,7 @@ export async function seedRunner<T>({
                 await process(item, i);
 
                 // Entity information for loaded item
-                const entityInfo = getEntityInfo ? getEntityInfo(item) : '';
+                const entityInfo = getEntityInfo ? getEntityInfo(item, context) : '';
                 const successMessage = entityInfo
                     ? `[${currentIndex} of ${totalItems}] - ${icon} ${entityInfo}`
                     : `[${currentIndex} of ${totalItems}] - ${icon} ${entityName} #${currentIndex}`;
@@ -90,9 +92,21 @@ export async function seedRunner<T>({
             const error = err as Error;
             errorCount++;
 
-            // Error information
+            // Record error in error history
             const entityInfo =
-                getEntityInfo && item ? getEntityInfo(item) : `${entityName} #${currentIndex}`;
+                getEntityInfo && item
+                    ? getEntityInfo(item, context)
+                    : `${entityName} #${currentIndex}`;
+            const fileName = context.currentFile || `item-${currentIndex}`;
+
+            errorHistory.recordError(
+                entityName,
+                fileName,
+                `Failed to process ${entityInfo}: ${error.message}`,
+                error
+            );
+
+            // Error information
             logger.error(`   ${STATUS_ICONS.Error} Error in ${entityInfo}: ${error.message}`);
 
             // Call error handler first if available

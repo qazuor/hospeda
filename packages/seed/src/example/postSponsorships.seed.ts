@@ -57,13 +57,15 @@ const preProcessSponsorship = async (item: unknown, context: SeedContext) => {
 /**
  * Get entity info for post sponsorship
  */
-const getPostSponsorshipInfo = (item: unknown) => {
+const getPostSponsorshipInfo = (item: unknown, context: SeedContext) => {
     const sponsorshipData = item as Record<string, unknown>;
     const sponsorId = sponsorshipData.sponsorId as string;
     const postId = sponsorshipData.postId as string;
     const isHighlighted = sponsorshipData.isHighlighted as boolean;
     const highlightIcon = isHighlighted ? ` ${STATUS_ICONS.Highlight}` : '';
-    return `Sponsor: ${sponsorId} → Post: ${postId}${highlightIcon}`;
+    const postName = context.idMapper.getDisplayNameByRealId('posts', postId);
+    const sponsorName = context.idMapper.getDisplayNameByRealId('sponsor', sponsorId);
+    return `Sponsor: ${sponsorName} → Post: ${postName}${highlightIcon}`;
 };
 
 /**

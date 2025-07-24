@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { TagService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
+import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
 
 /**
@@ -20,7 +21,7 @@ const tagNormalizer = (data: Record<string, unknown>) => {
 /**
  * Get entity info for tag
  */
-const getTagInfo = (item: unknown) => {
+const getTagInfo = (item: unknown, _context: SeedContext) => {
     const tagData = item as Record<string, unknown>;
     const name = tagData.name as string;
     const color = tagData.color as string;
