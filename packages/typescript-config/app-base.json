@@ -1,0 +1,31 @@
+{
+    "extends": "./base.json",
+    "compilerOptions": {
+        "lib": ["es2022", "DOM", "DOM.Iterable"],
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "paths": {
+            "@/*": ["./src/*"],
+            "@repo/config": ["../../packages/config/src/index.ts"],
+            "@repo/config/*": ["../../packages/config/src/*"],
+            "@repo/db": ["../../packages/db/src/index.ts"],
+            "@repo/db/*": ["../../packages/db/src/*"],
+            "@repo/logger": ["../../packages/logger/src/index.ts"],
+            "@repo/logger/*": ["../../packages/logger/src/*"],
+            "@repo/schemas": ["../../packages/schemas/src/index.ts"],
+            "@repo/schemas/*": ["../../packages/schemas/src/*"],
+            "@repo/types": ["../../packages/types/src/index.ts"],
+            "@repo/types/*": ["../../packages/types/src/*"],
+            "@repo/ui": ["../../packages/ui/src/index.ts"],
+            "@repo/ui/*": ["../../packages/ui/src/*"],
+            "@repo/utils": ["../../packages/utils/src/index.ts"],
+            "@repo/utils/*": ["../../packages/utils/src/*"],
+            "@repo/service-core": ["../../packages/service-core/src/index.ts"],
+            "@repo/service-core/*": ["../../packages/service-core/src/*"],
+            "@repo/seed": ["../../packages/seed/src/index.ts"],
+            "@repo/seed/*": ["../../packages/seed/src/*"]
+        }
+    },
+    "include": ["src/**/*"],
+    "exclude": ["dist", "node_modules"]
+}
