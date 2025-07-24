@@ -20,12 +20,12 @@
     "isFeatured": true,
     "moderationState": "APPROVED",
     "tagIds": [
-        "tag-festivales",
+        "018-tag-festivales",
         "026-tag-musica",
         "011-tag-cultura",
-        "tag-rio-parana-009",
-        "tag-familia-004",
-        "tag-entre-rios-003",
+        "033-tag-rio-parana",
+        "017-tag-familia",
+        "016-tag-entre-rios",
         "037-tag-teatro"
     ],
     "media": {

@@ -21,7 +21,7 @@
     "visibility": "PUBLIC",
     "isFeatured": false,
     "moderationState": "APPROVED",
-    "tagIds": ["013-tag-deportes", "tag-familia-004", "tag-entre-rios-003", "005-tag-aventura"],
+    "tagIds": ["013-tag-deportes", "017-tag-familia", "016-tag-entre-rios", "005-tag-aventura"],
     "media": {
         "featuredImage": {
             "url": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&h=600&fit=crop",

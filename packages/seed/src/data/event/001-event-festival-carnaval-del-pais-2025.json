@@ -21,12 +21,12 @@
     "visibility": "PUBLIC",
     "isFeatured": true,
     "tagIds": [
-        "tag-festivales",
+        "018-tag-festivales",
         "026-tag-musica",
         "011-tag-cultura",
-        "tag-familia-004",
-        "tag-vida-nocturna",
-        "tag-entre-rios-003",
+        "017-tag-familia",
+        "041-tag-vida-nocturna",
+        "016-tag-entre-rios",
         "037-tag-teatro"
     ],
     "moderationState": "APPROVED",
