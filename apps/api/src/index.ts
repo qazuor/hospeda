@@ -1,43 +1,60 @@
-import { apiLogger } from '@/utils/logger';
+/**
+ * API Server Entry Point
+ * Starts the Hono.js server with all configured middleware and routes
+ */
 import { serve } from '@hono/node-server';
-import 'dotenv/config';
+import { logger } from '@repo/logger';
 import { app } from './app';
+import { env } from './utils/env';
+import { listRoutes } from './utils/list-routes';
 
-const PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000;
+const port = env.API_PORT;
 
-apiLogger.info({ location: 'API:Startup' }, `Starting API server on port ${PORT}`);
-apiLogger.info(
-    'Starting API server on port lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-    'texto largo'
-);
+logger.info('Starting API server...', `Port: ${port}, Environment: ${env.NODE_ENV}`);
 
-apiLogger.warn(
+// Start the server
+const server = serve(
     {
-        location: 'API:Startup',
-        textLargo:
-            'Starting API server on port lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
+        fetch: app.fetch,
+        port
     },
-    `Starting API server on port ${PORT}`
+    (info) => {
+        logger.info(`🚀 Server running on port ${info.port}`, `Environment: ${env.NODE_ENV}`);
+
+        // List all registered routes
+        listRoutes();
+    }
 );
-apiLogger.error({ location: 'API:Startup' }, `Starting API server on port ${PORT}`);
-apiLogger.debug({ location: 'API:Startup' }, `Starting API server on port ${PORT}`);
-apiLogger.log({ location: 'API:Startup' }, `Starting API server on port ${PORT}`);
 
-serve({
-    fetch: app.fetch,
-    port: PORT,
-    hostname: '0.0.0.0'
-});
+// Graceful shutdown
+const gracefulShutdown = (signal: string) => {
+    logger.info(`Received ${signal}, shutting down gracefully...`);
 
-process.on('unhandledRejection', (reason) => {
-    const errorToLog = reason instanceof Error ? reason : new Error(String(reason));
-    apiLogger.error(
-        errorToLog,
-        `API:UnhandledRejection - Unhandled Rejection. Reason: ${String(reason)}`
-    );
-});
+    server.close(() => {
+        logger.info('Server closed');
+        process.exit(0);
+    });
 
+    // Force close after 10 seconds
+    setTimeout(() => {
+        logger.error('Force closing server after timeout');
+        process.exit(1);
+    }, 10000);
+};
+
+// Handle shutdown signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-    apiLogger.error(error, 'API:UncaughtException - Uncaught Exception');
+    logger.error(`Uncaught exception: ${error.message}`, error.stack || '');
     process.exit(1);
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error(`Unhandled rejection at: ${promise}`, `Reason: ${reason}`);
+    process.exit(1);
+});
+
+export { app };

@@ -5,27 +5,34 @@
     "main": "dist/index.js",
     "scripts": {
         "dev": "tsx watch src/index.ts",
-        "build": "tsup src/index.ts",
+        "build": "tsup",
         "start": "node dist/index.js",
         "clean": "rm -rf node_modules dist",
         "lint": "biome check .",
         "format": "biome format --write .",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit --project ./tsconfig.json"
     },
     "dependencies": {
         "@clerk/backend": "^1.32.3",
+        "@hono/clerk-auth": "^3.0.2",
         "@hono/node-server": "^1.14.1",
+        "@hono/swagger-ui": "^0.5.2",
+        "@hono/zod-openapi": "^1.0.2",
         "@hono/zod-validator": "^0.5.0",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",
+        "@repo/service-core": "workspace:*",
         "@repo/types": "workspace:*",
         "@repo/utils": "workspace:*",
+        "csrf": "^3.1.0",
         "dotenv": "^16.5.0",
         "hono": "^4.7.8",
+        "hono-rate-limiter": "^0.4.2",
         "jose": "^5.2.3",
         "pg": "^8.15.6",
+        "stoker": "^1.4.3",
         "zod": "^3.24.4"
     },
     "devDependencies": {
