@@ -12,15 +12,18 @@ export const ENTITY_ICONS = {
     Amenities: '✨',
     Features: '💎',
     Accommodations: '🏠',
-    Tags: '🏷️',
+    Tags: '🏷️ ',
     Posts: '📝',
     Events: '🎉',
     Attractions: '🎯',
     Reviews: '⭐',
     Bookmarks: '🔖',
-    Sponsors: '💼',
-    Organizers: '👨‍💼',
-    Locations: '📍',
+    PostSponsors: '📢',
+    PostSponsorships: '🤝',
+    EventOrganizers: '👨‍💼',
+    EventLocations: '📍',
+    AccommodationReviews: '⭐',
+    DestinationReviews: '⭐',
     Default: '📦'
 } as const;
 
