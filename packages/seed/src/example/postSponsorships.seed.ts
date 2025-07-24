@@ -64,7 +64,7 @@ const getPostSponsorshipInfo = (item: unknown, context: SeedContext) => {
     const isHighlighted = sponsorshipData.isHighlighted as boolean;
     const highlightIcon = isHighlighted ? ` ${STATUS_ICONS.Highlight}` : '';
     const postName = context.idMapper.getDisplayNameByRealId('posts', postId);
-    const sponsorName = context.idMapper.getDisplayNameByRealId('sponsor', sponsorId);
+    const sponsorName = context.idMapper.getDisplayNameByRealId('postsponsors', sponsorId);
     return `Sponsor: ${sponsorName} → Post: ${postName}${highlightIcon}`;
 };
 
