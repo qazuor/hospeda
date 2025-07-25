@@ -1,8 +1,9 @@
 /**
  * Global error handler middleware
- * Catches and formats all unhandled errors
+ * Catches and formats all unhandled errors using ServiceErrorCode from @repo/types
  */
 import { logger } from '@repo/logger';
+import { ServiceErrorCode } from '@repo/types';
 import type { ErrorHandler, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { ZodError } from 'zod';
@@ -13,7 +14,7 @@ import { env } from '../utils/env';
  */
 export class ValidationError extends Error {
     public readonly statusCode = 400;
-    public readonly code = 'VALIDATION_ERROR';
+    public readonly code = ServiceErrorCode.VALIDATION_ERROR;
 
     constructor(
         message: string,
@@ -26,7 +27,7 @@ export class ValidationError extends Error {
 
 export class AuthenticationError extends Error {
     public readonly statusCode = 401;
-    public readonly code = 'AUTHENTICATION_ERROR';
+    public readonly code = ServiceErrorCode.UNAUTHORIZED;
 
     constructor(message = 'Authentication required') {
         super(message);
@@ -36,7 +37,7 @@ export class AuthenticationError extends Error {
 
 export class AuthorizationError extends Error {
     public readonly statusCode = 403;
-    public readonly code = 'AUTHORIZATION_ERROR';
+    public readonly code = ServiceErrorCode.FORBIDDEN;
 
     constructor(message = 'Insufficient permissions') {
         super(message);
@@ -46,7 +47,7 @@ export class AuthorizationError extends Error {
 
 export class NotFoundError extends Error {
     public readonly statusCode = 404;
-    public readonly code = 'NOT_FOUND_ERROR';
+    public readonly code = ServiceErrorCode.NOT_FOUND;
 
     constructor(message = 'Resource not found') {
         super(message);
@@ -56,7 +57,7 @@ export class NotFoundError extends Error {
 
 export class ConflictError extends Error {
     public readonly statusCode = 409;
-    public readonly code = 'CONFLICT_ERROR';
+    public readonly code = ServiceErrorCode.ALREADY_EXISTS;
 
     constructor(message = 'Resource conflict') {
         super(message);
@@ -76,7 +77,7 @@ export class RateLimitError extends Error {
 
 export class InternalServerError extends Error {
     public readonly statusCode = 500;
-    public readonly code = 'INTERNAL_SERVER_ERROR';
+    public readonly code = ServiceErrorCode.INTERNAL_ERROR;
 
     constructor(message = 'Internal server error') {
         super(message);
@@ -108,7 +109,7 @@ export const errorHandler: ErrorHandler = (error, c) => {
             {
                 success: false,
                 error: {
-                    code: 'VALIDATION_ERROR',
+                    code: ServiceErrorCode.VALIDATION_ERROR,
                     message: 'Invalid input data',
                     details: error.errors.map((err) => ({
                         field: err.path.join('.'),
