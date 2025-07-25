@@ -3,6 +3,7 @@
  * Handles unauthenticated endpoints for accommodations, destinations, events, etc.
  */
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { AccommodationSchemas } from '../../validation/accommodation-schemas';
 
 const app = new OpenAPIHono();
 
@@ -39,15 +40,10 @@ const accommodationsListRoute = createRoute({
     method: 'get',
     path: '/accommodations',
     summary: 'List accommodations',
-    description: 'Get a paginated list of accommodations',
+    description: 'Get a paginated list of accommodations with filtering options',
     tags: ['Accommodations'],
     request: {
-        query: PaginationSchema.extend({
-            location: z.string().optional(),
-            minPrice: z.coerce.number().optional(),
-            maxPrice: z.coerce.number().optional(),
-            amenities: z.string().optional() // comma-separated values
-        })
+        query: AccommodationSchemas.list
     },
     responses: {
         200: {
@@ -57,43 +53,85 @@ const accommodationsListRoute = createRoute({
                     schema: AccommodationListSchema
                 }
             }
+        },
+        400: {
+            description: 'Invalid query parameters',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        error: z.string(),
+                        message: z.string(),
+                        details: z.array(
+                            z.object({
+                                field: z.string(),
+                                message: z.string(),
+                                code: z.string()
+                            })
+                        )
+                    })
+                }
+            }
         }
     }
 });
 
 app.openapi(accommodationsListRoute, async (c) => {
-    const { page = 1, limit = 20 } = c.req.valid('query');
+    const validatedQuery = c.req.valid('query');
 
     // TODO: Implement actual service call when service-core is ready
     // const result = await accommodationService.list(PUBLIC_USER_ACTOR, {
-    //   page,
-    //   limit,
-    //   filters: { location, minPrice, maxPrice, amenities: amenities?.split(',') },
-    //   sort: sort ? { [sort]: order } : undefined
+    //   limit: validatedQuery.limit,
+    //   offset: validatedQuery.offset,
+    //   filters: {
+    //     type: validatedQuery.type,
+    //     destination: validatedQuery.destination,
+    //     priceRange: validatedQuery.minPrice && validatedQuery.maxPrice ?
+    //       { min: validatedQuery.minPrice, max: validatedQuery.maxPrice } : undefined,
+    //     minRating: validatedQuery.minRating,
+    //     amenities: validatedQuery.amenities,
+    //     guests: validatedQuery.guests,
+    //     rooms: validatedQuery.rooms,
+    //     location: validatedQuery.lat && validatedQuery.lng ?
+    //       { lat: validatedQuery.lat, lng: validatedQuery.lng, radius: validatedQuery.radius } : undefined,
+    //     dateRange: validatedQuery.checkIn && validatedQuery.checkOut ?
+    //       { checkIn: validatedQuery.checkIn, checkOut: validatedQuery.checkOut } : undefined,
+    //     searchQuery: validatedQuery.q
+    //   },
+    //   sort: { field: validatedQuery.sort, order: validatedQuery.order },
+    //   language: validatedQuery.lang
     // });
 
-    // Mock response for now
+    // Mock response for now with more realistic data based on validated query
     const mockData = {
         accommodations: [
             {
                 id: '1',
                 name: 'Hotel Paradise',
-                description: 'A beautiful beachfront hotel',
+                description: 'A beautiful beachfront hotel with stunning ocean views',
                 location: 'Cancún, Mexico',
                 price: 150,
                 rating: 4.5,
-                amenities: ['WiFi', 'Pool', 'Beach Access']
+                amenities: ['WiFi', 'Pool', 'Beach Access', 'Restaurant']
+            },
+            {
+                id: '2',
+                name: 'Mountain Lodge',
+                description: 'Cozy cabin in the mountains with hiking trails',
+                location: 'Aspen, Colorado',
+                price: 200,
+                rating: 4.8,
+                amenities: ['WiFi', 'Fireplace', 'Hiking', 'Spa']
             }
         ],
         pagination: {
-            page,
-            limit,
-            total: 1,
+            page: Math.floor(validatedQuery.offset / validatedQuery.limit) + 1,
+            limit: validatedQuery.limit,
+            total: 2,
             totalPages: 1
         }
     };
 
-    return c.json(mockData);
+    return c.json(mockData, 200);
 });
 
 // Accommodation details route
@@ -104,8 +142,13 @@ const accommodationDetailsRoute = createRoute({
     description: 'Get detailed information about a specific accommodation',
     tags: ['Accommodations'],
     request: {
-        params: z.object({
-            id: z.string()
+        params: AccommodationSchemas.getById,
+        query: z.object({
+            lang: z
+                .string()
+                .regex(/^[a-z]{2}$/)
+                .default('en')
+                .optional()
         })
     },
     responses: {
@@ -133,6 +176,24 @@ const accommodationDetailsRoute = createRoute({
                 }
             }
         },
+        400: {
+            description: 'Invalid accommodation ID',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        error: z.string(),
+                        message: z.string(),
+                        details: z.array(
+                            z.object({
+                                field: z.string(),
+                                message: z.string(),
+                                code: z.string()
+                            })
+                        )
+                    })
+                }
+            }
+        },
         404: {
             description: 'Accommodation not found',
             content: {
@@ -148,13 +209,16 @@ const accommodationDetailsRoute = createRoute({
 });
 
 app.openapi(accommodationDetailsRoute, async (c) => {
-    const { id } = c.req.valid('param');
+    const validatedParams = c.req.valid('param');
+    const _validatedQuery = c.req.valid('query');
 
     // TODO: Implement actual service call
-    // const accommodation = await accommodationService.getById(PUBLIC_USER_ACTOR, id);
+    // const accommodation = await accommodationService.getById(PUBLIC_USER_ACTOR, validatedParams.id, {
+    //   language: validatedQuery.lang || 'en'
+    // });
 
     // Mock response - for demonstration only
-    if (id === 'not-found') {
+    if (validatedParams.id === '00000000-0000-0000-0000-000000000000') {
         return c.json(
             {
                 error: 'NOT_FOUND',
@@ -165,7 +229,7 @@ app.openapi(accommodationDetailsRoute, async (c) => {
     }
 
     const mockAccommodation = {
-        id,
+        id: validatedParams.id,
         name: 'Hotel Paradise',
         description: 'A beautiful beachfront hotel with stunning ocean views',
         location: 'Cancún, Mexico',
@@ -180,9 +244,7 @@ app.openapi(accommodationDetailsRoute, async (c) => {
     };
 
     return c.json(mockAccommodation, 200);
-});
-
-// Destinations list route
+}); // Destinations list route
 const destinationsListRoute = createRoute({
     method: 'get',
     path: '/destinations',
@@ -258,15 +320,7 @@ const searchRoute = createRoute({
     description: 'Search across accommodations, destinations, and events',
     tags: ['Search'],
     request: {
-        query: z.object({
-            query: z.string().min(1),
-            type: z
-                .enum(['all', 'accommodations', 'destinations', 'events'])
-                .default('all')
-                .optional(),
-            page: z.coerce.number().min(1).default(1).optional(),
-            limit: z.coerce.number().min(1).max(50).default(10).optional()
-        })
+        query: AccommodationSchemas.search
     },
     responses: {
         200: {
@@ -277,7 +331,7 @@ const searchRoute = createRoute({
                         results: z.array(
                             z.object({
                                 id: z.string(),
-                                type: z.enum(['accommodation', 'destination', 'event']),
+                                type: z.enum(['accommodation', 'destination']),
                                 title: z.string(),
                                 description: z.string(),
                                 image: z.string().optional(),
@@ -300,7 +354,14 @@ const searchRoute = createRoute({
                 'application/json': {
                     schema: z.object({
                         error: z.string(),
-                        message: z.string()
+                        message: z.string(),
+                        details: z.array(
+                            z.object({
+                                field: z.string(),
+                                message: z.string(),
+                                code: z.string()
+                            })
+                        )
                     })
                 }
             }
@@ -309,7 +370,7 @@ const searchRoute = createRoute({
 });
 
 app.openapi(searchRoute, async (c) => {
-    const { query, type = 'all', page = 1, limit = 10 } = c.req.valid('query');
+    const validatedQuery = c.req.valid('query');
 
     // Mock search results
     const allResults = [
@@ -328,42 +389,36 @@ app.openapi(searchRoute, async (c) => {
             description: 'Beautiful beaches and ancient Mayan ruins',
             image: 'https://example.com/cancun.jpg',
             score: 0.87
-        },
-        {
-            id: '3',
-            type: 'event' as const,
-            title: 'Beach Festival',
-            description: 'Annual music festival on the beach',
-            image: 'https://example.com/festival.jpg',
-            score: 0.75
         }
     ];
 
     // Filter by type if specified
     let results =
-        type === 'all' ? allResults : allResults.filter((r) => r.type === type.replace(/s$/, ''));
+        validatedQuery.type === 'all'
+            ? allResults
+            : allResults.filter((r) => r.type === validatedQuery.type);
 
     // Filter by search query (simple contains check)
-    if (query) {
+    if (validatedQuery.q) {
         results = results.filter(
             (r) =>
-                r.title.toLowerCase().includes(query.toLowerCase()) ||
-                r.description.toLowerCase().includes(query.toLowerCase())
+                r.title.toLowerCase().includes(validatedQuery.q.toLowerCase()) ||
+                r.description.toLowerCase().includes(validatedQuery.q.toLowerCase())
         );
     }
 
     // Apply pagination
     const total = results.length;
-    const totalPages = Math.ceil(total / limit);
-    const startIndex = (page - 1) * limit;
-    const paginatedResults = results.slice(startIndex, startIndex + limit);
+    const totalPages = Math.ceil(total / validatedQuery.limit);
+    const startIndex = validatedQuery.offset;
+    const paginatedResults = results.slice(startIndex, startIndex + validatedQuery.limit);
 
     return c.json(
         {
             results: paginatedResults,
             pagination: {
-                page,
-                limit,
+                page: Math.floor(validatedQuery.offset / validatedQuery.limit) + 1,
+                limit: validatedQuery.limit,
                 total,
                 totalPages
             }
