@@ -1,26 +1,16 @@
+import { AccommodationIdSchema, AccommodationTypeEnumSchema } from '@repo/schemas';
+import { AccommodationTypeEnum } from '@repo/types';
 /**
  * Accommodation-specific validation schemas
- * Validation schemas for accommodation-related endpoints
+ * Validation schemas for accommodation-related endpoints using @repo packages
  */
 import { z } from 'zod';
 import { CommonSchemas } from '../middlewares/validation';
 
 /**
- * Accommodation property types
+ * Accommodation property types - using enum from @repo/types
  */
-export const AccommodationTypes = [
-    'hotel',
-    'apartment',
-    'house',
-    'villa',
-    'cabin',
-    'resort',
-    'hostel',
-    'guesthouse',
-    'bnb',
-    'camping',
-    'glamping'
-] as const;
+export const AccommodationTypes = Object.values(AccommodationTypeEnum);
 
 /**
  * Accommodation amenities
@@ -69,7 +59,8 @@ export const AccommodationSchemas = {
             order: z.enum(['asc', 'desc']).default('desc'),
 
             // Filters
-            type: z.enum(AccommodationTypes).optional(),
+            // Type filter using enum from @repo packages
+            type: AccommodationTypeEnumSchema.optional(),
             destination: CommonSchemas.slug.optional(),
             minPrice: CommonSchemas.nonNegativeInt.optional(),
             maxPrice: CommonSchemas.nonNegativeInt.optional(),
@@ -135,9 +126,11 @@ export const AccommodationSchemas = {
     /**
      * Schema for getting a single accommodation by ID
      */
+    /**
+     * Get accommodation by ID parameters
+     */
     getById: z.object({
-        id: CommonSchemas.uuid,
-        lang: CommonSchemas.languageCode.default('en')
+        id: AccommodationIdSchema
     }),
 
     /**
