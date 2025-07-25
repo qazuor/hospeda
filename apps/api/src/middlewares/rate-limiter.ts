@@ -1,7 +1,7 @@
-import { logger } from '@repo/logger';
-import type { MiddlewareHandler } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { rateLimiter as honoRateLimiter } from 'hono-rate-limiter';
 import { env } from '../utils/env';
+
 /**
  * Advanced rate limiting middleware using hono-rate-limiter
  * Provides flexible rate limiting with different strategies
@@ -14,77 +14,88 @@ const RATE_LIMIT_CONFIG = {
     // General API endpoints
     default: {
         windowMs: env.RATE_LIMIT_WINDOW_MS,
-        limit: env.RATE_LIMIT_REQUESTS
+        limit: env.RATE_LIMIT_REQUESTS,
+        message: 'Too many requests. Please try again later.'
     },
     // Search endpoints (more restrictive)
     search: {
         windowMs: 5 * 60 * 1000, // 5 minutes
-        limit: 30
+        limit: 30,
+        message: 'Search rate limit exceeded. Please wait before searching again.'
     },
     // Admin endpoints (more permissive for authenticated users)
     admin: {
         windowMs: env.RATE_LIMIT_WINDOW_MS,
-        limit: env.RATE_LIMIT_REQUESTS * 2
+        limit: env.RATE_LIMIT_REQUESTS * 3, // 3x more permissive
+        message: 'Admin rate limit exceeded. Please wait before continuing.'
     },
-    // Authentication endpoints
+    // Authentication endpoints (very restrictive)
     auth: {
         windowMs: 15 * 60 * 1000, // 15 minutes
-        limit: 10
+        limit: 10,
+        message: 'Authentication rate limit exceeded. Please wait before trying again.'
+    },
+    // Public endpoints (moderate)
+    public: {
+        windowMs: env.RATE_LIMIT_WINDOW_MS,
+        limit: env.RATE_LIMIT_REQUESTS,
+        message: 'Public API rate limit exceeded. Please wait before making more requests.'
     }
+} as const;
+
+/**
+ * Enhanced key generator for rate limiting
+ * Uses IP + User-Agent for better fingerprinting
+ */
+const keyGenerator = (c: Context): string => {
+    const ip =
+        c.req.header('CF-Connecting-IP') ||
+        c.req.header('X-Forwarded-For') ||
+        c.req.header('X-Real-IP') ||
+        'unknown';
+
+    const userAgent = c.req.header('User-Agent') || 'unknown';
+    const userId = c.get('userId') || 'anonymous';
+
+    // Create composite key for better rate limiting
+    const baseKey = `${ip}-${userAgent.slice(0, 50)}`;
+
+    // If user is authenticated, use user ID for more accurate limiting
+    return userId !== 'anonymous' ? `user:${userId}` : `ip:${baseKey}`;
 };
 
 /**
  * Create rate limiter middleware with enhanced configuration
+ * @param type - Type of rate limiting to apply
  * @returns {MiddlewareHandler} Rate limiting middleware
  */
-export const rateLimiter = (): MiddlewareHandler => {
+export const rateLimiter = (
+    type: keyof typeof RATE_LIMIT_CONFIG = 'default'
+): MiddlewareHandler => {
+    const config = RATE_LIMIT_CONFIG[type];
+
     return honoRateLimiter({
-        windowMs: RATE_LIMIT_CONFIG.default.windowMs,
-        limit: RATE_LIMIT_CONFIG.default.limit,
+        windowMs: config.windowMs,
+        limit: config.limit,
+        keyGenerator,
         message: {
             success: false,
             error: {
                 code: 'RATE_LIMIT_EXCEEDED',
-                message: 'Too many requests. Please try again later.',
-                retryAfter: Math.ceil(RATE_LIMIT_CONFIG.default.windowMs / 1000)
+                message: config.message,
+                retryAfter: Math.ceil(config.windowMs / 1000),
+                limit: config.limit,
+                windowMs: config.windowMs
             }
         },
-        standardHeaders: true,
-
-        /**
-         * Generate unique key for rate limiting
-         * Combines IP address with endpoint path for granular control
-         */
-        keyGenerator: (c) => {
-            const clientIP =
-                c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
-            const endpoint = c.req.path;
-            const userId = c.get('userId'); // If authenticated
-
-            // Use user ID for authenticated requests, IP for anonymous
-            const identifier = userId || clientIP;
-            return `${identifier}:${endpoint}`;
-        },
-
-        /**
-         * Custom handler for rate limit exceeded
-         */
-        handler: (c) => {
-            logger.warn(`Rate limit exceeded for ${c.req.path}`);
-            logger.warn(
-                `IP: ${c.req.header('x-forwarded-for') || 'unknown'} | User-Agent: ${c.req.header('user-agent') || 'unknown'} | Time: ${new Date().toISOString()}`
-            );
-
-            return c.json(
-                {
-                    success: false,
-                    error: {
-                        code: 'RATE_LIMIT_EXCEEDED',
-                        message: 'Too many requests. Please try again later.'
-                    }
-                },
-                429
-            );
-        }
+        standardHeaders: true // Add standard rate limiting headers
     });
 };
+
+/**
+ * Specific rate limiters for different endpoint types
+ */
+export const searchRateLimiter = () => rateLimiter('search');
+export const adminRateLimiter = () => rateLimiter('admin');
+export const authRateLimiter = () => rateLimiter('auth');
+export const publicRateLimiter = () => rateLimiter('public');
