@@ -2,8 +2,7 @@
  * Health check routes
  * Provides system health and status information
  */
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { createRoute, z } from '@hono/zod-openapi';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 
 const app = new OpenAPIHono();
 
