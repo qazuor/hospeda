@@ -19,7 +19,7 @@ import { timeoutMiddleware } from './timeout';
  * @param app - OpenAPI Hono app instance
  */
 export const setupMiddlewares = (app: OpenAPIHono) => {
-    // 1. Error handler (must be first to catch all errors)
+    // 1. Error handler (catches all other errors)
     app.onError(errorHandler);
 
     // 2. Not found handler
@@ -28,7 +28,7 @@ export const setupMiddlewares = (app: OpenAPIHono) => {
     // 3. Security headers (early for all requests)
     app.use('*', apiSecurityHeaders());
 
-    // 4. Advanced CORS (before other request processing)
+    // 5. Advanced CORS (before other request processing)
     app.use(
         '*',
         advancedCors({
@@ -45,7 +45,7 @@ export const setupMiddlewares = (app: OpenAPIHono) => {
         })
     );
 
-    // 5. Advanced request logging (capture all requests with detailed info)
+    // 6. Advanced request logging (capture all requests with detailed info)
     if (env.ENABLE_REQUEST_LOGGING) {
         app.use(
             '*',
@@ -68,7 +68,7 @@ export const setupMiddlewares = (app: OpenAPIHono) => {
         app.use('*', loggerMiddleware);
     }
 
-    // 6. Advanced timeout protection (with shorter timeout for most endpoints)
+    // 7. Advanced timeout protection (with shorter timeout for most endpoints)
     app.use(
         '*',
         timeoutMiddleware({
@@ -77,12 +77,12 @@ export const setupMiddlewares = (app: OpenAPIHono) => {
         })
     );
 
-    // 7. Pretty JSON (development only)
+    // 8. Pretty JSON (development only)
     if (env.NODE_ENV === 'development') {
         app.use('*', prettyJSON());
     }
 
-    // 8. Advanced rate limiter (control abuse with multiple strategies)
+    // 9. Advanced rate limiter (control abuse with multiple strategies)
     app.use('*', rateLimiter('default'));
 
     // Note: Authentication middleware will be applied per route group
