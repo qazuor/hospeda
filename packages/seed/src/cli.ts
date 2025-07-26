@@ -60,7 +60,7 @@ try {
     runSeed(options);
 } catch (err) {
     // 🔍 DISTINCTIVE LOG: main CLI
-    console.error(`${STATUS_ICONS.Debug} [MAIN_CLI] Error at the main process level`);
+    logger.error(`${STATUS_ICONS.Debug} [MAIN_CLI] Error at the main process level`);
 
     logger.error('🧨 Error during seed process:');
     logger.error(String(err));

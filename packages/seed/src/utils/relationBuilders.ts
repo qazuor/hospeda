@@ -1,4 +1,5 @@
 import { STATUS_ICONS } from './icons.js';
+import { logger } from './logger.js';
 import type { SeedContext } from './seedContext.js';
 
 /**
@@ -51,7 +52,7 @@ export const createManyToManyRelation = (
                     const errorMessage = `${STATUS_ICONS.Error} Failed to create ${targetEntity} relationship: ${err.message}`;
 
                     if (context.continueOnError) {
-                        console.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
+                        logger.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
                     } else {
                         throw new Error(errorMessage);
                     }
@@ -101,7 +102,7 @@ export const createOneToManyRelation = (
                     const errorMessage = `${STATUS_ICONS.Error} Failed to update ${targetEntity} relationship: ${err.message}`;
 
                     if (context.continueOnError) {
-                        console.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
+                        logger.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
                     } else {
                         throw new Error(errorMessage);
                     }
@@ -136,10 +137,8 @@ export const createCustomRelationBuilder = (
             const errorMessage = `${STATUS_ICONS.Error} Missing ${targetEntity} mappings:\n${missingIdsList}`;
 
             if (context.continueOnError) {
-                console.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
-                console.warn(
-                    `Continuing with ${validation.validIds.length} valid ${targetEntity}s`
-                );
+                logger.warn(`${STATUS_ICONS.Warning} ${errorMessage}`);
+                logger.warn(`Continuing with ${validation.validIds.length} valid ${targetEntity}s`);
             } else {
                 throw new Error(errorMessage);
             }
@@ -162,6 +161,5 @@ export const createCustomRelationBuilder = (
 async function createCustomRelation(sourceId: string, targetId: string, _context: SeedContext) {
     // This would be implemented based on the specific relationship type
     // For now, it's a placeholder that can be overridden
-    // biome-ignore lint/suspicious/noConsoleLog: Custom relation logging
-    console.log(`Creating custom relation: ${sourceId} -> ${targetId}`);
+    logger.info(`Creating custom relation: ${sourceId} -> ${targetId}`);
 }
