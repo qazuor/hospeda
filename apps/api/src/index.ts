@@ -21,8 +21,10 @@ const server = serve(
     (info) => {
         logger.info(`🚀 Server running on port ${info.port}`, `Environment: ${env.NODE_ENV}`);
 
-        // List all registered routes
-        listRoutes();
+        // List all registered routes after a small delay to ensure all routes are registered
+        setTimeout(() => {
+            listRoutes(app);
+        }, 100);
     }
 );
 
