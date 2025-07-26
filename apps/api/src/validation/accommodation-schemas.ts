@@ -1,100 +1,90 @@
 import {
     AccommodationFilterInputSchema,
     AccommodationIdSchema,
-    BaseSearchSchema,
-    PriceSchema
+    AccommodationRatingSchema,
+    AccommodationSchema,
+    AccommodationTypeEnumSchema,
+    InternationalPhoneRegex,
+    PriceSchema,
+    SortDirectionSchema
 } from '@repo/schemas';
-import { AccommodationTypeEnum } from '@repo/types';
+import {
+    GetAccommodationSchema,
+    SearchAccommodationSchema
+} from '@repo/service-core/services/accommodation/accommodation.schemas';
+import { AccommodationTypeEnum, AmenitiesTypeEnum } from '@repo/types';
+
 /**
- * Accommodation-specific validation schemas
- * Validation schemas for accommodation-related endpoints using @repo packages
+ * Accommodation validation schemas optimized for public API
+ * Leverages @repo/schemas and @repo/service-core with minimal API-specific adaptations
  */
 import { z } from 'zod';
-import { CommonSchemas } from '../middlewares/validation';
+import { APIValidationSchemas } from '../middlewares/validation';
 
 /**
- * Accommodation property types - using enum from @repo/types
+ * Re-export accommodation types and amenity types from centralized packages
+ * No need to redefine these constants
  */
 export const AccommodationTypes = Object.values(AccommodationTypeEnum);
+export const AccommodationAmenityTypes = Object.values(AmenitiesTypeEnum);
 
 /**
- * Accommodation amenities
+ * Common validation patterns extracted from centralized schemas
  */
-export const AccommodationAmenities = [
-    'wifi',
-    'parking',
-    'pool',
-    'gym',
-    'spa',
-    'restaurant',
-    'bar',
-    'pet-friendly',
-    'family-friendly',
-    'accessible',
-    'business-center',
-    'concierge',
-    'room-service',
-    'laundry',
-    'kitchen',
-    'balcony',
-    'air-conditioning',
-    'heating',
-    'fireplace',
-    'hot-tub',
-    'garden'
-] as const;
+const CommonValidationPatterns = {
+    // Extract name validation pattern from AccommodationSchema
+    name: AccommodationSchema.shape.name,
+    // Create a more relaxed name pattern for guest names (min 2 instead of 3)
+    guestName: z.string().min(2).max(100)
+} as const;
 
 /**
- * Accommodation validation schemas
+ * Accommodation validation schemas optimized for public API
+ * Leverages existing schemas from @repo packages with API-specific adaptations
  */
 export const AccommodationSchemas = {
     /**
      * Schema for listing accommodations with filters
-     * Extends existing filter schema from @repo/schemas
+     * Reuses AccommodationFilterInputSchema and extends with API-specific pagination
      */
-    list: AccommodationFilterInputSchema.omit({ tags: true, visibility: true }) // Remove fields not needed for public API
-        .extend({
-            // Pagination using consistent naming with @repo/schemas
-            limit: CommonSchemas.paginationLimit,
-            offset: CommonSchemas.paginationOffset,
+    list: AccommodationFilterInputSchema.extend({
+        // Override pagination to use offset/limit for public API
+        limit: APIValidationSchemas.paginationLimit,
+        offset: APIValidationSchemas.paginationOffset,
 
-            // Sorting compatible with existing schemas
-            sort: z
-                .enum(['price', 'rating', 'distance', 'name', 'created_at'])
-                .default('created_at'),
-            order: z.enum(['asc', 'desc']).default('desc'),
+        // Use centralized accommodation type enum schema
+        type: AccommodationTypeEnumSchema.optional(),
 
-            // Additional filters for public API
-            destination: CommonSchemas.slug.optional(),
+        // Price filtering using centralized PriceSchema concepts
+        minPrice: PriceSchema.shape.price.optional(),
+        maxPrice: PriceSchema.shape.price.optional(),
 
-            // Price filtering using PriceSchema from @repo/schemas
-            minPrice: z.coerce.number().optional(),
-            maxPrice: z.coerce.number().optional(),
-            amenities: z
-                .string()
-                .transform((str) => str.split(',').map((s) => s.trim()))
-                .pipe(z.array(z.enum(AccommodationAmenities)))
-                .optional(),
+        // Use existing rating validation from centralized schemas
+        minRating: APIValidationSchemas.rating.optional(),
 
-            // Guest requirements
-            guests: CommonSchemas.positiveInt.max(20).optional(),
-            rooms: CommonSchemas.positiveInt.max(10).optional(),
+        // Guest requirements
+        guests: APIValidationSchemas.positiveInt.max(20).optional(),
+        rooms: APIValidationSchemas.positiveInt.max(10).optional(),
 
-            // Location-based search
-            lat: CommonSchemas.latitude.optional(),
-            lng: CommonSchemas.longitude.optional(),
-            radius: z.coerce.number().min(0.1).max(100).default(10).optional(),
+        // Location-based search (simplified from LocationSchema)
+        lat: z.number().min(-90).max(90).optional(),
+        lng: z.number().min(-180).max(180).optional(),
+        radius: z.coerce.number().min(0.1).max(100).default(10).optional(),
 
-            // Date range (for availability)
-            checkIn: CommonSchemas.date.optional(),
-            checkOut: CommonSchemas.date.optional(),
+        // Date range
+        checkIn: APIValidationSchemas.date.optional(),
+        checkOut: APIValidationSchemas.date.optional(),
 
-            // Language preference
-            lang: CommonSchemas.languageCode.default('en')
-        })
+        // Search and language
+        q: APIValidationSchemas.searchQuery.optional(),
+        lang: APIValidationSchemas.languageCode.default('en'),
+
+        // Sorting using centralized sort schemas
+        sort: z.enum(['price', 'rating', 'distance', 'name', 'created_at']).default('created_at'),
+        order: SortDirectionSchema.default('DESC')
+    })
         .refine(
             (data) => {
-                // If both lat and lng are provided, both must be present
                 if ((data.lat !== undefined) !== (data.lng !== undefined)) {
                     return false;
                 }
@@ -104,7 +94,6 @@ export const AccommodationSchemas = {
         )
         .refine(
             (data) => {
-                // If checkIn and checkOut are provided, validate the range
                 if (data.checkIn && data.checkOut) {
                     const checkInDate = new Date(data.checkIn);
                     const checkOutDate = new Date(data.checkOut);
@@ -116,7 +105,6 @@ export const AccommodationSchemas = {
         )
         .refine(
             (data) => {
-                // Validate price range
                 if (data.minPrice !== undefined && data.maxPrice !== undefined) {
                     return data.minPrice <= data.maxPrice;
                 }
@@ -126,104 +114,31 @@ export const AccommodationSchemas = {
         ),
 
     /**
-     * Schema for getting a single accommodation by ID
+     * Re-export GetAccommodationSchema from service-core
+     * No need to redefine this logic
      */
-    /**
-     * Get accommodation by ID parameters
-     */
-    getById: z.object({
-        id: AccommodationIdSchema
-    }),
+    getById: GetAccommodationSchema,
 
     /**
-     * Schema for creating a new accommodation (for future admin endpoints)
-     * Reuses base accommodation structure with public API additions
+     * Schema for search - adapts SearchAccommodationSchema for public API
+     * Uses service-core schema with pagination override
      */
-    create: z.object({
-        name: z.string().min(3).max(200),
-        description: z.string().min(10).max(2000),
-        type: z.enum(AccommodationTypes),
-        destination: CommonSchemas.slug,
-
-        // Location
-        address: z.string().min(5).max(200),
-        latitude: CommonSchemas.latitude,
-        longitude: CommonSchemas.longitude,
-
-        // Pricing - using PriceSchema from @repo/schemas
-        basePrice: PriceSchema.shape.price,
-        currency: PriceSchema.shape.currency,
-
-        // Capacity
-        maxGuests: CommonSchemas.positiveInt.max(20),
-        bedrooms: CommonSchemas.positiveInt.max(10),
-        bathrooms: CommonSchemas.positiveInt.max(10),
-
-        // Amenities
-        amenities: z.array(z.enum(AccommodationAmenities)),
-
-        // Images
-        images: z
-            .array(
-                z.object({
-                    url: CommonSchemas.url,
-                    alt: z.string().max(200),
-                    order: CommonSchemas.nonNegativeInt
-                })
-            )
-            .min(1)
-            .max(20),
-
-        // Contact
-        contactEmail: CommonSchemas.email,
-        contactPhone: CommonSchemas.phone.optional(),
-
-        // Status
-        isActive: z.boolean().default(true),
-        isVerified: z.boolean().default(false)
-    }),
+    search: SearchAccommodationSchema.extend({
+        // Override pagination for public API
+        limit: APIValidationSchemas.paginationLimit,
+        offset: APIValidationSchemas.paginationOffset,
+        lang: APIValidationSchemas.languageCode.default('en')
+    }).omit({ pagination: true }),
 
     /**
-     * Schema for updating an accommodation
-     */
-    update: z.object({
-        id: AccommodationIdSchema,
-        name: z.string().min(3).max(200).optional(),
-        description: z.string().min(10).max(2000).optional(),
-        basePrice: PriceSchema.shape.price.optional(),
-        amenities: z.array(z.enum(AccommodationAmenities)).optional(),
-        isActive: z.boolean().optional()
-    }),
-
-    /**
-     * Schema for accommodation search with full-text search
-     * Extends BaseSearchSchema from @repo/schemas
-     */
-    search: BaseSearchSchema.extend({
-        q: CommonSchemas.searchQuery,
-        type: z.enum(['accommodation', 'destination', 'all']).default('all'),
-
-        // Override pagination to use offset/limit instead of page/pageSize
-        limit: CommonSchemas.paginationLimit,
-        offset: CommonSchemas.paginationOffset,
-
-        // Location filters for search results
-        destination: CommonSchemas.slug.optional(),
-        accommodationType: z.enum(AccommodationTypes).optional(),
-
-        // Language
-        lang: CommonSchemas.languageCode.default('en')
-    }).omit({ pagination: true }), // Remove the nested pagination object
-
-    /**
-     * Schema for getting accommodation availability
+     * Availability check schema - minimal API-specific schema
      */
     availability: z
         .object({
             id: AccommodationIdSchema,
-            checkIn: CommonSchemas.date,
-            checkOut: CommonSchemas.date,
-            guests: CommonSchemas.positiveInt.max(20).default(2)
+            checkIn: APIValidationSchemas.date,
+            checkOut: APIValidationSchemas.date,
+            guests: APIValidationSchemas.positiveInt.max(20).default(2)
         })
         .refine(
             (data) => {
@@ -243,46 +158,46 @@ export const AccommodationSchemas = {
         ),
 
     /**
-     * Schema for accommodation reviews (for future implementation)
+     * Review schema - uses centralized rating validation from AccommodationRatingSchema
      */
     review: z.object({
         accommodationId: AccommodationIdSchema,
-        rating: CommonSchemas.rating,
+        // Extract rating validation pattern from AccommodationRatingSchema
+        rating: AccommodationRatingSchema.shape.cleanliness, // Same 1-5 validation pattern
         title: z.string().min(5).max(100),
         comment: z.string().min(10).max(1000),
-        guestName: z.string().min(2).max(100),
-        guestEmail: CommonSchemas.email,
-        stayDate: CommonSchemas.date
+        guestName: CommonValidationPatterns.guestName,
+        guestEmail: z.string().email(),
+        stayDate: APIValidationSchemas.date
     }),
 
     /**
-     * Schema for accommodation booking (for future implementation)
+     * Booking schema - leverages centralized PriceSchema completely
      */
     booking: z.object({
         accommodationId: AccommodationIdSchema,
-        checkIn: CommonSchemas.date,
-        checkOut: CommonSchemas.date,
-        guests: CommonSchemas.positiveInt.max(20),
+        checkIn: APIValidationSchemas.date,
+        checkOut: APIValidationSchemas.date,
+        guests: APIValidationSchemas.positiveInt.max(20),
 
-        // Guest information
-        guestName: z.string().min(2).max(100),
-        guestEmail: CommonSchemas.email,
-        guestPhone: CommonSchemas.phone,
+        // Guest information using centralized patterns
+        guestName: CommonValidationPatterns.guestName,
+        guestEmail: z.string().email(),
+        guestPhone: z.string().regex(InternationalPhoneRegex),
 
         // Special requests
         specialRequests: z.string().max(500).optional(),
 
-        // Pricing using PriceSchema from @repo/schemas
-        totalPrice: PriceSchema.shape.price,
-        currency: PriceSchema.shape.currency
+        // Pricing using complete centralized PriceSchema
+        pricing: PriceSchema
     })
 } as const;
 
 // Export individual schemas for easier importing
-export const { list, getById, search, create, update, availability } = AccommodationSchemas;
+export const { list, getById, search, availability, review, booking } = AccommodationSchemas;
 
 export default {
     AccommodationSchemas,
     AccommodationTypes,
-    AccommodationAmenities
+    AccommodationAmenityTypes
 };

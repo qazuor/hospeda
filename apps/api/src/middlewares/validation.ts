@@ -1,25 +1,17 @@
 import { logger } from '@repo/logger';
+import { IdSchema, InternationalPhoneRegex, SlugRegex } from '@repo/schemas';
 import type { Context } from 'hono';
 /**
  * Validation Infrastructure
- * Comprehensive validation system with Zod integration
+ * Optimized validation system using centralized schemas from @repo/schemas
  */
 import { z } from 'zod';
 
 /**
- * Common validation schemas for reuse across the API
+ * API-specific validation schemas for configurations not available in @repo/schemas
  */
-export const CommonSchemas = {
-    // UUID validation
-    uuid: z.string().uuid({ message: 'Must be a valid UUID' }),
-
-    // Email validation with detailed error message
-    email: z.string().email({ message: 'Must be a valid email address' }),
-
-    // URL validation
-    url: z.string().url({ message: 'Must be a valid URL' }),
-
-    // Date validation (ISO string)
+export const APIValidationSchemas = {
+    // Date validation (ISO string) - keeping as API-specific format requirement
     date: z.string().datetime({ message: 'Must be a valid ISO date string' }),
 
     // Positive integer
@@ -28,47 +20,31 @@ export const CommonSchemas = {
     // Non-negative integer (includes 0)
     nonNegativeInt: z.coerce.number().int().min(0, { message: 'Must be a non-negative integer' }),
 
-    // Pagination limit (1-100)
+    // API pagination with coercion for query params
     paginationLimit: z.coerce.number().int().min(1).max(100).default(20),
-
-    // Pagination offset
     paginationOffset: z.coerce.number().int().min(0).default(0),
 
-    // Search query (3-100 characters)
+    // Search query (3-100 characters) - API-specific length limits
     searchQuery: z
         .string()
         .min(3, { message: 'Search query must be at least 3 characters' })
         .max(100, { message: 'Search query must not exceed 100 characters' }),
 
-    // Slug validation (URL-friendly strings)
-    slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
-        message: 'Must be a valid slug (lowercase letters, numbers, and hyphens only)'
-    }),
-
-    // Coordinates
-    latitude: z.number().min(-90).max(90, { message: 'Latitude must be between -90 and 90' }),
-    longitude: z.number().min(-180).max(180, { message: 'Longitude must be between -180 and 180' }),
-
-    // Money amounts (in cents to avoid floating point issues)
+    // Money amounts (in cents to avoid floating point issues) - API-specific
     moneyInCents: z
         .number()
         .int()
         .min(0, { message: 'Amount must be a non-negative integer in cents' }),
 
-    // Rating (1-5 stars)
+    // Rating (1-5 stars) - API-specific range
     rating: z.number().min(1).max(5, { message: 'Rating must be between 1 and 5' }),
 
-    // Phone number (basic validation)
-    phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, {
-        message: 'Must be a valid phone number'
-    }),
-
-    // Language code (ISO 639-1)
+    // Language code (ISO 639-1) - API-specific format
     languageCode: z.string().regex(/^[a-z]{2}$/, {
         message: 'Must be a valid ISO 639-1 language code (e.g., "en", "es")'
     }),
 
-    // Country code (ISO 3166-1 alpha-2)
+    // Country code (ISO 3166-1 alpha-2) - API-specific format
     countryCode: z.string().regex(/^[A-Z]{2}$/, {
         message: 'Must be a valid ISO 3166-1 alpha-2 country code (e.g., "US", "ES")'
     })
@@ -307,37 +283,37 @@ export const ValidationMiddleware = {
 export const APISchemas = {
     // Standard pagination query
     pagination: z.object({
-        limit: CommonSchemas.paginationLimit,
-        offset: CommonSchemas.paginationOffset,
+        limit: APIValidationSchemas.paginationLimit,
+        offset: APIValidationSchemas.paginationOffset,
         sort: z.string().optional(),
         order: z.enum(['asc', 'desc']).default('asc')
     }),
 
     // Search with pagination
     search: z.object({
-        q: CommonSchemas.searchQuery,
-        limit: CommonSchemas.paginationLimit,
-        offset: CommonSchemas.paginationOffset,
+        q: APIValidationSchemas.searchQuery,
+        limit: APIValidationSchemas.paginationLimit,
+        offset: APIValidationSchemas.paginationOffset,
         type: z.string().optional()
     }),
 
     // Common ID parameter
     idParam: z.object({
-        id: CommonSchemas.uuid
+        id: IdSchema
     }),
 
     // Geolocation query
     geolocation: z.object({
-        lat: CommonSchemas.latitude,
-        lng: CommonSchemas.longitude,
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
         radius: z.coerce.number().min(0.1).max(100).default(10) // km
     }),
 
     // Date range query
     dateRange: z
         .object({
-            startDate: CommonSchemas.date,
-            endDate: CommonSchemas.date
+            startDate: APIValidationSchemas.date,
+            endDate: APIValidationSchemas.date
         })
         .refine((data) => new Date(data.startDate) <= new Date(data.endDate), {
             message: 'Start date must be before or equal to end date'
@@ -345,8 +321,41 @@ export const APISchemas = {
 
     // Language preference
     language: z.object({
-        lang: CommonSchemas.languageCode.default('en')
+        lang: APIValidationSchemas.languageCode.default('en')
     })
+} as const;
+
+/**
+ * Re-export centralized schemas for backward compatibility and create API-specific schemas
+ * @deprecated Use direct imports from @repo/schemas instead where possible
+ */
+export const CommonSchemas = {
+    // Direct re-exports from @repo/schemas
+    uuid: IdSchema,
+
+    // Basic validation patterns using centralized regex patterns where possible
+    email: z.string().email({ message: 'Must be a valid email address' }),
+    url: z.string().url({ message: 'Must be a valid URL' }),
+    phone: z.string().regex(InternationalPhoneRegex, {
+        message: 'Must be a valid international phone number'
+    }),
+    slug: z.string().regex(SlugRegex, {
+        message: 'Must be a valid slug (lowercase letters, numbers, and hyphens only)'
+    }),
+    latitude: z.number().min(-90).max(90, { message: 'Latitude must be between -90 and 90' }),
+    longitude: z.number().min(-180).max(180, { message: 'Longitude must be between -180 and 180' }),
+
+    // API-specific schemas
+    date: APIValidationSchemas.date,
+    positiveInt: APIValidationSchemas.positiveInt,
+    nonNegativeInt: APIValidationSchemas.nonNegativeInt,
+    paginationLimit: APIValidationSchemas.paginationLimit,
+    paginationOffset: APIValidationSchemas.paginationOffset,
+    searchQuery: APIValidationSchemas.searchQuery,
+    moneyInCents: APIValidationSchemas.moneyInCents,
+    rating: APIValidationSchemas.rating,
+    languageCode: APIValidationSchemas.languageCode,
+    countryCode: APIValidationSchemas.countryCode
 } as const;
 
 /**
@@ -361,7 +370,8 @@ declare module 'hono' {
 }
 
 export default {
-    CommonSchemas,
+    APIValidationSchemas,
+    CommonSchemas, // Backward compatibility
     DataSanitizer,
     ValidatorUtils,
     ValidationMiddleware,
