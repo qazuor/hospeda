@@ -10,20 +10,20 @@
         "strict": true,
         "skipLibCheck": true,
         "allowImportingTsExtensions": false,
-        
+
         "module": "ESNext",
         "moduleResolution": "bundler",
         "target": "ES2022",
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
-        
+
         "baseUrl": ".",
         "outDir": "dist",
         "declaration": true,
         "declarationMap": true,
         "sourceMap": true,
-        
+
         "types": ["node"]
     }
 }
