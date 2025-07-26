@@ -3,41 +3,32 @@
  * Handles unauthenticated endpoints for accommodations using shared packages
  */
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { CommonResponses } from '../../schemas/common-responses';
+import {
+    CommonResponses,
+    createPaginatedSchema,
+    createSuccessSchema
+} from '../../schemas/common-responses';
 import { responses } from '../../utils/response-helpers';
 import { AccommodationSchemas } from '../../validation/accommodation-schemas';
 
 const app = new OpenAPIHono();
 
-// Response schemas
-const AccommodationListSchema = z.object({
-    accommodations: z.array(
-        z.object({
-            id: z.string(),
-            name: z.string(),
-            description: z.string(),
-            location: z.string(),
-            price: z.number(),
-            rating: z.number(),
-            amenities: z.array(z.string())
-        })
-    ),
-    pagination: z.object({
-        page: z.number(),
-        limit: z.number(),
-        total: z.number(),
-        totalPages: z.number()
-    })
-});
-
-const AccommodationDetailSchema = z.object({
+// Accommodation item schema using existing structures
+const AccommodationItemSchema = z.object({
     id: z.string(),
     name: z.string(),
     description: z.string(),
     location: z.string(),
     price: z.number(),
     rating: z.number(),
-    amenities: z.array(z.string()),
+    amenities: z.array(z.string())
+});
+
+// List response schema using createPaginatedSchema
+const AccommodationListResponseSchema = createPaginatedSchema(AccommodationItemSchema);
+
+// Detail response schema
+const AccommodationDetailSchema = AccommodationItemSchema.extend({
     images: z.array(z.string()),
     rooms: z.array(
         z.object({
@@ -47,6 +38,8 @@ const AccommodationDetailSchema = z.object({
         })
     )
 });
+
+const AccommodationDetailResponseSchema = createSuccessSchema(AccommodationDetailSchema);
 
 // List accommodations route
 const accommodationsListRoute = createRoute({
@@ -63,7 +56,7 @@ const accommodationsListRoute = createRoute({
             description: 'Accommodations retrieved successfully',
             content: {
                 'application/json': {
-                    schema: AccommodationListSchema
+                    schema: AccommodationListResponseSchema
                 }
             }
         },
@@ -157,7 +150,7 @@ app.openapi(accommodationsListRoute, async (c) => {
     );
 
     const responseData = {
-        accommodations: paginatedAccommodations,
+        items: paginatedAccommodations,
         pagination: {
             page: Math.floor(validatedQuery.offset / validatedQuery.limit) + 1,
             limit: validatedQuery.limit,
@@ -191,7 +184,7 @@ const accommodationDetailsRoute = createRoute({
             description: 'Accommodation details retrieved successfully',
             content: {
                 'application/json': {
-                    schema: AccommodationDetailSchema
+                    schema: AccommodationDetailResponseSchema
                 }
             }
         },
