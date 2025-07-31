@@ -40,6 +40,6 @@
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/types": "workspace:*",
-        "zod": "^3.22.4"
+        "zod": "^4.0.8"
     }
 }
