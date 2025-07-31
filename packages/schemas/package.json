@@ -27,7 +27,7 @@
         "@repo/types": "workspace:*",
         "@repo/utils": "workspace:*",
         "@repo/config": "workspace:*",
-        "zod": "^3.24.4"
+        "zod": "^4.0.8"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
