@@ -1,22 +1,17 @@
-/**
- * Main router configuration
- * Sets up all API routes and their respective handlers
- */
-import type { OpenAPIHono } from '@hono/zod-openapi';
-import { docsRoutes } from './docs';
-import { healthRoutes } from './health';
-import { publicRoutes } from './public';
+import packageJSON from '../../package.json' with { type: 'json' };
+import type { AppOpenAPI } from '../types';
+import { accommodationRoutes } from './accommodation';
+import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
+import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
+import { userRoutes } from './user';
 
-/**
- * Setup all application routes
- * @param app - OpenAPI Hono app instance
- */
-export const setupRoutes = (app: OpenAPIHono) => {
+export const setupRoutes = (app: AppOpenAPI) => {
     // Root endpoint
     app.get('/', (c) => {
         return c.json({
-            name: 'Hospeda API',
-            version: '1.0.0',
+            name: packageJSON.name || 'Hospeda API',
+            version: packageJSON.version || '1.0.0',
+            description: packageJSON.description || 'Hospeda API',
             status: 'operational',
             timestamp: new Date().toISOString(),
             documentation: '/docs'
@@ -25,13 +20,16 @@ export const setupRoutes = (app: OpenAPIHono) => {
 
     // Health check routes
     app.route('/health', healthRoutes);
+    app.route('/health', dbHealthRoutes);
+    app.route('/health', readyRoutes);
+    app.route('/health', liveRoutes);
 
-    // Documentation and API specification
-    app.route('/docs', docsRoutes);
+    // Public routes
+    app.route('/api/v1/public/users', userRoutes);
+    app.route('/api/v1/public/accommodations', accommodationRoutes);
 
-    // Public API routes (no authentication required)
-    app.route('/api/v1/public', publicRoutes);
-
-    // Admin routes will be added later
-    // app.route('/api/v1/admin', adminRoutes);
+    // Documentation routes
+    app.route('/docs', docsIndexRoutes);
+    app.route('/docs', swaggerRoutes);
+    app.route('/docs', scalarRoutes);
 };

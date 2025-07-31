@@ -1,10 +1,10 @@
-import { logger as apiLogger } from '@repo/logger';
 /**
  * Logging middleware for API requests
  * Logs all incoming requests and responses with timing information
  */
 import type { MiddlewareHandler } from 'hono';
 import { env } from '../utils/env';
+import { apiLogger } from '../utils/logger';
 
 export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     const startTime = Date.now();
@@ -26,11 +26,11 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     const logMessage = `${method} ${url} ${status} ${duration}ms`;
 
     if (status >= 500) {
-        apiLogger.error(logMessage, 'Request Error');
+        apiLogger.error(logMessage, 'ERROR');
     } else if (status >= 400) {
-        apiLogger.warn(logMessage, 'Request Warning');
+        apiLogger.warn(logMessage, 'WARNING');
     } else {
-        apiLogger.info(logMessage, 'Request Success');
+        apiLogger.info(logMessage, 'SUCCESS');
     }
 
     // Log response body in debug mode for errors
