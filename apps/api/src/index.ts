@@ -3,60 +3,92 @@
  * Starts the Hono.js server with all configured middleware and routes
  */
 import { serve } from '@hono/node-server';
-import { logger } from '@repo/logger';
-import { app } from './app';
+import { initApp } from './app';
+import { closeDatabase, initializeDatabase } from './utils/database';
 import { env } from './utils/env';
 import { listRoutes } from './utils/list-routes';
+import { apiLogger } from './utils/logger';
 
 const port = env.API_PORT;
 
-logger.info('Starting API server...', `Port: ${port}, Environment: ${env.NODE_ENV}`);
+/**
+ * Starts the API server with database initialization
+ */
+const startServer = async (): Promise<void> => {
+    try {
+        apiLogger.info('Starting API server...', `Port: ${port}, Environment: ${env.NODE_ENV}`);
 
-// Start the server
-const server = serve(
-    {
-        fetch: app.fetch,
-        port
-    },
-    (info) => {
-        logger.info(`🚀 Server running on port ${info.port}`, `Environment: ${env.NODE_ENV}`);
+        // Initialize database connection before starting the server
+        await initializeDatabase();
 
-        // List all registered routes after a small delay to ensure all routes are registered
-        setTimeout(() => {
-            listRoutes(app);
-        }, 100);
-    }
-);
+        const app = initApp();
 
-// Graceful shutdown
-const gracefulShutdown = (signal: string) => {
-    logger.info(`Received ${signal}, shutting down gracefully...`);
+        // Start the server
+        const server = serve(
+            {
+                fetch: app.fetch,
+                port
+            },
+            (info) => {
+                apiLogger.info(`🚀 Server running on port ${info.port}`);
 
-    server.close(() => {
-        logger.info('Server closed');
-        process.exit(0);
-    });
+                // List all registered routes after a small delay to ensure all routes are registered
+                setTimeout(() => {
+                    listRoutes(app);
+                }, 100);
+            }
+        );
 
-    // Force close after 10 seconds
-    setTimeout(() => {
-        logger.error('Force closing server after timeout');
+        // Graceful shutdown
+        const gracefulShutdown = async (signal: string) => {
+            apiLogger.info(`Received ${signal}, shutting down gracefully...`);
+
+            try {
+                // Close database connection
+                await closeDatabase();
+
+                // Close server
+                server.close(() => {
+                    apiLogger.info('Server closed');
+                    process.exit(0);
+                });
+            } catch (error) {
+                apiLogger.error(
+                    'Error during shutdown:',
+                    error instanceof Error ? error.message : String(error)
+                );
+                process.exit(1);
+            }
+
+            // Force close after 10 seconds
+            setTimeout(() => {
+                apiLogger.error('Force closing server after timeout');
+                process.exit(1);
+            }, 10000);
+        };
+
+        // Handle shutdown signals
+        process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+        process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    } catch (error) {
+        apiLogger.error(
+            'Failed to start server:',
+            error instanceof Error ? error.message : String(error)
+        );
         process.exit(1);
-    }, 10000);
+    }
 };
 
-// Handle shutdown signals
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+// Start the server
+startServer();
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-    logger.error(`Uncaught exception: ${error.message}`, error.stack || '');
+    apiLogger.error(`Uncaught exception: ${error.message}`, error.stack || '');
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    logger.error(`Unhandled rejection at: ${promise}`, `Reason: ${reason}`);
+    apiLogger.error(`Unhandled rejection at: ${promise}`, `Reason: ${reason}`);
     process.exit(1);
 });
-
-export { app };
