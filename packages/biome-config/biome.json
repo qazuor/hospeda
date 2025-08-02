@@ -70,7 +70,7 @@
     },
     "overrides": [
         {
-            "include": ["tests/**", "__tests__/**"],
+            "include": ["tests/**", "__tests__/**", "test/**"],
             "linter": {
                 "rules": {
                     "suspicious": {
