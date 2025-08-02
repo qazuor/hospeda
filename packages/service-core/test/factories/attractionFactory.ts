@@ -3,7 +3,7 @@
  * Ensures all required fields are present and provides sensible defaults.
  */
 import type { AttractionId, AttractionType, UserId } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
+import { LifecycleStatusEnum } from '@repo/types';
 import { getMockId } from './utilsFactory';
 
 export class AttractionFactoryBuilder {

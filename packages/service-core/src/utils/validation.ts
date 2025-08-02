@@ -18,9 +18,12 @@ export const validateInput = <T>(schema: z.ZodType<T>, input: unknown, context: 
         return schema.parse(input);
     } catch (error) {
         if (error instanceof z.ZodError) {
+            const errorMessages = error.issues
+                .map((e) => e.message.replace(/^Invalid input: /, ''))
+                .join(', ');
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
-                `${context} validation failed: ${error.errors.map((e) => e.message).join(', ')}`
+                `${context} validation failed: ${errorMessages}`
             );
         }
         throw error;

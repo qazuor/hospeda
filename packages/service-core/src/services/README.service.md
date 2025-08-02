@@ -63,7 +63,7 @@ export const CreateDestinationSchema = z.object({
 });
 export type CreateDestinationInput = z.infer<typeof CreateDestinationSchema>;
 
-export const UpdateDestinationSchema = CreateDestinationSchema.deepPartial();
+export const UpdateDestinationSchema = CreateDestinationSchema.partial();
 export type UpdateDestinationInput = z.infer<typeof UpdateDestinationSchema>;
 
 export const SearchDestinationSchema = z.object({

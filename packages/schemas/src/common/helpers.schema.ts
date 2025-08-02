@@ -15,19 +15,16 @@ export const WithIdSchema = z.object({
 
 export const WithAuditSchema = z.object({
     createdAt: z.coerce.date({
-        required_error: 'zodError.common.createdAt.required',
-        invalid_type_error: 'zodError.common.createdAt.invalidType'
+        message: 'zodError.common.createdAt.required'
     }),
     updatedAt: z.coerce.date({
-        required_error: 'zodError.common.updatedAt.required',
-        invalid_type_error: 'zodError.common.updatedAt.invalidType'
+        message: 'zodError.common.updatedAt.required'
     }),
     createdById: UserIdSchema,
     updatedById: UserIdSchema,
     deletedAt: z.coerce
         .date({
-            required_error: 'zodError.common.deletedAt.required',
-            invalid_type_error: 'zodError.common.deletedAt.invalidType'
+            message: 'zodError.common.deletedAt.required'
         })
         .optional(),
     deletedById: UserIdSchema.optional()
@@ -40,14 +37,12 @@ export const WithLifecycleStateSchema = z.object({
 export const WithReviewStateSchema = z.object({
     reviewsCount: z
         .number({
-            required_error: 'zodError.common.reviewsCount.required',
-            invalid_type_error: 'zodError.common.reviewsCount.invalidType'
+            message: 'zodError.common.reviewsCount.required'
         })
         .optional(),
     averageRating: z
         .number({
-            required_error: 'zodError.common.averageRating.required',
-            invalid_type_error: 'zodError.common.averageRating.invalidType'
+            message: 'zodError.common.averageRating.required'
         })
         .optional()
 });
@@ -57,16 +52,14 @@ export const WithSeoSchema = z.object({
         .object({
             title: z
                 .string({
-                    required_error: 'zodError.common.seo.title.required',
-                    invalid_type_error: 'zodError.common.seo.title.invalidType'
+                    message: 'zodError.common.seo.title.required'
                 })
                 .min(30, { message: 'zodError.common.seo.title.min' })
                 .max(60, { message: 'zodError.common.seo.title.max' })
                 .optional(),
             description: z
                 .string({
-                    required_error: 'zodError.common.seo.description.required',
-                    invalid_type_error: 'zodError.common.seo.description.invalidType'
+                    message: 'zodError.common.seo.description.required'
                 })
                 .min(70, { message: 'zodError.common.seo.description.min' })
                 .max(160, { message: 'zodError.common.seo.description.max' })
@@ -74,8 +67,7 @@ export const WithSeoSchema = z.object({
             keywords: z
                 .array(
                     z.string({
-                        required_error: 'zodError.common.seo.keywords.required',
-                        invalid_type_error: 'zodError.common.seo.keywords.invalidType'
+                        message: 'zodError.common.seo.keywords.required'
                     })
                 )
                 .optional()
@@ -88,8 +80,7 @@ export const WithTagsSchema = z.object({
         .array(
             z.lazy(() => TagSchema),
             {
-                required_error: 'zodError.common.tags.required',
-                invalid_type_error: 'zodError.common.tags.invalidType'
+                message: 'zodError.common.tags.required'
             }
         )
         .optional()

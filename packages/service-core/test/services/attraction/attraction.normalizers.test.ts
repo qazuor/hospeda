@@ -1,7 +1,4 @@
-import type {
-    CreateAttractionSchema,
-    UpdateAttractionSchema
-} from '@repo/schemas/entities/destination/destination.attraction.schema';
+import type { CreateAttractionSchema, UpdateAttractionSchema } from '@repo/schemas';
 import { RoleEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';

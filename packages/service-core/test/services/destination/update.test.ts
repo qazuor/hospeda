@@ -1,6 +1,5 @@
 import type { DestinationModel } from '@repo/db';
-import type { UpdateDestinationInput } from '@repo/schemas/entities/destination/destination.schema';
-import * as schemas from '@repo/schemas/entities/destination/destination.schema';
+import { type UpdateDestinationInput, UpdateDestinationSchema } from '@repo/schemas';
 import { type DestinationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
@@ -17,7 +16,7 @@ const mockLogger = createLoggerMock();
 beforeEach(() => {
     vi.spyOn(helpers, 'generateDestinationSlug').mockResolvedValue('mock-slug');
     // Mock safeParseAsync for validation
-    vi.spyOn(schemas.UpdateDestinationSchema, 'safeParseAsync').mockImplementation(
+    vi.spyOn(UpdateDestinationSchema, 'safeParseAsync').mockImplementation(
         async (input: unknown) => {
             const typedInput = input as UpdateDestinationInput;
             if (
@@ -93,7 +92,7 @@ describe('DestinationService.update', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const actor = createAdminActor();
+        const actor = createAdminActor({ permissions: [PermissionEnum.DESTINATION_UPDATE] });
         const id = getMockId('destination') as DestinationType['id'];
         const existing = {
             ...createDestination(),

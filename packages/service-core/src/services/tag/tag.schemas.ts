@@ -1,6 +1,4 @@
-import { BaseSearchSchema } from '@repo/schemas';
-import { TagSchema } from '@repo/schemas/entities/tag/tag.schema';
-import { TagColorEnumSchema } from '@repo/schemas/enums/tag-color.enum.schema';
+import { BaseSearchSchema, TagColorEnumSchema, TagSchema } from '@repo/schemas';
 import { z } from 'zod';
 
 /**

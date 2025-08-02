@@ -32,8 +32,7 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
         id: EventIdSchema,
         slug: z
             .string({
-                required_error: 'zodError.event.slug.required',
-                invalid_type_error: 'zodError.event.slug.invalidType'
+                message: 'zodError.event.slug.required'
             })
             .min(1, { message: 'zodError.event.slug.min' }),
         /** Event name, 3-100 characters */
@@ -49,8 +48,7 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
         /** Event description, optional, 10-1000 characters */
         description: z
             .string({
-                required_error: 'zodError.event.description.required',
-                invalid_type_error: 'zodError.event.description.invalidType'
+                message: 'zodError.event.description.required'
             })
             .min(10, { message: 'zodError.event.description.min' })
             .max(1000, { message: 'zodError.event.description.max' })
@@ -63,16 +61,14 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
         /** Event location (ID only) */
         locationId: z
             .string({
-                required_error: 'zodError.event.locationId.required',
-                invalid_type_error: 'zodError.event.locationId.invalidType'
+                message: 'zodError.event.locationId.required'
             })
             .uuid({ message: 'zodError.event.locationId.invalidUuid' })
             .optional(),
         /** Event organizer (ID only) */
         organizerId: z
             .string({
-                required_error: 'zodError.event.organizerId.required',
-                invalid_type_error: 'zodError.event.organizerId.invalidType'
+                message: 'zodError.event.organizerId.required'
             })
             .uuid({ message: 'zodError.event.organizerId.invalidUuid' })
             .optional(),

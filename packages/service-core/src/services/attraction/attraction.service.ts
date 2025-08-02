@@ -7,7 +7,7 @@ import {
     RemoveAttractionFromDestinationInputSchema,
     SearchAttractionSchema,
     UpdateAttractionSchema
-} from '@repo/schemas/entities/destination/destination.attraction.schema';
+} from '@repo/schemas';
 import type {
     AttractionId,
     AttractionType,

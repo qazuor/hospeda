@@ -17,19 +17,16 @@ export const TagSchema = z.object({
 
     // From WithAuditSchema
     createdAt: z.coerce.date({
-        required_error: 'zodError.common.createdAt.required',
-        invalid_type_error: 'zodError.common.createdAt.invalidType'
+        message: 'zodError.common.createdAt.required'
     }),
     updatedAt: z.coerce.date({
-        required_error: 'zodError.common.updatedAt.required',
-        invalid_type_error: 'zodError.common.updatedAt.invalidType'
+        message: 'zodError.common.updatedAt.required'
     }),
     createdById: UserIdSchema,
     updatedById: UserIdSchema,
     deletedAt: z.coerce
         .date({
-            required_error: 'zodError.common.deletedAt.required',
-            invalid_type_error: 'zodError.common.deletedAt.invalidType'
+            message: 'zodError.common.deletedAt.required'
         })
         .optional(),
     deletedById: UserIdSchema.optional(),
@@ -40,30 +37,26 @@ export const TagSchema = z.object({
     // Own properties
     name: z
         .string({
-            required_error: 'zodError.tag.name.required',
-            invalid_type_error: 'zodError.tag.name.invalidType'
+            message: 'zodError.tag.name.required'
         })
         .min(2, { message: 'zodError.tag.name.min' })
         .max(50, { message: 'zodError.tag.name.max' }),
     slug: z
         .string({
-            required_error: 'zodError.tag.slug.required',
-            invalid_type_error: 'zodError.tag.slug.invalidType'
+            message: 'zodError.tag.slug.required'
         })
         .min(1, { message: 'zodError.tag.slug.min' }),
     color: TagColorEnumSchema,
     icon: z
         .string({
-            required_error: 'zodError.tag.icon.required',
-            invalid_type_error: 'zodError.tag.icon.invalidType'
+            message: 'zodError.tag.icon.required'
         })
         .min(2, { message: 'zodError.tag.icon.min' })
         .max(100, { message: 'zodError.tag.icon.max' })
         .optional(),
     notes: z
         .string({
-            required_error: 'zodError.tag.notes.required',
-            invalid_type_error: 'zodError.tag.notes.invalidType'
+            message: 'zodError.tag.notes.required'
         })
         .min(5, { message: 'zodError.tag.notes.min' })
         .max(300, { message: 'zodError.tag.notes.max' })
@@ -71,6 +64,5 @@ export const TagSchema = z.object({
 });
 
 export const TagsArraySchema = z.array(TagSchema, {
-    required_error: 'zodError.tags.required',
-    invalid_type_error: 'zodError.tags.invalidType'
+    message: 'zodError.tags.required'
 });

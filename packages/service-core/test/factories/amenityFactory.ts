@@ -1,6 +1,5 @@
 import type { AmenityId, AmenityType, UserId } from '@repo/types';
-import { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
+import { AmenitiesTypeEnum, LifecycleStatusEnum } from '@repo/types';
 import { getMockId } from './utilsFactory';
 
 /**

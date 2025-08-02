@@ -1,5 +1,5 @@
 import type { FeatureId, FeatureType, UserId } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
+import { LifecycleStatusEnum } from '@repo/types';
 import { getMockId } from './utilsFactory';
 
 /**

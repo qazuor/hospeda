@@ -15,27 +15,23 @@ export const AccommodationFaqSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithAdminInfoSchema)
     .extend({
         accommodationId: z.string({
-            required_error: 'zodError.accommodation.faq.accommodationId.required',
-            invalid_type_error: 'zodError.accommodation.faq.accommodationId.invalidType'
+            message: 'zodError.accommodation.faq.accommodationId.required'
         }),
         question: z
             .string({
-                required_error: 'zodError.accommodation.faq.question.required',
-                invalid_type_error: 'zodError.accommodation.faq.question.invalidType'
+                message: 'zodError.accommodation.faq.question.required'
             })
             .min(5, { message: 'zodError.accommodation.faq.question.min' })
             .max(200, { message: 'zodError.accommodation.faq.question.max' }),
         answer: z
             .string({
-                required_error: 'zodError.accommodation.faq.answer.required',
-                invalid_type_error: 'zodError.accommodation.faq.answer.invalidType'
+                message: 'zodError.accommodation.faq.answer.required'
             })
             .min(5, { message: 'zodError.accommodation.faq.answer.min' })
             .max(2000, { message: 'zodError.accommodation.faq.answer.max' }),
         category: z
             .string({
-                required_error: 'zodError.accommodation.faq.category.required',
-                invalid_type_error: 'zodError.accommodation.faq.category.invalidType'
+                message: 'zodError.accommodation.faq.category.required'
             })
             .min(2, { message: 'zodError.accommodation.faq.category.min' })
             .max(50, { message: 'zodError.accommodation.faq.category.max' })

@@ -9,19 +9,16 @@ import { FeatureSchema } from './feature.schema.js';
 export const AccommodationFeatureSchema = WithAdminInfoSchema.extend({
     /** Accommodation ID this feature belongs to */
     accommodationId: z.string({
-        required_error: 'zodError.accommodation.feature.accommodationId.required',
-        invalid_type_error: 'zodError.accommodation.feature.accommodationId.invalidType'
+        message: 'zodError.accommodation.feature.accommodationId.required'
     }),
     /** Feature ID */
     featureId: z.string({
-        required_error: 'zodError.accommodation.feature.featureId.required',
-        invalid_type_error: 'zodError.accommodation.feature.featureId.invalidType'
+        message: 'zodError.accommodation.feature.featureId.required'
     }),
     /** Custom name for the feature as rewritten by the host, optional */
     hostReWriteName: z
         .string({
-            required_error: 'zodError.accommodation.feature.hostReWriteName.required',
-            invalid_type_error: 'zodError.accommodation.feature.hostReWriteName.invalidType'
+            message: 'zodError.accommodation.feature.hostReWriteName.required'
         })
         .min(3, { message: 'zodError.accommodation.feature.hostReWriteName.min' })
         .max(100, { message: 'zodError.accommodation.feature.hostReWriteName.max' })
@@ -30,8 +27,7 @@ export const AccommodationFeatureSchema = WithAdminInfoSchema.extend({
     /** Comments about the feature, optional */
     comments: z
         .string({
-            required_error: 'zodError.accommodation.feature.comments.required',
-            invalid_type_error: 'zodError.accommodation.feature.comments.invalidType'
+            message: 'zodError.accommodation.feature.comments.required'
         })
         .min(5, { message: 'zodError.accommodation.feature.comments.min' })
         .max(300, { message: 'zodError.accommodation.feature.comments.max' })

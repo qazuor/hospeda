@@ -4,7 +4,7 @@ import {
     UpdateUserSchema,
     UserFilterInputSchema,
     UserSchema
-} from '@repo/schemas/entities/user/user.schema';
+} from '@repo/schemas';
 import type { PermissionEnum, UserType } from '@repo/types';
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';

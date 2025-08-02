@@ -22,7 +22,7 @@ export const normalizeCreateInput = (input: z.infer<typeof EventSchema>): Partia
         },
         locationId: input.locationId as EventType['locationId'],
         organizerId: input.organizerId as EventType['organizerId']
-    };
+    } as Partial<EventType>;
 };
 
 /**
@@ -58,5 +58,5 @@ export const normalizeUpdateInput = (
         ...(date ? { date } : {}),
         ...(locationId ? { locationId: locationId as EventType['locationId'] } : {}),
         ...(organizerId ? { organizerId: organizerId as EventType['organizerId'] } : {})
-    };
+    } as Partial<EventType>;
 };

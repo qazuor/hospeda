@@ -51,7 +51,8 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
         this.logMethodStart(methodName, params, actor);
         try {
             validateActor(actor);
-            let validationResult: import('zod').SafeParseReturnType<unknown, unknown>;
+            // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
+            let validationResult;
             try {
                 validationResult = await schema.safeParseAsync(params);
             } catch (zodError) {

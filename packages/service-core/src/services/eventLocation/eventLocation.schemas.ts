@@ -19,7 +19,7 @@ export type CreateEventLocationInput = z.infer<typeof CreateEventLocationSchema>
 /**
  * Zod schema for updating an event location (deep partial).
  */
-export const UpdateEventLocationSchema = EventLocationSchema.deepPartial();
+export const UpdateEventLocationSchema = EventLocationSchema.partial();
 export type UpdateEventLocationInput = z.infer<typeof UpdateEventLocationSchema>;
 
 /**

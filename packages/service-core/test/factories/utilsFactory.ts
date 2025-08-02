@@ -21,21 +21,18 @@ export type IdTypes =
     | 'iaData';
 
 function generateValidUuidFromLabel(label: string): string {
-    const rawUuid = crypto.randomUUID();
-    const prefix = crypto.createHash('md5').update(label).digest('hex').slice(0, 8);
-    return `${prefix}-${rawUuid.slice(9)}`;
+    const hash = crypto.createHash('md5').update(label).digest('hex');
+    // Create RFC 4122 compliant UUID (version 4 variant)
+    // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+    // where x is any hex digit and y is 8, 9, A, or B
+    return (
+        `${hash.substring(0, 8)}-` +
+        `${hash.substring(8, 12)}-` +
+        `4${hash.substring(13, 16)}-` +
+        `${((Number.parseInt(hash.substring(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0')}${hash.substring(18, 20)}-` +
+        `${hash.substring(20, 32)}`
+    );
 }
-
-const idTypeStrings: Record<IdTypes, string> = {
-    user: generateValidUuidFromLabel('user'),
-    accommodation: generateValidUuidFromLabel('accommodation'),
-    destination: generateValidUuidFromLabel('destination'),
-    post: generateValidUuidFromLabel('post'),
-    event: generateValidUuidFromLabel('event'),
-    tag: generateValidUuidFromLabel('tag'),
-    feature: generateValidUuidFromLabel('feature'),
-    iaData: generateValidUuidFromLabel('iaData')
-};
 
 /**
  * Returns a valid UUID for the given entity type, optionally using a custom string for deterministic output.
@@ -58,12 +55,12 @@ export const getMockId = (type: IdTypes, id?: string): string => {
         return (
             `${hash.substring(0, 8)}-` +
             `${hash.substring(8, 12)}-` +
-            `${hash.substring(12, 16)}-` +
-            `${hash.substring(16, 20)}-` +
+            `4${hash.substring(13, 16)}-` +
+            `${((Number.parseInt(hash.substring(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0')}${hash.substring(18, 20)}-` +
             `${hash.substring(20, 32)}`
         );
     }
-    return idTypeStrings[type];
+    return generateValidUuidFromLabel(type);
 };
 
 /**

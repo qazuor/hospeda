@@ -70,7 +70,7 @@ describe('validation util', () => {
         expect(() => validateInput(testSchema, { name: 123 }, context)).toThrow(
             new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
-                `${context} validation failed: Expected string, received number`
+                `${context} validation failed: expected string, received number`
             )
         );
     });

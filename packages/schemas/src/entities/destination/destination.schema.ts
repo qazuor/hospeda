@@ -136,5 +136,5 @@ export type NewDestinationInput = z.infer<typeof CreateDestinationSchema>;
  * Schema for updating an existing destination.
  * All fields son opcionales para permitir updates parciales.
  */
-export const UpdateDestinationSchema = CreateDestinationSchema.deepPartial().strict();
+export const UpdateDestinationSchema = CreateDestinationSchema.partial().strict();
 export type UpdateDestinationInput = z.infer<typeof UpdateDestinationSchema>;

@@ -18,26 +18,22 @@ export const AccommodationAmenitySchema = z.object({
     // Own Properties
     /** Accommodation ID this amenity belongs to */
     accommodationId: z.string({
-        required_error: 'zodError.accommodation.amenity.accommodationId.required',
-        invalid_type_error: 'zodError.accommodation.amenity.accommodationId.invalidType'
+        message: 'zodError.accommodation.amenity.accommodationId.required'
     }),
     /** Amenity ID */
     amenityId: z.string({
-        required_error: 'zodError.accommodation.amenity.amenityId.required',
-        invalid_type_error: 'zodError.accommodation.amenity.amenityId.invalidType'
+        message: 'zodError.accommodation.amenity.amenityId.required'
     }),
     /** Whether the amenity is optional for the guest */
     isOptional: z.boolean({
-        required_error: 'zodError.accommodation.amenity.isOptional.required',
-        invalid_type_error: 'zodError.accommodation.amenity.isOptional.invalidType'
+        message: 'zodError.accommodation.amenity.isOptional.required'
     }),
     /** Additional cost for this amenity, optional */
     additionalCost: PriceSchema.optional(),
     /** Additional cost as a percent, optional (0-100) */
     additionalCostPercent: z
         .number({
-            required_error: 'zodError.accommodation.amenity.additionalCostPercent.required',
-            invalid_type_error: 'zodError.accommodation.amenity.additionalCostPercent.invalidType'
+            message: 'zodError.accommodation.amenity.additionalCostPercent.required'
         })
         .min(0, { message: 'zodError.accommodation.amenity.additionalCostPercent.min' })
         .max(100, { message: 'zodError.accommodation.amenity.additionalCostPercent.max' })

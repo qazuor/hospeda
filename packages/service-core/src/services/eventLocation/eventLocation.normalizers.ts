@@ -23,7 +23,7 @@ export const normalizeCreateInput = (
         zipCode: data.zipCode?.trim(),
         country: data.country?.trim(),
         // EventLocationSchema specific fields
-        city: data.city.trim(),
+        city: data.city?.trim() || '',
         street: data.street?.trim(),
         number: data.number?.trim(),
         floor: data.floor?.trim(),

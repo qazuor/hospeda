@@ -2,54 +2,42 @@ import { z } from 'zod';
 
 /**
  * Accommodation Rating schema definition using Zod for validation.
- * Represents the rating breakdown for an accommodation (cleanliness, hospitality, etc.).
+ * Represents rating information for an accommodation.
  */
 export const AccommodationRatingSchema = z.object({
-    /** Cleanliness rating (1-5) */
     cleanliness: z
         .number({
-            required_error: 'zodError.accommodation.rating.cleanliness.required',
-            invalid_type_error: 'zodError.accommodation.rating.cleanliness.invalidType'
+            message: 'zodError.accommodation.rating.cleanliness.required'
         })
         .min(1, { message: 'zodError.accommodation.rating.cleanliness.min' })
         .max(5, { message: 'zodError.accommodation.rating.cleanliness.max' }),
-    /** Hospitality rating (1-5) */
     hospitality: z
         .number({
-            required_error: 'zodError.accommodation.rating.hospitality.required',
-            invalid_type_error: 'zodError.accommodation.rating.hospitality.invalidType'
+            message: 'zodError.accommodation.rating.hospitality.required'
         })
         .min(1, { message: 'zodError.accommodation.rating.hospitality.min' })
         .max(5, { message: 'zodError.accommodation.rating.hospitality.max' }),
-    /** Services rating (1-5) */
     services: z
         .number({
-            required_error: 'zodError.accommodation.rating.services.required',
-            invalid_type_error: 'zodError.accommodation.rating.services.invalidType'
+            message: 'zodError.accommodation.rating.services.required'
         })
         .min(1, { message: 'zodError.accommodation.rating.services.min' })
         .max(5, { message: 'zodError.accommodation.rating.services.max' }),
-    /** Accuracy rating (1-5) */
     accuracy: z
         .number({
-            required_error: 'zodError.accommodation.rating.accuracy.required',
-            invalid_type_error: 'zodError.accommodation.rating.accuracy.invalidType'
+            message: 'zodError.accommodation.rating.accuracy.required'
         })
         .min(1, { message: 'zodError.accommodation.rating.accuracy.min' })
         .max(5, { message: 'zodError.accommodation.rating.accuracy.max' }),
-    /** Communication rating (1-5) */
     communication: z
         .number({
-            required_error: 'zodError.accommodation.rating.communication.required',
-            invalid_type_error: 'zodError.accommodation.rating.communication.invalidType'
+            message: 'zodError.accommodation.rating.communication.required'
         })
         .min(1, { message: 'zodError.accommodation.rating.communication.min' })
         .max(5, { message: 'zodError.accommodation.rating.communication.max' }),
-    /** Location rating (1-5) */
     location: z
         .number({
-            required_error: 'zodError.accommodation.rating.location.required',
-            invalid_type_error: 'zodError.accommodation.rating.location.invalidType'
+            message: 'zodError.accommodation.rating.location.required'
         })
         .min(1, { message: 'zodError.accommodation.rating.location.min' })
         .max(5, { message: 'zodError.accommodation.rating.location.max' })

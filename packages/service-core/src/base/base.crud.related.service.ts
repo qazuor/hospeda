@@ -1,5 +1,5 @@
 import type { AdminInfoType } from '@repo/types';
-import type { AnyZodObject } from 'zod';
+import type { ZodObject } from 'zod';
 import type { BaseModel, ServiceContext } from '../types';
 import { BaseCrudService } from './base.crud.service';
 
@@ -18,9 +18,9 @@ export abstract class BaseCrudRelatedService<
     TEntity extends { id: string; adminInfo?: AdminInfoType; deletedAt?: Date | null },
     TModel extends BaseModel<TEntity>,
     TRelatedModel,
-    TCreateSchema extends AnyZodObject,
-    TUpdateSchema extends AnyZodObject,
-    TSearchSchema extends AnyZodObject
+    TCreateSchema extends ZodObject,
+    TUpdateSchema extends ZodObject,
+    TSearchSchema extends ZodObject
 > extends BaseCrudService<TEntity, TModel, TCreateSchema, TUpdateSchema, TSearchSchema> {
     /**
      * The related model instance for handling entity relations.

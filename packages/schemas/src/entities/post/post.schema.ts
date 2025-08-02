@@ -34,8 +34,7 @@ export const PostSchema = WithIdSchema.merge(WithAuditSchema)
     .extend({
         slug: z
             .string({
-                required_error: 'zodError.post.slug.required',
-                invalid_type_error: 'zodError.post.slug.invalidType'
+                message: 'zodError.post.slug.required'
             })
             .min(1, { message: 'zodError.post.slug.min' }),
         /** Post title, 3-150 characters */

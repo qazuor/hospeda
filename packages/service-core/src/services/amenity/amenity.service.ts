@@ -3,11 +3,11 @@ import type {
     AccommodationAmenityType,
     AccommodationId,
     AccommodationType,
+    AmenitiesTypeEnum,
     AmenityId,
     AmenityType
 } from '@repo/types';
 import { ServiceErrorCode, type VisibilityEnum } from '@repo/types';
-import type { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
