@@ -1,6 +1,4 @@
-import { BaseSearchSchema } from '@repo/schemas/common/search.schemas';
-import { PostSponsorSchema } from '@repo/schemas/entities/post/post.sponsor.schema';
-import { ClientTypeEnumSchema } from '@repo/schemas/enums';
+import { BaseSearchSchema, ClientTypeEnumSchema, PostSponsorSchema } from '@repo/schemas';
 import { z } from 'zod';
 
 /**

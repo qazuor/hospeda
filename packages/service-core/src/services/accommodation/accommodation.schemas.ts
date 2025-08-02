@@ -38,7 +38,7 @@ export const CreateAccommodationSchema = AccommodationSchema.omit({
  * Schema for updating an existing accommodation.
  * It takes the creation schema and makes all fields optional, allowing for partial updates.
  */
-export const UpdateAccommodationSchema = CreateAccommodationSchema.deepPartial();
+export const UpdateAccommodationSchema = CreateAccommodationSchema.partial();
 
 /**
  * Defines the filters available when searching for accommodations.
@@ -59,7 +59,7 @@ export const SearchAccommodationFiltersSchema = z.object({
 export const GetWithRelationsInputSchema = z
     .object({
         id: z.string().uuid(),
-        relations: z.record(z.boolean())
+        relations: z.record(z.string(), z.boolean())
     })
     .strict();
 

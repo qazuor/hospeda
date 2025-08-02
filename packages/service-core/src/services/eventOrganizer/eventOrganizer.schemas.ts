@@ -10,7 +10,7 @@ export const CreateEventOrganizerSchema = EventOrganizerSchema.omit({
     updatedById: true,
     deletedById: true
 });
-export const UpdateEventOrganizerSchema = EventOrganizerSchema.deepPartial();
+export const UpdateEventOrganizerSchema = EventOrganizerSchema.partial();
 export const SearchEventOrganizerSchema = z.object({
     filters: z
         .object({

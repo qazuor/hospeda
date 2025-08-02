@@ -1,4 +1,4 @@
-import { UserBookmarkSchema } from '@repo/schemas/entities/user/user.bookmark.schema';
+import { UserBookmarkSchema } from '@repo/schemas';
 import { EntityTypeEnum } from '@repo/types';
 import { z } from 'zod';
 

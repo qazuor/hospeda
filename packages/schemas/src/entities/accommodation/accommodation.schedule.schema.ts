@@ -7,62 +7,52 @@ import { z } from 'zod';
 export const ScheduleSchema = z.object({
     checkinTime: z
         .string({
-            required_error: 'zodError.accommodation.schedule.checkinTime.required',
-            invalid_type_error: 'zodError.accommodation.schedule.checkinTime.invalidType'
+            message: 'zodError.accommodation.schedule.checkinTime.required'
         })
         .min(3, { message: 'zodError.accommodation.schedule.checkinTime.min' })
         .max(20, { message: 'zodError.accommodation.schedule.checkinTime.max' })
         .optional(),
     checkoutTime: z
         .string({
-            required_error: 'zodError.accommodation.schedule.checkoutTime.required',
-            invalid_type_error: 'zodError.accommodation.schedule.checkoutTime.invalidType'
+            message: 'zodError.accommodation.schedule.checkoutTime.required'
         })
         .min(3, { message: 'zodError.accommodation.schedule.checkoutTime.min' })
         .max(20, { message: 'zodError.accommodation.schedule.checkoutTime.max' })
         .optional(),
     earlyCheckinAccepted: z.boolean({
-        required_error: 'zodError.accommodation.schedule.earlyCheckinAccepted.required',
-        invalid_type_error: 'zodError.accommodation.schedule.earlyCheckinAccepted.invalidType'
+        message: 'zodError.accommodation.schedule.earlyCheckinAccepted.required'
     }),
     earlyCheckinTime: z
         .string({
-            required_error: 'zodError.accommodation.schedule.earlyCheckinTime.required',
-            invalid_type_error: 'zodError.accommodation.schedule.earlyCheckinTime.invalidType'
+            message: 'zodError.accommodation.schedule.earlyCheckinTime.required'
         })
         .min(3, { message: 'zodError.accommodation.schedule.earlyCheckinTime.min' })
         .max(20, { message: 'zodError.accommodation.schedule.earlyCheckinTime.max' })
         .optional(),
     lateCheckinAccepted: z.boolean({
-        required_error: 'zodError.accommodation.schedule.lateCheckinAccepted.required',
-        invalid_type_error: 'zodError.accommodation.schedule.lateCheckinAccepted.invalidType'
+        message: 'zodError.accommodation.schedule.lateCheckinAccepted.required'
     }),
     lateCheckinTime: z
         .string({
-            required_error: 'zodError.accommodation.schedule.lateCheckinTime.required',
-            invalid_type_error: 'zodError.accommodation.schedule.lateCheckinTime.invalidType'
+            message: 'zodError.accommodation.schedule.lateCheckinTime.required'
         })
         .min(3, { message: 'zodError.accommodation.schedule.lateCheckinTime.min' })
         .max(20, { message: 'zodError.accommodation.schedule.lateCheckinTime.max' })
         .optional(),
     lateCheckoutAccepted: z.boolean({
-        required_error: 'zodError.accommodation.schedule.lateCheckoutAccepted.required',
-        invalid_type_error: 'zodError.accommodation.schedule.lateCheckoutAccepted.invalidType'
+        message: 'zodError.accommodation.schedule.lateCheckoutAccepted.required'
     }),
     lateCheckoutTime: z
         .string({
-            required_error: 'zodError.accommodation.schedule.lateCheckoutTime.required',
-            invalid_type_error: 'zodError.accommodation.schedule.lateCheckoutTime.invalidType'
+            message: 'zodError.accommodation.schedule.lateCheckoutTime.required'
         })
         .min(3, { message: 'zodError.accommodation.schedule.lateCheckoutTime.min' })
         .max(20, { message: 'zodError.accommodation.schedule.lateCheckoutTime.max' })
         .optional(),
     selfCheckin: z.boolean({
-        required_error: 'zodError.accommodation.schedule.selfCheckin.required',
-        invalid_type_error: 'zodError.accommodation.schedule.selfCheckin.invalidType'
+        message: 'zodError.accommodation.schedule.selfCheckin.required'
     }),
     selfCheckout: z.boolean({
-        required_error: 'zodError.accommodation.schedule.selfCheckout.required',
-        invalid_type_error: 'zodError.accommodation.schedule.selfCheckout.invalidType'
+        message: 'zodError.accommodation.schedule.selfCheckout.required'
     })
 });

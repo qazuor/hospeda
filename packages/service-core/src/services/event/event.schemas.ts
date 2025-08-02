@@ -109,7 +109,7 @@ export const EventUpdateSchema = z
     .object({
         id: EventIdSchema
     })
-    .merge(EventCreateSchema.deepPartial().strict());
+    .merge(EventCreateSchema.partial().strict());
 
 // Re-export base schemas
 export { EventFilterInputSchema, EventSchema };

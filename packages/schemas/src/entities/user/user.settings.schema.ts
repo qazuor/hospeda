@@ -6,15 +6,15 @@ import { z } from 'zod';
  */
 
 export const UserNotificationsSchema = z.object({
-    enabled: z.boolean({ required_error: 'zodError.user.settings.notifications.enabled.required' }),
+    enabled: z.boolean({ message: 'zodError.user.settings.notifications.enabled.required' }),
     allowEmails: z.boolean({
-        required_error: 'zodError.user.settings.notifications.allowEmails.required'
+        message: 'zodError.user.settings.notifications.allowEmails.required'
     }),
     allowSms: z.boolean({
-        required_error: 'zodError.user.settings.notifications.allowSms.required'
+        message: 'zodError.user.settings.notifications.allowSms.required'
     }),
     allowPush: z.boolean({
-        required_error: 'zodError.user.settings.notifications.allowPush.required'
+        message: 'zodError.user.settings.notifications.allowPush.required'
     })
 });
 

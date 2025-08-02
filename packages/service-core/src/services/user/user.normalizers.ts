@@ -1,4 +1,4 @@
-import type { CreateUserSchema, UpdateUserSchema } from '@repo/schemas/entities/user/user.schema';
+import type { CreateUserSchema, UpdateUserSchema } from '@repo/schemas';
 import type { UserType } from '@repo/types';
 import type { z } from 'zod';
 import type { Actor } from '../../types';

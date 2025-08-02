@@ -1,12 +1,12 @@
 import {
     EntityPermissionReasonEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
     PermissionEnum,
     RoleEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VisibilityEnum
 } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types/enums/lifecycle-state.enum';
-import { ModerationStatusEnum } from '@repo/types/enums/state.enum';
-import { VisibilityEnum } from '@repo/types/enums/visibility.enum';
 import type { Actor } from '../types';
 import { ServiceError } from '../types';
 

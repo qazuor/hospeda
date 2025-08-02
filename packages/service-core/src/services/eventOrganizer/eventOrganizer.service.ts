@@ -1,4 +1,4 @@
-import { EventOrganizerModel } from '@repo/db/models/event/eventOrganizer.model';
+import { EventOrganizerModel } from '@repo/db';
 import type { EventOrganizerType, VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';

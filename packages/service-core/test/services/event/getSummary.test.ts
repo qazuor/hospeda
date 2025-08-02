@@ -48,7 +48,7 @@ describe('EventService.getSummary', () => {
     it('should return NOT_FOUND if event does not exist', async () => {
         asMock(modelMock.findById).mockResolvedValue(null);
         const result = await service.getSummary(actorWithPerm, {
-            id: '11111111-1111-1111-1111-111111111111' as EventId
+            id: '00000000-0000-4000-8000-000000000000' as EventId
         });
         expectNotFoundError(result);
     });

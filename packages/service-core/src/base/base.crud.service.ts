@@ -1,6 +1,6 @@
 import type { AdminInfoType, UserId } from '@repo/types';
 import { ServiceErrorCode, VisibilityEnum } from '@repo/types';
-import type { AnyZodObject } from 'zod';
+import type { ZodObject } from 'zod';
 import { z } from 'zod';
 import {
     type Actor,
@@ -43,9 +43,9 @@ type CrudNormalizers<TCreate, TUpdate, TSearch> = {
 export abstract class BaseCrudService<
     TEntity extends { id: string; adminInfo?: AdminInfoType; deletedAt?: Date | null },
     TModel extends BaseModel<TEntity>,
-    TCreateSchema extends AnyZodObject,
-    TUpdateSchema extends AnyZodObject,
-    TSearchSchema extends AnyZodObject
+    TCreateSchema extends ZodObject,
+    TUpdateSchema extends ZodObject,
+    TSearchSchema extends ZodObject
 > extends BaseService<
     CrudNormalizers<z.infer<TCreateSchema>, z.infer<TUpdateSchema>, z.infer<TSearchSchema>>
 > {

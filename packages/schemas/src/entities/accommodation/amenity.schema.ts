@@ -16,19 +16,16 @@ export const AmenitySchema = z.object({
 
     // From WithAuditSchema
     createdAt: z.coerce.date({
-        required_error: 'zodError.common.createdAt.required',
-        invalid_type_error: 'zodError.common.createdAt.invalidType'
+        message: 'zodError.common.createdAt.required'
     }),
     updatedAt: z.coerce.date({
-        required_error: 'zodError.common.updatedAt.required',
-        invalid_type_error: 'zodError.common.updatedAt.invalidType'
+        message: 'zodError.common.updatedAt.required'
     }),
     createdById: UserIdSchema,
     updatedById: UserIdSchema,
     deletedAt: z.coerce
         .date({
-            required_error: 'zodError.common.deletedAt.required',
-            invalid_type_error: 'zodError.common.deletedAt.invalidType'
+            message: 'zodError.common.deletedAt.required'
         })
         .optional(),
     deletedById: UserIdSchema.optional(),
@@ -60,7 +57,7 @@ export const AmenitySchema = z.object({
         .min(2, { message: 'zodError.amenity.icon.min' })
         .max(100, { message: 'zodError.amenity.icon.max' })
         .optional(),
-    isBuiltin: z.boolean({ required_error: 'zodError.amenity.isBuiltin.required' }),
+    isBuiltin: z.boolean({ message: 'zodError.amenity.isBuiltin.required' }),
     isFeatured: z.boolean().optional().default(false),
     type: AmenitiesTypeEnumSchema
 });

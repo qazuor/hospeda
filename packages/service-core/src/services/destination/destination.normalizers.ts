@@ -1,7 +1,4 @@
-import type {
-    CreateDestinationSchema,
-    UpdateDestinationSchema
-} from '@repo/schemas/entities/destination/destination.schema';
+import type { CreateDestinationSchema, UpdateDestinationSchema } from '@repo/schemas';
 import { VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
 import type { Actor } from '../../types';

@@ -4,16 +4,14 @@ import { isValidLatitude, isValidLongitude } from '../utils/utils.js';
 const CoordinatesSchema = z.object({
     lat: z
         .string({
-            required_error: 'zodError.common.location.coordinates.lat.required',
-            invalid_type_error: 'zodError.common.location.coordinates.lat.invalidType'
+            message: 'zodError.common.location.coordinates.lat.required'
         })
         .refine(isValidLatitude, {
             message: 'zodError.common.location.coordinates.lat.invalidValue'
         }),
     long: z
         .string({
-            required_error: 'zodError.common.location.coordinates.long.required',
-            invalid_type_error: 'zodError.common.location.coordinates.long.invalidType'
+            message: 'zodError.common.location.coordinates.long.required'
         })
         .refine(isValidLongitude, {
             message: 'zodError.common.location.coordinates.long.invalidValue'
@@ -23,75 +21,65 @@ const CoordinatesSchema = z.object({
 export const LocationSchema = z.object({
     state: z
         .string({
-            required_error: 'zodError.common.location.state.required',
-            invalid_type_error: 'zodError.common.location.state.invalidType'
+            message: 'zodError.common.location.state.required'
         })
         .min(2, { message: 'zodError.common.location.state.min' })
         .max(50, { message: 'zodError.common.location.state.max' }),
     zipCode: z
         .string({
-            required_error: 'zodError.common.location.zipCode.required',
-            invalid_type_error: 'zodError.common.location.zipCode.invalidType'
+            message: 'zodError.common.location.zipCode.required'
         })
         .min(1, { message: 'zodError.common.location.zipCode.min' })
         .max(20, { message: 'zodError.common.location.zipCode.max' }),
     country: z
         .string({
-            required_error: 'zodError.common.location.country.required',
-            invalid_type_error: 'zodError.common.location.country.invalidType'
+            message: 'zodError.common.location.country.required'
         })
         .min(2, { message: 'zodError.common.location.country.min' })
         .max(50, { message: 'zodError.common.location.country.max' }),
     coordinates: CoordinatesSchema.optional(),
     street: z
         .string({
-            required_error: 'zodError.common.location.street.required',
-            invalid_type_error: 'zodError.common.location.street.invalidType'
+            message: 'zodError.common.location.street.required'
         })
         .min(2, { message: 'zodError.common.location.street.min' })
         .max(50, { message: 'zodError.common.location.street.max' }),
     number: z
         .string({
-            required_error: 'zodError.common.location.number.required',
-            invalid_type_error: 'zodError.common.location.number.invalidType'
+            message: 'zodError.common.location.number.required'
         })
         .min(1, { message: 'zodError.common.location.number.min' })
         .max(10, { message: 'zodError.common.location.number.max' }),
     floor: z
         .string({
-            required_error: 'zodError.common.location.floor.required',
-            invalid_type_error: 'zodError.common.location.floor.invalidType'
+            message: 'zodError.common.location.floor.required'
         })
         .min(1, { message: 'zodError.common.location.floor.min' })
         .max(10, { message: 'zodError.common.location.floor.max' })
         .optional(),
     apartment: z
         .string({
-            required_error: 'zodError.common.location.apartment.required',
-            invalid_type_error: 'zodError.common.location.apartment.invalidType'
+            message: 'zodError.common.location.apartment.required'
         })
         .min(1, { message: 'zodError.common.location.apartment.min' })
         .max(10, { message: 'zodError.common.location.apartment.max' })
         .optional(),
     neighborhood: z
         .string({
-            required_error: 'zodError.common.location.neighborhood.required',
-            invalid_type_error: 'zodError.common.location.neighborhood.invalidType'
+            message: 'zodError.common.location.neighborhood.required'
         })
         .min(2, { message: 'zodError.common.location.neighborhood.min' })
         .max(50, { message: 'zodError.common.location.neighborhood.max' })
         .optional(),
     city: z
         .string({
-            required_error: 'zodError.common.location.city.required',
-            invalid_type_error: 'zodError.common.location.city.invalidType'
+            message: 'zodError.common.location.city.required'
         })
         .min(2, { message: 'zodError.common.location.city.min' })
         .max(50, { message: 'zodError.common.location.city.max' }),
     department: z
         .string({
-            required_error: 'zodError.common.location.department.required',
-            invalid_type_error: 'zodError.common.location.department.invalidType'
+            message: 'zodError.common.location.department.required'
         })
         .min(2, { message: 'zodError.common.location.department.min' })
         .max(50, { message: 'zodError.common.location.department.max' })

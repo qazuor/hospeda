@@ -1,4 +1,4 @@
-import type { DestinationSchema } from '@repo/schemas/entities/destination/destination.schema';
+import type { DestinationSchema } from '@repo/schemas';
 import type { AttractionId, DestinationId } from '@repo/types';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';

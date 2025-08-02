@@ -11,7 +11,7 @@ export const PostCreateSchema = PostSchema;
 /**
  * Schema for updating a post (all fields optional, no id required)
  */
-export const PostUpdateSchema = PostSchema.deepPartial().strict();
+export const PostUpdateSchema = PostSchema.partial().strict();
 
 /**
  * Schema for filtering posts

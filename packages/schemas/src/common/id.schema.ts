@@ -22,8 +22,7 @@ import { z } from 'zod';
 
 const BaseIdSchema = z
     .string({
-        required_error: 'zodError.common.id.required',
-        invalid_type_error: 'zodError.common.id.invalidType'
+        message: 'zodError.common.id.required'
     })
     .uuid({ message: 'zodError.common.id.invalidUuid' });
 

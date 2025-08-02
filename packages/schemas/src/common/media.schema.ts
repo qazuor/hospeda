@@ -7,16 +7,14 @@ export const ImageSchema = z.object({
     url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
     caption: z
         .string({
-            required_error: 'zodError.common.media.image.caption.required',
-            invalid_type_error: 'zodError.common.media.image.caption.invalidType'
+            message: 'zodError.common.media.image.caption.required'
         })
         .min(3, { message: 'zodError.common.media.image.caption.min' })
         .max(100, { message: 'zodError.common.media.image.caption.max' })
         .optional(),
     description: z
         .string({
-            required_error: 'zodError.common.media.image.description.required',
-            invalid_type_error: 'zodError.common.media.image.description.invalidType'
+            message: 'zodError.common.media.image.description.required'
         })
         .min(10, { message: 'zodError.common.media.image.description.min' })
         .max(300, { message: 'zodError.common.media.image.description.max' })
@@ -29,16 +27,14 @@ export const VideoSchema = z.object({
     url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
     caption: z
         .string({
-            required_error: 'zodError.common.media.video.caption.required',
-            invalid_type_error: 'zodError.common.media.video.caption.invalidType'
+            message: 'zodError.common.media.video.caption.required'
         })
         .min(3, { message: 'zodError.common.media.video.caption.min' })
         .max(100, { message: 'zodError.common.media.video.caption.max' })
         .optional(),
     description: z
         .string({
-            required_error: 'zodError.common.media.video.description.required',
-            invalid_type_error: 'zodError.common.media.video.description.invalidType'
+            message: 'zodError.common.media.video.description.required'
         })
         .min(10, { message: 'zodError.common.media.video.description.min' })
         .max(300, { message: 'zodError.common.media.video.description.max' })

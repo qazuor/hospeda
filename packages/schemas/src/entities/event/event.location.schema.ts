@@ -46,7 +46,8 @@ export const EventLocationSchema = LocationSchema.merge(WithIdSchema)
         city: z
             .string()
             .min(2, { message: 'zodError.event.location.city.min' })
-            .max(50, { message: 'zodError.event.location.city.max' }),
+            .max(50, { message: 'zodError.event.location.city.max' })
+            .optional(),
         department: z
             .string()
             .min(2, { message: 'zodError.event.location.department.min' })

@@ -1,7 +1,4 @@
-import type {
-    CreateAttractionSchema,
-    UpdateAttractionSchema
-} from '@repo/schemas/entities/destination/destination.attraction.schema';
+import type { CreateAttractionSchema, UpdateAttractionSchema } from '@repo/schemas';
 import type { z } from 'zod';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo } from '../../utils';

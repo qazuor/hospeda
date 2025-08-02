@@ -6,8 +6,8 @@ import { z } from 'zod';
  * Both role and permission are referenced by their enums.
  */
 export const RolePermissionAssignmentSchema = z.object({
-    role: z.nativeEnum(RoleEnum, { required_error: 'zodError.rolePermission.role.required' }),
+    role: z.nativeEnum(RoleEnum, { message: 'zodError.rolePermission.role.required' }),
     permission: z.nativeEnum(PermissionEnum, {
-        required_error: 'zodError.rolePermission.permission.required'
+        message: 'zodError.rolePermission.permission.required'
     })
 });

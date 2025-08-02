@@ -197,7 +197,7 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor
     ): Promise<Partial<AccommodationType>> {
         const slug = await generateSlug(data.type, data.name);
-        return { ...data, slug };
+        return { ...data, slug } as Partial<AccommodationType>;
     }
 
     protected async _afterCreate(entity: AccommodationType): Promise<AccommodationType> {

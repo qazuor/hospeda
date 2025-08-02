@@ -1,5 +1,5 @@
 import type { DestinationModel } from '@repo/db';
-import type { NewDestinationInput } from '@repo/schemas/entities/destination/destination.schema';
+import type { NewDestinationInput } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,

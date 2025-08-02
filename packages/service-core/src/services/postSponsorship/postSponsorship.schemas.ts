@@ -1,5 +1,4 @@
-import { BaseSearchSchema } from '@repo/schemas/common/search.schemas';
-import { PostSponsorshipSchema } from '@repo/schemas/entities/post/post.sponsorship.schema';
+import { BaseSearchSchema, PostSponsorshipSchema } from '@repo/schemas';
 import { z } from 'zod';
 
 /**

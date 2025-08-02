@@ -9,6 +9,6 @@ import { z } from 'zod';
 export const UserPermissionAssignmentSchema = z.object({
     userId: z.custom<UserId>(),
     permission: z.nativeEnum(PermissionEnum, {
-        required_error: 'zodError.userPermission.permission.required'
+        message: 'zodError.userPermission.permission.required'
     })
 });

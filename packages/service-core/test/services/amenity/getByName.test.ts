@@ -1,5 +1,5 @@
 import { AmenityModel } from '@repo/db';
-import { AmenitiesTypeEnum } from '@repo/types/enums/amenity-type.enum';
+import { AmenitiesTypeEnum } from '@repo/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
 import type { Actor } from '../../../src/types';

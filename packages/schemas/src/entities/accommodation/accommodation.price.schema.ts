@@ -13,8 +13,7 @@ const AdditionalFeesInfoSchema = PriceSchema.extend({
 const OtherAdditionalFeesSchema = AdditionalFeesInfoSchema.extend({
     name: z
         .string({
-            required_error: 'zodError.accommodation.price.otherAdditionalFees.name.required',
-            invalid_type_error: 'zodError.accommodation.price.otherAdditionalFees.name.invalidType'
+            message: 'zodError.accommodation.price.otherAdditionalFees.name.required'
         })
         .min(2, { message: 'zodError.accommodation.price.otherAdditionalFees.name.min' })
         .max(50, { message: 'zodError.accommodation.price.otherAdditionalFees.name.max' })
@@ -51,8 +50,7 @@ const DiscountInfoSchema = PriceSchema.extend({
 const OtherDiscountSchema = DiscountInfoSchema.extend({
     name: z
         .string({
-            required_error: 'zodError.accommodation.price.otherDiscount.name.required',
-            invalid_type_error: 'zodError.accommodation.price.otherDiscount.name.invalidType'
+            message: 'zodError.accommodation.price.otherDiscount.name.required'
         })
         .min(2, { message: 'zodError.accommodation.price.otherDiscount.name.min' })
         .max(50, { message: 'zodError.accommodation.price.otherDiscount.name.max' })
