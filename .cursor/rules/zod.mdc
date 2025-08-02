@@ -66,17 +66,17 @@ export const AccommodationAmenitySchema = WithModerationStatusSchema.merge(WithA
     {
         /** Accommodation ID this amenity belongs to */
         accommodationId: z.string({
-            required_error: 'zodError.accommodation.amenity.accommodationId.required',
+            message: 'zodError.accommodation.amenity.accommodationId.required',
             invalid_type_error: 'zodError.accommodation.amenity.accommodationId.invalidType'
         }),
         /** Amenity ID */
         amenityId: z.string({
-            required_error: 'zodError.accommodation.amenity.amenityId.required',
+            message: 'zodError.accommodation.amenity.amenityId.required',
             invalid_type_error: 'zodError.accommodation.amenity.amenityId.invalidType'
         }),
         /** Whether the amenity is optional for the guest */
         isOptional: z.boolean({
-            required_error: 'zodError.accommodation.amenity.isOptional.required',
+            message: 'zodError.accommodation.amenity.isOptional.required',
             invalid_type_error: 'zodError.accommodation.amenity.isOptional.invalidType'
         }),
         /** Additional cost for this amenity, optional */
@@ -84,7 +84,7 @@ export const AccommodationAmenitySchema = WithModerationStatusSchema.merge(WithA
         /** Additional cost as a percent, optional (0-100) */
         additionalCostPercent: z
             .number({
-                required_error: 'zodError.accommodation.amenity.additionalCostPercent.required',
+                message: 'zodError.accommodation.amenity.additionalCostPercent.required',
                 invalid_type_error:
                     'zodError.accommodation.amenity.additionalCostPercent.invalidType'
             })
