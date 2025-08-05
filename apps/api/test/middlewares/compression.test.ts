@@ -14,12 +14,62 @@ vi.mock('../../src/utils/env', () => ({
     env: {
         COMPRESSION_ENABLED: true,
         COMPRESSION_ALGORITHMS: 'gzip,deflate',
-        COMPRESSION_THRESHOLD: 1024
-    }
+        COMPRESSION_THRESHOLD: 1024,
+        COMPRESSION_LEVEL: 6,
+        COMPRESSION_CHUNK_SIZE: 16384,
+        COMPRESSION_FILTER: 'text/*,application/json,application/xml,application/javascript',
+        COMPRESSION_EXCLUDE_ENDPOINTS: '/health/db,/docs'
+    },
+    getCompressionConfig: () => ({
+        enabled: true,
+        algorithms: ['gzip', 'deflate'],
+        threshold: 1024,
+        level: 6,
+        chunkSize: 16384,
+        filter: ['text/*', 'application/json', 'application/xml', 'application/javascript'],
+        excludeEndpoints: ['/health/db', '/docs']
+    })
 }));
 
 describe('Compression Middleware', () => {
     let app: Hono;
+
+    // Helper to create dynamic mocks with consistent structure
+    const createEnvMock = (config: {
+        enabled?: boolean;
+        algorithms?: string;
+        threshold?: number;
+        level?: number;
+        chunkSize?: number;
+        filter?: string;
+        excludeEndpoints?: string;
+    }) => ({
+        env: {
+            COMPRESSION_ENABLED: config.enabled ?? true,
+            COMPRESSION_ALGORITHMS: config.algorithms ?? 'gzip,deflate',
+            COMPRESSION_THRESHOLD: config.threshold ?? 1024,
+            COMPRESSION_LEVEL: config.level ?? 6,
+            COMPRESSION_CHUNK_SIZE: config.chunkSize ?? 16384,
+            COMPRESSION_FILTER:
+                config.filter ?? 'text/*,application/json,application/xml,application/javascript',
+            COMPRESSION_EXCLUDE_ENDPOINTS: config.excludeEndpoints ?? '/health/db,/docs'
+        },
+        getCompressionConfig: () => ({
+            enabled: config.enabled ?? true,
+            algorithms: (config.algorithms ?? 'gzip,deflate').split(',').map((a) => a.trim()),
+            threshold: config.threshold ?? 1024,
+            level: config.level ?? 6,
+            chunkSize: config.chunkSize ?? 16384,
+            filter: (
+                config.filter ?? 'text/*,application/json,application/xml,application/javascript'
+            )
+                .split(',')
+                .map((f) => f.trim()),
+            excludeEndpoints: (config.excludeEndpoints ?? '/health/db,/docs')
+                .split(',')
+                .map((e) => e.trim())
+        })
+    });
 
     beforeEach(() => {
         app = new Hono();
@@ -33,13 +83,7 @@ describe('Compression Middleware', () => {
         });
 
         it('should return no-op middleware when compression is disabled', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: false,
-                    COMPRESSION_ALGORITHMS: 'gzip,deflate',
-                    COMPRESSION_THRESHOLD: 1024
-                }
-            }));
+            vi.doMock('../../src/utils/env', () => createEnvMock({ enabled: false }));
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -57,13 +101,12 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle gzip-only configuration', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: 'gzip',
-                    COMPRESSION_THRESHOLD: 100
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: 'gzip',
+                    threshold: 100
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -75,13 +118,12 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle deflate-only configuration', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: 'deflate',
-                    COMPRESSION_THRESHOLD: 100
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: 'deflate',
+                    threshold: 100
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -93,13 +135,12 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle both algorithms configuration', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: 'gzip,deflate',
-                    COMPRESSION_THRESHOLD: 100
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: 'gzip,deflate',
+                    threshold: 100
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -111,13 +152,12 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle empty algorithms configuration', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: '',
-                    COMPRESSION_THRESHOLD: 100
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: '',
+                    threshold: 100
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -129,13 +169,12 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle algorithms with extra spaces', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: ' gzip , deflate ',
-                    COMPRESSION_THRESHOLD: 100
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: ' gzip , deflate ',
+                    threshold: 100
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -282,13 +321,12 @@ describe('Compression Middleware', () => {
 
     describe('Configuration edge cases', () => {
         it('should handle very low threshold', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: 'gzip',
-                    COMPRESSION_THRESHOLD: 1
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: 'gzip',
+                    threshold: 1
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -307,13 +345,12 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle very high threshold', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: 'gzip',
-                    COMPRESSION_THRESHOLD: 1000000 // 1MB
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: 'gzip',
+                    threshold: 1000000 // 1MB
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -351,13 +388,12 @@ describe('Compression Middleware', () => {
 
     describe('Multiple algorithm support', () => {
         it('should handle unsupported algorithms gracefully', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: 'brotli,unknownalgo',
-                    COMPRESSION_THRESHOLD: 100
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: 'brotli,unknownalgo',
+                    threshold: 100
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(
@@ -373,13 +409,12 @@ describe('Compression Middleware', () => {
         });
 
         it('should parse comma-separated algorithms correctly', async () => {
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    COMPRESSION_ENABLED: true,
-                    COMPRESSION_ALGORITHMS: 'gzip,deflate,br',
-                    COMPRESSION_THRESHOLD: 100
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    algorithms: 'gzip,deflate,br',
+                    threshold: 100
+                })
+            );
 
             vi.resetModules();
             const { createCompressionMiddleware: freshCreateMiddleware } = await import(

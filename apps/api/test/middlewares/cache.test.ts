@@ -22,8 +22,21 @@ vi.mock('../../src/utils/env', () => ({
         CACHE_DEFAULT_STALE_IF_ERROR: 86400,
         CACHE_PUBLIC_ENDPOINTS: '/api/v1/public/accommodations,/health',
         CACHE_PRIVATE_ENDPOINTS: '/api/v1/public/users',
-        CACHE_NO_CACHE_ENDPOINTS: '/health/db,/docs'
-    }
+        CACHE_NO_CACHE_ENDPOINTS: '/health/db,/docs',
+        CACHE_ETAG_ENABLED: true,
+        CACHE_LAST_MODIFIED_ENABLED: true
+    },
+    getCacheConfig: () => ({
+        enabled: true,
+        publicEndpoints: ['/api/v1/public/accommodations', '/health'],
+        privateEndpoints: ['/api/v1/public/users'],
+        noCacheEndpoints: ['/health/db', '/docs'],
+        maxAge: 300,
+        staleWhileRevalidate: 60,
+        staleIfError: 86400,
+        etagEnabled: true,
+        lastModifiedEnabled: true
+    })
 }));
 
 describe('Cache Middleware', () => {
@@ -41,6 +54,49 @@ describe('Cache Middleware', () => {
                 header: vi.fn().mockReturnValue(authHeader)
             }
         }) as any;
+
+    // Helper to create dynamic mocks with consistent structure
+    const createEnvMock = (config: {
+        enabled?: boolean;
+        maxAge?: number;
+        staleWhileRevalidate?: number;
+        staleIfError?: number;
+        publicEndpoints?: string;
+        privateEndpoints?: string;
+        noCacheEndpoints?: string;
+        etagEnabled?: boolean;
+        lastModifiedEnabled?: boolean;
+    }) => ({
+        env: {
+            CACHE_ENABLED: config.enabled ?? true,
+            CACHE_DEFAULT_MAX_AGE: config.maxAge ?? 300,
+            CACHE_DEFAULT_STALE_WHILE_REVALIDATE: config.staleWhileRevalidate ?? 60,
+            CACHE_DEFAULT_STALE_IF_ERROR: config.staleIfError ?? 86400,
+            CACHE_PUBLIC_ENDPOINTS:
+                config.publicEndpoints ?? '/api/v1/public/accommodations,/health',
+            CACHE_PRIVATE_ENDPOINTS: config.privateEndpoints ?? '/api/v1/public/users',
+            CACHE_NO_CACHE_ENDPOINTS: config.noCacheEndpoints ?? '/health/db,/docs',
+            CACHE_ETAG_ENABLED: config.etagEnabled ?? true,
+            CACHE_LAST_MODIFIED_ENABLED: config.lastModifiedEnabled ?? true
+        },
+        getCacheConfig: () => ({
+            enabled: config.enabled ?? true,
+            publicEndpoints: (config.publicEndpoints ?? '/api/v1/public/accommodations,/health')
+                .split(',')
+                .map((e) => e.trim()),
+            privateEndpoints: (config.privateEndpoints ?? '/api/v1/public/users')
+                .split(',')
+                .map((e) => e.trim()),
+            noCacheEndpoints: (config.noCacheEndpoints ?? '/health/db,/docs')
+                .split(',')
+                .map((e) => e.trim()),
+            maxAge: config.maxAge ?? 300,
+            staleWhileRevalidate: config.staleWhileRevalidate ?? 60,
+            staleIfError: config.staleIfError ?? 86400,
+            etagEnabled: config.etagEnabled ?? true,
+            lastModifiedEnabled: config.lastModifiedEnabled ?? true
+        })
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -66,11 +122,7 @@ describe('Cache Middleware', () => {
             vi.resetModules();
 
             // Mock env with cache disabled
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    CACHE_ENABLED: false
-                }
-            }));
+            vi.doMock('../../src/utils/env', () => createEnvMock({ enabled: false }));
 
             const { createCacheMiddleware: recreatedMiddleware } = await import(
                 '../../src/middlewares/cache'
@@ -161,17 +213,13 @@ describe('Cache Middleware', () => {
             vi.resetModules();
 
             // Mock env with empty endpoint lists
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    CACHE_ENABLED: true,
-                    CACHE_DEFAULT_MAX_AGE: 300,
-                    CACHE_DEFAULT_STALE_WHILE_REVALIDATE: 60,
-                    CACHE_DEFAULT_STALE_IF_ERROR: 86400,
-                    CACHE_PUBLIC_ENDPOINTS: '',
-                    CACHE_PRIVATE_ENDPOINTS: '',
-                    CACHE_NO_CACHE_ENDPOINTS: ''
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    publicEndpoints: '',
+                    privateEndpoints: '',
+                    noCacheEndpoints: ''
+                })
+            );
 
             const { createCacheMiddleware: recreatedMiddleware } = await import(
                 '../../src/middlewares/cache'
@@ -394,17 +442,16 @@ describe('Cache Middleware', () => {
             vi.resetModules();
 
             // Mock env with different values
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    CACHE_ENABLED: true,
-                    CACHE_DEFAULT_MAX_AGE: 600,
-                    CACHE_DEFAULT_STALE_WHILE_REVALIDATE: 120,
-                    CACHE_DEFAULT_STALE_IF_ERROR: 172800,
-                    CACHE_PUBLIC_ENDPOINTS: '/custom/public',
-                    CACHE_PRIVATE_ENDPOINTS: '/custom/private',
-                    CACHE_NO_CACHE_ENDPOINTS: '/custom/no-cache'
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    maxAge: 600,
+                    staleWhileRevalidate: 120,
+                    staleIfError: 172800,
+                    publicEndpoints: '/custom/public',
+                    privateEndpoints: '/custom/private',
+                    noCacheEndpoints: '/custom/no-cache'
+                })
+            );
 
             const { createCacheMiddleware: recreatedMiddleware } = await import(
                 '../../src/middlewares/cache'
@@ -434,17 +481,13 @@ describe('Cache Middleware', () => {
             vi.resetModules();
 
             // Mock env with whitespace in endpoint lists
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    CACHE_ENABLED: true,
-                    CACHE_DEFAULT_MAX_AGE: 300,
-                    CACHE_DEFAULT_STALE_WHILE_REVALIDATE: 60,
-                    CACHE_DEFAULT_STALE_IF_ERROR: 86400,
-                    CACHE_PUBLIC_ENDPOINTS: ' /api/v1/public/accommodations , /health ',
-                    CACHE_PRIVATE_ENDPOINTS: ' /api/v1/public/users ',
-                    CACHE_NO_CACHE_ENDPOINTS: ' /health/db , /docs '
-                }
-            }));
+            vi.doMock('../../src/utils/env', () =>
+                createEnvMock({
+                    publicEndpoints: ' /api/v1/public/accommodations , /health ',
+                    privateEndpoints: ' /api/v1/public/users ',
+                    noCacheEndpoints: ' /health/db , /docs '
+                })
+            );
 
             const { createCacheMiddleware: recreatedMiddleware } = await import(
                 '../../src/middlewares/cache'

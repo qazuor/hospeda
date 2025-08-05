@@ -15,7 +15,15 @@ vi.mock('../../src/utils/env', () => ({
         CORS_ALLOW_METHODS: 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
         CORS_ALLOW_HEADERS: 'Content-Type,Authorization,X-Requested-With',
         CORS_EXPOSE_HEADERS: 'Content-Length,X-Request-ID'
-    }
+    },
+    getCorsConfig: () => ({
+        origins: ['http://localhost:3000', 'http://localhost:5173'],
+        allowCredentials: true,
+        maxAge: 86400,
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        exposeHeaders: ['Content-Length', 'X-Request-ID']
+    })
 }));
 
 describe('CORS Middleware', () => {

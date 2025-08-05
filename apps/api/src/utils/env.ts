@@ -81,6 +81,9 @@ const EnvSchema = z.object({
 
     // Security Configuration
     SECURITY_ENABLED: z.coerce.boolean().default(true),
+    SECURITY_CSRF_ENABLED: z.coerce.boolean().default(true),
+    SECURITY_CSRF_ORIGIN: z.string().url().optional(),
+    SECURITY_CSRF_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
     SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
     SECURITY_CONTENT_SECURITY_POLICY: z
         .string()
@@ -145,3 +148,139 @@ export const env = parseEnv();
 
 // Export types for usage in other files
 export type Env = z.infer<typeof EnvSchema>;
+
+/**
+ * Configuration helpers for middlewares
+ * These helpers parse and validate common configuration patterns
+ */
+
+/**
+ * Parse comma-separated strings into arrays
+ */
+export const parseCommaSeparated = (value: string): string[] => {
+    return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+};
+
+/**
+ * Parse CORS origins with validation
+ */
+export const parseCorsOrigins = (): string[] | '*' => {
+    if (env.CORS_ORIGINS === '*') {
+        return '*';
+    }
+    return parseCommaSeparated(env.CORS_ORIGINS);
+};
+
+/**
+ * Parse cache endpoint lists
+ */
+export const getCacheConfig = () => ({
+    enabled: env.CACHE_ENABLED,
+    publicEndpoints: parseCommaSeparated(env.CACHE_PUBLIC_ENDPOINTS),
+    privateEndpoints: parseCommaSeparated(env.CACHE_PRIVATE_ENDPOINTS),
+    noCacheEndpoints: parseCommaSeparated(env.CACHE_NO_CACHE_ENDPOINTS),
+    maxAge: env.CACHE_DEFAULT_MAX_AGE,
+    staleWhileRevalidate: env.CACHE_DEFAULT_STALE_WHILE_REVALIDATE,
+    staleIfError: env.CACHE_DEFAULT_STALE_IF_ERROR,
+    etagEnabled: env.CACHE_ETAG_ENABLED,
+    lastModifiedEnabled: env.CACHE_LAST_MODIFIED_ENABLED
+});
+
+/**
+ * Parse compression configuration
+ */
+export const getCompressionConfig = () => ({
+    enabled: env.COMPRESSION_ENABLED,
+    algorithms: parseCommaSeparated(env.COMPRESSION_ALGORITHMS),
+    threshold: env.COMPRESSION_THRESHOLD,
+    level: env.COMPRESSION_LEVEL,
+    chunkSize: env.COMPRESSION_CHUNK_SIZE,
+    filter: parseCommaSeparated(env.COMPRESSION_FILTER),
+    excludeEndpoints: parseCommaSeparated(env.COMPRESSION_EXCLUDE_ENDPOINTS)
+});
+
+/**
+ * Parse rate limiting configuration
+ */
+export const getRateLimitConfig = () => ({
+    enabled: env.RATE_LIMIT_ENABLED,
+    windowMs: env.RATE_LIMIT_WINDOW_MS,
+    maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
+    keyGenerator: env.RATE_LIMIT_KEY_GENERATOR,
+    skipSuccessful: env.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS,
+    skipFailed: env.RATE_LIMIT_SKIP_FAILED_REQUESTS,
+    standardHeaders: env.RATE_LIMIT_STANDARD_HEADERS,
+    legacyHeaders: env.RATE_LIMIT_LEGACY_HEADERS,
+    message: env.RATE_LIMIT_MESSAGE
+});
+
+/**
+ * Parse security configuration
+ */
+export const getSecurityConfig = () => ({
+    enabled: env.SECURITY_ENABLED,
+    csrf: {
+        enabled: env.SECURITY_CSRF_ENABLED,
+        origin: env.SECURITY_CSRF_ORIGIN,
+        origins: parseCommaSeparated(env.SECURITY_CSRF_ORIGINS)
+    },
+    headers: {
+        enabled: env.SECURITY_HEADERS_ENABLED,
+        contentSecurityPolicy: env.SECURITY_CONTENT_SECURITY_POLICY,
+        strictTransportSecurity: env.SECURITY_STRICT_TRANSPORT_SECURITY,
+        xFrameOptions: env.SECURITY_X_FRAME_OPTIONS,
+        xContentTypeOptions: env.SECURITY_X_CONTENT_TYPE_OPTIONS,
+        xXssProtection: env.SECURITY_X_XSS_PROTECTION,
+        referrerPolicy: env.SECURITY_REFERRER_POLICY,
+        permissionsPolicy: env.SECURITY_PERMISSIONS_POLICY
+    }
+});
+
+/**
+ * Parse CORS configuration
+ */
+export const getCorsConfig = () => ({
+    origins: parseCorsOrigins(),
+    allowCredentials: env.CORS_ALLOW_CREDENTIALS,
+    maxAge: env.CORS_MAX_AGE,
+    allowMethods: parseCommaSeparated(env.CORS_ALLOW_METHODS),
+    allowHeaders: parseCommaSeparated(env.CORS_ALLOW_HEADERS),
+    exposeHeaders: parseCommaSeparated(env.CORS_EXPOSE_HEADERS)
+});
+
+/**
+ * Parse validation configuration
+ */
+export const getValidationConfig = () => ({
+    maxBodySize: env.VALIDATION_MAX_BODY_SIZE,
+    maxRequestTime: env.VALIDATION_MAX_REQUEST_TIME,
+    allowedContentTypes: parseCommaSeparated(env.VALIDATION_ALLOWED_CONTENT_TYPES),
+    requiredHeaders: parseCommaSeparated(env.VALIDATION_REQUIRED_HEADERS),
+    clerk: {
+        enabled: env.VALIDATION_CLERK_AUTH_ENABLED,
+        headers: parseCommaSeparated(env.VALIDATION_CLERK_AUTH_HEADERS)
+    },
+    sanitize: {
+        enabled: env.VALIDATION_SANITIZE_ENABLED,
+        maxStringLength: env.VALIDATION_SANITIZE_MAX_STRING_LENGTH,
+        removeHtmlTags: env.VALIDATION_SANITIZE_REMOVE_HTML_TAGS,
+        allowedChars: env.VALIDATION_SANITIZE_ALLOWED_CHARS
+    }
+});
+
+/**
+ * Parse response formatting configuration
+ */
+export const getResponseConfig = () => ({
+    enabled: env.RESPONSE_FORMAT_ENABLED,
+    includeTimestamp: env.RESPONSE_INCLUDE_TIMESTAMP,
+    includeVersion: env.RESPONSE_INCLUDE_VERSION,
+    apiVersion: env.RESPONSE_API_VERSION,
+    includeRequestId: env.RESPONSE_INCLUDE_REQUEST_ID,
+    includeMetadata: env.RESPONSE_INCLUDE_METADATA,
+    successMessage: env.RESPONSE_SUCCESS_MESSAGE,
+    errorMessage: env.RESPONSE_ERROR_MESSAGE
+});
