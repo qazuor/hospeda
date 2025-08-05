@@ -194,6 +194,69 @@ export const getMetrics = () => {
 };
 
 /**
+ * Get filtered metrics by endpoint category
+ */
+export const getFilteredMetrics = (filter: (endpoint: string) => boolean) => {
+    const allMetrics = metricsStore.getMetrics();
+
+    const filteredEndpoints = allMetrics.endpoints.filter((metric) => filter(metric.endpoint));
+
+    // Recalculate summary for filtered endpoints
+    const filteredRequests = filteredEndpoints.reduce((sum, ep) => sum + ep.requests, 0);
+    const filteredErrors = filteredEndpoints.reduce((sum, ep) => sum + ep.errors, 0);
+
+    return {
+        summary: {
+            totalRequests: filteredRequests,
+            totalErrors: filteredErrors,
+            globalErrorRate: filteredRequests > 0 ? (filteredErrors / filteredRequests) * 100 : 0,
+            activeConnections: allMetrics.summary.activeConnections,
+            timestamp: allMetrics.summary.timestamp
+        },
+        endpoints: filteredEndpoints
+    };
+};
+
+/**
+ * Get metrics for API endpoints (public/admin routes)
+ */
+export const getApiMetrics = () => {
+    return getFilteredMetrics((endpoint) => {
+        const path = endpoint.toLowerCase();
+        return (
+            path.includes('user') ||
+            path.includes('accommodation') ||
+            path.includes('destination') ||
+            path.includes('event') ||
+            path.includes('attraction') ||
+            path.includes('amenity') ||
+            path.includes('tag') ||
+            path.includes('feature') ||
+            path.includes('post') ||
+            path.includes('auth/login') ||
+            path.includes('auth/logout') ||
+            path.includes('admin')
+        );
+    });
+};
+
+/**
+ * Get metrics for system endpoints (health, docs, metrics)
+ */
+export const getSystemMetrics = () => {
+    return getFilteredMetrics((endpoint) => {
+        const path = endpoint.toLowerCase();
+        return (
+            path.includes('health') ||
+            path.includes('docs') ||
+            path.includes('metrics') ||
+            path.includes('openapi') ||
+            endpoint === 'GET /'
+        );
+    });
+};
+
+/**
  * Reset metrics store
  * Useful for testing and development
  */
