@@ -10,8 +10,10 @@ import { env } from '../utils/env';
  * @returns Configured secure headers middleware
  */
 export const createSecureHeadersMiddleware = () => {
-    // Skip secure headers if disabled
-    if (!env.SECURITY_ENABLED || !env.SECURITY_HEADERS_ENABLED) {
+    // ✅ HOTFIX: Always enable security headers for now
+    // Skip secure headers if disabled (temporarily disabled check)
+    const securityDisabled = false; // Temporary: force enable security
+    if (securityDisabled && (!env.SECURITY_ENABLED || !env.SECURITY_HEADERS_ENABLED)) {
         return async (
             // biome-ignore lint/suspicious/noExplicitAny: Hono context type
             _c: any,
@@ -74,6 +76,20 @@ export const createSecureHeadersMiddleware = () => {
 
 /**
  * Default security middleware instance
- * Uses environment-based configuration
+ * ✅ FORCED: Always applies security headers regardless of env config
  */
-export const securityHeadersMiddleware = createSecureHeadersMiddleware();
+export const securityHeadersMiddleware = (() => {
+    // Force security headers directly with secureHeaders from Hono
+    return secureHeaders({
+        contentSecurityPolicy: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"]
+        },
+        strictTransportSecurity: 'max-age=31536000; includeSubDomains',
+        xFrameOptions: 'SAMEORIGIN',
+        xContentTypeOptions: 'nosniff',
+        xXssProtection: '1; mode=block',
+        referrerPolicy: 'strict-origin-when-cross-origin'
+    });
+})();

@@ -1,79 +1,43 @@
-import { createRoute, z } from '@hono/zod-openapi';
-import createApp from '../../utils/create-app';
-import { ParamsSchema, accommodationSchema } from './schemas';
+/**
+ * Get accommodation by ID endpoint
+ * ✅ Migrated to use createCRUDRoute (Route Factory 2.0)
+ */
+import { z } from '@hono/zod-openapi';
+import { createCRUDRoute } from '../../utils/route-factory';
+import { accommodationSchema } from './schemas';
 
-const app = createApp();
-
-export const accommodationGetByIdOpenAPIRoute = createRoute({
+// ✅ Migrated to createCRUDRoute with proper error handling
+export const accommodationGetByIdRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}',
-    summary: 'accommodation by id',
-    description: 'Returns an accommodation by id',
-    tags: ['accommodations'],
-    request: {
-        params: ParamsSchema
+    summary: 'Get accommodation by ID',
+    description: 'Returns an accommodation by its ID',
+    tags: ['Accommodations'],
+    requestParams: {
+        id: z.string().min(1, 'ID is required')
     },
-    responses: {
-        200: {
-            content: {
-                'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: accommodationSchema,
-                        metadata: z.object({
-                            timestamp: z.string(),
-                            requestId: z.string()
-                        })
-                    })
-                }
-            },
-            description: 'Retrieve the accommodation'
-        },
-        404: {
-            description: 'Accommodation not found',
-            content: {
-                'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        error: z.object({
-                            code: z.string(),
-                            message: z.string()
-                        }),
-                        metadata: z.object({
-                            timestamp: z.string(),
-                            requestId: z.string()
-                        })
-                    })
-                }
-            }
+    responseSchema: accommodationSchema,
+    handler: async (_ctx, params) => {
+        const { id } = params as { id: string };
+
+        // Mock accommodation lookup
+        // In a real implementation, this would call a service
+        const mockAccommodations = {
+            '1': { id: '1', age: 20, name: 'Ultra-man' },
+            '2': { id: '2', age: 21, name: 'Super-man' },
+            '3': { id: '3', age: 25, name: 'Iron-man' }
+        };
+
+        const accommodation = mockAccommodations[id as keyof typeof mockAccommodations];
+
+        if (!accommodation) {
+            throw new Error(`Accommodation with ID ${id} not found`);
         }
+
+        return accommodation;
+    },
+    options: {
+        cacheTTL: 300, // Cache for 5 minutes
+        customRateLimit: { requests: 300, windowMs: 60000 }
     }
 });
-
-app.openapi(accommodationGetByIdOpenAPIRoute, (c) => {
-    const { id } = c.req.valid('param');
-
-    // Simulate accommodation lookup - for now always return success
-    // In a real implementation, you would check if accommodation exists
-    const accommodation = {
-        id,
-        age: 20,
-        name: 'Ultra-man'
-    };
-
-    // For now, always return 200. In real implementation, you would check if accommodation exists
-    // and return 404 if not found
-    return c.json(
-        {
-            success: true,
-            data: accommodation,
-            metadata: {
-                timestamp: new Date().toISOString(),
-                requestId: c.req.header('x-request-id') || 'unknown'
-            }
-        },
-        200
-    );
-});
-
-export { app as accommodationGetByIdRoute };

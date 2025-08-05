@@ -211,6 +211,17 @@ export const errorHandlingMiddleware: MiddlewareHandler = async (c, next) => {
             } else if (error.name === 'NotImplementedError') {
                 errorCode = ServiceErrorCode.NOT_IMPLEMENTED;
                 statusCode = 501;
+            } else if (
+                error.constructor.name === 'HTTPException' &&
+                error.message.includes('Malformed JSON')
+            ) {
+                errorCode = ServiceErrorCode.VALIDATION_ERROR;
+                errorMessage = 'Invalid JSON format in request body';
+                statusCode = 400;
+            } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
+                errorCode = ServiceErrorCode.VALIDATION_ERROR;
+                errorMessage = 'Invalid JSON format in request body';
+                statusCode = 400;
             } else {
                 errorCode = ServiceErrorCode.INTERNAL_ERROR;
                 statusCode = 500;
@@ -315,6 +326,17 @@ export const createErrorHandler = () => {
             } else if (error.name === 'NotImplementedError') {
                 errorCode = ServiceErrorCode.NOT_IMPLEMENTED;
                 statusCode = 501;
+            } else if (
+                error.constructor.name === 'HTTPException' &&
+                error.message.includes('Malformed JSON')
+            ) {
+                errorCode = ServiceErrorCode.VALIDATION_ERROR;
+                errorMessage = 'Invalid JSON format in request body';
+                statusCode = 400;
+            } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
+                errorCode = ServiceErrorCode.VALIDATION_ERROR;
+                errorMessage = 'Invalid JSON format in request body';
+                statusCode = 400;
             } else {
                 errorCode = ServiceErrorCode.INTERNAL_ERROR;
                 statusCode = 500;

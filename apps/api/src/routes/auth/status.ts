@@ -59,7 +59,7 @@ app.openapi(authStatusOpenAPIRoute, (c) => {
         },
         metadata: {
             timestamp: new Date().toISOString(),
-            requestId: c.req.header('x-request-id') || 'unknown'
+            requestId: c.get('requestId') || 'unknown'
         }
     });
 });

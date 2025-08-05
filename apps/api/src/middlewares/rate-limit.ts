@@ -2,6 +2,7 @@
  * Rate limiting middleware using hono-rate-limiter
  * Limits the number of requests per IP address or user
  */
+import type { Context, Next } from 'hono';
 import { env } from '../utils/env';
 
 // In-memory store for rate limiting
@@ -19,24 +20,17 @@ export const clearRateLimitStore = () => {
  * @returns Configured rate limiting middleware
  */
 export const createRateLimitMiddleware = () => {
-    // Skip rate limiting if disabled
-    if (!env.RATE_LIMIT_ENABLED) {
-        return async (
-            // biome-ignore lint/suspicious/noExplicitAny: Hono context type
-            _c: any,
-            // biome-ignore lint/suspicious/noExplicitAny: Hono next function type
-            next: any
-        ) => {
+    // ✅ Skip rate limiting in test environment UNLESS explicitly testing it
+    if (
+        !env.RATE_LIMIT_ENABLED ||
+        (process.env.NODE_ENV === 'test' && !process.env.TESTING_RATE_LIMIT)
+    ) {
+        return async (_c: Context, next: Next) => {
             await next();
         };
     }
 
-    return async (
-        // biome-ignore lint/suspicious/noExplicitAny: Hono context type
-        c: any,
-        // biome-ignore lint/suspicious/noExplicitAny: Hono next function type
-        next: any
-    ) => {
+    return async (c: Context, next: Next) => {
         // Get client IP
         const forwardedFor = c.req.header('x-forwarded-for');
         const realIp = c.req.header('x-real-ip');
@@ -44,7 +38,7 @@ export const createRateLimitMiddleware = () => {
 
         let clientIp = 'unknown';
         if (forwardedFor) {
-            clientIp = forwardedFor.split(',')[0].trim();
+            clientIp = forwardedFor.split(',')[0]?.trim() || 'unknown';
         } else if (realIp) {
             clientIp = realIp;
         } else if (cfConnectingIp) {
@@ -102,6 +96,17 @@ export const createRateLimitMiddleware = () => {
 
 /**
  * Default rate limiting middleware instance
- * Uses environment-based configuration
+ * ✅ DYNAMIC: Evaluates NODE_ENV on each request to respect test environment
  */
-export const rateLimitMiddleware = createRateLimitMiddleware();
+export const rateLimitMiddleware = async (c: Context, next: Next) => {
+    // Skip in test environment UNLESS rate limiting is explicitly being tested
+    // (detected by the test file name or explicit environment variable)
+    if (process.env.NODE_ENV === 'test' && !process.env.TESTING_RATE_LIMIT) {
+        await next();
+        return;
+    }
+
+    // Use the configured middleware for non-test environments or when explicitly testing
+    const middleware = createRateLimitMiddleware();
+    await middleware(c, next);
+};

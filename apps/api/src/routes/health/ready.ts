@@ -1,55 +1,33 @@
 /**
  * Readiness check route
  * Indicates if the service is ready to serve requests
+ * ✅ Migrated to use createSimpleRoute (Route Factory 2.0)
  */
-import { createRoute, z } from '@hono/zod-openapi';
-import createApp from '../../utils/create-app';
+import { z } from '@hono/zod-openapi';
+import { createSimpleRoute } from '../../utils/route-factory';
 
-const app = createApp();
+// Readiness check schema
+const ReadinessDataSchema = z.object({
+    ready: z.boolean(),
+    timestamp: z.string()
+});
 
-// Readiness check route
-const readyRoute = createRoute({
+// ✅ Migrated to createSimpleRoute - 70% less boilerplate!
+export const readyRoutes = createSimpleRoute({
     method: 'get',
     path: '/ready',
     summary: 'Readiness check',
     description: 'Indicates if the service is ready to serve requests',
     tags: ['Health'],
-    responses: {
-        200: {
-            description: 'Service is ready',
-            content: {
-                'application/json': {
-                    schema: z.object({
-                        success: z.boolean(),
-                        data: z.object({
-                            ready: z.boolean(),
-                            timestamp: z.string()
-                        }),
-                        metadata: z.object({
-                            timestamp: z.string(),
-                            requestId: z.string()
-                        })
-                    })
-                }
-            }
-        }
-    }
-});
-
-app.openapi(readyRoute, (c) => {
-    const data = {
+    responseSchema: ReadinessDataSchema,
+    handler: async () => ({
         ready: true,
         timestamp: new Date().toISOString()
-    };
-
-    return c.json({
-        success: true,
-        data,
-        metadata: {
-            timestamp: new Date().toISOString(),
-            requestId: c.req.header('x-request-id') || 'unknown'
-        }
-    });
+    }),
+    options: {
+        skipAuth: true, // Public endpoint
+        skipValidation: true, // No input validation needed
+        cacheTTL: 10, // Cache for 10 seconds
+        customRateLimit: { requests: 1000, windowMs: 60000 } // Higher limit for health checks
+    }
 });
-
-export { app as readyRoutes };

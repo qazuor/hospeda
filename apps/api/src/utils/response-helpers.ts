@@ -63,7 +63,7 @@ export const createResponse = <T = unknown>(data: T, c: Context, statusCode = 20
         data,
         metadata: {
             timestamp: new Date().toISOString(),
-            requestId: c.req.header('x-request-id') || 'unknown'
+            requestId: c.get('requestId') || 'unknown'
         }
     };
 
@@ -84,7 +84,7 @@ export const createErrorResponse = (
         error,
         metadata: {
             timestamp: new Date().toISOString(),
-            requestId: c.req.header('x-request-id') || 'unknown'
+            requestId: c.get('requestId') || 'unknown'
         }
     };
 
@@ -109,7 +109,7 @@ export const createPaginatedResponse = (
         },
         metadata: {
             timestamp: new Date().toISOString(),
-            requestId: c.req.header('x-request-id') || 'unknown',
+            requestId: c.get('requestId') || 'unknown',
             total: pagination.total,
             count: items.length
         }
