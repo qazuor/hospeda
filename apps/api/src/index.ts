@@ -71,6 +71,7 @@ const startServer = async (): Promise<void> => {
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     } catch (error) {
+        console.error(error);
         apiLogger.error(
             'Failed to start server:',
             error instanceof Error ? error.message : String(error)

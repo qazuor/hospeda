@@ -8,7 +8,7 @@ import createApp from '../../utils/create-app';
 const app = createApp();
 
 // Health check schema
-const HealthResponseSchema = z.object({
+const HealthDataSchema = z.object({
     status: z.enum(['healthy', 'unhealthy']),
     timestamp: z.string(),
     uptime: z.number(),
@@ -28,7 +28,14 @@ const healthRoute = createRoute({
             description: 'API is healthy',
             content: {
                 'application/json': {
-                    schema: HealthResponseSchema
+                    schema: z.object({
+                        success: z.boolean(),
+                        data: HealthDataSchema,
+                        metadata: z.object({
+                            timestamp: z.string(),
+                            requestId: z.string()
+                        })
+                    })
                 }
             }
         }
@@ -37,13 +44,21 @@ const healthRoute = createRoute({
 
 app.openapi(healthRoute, (c) => {
     const uptime = process.uptime();
-
-    return c.json({
+    const data = {
         status: 'healthy' as const,
         timestamp: new Date().toISOString(),
         uptime,
         version: '1.0.0',
         environment: process.env.NODE_ENV || 'development'
+    };
+
+    return c.json({
+        success: true,
+        data,
+        metadata: {
+            timestamp: new Date().toISOString(),
+            requestId: c.req.header('x-request-id') || 'unknown'
+        }
     });
 });
 

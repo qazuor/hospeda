@@ -1,4 +1,5 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, z } from '@hono/zod-openapi';
+import { getActorFromContext } from '../../utils/actor';
 import createApp from '../../utils/create-app';
 import { accommodationListSchema } from './schemas';
 
@@ -15,7 +16,16 @@ export const accommodationListOpenAPIRoute = createRoute({
             description: 'accommodation list',
             content: {
                 'application/json': {
-                    schema: accommodationListSchema
+                    schema: z.object({
+                        success: z.boolean(),
+                        data: accommodationListSchema,
+                        metadata: z.object({
+                            timestamp: z.string(),
+                            requestId: z.string(),
+                            total: z.number(),
+                            count: z.number()
+                        })
+                    })
                 }
             }
         }
@@ -23,7 +33,10 @@ export const accommodationListOpenAPIRoute = createRoute({
 });
 
 app.openapi(accommodationListOpenAPIRoute, (c) => {
-    return c.json([
+    // Get actor from context (will be either authenticated user or guest)
+    const actor = getActorFromContext(c);
+
+    const accommodations = [
         {
             id: '1',
             age: 20,
@@ -34,7 +47,22 @@ app.openapi(accommodationListOpenAPIRoute, (c) => {
             age: 21,
             name: 'Super-man'
         }
-    ]);
+    ];
+
+    return c.json({
+        success: true,
+        data: accommodations,
+        metadata: {
+            timestamp: new Date().toISOString(),
+            requestId: c.req.header('x-request-id') || 'unknown',
+            total: accommodations.length,
+            count: accommodations.length,
+            actor: {
+                id: actor.id,
+                role: actor.role
+            }
+        }
+    });
 });
 
 export { app as accommodationListRoute };
