@@ -520,7 +520,7 @@ describe('Real User Scenarios End-to-End', () => {
             const initialRequestId = discoveryRes.headers.get('x-request-id');
 
             // Step 2: Data exploration
-            const exploreRes = await app.request('/api/v1/accommodations', {
+            const exploreRes = await app.request('/api/v1/public/accommodations', {
                 headers: {
                     'user-agent': userAgent,
                     accept: 'application/json'

@@ -78,7 +78,7 @@ describe('Environment Configuration', () => {
             expect(env.COMPRESSION_ALGORITHMS).toBe('gzip,deflate');
 
             // Rate Limiting Configuration
-            expect(env.RATE_LIMIT_ENABLED).toBe(true);
+            expect(env.RATE_LIMIT_ENABLED).toBe(true); // Default value (middleware ignores in tests)
             expect(env.RATE_LIMIT_WINDOW_MS).toBe(900000);
             expect(env.RATE_LIMIT_MAX_REQUESTS).toBe(100);
             expect(env.RATE_LIMIT_KEY_GENERATOR).toBe('user');

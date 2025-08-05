@@ -90,7 +90,7 @@ app.openapi(dbHealthRoute, async (c) => {
             data,
             metadata: {
                 timestamp: new Date().toISOString(),
-                requestId: c.req.header('x-request-id') || 'unknown'
+                requestId: c.get('requestId') || 'unknown'
             }
         });
     } catch (error) {
@@ -115,7 +115,7 @@ app.openapi(dbHealthRoute, async (c) => {
                 data,
                 metadata: {
                     timestamp: new Date().toISOString(),
-                    requestId: c.req.header('x-request-id') || 'unknown'
+                    requestId: c.get('requestId') || 'unknown'
                 }
             },
             503

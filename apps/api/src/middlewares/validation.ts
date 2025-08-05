@@ -134,12 +134,32 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                                 error: transformedError,
                                 metadata: {
                                     timestamp: new Date().toISOString(),
-                                    requestId: c.req.header('x-request-id') || 'unknown'
+                                    requestId: c.get('requestId') || 'unknown'
                                 }
                             },
                             400
                         );
                     }
+
+                    // Handle JSON syntax errors gracefully
+                    if (error instanceof SyntaxError && error.message.includes('JSON')) {
+                        return c.json(
+                            {
+                                success: false,
+                                error: {
+                                    code: 'INVALID_JSON',
+                                    message: 'Invalid JSON format in request body',
+                                    details: 'The request body contains malformed JSON'
+                                },
+                                metadata: {
+                                    timestamp: new Date().toISOString(),
+                                    requestId: c.get('requestId') || 'unknown'
+                                }
+                            },
+                            400
+                        );
+                    }
+
                     throw error;
                 }
             }
@@ -158,7 +178,8 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                         },
                         metadata: {
                             timestamp: new Date().toISOString(),
-                            requestId: c.req.header('x-request-id') || 'unknown'
+                            requestId:
+                                c.get('requestId') || c.req.header('x-request-id') || 'unknown'
                         }
                     },
                     400

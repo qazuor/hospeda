@@ -1,7 +1,8 @@
 /**
  * Liveness check route (v2)
  * Indicates if the service is alive
- * Uses new validation system and response factory
+ * ⚠️ REVERTED from createSimpleRoute due to security headers issue
+ * TODO: Fix route factory security headers and re-migrate
  */
 import { createRoute, z } from '@hono/zod-openapi';
 import createApp from '../../utils/create-app';
@@ -48,7 +49,7 @@ app.openapi(liveRoute, (c) => {
         data,
         metadata: {
             timestamp: new Date().toISOString(),
-            requestId: c.req.header('x-request-id') || 'unknown'
+            requestId: c.get('requestId') || 'unknown'
         }
     });
 });

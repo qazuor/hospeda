@@ -109,7 +109,7 @@ describe('Error Handling Cross-Middleware Integration', () => {
         it('should handle content-type validation errors', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/users', {
+            const res = await app.request('/api/v1/public/users', {
                 method: 'POST',
                 headers: {
                     'user-agent': 'error-test/1.0',
@@ -248,7 +248,7 @@ describe('Error Handling Cross-Middleware Integration', () => {
         it('should handle JSON parsing errors gracefully', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/users', {
+            const res = await app.request('/api/v1/public/users', {
                 method: 'POST',
                 headers: {
                     'user-agent': 'json-error-test/1.0',
@@ -282,7 +282,7 @@ describe('Error Handling Cross-Middleware Integration', () => {
         it('should handle CORS preflight errors properly', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/users', {
+            const res = await app.request('/api/v1/public/users', {
                 method: 'OPTIONS',
                 headers: {
                     origin: 'https://evil-site.com', // Not allowed origin
@@ -313,7 +313,7 @@ describe('Error Handling Cross-Middleware Integration', () => {
                 data: 'x'.repeat(10000) // 10KB of data
             });
 
-            const res = await app.request('/api/v1/users', {
+            const res = await app.request('/api/v1/public/users', {
                 method: 'POST',
                 headers: {
                     'user-agent': 'large-body-test/1.0',

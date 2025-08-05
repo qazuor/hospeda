@@ -6,6 +6,9 @@ import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearRateLimitStore, createRateLimitMiddleware } from '../../src/middlewares/rate-limit';
 
+// ✅ Enable rate limiting for this specific test file
+process.env.TESTING_RATE_LIMIT = 'true';
+
 // Mock environment
 vi.mock('../../src/utils/env', () => {
     const mockEnv = {
