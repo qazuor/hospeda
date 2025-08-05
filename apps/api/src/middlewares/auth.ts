@@ -1,18 +1,26 @@
 /**
- * Authentication middleware
- * Handles JWT validation and user authentication
+ * Authentication middleware using Clerk
+ * Provides Clerk-based authentication for protected routes
  */
-import type { MiddlewareHandler } from 'hono';
 
-export const authMiddleware: MiddlewareHandler = async (_c, next) => {
-    // TODO: Implement authentication middleware
-    // - Validate JWT tokens
-    // - Extract user information from tokens
-    // - Handle API key authentication
-    // - Check user permissions and roles
-    // - Add user context to request
-    // - Handle token refresh
-    // - Implement rate limiting per user
+import { clerkMiddleware } from '@hono/clerk-auth';
+import { env } from '../utils/env';
 
-    await next();
+/**
+ * Creates Clerk authentication middleware
+ * Uses environment variables for configuration
+ * @returns Clerk middleware instance
+ * @throws Error if required Clerk environment variables are not set
+ */
+export const clerkAuth = () => {
+    if (!env.CLERK_SECRET_KEY || !env.CLERK_PUBLISHABLE_KEY) {
+        throw new Error(
+            'Clerk environment variables (CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
+        );
+    }
+
+    return clerkMiddleware({
+        secretKey: env.CLERK_SECRET_KEY,
+        publishableKey: env.CLERK_PUBLISHABLE_KEY
+    });
 };

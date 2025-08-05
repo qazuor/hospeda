@@ -15,6 +15,8 @@ interface RouteInfo {
 interface GroupedRoutes {
     core: RouteInfo[];
     documentation: RouteInfo[];
+    metrics: RouteInfo[];
+    auth: RouteInfo[];
     users: RouteInfo[];
     accommodations: RouteInfo[];
     destinations: RouteInfo[];
@@ -79,6 +81,8 @@ const groupRoutes = (routes: RouteInfo[]): GroupedRoutes => {
     const grouped: GroupedRoutes = {
         core: [],
         documentation: [],
+        metrics: [],
+        auth: [],
         users: [],
         accommodations: [],
         destinations: [],
@@ -101,6 +105,20 @@ const groupRoutes = (routes: RouteInfo[]): GroupedRoutes => {
         // Documentation routes
         else if (path.includes('docs') || path.includes('openapi')) {
             grouped.documentation.push(route);
+        }
+        // Metrics routes
+        else if (path.includes('metrics')) {
+            grouped.metrics.push(route);
+        }
+        // Auth routes
+        else if (
+            path.includes('auth') ||
+            path.includes('login') ||
+            path.includes('logout') ||
+            path.includes('signin') ||
+            path.includes('signup')
+        ) {
+            grouped.auth.push(route);
         }
         // Entity-specific routes
         else if (path.includes('user')) {
@@ -151,6 +169,28 @@ const displayRoutes = (grouped: GroupedRoutes) => {
     if (grouped.documentation.length > 0) {
         apiLogger.info('📖 Documentation:');
         for (const route of grouped.documentation) {
+            apiLogger.info(
+                `  ${route.method.padEnd(6)} http://${env.API_HOST}:${env.API_PORT}${route.path.padEnd(35)} - ${route.description || 'No description'}`
+            );
+        }
+        apiLogger.info('');
+    }
+
+    // Metrics endpoints
+    if (grouped.metrics.length > 0) {
+        apiLogger.info('📊 Metrics:');
+        for (const route of grouped.metrics) {
+            apiLogger.info(
+                `  ${route.method.padEnd(6)} http://${env.API_HOST}:${env.API_PORT}${route.path.padEnd(35)} - ${route.description || 'No description'}`
+            );
+        }
+        apiLogger.info('');
+    }
+
+    // Auth endpoints
+    if (grouped.auth.length > 0) {
+        apiLogger.info('🔐 Authentication:');
+        for (const route of grouped.auth) {
             apiLogger.info(
                 `  ${route.method.padEnd(6)} http://${env.API_HOST}:${env.API_PORT}${route.path.padEnd(35)} - ${route.description || 'No description'}`
             );
@@ -291,6 +331,8 @@ const displayRoutes = (grouped: GroupedRoutes) => {
     apiLogger.info(`  📚 Documentation: http://${env.API_HOST}:${env.API_PORT}/docs`);
     apiLogger.info(`  🔍 API Spec: http://${env.API_HOST}:${env.API_PORT}/docs/openapi.json`);
     apiLogger.info(`  ❤️  Health Check: http://${env.API_HOST}:${env.API_PORT}/health`);
+    apiLogger.info(`  📊 Metrics: http://${env.API_HOST}:${env.API_PORT}/metrics`);
+    apiLogger.info(`  🔐 Auth Status: http://${env.API_HOST}:${env.API_PORT}/auth`);
     apiLogger.info('');
 };
 

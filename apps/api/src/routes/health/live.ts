@@ -1,6 +1,7 @@
 /**
- * Liveness check route
+ * Liveness check route (v2)
  * Indicates if the service is alive
+ * Uses new validation system and response factory
  */
 import { createRoute, z } from '@hono/zod-openapi';
 import createApp from '../../utils/create-app';
@@ -20,8 +21,15 @@ const liveRoute = createRoute({
             content: {
                 'application/json': {
                     schema: z.object({
-                        alive: z.boolean(),
-                        timestamp: z.string()
+                        success: z.boolean(),
+                        data: z.object({
+                            alive: z.boolean(),
+                            timestamp: z.string()
+                        }),
+                        metadata: z.object({
+                            timestamp: z.string(),
+                            requestId: z.string()
+                        })
                     })
                 }
             }
@@ -30,9 +38,18 @@ const liveRoute = createRoute({
 });
 
 app.openapi(liveRoute, (c) => {
-    return c.json({
+    const data = {
         alive: true,
         timestamp: new Date().toISOString()
+    };
+
+    return c.json({
+        success: true,
+        data,
+        metadata: {
+            timestamp: new Date().toISOString(),
+            requestId: c.req.header('x-request-id') || 'unknown'
+        }
     });
 });
 

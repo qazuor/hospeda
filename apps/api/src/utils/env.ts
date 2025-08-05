@@ -6,7 +6,11 @@ import { config } from 'dotenv';
 import { z } from 'zod';
 
 // Load environment variables from .env files
-config({ path: ['.env.local', '.env'] });
+const envFiles = ['.env.local', '.env'];
+if (process.env.NODE_ENV === 'test') {
+    envFiles.unshift('.env.test');
+}
+config({ path: envFiles });
 
 const EnvSchema = z.object({
     // Server Configuration
@@ -77,9 +81,6 @@ const EnvSchema = z.object({
 
     // Security Configuration
     SECURITY_ENABLED: z.coerce.boolean().default(true),
-    SECURITY_CSRF_ENABLED: z.coerce.boolean().default(true),
-    SECURITY_CSRF_ORIGIN: z.string().default('http://localhost:3000'),
-    SECURITY_CSRF_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
     SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
     SECURITY_CONTENT_SECURITY_POLICY: z
         .string()
@@ -103,14 +104,29 @@ const EnvSchema = z.object({
     RESPONSE_SUCCESS_MESSAGE: z.string().default('Success'),
     RESPONSE_ERROR_MESSAGE: z.string().default('An error occurred'),
 
+    // Validation Configuration
+    VALIDATION_MAX_BODY_SIZE: z.coerce
+        .number()
+        .positive()
+        .default(10 * 1024 * 1024), // 10MB
+    VALIDATION_MAX_REQUEST_TIME: z.coerce.number().positive().default(30000), // 30s
+    VALIDATION_ALLOWED_CONTENT_TYPES: z.string().default('application/json,multipart/form-data'),
+    VALIDATION_REQUIRED_HEADERS: z.string().default('user-agent'),
+    VALIDATION_CLERK_AUTH_ENABLED: z.coerce.boolean().default(true),
+    VALIDATION_CLERK_AUTH_HEADERS: z.string().default('authorization'),
+    VALIDATION_SANITIZE_ENABLED: z.coerce.boolean().default(true),
+    VALIDATION_SANITIZE_MAX_STRING_LENGTH: z.coerce.number().positive().default(1000),
+    VALIDATION_SANITIZE_REMOVE_HTML_TAGS: z.coerce.boolean().default(true),
+    VALIDATION_SANITIZE_ALLOWED_CHARS: z.string().default('[\\w\\s\\-.,!?@#$%&*()+=]'),
+
     // Internationalization Configuration
     SUPPORTED_LOCALES: z.string().default('en,es'),
     DEFAULT_LOCALE: z.string().default('en'),
 
-    // Database Configuration (optional for now)
+    // Database Configuration (optional)
     DATABASE_URL: z.string().optional(),
 
-    // Auth Configuration (optional for now)
+    // Auth Configuration (optional)
     CLERK_PUBLISHABLE_KEY: z.string().optional(),
     CLERK_SECRET_KEY: z.string().optional()
 });

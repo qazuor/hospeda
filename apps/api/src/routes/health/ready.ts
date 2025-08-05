@@ -20,8 +20,15 @@ const readyRoute = createRoute({
             content: {
                 'application/json': {
                     schema: z.object({
-                        ready: z.boolean(),
-                        timestamp: z.string()
+                        success: z.boolean(),
+                        data: z.object({
+                            ready: z.boolean(),
+                            timestamp: z.string()
+                        }),
+                        metadata: z.object({
+                            timestamp: z.string(),
+                            requestId: z.string()
+                        })
                     })
                 }
             }
@@ -30,9 +37,18 @@ const readyRoute = createRoute({
 });
 
 app.openapi(readyRoute, (c) => {
-    return c.json({
+    const data = {
         ready: true,
         timestamp: new Date().toISOString()
+    };
+
+    return c.json({
+        success: true,
+        data,
+        metadata: {
+            timestamp: new Date().toISOString(),
+            requestId: c.req.header('x-request-id') || 'unknown'
+        }
     });
 });
 

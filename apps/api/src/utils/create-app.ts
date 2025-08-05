@@ -2,17 +2,20 @@ import type { Context, MiddlewareHandler, Schema } from 'hono';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { requestId } from 'hono/request-id';
-import { authMiddleware } from '../middlewares/auth';
+import { actorMiddleware } from '../middlewares/actor';
+import { clerkAuth } from '../middlewares/auth';
 import { cacheMiddleware } from '../middlewares/cache';
 import { compressionMiddleware } from '../middlewares/compression';
 import { corsMiddleware } from '../middlewares/cors';
 import { loggerMiddleware } from '../middlewares/logger';
+import { createErrorHandler } from '../middlewares/response';
+
 import { metricsMiddleware } from '../middlewares/metrics';
 import { rateLimitMiddleware } from '../middlewares/rate-limit';
 import { responseFormattingMiddleware } from '../middlewares/response';
 import { securityHeadersMiddleware } from '../middlewares/security';
 import { validationMiddleware } from '../middlewares/validation';
-import type { AppBindings, AppOpenAPI } from '../types';
+import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
 
 // Strongly typed middleware functions
 const serveEmojiFavicon =
@@ -33,12 +36,9 @@ const notFound = async (c: Context<AppBindings>) => {
     );
 };
 
-const onError = async (err: Error, c: Context<AppBindings>) => {
-    console.error('Unhandled error:', err);
-    return c.json(
-        { success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
-        500
-    );
+// Type-safe middleware wrappers for OpenAPIHono compatibility
+const wrapMiddleware = (middleware: MiddlewareHandler): AppMiddleware => {
+    return middleware as AppMiddleware;
 };
 
 export function createRouter() {
@@ -50,35 +50,25 @@ export function createRouter() {
 export default function createApp() {
     const app = createRouter();
 
-    // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues require type assertions
-    app.use(requestId() as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(serveEmojiFavicon('📝') as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(loggerMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(corsMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(rateLimitMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(securityHeadersMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(compressionMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(cacheMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(metricsMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(validationMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(responseFormattingMiddleware as any)
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        .use(authMiddleware as any);
+    // Set up global error handler
+    app.onError(createErrorHandler());
 
-    // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-    app.notFound(notFound as any);
-    // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-    app.onError(onError as any);
+    app.use(wrapMiddleware(requestId()))
+        .use(serveEmojiFavicon('📝'))
+        .use(wrapMiddleware(loggerMiddleware))
+        .use(wrapMiddleware(corsMiddleware))
+        .use(wrapMiddleware(rateLimitMiddleware))
+        .use(wrapMiddleware(securityHeadersMiddleware))
+        .use(wrapMiddleware(compressionMiddleware))
+        .use(wrapMiddleware(cacheMiddleware))
+        .use(wrapMiddleware(metricsMiddleware))
+        .use(wrapMiddleware(validationMiddleware))
+        .use(wrapMiddleware(responseFormattingMiddleware))
+        .use(wrapMiddleware(clerkAuth()))
+        .use(wrapMiddleware(actorMiddleware()));
+
+    app.notFound(notFound);
+
     return app;
 }
 
