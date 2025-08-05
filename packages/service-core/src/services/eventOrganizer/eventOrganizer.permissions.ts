@@ -1,6 +1,6 @@
-import { ServiceError } from '@repo/service-core';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
 import type { Actor } from '../../types';
+import { ServiceError } from '../../types';
 
 /**
  * Checks if the actor can create an event organizer.

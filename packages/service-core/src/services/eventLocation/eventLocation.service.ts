@@ -1,9 +1,10 @@
 import { EventLocationModel } from '@repo/db';
-import { BaseCrudService, ServiceError } from '@repo/service-core';
 import type { EventLocationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
+import { BaseCrudService } from '../../base';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
+import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventLocation.normalizers';
 import {
     checkCanCreateEventLocation,

@@ -1,7 +1,7 @@
-import { ServiceError } from '@repo/service-core';
 import type { PostSponsorType } from '@repo/types';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
 import type { Actor } from '../../types';
+import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 
 /**

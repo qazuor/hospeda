@@ -1,6 +1,6 @@
-import { ServiceError } from '@repo/service-core';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
 import type { Actor } from '../../types';
+import { ServiceError } from '../../types';
 
 export function checkCanManagePostSponsorship(actor: Actor): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');

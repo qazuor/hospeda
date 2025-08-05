@@ -1,7 +1,7 @@
 import type { PostSponsorshipModel } from '@repo/db';
 import { PostSponsorshipModel as RealPostSponsorshipModel } from '@repo/db';
-import { BaseCrudService } from '@repo/service-core';
 import type { PostSponsorshipType } from '@repo/types';
+import { BaseCrudService } from '../../base';
 import type { Actor, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsorship.normalizers';
 import {

@@ -1,7 +1,7 @@
 import type { PostSponsorModel } from '@repo/db';
 import { PostSponsorModel as RealPostSponsorModel } from '@repo/db';
-import { BaseCrudService } from '@repo/service-core';
 import type { PostSponsorType } from '@repo/types';
+import { BaseCrudService } from '../../base';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsor.normalizers';
 import { checkCanManagePostSponsor } from './postSponsor.permissions';
