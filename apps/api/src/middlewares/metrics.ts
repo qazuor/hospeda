@@ -6,22 +6,130 @@ import { logger } from '@repo/logger';
 import type { Context, MiddlewareHandler } from 'hono';
 
 /**
- * Metrics store for in-memory tracking
+ * Configuration for metrics optimization
+ */
+interface MetricsConfig {
+    maxSamplesPerEndpoint: number;
+    maxEndpoints: number;
+    cleanupIntervalMs: number;
+    maxMemoryMB: number;
+    enablePercentiles: boolean;
+}
+
+/**
+ * Default metrics configuration with memory optimization
+ */
+const DEFAULT_METRICS_CONFIG: MetricsConfig = {
+    maxSamplesPerEndpoint: 200, // Increased from 100 for better percentiles
+    maxEndpoints: 50, // Limit total endpoints tracked
+    cleanupIntervalMs: 5 * 60 * 1000, // Cleanup every 5 minutes
+    maxMemoryMB: 10, // Rough memory limit (10MB)
+    enablePercentiles: true
+};
+
+/**
+ * Enhanced metrics store with memory optimization and percentiles
  * In production, this would be replaced with a proper metrics backend
  */
 class MetricsStore {
     private requestCounts = new Map<string, number>();
     private responseTimes = new Map<string, number[]>();
     private errorCounts = new Map<string, number>();
+    private endpointLastAccess = new Map<string, number>(); // Track last access time
     private activeConnections = 0;
     private totalRequests = 0;
     private totalErrors = 0;
+    private config: MetricsConfig;
+    private cleanupTimer?: NodeJS.Timeout;
+
+    constructor(config: Partial<MetricsConfig> = {}) {
+        this.config = { ...DEFAULT_METRICS_CONFIG, ...config };
+        this.startPeriodicCleanup();
+    }
+
+    /**
+     * Start periodic cleanup to prevent memory leaks
+     */
+    private startPeriodicCleanup(): void {
+        if (this.cleanupTimer) {
+            clearInterval(this.cleanupTimer);
+        }
+
+        this.cleanupTimer = setInterval(() => {
+            this.performCleanup();
+        }, this.config.cleanupIntervalMs);
+    }
+
+    /**
+     * Perform memory cleanup by removing old/unused endpoints
+     */
+    private performCleanup(): void {
+        const now = Date.now();
+        const cleanupThreshold = 30 * 60 * 1000; // 30 minutes ago
+
+        // Remove endpoints not accessed recently
+        for (const [endpoint, lastAccess] of this.endpointLastAccess.entries()) {
+            if (now - lastAccess > cleanupThreshold) {
+                this.removeEndpoint(endpoint);
+            }
+        }
+
+        // If still over limit, remove oldest endpoints
+        if (this.requestCounts.size > this.config.maxEndpoints) {
+            const sortedByAccess = Array.from(this.endpointLastAccess.entries())
+                .sort(([, a], [, b]) => a - b)
+                .slice(0, this.requestCounts.size - this.config.maxEndpoints);
+
+            for (const [endpoint] of sortedByAccess) {
+                this.removeEndpoint(endpoint);
+            }
+        }
+
+        logger.debug(`Metrics cleanup completed. Active endpoints: ${this.requestCounts.size}`);
+    }
+
+    /**
+     * Remove all data for a specific endpoint
+     */
+    private removeEndpoint(endpoint: string): void {
+        this.requestCounts.delete(endpoint);
+        this.responseTimes.delete(endpoint);
+        this.errorCounts.delete(endpoint);
+        this.endpointLastAccess.delete(endpoint);
+    }
+
+    /**
+     * Calculate percentiles from response times
+     */
+    private calculatePercentiles(times: number[]): { p95: number; p99: number } {
+        if (!this.config.enablePercentiles || times.length === 0) {
+            return { p95: 0, p99: 0 };
+        }
+
+        const sorted = [...times].sort((a, b) => a - b);
+        const p95Index = Math.ceil(sorted.length * 0.95) - 1;
+        const p99Index = Math.ceil(sorted.length * 0.99) - 1;
+
+        return {
+            p95: sorted[Math.max(0, p95Index)] || 0,
+            p99: sorted[Math.max(0, p99Index)] || 0
+        };
+    }
+
+    /**
+     * Update last access time for an endpoint
+     */
+    private updateLastAccess(endpoint: string): void {
+        this.endpointLastAccess.set(endpoint, Date.now());
+    }
 
     /**
      * Increment request count for a specific endpoint
      */
     incrementRequest(endpoint: string): void {
         this.totalRequests++;
+        this.updateLastAccess(endpoint);
+
         const current = this.requestCounts.get(endpoint) || 0;
         this.requestCounts.set(endpoint, current + 1);
     }
@@ -30,12 +138,16 @@ class MetricsStore {
      * Record response time for an endpoint
      */
     recordResponseTime(endpoint: string, timeMs: number): void {
+        this.updateLastAccess(endpoint);
+
         const times = this.responseTimes.get(endpoint) || [];
         times.push(timeMs);
-        // Keep only last 100 measurements to prevent memory bloat
-        if (times.length > 100) {
+
+        // Use configurable limit instead of hardcoded 100
+        if (times.length > this.config.maxSamplesPerEndpoint) {
             times.shift();
         }
+
         this.responseTimes.set(endpoint, times);
     }
 
@@ -44,6 +156,8 @@ class MetricsStore {
      */
     incrementError(endpoint: string): void {
         this.totalErrors++;
+        this.updateLastAccess(endpoint);
+
         const current = this.errorCounts.get(endpoint) || 0;
         this.errorCounts.set(endpoint, current + 1);
     }
@@ -73,6 +187,7 @@ class MetricsStore {
                         : 0;
                 const maxResponseTime = responseTimes.length > 0 ? Math.max(...responseTimes) : 0;
                 const minResponseTime = responseTimes.length > 0 ? Math.min(...responseTimes) : 0;
+                const percentiles = this.calculatePercentiles(responseTimes);
 
                 return {
                     endpoint,
@@ -81,7 +196,10 @@ class MetricsStore {
                     errorRate: requests > 0 ? (errors / requests) * 100 : 0,
                     avgResponseTime: Math.round(avgResponseTime * 100) / 100,
                     maxResponseTime,
-                    minResponseTime
+                    minResponseTime,
+                    p95ResponseTime: percentiles.p95,
+                    p99ResponseTime: percentiles.p99,
+                    sampleCount: responseTimes.length
                 };
             }
         );
@@ -106,9 +224,41 @@ class MetricsStore {
         this.requestCounts.clear();
         this.responseTimes.clear();
         this.errorCounts.clear();
+        this.endpointLastAccess.clear();
         this.activeConnections = 0;
         this.totalRequests = 0;
         this.totalErrors = 0;
+    }
+
+    /**
+     * Get memory usage statistics
+     */
+    getMemoryStats(): { endpointCount: number; totalSamples: number; estimatedMemoryMB: number } {
+        const endpointCount = this.requestCounts.size;
+        const totalSamples = Array.from(this.responseTimes.values()).reduce(
+            (sum, times) => sum + times.length,
+            0
+        );
+
+        // Rough estimation: each sample ~8 bytes + overhead
+        const estimatedMemoryMB = (totalSamples * 8 + endpointCount * 100) / (1024 * 1024);
+
+        return {
+            endpointCount,
+            totalSamples,
+            estimatedMemoryMB: Math.round(estimatedMemoryMB * 100) / 100
+        };
+    }
+
+    /**
+     * Cleanup and destroy the metrics store
+     */
+    destroy(): void {
+        if (this.cleanupTimer) {
+            clearInterval(this.cleanupTimer);
+            this.cleanupTimer = undefined;
+        }
+        this.reset();
     }
 }
 
@@ -279,6 +429,12 @@ export const getPrometheusMetrics = (): string => {
     lines.push('# HELP http_request_duration_seconds HTTP request duration in seconds');
     lines.push('# TYPE http_request_duration_seconds histogram');
 
+    lines.push('# HELP http_request_duration_p95_seconds 95th percentile response time');
+    lines.push('# TYPE http_request_duration_p95_seconds gauge');
+
+    lines.push('# HELP http_request_duration_p99_seconds 99th percentile response time');
+    lines.push('# TYPE http_request_duration_p99_seconds gauge');
+
     lines.push('# HELP http_errors_total Total number of HTTP errors');
     lines.push('# TYPE http_errors_total counter');
 
@@ -291,6 +447,8 @@ export const getPrometheusMetrics = (): string => {
             `http_request_duration_seconds_sum${labels} ${(endpoint.avgResponseTime * endpoint.requests) / 1000}`
         );
         lines.push(`http_request_duration_seconds_count${labels} ${endpoint.requests}`);
+        lines.push(`http_request_duration_p95_seconds${labels} ${endpoint.p95ResponseTime / 1000}`);
+        lines.push(`http_request_duration_p99_seconds${labels} ${endpoint.p99ResponseTime / 1000}`);
     }
 
     // Add global metrics
@@ -299,6 +457,44 @@ export const getPrometheusMetrics = (): string => {
     lines.push(`http_active_connections ${metrics.summary.activeConnections}`);
 
     return `${lines.join('\n')}\n`;
+};
+
+/**
+ * Get memory usage statistics
+ */
+export const getMemoryStats = () => {
+    return metricsStore.getMemoryStats();
+};
+
+/**
+ * Get detailed metrics with percentiles
+ */
+export const getDetailedMetrics = () => {
+    const metrics = metricsStore.getMetrics();
+    const memoryStats = metricsStore.getMemoryStats();
+
+    return {
+        ...metrics,
+        performance: {
+            memoryUsage: memoryStats,
+            optimization: {
+                endpointLimit: DEFAULT_METRICS_CONFIG.maxEndpoints,
+                samplesPerEndpoint: DEFAULT_METRICS_CONFIG.maxSamplesPerEndpoint,
+                cleanupInterval: DEFAULT_METRICS_CONFIG.cleanupIntervalMs / 1000 / 60, // minutes
+                percentilesEnabled: DEFAULT_METRICS_CONFIG.enablePercentiles
+            }
+        }
+    };
+};
+
+/**
+ * Configure metrics optimization (for advanced usage)
+ */
+export const configureMetrics = (config: Partial<MetricsConfig>) => {
+    // Note: This would require recreating the store with new config
+    // For now, we log the configuration change
+    logger.info({ config }, 'Metrics configuration update requested (requires restart)');
+    return { success: false, reason: 'Configuration changes require application restart' };
 };
 
 /**
