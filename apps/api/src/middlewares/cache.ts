@@ -3,15 +3,17 @@
  * Uses the Web Standards' Cache API
  */
 import { cache } from 'hono/cache';
-import { env } from '../utils/env';
+import { getCacheConfig } from '../utils/env';
 
 /**
  * Creates cache middleware with environment-based configuration
  * @returns Configured cache middleware
  */
 export const createCacheMiddleware = () => {
+    const cacheConfig = getCacheConfig();
+
     // Skip cache if disabled
-    if (!env.CACHE_ENABLED) {
+    if (!cacheConfig.enabled) {
         return async (
             // biome-ignore lint/suspicious/noExplicitAny: Hono context type
             _c: any,
@@ -22,22 +24,23 @@ export const createCacheMiddleware = () => {
         };
     }
 
-    // Parse endpoint lists from environment
-    const publicEndpoints = env.CACHE_PUBLIC_ENDPOINTS.split(',').map((p) => p.trim());
-    const privateEndpoints = env.CACHE_PRIVATE_ENDPOINTS.split(',').map((p) => p.trim());
-    const noCacheEndpoints = env.CACHE_NO_CACHE_ENDPOINTS.split(',').map((p) => p.trim());
-
     return cache({
         cacheName: 'hospeda-api',
-        cacheControl: `public, max-age=${env.CACHE_DEFAULT_MAX_AGE}, stale-while-revalidate=${env.CACHE_DEFAULT_STALE_WHILE_REVALIDATE}, stale-if-error=${env.CACHE_DEFAULT_STALE_IF_ERROR}`,
+        cacheControl: `public, max-age=${cacheConfig.maxAge}, stale-while-revalidate=${cacheConfig.staleWhileRevalidate}, stale-if-error=${cacheConfig.staleIfError}`,
         vary: ['Accept-Encoding', 'Accept-Language'],
         keyGenerator: (c) => {
             const path = c.req.path;
 
             // Check if path matches any configured endpoints
-            const isPublic = publicEndpoints.some((endpoint) => path.startsWith(endpoint));
-            const isPrivate = privateEndpoints.some((endpoint) => path.startsWith(endpoint));
-            const isNoCache = noCacheEndpoints.some((endpoint) => path.startsWith(endpoint));
+            const isPublic = cacheConfig.publicEndpoints.some((endpoint) =>
+                path.startsWith(endpoint)
+            );
+            const isPrivate = cacheConfig.privateEndpoints.some((endpoint) =>
+                path.startsWith(endpoint)
+            );
+            const isNoCache = cacheConfig.noCacheEndpoints.some((endpoint) =>
+                path.startsWith(endpoint)
+            );
 
             if (isNoCache) {
                 // Return unique key to prevent caching

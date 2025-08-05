@@ -310,6 +310,9 @@ describe('Metrics Middleware', () => {
         it('should log slow requests', async () => {
             const { logger } = await import('@repo/logger');
 
+            // Ensure the mock is properly set up after clearAllMocks
+            vi.mocked(logger.warn).mockImplementation(() => {});
+
             app.use(metricsMiddleware);
             app.get('/slow', async (c) => {
                 await new Promise((resolve) => setTimeout(resolve, 1001)); // Simulate slow request
@@ -317,6 +320,9 @@ describe('Metrics Middleware', () => {
             });
 
             await app.request('/slow');
+
+            // Wait longer for async logging to complete
+            await new Promise((resolve) => setTimeout(resolve, 50));
 
             expect(logger.warn).toHaveBeenCalledWith(
                 expect.objectContaining({

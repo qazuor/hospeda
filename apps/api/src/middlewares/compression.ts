@@ -3,15 +3,17 @@
  * Compresses response bodies according to Accept-Encoding header
  */
 import { compress } from 'hono/compress';
-import { env } from '../utils/env';
+import { getCompressionConfig } from '../utils/env';
 
 /**
  * Creates compression middleware with environment-based configuration
  * @returns Configured compression middleware
  */
 export const createCompressionMiddleware = () => {
+    const compressionConfig = getCompressionConfig();
+
     // Skip compression if disabled
-    if (!env.COMPRESSION_ENABLED) {
+    if (!compressionConfig.enabled) {
         return async (
             // biome-ignore lint/suspicious/noExplicitAny: Hono context type
             _c: any,
@@ -22,21 +24,24 @@ export const createCompressionMiddleware = () => {
         };
     }
 
-    // Parse algorithms from environment
-    const algorithms = env.COMPRESSION_ALGORITHMS.split(',').map((a) => a.trim());
-
     // Determine encoding based on available algorithms
     let encoding: 'gzip' | 'deflate' | undefined;
-    if (algorithms.includes('gzip') && !algorithms.includes('deflate')) {
+    if (
+        compressionConfig.algorithms.includes('gzip') &&
+        !compressionConfig.algorithms.includes('deflate')
+    ) {
         encoding = 'gzip';
-    } else if (algorithms.includes('deflate') && !algorithms.includes('gzip')) {
+    } else if (
+        compressionConfig.algorithms.includes('deflate') &&
+        !compressionConfig.algorithms.includes('gzip')
+    ) {
         encoding = 'deflate';
     }
     // If both or neither are specified, let Hono choose based on Accept-Encoding
 
     return compress({
         encoding,
-        threshold: env.COMPRESSION_THRESHOLD
+        threshold: compressionConfig.threshold
     });
 };
 
