@@ -4,7 +4,13 @@
  */
 import { createRoute } from '@hono/zod-openapi';
 import { z } from 'zod';
-import { getMetrics, getPrometheusMetrics, resetMetrics } from '../../middlewares/metrics';
+import {
+    getApiMetrics,
+    getMetrics,
+    getPrometheusMetrics,
+    getSystemMetrics,
+    resetMetrics
+} from '../../middlewares/metrics';
 import { createRouter } from '../../utils/create-app';
 
 // Metrics response schema
@@ -29,13 +35,13 @@ const MetricsResponseSchema = z.object({
     )
 });
 
-// Get metrics endpoint
+// Get all metrics endpoint
 const getMetricsRoute = createRoute({
     method: 'get',
     path: '/',
     tags: ['Metrics'],
-    summary: 'Get application metrics',
-    description: 'Returns comprehensive metrics about API performance',
+    summary: 'Get all application metrics',
+    description: 'Returns comprehensive metrics about all API endpoints performance',
     responses: {
         200: {
             content: {
@@ -66,6 +72,51 @@ const getPrometheusMetricsRoute = createRoute({
                 }
             },
             description: 'Prometheus metrics data'
+        }
+    }
+});
+
+// Get API metrics endpoint
+const getApiMetricsRoute = createRoute({
+    method: 'get',
+    path: '/api',
+    tags: ['Metrics'],
+    summary: 'Get API endpoints metrics',
+    description:
+        'Returns metrics only for public/admin API endpoints (users, accommodations, etc.)',
+    responses: {
+        200: {
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        success: z.boolean(),
+                        data: MetricsResponseSchema
+                    })
+                }
+            },
+            description: 'API metrics data retrieved successfully'
+        }
+    }
+});
+
+// Get system metrics endpoint
+const getSystemMetricsRoute = createRoute({
+    method: 'get',
+    path: '/system',
+    tags: ['Metrics'],
+    summary: 'Get system endpoints metrics',
+    description: 'Returns metrics only for system endpoints (health, docs, metrics)',
+    responses: {
+        200: {
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        success: z.boolean(),
+                        data: MetricsResponseSchema
+                    })
+                }
+            },
+            description: 'System metrics data retrieved successfully'
         }
     }
 });
@@ -108,6 +159,22 @@ router.openapi(getPrometheusMetricsRoute, (c) => {
     const prometheusMetrics = getPrometheusMetrics();
     return c.text(prometheusMetrics, 200, {
         'Content-Type': 'text/plain; version=0.0.4; charset=utf-8'
+    });
+});
+
+router.openapi(getApiMetricsRoute, (c) => {
+    const metrics = getApiMetrics();
+    return c.json({
+        success: true,
+        data: metrics
+    });
+});
+
+router.openapi(getSystemMetricsRoute, (c) => {
+    const metrics = getSystemMetrics();
+    return c.json({
+        success: true,
+        data: metrics
     });
 });
 
