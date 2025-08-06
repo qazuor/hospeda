@@ -219,21 +219,26 @@ describe('Performance Stack Integration', () => {
                 })),
                 // API calls (potentially slower)
                 ...Array.from({ length: 2 }, (_, i) => ({
-                    path: '/api/v1/accommodations',
+                    path: '/api/v1/public/accommodations',
                     userAgent: `api-call-${i}/1.0`
                 }))
             ];
 
-            const startTime = Date.now();
-            const requests = workload.map(({ path, userAgent }) =>
-                app.request(path, {
-                    headers: {
-                        'user-agent': userAgent,
-                        accept: 'application/json'
-                    }
-                })
+            // Create request functions instead of executing them immediately
+            const requestFunctions = workload.map(
+                ({ path, userAgent }) =>
+                    () =>
+                        app.request(path, {
+                            headers: {
+                                'user-agent': userAgent,
+                                accept: 'application/json'
+                            }
+                        })
             );
 
+            // Execute all requests and measure performance
+            const startTime = Date.now();
+            const requests = requestFunctions.map((fn) => fn());
             const metrics = await measurePerformance(requests, startTime);
 
             // Mixed workload performance

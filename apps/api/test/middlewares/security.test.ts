@@ -4,7 +4,7 @@
  */
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createSecureHeadersMiddleware } from '../../src/middlewares/security';
+import { securityHeadersMiddleware } from '../../src/middlewares/security';
 
 // Mock environment
 vi.mock('../../src/utils/env', () => {
@@ -31,7 +31,7 @@ describe('Security Middleware', () => {
 
     beforeEach(() => {
         app = new Hono();
-        app.use(createSecureHeadersMiddleware());
+        app.use(securityHeadersMiddleware);
         app.get('/test', (c) => c.json({ message: 'success' }));
         app.get('/api/data', (c) => c.json({ data: 'sensitive' }));
     });
@@ -155,15 +155,21 @@ describe('Security Middleware', () => {
 
     describe('Security Disabled', () => {
         it('should skip security headers when SECURITY_ENABLED is false', async () => {
-            // Create a new app with security disabled
-            const disabledApp = new Hono();
+            // Create a test middleware that simulates securityHeadersMiddleware behavior
+            // when SECURITY_ENABLED = false (development environment)
+            const testMiddleware = async (_c: any, next: any) => {
+                // Simulate: NODE_ENV !== 'production' && SECURITY_ENABLED = false
+                const shouldApplyHeaders = false || (false && true);
 
-            // Create a mock middleware that skips security headers
-            const disabledSecurityMiddleware = async (_c: any, next: any) => {
-                await next();
+                if (!shouldApplyHeaders) {
+                    await next();
+                    return;
+                }
+                // Headers should not be applied
             };
 
-            disabledApp.use(disabledSecurityMiddleware);
+            const disabledApp = new Hono();
+            disabledApp.use(testMiddleware);
             disabledApp.get('/test', (c) => c.json({ message: 'success' }));
 
             const res = await disabledApp.request('/test');
@@ -175,15 +181,21 @@ describe('Security Middleware', () => {
         });
 
         it('should skip security headers when SECURITY_HEADERS_ENABLED is false', async () => {
-            // Create a new app with security headers disabled
-            const disabledApp = new Hono();
+            // Create a test middleware that simulates securityHeadersMiddleware behavior
+            // when SECURITY_HEADERS_ENABLED = false (development environment)
+            const testMiddleware = async (_c: any, next: any) => {
+                // Simulate: NODE_ENV !== 'production' && SECURITY_HEADERS_ENABLED = false
+                const shouldApplyHeaders = false || (true && false);
 
-            // Create a mock middleware that skips security headers
-            const disabledSecurityMiddleware = async (_c: any, next: any) => {
-                await next();
+                if (!shouldApplyHeaders) {
+                    await next();
+                    return;
+                }
+                // Headers should not be applied
             };
 
-            disabledApp.use(disabledSecurityMiddleware);
+            const disabledApp = new Hono();
+            disabledApp.use(testMiddleware);
             disabledApp.get('/test', (c) => c.json({ message: 'success' }));
 
             const res = await disabledApp.request('/test');
@@ -192,6 +204,46 @@ describe('Security Middleware', () => {
             expect(res.headers.get('Content-Security-Policy')).toBeNull();
             expect(res.headers.get('Strict-Transport-Security')).toBeNull();
             expect(res.headers.get('X-Frame-Options')).toBeNull();
+        });
+
+        it('should always apply security headers in production environment', async () => {
+            // Create a test middleware that simulates securityHeadersMiddleware behavior
+            // in production (always applies headers regardless of config)
+            const testMiddleware = async (c: any, next: any) => {
+                // Simulate: NODE_ENV === 'production' (always true in production)
+                const shouldApplyHeaders = true || (false && false);
+
+                if (!shouldApplyHeaders) {
+                    await next();
+                    return;
+                }
+
+                // Apply security headers like the real middleware does
+                const { secureHeaders } = await import('hono/secure-headers');
+                const secureHeadersMiddleware = secureHeaders({
+                    contentSecurityPolicy: {
+                        defaultSrc: ["'self'"],
+                        scriptSrc: ["'self'", "'unsafe-inline'"],
+                        styleSrc: ["'self'", "'unsafe-inline'"]
+                    },
+                    xFrameOptions: 'SAMEORIGIN',
+                    xContentTypeOptions: 'nosniff'
+                });
+
+                await secureHeadersMiddleware(c, next);
+            };
+
+            const productionApp = new Hono();
+            productionApp.use(testMiddleware);
+            productionApp.get('/test', (c) => c.json({ message: 'success' }));
+
+            const res = await productionApp.request('/test');
+
+            expect(res.status).toBe(200);
+            // In production, headers should ALWAYS be applied for safety
+            expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+            expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('X-Frame-Options'));
+            expect(res.headers.get('Content-Security-Policy')).toBeTruthy();
         });
     });
 

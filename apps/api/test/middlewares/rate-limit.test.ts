@@ -1,15 +1,13 @@
-import { Hono } from 'hono';
 /**
  * Rate Limit Middleware Tests
  * Tests the rate limiting functionality including IP detection, limits, and error handling
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearRateLimitStore, createRateLimitMiddleware } from '../../src/middlewares/rate-limit';
 
 // ✅ Enable rate limiting for this specific test file
 process.env.TESTING_RATE_LIMIT = 'true';
 
-// Mock environment
+// Mock environment BEFORE any imports
 vi.mock('../../src/utils/env', () => {
     const mockEnv = {
         RATE_LIMIT_ENABLED: true,
@@ -27,6 +25,9 @@ vi.mock('../../src/utils/env', () => {
         env: mockEnv
     };
 });
+
+import { Hono } from 'hono';
+import { clearRateLimitStore, createRateLimitMiddleware } from '../../src/middlewares/rate-limit';
 
 describe('Rate Limit Middleware', () => {
     let app: Hono;
