@@ -76,6 +76,38 @@ export function createTestApp<S extends Schema>(router: AppOpenAPI<S>): AppOpenA
     return createApp().route('/', router);
 }
 
+/**
+ * Creates a minimal Hono app with only essential middlewares
+ * Useful for documentation endpoints that need basic functionality but avoid interference
+ */
+export function createSimpleApp() {
+    const app = createRouter();
+
+    // Set up global error handler (essential for proper error handling)
+    app.onError(createErrorHandler());
+
+    // Essential middlewares for documentation endpoints
+    app.use(wrapMiddleware(requestId()));
+    app.use(serveEmojiFavicon('📝'));
+    app.use(wrapMiddleware(loggerMiddleware)); // Needed for debugging
+    app.use(wrapMiddleware(corsMiddleware)); // Needed for cross-origin requests and assets
+    app.use(wrapMiddleware(compressionMiddleware)); // Helps with large documentation assets
+
+    // Skip these middlewares that can interfere with documentation:
+    // - rateLimitMiddleware (can block documentation loading)
+    // - securityHeadersMiddleware (CSP can block inline scripts/styles)
+    // - cacheMiddleware (can cause stale documentation)
+    // - metricsMiddleware (not needed for docs)
+    // - validationMiddleware (not needed for static content)
+    // - responseFormattingMiddleware (can interfere with HTML responses)
+    // - clerkAuth (documentation should be public)
+    // - actorMiddleware (documentation should be public)
+
+    app.notFound(notFound);
+
+    return app;
+}
+
 const app = createApp();
 
 export const getApp = () => {

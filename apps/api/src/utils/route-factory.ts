@@ -154,8 +154,28 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createApp>, options?: Rout
         secureHeaders({
             contentSecurityPolicy: {
                 defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "'unsafe-inline'"],
-                styleSrc: ["'self'", "'unsafe-inline'"]
+                scriptSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    // Allow CDNs for documentation UI (Swagger, Scalar)
+                    'https://cdn.jsdelivr.net',
+                    'https://unpkg.com'
+                ],
+                styleSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    // Allow CDNs for documentation UI (Swagger, Scalar)
+                    'https://cdn.jsdelivr.net',
+                    'https://unpkg.com'
+                ],
+                fontSrc: [
+                    "'self'",
+                    'data:',
+                    // Allow fonts for documentation UI (Scalar)
+                    'https://fonts.scalar.com',
+                    'https://fonts.googleapis.com',
+                    'https://fonts.gstatic.com'
+                ]
             },
             strictTransportSecurity: 'max-age=31536000; includeSubDomains',
             xFrameOptions: 'SAMEORIGIN',
