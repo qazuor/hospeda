@@ -30,11 +30,7 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
 
     // Skip security headers for documentation routes
     // These routes may need different CSP settings for UI functionality
-    if (
-        c.req.path.startsWith('/docs') ||
-        c.req.path.startsWith('/reference') ||
-        c.req.path.startsWith('/ui')
-    ) {
+    if (c.req.path.startsWith('/docs')) {
         await next();
         return;
     }

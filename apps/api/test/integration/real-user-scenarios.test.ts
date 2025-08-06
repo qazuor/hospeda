@@ -44,6 +44,55 @@ vi.mock('@hono/clerk-auth', () => ({
     clerkMiddleware: vi.fn(() => (_c: any, next: any) => next())
 }));
 
+// Mock service-core for AccommodationService
+vi.mock('@repo/service-core', () => {
+    return {
+        AccommodationService: vi.fn().mockImplementation(() => ({
+            list: vi.fn().mockResolvedValue({
+                data: {
+                    items: [
+                        {
+                            id: 'acc_123',
+                            name: 'Test Accommodation',
+                            slug: 'test-accommodation',
+                            description: 'A test accommodation for scenarios'
+                        }
+                    ],
+                    total: 1
+                }
+            }),
+            getById: vi.fn().mockResolvedValue({
+                data: {
+                    id: 'acc_123',
+                    name: 'Test Accommodation',
+                    slug: 'test-accommodation',
+                    description: 'A test accommodation for scenarios'
+                }
+            }),
+            getBySlug: vi.fn().mockResolvedValue({
+                data: {
+                    id: 'acc_123',
+                    name: 'Test Accommodation',
+                    slug: 'test-accommodation',
+                    description: 'A test accommodation for scenarios'
+                }
+            }),
+            create: vi.fn(),
+            update: vi.fn(),
+            softDelete: vi.fn(),
+            hardDelete: vi.fn(),
+            restore: vi.fn()
+        })),
+        UserService: vi.fn().mockImplementation(() => ({
+            list: vi.fn().mockResolvedValue({ data: { items: [], total: 0 } }),
+            getById: vi.fn().mockResolvedValue({ data: null }),
+            create: vi.fn(),
+            update: vi.fn(),
+            softDelete: vi.fn()
+        }))
+    };
+});
+
 describe('Real User Scenarios End-to-End', () => {
     beforeEach(() => {
         vi.clearAllMocks();

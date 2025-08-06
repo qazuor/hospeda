@@ -138,6 +138,13 @@ export const responseFormattingMiddleware: MiddlewareHandler = async (c, next) =
         return;
     }
 
+    // Skip response formatting for documentation routes
+    // These routes need to return raw content (HTML, JSON spec, etc.)
+    if (c.req.path.startsWith('/docs/')) {
+        await next();
+        return;
+    }
+
     // Store the original json method
     const originalJson = c.json.bind(c);
 

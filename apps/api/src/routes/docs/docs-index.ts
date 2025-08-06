@@ -3,9 +3,9 @@
  * Redirects to the main API documentation interface
  */
 import { createRoute } from '@hono/zod-openapi';
-import createApp from '../../utils/create-app';
+import { createSimpleApp } from '../../utils/create-app';
 
-const app = createApp();
+const app = createSimpleApp();
 
 // Documentation index route - redirects to Swagger UI
 const docsIndexRoute = createRoute({
