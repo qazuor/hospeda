@@ -1,5 +1,11 @@
 import type { AppOpenAPI } from '../types';
+import { apiLogger } from '../utils/logger';
 import { accommodationRoutes } from './accommodation';
+
+// Debug: Add logging around accommodation route import
+apiLogger.debug('🏠 Loading accommodation routes...');
+apiLogger.debug('✅ Accommodation routes loaded successfully');
+
 import { authRoutes } from './auth';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
@@ -50,12 +56,25 @@ export const setupRoutes = (app: AppOpenAPI) => {
     app.route('/health', readyRoutes);
     app.route('/health', liveRoutes);
 
-    // Health check routes
+    // Metrics routes
     app.route('/metrics', metricsRoutes);
 
     // Public routes
     app.route('/api/v1/public/users', userRoutes);
-    app.route('/api/v1/public/accommodations', accommodationRoutes);
+
+    // Debug: Add logging around accommodation route registration
+    try {
+        apiLogger.debug('🔗 Registering accommodation routes...');
+        app.route('/api/v1/public/accommodations', accommodationRoutes);
+        apiLogger.debug('✅ Accommodation routes registered successfully');
+    } catch (error) {
+        apiLogger.error('❌ Failed to register accommodation routes:', String(error));
+        if (error instanceof Error && error.message.includes('TagSchema')) {
+            apiLogger.error('🔍 TagSchema error during accommodation route registration');
+        }
+        throw error;
+    }
+
     app.route('/api/v1/public/auth', authRoutes);
 
     // Documentation routes

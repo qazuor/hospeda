@@ -5,9 +5,10 @@ import createApp from './utils/create-app';
 const initApp = () => {
     const app = createApp();
 
-    configureOpenAPI(app);
-
     setupRoutes(app);
+
+    // Configure OpenAPI AFTER all routes are registered
+    configureOpenAPI(app);
 
     return app;
 };

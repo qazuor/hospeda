@@ -1,67 +1,65 @@
 /**
  * Accommodation list endpoint
- * ✅ Migrated to use createListRoute (Route Factory 2.0)
+ * Uses AccommodationService for real data retrieval with pagination
  */
 import { z } from '@hono/zod-openapi';
+import { AccommodationService } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
+import { apiLogger } from '../../utils/logger';
 import { createListRoute } from '../../utils/route-factory';
-import { accommodationListSchema } from './schemas';
+import { accommodationSchema } from './schemas';
 
-// ✅ Migrated to createListRoute with pagination support
+const accommodationService = new AccommodationService({ logger: apiLogger });
+
+/**
+ * List accommodations endpoint with pagination
+ * Public endpoint that doesn't require authentication
+ */
 export const accommodationListRoute = createListRoute({
     method: 'get',
     path: '/',
     summary: 'List accommodations',
-    description: 'Returns a paginated list of accommodations',
+    description: 'Returns a paginated list of accommodations using the AccommodationService',
     tags: ['Accommodations'],
     requestQuery: {
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
         limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
-        search: z.string().optional()
+        search: z.string().optional(),
+        sortOrder: z.enum(['ASC', 'DESC']).optional()
     },
-    responseSchema: accommodationListSchema,
+    responseSchema: accommodationSchema,
     handler: async (ctx, _params, _body, query) => {
-        // Get actor from context (will be either authenticated user or guest)
-        const _actor = getActorFromContext(ctx);
+        // Get actor from context (can be guest)
+        const actor = getActorFromContext(ctx);
 
         const queryData = query as { page?: number; limit?: number; search?: string };
-        const page = queryData.page || 1;
-        const pageSize = queryData.limit || 10;
+        const page = queryData.page ?? 1;
+        const pageSize = queryData.limit ?? 10;
 
-        // Mock accommodations data (in real implementation, this would come from a service)
-        const allAccommodations = [
-            { id: '1', age: 20, name: 'Ultra-man' },
-            { id: '2', age: 21, name: 'Super-man' },
-            { id: '3', age: 25, name: 'Iron-man' },
-            { id: '4', age: 30, name: 'Spider-man' },
-            { id: '5', age: 35, name: 'Bat-man' }
-        ];
+        // Call the real accommodation service
+        const result = await accommodationService.list(actor, {
+            page,
+            pageSize
+        });
 
-        // Apply search filter if provided
-        const filteredAccommodations = queryData.search
-            ? allAccommodations.filter((acc) =>
-                  acc.name.toLowerCase().includes(queryData.search?.toLowerCase() || '')
-              )
-            : allAccommodations;
-
-        // Apply pagination
-        const total = filteredAccommodations.length;
-        const startIndex = (page - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        const items = filteredAccommodations.slice(startIndex, endIndex);
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
 
         return {
-            items,
+            items: result.data?.items || [],
             pagination: {
                 page,
                 limit: pageSize,
-                total,
-                totalPages: Math.ceil(total / pageSize)
+                total: result.data?.total || 0,
+                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
             }
         };
     },
     options: {
+        skipAuth: true, // Public endpoint
+        skipValidation: true, // Skip header validation for public endpoint
         cacheTTL: 60, // Cache for 1 minute
-        customRateLimit: { requests: 200, windowMs: 60000 }
+        customRateLimit: { requests: 200, windowMs: 60000 } // 200 requests per minute
     }
 });

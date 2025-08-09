@@ -1,43 +1,44 @@
-/**
- * Get accommodation by ID endpoint
- * ✅ Migrated to use createCRUDRoute (Route Factory 2.0)
- */
-import { z } from '@hono/zod-openapi';
+import { AccommodationIdSchema } from '@repo/schemas';
+import { AccommodationService } from '@repo/service-core';
+import type { Context } from 'hono';
+import { getActorFromContext } from '../../utils/actor';
+import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 import { accommodationSchema } from './schemas';
 
-// ✅ Migrated to createCRUDRoute with proper error handling
+const accommodationService = new AccommodationService({ logger: apiLogger });
+
+/**
+ * Get accommodation by ID endpoint
+ * Public endpoint that doesn't require authentication
+ */
 export const accommodationGetByIdRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}',
     summary: 'Get accommodation by ID',
-    description: 'Returns an accommodation by its ID',
+    description: 'Retrieves an accommodation by its ID using the AccommodationService',
     tags: ['Accommodations'],
     requestParams: {
-        id: z.string().min(1, 'ID is required')
+        id: AccommodationIdSchema
     },
-    responseSchema: accommodationSchema,
-    handler: async (_ctx, params) => {
-        const { id } = params as { id: string };
+    responseSchema: accommodationSchema.nullable(),
+    handler: async (ctx: Context, params: Record<string, unknown>) => {
+        // Get actor from context (can be guest)
+        const actor = getActorFromContext(ctx);
 
-        // Mock accommodation lookup
-        // In a real implementation, this would call a service
-        const mockAccommodations = {
-            '1': { id: '1', age: 20, name: 'Ultra-man' },
-            '2': { id: '2', age: 21, name: 'Super-man' },
-            '3': { id: '3', age: 25, name: 'Iron-man' }
-        };
+        // Call the real accommodation service
+        const result = await accommodationService.getById(actor, params.id as string);
 
-        const accommodation = mockAccommodations[id as keyof typeof mockAccommodations];
-
-        if (!accommodation) {
-            throw new Error(`Accommodation with ID ${id} not found`);
+        if (result.error) {
+            throw new Error(result.error.message);
         }
 
-        return accommodation;
+        return result.data;
     },
     options: {
+        skipAuth: true, // Public endpoint
+        skipValidation: true, // Skip header validation for public endpoint
         cacheTTL: 300, // Cache for 5 minutes
-        customRateLimit: { requests: 300, windowMs: 60000 }
+        customRateLimit: { requests: 100, windowMs: 60000 } // 100 requests per minute
     }
 });
