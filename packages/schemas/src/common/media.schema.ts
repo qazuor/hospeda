@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { z } from 'zod';
 import { ModerationStatusEnumSchema } from '../enums/index.js';
 
@@ -14,9 +15,11 @@ import { ModerationStatusEnumSchema } from '../enums/index.js';
 let tagSchemaCache: z.ZodTypeAny | undefined;
 const getTagSchema = (): z.ZodTypeAny => {
     if (tagSchemaCache === undefined) {
-        // Use dynamic import at runtime to break circular dependency
-        const tagModule = require('../entities/tag/tag.schema.js');
-        tagSchemaCache = tagModule.TagSchema as z.ZodTypeAny;
+        // Use dynamic import at runtime to break circular dependency (ESM-safe)
+        // biome-ignore lint/suspicious/noExplicitAny: compatibility layer for require in ESM
+        const req: any = typeof require !== 'undefined' ? require : createRequire(import.meta.url);
+        const tagModule = req('../entities/tag/tag.schema.js');
+        tagSchemaCache = (tagModule.TagSchema ?? tagModule.default?.TagSchema) as z.ZodTypeAny;
     }
     return tagSchemaCache as z.ZodTypeAny;
 };
