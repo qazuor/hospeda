@@ -1,9 +1,8 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
 import {
-    CreateDestinationSchema,
+    CreateDestinationServiceSchema,
     DestinationFilterInputSchema,
-    type DestinationSchema,
-    UpdateDestinationSchema
+    UpdateDestinationServiceSchema
 } from '@repo/schemas';
 import type { AccommodationType, DestinationRatingType, DestinationType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
@@ -51,16 +50,16 @@ import {
 export class DestinationService extends BaseCrudService<
     DestinationType,
     DestinationModel,
-    typeof CreateDestinationSchema,
-    typeof UpdateDestinationSchema,
+    typeof CreateDestinationServiceSchema,
+    typeof UpdateDestinationServiceSchema,
     typeof DestinationFilterInputSchema
 > {
     static readonly ENTITY_NAME = 'destination';
     protected readonly entityName = DestinationService.ENTITY_NAME;
     protected readonly model: DestinationModel;
     protected readonly logger: ServiceLogger;
-    protected readonly createSchema = CreateDestinationSchema;
-    protected readonly updateSchema = UpdateDestinationSchema;
+    protected readonly createSchema = CreateDestinationServiceSchema;
+    protected readonly updateSchema = UpdateDestinationServiceSchema;
     protected readonly searchSchema = DestinationFilterInputSchema;
     protected normalizers = {
         create: normalizeCreateInput,
@@ -268,7 +267,7 @@ export class DestinationService extends BaseCrudService<
      * @returns The normalized data with a unique slug.
      */
     protected async _beforeCreate(
-        data: z.infer<typeof DestinationSchema>,
+        data: z.infer<typeof CreateDestinationServiceSchema>,
         _actor: Actor
     ): Promise<Partial<DestinationType>> {
         const slug = await generateDestinationSlug(data.name);
