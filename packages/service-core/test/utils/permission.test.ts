@@ -370,9 +370,7 @@ describe('getEntityPermission', () => {
     });
 
     it('should handle an invalid actor gracefully and return false', () => {
-        // biome-ignore lint/suspicious/noExplicitAny: Testing invalid actor type
         expect(getEntityPermission({} as any, baseEntity, 'view').allowed).toBe(false);
-        // biome-ignore lint/suspicious/noExplicitAny: Testing invalid actor type
         const invalidActor = { role: RoleEnum.USER } as any; // Missing id and permissions
         expect(getEntityPermission(invalidActor, baseEntity, 'view').allowed).toBe(false);
     });

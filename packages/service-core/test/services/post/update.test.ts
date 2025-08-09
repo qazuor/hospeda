@@ -82,12 +82,7 @@ describe('PostService.update', () => {
         const existing = { ...createMockPost(), id };
         (modelMock.findById as Mock).mockResolvedValue(existing);
         // purposely invalid input: missing required fields
-        const result = await service.update(
-            actor,
-            id,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            {} as any
-        );
+        const result = await service.update(actor, id, {} as any);
         assertions.expectValidationError(result);
     });
 

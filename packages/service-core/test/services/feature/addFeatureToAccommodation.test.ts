@@ -113,11 +113,7 @@ describe('FeatureService.addFeatureToAccommodation', () => {
     it('should throw validation error for invalid input', async () => {
         const invalidInput = { ...validInput, accommodationId: '' };
 
-        const result = await service.addFeatureToAccommodation(
-            actorWithPerms,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            invalidInput as any
-        );
+        const result = await service.addFeatureToAccommodation(actorWithPerms, invalidInput as any);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });

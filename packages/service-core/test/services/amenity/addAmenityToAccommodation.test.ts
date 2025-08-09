@@ -126,11 +126,7 @@ describe('AmenityService.addAmenityToAccommodation', () => {
         const invalidInput = { ...validInput, accommodationId: '' };
 
         // Act & Assert
-        const result = await service.addAmenityToAccommodation(
-            actorWithPerms,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            invalidInput as any
-        );
+        const result = await service.addAmenityToAccommodation(actorWithPerms, invalidInput as any);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });

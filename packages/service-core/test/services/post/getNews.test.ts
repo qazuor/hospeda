@@ -75,22 +75,13 @@ describe('PostService.getNews', () => {
 
     it('should return forbidden if actor is missing', async () => {
         // purposely invalid
-        const result = await service.getNews(
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            null as any,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            {} as any
-        );
+        const result = await service.getNews(null as any, {} as any);
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
 
     it('should return validation error if input is invalid', async () => {
         // purposely invalid input: invalid date and extra field
-        const result = await service.getNews(
-            actor,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            { fromDate: 'not-a-date', foo: 'bar' } as any
-        );
+        const result = await service.getNews(actor, { fromDate: 'not-a-date', foo: 'bar' } as any);
         expectValidationError(result);
     });
 

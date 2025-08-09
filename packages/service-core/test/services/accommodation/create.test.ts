@@ -1,10 +1,10 @@
 import type { AccommodationModel } from '@repo/db';
+import { CreateAccommodationServiceSchema } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { z } from 'zod';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
-import type { NewAccommodationInput } from '../../../src/services/accommodation/accommodation.schemas';
-import * as schemas from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createNewAccommodationInput } from '../../factories/accommodationFactory';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
@@ -16,8 +16,8 @@ const mockLogger = createLoggerMock();
 
 beforeEach(() => {
     vi.spyOn(helpers, 'generateSlug').mockResolvedValue('mock-slug');
-    vi.spyOn(schemas.CreateAccommodationSchema, 'parse').mockImplementation((input: unknown) => {
-        const typedInput = input as NewAccommodationInput;
+    vi.spyOn(CreateAccommodationServiceSchema, 'parse').mockImplementation((input: unknown) => {
+        const typedInput = input as z.infer<typeof CreateAccommodationServiceSchema>;
         if (!typedInput || !typedInput.name) {
             throw new ZodError([
                 {

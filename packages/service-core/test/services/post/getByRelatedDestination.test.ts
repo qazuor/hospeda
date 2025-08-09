@@ -98,7 +98,6 @@ describe('PostService.getByRelatedDestination', () => {
     it('should return forbidden if actor is missing', async () => {
         // purposely invalid
         const result = await service.getByRelatedDestination(
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             null as any,
             { destinationId } as { destinationId: string }
         );
@@ -107,11 +106,7 @@ describe('PostService.getByRelatedDestination', () => {
 
     it('should return validation error if input is invalid', async () => {
         // purposely invalid
-        const result = await service.getByRelatedDestination(
-            actor,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            { actor: 123 } as any
-        );
+        const result = await service.getByRelatedDestination(actor, { actor: 123 } as any);
         expectValidationError(result);
     });
 

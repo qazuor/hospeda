@@ -134,7 +134,6 @@ export function createTypedModelMock<M extends new (...args: unknown[]) => unkno
  * Mock class that extends BaseModel<T> and mocks all required methods/properties for strict type compatibility.
  */
 export class MockBaseModel<T> extends BaseModel<T> {
-    // biome-ignore lint/suspicious/noExplicitAny: test mock, not a real Drizzle Table. This is required because the real Table type is not available in the test environment, and BaseModel<T> requires a protected property of that type. This is a standard and safe workaround for mocking abstract classes with protected properties from external libraries.
     protected table = {} as any;
     protected entityName = 'mock_entity';
     findById = vi.fn();

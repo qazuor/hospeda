@@ -66,7 +66,6 @@ describe('BaseService: restore', () => {
 
     it('should handle errors from the _beforeRestore lifecycle hook', async () => {
         const hookError = new Error('fail');
-        // biome-ignore lint/suspicious/noExplicitAny: Necessary to mock protected method in test
         vi.spyOn(service as any, '_beforeRestore').mockRejectedValue(hookError);
         asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
         const result = await service.restore(mockAdminActor, MOCK_ENTITY_ID);
@@ -93,7 +92,6 @@ describe('BaseService: restore', () => {
 
     it('should handle errors from the _afterRestore hook', async () => {
         const hookError = new Error('fail');
-        // biome-ignore lint/suspicious/noExplicitAny: Necessary to mock protected method in test
         vi.spyOn(service as any, '_afterRestore').mockRejectedValue(hookError);
         asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
         asMock(modelMock.restore).mockResolvedValue(1);

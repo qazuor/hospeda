@@ -1,4 +1,5 @@
 import type { SQL, Table } from 'drizzle-orm';
+import { count } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { getDb } from '../client';
 import type * as schema from '../schemas/index.js';
@@ -209,18 +210,8 @@ export abstract class BaseModel<T> {
         const safeWhere = where ?? {};
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
-            // Buscar la columna id o la primera columna disponible
-            type CountableColumn = { count: () => SQL<unknown> };
-            const countableColumn = Object.values(this.table)[0] as CountableColumn;
 
-            if (!countableColumn || typeof countableColumn.count !== 'function') {
-                throw new Error('No countable column found in table schema');
-            }
-
-            const result = await db
-                .select({ count: countableColumn.count() })
-                .from(this.table)
-                .where(whereClause);
+            const result = await db.select({ count: count() }).from(this.table).where(whereClause);
 
             try {
                 logQuery(this.entityName, 'count', safeWhere, result);

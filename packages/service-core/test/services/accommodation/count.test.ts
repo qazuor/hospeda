@@ -57,7 +57,7 @@ describe('AccommodationService.count', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         const result = await service.count(actor, {
-            filters: { priceMin: 'not-a-number' },
+            filters: { minPrice: 'not-a-number' },
             pagination: { page: 1, pageSize: 10 }
         } as unknown as Record<string, unknown>);
         expect(result.data).toBeUndefined();

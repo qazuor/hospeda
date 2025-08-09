@@ -51,7 +51,6 @@ describe('Permission Helper Functions', () => {
         });
 
         it('should return a generic description for an unknown permission', () => {
-            // biome-ignore lint/suspicious/noExplicitAny: Testing an edge case
             const description = getPermissionDescription('UNKNOWN_PERMISSION' as any);
             expect(description).toBe('You do not have permission to perform this action.');
         });

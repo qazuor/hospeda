@@ -83,11 +83,7 @@ describe('TagService.getPopularTags', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.getPopularTags(
-            actor,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            { limit: -1 } as any
-        );
+        const result = await service.getPopularTags(actor, { limit: -1 } as any);
         expectValidationError(result);
     });
 
