@@ -58,56 +58,29 @@ export function getLogLevelEnv(key: string): LogLevelType | null {
 export function getConfigFromEnv(categoryKey?: string): Partial<BaseLoggerConfig> {
     const prefix = categoryKey && categoryKey !== 'DEFAULT' ? `LOG_${categoryKey}_` : 'LOG_';
 
-    let level = getLogLevelEnv(`${prefix}LEVEL`);
-    if (!level) {
-        level = getLogLevelEnv('LOG_LEVEL');
-        if (!level) {
-            level = 'WARN' as LogLevelType;
-        }
-    }
-    let shouldSave = getBooleanEnv(`${prefix}SAVE`);
-    if (shouldSave === null) {
-        shouldSave = getBooleanEnv('LOG_SAVE');
-        if (shouldSave === null) {
-            shouldSave = false;
-        }
-    }
-    let expandObjectLevels = getNumberEnv(`${prefix}EXPAND_OBJECT_LEVELS`);
-    if (expandObjectLevels === null) {
-        expandObjectLevels = getNumberEnv(`${prefix}EXPAND_OBJECT_LEVELS`);
-        if (expandObjectLevels === null) {
-            expandObjectLevels = 2;
-        }
-    }
-    let truncateLongText = getBooleanEnv(`${prefix}TRUNCATE_LONG_TEXT`);
-    if (truncateLongText === null) {
-        truncateLongText = getBooleanEnv(`${prefix}TRUNCATE_LONG_TEXT`);
-        if (truncateLongText === null) {
-            truncateLongText = true;
-        }
-    }
-    let truncateLongTextAt = getNumberEnv(`${prefix}TRUNCATE_LONG_TEXT_AT`);
-    if (truncateLongTextAt === null) {
-        truncateLongTextAt = getNumberEnv(`${prefix}TRUNCATE_LONG_TEXT_AT`);
-        if (truncateLongTextAt === null) {
-            truncateLongTextAt = 100;
-        }
-    }
+    const result: Partial<BaseLoggerConfig> = {};
 
-    let stringifyObjects = getBooleanEnv(`${prefix}STRINGIFY_OBJECTS`);
-    if (stringifyObjects === null) {
-        stringifyObjects = getBooleanEnv(`${prefix}STRINGIFY_OBJECT`);
-        if (stringifyObjects === null) {
-            stringifyObjects = true;
-        }
-    }
+    const level = getLogLevelEnv(`${prefix}LEVEL`) ?? getLogLevelEnv('LOG_LEVEL') ?? undefined;
+    if (level !== undefined) result.LEVEL = level;
 
-    return {
-        LEVEL: level,
-        SAVE: shouldSave,
-        EXPAND_OBJECT_LEVELS: expandObjectLevels,
-        TRUNCATE_LONG_TEXT: truncateLongText,
-        TRUNCATE_LONG_TEXT_AT: truncateLongTextAt,
-        STRINGIFY_OBJECTS: stringifyObjects
-    };
+    const shouldSave = getBooleanEnv(`${prefix}SAVE`) ?? getBooleanEnv('LOG_SAVE');
+    if (shouldSave !== null) result.SAVE = shouldSave;
+
+    const expandObjectLevels =
+        getNumberEnv(`${prefix}EXPAND_OBJECT_LEVELS`) ?? getNumberEnv('LOG_EXPAND_OBJECT_LEVELS');
+    if (expandObjectLevels !== null) result.EXPAND_OBJECT_LEVELS = expandObjectLevels;
+
+    const truncateLongText =
+        getBooleanEnv(`${prefix}TRUNCATE_LONG_TEXT`) ?? getBooleanEnv('LOG_TRUNCATE_LONG_TEXT');
+    if (truncateLongText !== null) result.TRUNCATE_LONG_TEXT = truncateLongText;
+
+    const truncateLongTextAt =
+        getNumberEnv(`${prefix}TRUNCATE_LONG_TEXT_AT`) ?? getNumberEnv('LOG_TRUNCATE_LONG_TEXT_AT');
+    if (truncateLongTextAt !== null) result.TRUNCATE_LONG_TEXT_AT = truncateLongTextAt;
+
+    const stringifyObjects =
+        getBooleanEnv(`${prefix}STRINGIFY_OBJECTS`) ?? getBooleanEnv('LOG_STRINGIFY_OBJECTS');
+    if (stringifyObjects !== null) result.STRINGIFY_OBJECTS = stringifyObjects;
+
+    return result;
 }

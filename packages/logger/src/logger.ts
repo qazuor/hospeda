@@ -3,9 +3,14 @@
  * @module logger/logger
  */
 
-import { clearCategories, getCategoryByKey, registerCategoryInternal } from './categories.js';
+import {
+    clearCategories,
+    getCategoryByKey,
+    registerCategoryInternal,
+    registerDefaultCategory
+} from './categories.js';
 import { configureLogger, getConfig, resetLoggerConfig } from './config.js';
-import { formatLogMessage } from './formatter.js';
+import { formatLogArgs } from './formatter.js';
 import {
     type ILogger,
     LogLevel,
@@ -41,11 +46,20 @@ function shouldLog(level: LogLevel, options?: LoggerOptions): boolean {
             : undefined) ||
         config.LEVEL;
 
-    const levels = Object.values(LogLevel) as LogLevelType[];
-    const configLevelIndex = levels.indexOf(configLevel);
-    const currentLevelIndex = levels.indexOf(level);
-
-    return currentLevelIndex >= configLevelIndex;
+    // Visibility model per threshold
+    switch (configLevel) {
+        case 'ERROR':
+            return level === LogLevel.ERROR;
+        case 'WARN':
+            return level === LogLevel.WARN || level === LogLevel.ERROR;
+        case 'INFO':
+            return level === LogLevel.INFO || level === LogLevel.WARN || level === LogLevel.ERROR;
+        // case 'LOG':
+        // case 'DEBUG':
+        default:
+            // Most permissive: show all levels (including DEBUG)
+            return true;
+    }
 }
 
 /**
@@ -65,25 +79,26 @@ function logWithLevel(
         return;
     }
 
-    const formattedMessage = formatLogMessage(level, value, label, options);
+    const args = formatLogArgs(level, value, label, options);
 
     // Log to console based on level
     switch (level) {
         case LogLevel.LOG:
             // biome-ignore lint/suspicious/noConsoleLog: Log method needs to use console.log
-            console.log(formattedMessage);
+            // biome-ignore lint/suspicious/noConsoleLog: Log method needs to use console.log
+            console.log(...args);
             break;
         case LogLevel.INFO:
-            console.info(formattedMessage);
+            console.info(...args);
             break;
         case LogLevel.WARN:
-            console.warn(formattedMessage);
+            console.warn(...args);
             break;
         case LogLevel.ERROR:
-            console.error(formattedMessage);
+            console.error(...args);
             break;
         case LogLevel.DEBUG:
-            console.debug(formattedMessage);
+            console.debug(...args);
             break;
     }
 
@@ -272,6 +287,9 @@ export function resetLogger(): void {
             delete (logger as Record<string, unknown>)[key];
         }
     }
+
+    // Ensure DEFAULT category is available after reset
+    registerDefaultCategory();
 }
 
 /**
