@@ -7,7 +7,25 @@ import {
 import { AdminInfoSchema } from './admin.schema.js';
 import { IdSchema, UserIdSchema } from './id.schema.js';
 
-declare const TagSchema: z.ZodTypeAny;
+/**
+ * Lazy reference to resolve circular dependency between TagSchema and helper schemas.
+ *
+ * Problem: TagSchema may import helper schemas (like WithIdSchema, WithAuditSchema),
+ * and WithTagsSchema needs TagSchema for the tags array. This creates a circular dependency.
+ *
+ * Solution: Use z.lazy() to defer TagSchema resolution until runtime, breaking the
+ * circular import chain at module load time. The function will be called only when
+ * the schema is actually used for validation.
+ */
+let tagSchemaCache: z.ZodTypeAny | undefined;
+const getTagSchema = (): z.ZodTypeAny => {
+    if (tagSchemaCache === undefined) {
+        // Use dynamic import at runtime to break circular dependency
+        const tagModule = require('../entities/tag/tag.schema.js');
+        tagSchemaCache = tagModule.TagSchema as z.ZodTypeAny;
+    }
+    return tagSchemaCache as z.ZodTypeAny;
+};
 
 export const WithIdSchema = z.object({
     id: IdSchema
@@ -78,7 +96,7 @@ export const WithSeoSchema = z.object({
 export const WithTagsSchema = z.object({
     tags: z
         .array(
-            z.lazy(() => TagSchema),
+            z.lazy(() => getTagSchema()),
             {
                 message: 'zodError.common.tags.required'
             }
