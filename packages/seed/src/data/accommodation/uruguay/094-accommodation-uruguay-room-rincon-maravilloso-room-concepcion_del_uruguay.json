@@ -147,12 +147,7 @@
         }
     ],
     "iaData": [],
-    "tagIds": [
-        "017-tag-familia",
-        "039-tag-turismo",
-        "011-tag-cultura",
-        "016-tag-entre-rios"
-    ],
+    "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"],
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,

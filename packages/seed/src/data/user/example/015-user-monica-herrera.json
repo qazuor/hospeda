@@ -1,50 +1,50 @@
 {
-  "id": "015-user-monica-herrera",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "monica-herrera",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Mónica",
-  "lastName": "Herrera",
-  "displayName": "Mónica Herrera",
-  "contactInfo": {
-    "personalEmail": "monica.herrera@hospeda.com.ar",
-    "mobilePhone": "+5493446236688",
-    "website": "https://www.hospeda.com.ar/host/monica-herrera",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "Ibicuy",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "2840",
-    "street": "Rivadavia",
-    "number": "345",
-    "coordinates": {
-      "lat": "-33.7333",
-      "long": "-59.1833"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "015-user-monica-herrera",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "monica-herrera",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Mónica",
+    "lastName": "Herrera",
+    "displayName": "Mónica Herrera",
+    "contactInfo": {
+        "personalEmail": "monica.herrera@hospeda.com.ar",
+        "mobilePhone": "+5493446236688",
+        "website": "https://www.hospeda.com.ar/host/monica-herrera",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "Ibicuy",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "2840",
+        "street": "Rivadavia",
+        "number": "345",
+        "coordinates": {
+            "lat": "-33.7333",
+            "long": "-59.1833"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }

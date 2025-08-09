@@ -1,50 +1,50 @@
 {
-  "id": "028-user-ernesto-flores",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "ernesto-flores",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Ernesto",
-  "lastName": "Flores",
-  "displayName": "Ernesto Flores",
-  "contactInfo": {
-    "personalEmail": "ernesto.flores@hospeda.com.ar",
-    "mobilePhone": "+549347674747",
-    "website": "https://www.hospeda.com.ar/host/ernesto-flores",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "Villa Paranacito",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "2829",
-    "street": "Entre Ríos",
-    "number": "147",
-    "coordinates": {
-      "lat": "-33.7167",
-      "long": "-58.6500"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "028-user-ernesto-flores",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "ernesto-flores",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Ernesto",
+    "lastName": "Flores",
+    "displayName": "Ernesto Flores",
+    "contactInfo": {
+        "personalEmail": "ernesto.flores@hospeda.com.ar",
+        "mobilePhone": "+549347674747",
+        "website": "https://www.hospeda.com.ar/host/ernesto-flores",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "Villa Paranacito",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "2829",
+        "street": "Entre Ríos",
+        "number": "147",
+        "coordinates": {
+            "lat": "-33.7167",
+            "long": "-58.6500"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }

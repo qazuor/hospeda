@@ -1,50 +1,50 @@
 {
-  "id": "012-user-fernando-lopez",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "fernando-lopez",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Fernando",
-  "lastName": "López",
-  "displayName": "Fernando López",
-  "contactInfo": {
-    "personalEmail": "fernando.lopez@hospeda.com.ar",
-    "mobilePhone": "+5493447284349",
-    "website": "https://www.hospeda.com.ar/host/fernando-lopez",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "Concordia",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "3200",
-    "street": "San Lorenzo",
-    "number": "654",
-    "coordinates": {
-      "lat": "-31.3933",
-      "long": "-58.0208"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en Concordia, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "012-user-fernando-lopez",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "fernando-lopez",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Fernando",
+    "lastName": "López",
+    "displayName": "Fernando López",
+    "contactInfo": {
+        "personalEmail": "fernando.lopez@hospeda.com.ar",
+        "mobilePhone": "+5493447284349",
+        "website": "https://www.hospeda.com.ar/host/fernando-lopez",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "Concordia",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3200",
+        "street": "San Lorenzo",
+        "number": "654",
+        "coordinates": {
+            "lat": "-31.3933",
+            "long": "-58.0208"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Concordia, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }

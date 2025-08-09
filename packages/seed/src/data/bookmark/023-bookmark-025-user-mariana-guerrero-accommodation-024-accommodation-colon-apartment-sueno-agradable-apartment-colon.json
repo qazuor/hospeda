@@ -1,10 +1,10 @@
 {
-  "$schema": "../../schemas/userBookmark.schema.json",
-  "id": "023-bookmark-025-user-mariana-guerrero-accommodation-024-accommodation-colon-apartment-sueno-agradable-apartment-colon",
-  "userId": "025-user-mariana-guerrero",
-  "entityId": "009-accommodation-colon-cabin-refugio-maravilloso-cabana-colon",
-  "entityType": "ACCOMMODATION",
-  "name": "sueno-agradable-apartment",
-  "description": "Vistas hermosas",
-  "lifecycleState": "ACTIVE"
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "023-bookmark-025-user-mariana-guerrero-accommodation-024-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "userId": "025-user-mariana-guerrero",
+    "entityId": "009-accommodation-colon-cabin-refugio-maravilloso-cabana-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "sueno-agradable-apartment",
+    "description": "Vistas hermosas",
+    "lifecycleState": "ACTIVE"
 }

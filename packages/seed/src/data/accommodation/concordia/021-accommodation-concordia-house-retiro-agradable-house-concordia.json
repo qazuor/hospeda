@@ -109,11 +109,7 @@
         "beds": 3,
         "bathrooms": 1,
         "smokingAllowed": false,
-        "extraInfo": [
-            "Barrio residencial tranquilo",
-            "Parrilla exterior",
-            "Ideal para familias"
-        ]
+        "extraInfo": ["Barrio residencial tranquilo", "Parrilla exterior", "Ideal para familias"]
     },
     "seo": {
         "title": "Retiro Agradable House - Casa en Concordia para familias",

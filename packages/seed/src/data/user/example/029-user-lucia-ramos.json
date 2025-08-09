@@ -1,50 +1,50 @@
 {
-  "id": "029-user-lucia-ramos",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "lucia-ramos",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Lucía",
-  "lastName": "Ramos",
-  "displayName": "Lucía Ramos",
-  "contactInfo": {
-    "personalEmail": "lucia.ramos@hospeda.com.ar",
-    "mobilePhone": "+5493447165400",
-    "website": "https://www.hospeda.com.ar/host/lucia-ramos",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "San José",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "3264",
-    "street": "Entre Ríos",
-    "number": "258",
-    "coordinates": {
-      "lat": "-31.7500",
-      "long": "-58.5500"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en San José, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "029-user-lucia-ramos",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "lucia-ramos",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Lucía",
+    "lastName": "Ramos",
+    "displayName": "Lucía Ramos",
+    "contactInfo": {
+        "personalEmail": "lucia.ramos@hospeda.com.ar",
+        "mobilePhone": "+5493447165400",
+        "website": "https://www.hospeda.com.ar/host/lucia-ramos",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "San José",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3264",
+        "street": "Entre Ríos",
+        "number": "258",
+        "coordinates": {
+            "lat": "-31.7500",
+            "long": "-58.5500"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en San José, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }

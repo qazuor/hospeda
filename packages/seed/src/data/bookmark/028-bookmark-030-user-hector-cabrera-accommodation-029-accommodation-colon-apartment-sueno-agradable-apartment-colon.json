@@ -1,10 +1,10 @@
 {
-  "$schema": "../../schemas/userBookmark.schema.json",
-  "id": "028-bookmark-030-user-hector-cabrera-accommodation-029-accommodation-colon-apartment-sueno-agradable-apartment-colon",
-  "userId": "030-user-hector-cabrera",
-  "entityId": "014-accommodation-colon-apartment-sueno-agradable-apartment-colon",
-  "entityType": "ACCOMMODATION",
-  "name": "sueno-agradable-apartment",
-  "description": "Muy buena experiencia",
-  "lifecycleState": "ACTIVE"
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "028-bookmark-030-user-hector-cabrera-accommodation-029-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "userId": "030-user-hector-cabrera",
+    "entityId": "014-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "sueno-agradable-apartment",
+    "description": "Muy buena experiencia",
+    "lifecycleState": "ACTIVE"
 }

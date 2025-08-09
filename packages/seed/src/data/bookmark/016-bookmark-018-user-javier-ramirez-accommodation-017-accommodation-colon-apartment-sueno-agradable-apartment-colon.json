@@ -1,10 +1,10 @@
 {
-  "$schema": "../../schemas/userBookmark.schema.json",
-  "id": "016-bookmark-018-user-javier-ramirez-accommodation-017-accommodation-colon-apartment-sueno-agradable-apartment-colon",
-  "userId": "018-user-javier-ramirez",
-  "entityId": "002-accommodation-chajari-cabin-rio-soleado-cabana-chajari",
-  "entityType": "ACCOMMODATION",
-  "name": "sueno-agradable-apartment",
-  "description": "Ideal para descansar",
-  "lifecycleState": "ACTIVE"
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "016-bookmark-018-user-javier-ramirez-accommodation-017-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "userId": "018-user-javier-ramirez",
+    "entityId": "002-accommodation-chajari-cabin-rio-soleado-cabana-chajari",
+    "entityType": "ACCOMMODATION",
+    "name": "sueno-agradable-apartment",
+    "description": "Ideal para descansar",
+    "lifecycleState": "ACTIVE"
 }

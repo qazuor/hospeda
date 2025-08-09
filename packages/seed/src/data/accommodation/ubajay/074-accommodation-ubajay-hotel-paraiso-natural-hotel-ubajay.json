@@ -167,9 +167,7 @@
         }
     ],
     "iaData": [],
-    "tagIds": [
-        "016-tag-entre-rios"
-    ],
+    "tagIds": ["016-tag-entre-rios"],
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
