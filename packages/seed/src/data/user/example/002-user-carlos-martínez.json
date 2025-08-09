@@ -1,51 +1,51 @@
 {
-  "id": "002-user-carlos-martínez",
-  "$schema": "../../schemas/user.schema.json",
-  "slug": "carlos-martínez",
-  "role": "EDITOR",
-  "permissions": [],
-  "firstName": "Carlos",
-  "lastName": "Martínez",
-  "displayName": "Carlos Martínez",
-  "contactInfo": {
-    "personalEmail": "carlos.martinez@hospeda.com.ar",
-    "mobilePhone": "+549342445566",
-    "website": "https://carlosmartinez.com",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "state": "Entre Ríos",
-    "city": "Concepción del Uruguay",
-    "country": "Argentina",
-    "zipCode": "3260",
-    "street": "San Martín",
-    "number": "850",
-    "coordinates": {
-      "lat": "-32.4833",
-      "long": "-58.2333"
-    }
-  },
-  "socialNetworks": {
-    "facebook": "https://facebook.com/carlos.martinez.editor",
-    "instagram": "https://instagram.com/carlos_editor",
-    "twitter": "https://twitter.com/carlos_editor",
-    "linkedin": "https://linkedin.com/in/carlos-martinez-editor"
-  },
-  "profile": {
-    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-    "bio": "Editor de contenido especializado en crear y gestionar eventos, posts y contenido promocional. Experto en marketing digital y comunicación turística.",
-    "website": "https://carlosmartinez.com"
-  },
-  "settings": {
-    "language": "es",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowSms": false,
-      "allowPush": true
-    }
-  },
-  "lifecycleState": "ACTIVE",
-  "visibility": "PUBLIC"
+    "id": "002-user-carlos-martínez",
+    "$schema": "../../schemas/user.schema.json",
+    "slug": "carlos-martínez",
+    "role": "EDITOR",
+    "permissions": [],
+    "firstName": "Carlos",
+    "lastName": "Martínez",
+    "displayName": "Carlos Martínez",
+    "contactInfo": {
+        "personalEmail": "carlos.martinez@hospeda.com.ar",
+        "mobilePhone": "+549342445566",
+        "website": "https://carlosmartinez.com",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "location": {
+        "state": "Entre Ríos",
+        "city": "Concepción del Uruguay",
+        "country": "Argentina",
+        "zipCode": "3260",
+        "street": "San Martín",
+        "number": "850",
+        "coordinates": {
+            "lat": "-32.4833",
+            "long": "-58.2333"
+        }
+    },
+    "socialNetworks": {
+        "facebook": "https://facebook.com/carlos.martinez.editor",
+        "instagram": "https://instagram.com/carlos_editor",
+        "twitter": "https://twitter.com/carlos_editor",
+        "linkedin": "https://linkedin.com/in/carlos-martinez-editor"
+    },
+    "profile": {
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+        "bio": "Editor de contenido especializado en crear y gestionar eventos, posts y contenido promocional. Experto en marketing digital y comunicación turística.",
+        "website": "https://carlosmartinez.com"
+    },
+    "settings": {
+        "language": "es",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowSms": false,
+            "allowPush": true
+        }
+    },
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

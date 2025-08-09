@@ -105,11 +105,7 @@
         "beds": 3,
         "bathrooms": 1,
         "smokingAllowed": false,
-        "extraInfo": [
-            "Cerca de la costanera",
-            "Parrilla exterior",
-            "Ideal para familias"
-        ]
+        "extraInfo": ["Cerca de la costanera", "Parrilla exterior", "Ideal para familias"]
     },
     "seo": {
         "title": "Rio Apacible House - Casa tranquila cerca del río en",
@@ -148,12 +144,7 @@
     ],
     "faqs": [],
     "iaData": [],
-    "tagIds": [
-        "017-tag-familia",
-        "027-tag-naturaleza",
-        "032-tag-relax",
-        "016-tag-entre-rios"
-    ],
+    "tagIds": ["017-tag-familia", "027-tag-naturaleza", "032-tag-relax", "016-tag-entre-rios"],
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,

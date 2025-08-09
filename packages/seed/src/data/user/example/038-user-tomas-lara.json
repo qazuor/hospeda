@@ -1,50 +1,50 @@
 {
-  "id": "038-user-tomas-lara",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "tomas-lara",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Tomás",
-  "lastName": "Lara",
-  "displayName": "Tomás Lara",
-  "contactInfo": {
-    "personalEmail": "tomas.lara@hospeda.com.ar",
-    "mobilePhone": "+549347877108",
-    "website": "https://www.hospeda.com.ar/host/tomas-lara",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "Liebig",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "3206",
-    "street": "Entre Ríos",
-    "number": "258",
-    "coordinates": {
-      "lat": "-30.8833",
-      "long": "-57.8667"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en Liebig, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "038-user-tomas-lara",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "tomas-lara",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Tomás",
+    "lastName": "Lara",
+    "displayName": "Tomás Lara",
+    "contactInfo": {
+        "personalEmail": "tomas.lara@hospeda.com.ar",
+        "mobilePhone": "+549347877108",
+        "website": "https://www.hospeda.com.ar/host/tomas-lara",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "Liebig",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3206",
+        "street": "Entre Ríos",
+        "number": "258",
+        "coordinates": {
+            "lat": "-30.8833",
+            "long": "-57.8667"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Liebig, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }

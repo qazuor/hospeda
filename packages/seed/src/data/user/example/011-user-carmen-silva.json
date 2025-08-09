@@ -1,50 +1,50 @@
 {
-  "id": "011-user-carmen-silva",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "carmen-silva",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Carmen",
-  "lastName": "Silva",
-  "displayName": "Carmen Silva",
-  "contactInfo": {
-    "personalEmail": "carmen.silva@hospeda.com.ar",
-    "mobilePhone": "+549347401308",
-    "website": "https://www.hospeda.com.ar/host/carmen-silva",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "Colón",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "3280",
-    "street": "Belgrano",
-    "number": "321",
-    "coordinates": {
-      "lat": "-32.2208",
-      "long": "-58.1431"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "011-user-carmen-silva",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "carmen-silva",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Carmen",
+    "lastName": "Silva",
+    "displayName": "Carmen Silva",
+    "contactInfo": {
+        "personalEmail": "carmen.silva@hospeda.com.ar",
+        "mobilePhone": "+549347401308",
+        "website": "https://www.hospeda.com.ar/host/carmen-silva",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "Colón",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3280",
+        "street": "Belgrano",
+        "number": "321",
+        "coordinates": {
+            "lat": "-32.2208",
+            "long": "-58.1431"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }

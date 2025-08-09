@@ -1,50 +1,50 @@
 {
-  "id": "022-user-ricardo-delgado",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "ricardo-delgado",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Ricardo",
-  "lastName": "Delgado",
-  "displayName": "Ricardo Delgado",
-  "contactInfo": {
-    "personalEmail": "ricardo.delgado@hospeda.com.ar",
-    "mobilePhone": "+5493446874265",
-    "website": "https://www.hospeda.com.ar/host/ricardo-delgado",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "Colón",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "3280",
-    "street": "Paysandú",
-    "number": "123",
-    "coordinates": {
-      "lat": "-32.2208",
-      "long": "-58.1431"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "022-user-ricardo-delgado",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "ricardo-delgado",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Ricardo",
+    "lastName": "Delgado",
+    "displayName": "Ricardo Delgado",
+    "contactInfo": {
+        "personalEmail": "ricardo.delgado@hospeda.com.ar",
+        "mobilePhone": "+5493446874265",
+        "website": "https://www.hospeda.com.ar/host/ricardo-delgado",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "Colón",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3280",
+        "street": "Paysandú",
+        "number": "123",
+        "coordinates": {
+            "lat": "-32.2208",
+            "long": "-58.1431"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }

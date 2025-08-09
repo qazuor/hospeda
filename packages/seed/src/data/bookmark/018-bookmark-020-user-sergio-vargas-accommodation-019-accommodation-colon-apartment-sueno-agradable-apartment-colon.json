@@ -1,10 +1,10 @@
 {
-  "$schema": "../../schemas/userBookmark.schema.json",
-  "id": "018-bookmark-020-user-sergio-vargas-accommodation-019-accommodation-colon-apartment-sueno-agradable-apartment-colon",
-  "userId": "020-user-sergio-vargas",
-  "entityId": "004-accommodation-colon-cabin-cabana-del-rio-colon",
-  "entityType": "ACCOMMODATION",
-  "name": "sueno-agradable-apartment",
-  "description": "Excelente ubicación",
-  "lifecycleState": "ACTIVE"
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "018-bookmark-020-user-sergio-vargas-accommodation-019-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "userId": "020-user-sergio-vargas",
+    "entityId": "004-accommodation-colon-cabin-cabana-del-rio-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "sueno-agradable-apartment",
+    "description": "Excelente ubicación",
+    "lifecycleState": "ACTIVE"
 }

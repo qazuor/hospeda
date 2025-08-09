@@ -1,54 +1,54 @@
 {
-  "id": "008-user-lucas-fernandez",
-  "$schema": "../../schemas/user.schema.json",
-  "slug": "lucas-fernandez",
-  "role": "USER",
-  "permissions": [],
-  "firstName": "Lucas",
-  "lastName": "Fernández",
-  "displayName": "Lucas Fernández",
-  "contactInfo": {
-    "personalEmail": "lucas.fernandez@gmail.com",
-    "mobilePhone": "+541155550005",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "state": "Buenos Aires",
-    "city": "Buenos Aires",
-    "country": "Argentina",
-    "zipCode": "1425",
-    "street": "Av. Corrientes",
-    "number": "3456",
-    "neighborhood": "Almagro",
-    "coordinates": {
-      "lat": "-34.6037",
-      "long": "-58.3816"
-    }
-  },
-  "socialNetworks": {
-    "instagram": "https://instagram.com/lucas_viajero",
-    "facebook": "https://facebook.com/lucas.fernandez.viajero"
-  },
-  "profile": {
-    "bio": "Viajero apasionado por descubrir nuevos lugares y experiencias."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "008-user-lucas-fernandez",
+    "$schema": "../../schemas/user.schema.json",
+    "slug": "lucas-fernandez",
+    "role": "USER",
+    "permissions": [],
+    "firstName": "Lucas",
+    "lastName": "Fernández",
+    "displayName": "Lucas Fernández",
+    "contactInfo": {
+        "personalEmail": "lucas.fernandez@gmail.com",
+        "mobilePhone": "+541155550005",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "lifecycleState": "ACTIVE",
-  "visibility": "PUBLIC"
+    "location": {
+        "state": "Buenos Aires",
+        "city": "Buenos Aires",
+        "country": "Argentina",
+        "zipCode": "1425",
+        "street": "Av. Corrientes",
+        "number": "3456",
+        "neighborhood": "Almagro",
+        "coordinates": {
+            "lat": "-34.6037",
+            "long": "-58.3816"
+        }
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/lucas_viajero",
+        "facebook": "https://facebook.com/lucas.fernandez.viajero"
+    },
+    "profile": {
+        "bio": "Viajero apasionado por descubrir nuevos lugares y experiencias."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

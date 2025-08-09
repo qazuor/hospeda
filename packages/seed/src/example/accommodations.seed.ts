@@ -236,9 +236,7 @@ export const seedAccommodations = createSeedFactory({
                         accommodationId,
                         faq: {
                             question: faq.question,
-                            answer: faq.answer,
-                            category: faq.category,
-                            accommodationId
+                            answer: faq.answer
                         }
                     });
                     logger.success(`[${i + 1} of ${faqs.length}] - Created FAQ: "${faq.question}"`);
@@ -285,8 +283,7 @@ export const seedAccommodations = createSeedFactory({
                             iaData: {
                                 title: aiEntry.title,
                                 content: aiEntry.content,
-                                category: aiEntry.category,
-                                accommodationId
+                                category: aiEntry.category
                             }
                         },
                         context.actor

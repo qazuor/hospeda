@@ -1,10 +1,10 @@
 {
-  "$schema": "../../schemas/userBookmark.schema.json",
-  "id": "030-bookmark-032-user-raul-molina-accommodation-031-accommodation-colon-apartment-sueno-agradable-apartment-colon",
-  "userId": "032-user-raul-molina",
-  "entityId": "016-accommodation-colon-house-sueno-soleado-house-colon",
-  "entityType": "ACCOMMODATION",
-  "name": "sueno-agradable-apartment",
-  "description": "Altamente recomendado",
-  "lifecycleState": "ACTIVE"
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "030-bookmark-032-user-raul-molina-accommodation-031-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "userId": "032-user-raul-molina",
+    "entityId": "016-accommodation-colon-house-sueno-soleado-house-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "sueno-agradable-apartment",
+    "description": "Altamente recomendado",
+    "lifecycleState": "ACTIVE"
 }

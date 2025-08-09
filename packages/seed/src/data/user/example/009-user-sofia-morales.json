@@ -1,58 +1,58 @@
 {
-  "id": "009-user-sofia-morales",
-  "$schema": "../../schemas/user.schema.json",
-  "slug": "sofia-morales",
-  "role": "USER",
-  "permissions": [],
-  "firstName": "Sofía",
-  "lastName": "Morales",
-  "displayName": "Sofía Morales",
-  "contactInfo": {
-    "personalEmail": "sofia.morales@hospeda.com.ar",
-    "mobilePhone": "+549341998877",
-    "website": "https://viajesyfotos.com",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "state": "Santa Fe",
-    "city": "Rosario",
-    "country": "Argentina",
-    "zipCode": "2000",
-    "street": "Córdoba",
-    "number": "1234",
-    "neighborhood": "Centro",
-    "coordinates": {
-      "lat": "-32.9442",
-      "long": "-60.6505"
-    }
-  },
-  "socialNetworks": {
-    "instagram": "https://instagram.com/sofia_travel",
-    "facebook": "https://facebook.com/sofia.morales.travel",
-    "twitter": "https://twitter.com/sofia_travel",
-    "youtube": "https://youtube.com/c/sofiaviajes"
-  },
-  "profile": {
-    "website": "https://viajesyfotos.com",
-    "bio": "Fotógrafa y bloguera de viajes, apasionada por capturar momentos únicos."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "009-user-sofia-morales",
+    "$schema": "../../schemas/user.schema.json",
+    "slug": "sofia-morales",
+    "role": "USER",
+    "permissions": [],
+    "firstName": "Sofía",
+    "lastName": "Morales",
+    "displayName": "Sofía Morales",
+    "contactInfo": {
+        "personalEmail": "sofia.morales@hospeda.com.ar",
+        "mobilePhone": "+549341998877",
+        "website": "https://viajesyfotos.com",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "lifecycleState": "ACTIVE",
-  "visibility": "PUBLIC"
+    "location": {
+        "state": "Santa Fe",
+        "city": "Rosario",
+        "country": "Argentina",
+        "zipCode": "2000",
+        "street": "Córdoba",
+        "number": "1234",
+        "neighborhood": "Centro",
+        "coordinates": {
+            "lat": "-32.9442",
+            "long": "-60.6505"
+        }
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/sofia_travel",
+        "facebook": "https://facebook.com/sofia.morales.travel",
+        "twitter": "https://twitter.com/sofia_travel",
+        "youtube": "https://youtube.com/c/sofiaviajes"
+    },
+    "profile": {
+        "website": "https://viajesyfotos.com",
+        "bio": "Fotógrafa y bloguera de viajes, apasionada por capturar momentos únicos."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "lifecycleState": "ACTIVE",
+    "visibility": "PUBLIC"
 }

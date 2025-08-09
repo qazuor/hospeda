@@ -1,10 +1,10 @@
 {
-  "$schema": "../../schemas/userBookmark.schema.json",
-  "id": "026-bookmark-028-user-ernesto-flores-accommodation-027-accommodation-colon-apartment-sueno-agradable-apartment-colon",
-  "userId": "028-user-ernesto-flores",
-  "entityId": "012-accommodation-colon-camping-retiro-encantado-camping-colon",
-  "entityType": "ACCOMMODATION",
-  "name": "sueno-agradable-apartment",
-  "description": "Muy limpio y ordenado",
-  "lifecycleState": "ACTIVE"
+    "$schema": "../../schemas/userBookmark.schema.json",
+    "id": "026-bookmark-028-user-ernesto-flores-accommodation-027-accommodation-colon-apartment-sueno-agradable-apartment-colon",
+    "userId": "028-user-ernesto-flores",
+    "entityId": "012-accommodation-colon-camping-retiro-encantado-camping-colon",
+    "entityType": "ACCOMMODATION",
+    "name": "sueno-agradable-apartment",
+    "description": "Muy limpio y ordenado",
+    "lifecycleState": "ACTIVE"
 }

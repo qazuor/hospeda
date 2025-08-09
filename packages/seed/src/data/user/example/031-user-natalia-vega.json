@@ -1,50 +1,50 @@
 {
-  "id": "031-user-natalia-vega",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "natalia-vega",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Natalia",
-  "lastName": "Vega",
-  "displayName": "Natalia Vega",
-  "contactInfo": {
-    "personalEmail": "natalia.vega@hospeda.com.ar",
-    "mobilePhone": "+5493447058327",
-    "website": "https://www.hospeda.com.ar/host/natalia-vega",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "Concepción del Uruguay",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "3260",
-    "street": "Entre Ríos",
-    "number": "159",
-    "coordinates": {
-      "lat": "-32.4833",
-      "long": "-58.2333"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en Concepción del Uruguay, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "031-user-natalia-vega",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "natalia-vega",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Natalia",
+    "lastName": "Vega",
+    "displayName": "Natalia Vega",
+    "contactInfo": {
+        "personalEmail": "natalia.vega@hospeda.com.ar",
+        "mobilePhone": "+5493447058327",
+        "website": "https://www.hospeda.com.ar/host/natalia-vega",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "Concepción del Uruguay",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "3260",
+        "street": "Entre Ríos",
+        "number": "159",
+        "coordinates": {
+            "lat": "-32.4833",
+            "long": "-58.2333"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Concepción del Uruguay, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }

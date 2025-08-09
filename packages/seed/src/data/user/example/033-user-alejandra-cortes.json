@@ -1,50 +1,50 @@
 {
-  "id": "033-user-alejandra-cortes",
-  "$schema": "../../schemas/user.schema.json",
-  "role": "HOST",
-  "slug": "alejandra-cortes",
-  "lifecycleState": "ACTIVE",
-  "firstName": "Alejandra",
-  "lastName": "Cortés",
-  "displayName": "Alejandra Cortés",
-  "contactInfo": {
-    "personalEmail": "alejandra.cortes@hospeda.com.ar",
-    "mobilePhone": "+5493447799407",
-    "website": "https://www.hospeda.com.ar/host/alejandra-cortes",
-    "preferredEmail": "HOME",
-    "preferredPhone": "MOBILE"
-  },
-  "location": {
-    "city": "Colón",
-    "state": "Entre Ríos",
-    "country": "Argentina",
-    "zipCode": "2820",
-    "street": "Entre Ríos",
-    "number": "486",
-    "coordinates": {
-      "lat": "-32.2167",
-      "long": "-58.1333"
-    }
-  },
-  "profile": {
-    "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad."
-  },
-  "settings": {
-    "theme": "AUTO",
-    "language": "es-AR",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "notifications": {
-      "enabled": true,
-      "allowEmails": true,
-      "allowPush": true,
-      "allowSms": false
+    "id": "033-user-alejandra-cortes",
+    "$schema": "../../schemas/user.schema.json",
+    "role": "HOST",
+    "slug": "alejandra-cortes",
+    "lifecycleState": "ACTIVE",
+    "firstName": "Alejandra",
+    "lastName": "Cortés",
+    "displayName": "Alejandra Cortés",
+    "contactInfo": {
+        "personalEmail": "alejandra.cortes@hospeda.com.ar",
+        "mobilePhone": "+5493447799407",
+        "website": "https://www.hospeda.com.ar/host/alejandra-cortes",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
     },
-    "privacy": {
-      "profileVisibility": "PUBLIC",
-      "showEmail": false,
-      "showPhone": true
-    }
-  },
-  "permissions": [],
-  "visibility": "PUBLIC"
+    "location": {
+        "city": "Colón",
+        "state": "Entre Ríos",
+        "country": "Argentina",
+        "zipCode": "2820",
+        "street": "Entre Ríos",
+        "number": "486",
+        "coordinates": {
+            "lat": "-32.2167",
+            "long": "-58.1333"
+        }
+    },
+    "profile": {
+        "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad."
+    },
+    "settings": {
+        "theme": "AUTO",
+        "language": "es-AR",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "notifications": {
+            "enabled": true,
+            "allowEmails": true,
+            "allowPush": true,
+            "allowSms": false
+        },
+        "privacy": {
+            "profileVisibility": "PUBLIC",
+            "showEmail": false,
+            "showPhone": true
+        }
+    },
+    "permissions": [],
+    "visibility": "PUBLIC"
 }
