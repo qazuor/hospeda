@@ -1,5 +1,5 @@
 import type { DestinationModel } from '@repo/db';
-import { type UpdateDestinationInput, UpdateDestinationSchema } from '@repo/schemas';
+import { type UpdateDestinationInput, UpdateDestinationServiceSchema } from '@repo/schemas';
 import { type DestinationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
@@ -16,9 +16,11 @@ const mockLogger = createLoggerMock();
 beforeEach(() => {
     vi.spyOn(helpers, 'generateDestinationSlug').mockResolvedValue('mock-slug');
     // Mock safeParseAsync for validation
-    vi.spyOn(UpdateDestinationSchema, 'safeParseAsync').mockImplementation(
+    vi.spyOn(UpdateDestinationServiceSchema, 'safeParseAsync').mockImplementation(
         async (input: unknown) => {
-            const typedInput = input as UpdateDestinationInput;
+            const typedInput = input as unknown as import('zod').infer<
+                typeof UpdateDestinationServiceSchema
+            >;
             if (
                 typedInput &&
                 Object.prototype.hasOwnProperty.call(typedInput, 'name') &&
@@ -33,9 +35,16 @@ beforeEach(() => {
                             path: ['name']
                         }
                     ])
-                };
+                } as unknown as Awaited<
+                    ReturnType<(typeof UpdateDestinationServiceSchema)['safeParseAsync']>
+                >;
             }
-            return { success: true, data: typedInput };
+            return {
+                success: true,
+                data: typedInput
+            } as unknown as Awaited<
+                ReturnType<(typeof UpdateDestinationServiceSchema)['safeParseAsync']>
+            >;
         }
     );
 });
@@ -60,10 +69,16 @@ describe('DestinationService.update', () => {
             createdById: getMockId('user') as DestinationType['createdById'],
             updatedById: getMockId('user') as DestinationType['updatedById']
         };
-        const updateInput: UpdateDestinationInput = { name: 'Updated Name' };
+        const updateInput = { name: 'Updated Name' } as unknown as import('zod').infer<
+            typeof UpdateDestinationServiceSchema
+        >;
         (model.findById as Mock).mockResolvedValue(existing);
         (model.update as Mock).mockResolvedValue({ ...existing, ...updateInput });
-        const result = await service.update(actor, id, updateInput);
+        const result = await service.update(
+            actor,
+            id,
+            updateInput as unknown as Record<string, unknown>
+        );
         expect(result.data).toBeDefined();
         expect(result.data?.name).toBe('Updated Name');
         expect(result.error).toBeUndefined();
@@ -85,7 +100,7 @@ describe('DestinationService.update', () => {
         (model.findById as Mock).mockResolvedValue(existing);
         const result = await service.update(actor, id, {
             name: 'Updated Name'
-        } as UpdateDestinationInput);
+        } as unknown as import('zod').infer<typeof UpdateDestinationServiceSchema>);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
@@ -105,7 +120,7 @@ describe('DestinationService.update', () => {
         (model.findById as Mock).mockResolvedValue(existing);
         const result = await service.update(actor, id, {
             name: undefined
-        } as UpdateDestinationInput);
+        } as unknown as import('zod').infer<typeof UpdateDestinationServiceSchema>);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(result.data).toBeUndefined();
@@ -117,7 +132,7 @@ describe('DestinationService.update', () => {
         (model.findById as Mock).mockResolvedValue(null);
         const result = await service.update(actor, id, {
             name: 'Updated Name'
-        } as UpdateDestinationInput);
+        } as unknown as import('zod').infer<typeof UpdateDestinationServiceSchema>);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(result.data).toBeUndefined();
