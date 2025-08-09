@@ -1,5 +1,5 @@
 import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
-import type { AccommodationReviewType, NewAccommodationReviewInputType } from '@repo/types';
+import type { AccommodationReviewType } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext } from '../../types';
@@ -48,7 +48,10 @@ export class AccommodationReviewService extends BaseCrudService<
         this.accommodationService = new AccommodationService(ctx);
     }
 
-    protected _canCreate(actor: Actor, _data: NewAccommodationReviewInputType): void {
+    protected _canCreate(
+        actor: Actor,
+        _data: z.infer<typeof CreateAccommodationReviewSchema>
+    ): void {
         checkCanCreateAccommodationReview(actor);
     }
     protected _canUpdate(actor: Actor, _entity: AccommodationReviewType): void {
