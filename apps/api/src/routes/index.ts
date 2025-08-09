@@ -1,6 +1,7 @@
 import type { AppOpenAPI } from '../types';
 import { apiLogger } from '../utils/logger';
 import { accommodationRoutes } from './accommodation';
+import { destinationRoutes } from './destination';
 
 // Debug: Add logging around accommodation route import
 apiLogger.debug('🏠 Loading accommodation routes...');
@@ -62,16 +63,17 @@ export const setupRoutes = (app: AppOpenAPI) => {
     // Public routes
     app.route('/api/v1/public/users', userRoutes);
 
-    // Debug: Add logging around accommodation route registration
+    // Debug: Add logging around route registration
     try {
         apiLogger.debug('🔗 Registering accommodation routes...');
         app.route('/api/v1/public/accommodations', accommodationRoutes);
         apiLogger.debug('✅ Accommodation routes registered successfully');
+
+        apiLogger.debug('🔗 Registering destination routes...');
+        app.route('/api/v1/public/destinations', destinationRoutes);
+        apiLogger.debug('✅ Destination routes registered successfully');
     } catch (error) {
-        apiLogger.error('❌ Failed to register accommodation routes:', String(error));
-        if (error instanceof Error && error.message.includes('TagSchema')) {
-            apiLogger.error('🔍 TagSchema error during accommodation route registration');
-        }
+        apiLogger.error('❌ Failed to register routes:', String(error));
         throw error;
     }
 
