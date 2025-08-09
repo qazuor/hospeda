@@ -78,12 +78,7 @@ describe('PostService.getFeatured', () => {
 
     it('should return forbidden if actor is missing', async () => {
         // purposely invalid
-        const result = await service.getFeatured(
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            null as any,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            {} as any
-        );
+        const result = await service.getFeatured(null as any, {} as any);
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
 
@@ -92,7 +87,6 @@ describe('PostService.getFeatured', () => {
         const result = await service.getFeatured(actor, {
             fromDate: 'not-a-date',
             foo: 'bar'
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         } as any);
         expectValidationError(result);
     });

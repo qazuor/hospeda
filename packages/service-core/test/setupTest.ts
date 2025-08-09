@@ -9,8 +9,8 @@
 import { vi } from 'vitest';
 
 // Mock logger globally
-vi.mock('@repo/logger', () => ({
-    default: {
+vi.mock('@repo/logger', () => {
+    const mockedLogger = {
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),
@@ -20,9 +20,23 @@ vi.mock('@repo/logger', () => ({
             warn: vi.fn(),
             error: vi.fn(),
             debug: vi.fn()
-        }))
-    }
-}));
+        })),
+        configure: vi.fn(),
+        resetConfig: vi.fn(),
+        createLogger: vi.fn(() => ({
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            debug: vi.fn()
+        })),
+        registerLogMethod: vi.fn()
+    };
+
+    return {
+        default: mockedLogger,
+        logger: mockedLogger
+    };
+});
 
 export const mockDb = {
     select: vi.fn().mockReturnThis(),

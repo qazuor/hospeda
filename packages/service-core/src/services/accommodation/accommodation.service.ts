@@ -1,4 +1,30 @@
 import { AccommodationFaqModel, AccommodationIaDataModel, AccommodationModel } from '@repo/db';
+import {
+    type AddFaqService,
+    AddFaqServiceSchema,
+    type AddIaDataService,
+    AddIaDataServiceSchema,
+    CreateAccommodationServiceSchema,
+    GetAccommodationServiceSchema,
+    type GetByDestinationService,
+    GetByDestinationServiceSchema,
+    type GetFaqsService,
+    GetFaqsServiceSchema,
+    type GetIaDataService,
+    GetIaDataServiceSchema,
+    type GetTopRatedService,
+    GetTopRatedServiceSchema,
+    type RemoveFaqService,
+    RemoveFaqServiceSchema,
+    type RemoveIaDataService,
+    RemoveIaDataServiceSchema,
+    SearchAccommodationServiceSchema,
+    UpdateAccommodationServiceSchema,
+    type UpdateFaqService,
+    UpdateFaqServiceSchema,
+    type UpdateIaDataService,
+    UpdateIaDataServiceSchema
+} from '@repo/schemas';
 import type {
     AccommodationId,
     AccommodationRatingType,
@@ -27,32 +53,6 @@ import {
     checkCanUpdate,
     checkCanView
 } from './accommodation.permissions';
-import {
-    type AddFaqInput,
-    AddFaqInputSchema,
-    type AddIADataInput,
-    AddIADataInputSchema,
-    CreateAccommodationSchema,
-    GetAccommodationSchema,
-    type GetByDestinationIdInput,
-    GetByDestinationIdInputSchema,
-    type GetFaqsInput,
-    GetFaqsInputSchema,
-    type GetIADataInput,
-    GetIADataInputSchema,
-    type GetTopRatedInput,
-    GetTopRatedInputSchema,
-    type RemoveFaqInput,
-    RemoveFaqInputSchema,
-    type RemoveIADataInput,
-    RemoveIADataInputSchema,
-    SearchAccommodationSchema,
-    UpdateAccommodationSchema,
-    type UpdateFaqInput,
-    UpdateFaqInputSchema,
-    type UpdateIADataInput,
-    UpdateIADataInputSchema
-} from './accommodation.schemas';
 
 /**
  * Provides accommodation-specific business logic, including creation, updates,
@@ -62,9 +62,9 @@ import {
 export class AccommodationService extends BaseCrudService<
     AccommodationType,
     AccommodationModel,
-    typeof CreateAccommodationSchema,
-    typeof UpdateAccommodationSchema,
-    typeof SearchAccommodationSchema
+    typeof CreateAccommodationServiceSchema,
+    typeof UpdateAccommodationServiceSchema,
+    typeof SearchAccommodationServiceSchema
 > {
     static readonly ENTITY_NAME = 'accommodation';
     protected readonly entityName = AccommodationService.ENTITY_NAME;
@@ -79,16 +79,16 @@ export class AccommodationService extends BaseCrudService<
     /**
      * @inheritdoc
      */
-    protected readonly createSchema = CreateAccommodationSchema;
+    protected readonly createSchema = CreateAccommodationServiceSchema;
     /**
      * @inheritdoc
      */
-    protected readonly updateSchema = UpdateAccommodationSchema;
+    protected readonly updateSchema = UpdateAccommodationServiceSchema;
 
     /**
      * @inheritdoc
      */
-    protected readonly searchSchema = SearchAccommodationSchema;
+    protected readonly searchSchema = SearchAccommodationServiceSchema;
 
     /**
      * @inheritdoc
@@ -98,7 +98,7 @@ export class AccommodationService extends BaseCrudService<
         update: normalizeUpdateInput,
         list: normalizeListInput,
         view: normalizeViewInput,
-        search: (params: z.infer<typeof SearchAccommodationSchema>) => params // identity by default, can be overridden in tests
+        search: (params: z.infer<typeof SearchAccommodationServiceSchema>) => params // identity by default, can be overridden in tests
     };
 
     private destinationService: DestinationService;
@@ -118,7 +118,10 @@ export class AccommodationService extends BaseCrudService<
     /**
      * @inheritdoc
      */
-    protected _canCreate(actor: Actor, data: z.infer<typeof CreateAccommodationSchema>): void {
+    protected _canCreate(
+        actor: Actor,
+        data: z.infer<typeof CreateAccommodationServiceSchema>
+    ): void {
         checkCanCreate(actor, data);
     }
     /**
@@ -193,11 +196,11 @@ export class AccommodationService extends BaseCrudService<
      * This hook ensures that every accommodation has a URL-friendly and unique identifier.
      */
     protected async _beforeCreate(
-        data: z.infer<typeof CreateAccommodationSchema>,
+        data: z.infer<typeof CreateAccommodationServiceSchema>,
         _actor: Actor
     ): Promise<Partial<AccommodationType>> {
-        const slug = await generateSlug(data.type, data.name);
-        return { ...data, slug } as Partial<AccommodationType>;
+        const slug = await generateSlug(data.type as string, data.name as string);
+        return { ...data, slug } as unknown as Partial<AccommodationType>;
     }
 
     protected async _afterCreate(entity: AccommodationType): Promise<AccommodationType> {
@@ -254,17 +257,10 @@ export class AccommodationService extends BaseCrudService<
      * @returns A paginated list of accommodations matching the criteria.
      */
     protected async _executeSearch(
-        params: z.infer<typeof SearchAccommodationSchema>,
+        params: z.infer<typeof SearchAccommodationServiceSchema>,
         _actor: Actor
     ) {
-        const searchParams = {
-            ...params,
-            filters: {
-                ...params.filters,
-                ownerId: params.filters?.ownerId as string | undefined
-            }
-        };
-        return this.model.search(searchParams);
+        return this.model.search(params);
     }
 
     /**
@@ -275,17 +271,10 @@ export class AccommodationService extends BaseCrudService<
      * @returns An object containing the total count of accommodations matching the criteria.
      */
     protected async _executeCount(
-        params: z.infer<typeof SearchAccommodationSchema>,
+        params: z.infer<typeof SearchAccommodationServiceSchema>,
         _actor: Actor
     ) {
-        const searchParams = {
-            ...params,
-            filters: {
-                ...params.filters,
-                ownerId: params.filters?.ownerId as string | undefined
-            }
-        };
-        return this.model.countByFilters(searchParams);
+        return this.model.countByFilters(params);
     }
 
     /**
@@ -296,12 +285,12 @@ export class AccommodationService extends BaseCrudService<
      */
     public async getSummary(
         actor: Actor,
-        data: z.infer<typeof GetAccommodationSchema>
+        data: z.infer<typeof GetAccommodationServiceSchema>
     ): Promise<ServiceOutput<AccommodationSummaryType | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
             input: { ...data, actor },
-            schema: GetAccommodationSchema,
+            schema: GetAccommodationServiceSchema,
             execute: async (validated, actor) => {
                 const { id, slug } = validated;
                 const field = id ? 'id' : 'slug';
@@ -346,7 +335,7 @@ export class AccommodationService extends BaseCrudService<
      */
     public async getStats(
         actor: Actor,
-        data: z.infer<typeof GetAccommodationSchema>
+        data: z.infer<typeof GetAccommodationServiceSchema>
     ): Promise<
         ServiceOutput<{
             reviewsCount: number;
@@ -357,7 +346,7 @@ export class AccommodationService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
             input: { ...data, actor },
-            schema: GetAccommodationSchema,
+            schema: GetAccommodationServiceSchema,
             execute: async (validated, actor) => {
                 const { id, slug } = validated;
                 const field = id ? 'id' : 'slug';
@@ -392,12 +381,12 @@ export class AccommodationService extends BaseCrudService<
      */
     public async getByDestination(
         actor: Actor,
-        data: GetByDestinationIdInput
+        data: GetByDestinationService
     ): Promise<ServiceOutput<AccommodationType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByDestination',
             input: { ...data, actor },
-            schema: GetByDestinationIdInputSchema,
+            schema: GetByDestinationServiceSchema,
             execute: async (validated, actor) => {
                 this._canList(actor);
                 const result = await this.model.findAll({
@@ -416,12 +405,12 @@ export class AccommodationService extends BaseCrudService<
      */
     public async getTopRatedByDestination(
         actor: Actor,
-        data: GetTopRatedInput
+        data: GetTopRatedService
     ): Promise<ServiceOutput<never>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRatedByDestination',
             input: { ...data, actor },
-            schema: GetTopRatedInputSchema,
+            schema: GetTopRatedServiceSchema,
             execute: async (_validated, actor) => {
                 this._canList(actor);
                 throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
@@ -437,12 +426,12 @@ export class AccommodationService extends BaseCrudService<
      */
     public async addFaq(
         actor: Actor,
-        data: AddFaqInput
+        data: AddFaqService
     ): Promise<ServiceOutput<{ faq: import('@repo/types').AccommodationFaqType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addFaq',
             input: { ...data, actor },
-            schema: AddFaqInputSchema,
+            schema: AddFaqServiceSchema,
             execute: async (validated) => {
                 const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
@@ -468,12 +457,12 @@ export class AccommodationService extends BaseCrudService<
      */
     public async removeFaq(
         actor: Actor,
-        data: RemoveFaqInput
+        data: RemoveFaqService
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeFaq',
             input: { ...data, actor },
-            schema: RemoveFaqInputSchema,
+            schema: RemoveFaqServiceSchema,
             execute: async (validated) => {
                 const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
@@ -502,12 +491,12 @@ export class AccommodationService extends BaseCrudService<
      */
     public async updateFaq(
         actor: Actor,
-        data: UpdateFaqInput
+        data: UpdateFaqService
     ): Promise<ServiceOutput<{ faq: import('@repo/types').AccommodationFaqType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'updateFaq',
             input: { ...data, actor },
-            schema: UpdateFaqInputSchema,
+            schema: UpdateFaqServiceSchema,
             execute: async (validated) => {
                 const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
@@ -545,12 +534,12 @@ export class AccommodationService extends BaseCrudService<
      */
     public async getFaqs(
         actor: Actor,
-        data: GetFaqsInput
+        data: GetFaqsService
     ): Promise<ServiceOutput<{ faqs: import('@repo/types').AccommodationFaqType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFaqs',
             input: { ...data, actor },
-            schema: GetFaqsInputSchema,
+            schema: GetFaqsServiceSchema,
             execute: async (validated, actor) => {
                 const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
@@ -573,13 +562,13 @@ export class AccommodationService extends BaseCrudService<
      * @returns Output object with the created IA data
      */
     public async addIAData(
-        input: AddIADataInput,
+        input: AddIaDataService,
         actor: Actor
     ): Promise<ServiceOutput<{ iaData: import('@repo/types').AccommodationIaDataType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addIAData',
             input: { actor: actor, ...input },
-            schema: AddIADataInputSchema,
+            schema: AddIaDataServiceSchema,
             execute: async (validated) => {
                 const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
@@ -604,13 +593,13 @@ export class AccommodationService extends BaseCrudService<
      * @returns Output object with success status
      */
     public async removeIAData(
-        input: RemoveIADataInput,
+        input: RemoveIaDataService,
         actor: Actor
     ): Promise<ServiceOutput<{ success: boolean }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeIAData',
             input: { actor: actor, ...input },
-            schema: RemoveIADataInputSchema,
+            schema: RemoveIaDataServiceSchema,
             execute: async (validated) => {
                 const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
@@ -638,13 +627,13 @@ export class AccommodationService extends BaseCrudService<
      * @returns Output object with the updated IA data
      */
     public async updateIAData(
-        input: UpdateIADataInput,
+        input: UpdateIaDataService,
         actor: Actor
     ): Promise<ServiceOutput<{ iaData: import('@repo/types').AccommodationIaDataType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'updateIAData',
             input: { actor: actor, ...input },
-            schema: UpdateIADataInputSchema,
+            schema: UpdateIaDataServiceSchema,
             execute: async (validated) => {
                 const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {
@@ -684,13 +673,13 @@ export class AccommodationService extends BaseCrudService<
      * @returns Output object with the list of IA data
      */
     public async getAllIAData(
-        input: GetIADataInput,
+        input: GetIaDataService,
         actor: Actor
     ): Promise<ServiceOutput<{ iaData: import('@repo/types').AccommodationIaDataType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAllIAData',
             input: { actor: actor, ...input },
-            schema: GetIADataInputSchema,
+            schema: GetIaDataServiceSchema,
             execute: async (validated, actor) => {
                 const accommodation = await this.model.findById(validated.accommodationId);
                 if (!accommodation) {

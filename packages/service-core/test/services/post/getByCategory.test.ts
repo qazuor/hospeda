@@ -94,11 +94,7 @@ describe('PostService.getByCategory', () => {
 
     it('should return validation error if input is invalid', async () => {
         // purposely invalid
-        const result = await service.getByCategory(
-            actor,
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-            { actor: 123 } as any
-        );
+        const result = await service.getByCategory(actor, { actor: 123 } as any);
         expectValidationError(result);
     });
 

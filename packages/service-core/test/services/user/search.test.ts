@@ -27,7 +27,7 @@ const paginated = (items: unknown[], page = 1, pageSize = 10) => ({
     pageSize,
     total: items.length
 });
-// biome-ignore lint/suspicious/noExplicitAny: test-only access to protected property
+
 const getNormalizers = (svc: unknown) => (svc as any).normalizers;
 
 describe('UserService.search', () => {

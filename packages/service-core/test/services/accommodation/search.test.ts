@@ -36,7 +36,6 @@ const paginated = (items: unknown[], page = 1, pageSize = 10) => ({
     total: items.length
 });
 
-// biome-ignore lint/suspicious/noExplicitAny: test-only access to protected property
 const getNormalizers = (svc: unknown) => (svc as any).normalizers;
 
 // Helper for type-safe mocking
@@ -99,7 +98,7 @@ describe('AccommodationService.search', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         const result = await service.search(actor, {
-            filters: { priceMin: 'not-a-number' },
+            filters: { minPrice: 'not-a-number' },
             pagination: { page: 1, pageSize: 2 }
         } as unknown as Record<string, unknown>);
         expect(result.data).toBeUndefined();

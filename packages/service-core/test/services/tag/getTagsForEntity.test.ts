@@ -57,7 +57,6 @@ describe('TagService.getTagsForEntity', () => {
         const result = await service.getTagsForEntity(actor, {
             entityId: '',
             entityType: 'POST'
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         } as any);
         expectValidationError(result);
     });

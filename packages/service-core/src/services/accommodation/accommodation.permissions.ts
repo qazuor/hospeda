@@ -1,9 +1,9 @@
+import type { CreateAccommodationServiceSchema } from '@repo/schemas';
 import { type AccommodationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { checkGenericPermission, hasPermission } from '../../utils';
-import type { CreateAccommodationSchema } from './';
 
 /**
  * Checks if a given actor is the owner of a resource.
@@ -26,7 +26,7 @@ const isOwner = (actor: Actor, entity: { ownerId?: string | null }) => {
  */
 export function checkCanCreate(
     actor: Actor,
-    _data: z.infer<typeof CreateAccommodationSchema>
+    _data: z.infer<typeof CreateAccommodationServiceSchema>
 ): void {
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
         throw new ServiceError(

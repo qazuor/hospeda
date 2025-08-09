@@ -50,7 +50,6 @@ describe('TagService.removeTagFromEntity', () => {
             tagId: '',
             entityId: 'e',
             entityType: 'POST'
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         } as any);
         expectValidationError(result);
     });

@@ -1,10 +1,10 @@
 import type { AccommodationModel } from '@repo/db';
+import { UpdateAccommodationServiceSchema } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { z } from 'zod';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
-import type { UpdateAccommodationInput } from '../../../src/services/accommodation/accommodation.schemas';
-import * as schemas from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createNewAccommodationInput } from '../../factories/accommodationFactory';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
@@ -17,9 +17,9 @@ const mockLogger = createLoggerMock();
 beforeEach(() => {
     vi.spyOn(helpers, 'generateSlug').mockResolvedValue('mock-slug');
     // Mock safeParseAsync for validation
-    vi.spyOn(schemas.UpdateAccommodationSchema, 'safeParseAsync').mockImplementation(
+    vi.spyOn(UpdateAccommodationServiceSchema, 'safeParseAsync').mockImplementation(
         async (input: unknown) => {
-            const typedInput = input as UpdateAccommodationInput;
+            const typedInput = input as z.infer<typeof UpdateAccommodationServiceSchema>;
             if (
                 typedInput &&
                 Object.prototype.hasOwnProperty.call(typedInput, 'name') &&
@@ -88,10 +88,13 @@ describe('AccommodationService.update', () => {
         const id = 'mock-id';
         const existing = { ...createNewAccommodationInput(), id };
         (model.findById as Mock).mockResolvedValue(existing);
-        // Act
-        const result = await service.update(actor, id, { name: undefined } as unknown as Parameters<
-            AccommodationService['update']
-        >[2]);
+
+        // Act - Send invalid data that should fail validation
+        const result = await service.update(actor, id, {
+            name: '', // Empty name should fail validation
+            type: 'INVALID_TYPE' // Invalid type should fail validation
+        } as unknown as Parameters<AccommodationService['update']>[2]);
+
         // Assert
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
