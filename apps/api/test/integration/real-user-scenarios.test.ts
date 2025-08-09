@@ -44,7 +44,7 @@ vi.mock('@hono/clerk-auth', () => ({
     clerkMiddleware: vi.fn(() => (_c: any, next: any) => next())
 }));
 
-// Mock service-core for AccommodationService
+// Mock service-core for AccommodationService and DestinationService
 vi.mock('@repo/service-core', () => {
     const { z } = require('zod');
 
@@ -62,51 +62,87 @@ vi.mock('@repo/service-core', () => {
 
     const UpdateAccommodationSchema = CreateAccommodationSchema.partial();
 
+    const AccommodationService = vi.fn().mockImplementation(() => ({
+        list: vi.fn().mockResolvedValue({
+            data: {
+                items: [
+                    {
+                        id: 'acc_123',
+                        name: 'Test Accommodation',
+                        slug: 'test-accommodation',
+                        description: 'A test accommodation for scenarios'
+                    }
+                ],
+                total: 1
+            }
+        }),
+        getById: vi.fn().mockResolvedValue({
+            data: {
+                id: 'acc_123',
+                name: 'Test Accommodation',
+                slug: 'test-accommodation',
+                description: 'A test accommodation for scenarios'
+            }
+        }),
+        getBySlug: vi.fn().mockResolvedValue({
+            data: {
+                id: 'acc_123',
+                name: 'Test Accommodation',
+                slug: 'test-accommodation',
+                description: 'A test accommodation for scenarios'
+            }
+        }),
+        create: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        hardDelete: vi.fn(),
+        restore: vi.fn()
+    }));
+
+    const DestinationService = vi.fn().mockImplementation(() => ({
+        list: vi.fn().mockResolvedValue({ data: { items: [], total: 0 } }),
+        getById: vi.fn().mockResolvedValue({
+            data: { id: 'dest_123', name: 'Test Destination', slug: 'test-destination' }
+        }),
+        getBySlug: vi.fn().mockResolvedValue({
+            data: { id: 'dest_123', name: 'Test Destination', slug: 'test-destination' }
+        }),
+        getSummary: vi.fn().mockResolvedValue({
+            data: {
+                summary: {
+                    id: 'dest_123',
+                    slug: 'test-destination',
+                    name: 'Test Destination',
+                    country: 'X',
+                    isFeatured: false,
+                    averageRating: 0,
+                    reviewsCount: 0,
+                    accommodationsCount: 0
+                }
+            }
+        }),
+        getStats: vi.fn().mockResolvedValue({
+            data: { stats: { accommodationsCount: 0, reviewsCount: 0, averageRating: 0 } }
+        }),
+        create: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        hardDelete: vi.fn(),
+        restore: vi.fn()
+    }));
+
+    const UserService = vi.fn().mockImplementation(() => ({
+        list: vi.fn().mockResolvedValue({ data: { items: [], total: 0 } }),
+        getById: vi.fn().mockResolvedValue({ data: null }),
+        create: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn()
+    }));
+    // Export the schemas so they can be imported
     return {
-        AccommodationService: vi.fn().mockImplementation(() => ({
-            list: vi.fn().mockResolvedValue({
-                data: {
-                    items: [
-                        {
-                            id: 'acc_123',
-                            name: 'Test Accommodation',
-                            slug: 'test-accommodation',
-                            description: 'A test accommodation for scenarios'
-                        }
-                    ],
-                    total: 1
-                }
-            }),
-            getById: vi.fn().mockResolvedValue({
-                data: {
-                    id: 'acc_123',
-                    name: 'Test Accommodation',
-                    slug: 'test-accommodation',
-                    description: 'A test accommodation for scenarios'
-                }
-            }),
-            getBySlug: vi.fn().mockResolvedValue({
-                data: {
-                    id: 'acc_123',
-                    name: 'Test Accommodation',
-                    slug: 'test-accommodation',
-                    description: 'A test accommodation for scenarios'
-                }
-            }),
-            create: vi.fn(),
-            update: vi.fn(),
-            softDelete: vi.fn(),
-            hardDelete: vi.fn(),
-            restore: vi.fn()
-        })),
-        UserService: vi.fn().mockImplementation(() => ({
-            list: vi.fn().mockResolvedValue({ data: { items: [], total: 0 } }),
-            getById: vi.fn().mockResolvedValue({ data: null }),
-            create: vi.fn(),
-            update: vi.fn(),
-            softDelete: vi.fn()
-        })),
-        // Export the schemas so they can be imported
+        AccommodationService,
+        DestinationService,
+        UserService,
         CreateAccommodationSchema,
         UpdateAccommodationSchema
     };
