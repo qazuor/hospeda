@@ -10,7 +10,7 @@ import { type BaseLoggerConfig, LogLevel, type LoggerConfig } from './types.js';
  * Default logger configuration
  */
 export const defaultConfig: BaseLoggerConfig = {
-    LEVEL: LogLevel.WARN,
+    LEVEL: LogLevel.LOG,
     INCLUDE_TIMESTAMPS: true,
     INCLUDE_LEVEL: true,
     USE_COLORS: true,

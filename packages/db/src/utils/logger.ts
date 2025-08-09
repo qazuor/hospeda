@@ -2,6 +2,12 @@
 import { logger as baseLogger } from '@repo/logger';
 
 /**
+ * Logger instance used by DB helpers.
+ * Exported for testing so spies can hook into the exact instance used.
+ */
+export const dbLogger = baseLogger;
+
+/**
  * Logs a successful database query with context.
  * @param table - The table name
  * @param action - The action performed (e.g., 'findAll', 'create')
@@ -9,7 +15,7 @@ import { logger as baseLogger } from '@repo/logger';
  * @param result - The query result
  */
 export const logQuery = (table: string, action: string, params: unknown, result: unknown) => {
-    baseLogger.info({ table, action, params, result }, `[DB] ${table}.${action} OK`);
+    dbLogger.info({ table, action, params, result }, `[DB] ${table}.${action} OK`);
 };
 
 /**
@@ -19,7 +25,7 @@ export const logQuery = (table: string, action: string, params: unknown, result:
  * @param params - The action parameters
  */
 export const logAction = (table: string, action: string, params: unknown) => {
-    baseLogger.info({ table, action, params }, `[DB] ${table}.${action}`);
+    dbLogger.info({ table, action, params }, `[DB] ${table}.${action}`);
 };
 
 /**
@@ -30,7 +36,7 @@ export const logAction = (table: string, action: string, params: unknown) => {
  * @param error - The error object
  */
 export const logError = (table: string, action: string, params: unknown, error: Error) => {
-    baseLogger.error(
+    dbLogger.error(
         { table, action, params, error: error.message, stack: error.stack },
         `[DB] ${table}.${action} ERROR`
     );
