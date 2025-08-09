@@ -1,9 +1,7 @@
-import { TagsArraySchema } from '@repo/schemas/entities/tag/tag.schema.js';
 import { z } from 'zod';
 import { DestinationIdSchema } from '../../common/id.schema.js';
 import {
     LocationSchema,
-    MediaSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
@@ -11,7 +9,6 @@ import {
     WithModerationStatusSchema,
     WithReviewStateSchema,
     WithSeoSchema,
-    WithTagsSchema,
     WithVisibilitySchema
 } from '../../common/index.js';
 import { BaseSearchSchema } from '../../common/search.schemas.js';
@@ -31,7 +28,6 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithModerationStatusSchema)
     .merge(WithVisibilitySchema)
     .merge(WithReviewStateSchema)
-    .merge(WithTagsSchema)
     .merge(WithSeoSchema)
     .extend({
         id: DestinationIdSchema,
@@ -57,8 +53,36 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
             .max(2000, { message: 'zodError.destination.description.max_length' }),
         /** Location object */
         location: LocationSchema,
-        /** Media object */
-        media: MediaSchema,
+        /** Media object (avoid lazy TagSchema refs for OpenAPI) */
+        media: z
+            .object({
+                featuredImage: z
+                    .object({
+                        url: z.string().url(),
+                        caption: z.string().optional(),
+                        description: z.string().optional()
+                    })
+                    .optional(),
+                gallery: z
+                    .array(
+                        z.object({
+                            url: z.string().url(),
+                            caption: z.string().optional(),
+                            description: z.string().optional()
+                        })
+                    )
+                    .optional(),
+                videos: z
+                    .array(
+                        z.object({
+                            url: z.string().url(),
+                            caption: z.string().optional(),
+                            description: z.string().optional()
+                        })
+                    )
+                    .optional()
+            })
+            .optional(),
         /** Whether the destination is featured, optional */
         isFeatured: z.boolean(),
         /** Number of accommodations, optional */
@@ -68,7 +92,9 @@ export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
         /** List of reviews, optional */
         reviews: z.array(DestinationReviewSchema).optional(),
         /** Rating object, optional */
-        rating: DestinationRatingSchema.optional()
+        rating: DestinationRatingSchema.optional(),
+        /** Tags as simple string array to avoid circular dependencies in OpenAPI */
+        tags: z.array(z.string()).optional()
     })
     .strict();
 
@@ -79,7 +105,9 @@ export const DestinationFilterInputSchema = BaseSearchSchema.extend({
             state: z.string().optional(),
             city: z.string().optional(),
             country: z.string().optional(),
-            tags: TagsArraySchema.optional(),
+            // Avoid importing TagSchema here to prevent circular deps during OpenAPI generation
+            // Follow Accommodation filters pattern: use simple string array
+            tags: z.array(z.string()).optional(),
             visibility: VisibilityEnumSchema.optional(),
             isFeatured: z.boolean().optional(),
             minRating: z.number().min(0).max(5).optional(),
