@@ -1,12 +1,23 @@
-export * from './accommodation.amenity.schema.js';
-export * from './accommodation.extrainfo.schema.js';
-export * from './accommodation.faq.schema.js';
-export * from './accommodation.feature.schema.js';
-export * from './accommodation.ia.schema.js';
-export * from './accommodation.price.schema.js';
-export * from './accommodation.rating.schema.js';
-export * from './accommodation.review.schema.js';
-export * from './accommodation.schedule.schema.js';
-export * from './accommodation.schema.js';
-export * from './amenity.schema.js';
-export * from './feature.schema.js';
+// Core schemas
+export * from './accommodation.base.schema.js';
+export * from './accommodation.service.schema.js';
+
+// Request and response schemas
+export * from './accommodation.requests.schema.js';
+export * from './accommodation.responses.schema.js';
+
+// Composition schemas (export only non-conflicting schemas)
+export {
+    AccommodationByDestinationSchema,
+    AccommodationCreateCompositionSchema,
+    AccommodationDetailSchema,
+    AccommodationListItemSchema,
+    AccommodationSearchCompositionSchema,
+    AccommodationSearchFiltersSchema,
+    AccommodationSearchPaginationSchema,
+    AccommodationSearchSortSchema,
+    AccommodationStatsSchema,
+    AccommodationSummarySchema,
+    AccommodationUpdateCompositionSchema,
+    TopRatedAccommodationsSchema
+} from './accommodation.composition.schema.js';
