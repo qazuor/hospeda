@@ -1,3 +1,4 @@
+import { inspect } from 'node:util';
 /**
  * Utility to list all registered routes automatically
  */
@@ -37,10 +38,18 @@ const extractRoutes = (app: OpenAPIHono<AppBindings>): RouteInfo[] => {
 
     try {
         // Access the OpenAPI registry to get registered routes
-        const openApiRoutes = app.getOpenAPIDocument({
+        // Try 3.1 first; if it fails, fallback to 3.0 (to match configure-open-api.ts)
+        let openApiRoutes = app.getOpenAPIDocument({
             openapi: '3.1.0',
             info: { title: 'API', version: '1.0.0' }
         });
+        if (!openApiRoutes?.paths) {
+            // Fallback to 3.0.0
+            openApiRoutes = app.getOpenAPIDocument({
+                openapi: '3.0.0',
+                info: { title: 'API', version: '1.0.0' }
+            });
+        }
 
         // Extract paths from OpenAPI document
         if (openApiRoutes.paths) {
@@ -64,21 +73,12 @@ const extractRoutes = (app: OpenAPIHono<AppBindings>): RouteInfo[] => {
 
         apiLogger.info(`Extracted ${routes.length} routes from OpenAPI registry`);
     } catch (error) {
-        apiLogger.warn('Could not extract OpenAPI routes, using fallback method');
-        apiLogger.debug(
-            'OpenAPI extraction error:',
-            error instanceof Error ? error.message : String(error)
-        );
+        apiLogger.warn('Could not extract OpenAPI routes');
+        apiLogger.warn(`OpenAPI extraction error: ${inspect(error, { depth: 2 })}`);
 
-        // Enhanced debugging for TagSchema issues
         if (error instanceof Error) {
             apiLogger.debug('Error stack:', error.stack);
-            if (error.message.includes('TagSchema')) {
-                apiLogger.debug(
-                    '🔍 TagSchema error detected - this is likely a circular dependency issue'
-                );
-                apiLogger.debug('Error details:', `${error.message} - ${error.name}`);
-            }
+            apiLogger.debug('Error details:', `${error.message} - ${error.name}`);
         }
     }
 
