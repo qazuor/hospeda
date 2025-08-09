@@ -1,30 +1,200 @@
 import { z } from '@hono/zod-openapi';
 
+// Import modular schemas from @repo/schemas for validation
+import {
+    AccommodationByDestinationSchema,
+    AccommodationDetailSchema,
+    AccommodationListItemSchema,
+    AccommodationSearchCompositionSchema,
+    AccommodationSearchFiltersSchema,
+    AccommodationSearchPaginationSchema,
+    AccommodationSearchSortSchema,
+    AccommodationStatsSchema,
+    AccommodationSummarySchema,
+    TopRatedAccommodationsSchema
+} from '@repo/schemas';
+
+// Import service schemas from @repo/schemas for validation
+import {
+    AddFaqServiceSchema,
+    CreateAccommodationServiceSchema,
+    GetAccommodationServiceSchema,
+    GetByDestinationServiceSchema,
+    GetFaqsServiceSchema,
+    GetTopRatedServiceSchema,
+    RemoveFaqServiceSchema,
+    SearchAccommodationServiceSchema,
+    UpdateAccommodationServiceSchema,
+    UpdateFaqServiceSchema
+} from '@repo/schemas';
+
+/**
+ * Accommodation API schemas - Optimized for maximum reuse
+ * Uses schemas from @repo/schemas to maintain single source of truth
+ */
+
+/**
+ * Accommodation response schemas using modular approach
+ * These replace the monolithic AccommodationSchema to avoid circular dependencies
+ */
+
+// List item schema for GET /accommodations
+export const accommodationListItemSchema = z
+    .object(AccommodationListItemSchema.shape)
+    .openapi('AccommodationListItem');
+
+// Detail schema for GET /accommodations/:id
+export const accommodationDetailSchema = z
+    .object(AccommodationDetailSchema.shape)
+    .openapi('AccommodationDetail');
+
+// Summary schema for GET /accommodations/:id/summary
+export const accommodationSummarySchema = z
+    .object(AccommodationSummarySchema.shape)
+    .openapi('AccommodationSummary');
+
+// Stats schema for GET /accommodations/stats
+export const accommodationStatsSchema = z
+    .object(AccommodationStatsSchema.shape)
+    .openapi('AccommodationStats');
+
+// By destination schema for GET /accommodations/destination/:destinationId
+export const accommodationByDestinationSchema = z
+    .object(AccommodationByDestinationSchema.shape)
+    .openapi('AccommodationByDestination');
+
+// Top rated schema for GET /accommodations/destination/:destinationId/top-rated
+export const topRatedAccommodationsSchema = z
+    .object(TopRatedAccommodationsSchema.shape)
+    .openapi('TopRatedAccommodations');
+
+/**
+ * Accommodation creation schema for API input
+ * Reuses CreateAccommodationServiceSchema from @repo/schemas
+ */
+export const accommodationCreateSchema = z
+    .object(CreateAccommodationServiceSchema.shape)
+    .openapi('AccommodationCreate');
+
+/**
+ * Accommodation update schema for API input
+ * Reuses UpdateAccommodationServiceSchema from @repo/schemas
+ */
+export const accommodationUpdateSchema = z
+    .object(UpdateAccommodationServiceSchema.shape)
+    .openapi('AccommodationUpdate');
+
+/**
+ * Search schemas for GET /accommodations
+ */
+export const accommodationSearchFiltersSchema = z
+    .object(AccommodationSearchFiltersSchema.shape)
+    .openapi('AccommodationSearchFilters');
+
+export const accommodationSearchSortSchema = z
+    .object(AccommodationSearchSortSchema.shape)
+    .openapi('AccommodationSearchSort');
+
+export const accommodationSearchPaginationSchema = z
+    .object(AccommodationSearchPaginationSchema.shape)
+    .openapi('AccommodationSearchPagination');
+
+export const accommodationSearchCompositionSchema = z
+    .object(AccommodationSearchCompositionSchema.shape)
+    .openapi('AccommodationSearchComposition');
+
+/**
+ * Updated schemas using modular approach
+ */
+export const accommodationSchema = accommodationDetailSchema;
+export const accommodationListSchema = z
+    .array(accommodationListItemSchema)
+    .openapi('AccommodationList');
+
+/**
+ * Parameter schemas for route validation
+ */
 export const ParamsSchema = z.object({
     id: z
         .string()
-        .min(3)
+        .uuid('Invalid accommodation ID format')
         .openapi({
-            param: {
-                name: 'id',
-                in: 'path'
-            },
-            example: '1212121'
+            param: { name: 'id', in: 'path' },
+            example: 'acc_1234567890'
         })
 });
 
-export const accommodationSchema = z
-    .object({
-        id: z.string().openapi({
-            example: '123'
-        }),
-        name: z.string().openapi({
-            example: 'John Doe'
-        }),
-        age: z.number().openapi({
-            example: 42
+export const SlugParamsSchema = z.object({
+    slug: z
+        .string()
+        .min(1, 'Slug is required')
+        .openapi({
+            param: { name: 'slug', in: 'path' },
+            example: 'luxury-hotel-barcelona'
         })
-    })
-    .openapi('accommodation');
+});
 
-export const accommodationListSchema = z.array(accommodationSchema).openapi('accommodationList');
+/**
+ * FAQ-related schemas for API input/output
+ */
+export const FaqParamsSchema = z.object({
+    id: z
+        .string()
+        .uuid('Invalid accommodation ID format')
+        .openapi({
+            param: { name: 'id', in: 'path' },
+            example: 'acc_1234567890'
+        }),
+    faqId: z
+        .string()
+        .uuid('Invalid FAQ ID format')
+        .openapi({
+            param: { name: 'faqId', in: 'path' },
+            example: 'faq_1234567890'
+        })
+});
+
+export const faqResponseSchema = z
+    .object({
+        id: z.string(),
+        question: z.string(),
+        answer: z.string(),
+        order: z.number(),
+        createdAt: z.string(),
+        updatedAt: z.string()
+    })
+    .openapi('FaqResponse');
+
+export const faqListResponseSchema = z
+    .object({
+        faqs: z.array(faqResponseSchema)
+    })
+    .openapi('FaqListResponse');
+
+export const successResponseSchema = z
+    .object({
+        success: z.boolean()
+    })
+    .openapi('SuccessResponse');
+
+export const faqCreateSchema = z.object(AddFaqServiceSchema.shape.faq.shape).openapi('FaqCreate');
+
+export const faqUpdateSchema = faqCreateSchema.partial().openapi('FaqUpdate');
+
+/**
+ * Service schemas for API validation
+ */
+export const getAccommodationSchema = z
+    .object(GetAccommodationServiceSchema.shape)
+    .openapi('GetAccommodation');
+export const searchAccommodationSchema = z
+    .object(SearchAccommodationServiceSchema.shape)
+    .openapi('SearchAccommodation');
+export const getByDestinationSchema = z
+    .object(GetByDestinationServiceSchema.shape)
+    .openapi('GetByDestination');
+export const getTopRatedSchema = z.object(GetTopRatedServiceSchema.shape).openapi('GetTopRated');
+export const addFaqSchema = z.object(AddFaqServiceSchema.shape).openapi('AddFaq');
+export const removeFaqSchema = z.object(RemoveFaqServiceSchema.shape).openapi('RemoveFaq');
+export const updateFaqSchema = z.object(UpdateFaqServiceSchema.shape).openapi('UpdateFaq');
+export const getFaqsSchema = z.object(GetFaqsServiceSchema.shape).openapi('GetFaqs');

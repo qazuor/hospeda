@@ -1,30 +1,59 @@
 import { z } from '@hono/zod-openapi';
+import { CreateUserSchema, UpdateUserSchema, UserSchema } from '@repo/schemas';
 
+/**
+ * User API schemas
+ * Uses real schemas from @repo/schemas with OpenAPI wrappers
+ */
+
+/**
+ * User response schema for API
+ * Uses real UserSchema from @repo/schemas but omits circular dependencies
+ */
+export const userResponseSchema = z
+    .object(UserSchema.omit({ bookmarks: true }).shape)
+    .openapi('UserResponse');
+
+/**
+ * User creation schema for API input
+ * Uses real CreateUserSchema from @repo/schemas with OpenAPI wrapper
+ */
+export const userCreateSchema = z.object(CreateUserSchema.shape).openapi('UserCreate');
+
+/**
+ * User update schema for API input
+ * Uses real UpdateUserSchema from @repo/schemas with OpenAPI wrapper
+ */
+export const userUpdateSchema = z
+    .object(UpdateUserSchema.omit({ id: true }).shape)
+    .openapi('UserUpdate');
+
+/**
+ * Legacy schema for backward compatibility
+ * @deprecated Use userResponseSchema instead
+ */
+export const UserSchema_deprecated = userResponseSchema;
+
+/**
+ * User list schema for API responses
+ */
+export const userListSchema = z.array(userResponseSchema).openapi('UserList');
+
+/**
+ * Parameter schemas for route validation
+ */
 export const ParamsSchema = z.object({
     id: z
         .string()
-        .min(3)
+        .min(1, 'User ID is required')
         .openapi({
             param: {
                 name: 'id',
                 in: 'path'
             },
-            example: '1212121'
+            example: 'usr_1234567890'
         })
 });
 
-export const UserSchema = z
-    .object({
-        id: z.string().openapi({
-            example: '123'
-        }),
-        name: z.string().openapi({
-            example: 'John Doe'
-        }),
-        age: z.number().openapi({
-            example: 42
-        })
-    })
-    .openapi('User');
-
-export const UserListSchema = z.array(UserSchema).openapi('UserList');
+// Export with original names for backward compatibility
+export { userListSchema as UserListSchema, userResponseSchema as UserSchema };
