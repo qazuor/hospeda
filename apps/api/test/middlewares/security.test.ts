@@ -112,10 +112,10 @@ describe('Security Middleware', () => {
             expect(res.headers.get('X-Frame-Options')).toBeNull();
         });
 
-        it('should skip security headers for /reference routes', async () => {
-            app.get('/reference', (c) => c.json({ reference: 'content' }));
+        it('should skip security headers for /docs/reference routes', async () => {
+            app.get('/docs/reference', (c) => c.json({ reference: 'content' }));
 
-            const res = await app.request('/reference');
+            const res = await app.request('/docs/reference');
 
             expect(res.status).toBe(200);
             expect(res.headers.get('Content-Security-Policy')).toBeNull();
@@ -123,10 +123,10 @@ describe('Security Middleware', () => {
             expect(res.headers.get('X-Frame-Options')).toBeNull();
         });
 
-        it('should skip security headers for /ui routes', async () => {
-            app.get('/ui', (c) => c.json({ ui: 'content' }));
+        it('should skip security headers for /docs/ui routes', async () => {
+            app.get('/docs/ui', (c) => c.json({ ui: 'content' }));
 
-            const res = await app.request('/ui');
+            const res = await app.request('/docs/ui');
 
             expect(res.status).toBe(200);
             expect(res.headers.get('Content-Security-Policy')).toBeNull();
@@ -136,12 +136,12 @@ describe('Security Middleware', () => {
 
         it('should skip security headers for nested documentation routes', async () => {
             app.get('/docs/api', (c) => c.json({ apiDocs: 'content' }));
-            app.get('/reference/v1', (c) => c.json({ v1Docs: 'content' }));
-            app.get('/ui/components', (c) => c.json({ components: 'content' }));
+            app.get('/docs/reference/v1', (c) => c.json({ v1Docs: 'content' }));
+            app.get('/docs/ui/components', (c) => c.json({ components: 'content' }));
 
             const docsRes = await app.request('/docs/api');
-            const refRes = await app.request('/reference/v1');
-            const uiRes = await app.request('/ui/components');
+            const refRes = await app.request('/docs/reference/v1');
+            const uiRes = await app.request('/docs/ui/components');
 
             expect(docsRes.status).toBe(200);
             expect(refRes.status).toBe(200);

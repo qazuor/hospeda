@@ -46,6 +46,22 @@ vi.mock('@hono/clerk-auth', () => ({
 
 // Mock service-core for AccommodationService
 vi.mock('@repo/service-core', () => {
+    const { z } = require('zod');
+
+    // Mock schemas that match the structure from service-core
+    const CreateAccommodationSchema = z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        country: z.string().optional(),
+        price: z.number().optional(),
+        currency: z.string().optional(),
+        maxGuests: z.number().optional()
+    });
+
+    const UpdateAccommodationSchema = CreateAccommodationSchema.partial();
+
     return {
         AccommodationService: vi.fn().mockImplementation(() => ({
             list: vi.fn().mockResolvedValue({
@@ -89,7 +105,10 @@ vi.mock('@repo/service-core', () => {
             create: vi.fn(),
             update: vi.fn(),
             softDelete: vi.fn()
-        }))
+        })),
+        // Export the schemas so they can be imported
+        CreateAccommodationSchema,
+        UpdateAccommodationSchema
     };
 });
 
