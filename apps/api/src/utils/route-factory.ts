@@ -74,7 +74,7 @@ export interface CreateOpenApiRouteInterface {
  */
 interface CreateRequestOptionsInterface {
     params: Record<string, z.ZodTypeAny>;
-    body: z.ZodTypeAny;
+    body?: z.ZodTypeAny; // optional to avoid declaring body for GET/DELETE
     query: Record<string, z.ZodTypeAny>;
 }
 
@@ -238,7 +238,11 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
         tags: options.tags,
         request: createRequestOptions({
             params: options.requestParams || {},
-            body: options.requestBody || z.object({}),
+            // Do not declare a body for GET/DELETE requests to avoid JSON parsing on empty bodies
+            body:
+                options.method === 'get' || options.method === 'delete'
+                    ? undefined
+                    : options.requestBody,
             query: options.requestQuery || {}
         }),
         responses: ResponseFactory.createCRUDResponses(options.responseSchema)
@@ -253,7 +257,9 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
                     ? // biome-ignore lint/suspicious/noExplicitAny: Hono validation returns transformed data
                       (ctx.req as any).valid('param')
                     : ctx.req.param() || {};
-            const body = await ctx.req.json().catch(() => ({}));
+            // Only parse JSON body for methods that are expected to have one
+            const shouldParseBody = !(options.method === 'get' || options.method === 'delete');
+            const body = shouldParseBody ? await ctx.req.json().catch(() => ({})) : {};
             const query =
                 options.requestQuery && Object.keys(options.requestQuery).length > 0
                     ? // biome-ignore lint/suspicious/noExplicitAny: Hono validation returns transformed data
