@@ -372,6 +372,107 @@ beforeAll(async () => {
             }
         }
 
+        class DestinationService {
+            async create(_actor: unknown, body: Record<string, unknown>) {
+                return {
+                    data: {
+                        id: 'dest_mock_id',
+                        slug: String((body as any).slug || 'destination-mock'),
+                        name: String((body as any).name || 'Destination Mock'),
+                        summary: (body as any).summary || 'Nice destination',
+                        description: (body as any).description || 'Long description',
+                        isFeatured: false,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        createdById: 'user_mock',
+                        updatedById: 'user_mock',
+                        media: { featuredImage: { url: 'https://example.com/image.jpg' } },
+                        location: { country: 'Testland' }
+                    }
+                };
+            }
+
+            async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+                return {
+                    data: {
+                        id,
+                        slug: String((body as any).slug || 'destination-updated'),
+                        name: String((body as any).name || 'Destination Updated')
+                    }
+                };
+            }
+
+            async list(_actor: unknown, _opts: { page?: number; pageSize?: number }) {
+                return { data: { items: [], total: 0 } };
+            }
+
+            async getById(_actor: unknown, id: string) {
+                if (id === '87654321-4321-4321-8765-876543218765') {
+                    return { data: null };
+                }
+                return {
+                    data: {
+                        id,
+                        slug: 'destination-slug',
+                        name: 'Test Destination',
+                        location: { country: 'Testland' },
+                        media: { featuredImage: { url: 'https://example.com/img.jpg' } }
+                    }
+                };
+            }
+
+            async getBySlug(_actor: unknown, slug: string) {
+                return { data: { id: 'dest_by_slug', slug, name: 'Destination By Slug' } };
+            }
+
+            async getStats(_actor: unknown, _params: { destinationId: string }) {
+                return {
+                    data: {
+                        stats: {
+                            accommodationsCount: 0,
+                            reviewsCount: 0,
+                            averageRating: 0
+                        }
+                    }
+                };
+            }
+
+            async getSummary(_actor: unknown, params: { destinationId: string }) {
+                return {
+                    data: {
+                        summary: {
+                            id: params.destinationId,
+                            slug: 'destination-summary',
+                            name: 'Destination Summary',
+                            country: 'Testland',
+                            location: { country: 'Testland' },
+                            isFeatured: false,
+                            averageRating: 0,
+                            reviewsCount: 0,
+                            accommodationsCount: 0,
+                            featuredImage: 'https://example.com/img.jpg'
+                        }
+                    }
+                };
+            }
+
+            async softDelete(_actor: unknown, _id: string) {
+                return { data: { count: 1 } };
+            }
+
+            async restore(_actor: unknown, _id: string) {
+                return { data: { count: 1 } };
+            }
+
+            async hardDelete(_actor: unknown, _id: string) {
+                return { data: { count: 1 } };
+            }
+
+            async getAccommodations(_actor: unknown, _params: { destinationId: string }) {
+                return { data: { accommodations: [] } };
+            }
+        }
+
         class UserService {
             async getById(_actor: unknown, userId: string) {
                 return {
@@ -384,7 +485,7 @@ beforeAll(async () => {
             }
         }
 
-        return { AccommodationService, UserService };
+        return { AccommodationService, DestinationService, UserService };
     });
 });
 
