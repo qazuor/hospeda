@@ -19,10 +19,29 @@ export interface ValidationMiddlewareOptions {
 }
 
 export const createValidationMiddleware = (options: ValidationMiddlewareOptions = {}) => {
-    const config = { ...getValidationConfig(), ...options.config };
-
     return createMiddleware(async (c: Context, next: Next) => {
+        // Load config at request time so process.env overrides (tests) are respected
+        const config = { ...getValidationConfig(), ...options.config } as ValidationConfig;
         try {
+            // Auto-skip validation for basic public endpoints
+            const path = c.req.path;
+            const publicPaths = ['/api/v1/health', '/api/v1/public/health'];
+            const isPublicPath = publicPaths.some((publicPath) => path.startsWith(publicPath));
+
+            // Allow routes to opt-out of validation via route options
+            // Route factories attach options on context as `routeOptions`
+            // biome-ignore lint/suspicious/noExplicitAny: Context extension used by route factories
+            const routeOptions = (c as any).routeOptions as
+                | { skipValidation?: boolean }
+                | undefined;
+            if (routeOptions?.skipValidation || isPublicPath) {
+                await next();
+                return;
+            }
+
+            // Note: even if no required headers are configured, we still validate Accept/content-type
+            // to keep behavior consistent across environments/tests.
+
             // 1. Validate Content-Type
             const contentType = c.req.header('content-type');
             if (

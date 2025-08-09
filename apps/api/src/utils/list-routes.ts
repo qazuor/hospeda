@@ -69,6 +69,17 @@ const extractRoutes = (app: OpenAPIHono<AppBindings>): RouteInfo[] => {
             'OpenAPI extraction error:',
             error instanceof Error ? error.message : String(error)
         );
+
+        // Enhanced debugging for TagSchema issues
+        if (error instanceof Error) {
+            apiLogger.debug('Error stack:', error.stack);
+            if (error.message.includes('TagSchema')) {
+                apiLogger.debug(
+                    '🔍 TagSchema error detected - this is likely a circular dependency issue'
+                );
+                apiLogger.debug('Error details:', `${error.message} - ${error.name}`);
+            }
+        }
     }
 
     return routes;

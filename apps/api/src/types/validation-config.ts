@@ -76,21 +76,61 @@ export const CRITICAL_HEADERS = {
  */
 export const getValidationConfig = (): ValidationConfig => {
     try {
+        // Read dynamic overrides directly from process.env to support test-time changes
+        const rawAllowed =
+            typeof process.env.VALIDATION_ALLOWED_CONTENT_TYPES === 'string'
+                ? process.env.VALIDATION_ALLOWED_CONTENT_TYPES
+                : env.VALIDATION_ALLOWED_CONTENT_TYPES;
+        const rawRequired =
+            typeof process.env.VALIDATION_REQUIRED_HEADERS === 'string'
+                ? process.env.VALIDATION_REQUIRED_HEADERS
+                : env.VALIDATION_REQUIRED_HEADERS;
+        const rawClerkHeaders =
+            typeof process.env.VALIDATION_CLERK_AUTH_HEADERS === 'string'
+                ? process.env.VALIDATION_CLERK_AUTH_HEADERS
+                : env.VALIDATION_CLERK_AUTH_HEADERS;
+        const clerkEnabled =
+            typeof process.env.VALIDATION_CLERK_AUTH_ENABLED === 'string'
+                ? process.env.VALIDATION_CLERK_AUTH_ENABLED === 'true'
+                : env.VALIDATION_CLERK_AUTH_ENABLED;
+
         return {
-            maxBodySize: env.VALIDATION_MAX_BODY_SIZE,
-            maxRequestTime: env.VALIDATION_MAX_REQUEST_TIME,
-            allowedContentTypes: env.VALIDATION_ALLOWED_CONTENT_TYPES.split(',').map((s) =>
-                s.trim()
-            ),
-            requiredHeaders: env.VALIDATION_REQUIRED_HEADERS.split(',').map((s) => s.trim()),
+            maxBodySize:
+                typeof process.env.VALIDATION_MAX_BODY_SIZE === 'string'
+                    ? Number(process.env.VALIDATION_MAX_BODY_SIZE)
+                    : env.VALIDATION_MAX_BODY_SIZE,
+            maxRequestTime:
+                typeof process.env.VALIDATION_MAX_REQUEST_TIME === 'string'
+                    ? Number(process.env.VALIDATION_MAX_REQUEST_TIME)
+                    : env.VALIDATION_MAX_REQUEST_TIME,
+            allowedContentTypes: rawAllowed
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
+            requiredHeaders: rawRequired
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean),
             sanitizeOptions: {
-                removeHtmlTags: env.VALIDATION_SANITIZE_REMOVE_HTML_TAGS,
-                maxStringLength: env.VALIDATION_SANITIZE_MAX_STRING_LENGTH,
-                allowedCharacters: env.VALIDATION_SANITIZE_ALLOWED_CHARS
+                removeHtmlTags:
+                    typeof process.env.VALIDATION_SANITIZE_REMOVE_HTML_TAGS === 'string'
+                        ? process.env.VALIDATION_SANITIZE_REMOVE_HTML_TAGS === 'true'
+                        : env.VALIDATION_SANITIZE_REMOVE_HTML_TAGS,
+                maxStringLength:
+                    typeof process.env.VALIDATION_SANITIZE_MAX_STRING_LENGTH === 'string'
+                        ? Number(process.env.VALIDATION_SANITIZE_MAX_STRING_LENGTH)
+                        : env.VALIDATION_SANITIZE_MAX_STRING_LENGTH,
+                allowedCharacters:
+                    typeof process.env.VALIDATION_SANITIZE_ALLOWED_CHARS === 'string'
+                        ? process.env.VALIDATION_SANITIZE_ALLOWED_CHARS
+                        : env.VALIDATION_SANITIZE_ALLOWED_CHARS
             },
             clerkAuth: {
-                enabled: env.VALIDATION_CLERK_AUTH_ENABLED,
-                requiredHeaders: env.VALIDATION_CLERK_AUTH_HEADERS.split(',').map((s) => s.trim())
+                enabled: clerkEnabled,
+                requiredHeaders: rawClerkHeaders
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
             }
         };
     } catch {

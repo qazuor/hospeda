@@ -147,6 +147,8 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createApp>, options?: Rout
         });
     }
 
+    // Do NOT attach another validation instance here; it's globally registered in create-app
+
     // ✅ FORCE security headers for route factories
     // This ensures security headers are always applied regardless of env config
     // Fixed test failures where SECURITY_ENABLED was disabled in test environment
@@ -244,9 +246,13 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
 
     app.openapi(route, async (ctx) => {
         try {
-            // ✅ Simplified type-safe validation
-            // Get validated data or use empty objects as fallbacks
-            const params = ctx.req.param() || {};
+            // ✅ Properly handle validated parameters from OpenAPI
+            // Use validated params if requestParams is defined, otherwise use raw params
+            const params =
+                options.requestParams && Object.keys(options.requestParams).length > 0
+                    ? // biome-ignore lint/suspicious/noExplicitAny: Hono validation returns transformed data
+                      (ctx.req as any).valid('param')
+                    : ctx.req.param() || {};
             const body = await ctx.req.json().catch(() => ({}));
             const query =
                 options.requestQuery && Object.keys(options.requestQuery).length > 0
