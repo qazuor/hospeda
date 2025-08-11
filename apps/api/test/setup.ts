@@ -48,6 +48,144 @@ beforeAll(async () => {
 
     // Mock @repo/service-core to force 2xx happy paths without DB/auth
     vi.mock('@repo/service-core', () => {
+        class PostService {
+            async create(_actor: unknown, body: Record<string, unknown>) {
+                return {
+                    data: {
+                        id: 'post_mock_id',
+                        slug: String((body as any).slug || 'post-mock'),
+                        title: String((body as any).title || 'Post Mock'),
+                        category: (body as any).category || 'NEWS',
+                        isFeatured: Boolean((body as any).isFeatured ?? false),
+                        isNews: Boolean((body as any).isNews ?? false),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        authorId: 'user_mock',
+                        media: { featuredImage: { url: 'https://example.com/post.jpg' } },
+                        summary: (body as any).summary || 'Mock summary'
+                    }
+                };
+            }
+
+            async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+                return {
+                    data: {
+                        id,
+                        slug: String((body as any).slug || 'post-updated'),
+                        title: String((body as any).title || 'Post Updated')
+                    }
+                };
+            }
+
+            async softDelete(_actor: unknown, id: string) {
+                if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+                return { data: { id, deletedAt: new Date().toISOString() } };
+            }
+
+            async restore(_actor: unknown, id: string) {
+                if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+                return { data: { id } };
+            }
+
+            async hardDelete(_actor: unknown, id: string) {
+                if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+                return { data: { id, deleted: true, count: 1 } };
+            }
+
+            async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+                return { data: { items: [], total: 0 } };
+            }
+
+            async getById(_actor: unknown, id: string) {
+                if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+                return {
+                    data: {
+                        id,
+                        slug: 'post-slug',
+                        title: 'Test Post',
+                        category: 'NEWS',
+                        isFeatured: false,
+                        isNews: false,
+                        createdAt: '2024-01-01T00:00:00.000Z',
+                        updatedAt: '2024-01-01T00:00:00.000Z',
+                        authorId: 'user_mock',
+                        media: { featuredImage: { url: 'https://example.com/post.jpg' } },
+                        summary: 'Post summary'
+                    }
+                };
+            }
+
+            async getBySlug(_actor: unknown, slug: string) {
+                return {
+                    data: {
+                        id: 'post_by_slug',
+                        slug,
+                        title: 'Post By Slug',
+                        category: 'NEWS',
+                        isFeatured: false,
+                        isNews: false,
+                        createdAt: '2024-01-01T00:00:00.000Z',
+                        authorId: 'user_mock',
+                        media: { featuredImage: { url: 'https://example.com/post.jpg' } },
+                        summary: 'Post summary'
+                    }
+                };
+            }
+
+            async getSummary(_actor: unknown, _data: { id?: string; slug?: string }) {
+                return {
+                    data: {
+                        id: _data.id ?? 'post_summary_id',
+                        slug: _data.slug ?? 'post-summary',
+                        title: 'Post Summary',
+                        category: 'NEWS',
+                        media: { featuredImage: { url: 'https://example.com/post.jpg' } },
+                        isFeatured: false,
+                        isNews: false,
+                        createdAt: '2024-01-01T00:00:00.000Z',
+                        authorId: 'user_mock',
+                        summary: 'Summary text'
+                    }
+                };
+            }
+
+            async getStats(_actor: unknown, _data: { id?: string; slug?: string }) {
+                return { data: { likes: 10, comments: 2, shares: 1 } };
+            }
+
+            async getByCategory(_actor: unknown, _params: { category: string }) {
+                return { data: [] };
+            }
+
+            async getByRelatedAccommodation(_actor: unknown, _params: { accommodationId: string }) {
+                return { data: [] };
+            }
+
+            async getByRelatedDestination(_actor: unknown, _params: { destinationId: string }) {
+                return { data: [] };
+            }
+
+            async getByRelatedEvent(_actor: unknown, _params: { eventId: string }) {
+                return { data: [] };
+            }
+
+            async getFeatured(_actor: unknown, _params?: Record<string, unknown>) {
+                return { data: [] };
+            }
+
+            async getNews(_actor: unknown, _params?: Record<string, unknown>) {
+                return { data: [] };
+            }
+
+            async like(_actor: unknown, _params: { postId: string }) {
+                return { data: { success: true } };
+            }
+
+            async unlike(_actor: unknown, _params: { postId: string }) {
+                return { data: { success: true } };
+            }
+        }
+
         class AccommodationService {
             // Create
             async create(_actor: unknown, body: Record<string, unknown>) {
@@ -646,7 +784,7 @@ beforeAll(async () => {
             }
         }
 
-        return { AccommodationService, DestinationService, EventService, UserService };
+        return { PostService, AccommodationService, DestinationService, EventService, UserService };
     });
 });
 
