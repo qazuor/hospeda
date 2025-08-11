@@ -3,6 +3,7 @@ import { apiLogger } from '../utils/logger';
 import { accommodationRoutes } from './accommodation';
 import { destinationRoutes } from './destination';
 import { eventRoutes } from './event';
+import { postRoutes } from './post';
 
 // Debug: Add logging around accommodation route import
 apiLogger.debug('🏠 Loading accommodation routes...');
@@ -77,6 +78,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('🔗 Registering event routes...');
         app.route('/api/v1/public/events', eventRoutes);
         apiLogger.debug('✅ Event routes registered successfully');
+
+        apiLogger.debug('🔗 Registering post routes...');
+        app.route('/api/v1/public/posts', postRoutes);
+        apiLogger.debug('✅ Post routes registered successfully');
     } catch (error) {
         apiLogger.error('❌ Failed to register routes:', String(error));
         throw error;
