@@ -1,0 +1,42 @@
+import createApp from '../../utils/create-app';
+import { createPostRoute } from './create';
+import { getPostsByCategoryRoute } from './getByCategory';
+import { postGetByIdRoute } from './getById';
+import { getPostsByRelatedAccommodationRoute } from './getByRelatedAccommodation';
+import { getPostsByRelatedDestinationRoute } from './getByRelatedDestination';
+import { getPostsByRelatedEventRoute } from './getByRelatedEvent';
+import { getPostBySlugRoute } from './getBySlug';
+import { getFeaturedPostsRoute } from './getFeatured';
+import { getNewsPostsRoute } from './getNews';
+import { getPostStatsRoute } from './getStats';
+import { getPostSummaryRoute } from './getSummary';
+import { hardDeletePostRoute } from './hardDelete';
+import { likePostRoute } from './like';
+import { postListRoute } from './list';
+import { restorePostRoute } from './restore';
+import { softDeletePostRoute } from './softDelete';
+import { unlikePostRoute } from './unlike';
+import { updatePostRoute } from './update';
+
+const app = createApp();
+
+app.route('/', postListRoute);
+app.route('/', postGetByIdRoute);
+app.route('/', getPostBySlugRoute);
+app.route('/', getPostSummaryRoute);
+app.route('/', getPostStatsRoute);
+app.route('/', createPostRoute);
+app.route('/', updatePostRoute);
+app.route('/', softDeletePostRoute);
+app.route('/', hardDeletePostRoute);
+app.route('/', restorePostRoute);
+app.route('/', getPostsByCategoryRoute);
+app.route('/', getPostsByRelatedDestinationRoute);
+app.route('/', getPostsByRelatedAccommodationRoute);
+app.route('/', getPostsByRelatedEventRoute);
+app.route('/', getNewsPostsRoute);
+app.route('/', getFeaturedPostsRoute);
+app.route('/', likePostRoute);
+app.route('/', unlikePostRoute);
+
+export const postRoutes = app;
