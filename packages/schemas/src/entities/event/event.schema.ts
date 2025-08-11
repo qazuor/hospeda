@@ -2,14 +2,12 @@ import { z } from 'zod';
 import { EventIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import {
     ContactInfoSchema,
-    MediaSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema,
     WithModerationStatusSchema,
     WithSeoSchema,
-    WithTagsSchema,
     WithVisibilitySchema
 } from '../../common/index.js';
 import { BaseSearchSchema } from '../../common/search.schemas.js';
@@ -25,7 +23,6 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithAdminInfoSchema)
     .merge(WithModerationStatusSchema)
-    .merge(WithTagsSchema)
     .merge(WithSeoSchema)
     .merge(WithVisibilitySchema)
     .extend({
@@ -53,7 +50,36 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
             .min(10, { message: 'zodError.event.description.min' })
             .max(1000, { message: 'zodError.event.description.max' })
             .optional(),
-        media: MediaSchema.optional(),
+        // Inline simplified media schema to avoid z.lazy TagSchema in OpenAPI generation
+        media: z
+            .object({
+                featuredImage: z
+                    .object({
+                        url: z.string().url(),
+                        caption: z.string().optional(),
+                        description: z.string().optional()
+                    })
+                    .optional(),
+                gallery: z
+                    .array(
+                        z.object({
+                            url: z.string().url(),
+                            caption: z.string().optional(),
+                            description: z.string().optional()
+                        })
+                    )
+                    .optional(),
+                videos: z
+                    .array(
+                        z.object({
+                            url: z.string().url(),
+                            caption: z.string().optional(),
+                            description: z.string().optional()
+                        })
+                    )
+                    .optional()
+            })
+            .optional(),
         category: EventCategoryEnumSchema,
         /** Event date object */
         date: EventDateSchema,
@@ -75,7 +101,9 @@ export const EventSchema = WithIdSchema.merge(WithAuditSchema)
         /** Event price, optional */
         pricing: EventPriceSchema.optional(),
         contact: ContactInfoSchema.optional(),
-        isFeatured: z.boolean()
+        isFeatured: z.boolean(),
+        // Tags as simple string array to avoid circular dependencies in OpenAPI
+        tags: z.array(z.string()).optional()
     });
 
 // Input para filtros de búsqueda de eventos
