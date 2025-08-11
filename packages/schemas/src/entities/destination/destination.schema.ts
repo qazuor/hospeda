@@ -106,8 +106,22 @@ export const DestinationFilterInputSchema = BaseSearchSchema.extend({
             city: z.string().optional(),
             country: z.string().optional(),
             // Avoid importing TagSchema here to prevent circular deps during OpenAPI generation
-            // Follow Accommodation filters pattern: use simple string array
-            tags: z.array(z.string()).optional(),
+            // Accept either simple strings (e.g., tag slugs/ids) or plain objects (from factories)
+            tags: z
+                .array(
+                    z.union([
+                        z.string(),
+                        // Permissive object to support test factories without pulling TagSchema
+                        z
+                            .object({
+                                id: z.string().uuid().optional(),
+                                slug: z.string().optional(),
+                                name: z.string().optional()
+                            })
+                            .passthrough()
+                    ])
+                )
+                .optional(),
             visibility: VisibilityEnumSchema.optional(),
             isFeatured: z.boolean().optional(),
             minRating: z.number().min(0).max(5).optional(),
