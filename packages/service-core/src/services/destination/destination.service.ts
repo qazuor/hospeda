@@ -158,7 +158,9 @@ export class DestinationService extends BaseCrudService<
             input: { ...params, actor },
             schema: GetAccommodationsInputSchema,
             execute: async (validated, actor) => {
-                const { destinationId } = validated;
+                // Support both legacy { destinationId } and new { id }
+                // biome-ignore lint/suspicious/noExplicitAny: bridging schema evolution
+                const destinationId = (validated as any).destinationId ?? (validated as any).id;
                 const destination = await this.model.findById(destinationId);
                 if (!destination) {
                     throw new ServiceError(
