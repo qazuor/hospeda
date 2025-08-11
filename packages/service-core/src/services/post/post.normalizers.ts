@@ -8,7 +8,10 @@ import type { ImageType, MediaType, VideoType } from '@repo/types';
 import { ModerationStatusEnum as ModerationStatusEnumType } from '@repo/types';
 import type { z } from 'zod';
 import { normalizeAdminInfo } from '../../utils';
-import type { PostCreateInput, PostUpdateSchema } from './post.schemas';
+import type {
+    PostCreateInputSchema,
+    PostUpdateSchema as UpdatePostInputSchema
+} from './post.schemas';
 
 const DEFAULT_MODERATION_STATE: ModerationStatusEnumType = ModerationStatusEnumType.PENDING;
 
@@ -79,7 +82,9 @@ export function normalizeMedia(input: unknown): MediaType | undefined {
  * @param data - The input data
  * @returns Normalized data
  */
-export function normalizeCreateInput(data: PostCreateInput): PostCreateInput {
+export function normalizeCreateInput(
+    data: z.infer<typeof PostCreateInputSchema>
+): z.infer<typeof PostCreateInputSchema> {
     const title = data.title?.trim() ?? '';
     let summary = data.summary?.trim() ?? '';
     const content = data.content?.trim() ?? '';
@@ -96,7 +101,7 @@ export function normalizeCreateInput(data: PostCreateInput): PostCreateInput {
     }
     const media = normalizeMedia(data.media);
     const { adminInfo: _adminInfo, ...rest } = data as { adminInfo?: unknown } & Omit<
-        PostCreateInput,
+        z.infer<typeof PostCreateInputSchema>,
         'adminInfo'
     >;
     const adminInfo = normalizeAdminInfo(_adminInfo);
@@ -107,7 +112,7 @@ export function normalizeCreateInput(data: PostCreateInput): PostCreateInput {
         content,
         ...(media !== undefined ? { media } : {}),
         ...(adminInfo ? { adminInfo } : {})
-    } as PostCreateInput;
+    } as z.infer<typeof PostCreateInputSchema>;
 }
 
 /**
@@ -120,13 +125,13 @@ export function normalizeCreateInput(data: PostCreateInput): PostCreateInput {
  * @returns Normalized data
  */
 export function normalizeUpdateInput(
-    data: { id: string } & Partial<Omit<z.infer<typeof PostUpdateSchema>, 'id'>>
-): z.infer<typeof PostUpdateSchema> {
+    data: { id: string } & Partial<Omit<z.infer<typeof UpdatePostInputSchema>, 'id'>>
+): z.infer<typeof UpdatePostInputSchema> {
     // If no updatable fields are present, return an empty object (homogeneous with other services)
     const { id, ...fields } = data;
     const hasUpdatableFields = Object.keys(fields).length > 0;
     if (!hasUpdatableFields) {
-        return {} as z.infer<typeof PostUpdateSchema>;
+        return {} as z.infer<typeof UpdatePostInputSchema>;
     }
     const title = data.title?.trim();
     let summary = data.summary?.trim();
@@ -144,7 +149,7 @@ export function normalizeUpdateInput(
     }
     const media = normalizeMedia(data.media);
     const { adminInfo: _adminInfo, ...rest } = data as { adminInfo?: unknown } & Omit<
-        z.infer<typeof PostUpdateSchema>,
+        z.infer<typeof UpdatePostInputSchema>,
         'adminInfo'
     >;
     const adminInfo = normalizeAdminInfo(_adminInfo);
@@ -155,5 +160,5 @@ export function normalizeUpdateInput(
         ...(content !== undefined ? { content } : {}),
         ...(media !== undefined ? { media } : {}),
         ...(adminInfo ? { adminInfo } : {})
-    } as z.infer<typeof PostUpdateSchema>;
+    } as z.infer<typeof UpdatePostInputSchema>;
 }
