@@ -138,10 +138,44 @@ vi.mock('@repo/service-core', () => {
         update: vi.fn(),
         softDelete: vi.fn()
     }));
+
+    const EventService = vi.fn().mockImplementation(() => ({
+        // List & getters
+        list: vi.fn().mockResolvedValue({ data: { items: [], total: 0 } }),
+        getById: vi.fn().mockResolvedValue({ data: null }),
+        getBySlug: vi.fn().mockResolvedValue({ data: null }),
+        getSummary: vi.fn().mockResolvedValue({ data: { summary: null } }),
+        // Specialized lists
+        getByAuthor: vi.fn().mockResolvedValue({
+            data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+        }),
+        getByLocation: vi.fn().mockResolvedValue({
+            data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+        }),
+        getByOrganizer: vi.fn().mockResolvedValue({
+            data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+        }),
+        getByCategory: vi.fn().mockResolvedValue({
+            data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+        }),
+        getFreeEvents: vi.fn().mockResolvedValue({
+            data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+        }),
+        getUpcoming: vi.fn().mockResolvedValue({
+            data: { items: [], pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 } }
+        }),
+        // Mutations
+        create: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        hardDelete: vi.fn(),
+        restore: vi.fn()
+    }));
     // Export the schemas so they can be imported
     return {
         AccommodationService,
         DestinationService,
+        EventService,
         UserService,
         CreateAccommodationSchema,
         UpdateAccommodationSchema
