@@ -139,6 +139,30 @@ vi.mock('@repo/service-core', () => {
         softDelete: vi.fn()
     }));
 
+    const PostService = vi.fn().mockImplementation(() => ({
+        // List & getters
+        list: vi.fn().mockResolvedValue({ data: { items: [], total: 0 } }),
+        getById: vi.fn().mockResolvedValue({ data: null }),
+        getBySlug: vi.fn().mockResolvedValue({ data: null }),
+        getSummary: vi.fn().mockResolvedValue({ data: null }),
+        getStats: vi.fn().mockResolvedValue({ data: null }),
+        // Specialized lists
+        getByCategory: vi.fn().mockResolvedValue({ data: [] }),
+        getByRelatedAccommodation: vi.fn().mockResolvedValue({ data: [] }),
+        getByRelatedDestination: vi.fn().mockResolvedValue({ data: [] }),
+        getByRelatedEvent: vi.fn().mockResolvedValue({ data: [] }),
+        getFeatured: vi.fn().mockResolvedValue({ data: [] }),
+        getNews: vi.fn().mockResolvedValue({ data: [] }),
+        // Mutations
+        create: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        hardDelete: vi.fn(),
+        restore: vi.fn(),
+        like: vi.fn().mockResolvedValue({ data: { success: true } }),
+        unlike: vi.fn().mockResolvedValue({ data: { success: true } })
+    }));
+
     const EventService = vi.fn().mockImplementation(() => ({
         // List & getters
         list: vi.fn().mockResolvedValue({ data: { items: [], total: 0 } }),
@@ -177,6 +201,7 @@ vi.mock('@repo/service-core', () => {
         DestinationService,
         EventService,
         UserService,
+        PostService,
         CreateAccommodationSchema,
         UpdateAccommodationSchema
     };
