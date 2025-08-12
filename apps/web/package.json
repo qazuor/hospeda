@@ -1,0 +1,37 @@
+{
+    "name": "hospeda-web",
+    "type": "module",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "astro dev",
+        "build": "astro build",
+        "preview": "astro preview",
+        "astro": "astro",
+        "analyze": "astro build --verbose",
+        "gen:translations-keys": "pnpm tsx scripts/generate-translation-keys.ts",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "clean": "rm -rf node_modules dist"
+    },
+    "dependencies": {
+        "@astrojs/react": "^3.0.9",
+        "@astrojs/tailwind": "^5.1.0",
+        "@astrojs/vercel": "^8.1.4",
+        "astro": "^5.12.9",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "@repo/config": "workspace:*",
+        "@repo/db": "workspace:*",
+        "@repo/logger": "workspace:*",
+        "@repo/service-core": "workspace:*",
+        "@repo/types": "workspace:*",
+        "@repo/schemas": "workspace:*",
+        "@repo/utils": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1"
+    }
+}
