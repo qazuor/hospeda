@@ -14,6 +14,7 @@ import { PostSchema } from './post.schema.js';
 
 export const CreatePostServiceSchema = PostSchema.omit({
     id: true,
+    slug: true,
     createdAt: true,
     updatedAt: true,
     deletedAt: true,
@@ -26,9 +27,7 @@ export const CreatePostServiceSchema = PostSchema.omit({
 }).strict();
 export type CreatePostInput = z.infer<typeof CreatePostServiceSchema>;
 
-export const UpdatePostServiceSchema = z
-    .object({ id: PostIdSchema })
-    .merge(CreatePostServiceSchema.partial().strict());
+export const UpdatePostServiceSchema = CreatePostServiceSchema.partial().strict();
 export type UpdatePostInput = z.infer<typeof UpdatePostServiceSchema>;
 
 export const PaginationSchema = z
