@@ -1,4 +1,4 @@
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 import { createPostRoute } from './create';
 import { getPostsByCategoryRoute } from './getByCategory';
 import { postGetByIdRoute } from './getById';
@@ -18,7 +18,7 @@ import { softDeletePostRoute } from './softDelete';
 import { unlikePostRoute } from './unlike';
 import { updatePostRoute } from './update';
 
-const app = createApp();
+const app = createRouter();
 
 app.route('/', postListRoute);
 app.route('/', postGetByIdRoute);

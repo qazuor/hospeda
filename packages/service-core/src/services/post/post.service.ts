@@ -23,12 +23,12 @@ import {
     checkCanViewPost
 } from './post.permissions';
 import {
-    GetByCategoryInputSchema,
-    GetByRelatedAccommodationInputSchema,
-    GetByRelatedDestinationInputSchema,
-    GetByRelatedEventInputSchema,
-    GetFeaturedInputSchema,
-    GetNewsInputSchema,
+    GetPostByCategoryInputSchema,
+    GetPostByRelatedAccommodationInputSchema,
+    GetPostByRelatedDestinationInputSchema,
+    GetPostByRelatedEventInputSchema,
+    GetPostFeaturedInputSchema,
+    GetPostNewsInputSchema,
     GetPostStatsInputSchema,
     GetPostSummaryInputSchema,
     LikePostInputSchema,
@@ -376,13 +376,13 @@ export class PostService extends BaseCrudService<
      */
     public async getNews(
         actor: Actor,
-        params: z.infer<typeof GetNewsInputSchema>
+        params: z.infer<typeof GetPostNewsInputSchema>
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getNews',
             input: { ...params, actor },
-            schema: GetNewsInputSchema.strict(),
-            execute: async (validated: z.infer<typeof GetNewsInputSchema>, actor) => {
+            schema: GetPostNewsInputSchema.strict(),
+            execute: async (validated: z.infer<typeof GetPostNewsInputSchema>, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
                 if (validated.visibility) where.visibility = validated.visibility;
@@ -406,13 +406,13 @@ export class PostService extends BaseCrudService<
      */
     public async getFeatured(
         actor: Actor,
-        params: z.infer<typeof GetFeaturedInputSchema>
+        params: z.infer<typeof GetPostFeaturedInputSchema>
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFeatured',
             input: { ...params, actor },
-            schema: GetFeaturedInputSchema.strict(),
-            execute: async (validated: z.infer<typeof GetFeaturedInputSchema>, actor) => {
+            schema: GetPostFeaturedInputSchema.strict(),
+            execute: async (validated: z.infer<typeof GetPostFeaturedInputSchema>, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
                 if (validated.visibility) where.visibility = validated.visibility;
@@ -436,20 +436,26 @@ export class PostService extends BaseCrudService<
      */
     public async getByCategory(
         actor: Actor,
-        params: z.infer<typeof GetByCategoryInputSchema>
+        params: z.infer<typeof GetPostByCategoryInputSchema>
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByCategory',
             input: { ...params, actor },
-            schema: GetByCategoryInputSchema.strict(),
-            execute: async (validated: z.infer<typeof GetByCategoryInputSchema>, actor) => {
+            schema: GetPostByCategoryInputSchema.strict(),
+            execute: async (validated: z.infer<typeof GetPostByCategoryInputSchema>, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
-                if (validated.visibility) where.visibility = validated.visibility;
-                if (validated.fromDate || validated.toDate) {
+                if ('visibility' in validated && validated.visibility)
+                    where.visibility = validated.visibility;
+                if (
+                    ('fromDate' in validated && validated.fromDate) ||
+                    ('toDate' in validated && validated.toDate)
+                ) {
                     const createdAtFilter: Record<string, unknown> = {};
-                    if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
-                    if (validated.toDate) createdAtFilter.lte = validated.toDate;
+                    if ('fromDate' in validated && validated.fromDate)
+                        createdAtFilter.gte = validated.fromDate;
+                    if ('toDate' in validated && validated.toDate)
+                        createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
                 const { items } = await this.model.findAll(where);
@@ -466,14 +472,14 @@ export class PostService extends BaseCrudService<
      */
     public async getByRelatedAccommodation(
         actor: Actor,
-        params: z.infer<typeof GetByRelatedAccommodationInputSchema>
+        params: z.infer<typeof GetPostByRelatedAccommodationInputSchema>
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedAccommodation',
             input: { ...params, actor },
-            schema: GetByRelatedAccommodationInputSchema.strict(),
+            schema: GetPostByRelatedAccommodationInputSchema.strict(),
             execute: async (
-                validated: z.infer<typeof GetByRelatedAccommodationInputSchema>,
+                validated: z.infer<typeof GetPostByRelatedAccommodationInputSchema>,
                 actor
             ) => {
                 this._canList(actor);
@@ -501,14 +507,14 @@ export class PostService extends BaseCrudService<
      */
     public async getByRelatedDestination(
         actor: Actor,
-        params: z.infer<typeof GetByRelatedDestinationInputSchema>
+        params: z.infer<typeof GetPostByRelatedDestinationInputSchema>
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedDestination',
             input: { ...params, actor },
-            schema: GetByRelatedDestinationInputSchema.strict(),
+            schema: GetPostByRelatedDestinationInputSchema.strict(),
             execute: async (
-                validated: z.infer<typeof GetByRelatedDestinationInputSchema>,
+                validated: z.infer<typeof GetPostByRelatedDestinationInputSchema>,
                 actor
             ) => {
                 this._canList(actor);
@@ -536,13 +542,13 @@ export class PostService extends BaseCrudService<
      */
     public async getByRelatedEvent(
         actor: Actor,
-        params: z.infer<typeof GetByRelatedEventInputSchema>
+        params: z.infer<typeof GetPostByRelatedEventInputSchema>
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedEvent',
             input: { ...params, actor },
-            schema: GetByRelatedEventInputSchema.strict(),
-            execute: async (validated: z.infer<typeof GetByRelatedEventInputSchema>, actor) => {
+            schema: GetPostByRelatedEventInputSchema.strict(),
+            execute: async (validated: z.infer<typeof GetPostByRelatedEventInputSchema>, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
                 if (validated.visibility) where.visibility = validated.visibility;
