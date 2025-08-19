@@ -1,11 +1,11 @@
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 import { createUserRoute } from './create';
 import { deleteUserRoute } from './delete';
 import { getUserByIdRoute } from './getById';
 import { listUsersRoute } from './list';
 import { updateUserRoute } from './update';
 
-const app = createApp();
+const app = createRouter();
 
 app.route('/', getUserByIdRoute);
 app.route('/', createUserRoute);

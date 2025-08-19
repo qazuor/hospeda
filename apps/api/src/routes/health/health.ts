@@ -1,13 +1,11 @@
 /**
  * Main health check route
  * Returns the health status of the API
- * ⚠️ REVERTED from createSimpleRoute due to security headers issue
- * TODO: Fix route factory security headers and re-migrate
  */
 import { createRoute, z } from '@hono/zod-openapi';
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 
-const app = createApp();
+const app = createRouter();
 
 // Health check schema
 const HealthDataSchema = z.object({

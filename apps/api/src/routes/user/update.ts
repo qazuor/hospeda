@@ -9,6 +9,7 @@ import type { UserId } from '@repo/types';
 import { RoleEnum } from '@repo/types';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
+import { userCache } from '../../utils/user-cache';
 import { UserSchema } from './schemas';
 
 const userService = new UserService({ logger: apiLogger });
@@ -52,6 +53,14 @@ export const updateUserRoute = createCRUDRoute({
 
         if (result.error) {
             throw new Error(result.error.message);
+        }
+
+        // Invalidate cache for the updated user
+        // Note: We need to find the user's Clerk ID to invalidate properly
+        // For now, we'll invalidate all cache as a simple solution
+        // TODO: Improve this by storing Clerk ID mapping or adding a method to get Clerk ID by user ID
+        if (result.data?.authProviderUserId) {
+            userCache.invalidate(result.data.authProviderUserId);
         }
 
         return result.data;

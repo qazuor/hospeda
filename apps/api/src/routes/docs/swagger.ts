@@ -4,9 +4,9 @@
  */
 import { swaggerUI } from '@hono/swagger-ui';
 import { createRoute } from '@hono/zod-openapi';
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 
-const app = createApp();
+const app = createRouter();
 
 // Swagger UI documentation route
 const swaggerRoute = createRoute({

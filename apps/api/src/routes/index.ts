@@ -9,8 +9,10 @@ import { postRoutes } from './post';
 apiLogger.debug('🏠 Loading accommodation routes...');
 apiLogger.debug('✅ Accommodation routes loaded successfully');
 
+import { amenityRoutes } from './amenity';
 import { authRoutes } from './auth';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
+import { featureRoutes } from './feature';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { metricsRoutes } from './metrics';
 import { userRoutes } from './user';
@@ -82,6 +84,14 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('🔗 Registering post routes...');
         app.route('/api/v1/public/posts', postRoutes);
         apiLogger.debug('✅ Post routes registered successfully');
+
+        apiLogger.debug('🔗 Registering amenity routes...');
+        app.route('/api/v1/public', amenityRoutes);
+        apiLogger.debug('✅ Amenity routes registered successfully');
+
+        apiLogger.debug('🔗 Registering feature routes...');
+        app.route('/api/v1/public', featureRoutes);
+        apiLogger.debug('✅ Feature routes registered successfully');
     } catch (error) {
         apiLogger.error('❌ Failed to register routes:', String(error));
         throw error;
