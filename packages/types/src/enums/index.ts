@@ -1,6 +1,7 @@
 export * from './accommodation-type.enum.js';
 export * from './all-enums.js';
 export * from './amenity-type.enum.js';
+export * from './auth-provider.enum.js';
 export * from './client-type.enum.js';
 export * from './contact-preference.enum.js';
 export * from './currency.enum.js';
