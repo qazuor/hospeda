@@ -7,14 +7,12 @@ import {
     UserIdSchema
 } from '../../common/id.schema.js';
 import {
-    MediaSchema,
     WithAdminInfoSchema,
     WithAuditSchema,
     WithIdSchema,
     WithLifecycleStateSchema,
     WithModerationStatusSchema,
     WithSeoSchema,
-    WithTagsSchema,
     WithVisibilitySchema
 } from '../../common/index.js';
 import { BaseSearchSchema } from '../../common/search.schemas.js';
@@ -22,13 +20,16 @@ import { PostCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.
 
 /**
  * Post schema definition using Zod for validation.
- * Includes sponsorship, sponsor, and extras as optional fields.
+ *
+ * Important: Avoid using schemas that rely on z.lazy() (e.g., WithTagsSchema, MediaSchema)
+ * because OpenAPI extraction cannot introspect lazy schemas. We inline a simplified
+ * media object and represent tags as string arrays, mirroring the approach used in
+ * DestinationSchema to keep OpenAPI generation stable.
  */
 export const PostSchema = WithIdSchema.merge(WithAuditSchema)
     .merge(WithLifecycleStateSchema)
     .merge(WithAdminInfoSchema)
     .merge(WithModerationStatusSchema)
-    .merge(WithTagsSchema)
     .merge(WithSeoSchema)
     .merge(WithVisibilitySchema)
     .extend({
@@ -51,7 +52,41 @@ export const PostSchema = WithIdSchema.merge(WithAuditSchema)
             .string()
             .min(10, { message: 'zodError.post.content.min' })
             .max(5000, { message: 'zodError.post.content.max' }),
-        media: MediaSchema,
+        /**
+         * Simplified media object to avoid circular/lazy references for OpenAPI.
+         * Uses only URL and optional caption/description fields.
+         */
+        media: z
+            .object({
+                featuredImage: z
+                    .object({
+                        url: z.string().url(),
+                        caption: z.string().optional(),
+                        description: z.string().optional()
+                    })
+                    .optional(),
+                gallery: z
+                    .array(
+                        z.object({
+                            url: z.string().url(),
+                            caption: z.string().optional(),
+                            description: z.string().optional()
+                        })
+                    )
+                    .optional(),
+                videos: z
+                    .array(
+                        z.object({
+                            url: z.string().url(),
+                            caption: z.string().optional(),
+                            description: z.string().optional()
+                        })
+                    )
+                    .optional()
+            })
+            .optional(),
+        /** Tags as simple string array to avoid z.lazy() */
+        tags: z.array(z.string()).optional(),
         /** Author user ID */
         authorId: UserIdSchema,
         /** Post category, 3-50 characters */

@@ -5,7 +5,8 @@ import {
     EventIdSchema,
     PostIdSchema
 } from '../../common/id.schema.js';
-import { PostCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.js';
+import { PostCategoryEnumSchema } from '../../enums/post-category.enum.schema.js';
+import { VisibilityEnumSchema } from '../../enums/visibility.enum.schema.js';
 import { PostSchema } from './post.schema.js';
 
 /**
@@ -37,7 +38,7 @@ export const PaginationSchema = z
     })
     .strict();
 
-export const GetNewsInputSchema = z
+export const GetPostNewsInputSchema = z
     .object({
         visibility: VisibilityEnumSchema.optional(),
         fromDate: z.coerce.date().optional(),
@@ -45,9 +46,9 @@ export const GetNewsInputSchema = z
     })
     .merge(PaginationSchema.partial())
     .strict();
-export type GetNewsInput = z.infer<typeof GetNewsInputSchema>;
+export type GetPostNewsInput = z.infer<typeof GetPostNewsInputSchema>;
 
-export const GetFeaturedInputSchema = z
+export const GetPostFeaturedInputSchema = z
     .object({
         visibility: VisibilityEnumSchema.optional(),
         fromDate: z.coerce.date().optional(),
@@ -55,9 +56,9 @@ export const GetFeaturedInputSchema = z
     })
     .merge(PaginationSchema.partial())
     .strict();
-export type GetFeaturedInput = z.infer<typeof GetFeaturedInputSchema>;
+export type GetPostFeaturedInput = z.infer<typeof GetPostFeaturedInputSchema>;
 
-export const GetByCategoryInputSchema = z
+export const GetPostByCategoryInputSchema = z
     .object({
         category: PostCategoryEnumSchema,
         visibility: VisibilityEnumSchema.optional(),
@@ -66,9 +67,9 @@ export const GetByCategoryInputSchema = z
     })
     .merge(PaginationSchema.partial())
     .strict();
-export type GetByCategoryInput = z.infer<typeof GetByCategoryInputSchema>;
+export type GetPostByCategoryInput = z.infer<typeof GetPostByCategoryInputSchema>;
 
-export const GetByRelatedDestinationInputSchema = z
+export const GetPostByRelatedDestinationInputSchema = z
     .object({
         destinationId: DestinationIdSchema,
         visibility: VisibilityEnumSchema.optional(),
@@ -77,9 +78,11 @@ export const GetByRelatedDestinationInputSchema = z
     })
     .merge(PaginationSchema.partial())
     .strict();
-export type GetByRelatedDestinationInput = z.infer<typeof GetByRelatedDestinationInputSchema>;
+export type GetPostByRelatedDestinationInput = z.infer<
+    typeof GetPostByRelatedDestinationInputSchema
+>;
 
-export const GetByRelatedAccommodationInputSchema = z
+export const GetPostByRelatedAccommodationInputSchema = z
     .object({
         accommodationId: AccommodationIdSchema,
         visibility: VisibilityEnumSchema.optional(),
@@ -88,9 +91,11 @@ export const GetByRelatedAccommodationInputSchema = z
     })
     .merge(PaginationSchema.partial())
     .strict();
-export type GetByRelatedAccommodationInput = z.infer<typeof GetByRelatedAccommodationInputSchema>;
+export type GetPostByRelatedAccommodationInput = z.infer<
+    typeof GetPostByRelatedAccommodationInputSchema
+>;
 
-export const GetByRelatedEventInputSchema = z
+export const GetPostByRelatedEventInputSchema = z
     .object({
         eventId: EventIdSchema,
         visibility: VisibilityEnumSchema.optional(),
@@ -99,7 +104,7 @@ export const GetByRelatedEventInputSchema = z
     })
     .merge(PaginationSchema.partial())
     .strict();
-export type GetByRelatedEventInput = z.infer<typeof GetByRelatedEventInputSchema>;
+export type GetPostByRelatedEventInput = z.infer<typeof GetPostByRelatedEventInputSchema>;
 
 export const LikePostInputSchema = z.object({ postId: PostIdSchema }).strict();
 

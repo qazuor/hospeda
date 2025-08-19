@@ -4,24 +4,24 @@
  */
 
 export {
-    GetByCategoryInputSchema,
-    GetByRelatedAccommodationInputSchema,
-    GetByRelatedDestinationInputSchema,
-    GetByRelatedEventInputSchema,
-    GetFeaturedInputSchema,
-    GetNewsInputSchema,
+    GetPostByCategoryInputSchema,
+    GetPostByRelatedAccommodationInputSchema,
+    GetPostByRelatedDestinationInputSchema,
+    GetPostByRelatedEventInputSchema,
+    GetPostFeaturedInputSchema,
+    GetPostNewsInputSchema,
     GetPostStatsInputSchema,
     GetPostSummaryInputSchema,
     LikePostInputSchema,
     CreatePostServiceSchema as PostCreateInputSchema,
     PostFilterInputSchema,
     UpdatePostServiceSchema as PostUpdateSchema
-} from '@repo/schemas/entities/post/index.js';
+} from '@repo/schemas';
 
-export { PostSchema } from '@repo/schemas/entities/post/post.schema.js';
+export { PostSchema } from '@repo/schemas';
 
 // Re-export types expected by service-core tests/factories
 export type {
     CreatePostInput as PostCreateInput,
     UpdatePostInput as PostUpdateInput
-} from '@repo/schemas/entities/post/post.service.schema.js';
+} from '@repo/schemas';
