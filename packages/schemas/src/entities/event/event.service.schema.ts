@@ -46,28 +46,28 @@ export const UpdateEventServiceSchema = z
 export type UpdateEventInput = z.infer<typeof UpdateEventServiceSchema>;
 
 // Search & specialized inputs
-export const GetByAuthorInputSchema = z
+export const GetEventByAuthorInputSchema = z
     .object({
         authorId: UserIdSchema
     })
     .merge(PaginationSchema)
     .strict();
 
-export const GetByLocationInputSchema = z
+export const GetEventByLocationInputSchema = z
     .object({
         locationId: EventLocationIdSchema
     })
     .merge(PaginationSchema)
     .strict();
 
-export const GetByOrganizerInputSchema = z
+export const GetEventByOrganizerInputSchema = z
     .object({
         organizerId: EventOrganizerIdSchema
     })
     .merge(PaginationSchema)
     .strict();
 
-export const GetUpcomingInputSchema = z
+export const GetEventUpcomingInputSchema = z
     .object({
         fromDate: z.coerce.date(),
         toDate: z.coerce.date().optional()
@@ -75,20 +75,20 @@ export const GetUpcomingInputSchema = z
     .merge(PaginationSchema)
     .strict();
 
-export const GetSummaryInputSchema = z
+export const GetEventSummaryInputSchema = z
     .object({
         id: EventIdSchema
     })
     .strict();
 
-export const GetByCategoryInputSchema = z
+export const GetEventByCategoryInputSchema = z
     .object({
         category: EventCategoryEnumSchema
     })
     .merge(PaginationSchema)
     .strict();
 
-export const GetFreeInputSchema = PaginationSchema;
+export const GetEventFreeInputSchema = PaginationSchema;
 
 // Re-export search input for consumers expecting it from service schema
 export { EventFilterInputSchema } from './event.schema.js';

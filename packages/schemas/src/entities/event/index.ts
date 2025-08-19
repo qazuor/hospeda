@@ -16,12 +16,12 @@ export * from './event.schema.js';
 export {
     CreateEventServiceSchema,
     EventFilterInputSchema,
-    GetByAuthorInputSchema,
-    GetByCategoryInputSchema,
-    GetByLocationInputSchema,
-    GetByOrganizerInputSchema,
-    GetFreeInputSchema,
-    GetSummaryInputSchema,
-    GetUpcomingInputSchema,
+    GetEventByAuthorInputSchema,
+    GetEventByCategoryInputSchema,
+    GetEventByLocationInputSchema,
+    GetEventByOrganizerInputSchema,
+    GetEventFreeInputSchema,
+    GetEventSummaryInputSchema,
+    GetEventUpcomingInputSchema,
     UpdateEventServiceSchema
 } from './event.service.schema.js';
