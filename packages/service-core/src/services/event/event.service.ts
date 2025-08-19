@@ -28,13 +28,13 @@ import {
     EventFilterInputSchema,
     type EventSchema,
     EventUpdateSchema,
-    GetByAuthorInputSchema,
-    GetByCategoryInputSchema,
-    GetByLocationInputSchema,
-    GetByOrganizerInputSchema,
-    GetFreeInputSchema,
-    GetSummaryInputSchema,
-    GetUpcomingInputSchema
+    GetEventByAuthorInputSchema,
+    GetEventByCategoryInputSchema,
+    GetEventByLocationInputSchema,
+    GetEventByOrganizerInputSchema,
+    GetEventFreeInputSchema,
+    GetEventUpcomingInputSchema,
+    GetSummaryInputSchema
 } from './event.schemas';
 
 /**
@@ -232,7 +232,7 @@ export class EventService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getByAuthor',
             input: { ...input, actor },
-            schema: GetByAuthorInputSchema,
+            schema: GetEventByAuthorInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
@@ -269,7 +269,7 @@ export class EventService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getByLocation',
             input: { ...input, actor },
-            schema: GetByLocationInputSchema,
+            schema: GetEventByLocationInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
@@ -306,7 +306,7 @@ export class EventService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getByOrganizer',
             input: { ...input, actor },
-            schema: GetByOrganizerInputSchema,
+            schema: GetEventByOrganizerInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
@@ -345,7 +345,7 @@ export class EventService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getUpcoming',
             input: { ...input, actor },
-            schema: GetUpcomingInputSchema,
+            schema: GetEventUpcomingInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
@@ -437,7 +437,7 @@ export class EventService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getByCategory',
             input: { ...input, actor },
-            schema: GetByCategoryInputSchema,
+            schema: GetEventByCategoryInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
@@ -474,7 +474,7 @@ export class EventService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getFreeEvents',
             input: { ...input, actor },
-            schema: GetFreeInputSchema,
+            schema: GetEventFreeInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');

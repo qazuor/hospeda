@@ -1,4 +1,4 @@
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 import { createEventRoute } from './create';
 import { getEventsByAuthorRoute } from './getByAuthor';
 import { getEventsByCategoryRoute } from './getByCategory';
@@ -15,7 +15,7 @@ import { restoreEventRoute } from './restore';
 import { softDeleteEventRoute } from './softDelete';
 import { updateEventRoute } from './update';
 
-const app = createApp();
+const app = createRouter();
 
 app.route('/', eventListRoute);
 app.route('/', eventGetByIdRoute);

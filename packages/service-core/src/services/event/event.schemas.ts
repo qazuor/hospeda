@@ -11,14 +11,14 @@ export {
     // base
     EventSchema,
     UpdateEventServiceSchema as EventUpdateSchema,
-    GetByAuthorInputSchema,
-    GetByCategoryInputSchema,
-    GetByLocationInputSchema,
-    GetByOrganizerInputSchema,
-    GetFreeInputSchema,
-    // Use event-specific alias to avoid collision with Destination's schema
-    EventGetSummaryInputSchema as GetSummaryInputSchema,
-    GetUpcomingInputSchema
+    GetEventByAuthorInputSchema,
+    GetEventByCategoryInputSchema,
+    GetEventByLocationInputSchema,
+    GetEventByOrganizerInputSchema,
+    GetEventFreeInputSchema,
+    GetEventUpcomingInputSchema,
+    // Renamed to avoid collision with Destination's schema
+    GetEventSummaryInputSchema as GetSummaryInputSchema
 } from '@repo/schemas';
 // No local zod schemas here; we fully depend on @repo/schemas to avoid drift.
 
