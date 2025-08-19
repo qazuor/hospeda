@@ -7,7 +7,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import type { Context, MiddlewareHandler } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
-import createApp from './create-app';
+import { createRouter } from './create-app';
 import { ResponseFactory } from './response-factory';
 import {
     type PaginatedResult,
@@ -130,7 +130,7 @@ const createRequestOptions = (requestOptions: CreateRequestOptionsInterface) => 
 /**
  * Helper function to apply route-specific middlewares
  */
-const applyRouteMiddlewares = (app: ReturnType<typeof createApp>, options?: RouteOptions) => {
+const applyRouteMiddlewares = (app: ReturnType<typeof createRouter>, options?: RouteOptions) => {
     if (options?.middlewares) {
         for (const middleware of options.middlewares) {
             app.use(middleware);
@@ -139,7 +139,7 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createApp>, options?: Rout
 
     // Add route-specific options as context for middlewares to use
     if (options) {
-        app.use(async (c, next) => {
+        app.use(async (c: Context, next: () => Promise<void>) => {
             // Store route options for middleware consumption
             // biome-ignore lint/suspicious/noExplicitAny: Context extension for route options
             (c as any).routeOptions = options;
@@ -193,7 +193,7 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createApp>, options?: Rout
  * Reduces boilerplate for endpoints that don't need complex validation
  */
 export const createSimpleRoute = (options: SimpleRouteInterface) => {
-    const app = createApp();
+    const app = createRouter();
 
     // Apply route-specific middlewares
     applyRouteMiddlewares(app, options.options);
@@ -210,6 +210,9 @@ export const createSimpleRoute = (options: SimpleRouteInterface) => {
     app.openapi(route, async (ctx) => {
         try {
             const result = await options.handler(ctx);
+            if (result instanceof Response) {
+                return result;
+            }
             return createResponse(result, ctx, 200);
         } catch (error) {
             return handleRouteError(error, ctx);
@@ -225,7 +228,7 @@ export const createSimpleRoute = (options: SimpleRouteInterface) => {
  * Version 2.0 - Improved type safety, eliminated dangerous type assertions
  */
 export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
-    const app = createApp();
+    const app = createRouter();
 
     // Apply route-specific middlewares
     applyRouteMiddlewares(app, options.options);
@@ -286,7 +289,7 @@ export const createListRoute = (
         requestQuery: Record<string, z.ZodTypeAny>;
     }
 ) => {
-    const app = createApp();
+    const app = createRouter();
 
     // Apply route-specific middlewares
     applyRouteMiddlewares(app, options.options);

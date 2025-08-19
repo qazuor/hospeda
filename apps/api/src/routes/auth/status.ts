@@ -5,9 +5,9 @@ import { getAuth } from '@hono/clerk-auth';
  */
 import { createRoute, z } from '@hono/zod-openapi';
 import { getActorFromContext } from '../../utils/actor';
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 
-const app = createApp();
+const app = createRouter();
 
 export const authStatusOpenAPIRoute = createRoute({
     method: 'get',

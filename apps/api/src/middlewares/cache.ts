@@ -1,9 +1,10 @@
 /**
  * Cache middleware using Hono's built-in cache
- * Uses the Web Standards' Cache API
+ * Uses the Web Standards' Cache API (requires runtime support)
  */
 import { cache } from 'hono/cache';
 import { getCacheConfig } from '../utils/env';
+import { apiLogger } from '../utils/logger';
 
 /**
  * Creates cache middleware with environment-based configuration
@@ -12,8 +13,9 @@ import { getCacheConfig } from '../utils/env';
 export const createCacheMiddleware = () => {
     const cacheConfig = getCacheConfig();
 
-    // Skip cache if disabled
+    // Case 1: CACHE_ENABLED=false -> never enable
     if (!cacheConfig.enabled) {
+        apiLogger.info('Cache middleware disabled via configuration (CACHE_ENABLED=false)');
         return async (
             // biome-ignore lint/suspicious/noExplicitAny: Hono context type
             _c: any,
@@ -23,6 +25,27 @@ export const createCacheMiddleware = () => {
             await next();
         };
     }
+
+    // Case 2: CACHE_ENABLED=true -> check runtime support
+    const hasCacheApiSupport = typeof globalThis.caches !== 'undefined';
+
+    if (!hasCacheApiSupport) {
+        // Case 3: CACHE_ENABLED=true but runtime doesn't support it
+        apiLogger.warn(
+            'Cache middleware disabled: Web Standards Cache API not available in this runtime (Node.js). Cache would be enabled in compatible runtimes like Cloudflare Workers, Deno, or browsers.'
+        );
+        return async (
+            // biome-ignore lint/suspicious/noExplicitAny: Hono context type
+            _c: any,
+            // biome-ignore lint/suspicious/noExplicitAny: Hono next function type
+            next: any
+        ) => {
+            await next();
+        };
+    }
+
+    // Case 2: CACHE_ENABLED=true and runtime supports it -> enable cache
+    apiLogger.info('Cache middleware enabled: Web Standards Cache API detected and available');
 
     return cache({
         cacheName: 'hospeda-api',

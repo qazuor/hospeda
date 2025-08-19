@@ -33,20 +33,22 @@ const EnvSchema = z.object({
     API_LOG_SAVE: z.coerce.boolean().default(false),
     API_LOG_EXPAND_OBJECT_LEVELS: z.coerce.boolean().default(false),
     API_LOG_TRUNCATE_LONG_TEXT: z.coerce.boolean().default(true),
-    API_LOG_TRUNCATE_LONG_TEXT_AT: z.coerce.number().default(1000),
+    API_LOG_TRUNCATE_LONG_TEXT_AT: z.coerce.number().default(200),
     API_LOG_STRINGIFY_OBJECTS: z.coerce.boolean().default(false),
 
     // CORS Configuration
     CORS_ORIGINS: z
         .string()
-        .default('http://localhost:3000,http://localhost:5173,http://localhost:4173'),
+        .default(
+            'http://localhost:3000,http://localhost:4321,http://localhost:5173,http://localhost:4173'
+        ),
     CORS_ALLOW_CREDENTIALS: z.coerce.boolean().default(true),
     CORS_MAX_AGE: z.coerce.number().default(86400), // 24 hours
     CORS_ALLOW_METHODS: z.string().default('GET,POST,PUT,DELETE,PATCH,OPTIONS'),
     CORS_ALLOW_HEADERS: z.string().default('Content-Type,Authorization,X-Requested-With'),
     CORS_EXPOSE_HEADERS: z.string().default('Content-Length,X-Request-ID'),
 
-    // Cache Configuration
+    // Cache Configuration (auto-detects runtime support)
     CACHE_ENABLED: z.coerce.boolean().default(true),
     CACHE_DEFAULT_MAX_AGE: z.coerce.number().default(300), // 5 minutes
     CACHE_DEFAULT_STALE_WHILE_REVALIDATE: z.coerce.number().default(60), // 1 minute
@@ -68,7 +70,7 @@ const EnvSchema = z.object({
     COMPRESSION_EXCLUDE_ENDPOINTS: z.string().default('/health/db,/docs'),
     COMPRESSION_ALGORITHMS: z.string().default('gzip,deflate'),
 
-    // Rate Limiting Configuration
+    // Rate Limiting Configuration - General
     RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
     RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000), // 15 minutes
     RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
@@ -78,6 +80,28 @@ const EnvSchema = z.object({
     RATE_LIMIT_STANDARD_HEADERS: z.coerce.boolean().default(true),
     RATE_LIMIT_LEGACY_HEADERS: z.coerce.boolean().default(false),
     RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
+
+    // Rate Limiting Configuration - Auth Endpoints (more permissive)
+    RATE_LIMIT_AUTH_ENABLED: z.coerce.boolean().default(true),
+    RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(300000), // 5 minutes
+    RATE_LIMIT_AUTH_MAX_REQUESTS: z.coerce.number().default(50), // Higher limit for auth operations
+    RATE_LIMIT_AUTH_MESSAGE: z
+        .string()
+        .default('Too many authentication requests, please try again later.'),
+
+    // Rate Limiting Configuration - Public API (more restrictive)
+    RATE_LIMIT_PUBLIC_ENABLED: z.coerce.boolean().default(true),
+    RATE_LIMIT_PUBLIC_WINDOW_MS: z.coerce.number().default(3600000), // 1 hour
+    RATE_LIMIT_PUBLIC_MAX_REQUESTS: z.coerce.number().default(1000), // Higher limit for public data
+    RATE_LIMIT_PUBLIC_MESSAGE: z.string().default('Too many API requests, please try again later.'),
+
+    // Rate Limiting Configuration - Admin Endpoints (most restrictive)
+    RATE_LIMIT_ADMIN_ENABLED: z.coerce.boolean().default(true),
+    RATE_LIMIT_ADMIN_WINDOW_MS: z.coerce.number().default(600000), // 10 minutes
+    RATE_LIMIT_ADMIN_MAX_REQUESTS: z.coerce.number().default(200), // Moderate limit for admin operations
+    RATE_LIMIT_ADMIN_MESSAGE: z
+        .string()
+        .default('Too many admin requests, please try again later.'),
 
     // Security Configuration
     SECURITY_ENABLED: z.coerce.boolean().default(true),
@@ -122,6 +146,11 @@ const EnvSchema = z.object({
     VALIDATION_SANITIZE_REMOVE_HTML_TAGS: z.coerce.boolean().default(true),
     VALIDATION_SANITIZE_ALLOWED_CHARS: z.string().default('[\\w\\s\\-.,!?@#$%&*()+=]'),
 
+    // Metrics Configuration
+    METRICS_ENABLED: z.coerce.boolean().default(true),
+    METRICS_SLOW_REQUEST_THRESHOLD_MS: z.coerce.number().positive().default(1000),
+    METRICS_SLOW_AUTH_THRESHOLD_MS: z.coerce.number().positive().default(2000),
+
     // Internationalization Configuration
     SUPPORTED_LOCALES: z.string().default('en,es'),
     DEFAULT_LOCALE: z.string().default('en'),
@@ -131,7 +160,8 @@ const EnvSchema = z.object({
 
     // Auth Configuration (optional)
     CLERK_PUBLISHABLE_KEY: z.string().optional(),
-    CLERK_SECRET_KEY: z.string().optional()
+    CLERK_SECRET_KEY: z.string().optional(),
+    CLERK_WEBHOOK_SECRET: z.string().optional()
 });
 
 // Parse and validate environment variables
@@ -139,6 +169,7 @@ const parseEnv = () => {
     try {
         return EnvSchema.parse(process.env);
     } catch (error) {
+        // Use console.error here since logger may not be initialized yet
         console.error('❌ Invalid environment configuration:', error);
         process.exit(1);
     }
@@ -203,19 +234,54 @@ export const getCompressionConfig = () => ({
 });
 
 /**
- * Parse rate limiting configuration
+ * Get rate limiting configuration for different endpoint types
  */
-export const getRateLimitConfig = () => ({
-    enabled: env.RATE_LIMIT_ENABLED,
-    windowMs: env.RATE_LIMIT_WINDOW_MS,
-    maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
-    keyGenerator: env.RATE_LIMIT_KEY_GENERATOR,
-    skipSuccessful: env.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS,
-    skipFailed: env.RATE_LIMIT_SKIP_FAILED_REQUESTS,
-    standardHeaders: env.RATE_LIMIT_STANDARD_HEADERS,
-    legacyHeaders: env.RATE_LIMIT_LEGACY_HEADERS,
-    message: env.RATE_LIMIT_MESSAGE
-});
+export const getRateLimitConfig = (
+    endpointType: 'general' | 'auth' | 'public' | 'admin' = 'general'
+) => {
+    const baseConfig = {
+        keyGenerator: env.RATE_LIMIT_KEY_GENERATOR,
+        skipSuccessful: env.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS,
+        skipFailed: env.RATE_LIMIT_SKIP_FAILED_REQUESTS,
+        standardHeaders: env.RATE_LIMIT_STANDARD_HEADERS,
+        legacyHeaders: env.RATE_LIMIT_LEGACY_HEADERS
+    };
+
+    switch (endpointType) {
+        case 'auth':
+            return {
+                ...baseConfig,
+                enabled: env.RATE_LIMIT_AUTH_ENABLED,
+                windowMs: env.RATE_LIMIT_AUTH_WINDOW_MS,
+                maxRequests: env.RATE_LIMIT_AUTH_MAX_REQUESTS,
+                message: env.RATE_LIMIT_AUTH_MESSAGE
+            };
+        case 'public':
+            return {
+                ...baseConfig,
+                enabled: env.RATE_LIMIT_PUBLIC_ENABLED,
+                windowMs: env.RATE_LIMIT_PUBLIC_WINDOW_MS,
+                maxRequests: env.RATE_LIMIT_PUBLIC_MAX_REQUESTS,
+                message: env.RATE_LIMIT_PUBLIC_MESSAGE
+            };
+        case 'admin':
+            return {
+                ...baseConfig,
+                enabled: env.RATE_LIMIT_ADMIN_ENABLED,
+                windowMs: env.RATE_LIMIT_ADMIN_WINDOW_MS,
+                maxRequests: env.RATE_LIMIT_ADMIN_MAX_REQUESTS,
+                message: env.RATE_LIMIT_ADMIN_MESSAGE
+            };
+        default:
+            return {
+                ...baseConfig,
+                enabled: env.RATE_LIMIT_ENABLED,
+                windowMs: env.RATE_LIMIT_WINDOW_MS,
+                maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
+                message: env.RATE_LIMIT_MESSAGE
+            };
+    }
+};
 
 /**
  * Parse security configuration

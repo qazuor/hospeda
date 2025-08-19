@@ -2,13 +2,14 @@
  * Universal Actor Middleware
  * Automatically creates and injects actor into context for all routes
  * Handles both authenticated users and guest users
+ * Uses high-performance user cache to minimize database queries
  */
 import { getAuth } from '@hono/clerk-auth';
 import type { Actor } from '@repo/service-core';
-import { UserService } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
 import { createGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
+import { userCache } from '../utils/user-cache';
 
 /**
  * Universal actor middleware that runs on all routes
@@ -19,22 +20,19 @@ import { apiLogger } from '../utils/logger';
 export const actorMiddleware = (): MiddlewareHandler => {
     return async (c, next) => {
         const auth = getAuth(c);
-
         let actor: Actor;
 
+        // Handle case where Clerk returns undefined after sign-out
         if (auth?.userId) {
-            // User is authenticated - get user from database
+            // User is authenticated - get user from cache (or database if cache miss)
             try {
-                const userService = new UserService({ logger: apiLogger });
-                const guestActor = createGuestActor(); // Temporary actor for database query
+                const dbUser = await userCache.getUser(auth.userId);
 
-                const userResult = await userService.getById(guestActor, auth.userId);
-
-                if (userResult.data) {
+                if (dbUser) {
                     actor = {
-                        id: userResult.data.id,
-                        role: userResult.data.role,
-                        permissions: userResult.data.permissions
+                        id: dbUser.id,
+                        role: dbUser.role,
+                        permissions: dbUser.permissions
                     };
                 } else {
                     // Fallback to GUEST if user not found
