@@ -1,4 +1,4 @@
-import { UserModel } from '@repo/db';
+import { UserIdentityModel, UserModel } from '@repo/db';
 import {
     CreateUserSchema,
     UpdateUserSchema,
@@ -7,7 +7,7 @@ import {
 } from '@repo/schemas';
 import type { PermissionEnum, UserType } from '@repo/types';
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -62,6 +62,217 @@ export class UserService extends BaseCrudService<
         super(ctx, UserService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new UserModel();
+    }
+
+    /**
+     * Retrieves a user by authentication provider mapping.
+     * @param actor - The actor performing the action (authorization handled upstream if needed)
+     * @param params - The provider and providerUserId pair
+     * @returns The user if found, otherwise null
+     */
+    public async getByAuthProviderId(
+        actor: Actor,
+        params: { provider: string; providerUserId: string }
+    ): Promise<ServiceOutput<{ user: UserType | null }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getByAuthProviderId',
+            input: { actor, ...params },
+            schema: z.object({ provider: z.string(), providerUserId: z.string() }),
+            execute: async ({ provider, providerUserId }) => {
+                const user = await this.model.findOne({
+                    authProvider: provider,
+                    authProviderUserId: providerUserId
+                });
+                return { user };
+            }
+        });
+    }
+
+    /**
+     * Ensures a user exists for a given authentication provider mapping.
+     * - If the user exists: updates basic profile fields from provider data.
+     * - If not: creates a new user with sane defaults and provider linkage.
+     * - Upserts external identities (OAuth) when provided.
+     */
+    public async ensureFromAuthProvider(
+        actor: Actor,
+        params: {
+            provider: string;
+            providerUserId: string;
+            profile?: Partial<
+                Pick<UserType, 'firstName' | 'lastName' | 'displayName' | 'contactInfo' | 'profile'>
+            >;
+            identities?: Array<{
+                provider: string;
+                providerUserId: string;
+                email?: string;
+                username?: string;
+                avatarUrl?: string;
+                raw?: unknown;
+                lastLoginAt?: Date;
+            }>;
+        }
+    ): Promise<ServiceOutput<{ user: UserType }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'ensureFromAuthProvider',
+            input: { actor, ...params },
+            schema: z.object({
+                provider: z.string(),
+                providerUserId: z.string(),
+                profile: z
+                    .object({
+                        firstName: z.string().optional(),
+                        lastName: z.string().optional(),
+                        displayName: z.string().optional(),
+                        contactInfo: z.any().optional(),
+                        profile: z.any().optional()
+                    })
+                    .optional(),
+                identities: z
+                    .array(
+                        z.object({
+                            provider: z.string(),
+                            providerUserId: z.string(),
+                            email: z.string().optional(),
+                            username: z.string().optional(),
+                            avatarUrl: z.string().optional(),
+                            raw: z.unknown().optional(),
+                            lastLoginAt: z.date().optional()
+                        })
+                    )
+                    .optional()
+            }),
+            execute: async ({ provider, providerUserId, profile, identities }) => {
+                // Try to find existing user
+                const existing = await this.model.findOne({
+                    authProvider: provider,
+                    authProviderUserId: providerUserId
+                });
+
+                if (existing) {
+                    // Update only when current fields are empty and provider data is available
+                    const selectiveUpdates: Partial<UserType> = {};
+                    if (!existing.firstName && profile?.firstName) {
+                        selectiveUpdates.firstName = profile.firstName;
+                    }
+                    if (!existing.lastName && profile?.lastName) {
+                        selectiveUpdates.lastName = profile.lastName;
+                    }
+                    if (!existing.displayName && profile?.displayName) {
+                        selectiveUpdates.displayName = profile.displayName;
+                    }
+                    // Merge avatar if missing
+                    const newAvatar = profile?.profile?.avatar;
+                    const hasAvatar = !!existing.profile?.avatar;
+                    if (newAvatar && !hasAvatar) {
+                        selectiveUpdates.profile = {
+                            ...(existing.profile ?? {}),
+                            avatar: newAvatar
+                        };
+                    }
+                    // Complete email only if contactInfo exists already and email available via identities
+                    const emailFromIdentities = (identities || []).find((i) => i.email)?.email;
+                    if (existing.contactInfo && emailFromIdentities) {
+                        const hasAnyEmail =
+                            !!existing.contactInfo.personalEmail ||
+                            !!existing.contactInfo.workEmail;
+                        if (!hasAnyEmail) {
+                            selectiveUpdates.contactInfo = {
+                                ...existing.contactInfo,
+                                personalEmail: emailFromIdentities
+                            } as unknown as UserType['contactInfo'];
+                        }
+                    }
+
+                    const hasUpdates = Object.keys(selectiveUpdates).length > 0;
+                    const updated = hasUpdates
+                        ? await this.model.update({ id: existing.id }, selectiveUpdates)
+                        : null;
+                    const user = updated ?? existing;
+                    // Upsert identities if provided
+                    if (user && identities && identities.length > 0) {
+                        const identityModel = new UserIdentityModel();
+                        for (const ident of identities) {
+                            const exists = await identityModel.findOne({
+                                provider: ident.provider,
+                                providerUserId: ident.providerUserId
+                            });
+                            if (exists) {
+                                await identityModel.update({ id: exists.id }, {
+                                    email: ident.email ?? exists.email,
+                                    username: ident.username ?? exists.username,
+                                    avatarUrl: ident.avatarUrl ?? exists.avatarUrl,
+                                    raw: ident.raw ?? exists.raw,
+                                    lastLoginAt: ident.lastLoginAt ?? exists.lastLoginAt,
+                                    updatedById: user.id // Use the actual user ID instead of actor ID
+                                } as unknown as Record<string, unknown>);
+                            } else {
+                                await identityModel.create({
+                                    userId: user.id,
+                                    provider: ident.provider,
+                                    providerUserId: ident.providerUserId,
+                                    email: ident.email,
+                                    username: ident.username,
+                                    avatarUrl: ident.avatarUrl,
+                                    raw: ident.raw,
+                                    lastLoginAt: ident.lastLoginAt,
+                                    createdById: user.id, // Use the actual user ID instead of actor ID
+                                    updatedById: user.id // Use the actual user ID instead of actor ID
+                                } as unknown as Record<string, unknown>);
+                            }
+                        }
+                    }
+                    return { user };
+                }
+
+                // Create new user with defaults
+                const baseNewUser: Partial<UserType> = {
+                    slug: `${provider}-${providerUserId}`,
+                    authProvider: provider as unknown as UserType['authProvider'],
+                    authProviderUserId: providerUserId,
+                    role: RoleEnum.USER,
+                    permissions: [],
+                    visibility: 'PUBLIC' as UserType['visibility'],
+                    lifecycleState: 'ACTIVE' as UserType['lifecycleState']
+                };
+                const profilePayload: Partial<UserType> = {
+                    ...(profile?.firstName ? { firstName: profile.firstName } : {}),
+                    ...(profile?.lastName ? { lastName: profile.lastName } : {}),
+                    ...(profile?.displayName ? { displayName: profile.displayName } : {}),
+                    ...(profile?.contactInfo ? { contactInfo: profile.contactInfo } : {}),
+                    ...(profile?.profile ? { profile: profile.profile } : {})
+                };
+                const created = await this.model.create({
+                    ...baseNewUser,
+                    ...profilePayload
+                });
+                // Upsert identities for new user
+                if (created && identities && identities.length > 0) {
+                    const identityModel = new UserIdentityModel();
+                    for (const ident of identities) {
+                        const exists = await identityModel.findOne({
+                            provider: ident.provider,
+                            providerUserId: ident.providerUserId
+                        });
+                        if (!exists) {
+                            await identityModel.create({
+                                userId: created.id,
+                                provider: ident.provider,
+                                providerUserId: ident.providerUserId,
+                                email: ident.email,
+                                username: ident.username,
+                                avatarUrl: ident.avatarUrl,
+                                raw: ident.raw,
+                                lastLoginAt: ident.lastLoginAt,
+                                createdById: actor.id,
+                                updatedById: actor.id
+                            } as unknown as Record<string, unknown>);
+                        }
+                    }
+                }
+                return { user: created as UserType };
+            }
+        });
     }
 
     /**

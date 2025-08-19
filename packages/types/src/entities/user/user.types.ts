@@ -10,6 +10,7 @@ import type {
 import type { UserId } from '../../common/id.types.js';
 import type { FullLocationType } from '../../common/location.types.js';
 import type { SocialNetworkType } from '../../common/social.types.js';
+import type { AuthProviderEnum } from '../../enums/auth-provider.enum.js';
 import type { PermissionEnum } from '../../enums/permission.enum.js';
 import { RoleEnum } from '../../enums/role.enum.js';
 import type { UserBookmarkType } from './user.bookmark.types.js';
@@ -24,6 +25,10 @@ import type { UserSettingsType } from './user.settings.types.js';
 export interface UserType extends WithAudit, WithLifecycleState, WithVisibility, WithAdminInfo {
     id: UserId;
     slug: string;
+    /** Primary authentication provider that owns the session for this user */
+    authProvider?: AuthProviderEnum;
+    /** Provider-scoped user id used to map IdP user to DB user (e.g., Clerk user id) */
+    authProviderUserId?: string;
 
     displayName?: string;
     firstName?: string;
@@ -40,6 +45,28 @@ export interface UserType extends WithAudit, WithLifecycleState, WithVisibility,
     profile?: UserProfile;
     settings?: UserSettingsType;
     bookmarks?: UserBookmarkType[];
+}
+
+/**
+ * Represents an external OAuth2 identity linked to the user (e.g., Google, GitHub).
+ * Captures the normalized provider/user mapping and selected profile fields.
+ */
+export interface UserAuthIdentityType {
+    id: string;
+    userId: UserId;
+    provider: string;
+    providerUserId: string;
+    email?: string;
+    username?: string;
+    avatarUrl?: string;
+    raw?: unknown;
+    lastLoginAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    createdById?: UserId;
+    updatedById?: UserId;
+    deletedAt?: Date;
+    deletedById?: UserId;
 }
 
 /**

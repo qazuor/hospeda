@@ -1,4 +1,4 @@
-import { RoleEnum } from '@repo/types';
+import { AuthProviderEnum, RoleEnum } from '@repo/types';
 import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
 import {
@@ -29,6 +29,9 @@ export const UserSchema = WithIdSchema.merge(WithAuditSchema)
     .extend({
         id: UserIdSchema,
         slug: z.string().min(1, { message: 'zodError.common.slug.min' }),
+        /** Primary authentication provider and provider user id (optional) */
+        authProvider: z.nativeEnum(AuthProviderEnum).optional(),
+        authProviderUserId: z.string().min(1).optional(),
         /** Display name, optional */
         displayName: z
             .string()

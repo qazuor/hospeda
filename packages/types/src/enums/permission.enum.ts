@@ -43,6 +43,13 @@ export enum PermissionEnum {
     ACCOMMODATION_IA_SUGGESTIONS_VIEW = 'accommodation.iaSuggestions.view', // Allows viewing AI suggestions for accommodations.
     ACCOMMODATION_IA_CONTENT_APPROVE = 'accommodation.iaContent.approve', // Allows approving AI-generated content for accommodations.
     ACCOMMODATION_SLUG_MANAGE = 'accommodation.slug.manage', // Allows managing accommodation slugs.
+    // Catalog management for amenities/features
+    AMENITY_CREATE = 'amenity.create', // Allows creating a new amenity in the catalog.
+    AMENITY_UPDATE = 'amenity.update', // Allows updating an amenity in the catalog.
+    AMENITY_DELETE = 'amenity.delete', // Allows deleting an amenity from the catalog.
+    FEATURE_CREATE = 'feature.create', // Allows creating a new feature in the catalog.
+    FEATURE_UPDATE = 'feature.update', // Allows updating a feature in the catalog.
+    FEATURE_DELETE = 'feature.delete', // Allows deleting a feature from the catalog.
 
     // DESTINATION: Permissions related to destinations (cities, regions, etc.)
     DESTINATION_CREATE = 'destination.create', // Allows creating a new destination.
@@ -61,6 +68,8 @@ export enum PermissionEnum {
     DESTINATION_SLUG_MANAGE = 'destination.slug.manage', // Allows managing destination slugs.
     DESTINATION_VIEW_PRIVATE = 'destination.view.private', // Allows viewing private destinations.
     DESTINATION_VIEW_DRAFT = 'destination.view.draft', // Allows viewing draft destinations.
+    DESTINATION_VIEW_ALL = 'destination.viewAll', // Allows viewing all destinations.
+    DESTINATION_ATTRACTION_MANAGE = 'destination.attraction.manage', // Allows managing destination attractions.
 
     // EVENT: Permissions related to events (festivals, shows, etc.)
     EVENT_CREATE = 'event.create', // Allows creating a new event.
@@ -77,6 +86,8 @@ export enum PermissionEnum {
     EVENT_COMMENT_CREATE = 'event.comment.create', // Allows creating comments on events.
     EVENT_VIEW_PRIVATE = 'event.view.private', // Allows viewing private events.
     EVENT_VIEW_DRAFT = 'event.view.draft', // Allows viewing draft events.
+    EVENT_VIEW_ALL = 'event.viewAll', // Allows viewing all events.
+    EVENT_LOCATION_MANAGE = 'event.location.manage', // Allows managing event locations catalog.
 
     // POST: Permissions related to blog posts and articles
     POST_CREATE = 'post.create', // Allows creating a new post.
@@ -93,6 +104,8 @@ export enum PermissionEnum {
     POST_COMMENT_CREATE = 'post.comment.create', // Allows creating comments on posts.
     POST_VIEW_PRIVATE = 'post.view.private', // Allows viewing private posts.
     POST_VIEW_DRAFT = 'post.view.draft', // Allows viewing draft posts.
+    POST_VIEW_ALL = 'post.viewAll', // Allows viewing all posts.
+    POST_SPONSORSHIP_MANAGE = 'post.sponsorship.manage', // Allows managing post sponsorships/contracts.
 
     // USER: Permissions related to user management and actions
     USER_READ_ALL = 'user.read.all', // Allows reading all user profiles.
@@ -109,6 +122,7 @@ export enum PermissionEnum {
     USER_ACTIVITY_LOG_VIEW = 'user.activityLog.view', // Allows viewing user activity logs.
     USER_PASSWORD_RESET = 'user.password.reset', // Allows resetting user password.
     USER_UPDATE_PROFILE = 'user.update.profile', // Allows updating own user profile.
+    USER_SETTINGS_UPDATE = 'user.settings.update', // Allows updating own user settings.
 
     // PUBLIC USER ACTIONS: Permissions for actions available to public or logged-in users
     ACCOMMODATION_REVIEW_CREATE = 'accommodation.review.create', // Allows creating a review for an accommodation.
@@ -130,11 +144,13 @@ export enum PermissionEnum {
     STATS_VIEW = 'stats.view', // Allows viewing system statistics.
     NOTIFICATION_SEND = 'notification.send', // Allows sending notifications.
     NOTIFICATION_CONFIGURE = 'notification.configure', // Allows configuring notification settings.
+    SEO_MANAGE = 'seo.manage', // Allows managing SEO settings.
 
     // ACCESS: Permissions for accessing different panels and APIs
     ACCESS_PANEL_ADMIN = 'access.panelAdmin', // Allows accessing the admin panel.
     ACCESS_API_ADMIN = 'access.apiAdmin', // Allows accessing the admin API.
     ACCESS_API_PUBLIC = 'access.apiPublic', // Allows accessing the public API.
+    ACCESS_PERMISSIONS_MANAGE = 'access.permissions.manage', // Allows managing permission assignments.
 
     // LOGGING & ERROR TRACKING: Permissions for logs, errors, analytics
     LOGS_VIEW_ALL = 'logs.viewAll', // Allows viewing all logs.
