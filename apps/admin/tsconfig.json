@@ -1,0 +1,46 @@
+{
+    "include": ["**/*.ts", "**/*.tsx"],
+    "compilerOptions": {
+        "target": "ES2022",
+        "jsx": "react-jsx",
+        "module": "ESNext",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "types": ["vite/client"],
+
+        /* Bundler mode */
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "verbatimModuleSyntax": false,
+        "noEmit": true,
+
+        /* Linting */
+        "skipLibCheck": true,
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedSideEffectImports": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"],
+            "@repo/config": ["../../packages/config/src/index.ts"],
+            "@repo/config/*": ["../../packages/config/src/*"],
+            "@repo/db": ["../../packages/db/src/index.ts"],
+            "@repo/db/*": ["../../packages/db/src/*"],
+            "@repo/service-core": ["../../packages/service-core/src/index.ts"],
+            "@repo/service-core/*": ["../../packages/service-core/src/*"],
+            "@repo/logger": ["../../packages/logger/src/index.ts"],
+            "@repo/logger/*": ["../../packages/logger/src/*"],
+            "@repo/schemas": ["../../packages/schemas/src/index.ts"],
+            "@repo/schemas/*": ["../../packages/schemas/src/*"],
+            "@repo/types": ["../../packages/types/src/index.ts"],
+            "@repo/types/*": ["../../packages/types/src/*"],
+            "@repo/utils": ["../../packages/utils/src/index.ts"],
+            "@repo/utils/*": ["../../packages/utils/src/*"],
+            "@repo/auth-ui": ["../../packages/auth-ui/src/index.ts"],
+            "@repo/auth-ui/*": ["../../packages/auth-ui/src/*"],
+            "@repo/tailwind-config": ["../../packages/tailwind-config/src/index.ts"],
+            "@repo/tailwind-config/*": ["../../packages/tailwind-config/src/*"]
+        }
+    }
+}
