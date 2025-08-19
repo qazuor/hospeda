@@ -139,10 +139,19 @@ export const GetByFeatureServiceSchema = z
 
 /**
  * Schema for getting top rated accommodations.
+ * - limit: optional, defaults to 10
+ * - destinationId: optional filter
+ * - type: optional filter
+ * - onlyFeatured: optional, defaults to false
  */
-export const GetTopRatedServiceSchema = z.object({
-    destinationId: z.string().uuid().optional()
-});
+export const GetTopRatedServiceSchema = z
+    .object({
+        limit: z.number().int().min(1).max(100).optional().default(10),
+        destinationId: z.string().uuid().optional(),
+        type: z.string().optional(),
+        onlyFeatured: z.boolean().optional().default(false)
+    })
+    .strict();
 
 /**
  * Schema for getting similar accommodations.
