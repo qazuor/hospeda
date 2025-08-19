@@ -6,6 +6,7 @@ import type {
     UserProfile,
     UserSettingsType
 } from '@repo/types';
+import { AuthProviderEnum } from '@repo/types';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
@@ -20,12 +21,17 @@ import { postSponsorships } from '../post/post_sponsorship.dbschema.ts';
 import { tags } from '../tag/tag.dbschema.ts';
 import { userPermission } from './r_user_permission.dbschema.ts';
 import { userBookmarks } from './user_bookmark.dbschema.ts';
+import { userAuthIdentities } from './user_identity.dbschema.ts';
 
 export const users: ReturnType<typeof pgTable> = pgTable(
     'users',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         slug: text('slug').notNull().unique(),
+        authProvider: text('auth_provider')
+            .$type<AuthProviderEnum>()
+            .default(AuthProviderEnum.CLERK),
+        authProviderUserId: text('auth_provider_user_id'),
         displayName: text('display_name'),
         firstName: text('first_name'),
         lastName: text('last_name'),
@@ -47,13 +53,18 @@ export const users: ReturnType<typeof pgTable> = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table: typeof users) => ({
-        uniqueSlug: uniqueIndex('users_slug_key').on(table.slug)
+        uniqueSlug: uniqueIndex('users_slug_key').on(table.slug),
+        uniqueAuthProvider: uniqueIndex('users_auth_provider_user_id_key').on(
+            table.authProvider,
+            table.authProviderUserId
+        )
     })
 );
 
 export const usersRelations = relations(users, ({ many }) => ({
     permissions: many(userPermission),
     bookmarks: many(userBookmarks),
+    authIdentities: many(userAuthIdentities),
     updatedAccommodations: many(accommodations),
     deletedAccommodations: many(accommodations),
     updatedDestinations: many(destinations),
