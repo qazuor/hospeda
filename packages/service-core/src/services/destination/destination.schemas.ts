@@ -2,12 +2,12 @@
 // have been centralized under @repo/schemas to establish a single source of truth.
 // Keeping the file to avoid sudden import breaks during migration.
 export {
-    GetAccommodationsInputSchema,
-    GetStatsInputSchema,
-    GetSummaryInputSchema,
+    GetDestinationAccommodationsInputSchema,
+    GetDestinationStatsInputSchema,
+    GetDestinationSummaryInputSchema,
     type DestinationStats,
     type DestinationSummaryType,
-    type GetAccommodationsInput,
-    type GetStatsInput,
-    type GetSummaryInput
+    type GetDestinationAccommodationsInput,
+    type GetDestinationStatsInput,
+    type GetDestinationSummaryInput
 } from '@repo/schemas';
