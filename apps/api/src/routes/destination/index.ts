@@ -1,4 +1,4 @@
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 
 import { createDestinationRoute } from './create';
 import { getDestinationAccommodationsRoute } from './getAccommodations';
@@ -9,10 +9,11 @@ import { getDestinationSummaryRoute } from './getSummary';
 import { hardDeleteDestinationRoute } from './hardDelete';
 import { destinationListRoute } from './list';
 import { restoreDestinationRoute } from './restore';
+import { destinationReviewRoutes } from './reviews';
 import { softDeleteDestinationRoute } from './softDelete';
 import { updateDestinationRoute } from './update';
 
-const app = createApp();
+const app = createRouter();
 
 // Public routes
 app.route('/', destinationListRoute);
@@ -21,6 +22,7 @@ app.route('/', getDestinationBySlugRoute);
 app.route('/', getDestinationStatsRoute);
 app.route('/', getDestinationSummaryRoute);
 app.route('/', getDestinationAccommodationsRoute);
+app.route('/', destinationReviewRoutes); // /:destinationId/reviews
 
 // Protected routes
 app.route('/', createDestinationRoute);

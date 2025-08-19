@@ -39,32 +39,34 @@ export const UpdateDestinationServiceSchema = CreateDestinationServiceSchema.par
 /**
  * Input schema for fetching accommodations by destination.
  */
-export const GetAccommodationsInputSchema = z
+export const GetDestinationAccommodationsInputSchema = z
     .object({
         destinationId: z.string().min(1)
     })
     .strict();
-export type GetAccommodationsInput = z.infer<typeof GetAccommodationsInputSchema>;
+export type GetDestinationAccommodationsInput = z.infer<
+    typeof GetDestinationAccommodationsInputSchema
+>;
 
 /**
  * Input schema for computing destination stats.
  */
-export const GetStatsInputSchema = z
+export const GetDestinationStatsInputSchema = z
     .object({
         destinationId: z.string().min(1)
     })
     .strict();
-export type GetStatsInput = z.infer<typeof GetStatsInputSchema>;
+export type GetDestinationStatsInput = z.infer<typeof GetDestinationStatsInputSchema>;
 
 /**
  * Input schema for retrieving destination summary.
  */
-export const GetSummaryInputSchema = z
+export const GetDestinationSummaryInputSchema = z
     .object({
         destinationId: z.string().min(1)
     })
     .strict();
-export type GetSummaryInput = z.infer<typeof GetSummaryInputSchema>;
+export type GetDestinationSummaryInput = z.infer<typeof GetDestinationSummaryInputSchema>;
 
 /**
  * Domain stats type for Destination.

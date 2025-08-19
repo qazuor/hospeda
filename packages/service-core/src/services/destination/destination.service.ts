@@ -33,14 +33,14 @@ import {
 import type {
     DestinationStats,
     DestinationSummaryType,
-    GetAccommodationsInput,
-    GetStatsInput,
-    GetSummaryInput
+    GetDestinationAccommodationsInput,
+    GetDestinationStatsInput,
+    GetDestinationSummaryInput
 } from './destination.schemas';
 import {
-    GetAccommodationsInputSchema,
-    GetStatsInputSchema,
-    GetSummaryInputSchema
+    GetDestinationAccommodationsInputSchema,
+    GetDestinationStatsInputSchema,
+    GetDestinationSummaryInputSchema
 } from './destination.schemas';
 
 /**
@@ -151,12 +151,12 @@ export class DestinationService extends BaseCrudService<
      */
     public async getAccommodations(
         actor: Actor,
-        params: GetAccommodationsInput
+        params: GetDestinationAccommodationsInput
     ): Promise<ServiceOutput<{ accommodations: AccommodationType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAccommodations',
             input: { ...params, actor },
-            schema: GetAccommodationsInputSchema,
+            schema: GetDestinationAccommodationsInputSchema,
             execute: async (validated, actor) => {
                 // Support both legacy { destinationId } and new { id }
                 // biome-ignore lint/suspicious/noExplicitAny: bridging schema evolution
@@ -185,12 +185,12 @@ export class DestinationService extends BaseCrudService<
      */
     public async getStats(
         actor: Actor,
-        params: GetStatsInput
+        params: GetDestinationStatsInput
     ): Promise<ServiceOutput<{ stats: DestinationStats }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
             input: { ...params, actor },
-            schema: GetStatsInputSchema,
+            schema: GetDestinationStatsInputSchema,
             execute: async (validated, actor) => {
                 const { destinationId } = validated;
                 const destination = await this.model.findById(destinationId);
@@ -221,12 +221,12 @@ export class DestinationService extends BaseCrudService<
      */
     public async getSummary(
         actor: Actor,
-        params: GetSummaryInput
+        params: GetDestinationSummaryInput
     ): Promise<ServiceOutput<{ summary: DestinationSummaryType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
             input: { ...params, actor },
-            schema: GetSummaryInputSchema,
+            schema: GetDestinationSummaryInputSchema,
             execute: async (validated, actor) => {
                 const { destinationId } = validated;
                 const destination = await this.model.findById(destinationId);
