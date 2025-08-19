@@ -5,6 +5,7 @@ import { ServiceErrorCode } from '@repo/types';
  */
 import type { Context, MiddlewareHandler } from 'hono';
 import { env } from '../utils/env';
+import { apiLogger } from '../utils/logger';
 
 // Standard API response types
 type ApiResponse<T = unknown> = {
@@ -110,6 +111,7 @@ const formatErrorResponse = (
 
 /**
  * Helper function to add headers to responses
+ * TODO: Preserve CORS headers that were set by CORS middleware
  */
 const addResponseHeaders = (c: Context): Record<string, string> => {
     const headers: Record<string, string> = {};
@@ -122,6 +124,22 @@ const addResponseHeaders = (c: Context): Record<string, string> => {
         const requestId = c.get('requestId');
         if (requestId) {
             headers['X-Request-ID'] = requestId;
+        }
+    }
+
+    // Preserve existing CORS headers
+    const existingCorsHeaders = [
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Methods',
+        'Access-Control-Allow-Headers',
+        'Access-Control-Allow-Credentials',
+        'Access-Control-Max-Age'
+    ];
+
+    for (const corsHeader of existingCorsHeaders) {
+        const existingValue = c.res.headers.get(corsHeader);
+        if (existingValue) {
+            headers[corsHeader] = existingValue;
         }
     }
 
@@ -178,81 +196,6 @@ export const responseFormattingMiddleware: MiddlewareHandler = async (c, next) =
 };
 
 /**
- * Error handling middleware
- * Should be used as the last middleware to catch all errors
- */
-export const errorHandlingMiddleware: MiddlewareHandler = async (c, next) => {
-    if (!env.RESPONSE_FORMAT_ENABLED) {
-        await next();
-        return;
-    }
-
-    try {
-        await next();
-    } catch (error) {
-        // Format error responses
-        let errorCode = ServiceErrorCode.INTERNAL_ERROR;
-        let errorMessage = env.RESPONSE_ERROR_MESSAGE;
-        let statusCode = 500;
-
-        // Handle different types of errors
-        if (error instanceof Error) {
-            errorMessage = error.message;
-
-            // Map common error types to appropriate codes
-            if (error.name === 'ValidationError') {
-                errorCode = ServiceErrorCode.VALIDATION_ERROR;
-                statusCode = 400;
-            } else if (error.name === 'UnauthorizedError') {
-                errorCode = ServiceErrorCode.UNAUTHORIZED;
-                statusCode = 401;
-            } else if (error.name === 'ForbiddenError') {
-                errorCode = ServiceErrorCode.FORBIDDEN;
-                statusCode = 403;
-            } else if (error.name === 'NotFoundError') {
-                errorCode = ServiceErrorCode.NOT_FOUND;
-                statusCode = 404;
-            } else if (error.name === 'ConflictError' || error.name === 'AlreadyExistsError') {
-                errorCode = ServiceErrorCode.ALREADY_EXISTS;
-                statusCode = 409;
-            } else if (error.name === 'NotImplementedError') {
-                errorCode = ServiceErrorCode.NOT_IMPLEMENTED;
-                statusCode = 501;
-            } else if (
-                error.constructor.name === 'HTTPException' &&
-                error.message.includes('Malformed JSON')
-            ) {
-                errorCode = ServiceErrorCode.VALIDATION_ERROR;
-                errorMessage = 'Invalid JSON format in request body';
-                statusCode = 400;
-            } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
-                errorCode = ServiceErrorCode.VALIDATION_ERROR;
-                errorMessage = 'Invalid JSON format in request body';
-                statusCode = 400;
-            } else {
-                errorCode = ServiceErrorCode.INTERNAL_ERROR;
-                statusCode = 500;
-            }
-        }
-
-        const requestId = c.get('requestId');
-        const formattedError = formatErrorResponse(
-            errorCode,
-            errorMessage,
-            statusCode,
-            error,
-            requestId
-        );
-
-        // Add response headers
-        const headers = addResponseHeaders(c);
-
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        return c.json(formattedError, statusCode as any, headers);
-    }
-};
-
-/**
  * Helper function to create formatted error responses
  * Can be used directly in route handlers
  */
@@ -301,6 +244,17 @@ export const sendFormattedResponse = <T>(
  */
 export const createErrorHandler = () => {
     return (error: Error, c: Context) => {
+        // Log the error for debugging
+        apiLogger.error({
+            message: '🚨 Caught error:',
+            name: error.name,
+            errorMessage: error.message,
+            stack: error.stack,
+            path: c.req.path,
+            method: c.req.method,
+            requestId: c.get('requestId')
+        });
+
         if (!env.RESPONSE_FORMAT_ENABLED) {
             throw error; // Let Hono handle it
         }
@@ -359,7 +313,7 @@ export const createErrorHandler = () => {
             requestId
         );
 
-        // Add response headers
+        // Add response headers (includes preserved CORS headers)
         const headers = addResponseHeaders(c);
 
         // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues

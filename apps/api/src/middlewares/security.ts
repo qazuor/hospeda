@@ -18,6 +18,9 @@ import { env } from '../utils/env';
  * @returns Configured secure headers middleware
  */
 export const securityHeadersMiddleware = async (c: Context, next: Next) => {
+    // const path = c.req.path; // Available for future use
+    // const requestId = c.get('requestId') || 'unknown'; // Available for future use
+
     // In production, always apply security headers for safety
     // In other environments, respect the configuration
     const shouldApplyHeaders =

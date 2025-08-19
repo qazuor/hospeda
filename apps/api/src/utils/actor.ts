@@ -5,6 +5,7 @@
 import type { Actor } from '@repo/service-core';
 import { PermissionEnum, RoleEnum } from '@repo/types';
 import type { Context } from 'hono';
+import { apiLogger } from './logger';
 
 /**
  * Creates a GUEST actor for public API endpoints
@@ -13,7 +14,7 @@ import type { Context } from 'hono';
  * @returns {Actor} A guest actor with basic public access permissions
  */
 export const createGuestActor = (): Actor => ({
-    id: 'guest',
+    id: '00000000-0000-4000-8000-000000000000', // Valid UUID v4 for guest actor
     role: RoleEnum.GUEST,
     permissions: [PermissionEnum.ACCESS_API_PUBLIC]
 });
@@ -24,7 +25,7 @@ export const createGuestActor = (): Actor => ({
  * @returns {boolean} True if the actor is a guest user
  */
 export const isGuestActor = (actor: Actor): boolean => {
-    return actor.id === 'guest' || actor.role === RoleEnum.GUEST;
+    return actor.id === '00000000-0000-4000-8000-000000000000' || actor.role === RoleEnum.GUEST;
 };
 
 /**
@@ -37,7 +38,7 @@ export const isGuestActor = (actor: Actor): boolean => {
 export const getActorFromContext = (c: Context): Actor => {
     const actor = c.get('actor');
     if (!actor) {
-        console.warn('No actor found in context, using guest actor as fallback');
+        apiLogger.warn('No actor found in context, using guest actor as fallback');
         return createGuestActor();
     }
     return actor;

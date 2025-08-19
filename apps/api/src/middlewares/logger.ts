@@ -1,6 +1,7 @@
 /**
  * Logging middleware for API requests
  * Logs all incoming requests and responses with timing information
+ * Uses structured apiLogger for consistency
  */
 import type { MiddlewareHandler } from 'hono';
 import { env } from '../utils/env';
@@ -10,12 +11,10 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     const startTime = Date.now();
     const method = c.req.method;
     const url = c.req.url;
+    // const path = c.req.path; // Available for future use
 
     if (env.LOG_LEVEL === 'debug') {
-        apiLogger.debug('Incoming request', `${method} ${url}`, {
-            category: 'api',
-            debug: true
-        });
+        apiLogger.debug(`🔍 Incoming request: ${method} ${url}`);
     }
 
     await next();
@@ -25,34 +24,22 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
 
     const logMessage = `${method} ${url} ${status} ${duration}ms`;
 
-    // In test environment, keep behavior expected by logger tests
-    const isTest = process.env.NODE_ENV === 'test';
-    if (isTest) {
-        if (status >= 500) {
-            apiLogger.error(logMessage, 'ERROR');
-        } else if (status >= 400) {
-            apiLogger.warn(logMessage, 'WARNING');
-        } else {
-            apiLogger.info(logMessage, 'SUCCESS');
-        }
-        return;
-    }
-
+    // Use structured apiLogger for consistency
     if (status >= 500) {
-        apiLogger.error(logMessage, 'ERROR');
+        apiLogger.error(`❌ HTTP ERROR => ${logMessage}`);
     } else if (status >= 400) {
-        apiLogger.warn(logMessage, 'WARNING');
+        apiLogger.warn(`⚠️ HTTP WARNING => ${logMessage}`);
     } else {
-        apiLogger.info(logMessage, 'SUCCESS');
+        apiLogger.info(`✅ HTTP SUCCESS => ${logMessage}`);
     }
 
     // Log response body in debug mode for errors
     if (env.LOG_LEVEL === 'debug' && status >= 400) {
         try {
             const responseText = await c.res.clone().text();
-            apiLogger.error(responseText, 'Error Response', { category: 'api', debug: true });
+            apiLogger.error(`📄 Error Response Body: ${responseText}`);
         } catch {
-            apiLogger.error('Failed to log response body', 'Logging Error', { category: 'api' });
+            apiLogger.error('💥 Failed to log response body');
         }
     }
 };

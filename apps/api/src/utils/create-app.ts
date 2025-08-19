@@ -8,11 +8,9 @@ import { cacheMiddleware } from '../middlewares/cache';
 import { compressionMiddleware } from '../middlewares/compression';
 import { corsMiddleware } from '../middlewares/cors';
 import { loggerMiddleware } from '../middlewares/logger';
-import { createErrorHandler } from '../middlewares/response';
-
 import { metricsMiddleware } from '../middlewares/metrics';
 import { rateLimitMiddleware } from '../middlewares/rate-limit';
-import { responseFormattingMiddleware } from '../middlewares/response';
+import { createErrorHandler, responseFormattingMiddleware } from '../middlewares/response';
 import { securityHeadersMiddleware } from '../middlewares/security';
 import { validationMiddleware } from '../middlewares/validation';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
@@ -53,17 +51,26 @@ export default function createApp() {
     // Set up global error handler
     app.onError(createErrorHandler());
 
+    // Early stage: Request setup and logging
     app.use(wrapMiddleware(requestId()))
         .use(serveEmojiFavicon('📝'))
         .use(wrapMiddleware(loggerMiddleware))
+
+        // Security and access control
         .use(wrapMiddleware(corsMiddleware))
-        .use(wrapMiddleware(rateLimitMiddleware))
         .use(wrapMiddleware(securityHeadersMiddleware))
+        .use(wrapMiddleware(rateLimitMiddleware))
+
+        // Performance and optimization
         .use(wrapMiddleware(compressionMiddleware))
         .use(wrapMiddleware(cacheMiddleware))
         .use(wrapMiddleware(metricsMiddleware))
+
+        // Request processing
         .use(wrapMiddleware(validationMiddleware))
         .use(wrapMiddleware(responseFormattingMiddleware))
+
+        // Authentication and authorization
         .use(wrapMiddleware(clerkAuth()))
         .use(wrapMiddleware(actorMiddleware()));
 
@@ -77,19 +84,19 @@ export function createTestApp<S extends Schema>(router: AppOpenAPI<S>): AppOpenA
 }
 
 /**
- * Creates a minimal Hono app with only essential middlewares
- * Useful for documentation endpoints that need basic functionality but avoid interference
+ * Creates a minimal Hono app optimized for documentation endpoints
+ * Includes only essential middlewares and avoids those that interfere with docs UI
  */
-export function createSimpleApp() {
+export function createDocApp() {
     const app = createRouter();
 
     // Set up global error handler (essential for proper error handling)
     app.onError(createErrorHandler());
 
-    // Essential middlewares for documentation endpoints
+    // Essential middlewares for documentation endpoints (Swagger UI, Scalar, etc.)
     app.use(wrapMiddleware(requestId()));
     app.use(serveEmojiFavicon('📝'));
-    app.use(wrapMiddleware(loggerMiddleware)); // Needed for debugging
+    app.use(wrapMiddleware(loggerMiddleware)); // Needed for request logging
     app.use(wrapMiddleware(corsMiddleware)); // Needed for cross-origin requests and assets
     app.use(wrapMiddleware(compressionMiddleware)); // Helps with large documentation assets
 

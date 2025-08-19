@@ -4,6 +4,7 @@
  */
 
 import type { Context } from 'hono';
+import { apiLogger } from './logger';
 
 /**
  * Interface for pagination metadata
@@ -123,7 +124,7 @@ export const createPaginatedResponse = (
  * Provides consistent error handling across all endpoints
  */
 export const handleRouteError = (error: unknown, c: Context) => {
-    console.error('Route error:', error);
+    apiLogger.error({ message: 'Route error', error });
 
     if (error instanceof Error) {
         return createErrorResponse(
