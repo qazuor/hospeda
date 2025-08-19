@@ -31,8 +31,12 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
         throw new Error('VALIDATION_ERROR: destination ID is required');
     }
 
-    // Get top-rated accommodations by destination
-    const result = await accommodationService.getTopRatedByDestination(actor, { destinationId });
+    // Get top-rated accommodations by destination (provide required defaults)
+    const result = await accommodationService.getTopRatedByDestination(actor, {
+        destinationId,
+        limit: 10,
+        onlyFeatured: false
+    });
 
     if (result.error) {
         throw new Error(`${result.error.code}: ${result.error.message}`);

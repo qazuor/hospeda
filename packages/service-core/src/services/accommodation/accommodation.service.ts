@@ -39,6 +39,7 @@ import { ServiceError } from '../../types';
 import { DestinationService } from '../destination/destination.service';
 import {
     generateSlug,
+    normalizeAccommodationOutput,
     normalizeCreateInput,
     normalizeListInput,
     normalizeUpdateInput,
@@ -278,6 +279,38 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Returns top-rated accommodations, optionally filtered by destination, type, and featured flag.
+     * The output is a compact summary tailored for cards/lists and includes joined amenities/features only when related.
+     * @param actor - The actor performing the action
+     * @param params - Input with optional limit, destinationId, type and onlyFeatured
+     * @returns List of summarized accommodations ordered by rating
+     */
+    public async getTopRated(
+        actor: Actor,
+        params: z.infer<typeof GetTopRatedServiceSchema>
+    ): Promise<ServiceOutput<AccommodationType[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getTopRated',
+            input: { ...params, actor },
+            schema: GetTopRatedServiceSchema,
+            execute: async (validated, actor) => {
+                this._canList(actor);
+                const items = await this.model.findTopRated({
+                    limit: validated.limit,
+                    destinationId: validated.destinationId,
+                    type: validated.type,
+                    onlyFeatured: validated.onlyFeatured
+                });
+                return (
+                    items.map(
+                        (item) => normalizeAccommodationOutput(item, actor) as AccommodationType
+                    ) ?? []
+                );
+            }
+        });
+    }
+
+    /**
      * Gets a summary for a specific accommodation.
      * @param actor - The actor performing the action
      * @param data - The input object containing id or slug
@@ -392,7 +425,11 @@ export class AccommodationService extends BaseCrudService<
                 const result = await this.model.findAll({
                     destinationId: validated.destinationId
                 });
-                return Array.isArray(result.items) ? result.items : [];
+                return Array.isArray(result.items)
+                    ? result.items.map(
+                          (item) => normalizeAccommodationOutput(item, actor) as AccommodationType
+                      )
+                    : [];
             }
         });
     }

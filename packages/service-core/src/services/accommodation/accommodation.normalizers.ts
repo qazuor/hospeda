@@ -2,10 +2,32 @@ import type {
     CreateAccommodationServiceSchema,
     UpdateAccommodationServiceSchema
 } from '@repo/schemas';
+import type { AccommodationType } from '@repo/types';
 import { VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
+
+/**
+ * Simplified destination type for API responses
+ */
+type SimplifiedDestination = {
+    name: string;
+    slug: string;
+};
+
+/**
+ * Normalized accommodation type for API responses
+ * Similar to AccommodationType but with simplified relationships
+ */
+type NormalizedAccommodationType = Omit<
+    AccommodationType,
+    'amenities' | 'features' | 'destination'
+> & {
+    amenities?: string[];
+    features?: string[];
+    destination?: SimplifiedDestination;
+};
 
 /**
  * Normalizes the input data for creating an accommodation.
@@ -94,4 +116,46 @@ export const normalizeViewInput = (
 ): { field: string; value: unknown } => {
     // No normalization needed for view parameters at this time.
     return { field, value };
+};
+
+/**
+ * Normalizes accommodation output data for API responses.
+ * Transforms complex relationship objects into simple string arrays for amenities and features.
+ * Simplifies destination object to only include name and slug.
+ * @param accommodation The accommodation data from the database.
+ * @param _actor The actor performing the action (unused).
+ * @returns The normalized accommodation data.
+ */
+export const normalizeAccommodationOutput = (
+    accommodation: AccommodationType,
+    _actor: Actor
+): NormalizedAccommodationType => {
+    return {
+        ...accommodation,
+        // Transform amenities from relationship objects to string array of slugs
+        amenities: accommodation.amenities
+            ?.map((amenity) =>
+                typeof amenity === 'object' && amenity && 'amenity' in amenity
+                    ? (amenity.amenity?.slug ?? '')
+                    : amenity
+            )
+            .filter((slug): slug is string => typeof slug === 'string' && !!slug),
+
+        // Transform features from relationship objects to string array of slugs
+        features: accommodation.features
+            ?.map((feature) =>
+                typeof feature === 'object' && feature && 'feature' in feature
+                    ? (feature.feature?.slug ?? '')
+                    : feature
+            )
+            .filter((slug): slug is string => typeof slug === 'string' && !!slug),
+
+        // Simplify destination to only include essential fields
+        destination: accommodation.destination
+            ? {
+                  name: accommodation.destination.name ?? '',
+                  slug: accommodation.destination.slug ?? ''
+              }
+            : undefined
+    };
 };

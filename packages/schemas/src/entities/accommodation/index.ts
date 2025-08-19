@@ -21,3 +21,7 @@ export {
     AccommodationUpdateCompositionSchema,
     TopRatedAccommodationsSchema
 } from './accommodation.composition.schema.js';
+
+// Reviews
+export * from './accommodation.rating.schema.js';
+export * from './accommodation.review.schema.js';

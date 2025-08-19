@@ -1,8 +1,9 @@
 import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
 import type { AccommodationReviewType } from '@repo/types';
-import type { z } from 'zod';
+import { z } from 'zod';
+// zod imported as a value below
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { calculateStatsFromReviews } from './accommodationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
@@ -138,5 +139,39 @@ export class AccommodationReviewService extends BaseCrudService<
         // For now, do nothing (or log)
         // To be implemented: pass the entity or reviewId to this hook for precise update
         return result;
+    }
+
+    /**
+     * Gets paginated reviews for a specific accommodation.
+     * Validates permissions via _canList and returns only non-deleted reviews.
+     * @param actor - The actor performing the action
+     * @param input - Object containing accommodationId and optional pagination
+     * @returns Paginated list of reviews for the accommodation
+     */
+    public async listByAccommodation(
+        actor: Actor,
+        input: { accommodationId: string; page?: number; pageSize?: number }
+    ): Promise<ServiceOutput<PaginatedListOutput<AccommodationReviewType>>> {
+        const { accommodationId, page, pageSize } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'listByAccommodation',
+            input: { actor, accommodationId, page, pageSize },
+            schema: z
+                .object({
+                    actor: z.any(),
+                    accommodationId: z.string().uuid(),
+                    page: z.number().optional(),
+                    pageSize: z.number().optional()
+                })
+                .strict(),
+            execute: async (_validData, validatedActor) => {
+                await this._canList(validatedActor);
+                const result = await this.model.findAll(
+                    { accommodationId, deletedAt: null },
+                    { page, pageSize }
+                );
+                return result;
+            }
+        });
     }
 }
