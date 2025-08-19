@@ -2,7 +2,7 @@
     "id": "020-accommodation-concordia-hotel-refugio-relajante-hotel-concordia",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-relajante-hotel-concordia",
-    "name": "refugio-relajante-hotel",
+    "name": "Refugio Relajante Hotel",
     "summary": "Encuentra la tranquilidad y el descanso en Refugio Relajante Hotel, ubicado en una zona serena de Concordia, ideal para quienes visitan la ciudad por sus termas o buscan un lugar apacible para relajarse.",
     "type": "HOTEL",
     "description": "Encuentra la tranquilidad y el descanso en Refugio Relajante Hotel, ubicado en una zona serena de Concordia, ideal para quienes visitan la ciudad por sus termas o buscan un lugar apacible para relajarse. Ofrece un ambiente calmado y servicios orientados al bienestar.\n\nEl hotel cuenta con 20 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto a las Termas de Concordia, el Lago de Salto Grande y el centro de la ciudad. Refugio Relajante es la opción ideal para una estancia dedicada al descanso y al bienestar.",
@@ -22,26 +22,16 @@
         "twitter": "https://twitter.com/refugiorelajantehotelar"
     },
     "price": {
-        "basePrice": {
-            "price": 22000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 22000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.4011",
-            "long": "-58.0299"
+            "latitude": -31.4011,
+            "longitude": -58.0299
         },
         "street": "Avenida Las Heras",
         "number": "2500",
@@ -89,15 +79,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 40,
@@ -192,6 +182,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

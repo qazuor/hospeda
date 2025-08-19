@@ -2,7 +2,7 @@
     "id": "074-accommodation-ubajay-hotel-paraiso-natural-hotel-ubajay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-natural-hotel-ubajay",
-    "name": "paraiso-natural-hotel",
+    "name": "Paraíso Natural Hotel",
     "summary": "Sumérgete en un ambiente natural en Paraíso Natural Hotel, ubicado en una zona tranquila de Ubajay, con un entorno verde cercano y acceso al Parque Nacional El Palmar.",
     "type": "HOTEL",
     "description": "Sumérgete en un ambiente natural en Paraíso Natural Hotel, ubicado en una zona tranquila de Ubajay, con un entorno verde cercano y acceso al Parque Nacional El Palmar. Ideal para quienes buscan confort y contacto directo con la naturaleza, con fácil acceso a la Ruta 14.\n\nEl hotel cuenta con 20 habitaciones confortables, muchas de ellas con vista al entorno natural. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para relajarse. El hotel ofrece desayuno incluido en la tarifa, servido en un comedor con vista al exterior. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder fácilmente al centro de Ubajay y es una excelente base para visitar el Parque Nacional El Palmar, que se encuentra a pocos minutos en auto. Paraíso Natural Hotel es la opción ideal para una estancia relajante en contacto con la belleza natural y el principal atractivo de la zona.",
@@ -23,26 +23,16 @@
         "twitter": "https://twitter.com/paraisonaturalhotel"
     },
     "price": {
-        "basePrice": {
-            "price": 22000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 22000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.3554",
-            "long": "-58.3014"
+            "latitude": -32.3554,
+            "longitude": -58.3014
         },
         "street": "Avenida Las Palmeras",
         "number": "150",
@@ -90,15 +80,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 40,
@@ -171,6 +161,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

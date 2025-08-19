@@ -1,6 +1,6 @@
 import { UserModel } from '@repo/db';
 import type { Actor } from '@repo/service-core';
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { AuthProviderEnum, PermissionEnum, RoleEnum } from '@repo/types';
 import superAdminInput from '../data/user/required/super-admin-user.json';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
@@ -53,6 +53,11 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
     try {
         const userModel = new UserModel();
 
+        const seedAuthProvider: AuthProviderEnum =
+            (process.env.SEED_AUTH_PROVIDER as AuthProviderEnum | undefined) ??
+            AuthProviderEnum.CLERK;
+        const seedSuperAdminAuthProviderUserId = process.env.SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID;
+
         // Check if super admin already exists
         const existingSuperAdmin = await userModel.findOne({
             role: RoleEnum.SUPER_ADMIN
@@ -66,6 +71,31 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
             summaryTracker.trackProcessStep('Super Admin', 'success', 'Existing super admin found');
 
+            // Optionally link auth provider id if provided and not already set
+            try {
+                if (
+                    seedSuperAdminAuthProviderUserId &&
+                    (!('authProviderUserId' in existingSuperAdmin) ||
+                        !existingSuperAdmin.authProviderUserId)
+                ) {
+                    await userModel.updateById(existingSuperAdmin.id, {
+                        authProvider: seedAuthProvider,
+                        authProviderUserId: seedSuperAdminAuthProviderUserId
+                    } as Record<string, unknown>);
+                    logger.info(
+                        `${STATUS_ICONS.Success} Linked super admin with auth provider (${seedAuthProvider})`
+                    );
+                } else if (!seedSuperAdminAuthProviderUserId) {
+                    logger.warn(
+                        `${STATUS_ICONS.Warning} SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID not set; super admin won't be linked to auth provider`
+                    );
+                }
+            } catch (e) {
+                logger.warn(
+                    `${STATUS_ICONS.Warning} Could not link super admin to auth provider: ${(e as Error).message}`
+                );
+            }
+
             return {
                 id: existingSuperAdmin.id,
                 role: existingSuperAdmin.role as RoleEnum,
@@ -75,9 +105,15 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
         // Create super admin user
         const normalizedSuperAdminInput = normalizeUserData(superAdminInput);
-        const createdUser = await userModel.create(
-            normalizedSuperAdminInput as Record<string, unknown>
-        );
+        const createdUser = await userModel.create({
+            ...(normalizedSuperAdminInput as Record<string, unknown>),
+            ...(seedSuperAdminAuthProviderUserId
+                ? {
+                      authProvider: seedAuthProvider,
+                      authProviderUserId: seedSuperAdminAuthProviderUserId
+                  }
+                : {})
+        });
 
         if (!createdUser) {
             throw new Error('Failed to create super admin user');

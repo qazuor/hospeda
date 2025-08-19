@@ -2,7 +2,7 @@
     "id": "039-accommodation-gualeguaychu-apartment-refugio-calmado-apartment-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-calmado-apartment-gualeguaychu",
-    "name": "refugio-calmado-apartment",
+    "name": "Refugio Calmado",
     "summary": "Disfruta de la calma y un ambiente sereno en Refugio Calmado, un apartamento ubicado en un barrio tranquilo de Gualeguaychú.",
     "type": "APARTMENT",
     "description": "Disfruta de la calma y un ambiente sereno en Refugio Calmado, un apartamento ubicado en un barrio tranquilo de Gualeguaychú. Ideal para viajeros que buscan un espacio apacible para descansar, con fácil acceso a los puntos de interés de la ciudad, la costanera y el Carnaval.\n\nEl apartamento ofrece un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo alojar hasta 3 personas. La decoración es sencilla y funcional.\n\nSituado en un edificio tranquilo, ofrece un retiro pacífico. Estás a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. Refugio Calmado es una opción serena y confortable para tu estadía.",
@@ -20,30 +20,16 @@
         "twitter": "https://twitter.com/refugiocalmadoapartment"
     },
     "price": {
-        "basePrice": {
-            "price": 12800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2100,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 12800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0073",
-            "long": "-58.5131"
+            "latitude": -33.0073,
+            "longitude": -58.5131
         },
         "street": "Calle Entre Ríos",
         "number": "500",
@@ -87,14 +73,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -155,6 +141,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

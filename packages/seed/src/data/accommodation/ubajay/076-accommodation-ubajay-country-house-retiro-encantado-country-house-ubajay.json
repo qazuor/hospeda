@@ -2,7 +2,7 @@
     "id": "076-accommodation-ubajay-country-house-retiro-encantado-country-house-ubajay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-encantado-country-house-ubajay",
-    "name": "retiro-encantado-country-house",
+    "name": "Retiro Encantado",
     "summary": "Descubre un retiro con encanto en Retiro Encantado, una hermosa casa de campo ubicada en un entorno rural sereno cerca de Ubajay.",
     "type": "COUNTRY_HOUSE",
     "description": "Descubre un retiro con encanto en Retiro Encantado, una hermosa casa de campo ubicada en un entorno rural sereno cerca de Ubajay. Ideal para familias y grupos que buscan desconectar, disfrutar de la paz del campo y pasar tiempo de calidad en amplios espacios, con fácil acceso al Parque Nacional El Palmar.\n\nLa casa cuenta con tres dormitorios y dos baños completos, ofreciendo privacidad y espacio para hasta 7 personas. El living-comedor es amplio y luminoso, integrado con una cocina bien equipada. La decoración es sencilla y funcional, pensada para una estancia relajada.\n\nEl exterior dispone de un gran jardín parquizado, ideal para actividades al aire libre. Cuenta con una galería techada con asador y una mesa grande, perfecta para disfrutar de comidas. También cuenta con una piscina para refrescarse en verano. Es un entorno seguro y tranquilo para relajarse. Aunque ofrece privacidad, la casa está a una distancia razonable en auto de Ubajay y del Parque Nacional El Palmar.",
@@ -20,36 +20,16 @@
         "facebook": "https://facebook.com/retiroencantadocountryhouse"
     },
     "price": {
-        "basePrice": {
-            "price": 29500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 5500,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            }
-        }
+        "price": 29500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.3559",
-            "long": "-58.2965"
+            "latitude": -32.3559,
+            "longitude": -58.2965
         },
         "street": "Camino Rural Este S/N",
         "number": "S/N",
@@ -109,15 +89,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "13:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "15:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 7,
@@ -193,6 +173,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

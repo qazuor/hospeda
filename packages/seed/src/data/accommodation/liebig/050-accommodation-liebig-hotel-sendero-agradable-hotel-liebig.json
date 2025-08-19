@@ -2,7 +2,7 @@
     "id": "050-accommodation-liebig-hotel-sendero-agradable-hotel-liebig",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-agradable-hotel-liebig",
-    "name": "sendero-agradable-hotel",
+    "name": "Sendero Agradable Hotel",
     "summary": "Disfruta de una estancia agradable en Sendero Agradable Hotel, un hotel con encanto ubicado en la histórica localidad de Liebig.",
     "type": "HOTEL",
     "description": "Disfruta de una estancia agradable en Sendero Agradable Hotel, un hotel con encanto ubicado en la histórica localidad de Liebig. Ideal para quienes visitan el antiguo Frigorífico y buscan un lugar cómodo y apacible para descansar, con fácil acceso al río Uruguay.\n\nEl hotel cuenta con 15 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un pequeño jardín y una sala de estar común. El hotel ofrece desayuno incluido en la tarifa. También cuenta con Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder caminando o en pocos minutos en auto a los restos históricos del Frigorífico Liebig y a la costa del río Uruguay. Sendero Agradable es una opción agradable y práctica para explorar la historia y la tranquilidad de Liebig.",
@@ -17,26 +17,16 @@
         "preferredPhone": "MOBILE"
     },
     "price": {
-        "basePrice": {
-            "price": 18500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 18500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0592",
-            "long": "-58.0997"
+            "latitude": -31.0592,
+            "longitude": -58.0997
         },
         "street": "Calle Las Colonias",
         "number": "120",
@@ -78,15 +68,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 30,
@@ -152,6 +142,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

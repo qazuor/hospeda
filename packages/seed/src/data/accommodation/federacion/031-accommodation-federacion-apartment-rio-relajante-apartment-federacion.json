@@ -2,7 +2,7 @@
     "id": "031-accommodation-federacion-apartment-rio-relajante-apartment-federacion",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-relajante-apartment-federacion",
-    "name": "rio-relajante-apartment",
+    "name": "Rio Relajante",
     "summary": "Disfruta de la cercanía al lago y un ambiente relajado en Rio Relajante Apartamento, ubicado en una zona conveniente de Federación, a pocos minutos del Parque Termal y con acceso fácil a la costanera.",
     "type": "APARTMENT",
     "description": "Disfruta de la cercanía al lago y un ambiente relajado en Rio Relajante Apartamento, ubicado en una zona conveniente de Federación, a pocos minutos del Parque Termal y con acceso fácil a la costanera. Ideal para quienes buscan combinar el relax de las termas con la cercanía al espejo de agua.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional.\n\nSituado en un edificio moderno, ofrece un refugio tranquilo. Estás a pocos minutos en auto del Parque Termal y con acceso rápido a la costanera del Lago de Salto Grande. El centro de la ciudad también es accesible en poco tiempo. Una opción práctica y cómoda para tu visita a Federación.",
@@ -18,30 +18,16 @@
         "website": "https://riorelajanteapartment.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 13800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2200,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 13800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0246",
-            "long": "-57.9007"
+            "latitude": -31.0246,
+            "longitude": -57.9007
         },
         "street": "Calle Paraná",
         "number": "800",
@@ -85,14 +71,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -167,6 +153,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

@@ -2,7 +2,7 @@
     "id": "091-accommodation-uruguay-apartment-refugio-soleado-apartment-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-soleado-apartment-concepcion_del_uruguay",
-    "name": "refugio-soleado-apartment",
+    "name": "Refugio Soleado",
     "summary": "Disfruta de la luz natural y la comodidad en Refugio Soleado, un apartamento moderno y luminoso ubicado en una zona conveniente de Concepción del Uruguay.",
     "type": "APARTMENT",
     "description": "Disfruta de la luz natural y la comodidad en Refugio Soleado, un apartamento moderno y luminoso ubicado en una zona conveniente de Concepción del Uruguay. Ideal para parejas o viajeros de negocios que buscan un espacio agradable, bien equipado y con fácil acceso a los principales puntos de la ciudad. Su orientación le confiere una calidez especial durante gran parte del día.\n\nEl apartamento cuenta con un dormitorio confortable con cama doble, un baño completo, y un espacio integrado de living-comedor con cocina americana. El living dispone de un sofá y TV, con un gran ventanal que llena el ambiente de luz. La cocina está equipada con heladera, anafe eléctrico, microondas y utensilios básicos.\n\nUbicado en un edificio seguro, el apartamento ofrece un retiro tranquilo después de un día de actividades. Se encuentra a corta distancia en auto o transporte público del centro histórico, la costanera y la zona comercial. Es una base práctica y agradable para explorar Concepción del Uruguay. El edificio cuenta con ascensor para mayor comodidad.",
@@ -17,25 +17,16 @@
         "homeEmail": "reservas@refugiosoleadoapartment.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 14000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2300,
-                "currency": "ARS"
-            },
-            "taxPercent": 21
-        }
+        "price": 14000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4764",
-            "long": "-58.2284"
+            "latitude": -32.4764,
+            "longitude": -58.2284
         },
         "street": "Calle Galarza",
         "number": "1050",
@@ -79,14 +70,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -147,6 +138,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

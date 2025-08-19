@@ -2,7 +2,7 @@
     "id": "064-accommodation-san-jose-apartment-nido-tranquilo-apartment-san_jose",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-tranquilo-apartment-san_jose",
-    "name": "nido-tranquilo-apartment",
+    "name": "Nido Tranquilo",
     "summary": "Encuentra la paz y el confort en Nido Tranquilo Apartamento, un espacio moderno ubicado en un barrio sereno de San José.",
     "type": "APARTMENT",
     "description": "Encuentra la paz y el confort en Nido Tranquilo Apartamento, un espacio moderno ubicado en un barrio sereno de San José. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado para acceder al centro y al Parque Nacional El Palmar.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, invitando a la relajación.\n\nSituado en un edificio tranquilo, ofrece un descanso reparador. Estás a pocos minutos en auto del centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Una opción práctica y cómoda para tu visita a San José.",
@@ -23,30 +23,16 @@
         "twitter": "https://twitter.com/nidotranquiloapartmentar"
     },
     "price": {
-        "basePrice": {
-            "price": 12500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 12500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.1870",
-            "long": "-58.7362"
+            "latitude": -32.187,
+            "longitude": -58.7362
         },
         "street": "Calle Sarmiento",
         "number": "1300",
@@ -90,14 +76,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -157,6 +143,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

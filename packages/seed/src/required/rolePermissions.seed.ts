@@ -33,6 +33,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_IA_SUGGESTIONS_VIEW,
         PermissionEnum.ACCOMMODATION_IA_CONTENT_APPROVE,
         PermissionEnum.ACCOMMODATION_SLUG_MANAGE,
+        // Catalog management (amenities/features)
+        PermissionEnum.AMENITY_CREATE,
+        PermissionEnum.AMENITY_UPDATE,
+        PermissionEnum.AMENITY_DELETE,
+        PermissionEnum.FEATURE_CREATE,
+        PermissionEnum.FEATURE_UPDATE,
+        PermissionEnum.FEATURE_DELETE,
 
         // DESTINATION: All permissions
         PermissionEnum.DESTINATION_CREATE,
@@ -51,6 +58,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DESTINATION_SLUG_MANAGE,
         PermissionEnum.DESTINATION_VIEW_PRIVATE,
         PermissionEnum.DESTINATION_VIEW_DRAFT,
+        PermissionEnum.DESTINATION_VIEW_ALL,
+        PermissionEnum.DESTINATION_ATTRACTION_MANAGE,
 
         // EVENT: All permissions
         PermissionEnum.EVENT_CREATE,
@@ -67,6 +76,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_VIEW_PRIVATE,
         PermissionEnum.EVENT_VIEW_DRAFT,
+        PermissionEnum.EVENT_VIEW_ALL,
+        PermissionEnum.EVENT_LOCATION_MANAGE,
 
         // POST: All permissions
         PermissionEnum.POST_CREATE,
@@ -99,6 +110,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_ACTIVITY_LOG_VIEW,
         PermissionEnum.USER_PASSWORD_RESET,
         PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
 
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
@@ -120,11 +132,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
+        PermissionEnum.SEO_MANAGE,
 
         // ACCESS: All permissions
         PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.ACCESS_API_ADMIN,
         PermissionEnum.ACCESS_API_PUBLIC,
+        PermissionEnum.ACCESS_PERMISSIONS_MANAGE,
 
         // LOGGING & ERROR TRACKING: All permissions
         PermissionEnum.LOGS_VIEW_ALL,
@@ -143,7 +157,10 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // TAG: All permissions
         PermissionEnum.TAG_CREATE,
         PermissionEnum.TAG_UPDATE,
-        PermissionEnum.TAG_DELETE
+        PermissionEnum.TAG_DELETE,
+
+        // POST Sponsorship management
+        PermissionEnum.POST_SPONSORSHIP_MANAGE
     ],
 
     [RoleEnum.ADMIN]: [
@@ -166,6 +183,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_IA_SUGGESTIONS_VIEW,
         PermissionEnum.ACCOMMODATION_IA_CONTENT_APPROVE,
         PermissionEnum.ACCOMMODATION_SLUG_MANAGE,
+        // Catalog management (amenities/features)
+        PermissionEnum.AMENITY_CREATE,
+        PermissionEnum.AMENITY_UPDATE,
+        PermissionEnum.AMENITY_DELETE,
+        PermissionEnum.FEATURE_CREATE,
+        PermissionEnum.FEATURE_UPDATE,
+        PermissionEnum.FEATURE_DELETE,
 
         // DESTINATION: Most permissions (no hard delete)
         PermissionEnum.DESTINATION_CREATE,
@@ -183,6 +207,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.DESTINATION_SLUG_MANAGE,
         PermissionEnum.DESTINATION_VIEW_PRIVATE,
         PermissionEnum.DESTINATION_VIEW_DRAFT,
+        PermissionEnum.DESTINATION_VIEW_ALL,
+        PermissionEnum.DESTINATION_ATTRACTION_MANAGE,
 
         // EVENT: Most permissions (no hard delete)
         PermissionEnum.EVENT_CREATE,
@@ -198,6 +224,8 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_VIEW_PRIVATE,
         PermissionEnum.EVENT_VIEW_DRAFT,
+        PermissionEnum.EVENT_VIEW_ALL,
+        PermissionEnum.EVENT_LOCATION_MANAGE,
 
         // POST: Most permissions (no hard delete)
         PermissionEnum.POST_CREATE,
@@ -213,6 +241,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_COMMENT_CREATE,
         PermissionEnum.POST_VIEW_PRIVATE,
         PermissionEnum.POST_VIEW_DRAFT,
+        PermissionEnum.POST_VIEW_ALL,
 
         // USER: Most permissions (no impersonate, no hard delete)
         PermissionEnum.USER_READ_ALL,
@@ -227,6 +256,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_ACTIVITY_LOG_VIEW,
         PermissionEnum.USER_PASSWORD_RESET,
         PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
 
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
@@ -247,6 +277,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
+        PermissionEnum.SEO_MANAGE,
 
         // ACCESS: All permissions
         PermissionEnum.ACCESS_PANEL_ADMIN,
@@ -269,7 +300,10 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // TAG: All permissions
         PermissionEnum.TAG_CREATE,
         PermissionEnum.TAG_UPDATE,
-        PermissionEnum.TAG_DELETE
+        PermissionEnum.TAG_DELETE,
+
+        // POST Sponsorship management
+        PermissionEnum.POST_SPONSORSHIP_MANAGE
     ],
 
     [RoleEnum.EDITOR]: [
@@ -300,6 +334,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,
         PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
 
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
@@ -340,6 +375,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,
         PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
 
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
@@ -360,6 +396,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,
         PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
 
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,

@@ -2,7 +2,7 @@
     "id": "030-accommodation-federacion-hostel-rincon-silvestre-hostel-federacion",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-silvestre-hostel-federacion",
-    "name": "rincon-silvestre-hostel",
+    "name": "Rincón Silvestre Hostel",
     "summary": "Descubre un rincón con espíritu natural en Rincón Silvestre Hostel, ubicado en las afueras de Federación, ideal para viajeros que disfrutan de la naturaleza y buscan un ambiente relajado y económico.",
     "type": "HOSTEL",
     "description": "Descubre un rincón con espíritu natural en Rincón Silvestre Hostel, ubicado en las afueras de Federación, ideal para viajeros que disfrutan de la naturaleza y buscan un ambiente relajado y económico. Un lugar para desconectar y explorar el entorno silvestre cercano.\n\nEl hostel ofrece dormitorios compartidos (6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos. Las áreas comunes incluyen una cocina básica compartida, un comedor y un espacio de estar sencillo. Dispone de un patio con algo de vegetación.\n\nSu ubicación en las afueras ofrece más tranquilidad y cercanía a caminos rurales. Estás a poca distancia en auto del Parque Termal y del centro de Federación. Es una base económica para explorar la zona, con un ambiente más cercano a la naturaleza que un hostel céntrico.",
@@ -23,26 +23,16 @@
         "twitter": "https://twitter.com/rinconsilvestrehostelar"
     },
     "price": {
-        "basePrice": {
-            "price": 7200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 7200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0242",
-            "long": "-57.8846"
+            "latitude": -31.0242,
+            "longitude": -57.8846
         },
         "street": "Camino Rural C",
         "number": "S/N",
@@ -84,8 +74,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -93,7 +81,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "11:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 15,
@@ -166,6 +156,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

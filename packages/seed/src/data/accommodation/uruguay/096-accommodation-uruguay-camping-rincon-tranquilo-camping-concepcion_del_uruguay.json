@@ -2,7 +2,7 @@
     "id": "096-accommodation-uruguay-camping-rincon-tranquilo-camping-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-tranquilo-camping-concepcion_del_uruguay",
-    "name": "rincon-tranquilo-camping",
+    "name": "Rincón Tranquilo Camping",
     "summary": "Buscas paz y un contacto directo con la naturaleza? Rincón Tranquilo Camping es tu lugar.",
     "type": "CAMPING",
     "description": "Buscas paz y un contacto directo con la naturaleza? Rincón Tranquilo Camping es tu lugar. Ubicado en un entorno arbolado cerca de Concepción del Uruguay, ofrece un espacio sereno para acampar, lejos del ruido de la ciudad pero con acceso conveniente a los puntos de interés.\n\nEl camping cuenta con parcelas amplias con sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping simple, pensado para disfrutar de la tranquilidad y el aire libre.\n\nDisponemos de un espacio común con mesas y bancos bajo los árboles. La cercanía a caminos rurales invita a dar paseos en bicicleta o caminatas explorando el entorno. La paz del lugar lo hace ideal para desconectar. Se encuentra a una distancia razonable en auto de Concepción del Uruguay, permitiéndote visitar el centro, la costanera y las playas.",
@@ -22,32 +22,16 @@
         "twitter": "https://twitter.com/rincontranquilocamping"
     },
     "price": {
-        "basePrice": {
-            "price": 3800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "perPerson": {
-                "price": 1600,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 3800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4764",
-            "long": "-58.2246"
+            "latitude": -32.4764,
+            "longitude": -58.2246
         },
         "street": "Camino al Campo S/N",
         "number": "S/N",
@@ -89,14 +73,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "12:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "19:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "12:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 50,
@@ -108,7 +92,8 @@
             "Parcelas con sombra y parrilla",
             "Entorno tranquilo",
             "Ideal para desconectar"
-        ]
+        ],
+        "bedrooms": 1
     },
     "seo": {
         "title": "Rincón Tranquilo Camping - Naturaleza y paz cerca de",
@@ -158,6 +143,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

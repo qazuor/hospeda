@@ -2,7 +2,7 @@
     "id": "033-accommodation-gualeguaychu-hotel-hotel-plaza-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "hotel-plaza-gualeguaychu",
-    "name": "hotel-plaza",
+    "name": "Hotel Plaza",
     "summary": "Hotel Plaza se encuentra en el corazón de Gualeguaychú, a solo 200 metros de la Plaza Principal y a corta distancia de los principales atractivos de esta vibrante ciudad entrerriana.",
     "type": "HOTEL",
     "description": "Hotel Plaza se encuentra en el corazón de Gualeguaychú, a solo 200 metros de la Plaza Principal y a corta distancia de los principales atractivos de esta vibrante ciudad entrerriana. Con una arquitectura que combina elementos clásicos y modernos, este hotel boutique de 3 estrellas ofrece una experiencia confortable y personalizada para viajeros de negocios y turistas.\n\nCon 24 habitaciones distribuidas en tres categorías (estándar, superior y suite), el hotel satisface las necesidades de diferentes tipos de huéspedes. Todas las habitaciones están equipadas con camas de alta calidad, ropa de cama premium, aire acondicionado, TV LED con cable, minibar y baño privado con amenities seleccionados. Las habitaciones superiores y suites añaden áreas de descanso adicionales y vistas privilegiadas a la ciudad.\n\nEntre los servicios destacados del Hotel Plaza se encuentra su restaurante 'El Dorado', que sirve desayuno buffet completo incluido en la tarifa, así como almuerzos y cenas con un menú que resalta los sabores regionales y productos locales. El lobby bar es el punto de encuentro ideal para disfrutar de un café o un cóctel en un ambiente relajado. El hotel también cuenta con una pequeña sala de reuniones con capacidad para 20 personas, ideal para pequeños eventos corporativos, y ofrece WiFi de alta velocidad gratuito en todas las instalaciones.\n\nUna de las ventajas más apreciadas por los huéspedes es su ubicación estratégica que permite explorar caminando el casco histórico, la zona comercial y la costanera de Gualeguaychú. Durante la temporada de Carnaval, el hotel ofrece servicio de traslado al Corsódromo y paquetes especiales que incluyen entradas al espectáculo.",
@@ -19,40 +19,16 @@
         "preferredPhone": "HOME"
     },
     "price": {
-        "basePrice": {
-            "price": 22000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 25,
-                "minNights": 30
-            },
-            "lastMinute": {
-                "percentage": 10,
-                "minNights": 1
-            }
-        }
+        "price": 22000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0149",
-            "long": "-58.5242"
+            "latitude": -33.0149,
+            "longitude": -58.5242
         },
         "street": "Calle Alberdi",
         "number": "478",
@@ -118,8 +94,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -127,7 +101,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "13:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 48,
@@ -253,6 +229,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

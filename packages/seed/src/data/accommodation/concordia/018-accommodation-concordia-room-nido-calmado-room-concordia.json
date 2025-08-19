@@ -2,7 +2,7 @@
     "id": "018-accommodation-concordia-room-nido-calmado-room-concordia",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-calmado-room-concordia",
-    "name": "nido-calmado-room",
+    "name": "Nido Calmado",
     "summary": "Encuentra un espacio tranquilo para tu descanso en Nido Calmado, una habitación privada en una casa familiar ubicada en un barrio residencial apacible de Concordia.",
     "type": "ROOM",
     "description": "Encuentra un espacio tranquilo para tu descanso en Nido Calmado, una habitación privada en una casa familiar ubicada en un barrio residencial apacible de Concordia. Ideal para viajeros que valoran la serenidad y un ambiente hogareño, con fácil acceso a los puntos de interés de la ciudad.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar una pequeña área de cocina básica con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común para relajarse.\n\nLa casa se encuentra en un barrio tranquilo, garantizando un buen descanso. Estás a una distancia conveniente en auto o transporte público del centro de Concordia, las Termas y el Lago de Salto Grande. Los anfitriones ofrecen un trato amable, haciendo de tu estancia una experiencia calmada y agradable.",
@@ -21,26 +21,16 @@
         "twitter": "https://twitter.com/nidocalmadoroomok"
     },
     "price": {
-        "basePrice": {
-            "price": 5500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 5500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.3898",
-            "long": "-58.0203"
+            "latitude": -31.3898,
+            "longitude": -58.0203
         },
         "street": "Calle Los Álamos",
         "number": "180",
@@ -76,14 +66,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -147,6 +137,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

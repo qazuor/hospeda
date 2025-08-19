@@ -50,36 +50,7 @@
             "$ref": "common.schema.json#/definitions/socialNetworks"
         },
         "price": {
-            "type": "object",
-            "properties": {
-                "basePrice": {
-                    "$ref": "common.schema.json#/definitions/price"
-                },
-                "additionalFees": {
-                    "type": "object",
-                    "properties": {
-                        "cleaning": { "type": "number", "minimum": 0 },
-                        "tax": { "type": "number", "minimum": 0 },
-                        "taxPercent": { "type": "number", "minimum": 0, "maximum": 100 },
-                        "lateCheckout": { "type": "number", "minimum": 0 },
-                        "parking": { "type": "number", "minimum": 0 },
-                        "perPerson": { "type": "number", "minimum": 0 },
-                        "electricity": { "type": "number", "minimum": 0 },
-                        "towelRental": { "type": "number", "minimum": 0 }
-                    },
-                    "additionalProperties": true
-                },
-                "discounts": {
-                    "type": "object",
-                    "properties": {
-                        "weekly": { "type": "number", "minimum": 0, "maximum": 100 },
-                        "monthly": { "type": "number", "minimum": 0, "maximum": 100 },
-                        "lastMinute": { "type": "number", "minimum": 0, "maximum": 100 }
-                    },
-                    "additionalProperties": false
-                }
-            },
-            "additionalProperties": false
+            "$ref": "common.schema.json#/definitions/price"
         },
         "location": {
             "$ref": "common.schema.json#/definitions/location"

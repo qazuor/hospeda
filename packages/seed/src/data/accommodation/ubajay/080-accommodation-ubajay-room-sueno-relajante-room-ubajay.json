@@ -2,7 +2,7 @@
     "id": "080-accommodation-ubajay-room-sueno-relajante-room-ubajay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-relajante-room-ubajay",
-    "name": "sueno-relajante-room",
+    "name": "Sueño Relajante",
     "summary": "Encuentra un espacio tranquilo para tu descanso en Sueño Relajante, una habitación privada en una casa familiar ubicada en un barrio residencial apacible de Ubajay.",
     "type": "ROOM",
     "description": "Encuentra un espacio tranquilo para tu descanso en Sueño Relajante, una habitación privada en una casa familiar ubicada en un barrio residencial apacible de Ubajay. Ideal para viajeros que valoran la serenidad y un ambiente hogareño, con fácil acceso a los puntos de interés del pueblo y el Parque Nacional El Palmar.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común para relajarse.\n\nLa casa se encuentra en un barrio tranquilo, garantizando un buen descanso. Estás a una distancia conveniente en auto o caminando del centro de Ubajay y del Parque Nacional El Palmar. Los anfitriones ofrecen un trato amable, haciendo de tu estancia una experiencia calmada y agradable.",
@@ -17,26 +17,16 @@
         "homeEmail": "info@suenorelajanteroom.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 5800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 5800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.3648",
-            "long": "-58.2945"
+            "latitude": -32.3648,
+            "longitude": -58.2945
         },
         "street": "Calle Los Fresnos",
         "number": "120",
@@ -72,14 +62,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -138,6 +128,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

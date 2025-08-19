@@ -2,7 +2,7 @@
     "id": "093-accommodation-uruguay-apartment-retiro-encantado-apartment-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-encantado-apartment-concepcion_del_uruguay",
-    "name": "retiro-encantado-apartment",
+    "name": "Retiro Encantado",
     "summary": "Descubre el encanto histórico de Concepción del Uruguay alojándote en Retiro Encantado, un apartamento moderno y confortable situado a pocas cuadras del centro histórico.",
     "type": "APARTMENT",
     "description": "Descubre el encanto histórico de Concepción del Uruguay alojándote en Retiro Encantado, un apartamento moderno y confortable situado a pocas cuadras del centro histórico. Ideal para quienes desean explorar 'La Histórica' a pie, combinando la comodidad de un apartamento propio con la cercanía a los principales puntos de interés, cafés, restaurantes y la hermosa costanera.\n\nEste apartamento ofrece un ambiente acogedor con un dormitorio principal con cama doble y un sofá cama en el living, permitiendo alojar hasta 3-4 personas. Cuenta con un baño completo y una cocina integrada al living-comedor, equipada con lo necesario para preparar tus propias comidas (heladera, anafe, microondas, utensilios básicos). Dispone de aire acondicionado y calefacción para una estadía confortable en cualquier época del año.\n\nLa ubicación es uno de sus mayores atractivos, permitiéndote caminar hasta la Plaza Principal, la Basílica, el Colegio Nacional y otras joyas arquitectónicas de la ciudad. La costanera del río Uruguay, con sus espacios verdes y opciones gastronómicas, también está a una distancia caminable. El edificio es tranquilo y cuenta con acceso seguro. Retiro Encantado es el punto de partida perfecto para sumergirte en la historia y la vida cultural de Concepción del Uruguay.",
@@ -17,25 +17,16 @@
         "homeEmail": "hola@retiroencantadoapartment.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 13500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2200,
-                "currency": "ARS"
-            },
-            "taxPercent": 21
-        }
+        "price": 13500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4780",
-            "long": "-58.2317"
+            "latitude": -32.478,
+            "longitude": -58.2317
         },
         "street": "Calle 9 de Julio",
         "number": "870",
@@ -79,15 +70,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "15:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -154,6 +145,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

@@ -2,7 +2,7 @@
     "id": "083-accommodation-uruguay-hotel-mirador-natural-hotel-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-natural-hotel-concepcion_del_uruguay",
-    "name": "mirador-natural-hotel",
+    "name": "Mirador Natural Hotel",
     "summary": "Disfruta de la serenidad y las vistas en Mirador Natural Hotel, un refugio tranquilo en Concepción del Uruguay con hermosas vistas al entorno natural.",
     "type": "HOTEL",
     "description": "Disfruta de la serenidad y las vistas en Mirador Natural Hotel, un refugio tranquilo en Concepción del Uruguay con hermosas vistas al entorno natural. Ubicado estratégicamente cerca de la costanera y con fácil acceso al centro, este hotel es ideal para quienes buscan paz y confort.\n\nEl hotel cuenta con 18 habitaciones confortables, muchas de ellas con balcón y vista panorámica al río o a zonas arboladas. Todas están equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y familiares.\n\nEntre nuestras instalaciones, destacamos un jardín con piscina y solárium, un espacio perfecto para relajarse disfrutando del paisaje. El hotel ofrece desayuno buffet incluido, servido en un comedor con vista al exterior. También contamos con un lobby acogedor y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder rápidamente a la costanera, la Isla del Puerto y zonas de esparcimiento al aire libre. El centro histórico y los sitios de interés de 'La Histórica' están a pocos minutos en auto. Mirador Natural Hotel es la opción ideal para una estancia relajante en contacto con la belleza natural de Concepción del Uruguay.",
@@ -23,21 +23,16 @@
         "twitter": "https://twitter.com/miradornaturalhotel"
     },
     "price": {
-        "basePrice": {
-            "price": 20000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": 21
-        }
+        "price": 20000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4912",
-            "long": "-58.2256"
+            "latitude": -32.4912,
+            "longitude": -58.2256
         },
         "street": "Avenida Costanera",
         "number": "1500",
@@ -85,8 +80,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -94,7 +87,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "13:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 38,
@@ -177,6 +172,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

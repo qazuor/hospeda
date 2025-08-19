@@ -2,7 +2,7 @@
     "id": "063-accommodation-san-jose-apartment-mirador-agradable-apartment-san_jose",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-agradable-apartment-san_jose",
-    "name": "mirador-agradable-apartment",
+    "name": "Mirador Agradable",
     "summary": "Disfruta de una estancia agradable con vistas en Mirador Agradable Apartamento, un espacio moderno y confortable ubicado en San José.",
     "type": "APARTMENT",
     "description": "Disfruta de una estancia agradable con vistas en Mirador Agradable Apartamento, un espacio moderno y confortable ubicado en San José. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado, con vistas parciales y fácil acceso al centro y a los alrededores, incluyendo el Parque Nacional El Palmar.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo alojar hasta 3 personas. Los ventanales permiten la entrada de luz y ofrecen vistas parciales a la ciudad o zonas verdes. Dispone de aire acondicionado y calefacción.\n\nUbicado en un edificio con ascensor en una zona tranquila, ofrece un retiro pacífico. Estás a pocos minutos en auto del centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Una opción práctica y cómoda para tu visita a San José.",
@@ -17,30 +17,16 @@
         "homeEmail": "hola@miradoragradableapartment.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 13500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2200,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 13500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2005",
-            "long": "-58.7394"
+            "latitude": -32.2005,
+            "longitude": -58.7394
         },
         "street": "Calle Urquiza",
         "number": "850",
@@ -90,14 +76,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -165,6 +151,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

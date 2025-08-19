@@ -2,7 +2,7 @@
     "id": "055-accommodation-paranacito-country-house-paraiso-relajante-country-house-villa_paranacito",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-relajante-country-house-villa_paranacito",
-    "name": "paraiso-relajante-country-house",
+    "name": "Paraíso Relajante",
     "summary": "Encuentra tu paraíso de relax en Paraíso Relajante, una espaciosa casa de campo ubicada en un entorno sereno cerca de Paranacito.",
     "type": "COUNTRY_HOUSE",
     "description": "Encuentra tu paraíso de relax en Paraíso Relajante, una espaciosa casa de campo ubicada en un entorno sereno cerca de Paranacito. Ideal para familias y grupos que buscan desconectar, disfrutar de la tranquilidad del campo y el Delta, y pasar tiempo de calidad en amplios espacios.\n\nLa casa cuenta con tres dormitorios y dos baños completos, ofreciendo privacidad y espacio para hasta 8 personas. El living-comedor es amplio y luminoso, integrado con una cocina bien equipada. La decoración es sencilla y funcional, pensada para una estancia relajada.\n\nEl exterior dispone de un gran jardín parquizado, ideal para actividades al aire libre. Cuenta con una galería techada con asador y una mesa grande, perfecta para disfrutar de comidas. También cuenta con una piscina para refrescarse en verano. Es un entorno seguro y tranquilo para relajarse. Aunque ofrece privacidad, la casa está a una distancia razonable en auto de Paranacito y del acceso al Delta y sus actividades.",
@@ -17,31 +17,16 @@
         "homeEmail": "reservas@paraisorelajantecountryhouse.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 29000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 5500,
-                "currency": "ARS"
-            },
-            "taxPercent": 21
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            }
-        }
+        "price": 29000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.7014",
-            "long": "-58.6602"
+            "latitude": -33.7014,
+            "longitude": -58.6602
         },
         "street": "Camino Rural Delta S/N",
         "number": "S/N",
@@ -101,15 +86,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "13:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "15:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 8,
@@ -185,6 +170,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

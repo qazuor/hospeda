@@ -2,7 +2,7 @@
     "id": "095-accommodation-uruguay-hostel-rincon-soleado-hostel-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-soleado-hostel-concepcion_del_uruguay",
-    "name": "rincon-soleado-hostel",
+    "name": "Rincón Soleado Hostel",
     "summary": "Disfruta de la luz y un ambiente vibrante en Rincón Soleado Hostel, ubicado en el corazón de Concepción del Uruguay.",
     "type": "HOSTEL",
     "description": "Disfruta de la luz y un ambiente vibrante en Rincón Soleado Hostel, ubicado en el corazón de Concepción del Uruguay. Ideal para jóvenes viajeros y mochileros que buscan socializar y estar cerca de la acción. Su diseño moderno y luminoso crea un espacio muy agradable para tu estadía.\n\nEl hostel cuenta con dormitorios compartidos (4, 6 y 10 camas) equipados con literas robustas y lockers individuales. También ofrecemos algunas habitaciones privadas dobles y triples. Los baños son compartidos, separados por género y con duchas de agua caliente 24hs. Las áreas comunes son amplias y luminosas: una gran cocina equipada, un comedor espacioso, un living con puff y TV, y un patio interior con mesas y sillas.\n\nLa ubicación es inmejorable, a pocas cuadras de la plaza principal, la peatonal, bares, restaurantes y la costanera. Es muy fácil moverse a pie desde aquí. El hostel organiza actividades sociales como noches de pizza, juegos o salidas grupales para fomentar la interacción entre huéspedes de todo el mundo. Rincón Soleado es tu base ideal para explorar 'La Histórica' y hacer nuevos amigos.",
@@ -22,38 +22,16 @@
         "twitter": "https://twitter.com/rinconsoleadohostelok"
     },
     "price": {
-        "basePrice": {
-            "price": 7200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "towelRental": {
-                "price": 400,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 10,
-                "minNights": 7
-            }
-        }
+        "price": 7200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4740",
-            "long": "-58.2310"
+            "latitude": -32.474,
+            "longitude": -58.231
         },
         "street": "Calle Eva Perón",
         "number": "680",
@@ -101,8 +79,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -110,7 +86,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 30,
@@ -186,6 +164,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

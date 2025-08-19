@@ -2,7 +2,7 @@
     "id": "084-accommodation-uruguay-hostel-mirador-relajante-hostel-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-relajante-hostel-concepcion_del_uruguay",
-    "name": "mirador-relajante-hostel",
+    "name": "Mirador Relajante Hostel",
     "summary": "Encuentra un espacio para relajarte y conocer otros viajeros en Mirador Relajante Hostel, ubicado en una zona tranquila pero bien conectada de Concepción del Uruguay.",
     "type": "HOSTEL",
     "description": "Encuentra un espacio para relajarte y conocer otros viajeros en Mirador Relajante Hostel, ubicado en una zona tranquila pero bien conectada de Concepción del Uruguay. Con un ambiente distendido y espacios comunes cómodos, este hostel es ideal para mochileros y viajeros que buscan un lugar amigable y económico.\n\nEl hostel ofrece dormitorios compartidos (4 y 6 camas) con lockers individuales y habitaciones privadas (dobles y triples). Los baños son compartidos y están separados por género. Las áreas comunes incluyen una cocina equipada para uso de los huéspedes, un comedor social, y una sala de estar con TV. Cuenta con un pequeño patio con hamacas.\n\nAunque no tiene grandes vistas, el nombre 'Relajante' describe su atmósfera. La ubicación permite acceder en pocos minutos a la Terminal de Ómnibus y a las vías principales hacia el centro y la costanera. Es una base práctica para explorar la ciudad y sus alrededores de forma económica.",
@@ -17,26 +17,16 @@
         "homeEmail": "reservas@miradorrelajantehostel.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 7000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 7000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4802",
-            "long": "-58.2374"
+            "latitude": -32.4802,
+            "longitude": -58.2374
         },
         "street": "Calle Los Alerces",
         "number": "45",
@@ -84,8 +74,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -93,7 +81,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 20,
@@ -162,6 +152,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

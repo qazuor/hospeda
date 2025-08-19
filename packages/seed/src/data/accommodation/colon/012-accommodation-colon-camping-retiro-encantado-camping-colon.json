@@ -2,7 +2,7 @@
     "id": "012-accommodation-colon-camping-retiro-encantado-camping-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-encantado-camping-colon",
-    "name": "retiro-encantado-camping",
+    "name": "Retiro Encantado Camping",
     "summary": "Descubre un rincón mágico en Retiro Encantado Camping, ubicado en un entorno arbolado a pocos kilómetros de Colón.",
     "type": "CAMPING",
     "description": "Descubre un rincón mágico en Retiro Encantado Camping, ubicado en un entorno arbolado a pocos kilómetros de Colón. Este camping ofrece una experiencia tranquila y natural, ideal para desconectar, disfrutar del aire libre y crear recuerdos inolvidables en familia o con amigos. Su atmósfera relajada y sus instalaciones lo convierten en un lugar encantador para tu escapada.\n\nEl camping cuenta con amplias parcelas delimitadas con abundante sombra natural, perfectas para carpas y rodantes. Cada parcela dispone de fogón individual y mesa con bancos. Las instalaciones incluyen baños completos con duchas de agua caliente las 24hs, una cocina comunitaria equipada con heladeras y anafes, y un área de quincho techado para encuentros grupales.\n\nOfrecemos diversas actividades para complementar tu estadía, como senderos para caminatas, alquiler de bicicletas para explorar los alrededores y un sector de juegos infantiles. Estamos cerca de un brazo del río, ideal para pesca de orilla o simplemente para disfrutar del paisaje. Por las noches, organizamos fogones comunitarios o proyecciones de películas al aire libre en temporada alta.\n\nLa distancia al centro de Colón es corta en auto, lo que te permite acceder fácilmente a supermercados, restaurantes y tiendas, así como a la costanera y las Termas de Colón. Retiro Encantado es el equilibrio perfecto entre la serenidad del campo y la conveniencia de tener la ciudad a mano.",
@@ -22,44 +22,16 @@
         "twitter": "https://twitter.com/retiroencantadocamping"
     },
     "price": {
-        "basePrice": {
-            "price": 4000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "perPerson": {
-                "price": 1800,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "electricity": {
-                "price": 500,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 10,
-                "minNights": 7
-            }
-        }
+        "price": 4000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2323",
-            "long": "-58.1440"
+            "latitude": -32.2323,
+            "longitude": -58.144
         },
         "street": "Camino a La Balsa",
         "number": "Km 3.5",
@@ -107,8 +79,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "12:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "10:00",
         "lateCheckinAccepted": true,
@@ -116,7 +86,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "12:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 60,
@@ -130,7 +102,8 @@
             "Juegos infantiles",
             "Fogones individuales por parcela",
             "Se admiten mascotas con correa"
-        ]
+        ],
+        "bedrooms": 1
     },
     "seo": {
         "title": "Retiro Encantado Camping - Naturaleza y relax cerca de Colón",
@@ -199,6 +172,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

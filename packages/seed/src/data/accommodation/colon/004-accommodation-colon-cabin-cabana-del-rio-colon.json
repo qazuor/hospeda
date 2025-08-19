@@ -2,7 +2,7 @@
     "id": "004-accommodation-colon-cabin-cabana-del-rio-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "cabana-del-rio-colon",
-    "name": "cabana-del-rio",
+    "name": "Cabaña del Río",
     "summary": "Disfruta de la tranquilidad y la belleza del río Uruguay en esta hermosa cabaña ubicada a solo 300 metros de la costanera de Colón.",
     "type": "CABIN",
     "description": "Disfruta de la tranquilidad y la belleza del río Uruguay en esta hermosa cabaña ubicada a solo 300 metros de la costanera de Colón. Con una arquitectura cálida que combina madera y piedra, Cabaña del Río ofrece el refugio perfecto para parejas y familias pequeñas que buscan conectar con la naturaleza sin renunciar a la comodidad.\n\nLa cabaña, de construcción reciente, cuenta con un dormitorio principal con cama queen y un entrepiso con dos camas individuales, ideal para alojar hasta 4 personas. El diseño interior prioriza los espacios abiertos, con una sala de estar que se integra a la cocina equipada, creando un ambiente acogedor perfecto para compartir momentos en familia. Los amplios ventanales permiten disfrutar de la luz natural y las vistas al jardín arbolado.\n\nEl verdadero encanto de Cabaña del Río se encuentra en su galería exterior techada con asador tradicional, donde podrás disfrutar de comidas al aire libre mientras escuchas el suave murmullo del río cercano. El jardín privado, con una pequeña fuente y espacios de sombra, invita al descanso en las hamacas paraguayas disponibles para los huéspedes. A pocos minutos caminando encontrarás las playas del río Uruguay, reconocidas por su arena fina y aguas tranquilas.",
@@ -23,44 +23,16 @@
         "twitter": "https://twitter.com/cabanadelrioar"
     },
     "price": {
-        "basePrice": {
-            "price": 18000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3500,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 10,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 25,
-                "minNights": 30
-            },
-            "lastMinute": {
-                "percentage": 15,
-                "minNights": 1
-            }
-        }
+        "price": 18000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2280",
-            "long": "-58.1590"
+            "latitude": -32.228,
+            "longitude": -58.159
         },
         "street": "Calle Los Sauces",
         "number": "258",
@@ -126,8 +98,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -135,7 +105,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -257,6 +229,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

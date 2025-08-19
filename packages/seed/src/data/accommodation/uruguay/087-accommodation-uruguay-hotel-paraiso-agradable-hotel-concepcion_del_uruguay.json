@@ -2,7 +2,7 @@
     "id": "087-accommodation-uruguay-hotel-paraiso-agradable-hotel-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-agradable-hotel-concepcion_del_uruguay",
-    "name": "paraiso-agradable-hotel",
+    "name": "Paraíso Agradable Hotel",
     "summary": "Experimenta una estancia agradable en Paraíso Agradable Hotel, un hotel con encanto ubicado en una zona conveniente de Concepción del Uruguay.",
     "type": "HOTEL",
     "description": "Experimenta una estancia agradable en Paraíso Agradable Hotel, un hotel con encanto ubicado en una zona conveniente de Concepción del Uruguay. Ofrece un ambiente relajado, servicios de calidad y fácil acceso a los puntos de interés de la ciudad, ideal para turistas que buscan confort y buena atención.\n\nEl hotel dispone de 28 habitaciones, incluyendo opciones Standard y Superior, todas equipadas con aire acondicionado, calefacción, TV, minibar y baño privado. Las habitaciones Superior son más amplias o cuentan con alguna comodidad adicional. La decoración es clásica y confortable.\n\nEntre sus instalaciones, cuenta con un área de piscina exterior con solárium en el jardín, un espacio ideal para descansar. El hotel ofrece desayuno buffet incluido, servido en su comedor. También dispone de un lobby acogedor y Wi-Fi gratuito en todas las áreas. Ofrece estacionamiento descubierto en el predio.\n\nSu ubicación permite llegar en pocos minutos en auto al centro histórico, la costanera, la Terminal de Ómnibus y las playas. Un hotel agradable para disfrutar de una estancia cómoda en Concepción del Uruguay.",
@@ -21,27 +21,16 @@
         "twitter": "https://twitter.com/paraisoagradablehotel"
     },
     "price": {
-        "basePrice": {
-            "price": 19500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": 21
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 10,
-                "minNights": 7
-            }
-        }
+        "price": 19500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4859",
-            "long": "-58.2254"
+            "latitude": -32.4859,
+            "longitude": -58.2254
         },
         "street": "Calle Alem",
         "number": "350",
@@ -89,8 +78,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -98,7 +85,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 55,
@@ -162,6 +151,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

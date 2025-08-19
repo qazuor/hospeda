@@ -2,7 +2,7 @@
     "id": "077-accommodation-ubajay-camping-rincon-agradable-camping-ubajay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-agradable-camping-ubajay",
-    "name": "rincon-agradable-camping",
+    "name": "Rincón Agradable Camping",
     "summary": "Encuentra un lugar agradable para tu experiencia de camping en Rincón Agradable Camping, ubicado en un entorno sereno de Ubajay, a orillas de un arroyo.",
     "type": "CAMPING",
     "description": "Encuentra un lugar agradable para tu experiencia de camping en Rincón Agradable Camping, ubicado en un entorno sereno de Ubajay, a orillas de un arroyo. Ideal para campistas que buscan tranquilidad y un contacto directo con la naturaleza, con fácil acceso al Parque Nacional El Palmar.\n\nEl camping ofrece parcelas con buena sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, diseñado para disfrutar del aire libre y la paz del entorno.\n\nSu ubicación junto a un arroyo ofrece acceso directo al agua, ideal para pesca y simplemente disfrutar del sonido. El entorno es muy tranquilo y natural. Estás a poca distancia en auto de Ubajay y del Parque Nacional El Palmar. Un lugar agradable para una aventura en la naturaleza.",
@@ -22,32 +22,16 @@
         "twitter": "https://twitter.com/rinconagradablecampingar"
     },
     "price": {
-        "basePrice": {
-            "price": 3900,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "perPerson": {
-                "price": 1700,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 3900,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.3673",
-            "long": "-58.2983"
+            "latitude": -32.3673,
+            "longitude": -58.2983
         },
         "street": "Camino al Arroyo S/N",
         "number": "S/N",
@@ -89,14 +73,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "12:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "19:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "12:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 35,
@@ -109,7 +93,8 @@
             "Acceso directo al arroyo",
             "Entorno tranquilo y natural",
             "Cerca del Parque Nacional El Palmar"
-        ]
+        ],
+        "bedrooms": 1
     },
     "seo": {
         "title": "Rincón Agradable Camping - Naturaleza y arroyo en Ubajay ",
@@ -155,6 +140,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

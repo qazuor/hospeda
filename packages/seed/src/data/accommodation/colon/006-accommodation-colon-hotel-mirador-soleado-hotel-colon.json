@@ -2,7 +2,7 @@
     "id": "006-accommodation-colon-hotel-mirador-soleado-hotel-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-soleado-hotel-colon",
-    "name": "mirador-soleado-hotel",
+    "name": "Mirador Soleado Hotel",
     "summary": "Con una ubicación privilegiada y vistas panorámicas de Colón y el río Uruguay, Mirador Soleado Hotel ofrece una experiencia de alojamiento superior.",
     "type": "HOTEL",
     "description": "Con una ubicación privilegiada y vistas panorámicas de Colón y el río Uruguay, Mirador Soleado Hotel ofrece una experiencia de alojamiento superior. Este hotel moderno, ideal para turistas que valoran la comodidad y el acceso rápido a las principales atracciones, se destaca por su diseño contemporáneo y servicios de calidad.\n\nEl hotel dispone de 20 habitaciones elegantemente decoradas, incluyendo opciones Standard, Superior con vista al río y Suites. Todas cuentan con aire acondicionado, calefacción central, TV LED, minibar, caja de seguridad y baño privado con secador de pelo y amenities. Las habitaciones superiores y suites ofrecen balcones privados con vistas espectaculares.\n\nEntre sus instalaciones, el hotel cuenta con un rooftop con piscina y solárium, desde donde se obtienen las mejores vistas de la ciudad y el río. El restaurante en planta baja ofrece desayuno buffet y un menú a la carta para almuerzo y cena, con platos internacionales y regionales. También dispone de un bar y una sala de estar común. Ofrece WiFi de alta velocidad gratuito en todo el edificio y estacionamiento cubierto opcional.\n\nSu excelente ubicación en el centro permite acceder caminando a la peatonal, la plaza principal, restaurantes y tiendas. La costanera y el acceso a las Termas de Colón están a pocos minutos en auto. Un hotel ideal para disfrutar de Colón con estilo y comodidad, con el plus de vistas inolvidables.",
@@ -17,38 +17,16 @@
         "preferredPhone": "MOBILE"
     },
     "price": {
-        "basePrice": {
-            "price": 25000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "parking": {
-                "price": 2000,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "monthly": {
-                "percentage": 15,
-                "minNights": 30
-            }
-        }
+        "price": 25000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2320",
-            "long": "-58.1554"
+            "latitude": -32.232,
+            "longitude": -58.1554
         },
         "street": "Calle Mitre",
         "number": "980",
@@ -102,8 +80,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -111,7 +87,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "13:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 40,
@@ -201,6 +179,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

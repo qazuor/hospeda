@@ -2,7 +2,7 @@
     "id": "014-accommodation-colon-apartment-sueno-agradable-apartment-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-agradable-apartment-colon",
-    "name": "sueno-agradable-apartment",
+    "name": "Sueño Agradable Apartamento",
     "summary": "Situado a pocas cuadras de la vibrante costanera de Colón y con fácil acceso al centro, Sueño Agradable es un moderno y cómodo apartamento ideal para parejas o pequeños grupos de amigos que buscan una estadía práctica y bien ubicada.",
     "type": "APARTMENT",
     "description": "Situado a pocas cuadras de la vibrante costanera de Colón y con fácil acceso al centro, Sueño Agradable es un moderno y cómodo apartamento ideal para parejas o pequeños grupos de amigos que buscan una estadía práctica y bien ubicada. Este espacio de diseño funcional ofrece todas las comodidades necesarias para sentirse como en casa mientras exploras esta hermosa ciudad a orillas del río Uruguay.\n\nEl apartamento cuenta con un dormitorio luminoso con cama matrimonial y un sofá cama en el área de estar, pudiendo alojar hasta 3-4 personas. La cocina integrada está equipada con anafe, microondas, heladera y utensilios básicos para preparar desayunos o comidas ligeras. El área de estar dispone de TV y un pequeño balcón con vista a la calle.\n\nLas instalaciones del edificio incluyen ascensor y seguridad. La ubicación céntrica te permite acceder caminando a restaurantes, supermercados, tiendas y a la principal zona de esparcimiento de Colón, la costanera, donde encontrarás playas, bares y actividades recreativas. Es un punto de partida ideal para visitar las Termas de Colón o el cercano Parque Nacional El Palmar.",
@@ -18,30 +18,16 @@
         "website": "https://suenoagradableapartment.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 11000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 11000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2170",
-            "long": "-58.1462"
+            "latitude": -32.217,
+            "longitude": -58.1462
         },
         "street": "Calle 12 de Abril",
         "number": "550",
@@ -79,14 +65,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -165,6 +151,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

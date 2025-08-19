@@ -2,7 +2,7 @@
     "id": "027-accommodation-federacion-hostel-nido-tranquilo-hostel-federacion",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-tranquilo-hostel-federacion",
-    "name": "nido-tranquilo-hostel",
+    "name": "Nido Tranquilo Hostel",
     "summary": "Encuentra un espacio para descansar en Nido Tranquilo Hostel, ubicado en una zona serena de Federación.",
     "type": "HOSTEL",
     "description": "Encuentra un espacio para descansar en Nido Tranquilo Hostel, ubicado en una zona serena de Federación. Ideal para viajeros que buscan un lugar apacible y económico para alojarse, con acceso conveniente al Parque Termal y el centro de la ciudad.\n\nEl hostel ofrece dormitorios compartidos (4 y 6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes incluyen una cocina equipada para uso de los huéspedes, un comedor social y un living sencillo. Dispone de un pequeño patio.\n\nLa ubicación en un barrio tranquilo te garantiza un buen descanso. Estás a poca distancia en auto de los principales puntos de interés de Federación, incluyendo el Parque Termal y la costanera. Es una base práctica y económica para explorar la ciudad y disfrutar de sus termas.",
@@ -20,21 +20,16 @@
         "instagram": "https://instagram.com/nidotranquilohostelok"
     },
     "price": {
-        "basePrice": {
-            "price": 7500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": 21
-        }
+        "price": 7500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0080",
-            "long": "-57.9029"
+            "latitude": -31.008,
+            "longitude": -57.9029
         },
         "street": "Calle Los Robles",
         "number": "50",
@@ -76,8 +71,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -85,7 +78,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "11:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 18,
@@ -150,6 +145,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

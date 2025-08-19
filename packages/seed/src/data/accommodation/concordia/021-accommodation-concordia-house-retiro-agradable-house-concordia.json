@@ -2,7 +2,7 @@
     "id": "021-accommodation-concordia-house-retiro-agradable-house-concordia",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-agradable-house-concordia",
-    "name": "retiro-agradable-house",
+    "name": "Retiro Agradable House",
     "summary": "Encuentra un espacio agradable y privado en Retiro Agradable House, una casa cómoda ubicada en un barrio tranquilo de Concordia.",
     "type": "HOUSE",
     "description": "Encuentra un espacio agradable y privado en Retiro Agradable House, una casa cómoda ubicada en un barrio tranquilo de Concordia. Ideal para familias o grupos de amigos que buscan un lugar propio para descansar y disfrutar, con fácil acceso a las atracciones de la ciudad y las termas.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio funcional para compartir. Está equipada con lo esencial para una estadía confortable, incluyendo aire acondicionado. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con césped y un sector de parrilla, perfecto para disfrutar de asados al aire libre. La ubicación en un barrio residencial garantiza tranquilidad. Estás a una distancia conveniente en auto del centro de Concordia, las Termas y el Lago de Salto Grande. Una opción práctica y agradable para tu estadía.",
@@ -21,30 +21,16 @@
         "instagram": "https://instagram.com/retiroagradablehouseok"
     },
     "price": {
-        "basePrice": {
-            "price": 18000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3200,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 18000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.3980",
-            "long": "-58.0218"
+            "latitude": -31.398,
+            "longitude": -58.0218
         },
         "street": "Calle Las Rosas",
         "number": "55",
@@ -92,14 +78,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 5,
@@ -166,6 +152,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

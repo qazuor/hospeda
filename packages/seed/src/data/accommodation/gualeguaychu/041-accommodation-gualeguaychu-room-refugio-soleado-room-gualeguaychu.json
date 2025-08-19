@@ -2,7 +2,7 @@
     "id": "041-accommodation-gualeguaychu-room-refugio-soleado-room-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-soleado-room-gualeguaychu",
-    "name": "refugio-soleado-room",
+    "name": "Refugio Soleado",
     "summary": "Disfruta de la luz y la calidez en Refugio Soleado, una habitación privada ubicada en un barrio tranquilo de Gualeguaychú.",
     "type": "ROOM",
     "description": "Disfruta de la luz y la calidez en Refugio Soleado, una habitación privada ubicada en un barrio tranquilo de Gualeguaychú. Ideal para viajeros solos o parejas que buscan un lugar luminoso y confortable para descansar, con fácil acceso a los puntos de interés de la ciudad.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial tranquilo, garantizando un buen descanso. Estás a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera y el Corsódromo (en temporada de Carnaval). Es una opción económica y luminosa para tu estadía en la ciudad del Carnaval.",
@@ -17,26 +17,16 @@
         "homeEmail": "hola@refugiosoleadoroom.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 6200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 6200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0020",
-            "long": "-58.5148"
+            "latitude": -33.002,
+            "longitude": -58.5148
         },
         "street": "Calle Los Jazmines",
         "number": "350",
@@ -72,14 +62,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -149,6 +139,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

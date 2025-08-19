@@ -2,7 +2,7 @@
     "id": "003-accommodation-chajari-country-house-sendero-natural-country-house-chajari",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-natural-country-house-chajari",
-    "name": "sendero-natural-country-house",
+    "name": "Sendero Natural Country House",
     "summary": "Descubre la paz y la belleza natural de Entre Ríos en esta encantadora casa de campo ubicada en las afueras de Chajarí.",
     "type": "COUNTRY_HOUSE",
     "description": "Descubre la paz y la belleza natural de Entre Ríos en esta encantadora casa de campo ubicada en las afueras de Chajarí. Rodeada de naturaleza exuberante, Sendero Natural es el refugio perfecto para aquellos que buscan escapar del bullicio de la ciudad y sumergirse en un entorno tranquilo y rejuvenecedor. La propiedad ofrece amplios espacios, tanto interiores como exteriores, diseñados para brindar comodidad y una auténtica experiencia rural.\n\nLa casa, con su arquitectura tradicional y toques modernos, cuenta con tres espaciosas habitaciones que pueden alojar cómodamente a 8 personas. Los interiores están decorados con un estilo rústico elegante, utilizando maderas locales y elementos naturales que complementan el entorno. La amplia sala de estar invita a relajarse frente a la chimenea en las noches frescas, mientras que la cocina completamente equipada permite a los huéspedes preparar deliciosas comidas con productos locales.\n\nEl verdadero encanto de Sendero Natural se encuentra en sus exteriores. Un extenso jardín parquizado con árboles autóctonos y frutales proporciona sombra y belleza, mientras que la piscina de 8x4 metros ofrece un refrescante alivio durante los días cálidos. El asador tradicional es perfecto para disfrutar de los famosos asados argentinos en una mesa exterior que puede acomodar a 10 personas, ideal para compartir momentos memorables en familia o con amigos.",
@@ -17,50 +17,16 @@
         "homeEmail": "hola@senderonaturalcountryhouse.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 25000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 5000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "lateCheckout": {
-                "price": 3000,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 30,
-                "minNights": 30
-            },
-            "lastMinute": {
-                "percentage": 10,
-                "minNights": 1
-            }
-        }
+        "price": 25000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3228",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-30.7392",
-            "long": "-58.0387"
+            "latitude": -30.7392,
+            "longitude": -58.0387
         },
         "street": "Ruta Provincial 2",
         "number": "Km 15.5",
@@ -134,8 +100,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -143,7 +107,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 8,
@@ -267,6 +233,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

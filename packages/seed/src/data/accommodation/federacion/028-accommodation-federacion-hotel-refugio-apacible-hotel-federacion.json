@@ -2,7 +2,7 @@
     "id": "028-accommodation-federacion-hotel-refugio-apacible-hotel-federacion",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-apacible-hotel-federacion",
-    "name": "refugio-apacible-hotel",
+    "name": "Refugio Apacible Hotel",
     "summary": "Encuentra un ambiente apacible y relajante en Refugio Apacible Hotel, ubicado en una zona tranquila de Federación, ideal para quienes visitan la ciudad por sus termas y buscan un lugar sereno para descansar.",
     "type": "HOTEL",
     "description": "Encuentra un ambiente apacible y relajante en Refugio Apacible Hotel, ubicado en una zona tranquila de Federación, ideal para quienes visitan la ciudad por sus termas y buscan un lugar sereno para descansar. Ofrece un ambiente calmado y servicios orientados al bienestar termal.\n\nEl hotel cuenta con 25 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto al Parque Termal de Federación, el Lago de Salto Grande y el centro de la ciudad. Refugio Apacible es la opción ideal para una estancia dedicada al descanso y al bienestar en Federación.",
@@ -21,26 +21,16 @@
         "facebook": "https://facebook.com/refugioapaciblehotel"
     },
     "price": {
-        "basePrice": {
-            "price": 21500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 21500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0085",
-            "long": "-57.8916"
+            "latitude": -31.0085,
+            "longitude": -57.8916
         },
         "street": "Calle Los Lapachos",
         "number": "80",
@@ -88,15 +78,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 50,
@@ -174,6 +164,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }
