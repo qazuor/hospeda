@@ -1,9 +1,12 @@
 import type {
+    AccommodationAmenityType,
+    AccommodationFeatureType,
     AccommodationRatingType,
     AccommodationType,
     BaseSearchType,
     SortType
 } from '@repo/types';
+import type { SQL } from 'drizzle-orm';
 import { and, asc, count, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
@@ -104,6 +107,67 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
         const total = totalResult[0]?.count ?? 0;
 
         return { items: items as AccommodationType[], total };
+    }
+
+    /**
+     * Finds top-rated accommodations with optional filters and relations loaded.
+     * Orders by averageRating DESC then reviewsCount DESC and limits the result size.
+     */
+    public async findTopRated(params: {
+        limit?: number;
+        destinationId?: string;
+        type?: string;
+        onlyFeatured?: boolean;
+    }): Promise<AccommodationType[]> {
+        const db = getDb();
+        const { limit = 10, destinationId, type, onlyFeatured = false } = params ?? {};
+        const results = await db.query.accommodations.findMany({
+            where: (fields, { eq }) => {
+                const clauses: SQL<unknown>[] = [];
+                if (destinationId) clauses.push(eq(fields.destinationId, destinationId));
+                if (type) clauses.push(eq(fields.type, type as unknown as typeof fields.type));
+                if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
+                if (clauses.length === 0) return undefined;
+                if (clauses.length === 1) return clauses[0];
+                return and(...clauses);
+            },
+            with: { destination: true },
+            orderBy: [desc(accommodations.averageRating), desc(accommodations.reviewsCount)],
+            limit
+        });
+        const items = results as unknown as AccommodationType[];
+        if (!items || items.length === 0) return items;
+        const ids = items.map((i) => i.id);
+        // Fetch amenities with amenity joined
+        const [amenitiesRows, featuresRows] = await Promise.all([
+            db.query.rAccommodationAmenity.findMany({
+                where: (fields) => inArray(fields.accommodationId, ids),
+                with: { amenity: true }
+            }),
+            db.query.rAccommodationFeature.findMany({
+                where: (fields) => inArray(fields.accommodationId, ids),
+                with: { feature: true }
+            })
+        ]);
+        const amenitiesByAcc = new Map<string, AccommodationAmenityType[]>();
+        for (const row of amenitiesRows as unknown as AccommodationAmenityType[]) {
+            const accId = row.accommodationId as unknown as string;
+            const arr = amenitiesByAcc.get(accId) ?? [];
+            arr.push(row);
+            amenitiesByAcc.set(accId, arr);
+        }
+        const featuresByAcc = new Map<string, AccommodationFeatureType[]>();
+        for (const row of featuresRows as unknown as AccommodationFeatureType[]) {
+            const accId = row.accommodationId as unknown as string;
+            const arr = featuresByAcc.get(accId) ?? [];
+            arr.push(row);
+            featuresByAcc.set(accId, arr);
+        }
+        return items.map((i) => ({
+            ...i,
+            amenities: amenitiesByAcc.get(i.id),
+            features: featuresByAcc.get(i.id)
+        })) as unknown as AccommodationType[];
     }
 
     /**
