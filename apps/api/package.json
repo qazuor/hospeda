@@ -15,7 +15,8 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:file": "vitest run",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+        "test:cache": "node test-cache.js"
     },
     "dependencies": {
         "@clerk/backend": "^2.6.2",
@@ -34,11 +35,14 @@
         "dotenv": "^16.5.0",
         "hono": "^4.7.8",
         "hono-rate-limiter": "^0.4.2",
+        "lru-cache": "^11.1.0",
         "pg": "^8.15.6",
+        "svix": "^1.73.0",
         "zod": "^4.0.8"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
+        "@types/lru-cache": "^7.10.10",
         "@types/node": "^22.15.3",
         "@types/pg": "^8.15.1",
         "@vitest/coverage-v8": "^2.1.8",
