@@ -11,8 +11,6 @@ export {
     EventDetailSchema,
     EventFilterInputSchema,
     EventFilterSchema,
-    // Alias to avoid collision with Destination's GetSummaryInputSchema
-    GetSummaryInputSchema as EventGetSummaryInputSchema,
     // responses
     EventListItemSchema,
     EventLocationSchema,
@@ -23,12 +21,14 @@ export {
     EventSortInputSchema,
     EventSummarySchema,
     EventUpdateSchema,
-    GetByAuthorInputSchema,
-    GetByCategoryInputSchema,
-    GetByLocationInputSchema,
-    GetByOrganizerInputSchema,
-    GetFreeInputSchema,
-    GetUpcomingInputSchema,
+    GetEventByAuthorInputSchema,
+    GetEventByCategoryInputSchema,
+    GetEventByLocationInputSchema,
+    GetEventByOrganizerInputSchema,
+    GetEventFreeInputSchema,
+    // Renamed to avoid collision with Destination's GetSummaryInputSchema
+    GetEventSummaryInputSchema,
+    GetEventUpcomingInputSchema,
     UpdateEventServiceSchema
 } from './event/index.js';
 export * from './post/index.js';
