@@ -16,6 +16,7 @@
     "scripts": {
         "build": "turbo run build",
         "dev": "turbo run dev",
+        "dev:admin": "node scripts/dev-admin.js",
         "lint": "turbo run lint",
         "format": "turbo run format",
         "clean": "turbo run clean",
@@ -47,8 +48,12 @@
         "glob": "^11.0.3",
         "zod": "^4.0.8"
     },
-    "workspaces": [
-        "apps/*",
-        "packages/*"
-    ]
+    "workspaces": ["apps/*", "packages/*"],
+    "pnpm": {
+        "overrides": {
+            "react": "19.1.1",
+            "react-dom": "19.1.1"
+        },
+        "publicHoistPattern": ["react", "react-dom", "*react*"]
+    }
 }
