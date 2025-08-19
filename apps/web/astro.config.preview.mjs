@@ -1,7 +1,7 @@
+import node from '@astrojs/node';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import tailwind from '@astrojs/tailwind';
-import vercel from '@astrojs/vercel';
 import clerk from '@clerk/astro';
 import devtoolBreakpoints from 'astro-devtool-breakpoints';
 import astroFontPicker from 'astro-font-picker';
@@ -13,41 +13,37 @@ import typedLinks from 'astro-typed-links';
 
 import reunmedianormalizeTrailingSlash from '@reunmedia/astro-normalize-trailing-slash';
 
-// https://astro.build/config
+// Configuration for preview/testing - uses Node adapter instead of Vercel
 export default defineConfig({
     integrations: [
         tailwind({ config: { applyBaseStyles: true } }),
         react(),
         clerk(),
         sitemap(),
-        astroFontPicker(),
         og(),
         lighthouse(),
+        astroFontPicker(),
         devtoolBreakpoints(),
         typedLinks(),
         reunmedianormalizeTrailingSlash()
     ],
     output: 'server',
-    adapter: vercel(),
+    adapter: node({
+        mode: 'standalone'
+    }),
     trailingSlash: 'always',
     site: process.env.PUBLIC_SITE_URL ?? 'http://localhost:4321',
-    viewTransitions: true,
-    server: {
-        port: 4321
-    },
     vite: {
         resolve: {
             alias: {
-                '@repo/auth-ui': new URL('../../packages/auth-ui/src', import.meta.url).pathname,
-                '@repo/types': new URL('../../packages/types/src', import.meta.url).pathname,
-                '@repo/config': new URL('../../packages/config/src', import.meta.url).pathname,
-                '@repo/db': new URL('../../packages/db/src', import.meta.url).pathname,
-                '@repo/utils': new URL('../../packages/utils/src', import.meta.url).pathname,
-                '@repo/logger': new URL('../../packages/logger/src', import.meta.url).pathname,
-                '@repo/service-common': new URL(
-                    '../../packages/service-common/src',
-                    import.meta.url
-                ).pathname
+                '@repo/auth-ui': '/home/qazuor/projects/WEBS/hospeda/packages/auth-ui/src',
+                '@repo/types': '/home/qazuor/projects/WEBS/hospeda/packages/types/src',
+                '@repo/config': '/home/qazuor/projects/WEBS/hospeda/packages/config/src',
+                '@repo/db': '/home/qazuor/projects/WEBS/hospeda/packages/db/src',
+                '@repo/utils': '/home/qazuor/projects/WEBS/hospeda/packages/utils/src',
+                '@repo/logger': '/home/qazuor/projects/WEBS/hospeda/packages/logger/src',
+                '@repo/service-common':
+                    '/home/qazuor/projects/WEBS/hospeda/packages/service-common/src'
             }
         }
     }

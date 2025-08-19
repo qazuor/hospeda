@@ -1,0 +1,67 @@
+---
+import { ensureDatabase } from '@/server/db';
+import '@/styles/global.css';
+import '@/styles/transitions.css';
+import { getLangFromUrl } from '@/utils';
+
+ensureDatabase();
+const lang = getLangFromUrl(Astro.url);
+
+interface Props {
+    title?: string;
+    description?: string;
+    keywords?: string;
+}
+
+const { title, description, keywords } = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang} transition:animate='slide'>
+    <head>
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <link rel='icon' type='image/png' href='/favicon-96x96.png' sizes='96x96' />
+        <link rel='icon' type='image/svg+xml' href='/favicon.svg' />
+        <link rel='shortcut icon' href='/favicon.ico' />
+        <link rel='apple-touch-icon' sizes='180x180' href='/apple-touch-icon.png' />
+        <meta name='apple-mobile-web-app-title' content='Hosped.ar' />
+        <link rel='manifest' href='/site.webmanifest' />
+
+        <link rel='preconnect' href='https://fonts.googleapis.com' />
+        <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin />
+        <link
+            href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Montserrat:wght@500;700&display=swap'
+            rel='stylesheet'
+        />
+        <link href='https://fonts.googleapis.com/css2?family=Madimi+One&display=swap' rel='stylesheet' />
+
+        {title && <title>{title}</title>}
+        {description && <meta name='description' content={description} />}
+        {keywords && <meta name='keywords' content={keywords} />}
+    </head>
+
+    <body
+        class='min-h-screen flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300'
+    >
+        <!-- Simple header for auth pages without UserNav -->
+        <header class='bg-white shadow-sm'>
+            <div class='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+                <div class='flex h-16 justify-between items-center'>
+                    <div class='flex items-center'>
+                        <a href='/' class='flex items-center space-x-2'>
+                            <span class='font-bold text-xl text-gray-900'>Hospeda</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class='flex-grow page-content'>
+            <slot />
+        </main>
+
+        <script type='module' src='/scripts/theme.js'></script>
+        <script type='module' src='/scripts/page-transitions.js'></script>
+    </body>
+</html>

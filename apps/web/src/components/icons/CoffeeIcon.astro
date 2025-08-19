@@ -1,0 +1,14 @@
+---
+import { Coffee } from 'lucide-react';
+
+interface Props {
+    class?: string;
+    size?: number | string;
+    color?: string;
+    strokeWidth?: number;
+}
+
+const { class: className, size, color, strokeWidth } = Astro.props as Props;
+---
+
+<Coffee className={className} size={size} color={color} strokeWidth={strokeWidth} />

@@ -1,0 +1,41 @@
+---
+import EventCard from '@/components/events/EventCard.astro';
+import { getEventsIndexUrl, getLangFromUrl, useTranslations } from '@/utils';
+import type { EventType } from '@repo/types';
+
+interface Props {
+    events: EventType[];
+    title: string;
+    subtitle?: string;
+    showSeeAll?: boolean;
+}
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { events, title, subtitle, showSeeAll = true } = Astro.props;
+---
+
+<section class='py-12'>
+    <div class='container'>
+        <div class='text-center mb-12'>
+            <h2 class='text-3xl font-bold mb-4'>
+                {title}
+                {
+                    showSeeAll && (
+                        <a href={getEventsIndexUrl()} class='text-primary-600 hover:underline text-sm font-medium'>
+                            {t('common.seeAll')}
+                        </a>
+                    )
+                }
+            </h2>
+            <p class='text-gray-600 dark:text-gray-400 max-w-2xl mx-auto'>
+                {subtitle}
+            </p>
+        </div>
+
+        <div class='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
+            {events.map((event) => <EventCard key={event.id} event={event} />)}
+        </div>
+    </div>
+</section>

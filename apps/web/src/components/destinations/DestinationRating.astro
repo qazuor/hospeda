@@ -1,0 +1,16 @@
+---
+import RatingStars from '@/components/shared/RatingStars.astro';
+
+const {
+    rating = 0,
+    totalReviews = 0,
+    size = 'md', // puede ser 'sm', 'md' o 'lg'
+} = Astro.props;
+---
+
+<div class='flex items-center space-x-2'>
+    <RatingStars rating={rating} size={size} />
+    <span class='text-sm text-gray-600 dark:text-gray-300'>
+        {rating.toFixed(1)} ({totalReviews} reseñas)
+    </span>
+</div>

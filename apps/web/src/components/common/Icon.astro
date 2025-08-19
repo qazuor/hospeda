@@ -1,0 +1,23 @@
+---
+interface Props {
+    name: string;
+    size?: string;
+    class?: string;
+    ariaLabel?: string;
+}
+
+const { name, size = '1.5rem', class: className = '', ariaLabel = name } = Astro.props;
+---
+
+<svg
+    class={className}
+    aria-label={ariaLabel}
+    xmlns='http://www.w3.org/2000/svg'
+    fill='none'
+    viewBox='0 0 24 24'
+    stroke='currentColor'
+    width={size}
+    height={size}
+>
+    <use href={`#${name}`}></use>
+</svg>

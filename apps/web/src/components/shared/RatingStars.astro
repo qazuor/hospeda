@@ -1,0 +1,28 @@
+---
+import EmptyStar from '@/components/icons/rating/EmptyStar.astro';
+import FullStar from '@/components/icons/rating/FullStar.astro';
+import HalfStar from '@/components/icons/rating/HalfStar.astro';
+
+interface Props {
+    rating: number; // 0..starCount (puede tener decimales)
+    starCount?: number; // cantidad de estrellas a mostrar
+    iconSize?: number; // tamaño visual en px de cada estrella
+    className?: string;
+}
+
+const props = Astro.props as Partial<Props> & { rating: number; max?: number; size?: number };
+const rating = props.rating;
+const starCount = props.starCount ?? props.max ?? 5;
+const iconSize = props.iconSize ?? props.size ?? 20;
+const className = props.className ?? '';
+
+const fullStars = Math.floor(rating);
+const hasHalfStar = rating % 1 >= 0.25 && rating % 1 < 0.75;
+const emptyStars = starCount - fullStars - (hasHalfStar ? 1 : 0);
+---
+
+<div class={`inline-flex items-center gap-1 ${className}`}>
+    {Array.from({ length: fullStars }).map(() => <FullStar size={iconSize} className='text-yellow-400' />)}
+    {hasHalfStar && <HalfStar size={iconSize} className='text-yellow-400' />}
+    {Array.from({ length: emptyStars }).map(() => <EmptyStar size={iconSize} className='text-gray-300' />)}
+</div>

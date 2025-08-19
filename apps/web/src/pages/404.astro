@@ -1,0 +1,24 @@
+---
+import { getHomeUrl } from '@/utils';
+
+export const prerender = true;
+
+import Layout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<Layout title={t('error.404.title')} description={t('error.404.description')}>
+    <section class='min-h-[70vh] py-20 flex items-center justify-center text-center'>
+        <div class='px-4 max-w-lg'>
+            <h1 class='text-6xl font-bold text-primary-500 mb-4'>404</h1>
+            <h2 class='text-2xl font-display font-semibold mb-4'>{t('error.404.heading')}</h2>
+            <p class='text-gray-600 dark:text-gray-400 mb-8'>
+                {t('error.404.message')}
+            </p>
+            <a href={getHomeUrl()} class='btn-primary'>{t('common.goHome')}</a>
+        </div>
+    </section>
+</Layout>

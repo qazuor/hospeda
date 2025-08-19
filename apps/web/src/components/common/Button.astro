@@ -1,0 +1,41 @@
+---
+interface Props {
+    type?: 'button' | 'submit' | 'reset';
+    variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
+    size?: 'sm' | 'md' | 'lg';
+    disabled?: boolean;
+    loading?: boolean;
+    fullWidth?: boolean;
+    iconLeft?: any;
+    iconRight?: any;
+}
+
+const {
+    type = 'button',
+    variant = 'primary',
+    size = 'md',
+    disabled = false,
+    loading = false,
+    fullWidth = false,
+    iconLeft,
+    iconRight,
+} = Astro.props as Props;
+---
+
+<button
+    type={type}
+    class:list={[
+        'btn',
+        `btn-${variant}`,
+        size === 'sm' && 'text-sm px-3 py-1.5',
+        size === 'md' && 'text-base px-4 py-2',
+        size === 'lg' && 'text-lg px-5 py-3',
+        fullWidth && 'w-full',
+        disabled && 'opacity-50 cursor-not-allowed',
+    ]}
+    disabled={disabled || loading}
+>
+    {iconLeft && <span class='mr-2'>{iconLeft}</span>}
+    <slot />
+    {iconRight && <span class='ml-2'>{iconRight}</span>}
+</button>

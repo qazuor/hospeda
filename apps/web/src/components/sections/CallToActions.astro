@@ -1,0 +1,49 @@
+---
+interface CTA {
+    title: string;
+    description: string;
+    href: string;
+    buttonText: string;
+}
+
+const ctas: CTA[] = [
+    {
+        title: 'Explorá los mejores destinos',
+        description: 'Descubrí ciudades mágicas y pueblos encantadores a orillas del río Uruguay.',
+        href: '/destinos',
+        buttonText: 'Ver destinos',
+    },
+    {
+        title: 'Encontrá tu alojamiento ideal',
+        description: 'Cabañas, casas, hoteles y más opciones para disfrutar tu estadía.',
+        href: '/alojamientos',
+        buttonText: 'Buscar alojamientos',
+    },
+    {
+        title: 'Enterate de los próximos eventos',
+        description: 'Festivales, ferias, actividades culturales y mucho más.',
+        href: '/eventos',
+        buttonText: 'Ver eventos',
+    },
+];
+---
+
+<section class='bg-primary-50 py-16'>
+    <div class='container'>
+        <div class='grid gap-8 md:grid-cols-3'>
+            {
+                ctas.map((cta) => (
+                    <div class='card-hover h-full flex flex-col justify-between'>
+                        <div>
+                            <h3 class='heading-md mb-2'>{cta.title}</h3>
+                            <p class='text-muted mb-4'>{cta.description}</p>
+                        </div>
+                        <a href={cta.href} class='btn-primary w-fit'>
+                            {cta.buttonText}
+                        </a>
+                    </div>
+                ))
+            }
+        </div>
+    </div>
+</section>

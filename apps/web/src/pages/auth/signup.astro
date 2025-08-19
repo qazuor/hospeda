@@ -1,0 +1,43 @@
+---
+import { SignUpFormWrapper } from '../../components/auth/SignUpFormWrapper';
+import AuthLayout from '../../layout/AuthLayout.astro';
+
+const title = 'Crear Cuenta - Hospeda';
+const description = 'Crea tu cuenta en Hospeda y descubre los mejores alojamientos.';
+---
+
+<AuthLayout title={title} description={description}>
+    <main class='min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8'>
+        <div class='sm:mx-auto sm:w-full sm:max-w-md'>
+            <div class='flex justify-center'>
+                <a href='/' class='flex items-center space-x-2'>
+                    <div
+                        class='w-8 h-8 bg-gradient-to-r from-cyan-500 to-green-500 rounded-lg flex items-center justify-center'
+                    >
+                        <span class='text-white font-bold text-lg'>H</span>
+                    </div>
+                    <span class='text-2xl font-bold text-gray-900'>Hospeda</span>
+                </a>
+            </div>
+            <h2 class='mt-6 text-center text-3xl font-bold tracking-tight text-gray-900'>Crear cuenta</h2>
+            <p class='mt-2 text-center text-sm text-gray-600'>
+                ¿Ya tienes cuenta?{' '}
+                <a href='/auth/signin/' class='font-medium text-cyan-600 hover:text-cyan-500'> Inicia sesión aquí </a>
+            </p>
+        </div>
+
+        <div class='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
+            <div class='bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10'>
+                <SignUpFormWrapper
+                    client:only='react'
+                    apiBaseUrl={import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:3002'}
+                    redirectTo='/'
+                />
+            </div>
+        </div>
+
+        <div class='mt-8 text-center'>
+            <a href='/' class='text-sm text-gray-500 hover:text-gray-700'> ← Volver al inicio </a>
+        </div>
+    </main>
+</AuthLayout>

@@ -1,0 +1,19 @@
+---
+import RatingStars from '@/components/shared/RatingStars.astro';
+
+interface Props {
+    rating: number;
+    reviewCount?: number;
+    size?: 'sm' | 'md' | 'lg'; // visual density for text/container
+    stars?: number; // cantidad de estrellas (antes: max)
+}
+
+const { rating, reviewCount = 0, size = 'md', stars = 5 } = Astro.props as Props;
+const iconSize: number = size === 'sm' ? 14 : size === 'lg' ? 24 : 18;
+---
+
+<div class='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300'>
+    <RatingStars rating={rating} starCount={stars} iconSize={iconSize} />
+    <span class='font-medium'>{rating.toFixed(1)}</span>
+    {reviewCount > 0 && <span class='text-gray-500 dark:text-gray-400'>({reviewCount})</span>}
+</div>

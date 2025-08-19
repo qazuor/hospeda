@@ -1,0 +1,42 @@
+---
+import Icon from '@/components/common/Icon.astro';
+import { formatDate, getPostUrl } from '@/utils';
+import type { PostType } from '@repo/types';
+
+const { post } = Astro.props as { post: PostType };
+
+const formattedDate = post.createdAt ? formatDate(post.createdAt) : '';
+---
+
+<a
+    href={getPostUrl(post)}
+    class='card-hover flex flex-col overflow-hidden rounded-md shadow hover:shadow-lg transition'
+>
+    {
+        post.media?.featuredImage && (
+            <div>
+                <img
+                    src={post.media.featuredImage.url}
+                    alt={post.title}
+                    class='h-48 w-full object-cover'
+                    loading='lazy'
+                />
+            </div>
+        )
+    }
+
+    <div class='p-4 flex flex-col flex-1'>
+        <h3 class='heading-sm mb-1'>{post.title}</h3>
+
+        {
+            post.createdAt && (
+                <p class='text-sm text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1'>
+                    <Icon name='calendar' class='w-4 h-4' />
+                    {formattedDate}
+                </p>
+            )
+        }
+
+        {post.summary && <p class='text-sm text-gray-700 dark:text-gray-300 line-clamp-3'>{post.summary}</p>}
+    </div>
+</a>

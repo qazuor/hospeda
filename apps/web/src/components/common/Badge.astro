@@ -1,0 +1,25 @@
+---
+interface Props {
+    color?: 'none' | 'primary' | 'secondary' | 'accent' | 'info' | 'success' | 'warning' | 'danger' | 'neutral';
+    class?: string;
+}
+
+const { color = 'primary', class: className = '', ...attrs } = Astro.props as Props & Record<string, any>;
+
+const baseClass = 'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium';
+const colorClass = {
+    none: '',
+    primary: 'bg-blue-600 text-white',
+    secondary: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+    accent: 'bg-fuchsia-600 text-white',
+    info: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200',
+    success: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200',
+    warning: 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100',
+    danger: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200',
+    neutral: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+}[color ?? 'primary'];
+---
+
+<span {...attrs} class:list={[baseClass, colorClass, className]}>
+    <slot />
+</span>

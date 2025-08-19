@@ -1,0 +1,93 @@
+---
+import { getUrl } from '@/utils';
+import { useTranslations } from '@/utils/i18n';
+
+interface Props {
+    lang: string;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<footer class='bg-gray-100 dark:bg-gray-800 py-12 mt-auto text-sm text-gray-600 dark:text-gray-400'>
+    <div class='container grid grid-cols-1 md:grid-cols-4 gap-10'>
+        <!-- Brand & Description -->
+        <div>
+            <h3 class='text-lg font-bold text-gray-900 dark:text-white mb-4'>Hosped.ar</h3>
+            <p>{t('footer.description')}</p>
+            <div class='flex space-x-4 mt-4'>
+                <a href='#' aria-label='Facebook' class='hover:text-primary-500'>
+                    <svg class='w-6 h-6' fill='currentColor' viewBox='0 0 24 24'>
+                        <path
+                            d='M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z'
+                        ></path>
+                    </svg>
+                </a>
+                <a href='#' aria-label='Instagram' class='hover:text-primary-500'>
+                    <svg class='w-6 h-6' fill='currentColor' viewBox='0 0 24 24'>
+                        <path
+                            d='M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153.509.5.902 1.105 1.153 1.772.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 01-1.153 1.772c-.5.508-1.105.902-1.772 1.153-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 01-1.772-1.153 4.904 4.904 0 01-1.153-1.772c-.247-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.066.217-1.79.465-2.428.247-.667.642-1.272 1.153-1.772a4.91 4.91 0 011.772-1.153c.637-.247 1.362-.415 2.428-.465C8.944 2.013 9.283 2 12 2zm0 4a6 6 0 100 12 6 6 0 000-12z'
+                        ></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Destinations -->
+        <div>
+            <h3 class='text-lg font-bold text-gray-900 dark:text-white mb-4'>{t('footer.destinations')}</h3>
+            <ul class='space-y-2'>
+                <li><a href={getUrl('/destinos/colon')} class='hover:text-primary-500'>Colón</a></li>
+                <li>
+                    <a href={getUrl('/destinos/concordia')} class='hover:text-primary-500'>Concordia</a>
+                </li>
+                <li>
+                    <a href={getUrl('/destinos/gualeguaychu')} class='hover:text-primary-500'>Gualeguaychú</a>
+                </li>
+                <li>
+                    <a href={getUrl('/destinos/villa-paranacito')} class='hover:text-primary-500'>Villa Paranacito</a>
+                </li>
+                <li>
+                    <a href={getUrl('/destinos/federacion')} class='hover:text-primary-500'>Federación</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- About -->
+        <div>
+            <h3 class='text-lg font-bold text-gray-900 dark:text-white mb-4'>{t('footer.about')}</h3>
+            <ul class='space-y-2'>
+                <li>
+                    <a href={getUrl('/quienes-somos')} class='hover:text-primary-500'>{t('footer.aboutUs')}</a>
+                </li>
+                <li>
+                    <a href={getUrl('/contacto')} class='hover:text-primary-500'>{t('footer.contact')}</a>
+                </li>
+                <li>
+                    <a href={getUrl('/beneficios')} class='hover:text-primary-500'>{t('footer.benefits')}</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Legal -->
+        <div>
+            <h3 class='text-lg font-bold text-gray-900 dark:text-white mb-4'>{t('footer.legal')}</h3>
+            <ul class='space-y-2'>
+                <li>
+                    <a href={getUrl('/condiciones-de-uso')} class='hover:text-primary-500'>{t('footer.terms')}</a>
+                </li>
+                <li>
+                    <a href={getUrl('/politica-de-privacidad')} class='hover:text-primary-500'>{t('footer.privacy')}</a>
+                </li>
+                <li>
+                    <a href={getUrl('/politica-de-cookies')} class='hover:text-primary-500'>{t('footer.cookies')}</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class='border-t border-gray-200 dark:border-gray-700 mt-12 pt-6 text-center'>
+        <p>&copy; {new Date().getFullYear()} Hosped.ar — {t('footer.rights')}</p>
+    </div>
+</footer>
