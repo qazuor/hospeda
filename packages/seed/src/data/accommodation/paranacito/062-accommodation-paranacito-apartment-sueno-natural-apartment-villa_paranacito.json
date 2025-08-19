@@ -2,7 +2,7 @@
     "id": "062-accommodation-paranacito-apartment-sueno-natural-apartment-villa_paranacito",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-natural-apartment-villa_paranacito",
-    "name": "sueno-natural-apartment",
+    "name": "Sueño Natural",
     "summary": "Relájate y conecta con la naturaleza en Sueño Natural Apartamento, un espacio moderno y confortable ubicado en una zona tranquila de Paranacito, con un entorno verde cercano y acceso al Delta.",
     "type": "APARTMENT",
     "description": "Relájate y conecta con la naturaleza en Sueño Natural Apartamento, un espacio moderno y confortable ubicado en una zona tranquila de Paranacito, con un entorno verde cercano y acceso al Delta. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado para explorar el Delta y disfrutar del paisaje.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, con toques que recuerdan el entorno natural.\n\nSituado en un edificio tranquilo, ofrece un descanso reparador. Aunque no tiene vistas espectaculares, su proximidad a espacios verdes y la serenidad del barrio lo hacen ideal para recargar energías. Estás a pocos minutos en auto del centro de Paranacito y con fácil acceso a los puntos de embarque para recorrer el Delta. Una opción práctica y cómoda para tu visita.",
@@ -20,30 +20,16 @@
         "instagram": "https://instagram.com/suenonaturalapartmentok"
     },
     "price": {
-        "basePrice": {
-            "price": 12800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2100,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 12800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.6998",
-            "long": "-58.6480"
+            "latitude": -33.6998,
+            "longitude": -58.648
         },
         "street": "Calle Los Álamos",
         "number": "80",
@@ -87,14 +73,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -156,6 +142,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

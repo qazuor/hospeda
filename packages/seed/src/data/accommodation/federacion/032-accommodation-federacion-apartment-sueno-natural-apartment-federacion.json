@@ -2,7 +2,7 @@
     "id": "032-accommodation-federacion-apartment-sueno-natural-apartment-federacion",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-natural-apartment-federacion",
-    "name": "sueno-natural-apartment",
+    "name": "Sueño Natural",
     "summary": "Relájate y conecta con la naturaleza en Sueño Natural Apartamento, un espacio moderno y confortable ubicado en una zona tranquila de Federación, con un entorno verde cercano.",
     "type": "APARTMENT",
     "description": "Relájate y conecta con la naturaleza en Sueño Natural Apartamento, un espacio moderno y confortable ubicado en una zona tranquila de Federación, con un entorno verde cercano. Ideal para parejas o viajeros que buscan un retiro apacible y bien ubicado para acceder a las termas y disfrutar del paisaje.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, con toques que recuerdan el entorno natural.\n\nSituado en un edificio tranquilo, ofrece un descanso reparador. Aunque no tiene vistas espectaculares, su proximidad a espacios verdes y la serenidad del barrio lo hacen ideal para recargar energías. Estás a pocos minutos en auto del Parque Termal de Federación y del centro de la ciudad. Una opción práctica y cómoda para tu visita.",
@@ -22,30 +22,16 @@
         "twitter": "https://twitter.com/suenonaturalapartmentok"
     },
     "price": {
-        "basePrice": {
-            "price": 13000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2100,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 13000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0127",
-            "long": "-57.9001"
+            "latitude": -31.0127,
+            "longitude": -57.9001
         },
         "street": "Calle Los Sauces",
         "number": "30",
@@ -89,14 +75,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -164,6 +150,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

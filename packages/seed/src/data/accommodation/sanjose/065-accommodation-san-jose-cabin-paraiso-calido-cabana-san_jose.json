@@ -2,7 +2,7 @@
     "id": "065-accommodation-san-jose-cabin-paraiso-calido-cabana-san_jose",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-calido-cabana-san_jose",
-    "name": "paraiso-calido-cabana",
+    "name": "Paraíso Cálido",
     "summary": "Encuentra un rincón cálido y acogedor en Paraíso Cálido, una encantadora cabaña de madera ubicada en un entorno tranquilo de San José.",
     "type": "CABIN",
     "description": "Encuentra un rincón cálido y acogedor en Paraíso Cálido, una encantadora cabaña de madera ubicada en un entorno tranquilo de San José. Ideal para parejas o familias pequeñas que buscan un refugio confortable, rodeado de naturaleza y con fácil acceso al Parque Nacional El Palmar y al centro de la ciudad.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es cálida y rústica, creando un ambiente hogareño.\n\nEl exterior ofrece una galería techada con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y árboles, un espacio agradable para relajarse. La ubicación en un barrio tranquilo de San José permite un rápido acceso en auto al Parque Nacional El Palmar, al centro de la ciudad y a las playas del río Uruguay cercanas. Paraíso Cálido es tu base ideal para disfrutar de la naturaleza y la tranquilidad.",
@@ -23,30 +23,16 @@
         "twitter": "https://twitter.com/paraisocalidocabanaok"
     },
     "price": {
-        "basePrice": {
-            "price": 16000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 16000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2018",
-            "long": "-58.7519"
+            "latitude": -32.2018,
+            "longitude": -58.7519
         },
         "street": "Calle Los Nogales",
         "number": "80",
@@ -94,14 +80,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -166,6 +152,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

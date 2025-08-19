@@ -2,7 +2,7 @@
     "id": "082-accommodation-uruguay-apartment-mirador-calmado-apartment-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-calmado-apartment-concepcion_del_uruguay",
-    "name": "mirador-calmado-apartment",
+    "name": "Mirador Calmado",
     "summary": "Disfruta de la calma y una perspectiva diferente de Concepción del Uruguay en Mirador Calmado, un apartamento ubicado en un piso alto con vistas parciales a la ciudad o zonas verdes.",
     "type": "APARTMENT",
     "description": "Disfruta de la calma y una perspectiva diferente de Concepción del Uruguay en Mirador Calmado, un apartamento ubicado en un piso alto con vistas parciales a la ciudad o zonas verdes. Ideal para viajeros que valoran un ambiente tranquilo, luminoso y con las comodidades de un apartamento moderno.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo, y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). El living dispone de sofá cama, permitiendo alojar hasta 3 personas. Los ventanales permiten la entrada de luz y ofrecen las vistas parciales. Dispone de aire acondicionado y calefacción.\n\nUbicado en un edificio con ascensor en una zona residencial tranquila, ofrece un retiro pacífico. Aunque no es céntrico, su ubicación permite un acceso rápido en auto o transporte público al centro histórico, la costanera, las playas y la Terminal de Ómnibus. Mirador Calmado es una opción serena y confortable para tu estadía.",
@@ -18,30 +18,16 @@
         "website": "https://www.miradorcalmadoapartment.net.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 13000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2200,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 13000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4807",
-            "long": "-58.2390"
+            "latitude": -32.4807,
+            "longitude": -58.239
         },
         "street": "Calle 3 de Febrero",
         "number": "1200",
@@ -91,14 +77,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -176,6 +162,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

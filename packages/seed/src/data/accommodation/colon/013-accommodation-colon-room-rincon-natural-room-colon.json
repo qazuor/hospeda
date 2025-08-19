@@ -2,7 +2,7 @@
     "id": "013-accommodation-colon-room-rincon-natural-room-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-natural-room-colon",
-    "name": "rincon-natural-room",
+    "name": "Rincón Natural",
     "summary": "Descansa en un ambiente sereno en Rincón Natural, una habitación privada dentro de una casa con jardín en un barrio tranquilo de Colón.",
     "type": "ROOM",
     "description": "Descansa en un ambiente sereno en Rincón Natural, una habitación privada dentro de una casa con jardín en un barrio tranquilo de Colón. Ideal para viajeros individuales o parejas que buscan un lugar cómodo y apacible para alojarse, con acceso a espacios verdes y a poca distancia de las atracciones.\n\nLa habitación privada es confortable, cuenta con cama matrimonial, ropa de cama, toallas y ventilador/calefactor. Tendrás acceso a un baño completo que puede ser privado o compartido dependiendo de la disponibilidad y la configuración de la casa. Los huéspedes tienen acceso a áreas comunes de la casa, incluyendo la cocina básica para preparar café/té o comidas sencillas, y el comedor.\n\nEl mayor atractivo es el jardín, un espacio verde donde podrás relajarte, leer o disfrutar del aire libre. La casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, pero a una distancia conveniente en auto o bicicleta del centro de Colón, la costanera y las Termas. Es una opción económica y agradable para quienes valoran un entorno natural y una atmósfera hogareña.",
@@ -22,21 +22,16 @@
         "twitter": "https://twitter.com/rinconnaturalroom"
     },
     "price": {
-        "basePrice": {
-            "price": 6000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": 21
-        }
+        "price": 6000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2137",
-            "long": "-58.1410"
+            "latitude": -32.2137,
+            "longitude": -58.141
         },
         "street": "Calle Los Ceibos",
         "number": "450",
@@ -72,14 +67,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -168,6 +163,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

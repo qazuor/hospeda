@@ -2,7 +2,7 @@
     "id": "066-accommodation-san-jose-room-refugio-encantado-room-san_jose",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-encantado-room-san_jose",
-    "name": "refugio-encantado-room",
+    "name": "Refugio Encantado",
     "summary": "Descubre un rincón encantador en Refugio Encantado, una habitación privada en una casa con jardín ubicada en un barrio residencial de San José.",
     "type": "ROOM",
     "description": "Descubre un rincón encantador en Refugio Encantado, una habitación privada en una casa con jardín ubicada en un barrio residencial de San José. Ideal para viajeros que buscan un lugar apacible y agradable para descansar, con acceso a espacios verdes y a poca distancia del pueblo y el Parque Nacional El Palmar.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, y cerca de zonas con vegetación. Estás a una distancia conveniente en auto o caminando del centro de San José y del Parque Nacional El Palmar. El jardín es un plus para disfrutar del aire libre. Una opción económica y agradable para tu estadía en San José.",
@@ -17,26 +17,16 @@
         "homeEmail": "info@refugioencantadoroom.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 6200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 6200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.1999",
-            "long": "-58.7505"
+            "latitude": -32.1999,
+            "longitude": -58.7505
         },
         "street": "Calle Los Ceibos",
         "number": "250",
@@ -72,14 +62,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -136,6 +126,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

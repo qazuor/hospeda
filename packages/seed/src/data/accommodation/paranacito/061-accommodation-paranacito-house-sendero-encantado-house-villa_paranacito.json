@@ -2,7 +2,7 @@
     "id": "061-accommodation-paranacito-house-sendero-encantado-house-villa_paranacito",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-encantado-house-villa_paranacito",
-    "name": "sendero-encantado-house",
+    "name": "Sendero Encantado House",
     "summary": "Descubre un hogar con encanto en Sendero Encantado House, una cómoda casa ubicada en un barrio tranquilo de Paranacito.",
     "type": "HOUSE",
     "description": "Descubre un hogar con encanto en Sendero Encantado House, una cómoda casa ubicada en un barrio tranquilo de Paranacito. Ideal para familias o grupos de amigos que buscan un lugar propio para descansar y disfrutar, con fácil acceso al pueblo y a las actividades del Delta.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio funcional para compartir. Está equipada con lo esencial para una estadía confortable, incluyendo aire acondicionado. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con césped y un sector de parrilla, perfecto para disfrutar de asados al aire libre. La ubicación en un barrio residencial garantiza tranquilidad. Estás a una distancia conveniente en auto o caminando del centro de Paranacito y de los puntos de acceso al Delta. Una opción práctica y agradable para tu estadía.",
@@ -22,30 +22,16 @@
         "twitter": "https://twitter.com/senderoencantadohousear"
     },
     "price": {
-        "basePrice": {
-            "price": 17500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3200,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 17500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.7070",
-            "long": "-58.6549"
+            "latitude": -33.707,
+            "longitude": -58.6549
         },
         "street": "Calle Los Cerezos",
         "number": "50",
@@ -93,14 +79,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 5,
@@ -160,6 +146,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

@@ -2,7 +2,7 @@
     "id": "052-accommodation-paranacito-camping-camping-rio-vida-villa_paranacito",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "camping-rio-vida-villa_paranacito",
-    "name": "camping-rio-vida",
+    "name": "Camping Río Vida",
     "summary": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza.",
     "type": "CAMPING",
     "description": "Camping Río Vida es un paraíso natural ubicado en las idílicas islas del Delta de Villa Paranacito, donde la paz del entorno y la belleza del paisaje fluvial crean una experiencia única para los amantes de la naturaleza. A diferencia de los campings tradicionales, Río Vida se encuentra en una isla de tres hectáreas rodeada por los arroyos Paranacito, Las Tintas y una pequeña bahía que forma un entorno natural protegido, accesible únicamente por lancha.\n\nEl camping cuenta con amplios espacios para acampar bajo la sombra de sauces, ceibos y timbos autóctonos, con parcelas demarcadas que respetan la privacidad sin perder la esencia natural del lugar. Cada sitio para carpas dispone de mesa con bancos, parrilla individual, agua potable y toma de luz, distribuidos estratégicamente para aprovechar las mejores vistas al agua. Para quienes prefieren mayor comodidad, ofrecemos un sector de domos equipados con colchones que pueden alojar entre 2 y 6 personas, una opción perfecta para quienes se inician en la experiencia del camping o desean un mayor confort.\n\nLas instalaciones incluyen sanitarios limpios y modernos, duchas con agua caliente, una proveeduría básica para artículos esenciales, y un salón comunitario techado con cocina compartida, ideal para días lluviosos o para socializar con otros campistas. El muelle principal permite la pesca directamente desde la costa, siendo un punto privilegiado para la captura de dorados, bogas y bagres. También contamos con servicio de alquiler de kayaks, canoas y tablas de stand-up paddle para explorar los arroyos circundantes.\n\nCamping Río Vida es un refugio para la observación de aves, con más de 50 especies identificadas en el predio, y ofrece rutas de senderismo que recorren la isla mostrando la rica biodiversidad local. Por las noches, organizamos fogones comunitarios donde se comparten historias, música y, a veces, un típico guiso de pescado preparado por los anfitriones. La experiencia se completa con los impresionantes amane...",
@@ -23,40 +23,16 @@
         "twitter": "https://twitter.com/campingriovida"
     },
     "price": {
-        "basePrice": {
-            "price": 7500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 20,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 35,
-                "minNights": 30
-            },
-            "lastMinute": {
-                "percentage": 15,
-                "minNights": 1
-            }
-        }
+        "price": 7500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.7048",
-            "long": "-58.6491"
+            "latitude": -33.7048,
+            "longitude": -58.6491
         },
         "street": "Isla Los Sauces",
         "number": "s/n",
@@ -130,8 +106,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "12:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "10:00",
         "lateCheckinAccepted": true,
@@ -139,7 +113,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "12:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 70,
@@ -263,6 +239,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

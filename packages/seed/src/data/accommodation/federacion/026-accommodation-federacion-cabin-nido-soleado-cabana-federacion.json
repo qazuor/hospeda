@@ -2,7 +2,7 @@
     "id": "026-accommodation-federacion-cabin-nido-soleado-cabana-federacion",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-soleado-cabana-federacion",
-    "name": "nido-soleado-cabana",
+    "name": "Nido Soleado",
     "summary": "Disfruta de la luz y la paz en Nido Soleado, una cabaña moderna ubicada en un entorno tranquilo de Federación, ideal para parejas o familias pequeñas que buscan un refugio luminoso y confortable cerca del parque termal.",
     "type": "CABIN",
     "description": "Disfruta de la luz y la paz en Nido Soleado, una cabaña moderna ubicada en un entorno tranquilo de Federación, ideal para parejas o familias pequeñas que buscan un refugio luminoso y confortable cerca del parque termal. Un espacio pensado para el relax y el disfrute.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). Los amplios ventanales llenan el interior de luz natural y ofrecen vistas al jardín.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación. La ubicación en un barrio tranquilo de Federación permite un rápido acceso en auto al famoso Parque Termal, al centro de la ciudad y a la costanera del lago. Nido Soleado es tu base ideal para disfrutar de las aguas termales y la tranquilidad de Federación.",
@@ -22,30 +22,16 @@
         "twitter": "https://twitter.com/nidosoleadocabanaok"
     },
     "price": {
-        "basePrice": {
-            "price": 16000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 16000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0151",
-            "long": "-57.8941"
+            "latitude": -31.0151,
+            "longitude": -57.8941
         },
         "street": "Calle Los Ceibos",
         "number": "125",
@@ -93,14 +79,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -188,6 +174,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

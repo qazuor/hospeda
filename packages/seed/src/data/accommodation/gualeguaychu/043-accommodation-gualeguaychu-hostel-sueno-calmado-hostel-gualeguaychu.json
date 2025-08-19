@@ -2,7 +2,7 @@
     "id": "043-accommodation-gualeguaychu-hostel-sueno-calmado-hostel-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-calmado-hostel-gualeguaychu",
-    "name": "sueno-calmado-hostel",
+    "name": "Sueño Calmado Hostel",
     "summary": "Encuentra un espacio para descansar en Sueño Calmado Hostel, ubicado en una zona serena de Gualeguaychú.",
     "type": "HOSTEL",
     "description": "Encuentra un espacio para descansar en Sueño Calmado Hostel, ubicado en una zona serena de Gualeguaychú. Ideal para viajeros que buscan un lugar apacible y económico para alojarse, con acceso conveniente al centro y al Carnaval.\n\nEl hostel ofrece dormitorios compartidos (4 y 6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes incluyen una cocina equipada para uso de los huéspedes, un comedor social y un living sencillo. Dispone de un pequeño patio.\n\nLa ubicación en un barrio tranquilo te garantiza un buen descanso. Estás a poca distancia en auto o transporte público de los principales puntos de interés de Gualeguaychú, incluyendo el centro, la costanera y el Corsódromo. Es una base práctica y económica para explorar la ciudad y disfrutar de su famoso Carnaval.",
@@ -23,26 +23,16 @@
         "twitter": "https://twitter.com/suenocalmadohostel"
     },
     "price": {
-        "basePrice": {
-            "price": 7800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 7800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0164",
-            "long": "-58.5222"
+            "latitude": -33.0164,
+            "longitude": -58.5222
         },
         "street": "Calle Los Eucaliptus",
         "number": "80",
@@ -84,8 +74,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -93,7 +81,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "11:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 18,
@@ -151,6 +141,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

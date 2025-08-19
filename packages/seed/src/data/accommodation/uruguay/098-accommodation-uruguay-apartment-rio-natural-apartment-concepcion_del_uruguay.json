@@ -2,7 +2,7 @@
     "id": "098-accommodation-uruguay-apartment-rio-natural-apartment-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-natural-apartment-concepcion_del_uruguay",
-    "name": "rio-natural-apartment",
+    "name": "Rio Natural",
     "summary": "Sumérgete en un ambiente relajado con un toque natural en Rio Natural Apartamento, ubicado en una zona tranquila de Concepción del Uruguay, cerca del río.",
     "type": "APARTMENT",
     "description": "Sumérgete en un ambiente relajado con un toque natural en Rio Natural Apartamento, ubicado en una zona tranquila de Concepción del Uruguay, cerca del río. Este apartamento moderno es ideal para quienes buscan comodidad y un acceso conveniente a espacios verdes y la costanera, sin estar en el bullicio del centro.\n\nEl apartamento ofrece un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (anafe, microondas, heladera). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es sencilla y funcional, con detalles que evocan la naturaleza cercana.\n\nAunque no tiene vistas directas al río, su proximidad permite llegar caminando a la costanera en pocos minutos y disfrutar del entorno natural que ofrece el río Uruguay. El edificio es moderno y seguro. Es una excelente base para explorar las playas, la Isla del Puerto y el centro de Concepción del Uruguay en auto o bicicleta.",
@@ -21,30 +21,16 @@
         "twitter": "https://twitter.com/rionaturalapartment"
     },
     "price": {
-        "basePrice": {
-            "price": 12800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2100,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 12800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4826",
-            "long": "-58.2352"
+            "latitude": -32.4826,
+            "longitude": -58.2352
         },
         "street": "Calle Los Ceibos",
         "number": "120",
@@ -88,14 +74,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -162,6 +148,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

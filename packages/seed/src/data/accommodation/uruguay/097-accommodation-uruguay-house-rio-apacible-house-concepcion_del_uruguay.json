@@ -2,7 +2,7 @@
     "id": "097-accommodation-uruguay-house-rio-apacible-house-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-apacible-house-concepcion_del_uruguay",
-    "name": "rio-apacible-house",
+    "name": "Rio Apacible House",
     "summary": "Disfruta de la tranquilidad del río en Rio Apacible House, una cómoda casa ubicada en una zona serena de Concepción del Uruguay, con acceso cercano a la costanera.",
     "type": "HOUSE",
     "description": "Disfruta de la tranquilidad del río en Rio Apacible House, una cómoda casa ubicada en una zona serena de Concepción del Uruguay, con acceso cercano a la costanera. Ideal para familias o grupos que buscan un espacio privado y relajado para sus vacaciones, a poca distancia de las playas y el movimiento de la ciudad.\n\nLa casa cuenta con dos dormitorios y un baño completo. El living-comedor es integrado con la cocina, creando un espacio social funcional y luminoso. Está equipada con lo básico para una estadía confortable. Puede alojar hasta 5 personas.\n\nEl exterior ofrece un jardín con parrilla, ideal para disfrutar de asados al aire libre. La cercanía a la costanera permite acceder fácilmente a pie a zonas verdes y con vistas al río Uruguay. Un lugar simple y apacible para descansar y disfrutar del entorno fluvial de Concepción del Uruguay.",
@@ -17,30 +17,16 @@
         "homeEmail": "hola@rioapaciblehouse.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 19000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3500,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 19000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4839",
-            "long": "-58.2254"
+            "latitude": -32.4839,
+            "longitude": -58.2254
         },
         "street": "Calle del Puerto",
         "number": "180",
@@ -88,14 +74,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 5,
@@ -148,6 +134,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

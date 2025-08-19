@@ -2,7 +2,7 @@
     "id": "022-accommodation-concordia-apartment-sendero-relajante-apartment-concordia",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-relajante-apartment-concordia",
-    "name": "sendero-relajante-apartment",
+    "name": "Sendero Relajante",
     "summary": "Encuentra tu espacio de relax en Sendero Relajante Apartamento, un moderno y cómodo apartamento ubicado en una zona estratégica de Concordia.",
     "type": "APARTMENT",
     "description": "Encuentra tu espacio de relax en Sendero Relajante Apartamento, un moderno y cómodo apartamento ubicado en una zona estratégica de Concordia. Ideal para quienes buscan un lugar bien conectado para acceder fácilmente a las termas, el centro y el Lago de Salto Grande, con la tranquilidad necesaria para descansar.\n\nEl apartamento ofrece un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es funcional y invita a la relajación. Cuenta con aire acondicionado y calefacción.\n\nUbicado en un edificio seguro, ofrece un retiro pacífico. Su nombre evoca la idea de un 'sendero' hacia el relax. Estás a pocos minutos en auto de las Termas de Concordia y con acceso rápido a la ruta que lleva al Lago de Salto Grande. El centro de la ciudad también es accesible en poco tiempo. Una opción práctica y cómoda para tu visita a Concordia.",
@@ -22,30 +22,16 @@
         "twitter": "https://twitter.com/senderorelajanteapartment"
     },
     "price": {
-        "basePrice": {
-            "price": 13500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2200,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 13500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.3925",
-            "long": "-58.0110"
+            "latitude": -31.3925,
+            "longitude": -58.011
         },
         "street": "Calle Entre Ríos",
         "number": "1500",
@@ -89,14 +75,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -173,6 +159,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

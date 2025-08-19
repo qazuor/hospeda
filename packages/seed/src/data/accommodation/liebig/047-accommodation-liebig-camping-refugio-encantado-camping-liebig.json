@@ -2,7 +2,7 @@
     "id": "047-accommodation-liebig-camping-refugio-encantado-camping-liebig",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-encantado-camping-liebig",
-    "name": "refugio-encantado-camping",
+    "name": "Refugio Encantado Camping",
     "summary": "Descubre la magia de acampar en Refugio Encantado Camping, un espacio único ubicado en un entorno natural exuberante cerca de Liebig, a orillas de un arroyo.",
     "type": "CAMPING",
     "description": "Descubre la magia de acampar en Refugio Encantado Camping, un espacio único ubicado en un entorno natural exuberante cerca de Liebig, a orillas de un arroyo. Ideal para campistas y amantes de la pesca, la tranquilidad y la naturaleza que buscan una experiencia auténtica.\n\nEl camping ofrece parcelas amplias con sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, pensado para disfrutar del arroyo y el entorno.\n\nSu ubicación sobre un arroyo ofrece acceso directo al agua, ideal para pesca y simplemente disfrutar del sonido. El entorno es muy tranquilo y natural. Estás a poca distancia del pueblo de Liebig y los restos del antiguo Frigorífico. Un lugar encantador para una aventura en la naturaleza.",
@@ -18,32 +18,16 @@
         "website": "https://refugioencantadocamping.tur.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 4200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "perPerson": {
-                "price": 2000,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 4200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0440",
-            "long": "-58.0936"
+            "latitude": -31.044,
+            "longitude": -58.0936
         },
         "street": "Camino al Arroyo S/N",
         "number": "S/N",
@@ -85,14 +69,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "12:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "19:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "12:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 35,
@@ -105,7 +89,8 @@
             "Acceso directo al arroyo",
             "Ideal para pesca y relax",
             "Entorno natural"
-        ]
+        ],
+        "bedrooms": 1
     },
     "seo": {
         "title": "Refugio Encantado Camping - Naturaleza y arroyo en Liebig ",
@@ -157,6 +142,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

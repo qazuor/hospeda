@@ -2,7 +2,7 @@
     "id": "102-accommodation-uruguay-apartment-sueno-tranquilo-apartment-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-tranquilo-apartment-concepcion_del_uruguay",
-    "name": "sueno-tranquilo-apartment",
+    "name": "Sueño Tranquilo",
     "summary": "Encuentra la paz en Sueño Tranquilo Apartamento, un espacio moderno y sereno ubicado en un barrio residencial de Concepción del Uruguay.",
     "type": "APARTMENT",
     "description": "Encuentra la paz en Sueño Tranquilo Apartamento, un espacio moderno y sereno ubicado en un barrio residencial de Concepción del Uruguay. Ideal para quienes buscan descansar en un entorno apacible, con fácil acceso en pocos minutos al centro y a la costanera.\n\nEl apartamento cuenta con un dormitorio con cama doble, baño completo, y un living-comedor integrado con cocina equipada (heladera, microondas, anafe). Es un espacio funcional y cómodo para una estadía relajante de hasta 3 personas (con sofá cama en el living).\n\nUbicado en un edificio tranquilo, ofrece un retiro después de un día explorando la ciudad. Aunque no está en el corazón del centro, su ubicación permite acceder rápidamente en auto o transporte público a las principales atracciones de 'La Histórica', incluyendo el centro histórico, la costanera y las playas. Es una opción perfecta para quienes valoran el descanso en un ambiente tranquilo.",
@@ -20,30 +20,16 @@
         "twitter": "https://twitter.com/suenotranquiloapartment"
     },
     "price": {
-        "basePrice": {
-            "price": 12000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 12000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4880",
-            "long": "-58.2337"
+            "latitude": -32.488,
+            "longitude": -58.2337
         },
         "street": "Calle Los Sauces",
         "number": "789",
@@ -87,14 +73,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -160,6 +146,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

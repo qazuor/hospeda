@@ -2,7 +2,7 @@
     "id": "060-accommodation-paranacito-hotel-rio-silvestre-hotel-villa_paranacito",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-silvestre-hotel-villa_paranacito",
-    "name": "rio-silvestre-hotel",
+    "name": "Rio Silvestre Hotel",
     "summary": "Sumérgete en un ambiente natural y tranquilo en Rio Silvestre Hotel, ubicado en una zona serena de Paranacito, con vistas al entorno silvestre del Delta.",
     "type": "HOTEL",
     "description": "Sumérgete en un ambiente natural y tranquilo en Rio Silvestre Hotel, ubicado en una zona serena de Paranacito, con vistas al entorno silvestre del Delta. Ideal para quienes buscan confort y contacto directo con la naturaleza del Delta.\n\nEl hotel cuenta con 18 habitaciones confortables, muchas de ellas con vista al entorno natural. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para relajarse. El hotel ofrece desayuno incluido en la tarifa, servido en un comedor con vista al exterior. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder fácilmente a los puntos de interés de Paranacito y es una excelente base para explorar el Delta en lancha. Rio Silvestre Hotel es la opción ideal para una estancia relajante en contacto con la belleza natural del Delta.",
@@ -23,26 +23,16 @@
         "twitter": "https://twitter.com/riosilvestre"
     },
     "price": {
-        "basePrice": {
-            "price": 22000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 22000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.7069",
-            "long": "-58.6588"
+            "latitude": -33.7069,
+            "longitude": -58.6588
         },
         "street": "Avenida Costanera S/N",
         "number": "S/N",
@@ -90,15 +80,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 36,
@@ -165,6 +155,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

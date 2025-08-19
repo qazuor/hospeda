@@ -2,7 +2,7 @@
     "id": "015-accommodation-colon-apartment-sueno-calido-apartment-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-calido-apartment-colon",
-    "name": "sueno-calido-apartment",
+    "name": "Sueño Cálido Apartamento",
     "summary": "Descubre el confort y la calidez en Sueño Cálido Apartamento, ubicado en una zona tranquila de Colón, a solo minutos del centro y de las playas.",
     "type": "APARTMENT",
     "description": "Descubre el confort y la calidez en Sueño Cálido Apartamento, ubicado en una zona tranquila de Colón, a solo minutos del centro y de las playas. Este apartamento moderno y totalmente equipado es ideal para disfrutar de una estadía relajante, ya sea en pareja o en familia.\n\nEl apartamento cuenta con un dormitorio principal con cama queen y placard, y un área de estar luminosa con sofá cama y TV Smart. La cocina semi-integrada está equipada con horno, anafe, microondas, heladera con freezer y todos los utensilios necesarios para una estadía cómoda. Dispone de un baño completo con ducha.\n\nPodrás disfrutar de un pequeño balcón con vista lateral a un área verde. El edificio cuenta con acceso por escalera (no tiene ascensor). La ubicación te permite acceder fácilmente a supermercados, panaderías y a las vías de acceso para visitar las Termas de Colón o el Parque Nacional El Palmar. Un espacio diseñado para ofrecer una experiencia hogareña durante tus vacaciones o escapadas de fin de semana.",
@@ -22,30 +22,16 @@
         "twitter": "https://twitter.com/suenocalidoapartment"
     },
     "price": {
-        "basePrice": {
-            "price": 12500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2500,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 12500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2185",
-            "long": "-58.1465"
+            "latitude": -32.2185,
+            "longitude": -58.1465
         },
         "street": "Calle San Martín",
         "number": "1230",
@@ -83,15 +69,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "13:00",
         "lateCheckinAccepted": false,
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "15:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -171,6 +157,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

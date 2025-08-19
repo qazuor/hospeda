@@ -2,7 +2,7 @@
     "id": "085-accommodation-uruguay-country-house-nido-maravilloso-country-house-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-maravilloso-country-house-concepcion_del_urug",
-    "name": "nido-maravilloso-country-house",
+    "name": "Nido Maravilloso",
     "summary": "Encuentra tu 'Nido Maravilloso' en esta encantadora casa de campo ubicada en un entorno rural sereno cerca de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
     "description": "Encuentra tu 'Nido Maravilloso' en esta encantadora casa de campo ubicada en un entorno rural sereno cerca de Concepción del Uruguay. Ideal para quienes buscan desconectar, disfrutar de la paz del campo y pasar tiempo de calidad en familia o con amigos. La propiedad ofrece un ambiente cálido y todas las comodidades para una estancia inolvidable.\n\nLa casa, con su estilo rústico renovado, cuenta con tres dormitorios confortables y dos baños completos. El living-comedor es amplio y acogedor, con grandes ventanales que ofrecen vistas al parque. La cocina es independiente y está completamente equipada para que prepares tus comidas con facilidad. La capacidad es para 7 personas.\n\nEl exterior es ideal para disfrutar al aire libre. Dispone de un extenso parque con árboles, una piscina para refrescarse, una galería con asador y horno de barro, y un espacio de fogón para las noches estrelladas. Es un lugar perfecto para juegos al aire libre, observar aves y simplemente relajarse en contacto con la naturaleza.\n\nSituada a corta distancia en auto de Concepción del Uruguay, tendrás acceso rápido al centro histórico, la costanera y otros atractivos. También es una base ideal para visitar el Palacio San José y explorar los caminos rurales de la zona. Nido Maravilloso es tu refugio perfecto en el campo entrerriano.",
@@ -18,36 +18,16 @@
         "website": "https://nidomaravillosocountryhouse.tur.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 30000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 5500,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            }
-        }
+        "price": 30000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4862",
-            "long": "-58.2229"
+            "latitude": -32.4862,
+            "longitude": -58.2229
         },
         "street": "Camino Vecinal Este S/N",
         "number": "S/N",
@@ -107,15 +87,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "13:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "15:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 7,
@@ -211,6 +191,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

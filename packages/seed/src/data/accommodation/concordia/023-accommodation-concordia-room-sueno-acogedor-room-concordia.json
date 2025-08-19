@@ -2,7 +2,7 @@
     "id": "023-accommodation-concordia-room-sueno-acogedor-room-concordia",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-acogedor-room-concordia",
-    "name": "sueno-acogedor-room",
+    "name": "Sueño Acogedor",
     "summary": "Siéntete como en casa en Sueño Acogedor, una habitación privada dentro de una casa familiar en Concordia.",
     "type": "ROOM",
     "description": "Siéntete como en casa en Sueño Acogedor, una habitación privada dentro de una casa familiar en Concordia. Ideal para viajeros solos o parejas que buscan un lugar cómodo, limpio y con la calidez de un hogar local. Ubicado en un barrio tranquilo, ofrece una base conveniente para explorar la ciudad.\n\nLa habitación es sencilla pero confortable, con cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, mantenido con cuidado. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para comidas rápidas o infusiones.\n\nLa casa se encuentra en un barrio residencial que permite descansar bien. Estás a una distancia razonable en auto o transporte público del centro de Concordia, las Termas y otros atractivos. Los anfitriones ofrecen un trato cercano y amable, haciendo de tu estadía una experiencia acogedora.",
@@ -22,26 +22,16 @@
         "twitter": "https://twitter.com/suenoacogedorroom"
     },
     "price": {
-        "basePrice": {
-            "price": 6000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 6000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.3841",
-            "long": "-58.0269"
+            "latitude": -31.3841,
+            "longitude": -58.0269
         },
         "street": "Calle Las Acacias",
         "number": "210",
@@ -77,14 +67,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -147,6 +137,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

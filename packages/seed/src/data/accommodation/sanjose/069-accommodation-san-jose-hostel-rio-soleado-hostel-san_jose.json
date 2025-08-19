@@ -2,7 +2,7 @@
     "id": "069-accommodation-san-jose-hostel-rio-soleado-hostel-san_jose",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-soleado-hostel-san_jose",
-    "name": "rio-soleado-hostel",
+    "name": "Rio Soleado Hostel",
     "summary": "Disfruta de la luz y un ambiente vibrante en Rio Soleado Hostel, ubicado en San José.",
     "type": "HOSTEL",
     "description": "Disfruta de la luz y un ambiente vibrante en Rio Soleado Hostel, ubicado en San José. Ideal para jóvenes viajeros y mochileros que buscan socializar y estar cerca de los puntos de interés, incluyendo el Parque Nacional El Palmar. Su diseño moderno y luminoso crea un espacio muy agradable para tu estadía.\n\nEl hostel cuenta con dormitorios compartidos (4, 6 y 8 camas) equipados con literas robustas y lockers individuales. También ofrecemos algunas habitaciones privadas dobles. Los baños son compartidos, separados por género y con duchas de agua caliente 24hs. Las áreas comunes son amplias y luminosas: una gran cocina equipada, un comedor espacioso, un living con puff y TV, y un patio interior.\n\nLa ubicación permite un acceso fácil en auto a la Ruta 14 hacia el Parque Nacional El Palmar, así como al centro de San José y la cercana Colón. Es una base ideal para explorar la zona de forma económica y hacer nuevos amigos. El ambiente es relajado y promueve la interacción entre huéspedes.",
@@ -21,38 +21,16 @@
         "instagram": "https://instagram.com/riosoleadohostel"
     },
     "price": {
-        "basePrice": {
-            "price": 7200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "towelRental": {
-                "price": 400,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 10,
-                "minNights": 7
-            }
-        }
+        "price": 7200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2013",
-            "long": "-58.7382"
+            "latitude": -32.2013,
+            "longitude": -58.7382
         },
         "street": "Calle Entre Ríos",
         "number": "550",
@@ -100,8 +78,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -109,7 +85,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 25,
@@ -180,6 +158,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

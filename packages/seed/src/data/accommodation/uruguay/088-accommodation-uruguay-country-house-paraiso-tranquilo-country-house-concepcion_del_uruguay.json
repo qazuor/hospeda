@@ -2,7 +2,7 @@
     "id": "088-accommodation-uruguay-country-house-paraiso-tranquilo-country-house-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-tranquilo-country-house-concepcion_del_uru",
-    "name": "paraiso-tranquilo-country-house",
+    "name": "Paraíso Tranquilo",
     "summary": "Buscas paz y naturaleza? Encuéntralas en Paraíso Tranquilo, una hermosa casa de campo en las cercanías de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
     "description": "Buscas paz y naturaleza? Encuéntralas en Paraíso Tranquilo, una hermosa casa de campo en las cercanías de Concepción del Uruguay. Rodeada de un entorno natural apacible, esta propiedad es el lugar ideal para desconectar, relajarse y disfrutar de la serenidad del campo entrerriano. Perfecta para familias o grupos pequeños que valoran la privacidad y el espacio al aire libre.\n\nLa casa ofrece un diseño funcional y acogedor, con dos dormitorios cómodos y dos baños completos. El living-comedor es un espacio luminoso con vistas al parque, ideal para descansar. La cocina está semi-integrada y equipada con los electrodomésticos básicos para tu estadía. La capacidad es para 5 personas.\n\nEl exterior es el corazón de Paraíso Tranquilo. Un amplio parque arbolado te invita a caminar, leer o simplemente disfrutar del aire fresco. Cuenta con una piscina para refrescarse en los días cálidos y un sector de parrilla para disfrutar de asados al aire libre. Es un entorno seguro y tranquilo para disfrutar de la naturaleza. Aunque ofrece privacidad, la casa está a una distancia razonable en auto del centro de Concepción del Uruguay, permitiéndote acceder a comercios y atracciones fácilmente. Un verdadero paraíso para quienes buscan tranquilidad.",
@@ -17,30 +17,16 @@
         "homeEmail": "reservas@paraisotranquilocountryhouse.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 24000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 4000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 24000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4906",
-            "long": "-58.2309"
+            "latitude": -32.4906,
+            "longitude": -58.2309
         },
         "street": "Camino al Ñandubay S/N",
         "number": "S/N",
@@ -94,14 +80,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "19:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 5,
@@ -172,6 +158,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

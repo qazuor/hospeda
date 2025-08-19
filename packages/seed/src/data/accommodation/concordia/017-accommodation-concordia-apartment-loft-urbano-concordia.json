@@ -2,7 +2,7 @@
     "id": "017-accommodation-concordia-apartment-loft-urbano-concordia",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "loft-urbano-concordia",
-    "name": "loft-urbano",
+    "name": "Loft Urbano",
     "summary": "Moderno y luminoso loft ubicado en pleno centro de Concordia, ideal para viajeros urbanos que buscan una ubicación estratégica y un ambiente contemporáneo.",
     "type": "APARTMENT",
     "description": "Moderno y luminoso loft ubicado en pleno centro de Concordia, ideal para viajeros urbanos que buscan una ubicación estratégica y un ambiente contemporáneo. Este espacio de diseño urbano-industrial combina funcionalidad y estilo en sus 65 metros cuadrados distribuidos en un ambiente abierto con distintas áreas definidas para maximizar la comodidad.\n\nEl área de descanso cuenta con una cama queen size con colchón premium y ropa de cama de alta calidad, separada del espacio común por una biblioteca de diseño que permite privacidad sin perder la amplitud. El living está equipado con un cómodo sofá que puede convertirse en cama adicional, Smart TV de 50 pulgadas y una pequeña área de trabajo ideal para quienes necesitan conectarse durante su viaje. La cocina totalmente equipada incluye una barra con taburetes que funciona perfectamente como zona de desayuno o para disfrutar de un vino por la noche.\n\nLa iluminación ha sido cuidadosamente diseñada para crear diferentes ambientes según la hora del día, complementada por los amplios ventanales que permiten la entrada de luz natural abundante y ofrecen vistas a la ciudad. El baño, totalmente renovado, cuenta con una amplia ducha con hidromasaje y amenities de alta calidad.\n\nSu ubicación privilegiada permite llegar caminando a los principales atractivos del centro de Concordia, incluyendo la peatonal, el Palacio San Carlos, restaurantes, cafés y tiendas. A solo 10 minutos en auto se encuentran las famosas Termas de Concordia, y a 15 minutos el Lago de Salto Grande, destino ideal para los amantes de la naturaleza y los deportes acuáticos.",
@@ -21,44 +21,16 @@
         "twitter": "https://twitter.com/lofturbano"
     },
     "price": {
-        "basePrice": {
-            "price": 15000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 10,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 20,
-                "minNights": 30
-            },
-            "lastMinute": {
-                "percentage": 15,
-                "minNights": 1
-            }
-        }
+        "price": 15000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.3918",
-            "long": "-58.0181"
+            "latitude": -31.3918,
+            "longitude": -58.0181
         },
         "street": "Calle Urquiza",
         "number": "568",
@@ -134,8 +106,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "13:00",
         "lateCheckinAccepted": true,
@@ -143,7 +113,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "13:00",
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "15:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -262,6 +234,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

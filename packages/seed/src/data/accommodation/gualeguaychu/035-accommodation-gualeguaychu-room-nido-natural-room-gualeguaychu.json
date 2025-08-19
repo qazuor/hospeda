@@ -2,7 +2,7 @@
     "id": "035-accommodation-gualeguaychu-room-nido-natural-room-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-natural-room-gualeguaychu",
-    "name": "nido-natural-room",
+    "name": "Nido Natural",
     "summary": "Encuentra un espacio con encanto natural en Nido Natural, una habitación privada dentro de una casa con jardín en un barrio tranquilo de Gualeguaychú.",
     "type": "ROOM",
     "description": "Encuentra un espacio con encanto natural en Nido Natural, una habitación privada dentro de una casa con jardín en un barrio tranquilo de Gualeguaychú. Ideal para viajeros que buscan un lugar apacible para descansar, con acceso a espacios verdes y a poca distancia de los puntos de interés de la ciudad y el Carnaval.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, pero a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. El jardín es un plus para disfrutar del aire libre. Una opción económica y agradable para tu estadía en Gualeguaychú.",
@@ -20,26 +20,16 @@
         "facebook": "https://facebook.com/nidonaturalroom"
     },
     "price": {
-        "basePrice": {
-            "price": 6000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 6000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0198",
-            "long": "-58.5196"
+            "latitude": -33.0198,
+            "longitude": -58.5196
         },
         "street": "Calle Los Tilos",
         "number": "110",
@@ -75,14 +65,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -146,6 +136,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

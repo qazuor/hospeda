@@ -2,7 +2,7 @@
     "id": "037-accommodation-gualeguaychu-cabin-paraiso-acogedor-cabana-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-acogedor-cabana-gualeguaychu",
-    "name": "paraiso-acogedor-cabana",
+    "name": "Paraíso Acogedor",
     "summary": "Encuentra un rincón acogedor en Paraíso Acogedor, una encantadora cabaña de madera ubicada en un entorno tranquilo de Gualeguaychú.",
     "type": "CABIN",
     "description": "Encuentra un rincón acogedor en Paraíso Acogedor, una encantadora cabaña de madera ubicada en un entorno tranquilo de Gualeguaychú. Ideal para parejas o familias que buscan un refugio confortable, rodeado de naturaleza y con fácil acceso a las playas, la ciudad y el Carnaval.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es cálida y rústica, creando un ambiente hogareño.\n\nEl exterior ofrece una galería techada con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y árboles, un espacio agradable para relajarse. La ubicación en las afueras de Gualeguaychú permite un rápido acceso en auto a las playas del río Uruguay, al centro de la ciudad y al Corsódromo. Paraíso Acogedor es tu base ideal para disfrutar de la playa y la tranquilidad de Gualeguaychú.",
@@ -20,30 +20,16 @@
         "twitter": "https://twitter.com/paraisoacogedorcabana"
     },
     "price": {
-        "basePrice": {
-            "price": 16500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 16500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0130",
-            "long": "-58.5259"
+            "latitude": -33.013,
+            "longitude": -58.5259
         },
         "street": "Camino a la Playa S/N",
         "number": "S/N",
@@ -91,14 +77,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -163,6 +149,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

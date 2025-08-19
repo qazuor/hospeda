@@ -2,7 +2,7 @@
     "id": "086-accommodation-uruguay-country-house-nido-silvestre-country-house-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-silvestre-country-house-concepcion_del_urugua",
-    "name": "nido-silvestre-country-house",
+    "name": "Nido Silvestre",
     "summary": "Adéntrate en la naturaleza salvaje en Nido Silvestre, una casa de campo ubicada en un entorno más agreste y natural cerca de Concepción del Uruguay.",
     "type": "COUNTRY_HOUSE",
     "description": "Adéntrate en la naturaleza salvaje en Nido Silvestre, una casa de campo ubicada en un entorno más agreste y natural cerca de Concepción del Uruguay. Ideal para amantes de la tranquilidad absoluta, la observación de aves y la flora nativa. Un verdadero nido en la naturaleza silvestre entrerriana.\n\nLa casa ofrece un espacio rústico pero cómodo, con dos dormitorios y un baño completo. El living-comedor es integrado con una cocina básica equipada con heladera y anafe. La electricidad es limitada y prioriza la iluminación y carga de dispositivos, fomentando la desconexión. La capacidad es para 4 personas.\n\nEl exterior es su mayor valor, rodeado de vegetación nativa. Un deck exterior permite disfrutar del paisaje y el sonido de las aves. Cuenta con un fogón y parrilla rústica. Es un lugar para apreciar la vida silvestre, caminar por los alrededores y disfrutar de noches estrelladas lejos de las luces de la ciudad. La propiedad se encuentra a una distancia considerable en auto del centro de Concepción del Uruguay, lo que garantiza la paz, pero requiere planificación para abastecerse y acceder a atracciones.",
@@ -22,30 +22,16 @@
         "twitter": "https://twitter.com/nidosilvestrecountryhouse"
     },
     "price": {
-        "basePrice": {
-            "price": 20000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 4000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 20000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4825",
-            "long": "-58.2295"
+            "latitude": -32.4825,
+            "longitude": -58.2295
         },
         "street": "Camino a Estancia S/N",
         "number": "S/N",
@@ -93,14 +79,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "18:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "15:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -193,6 +179,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

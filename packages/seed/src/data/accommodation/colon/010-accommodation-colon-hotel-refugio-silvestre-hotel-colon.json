@@ -2,7 +2,7 @@
     "id": "010-accommodation-colon-hotel-refugio-silvestre-hotel-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-silvestre-hotel-colon",
-    "name": "refugio-silvestre-hotel",
+    "name": "Refugio Silvestre Hotel",
     "summary": "Experimenta una estancia de relax en el Refugio Silvestre Hotel, un oasis de tranquilidad ubicado en una zona semi-céntrica de Colón, ideal para quienes buscan combinar la paz del entorno con la comodidad de estar cerca de las atracciones principales.",
     "type": "HOTEL",
     "description": "Experimenta una estancia de relax en el Refugio Silvestre Hotel, un oasis de tranquilidad ubicado en una zona semi-céntrica de Colón, ideal para quienes buscan combinar la paz del entorno con la comodidad de estar cerca de las atracciones principales. Este hotel está diseñado para ofrecer una experiencia acogedora y personalizada, rodeado de naturaleza y con servicios pensados para tu bienestar.\n\nEl hotel cuenta con 15 habitaciones confortables, decoradas con un estilo rústico y elegante, equipadas con aire acondicionado, calefacción, TV por cable y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples para adaptarnos a diferentes necesidades de alojamiento. Algunas habitaciones cuentan con vista al jardín o a la piscina.\n\nEntre nuestras instalaciones, destacamos un amplio jardín con piscina y solárium, perfectos para disfrutar de los días cálidos. Contamos con un desayuno buffet casero incluido en la tarifa, que se sirve en nuestro comedor con vista al jardín. También ofrecemos servicio de bar y cafetería. El hotel dispone de conexión WiFi gratuita en todas las áreas y estacionamiento descubierto dentro de la propiedad.\n\nSu ubicación estratégica facilita el acceso en pocos minutos en auto a la costanera, el centro comercial y el complejo termal de Colón. Es un refugio ideal para descansar después de un día de actividades, rodeado de la serenidad que solo un entorno con vegetación puede ofrecer.",
@@ -22,26 +22,16 @@
         "twitter": "https://twitter.com/refugiosilvestre"
     },
     "price": {
-        "basePrice": {
-            "price": 18000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 18000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2269",
-            "long": "-58.1569"
+            "latitude": -32.2269,
+            "longitude": -58.1569
         },
         "street": "Calle Las Retamas",
         "number": "85",
@@ -89,15 +79,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "23:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 35,
@@ -187,6 +177,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

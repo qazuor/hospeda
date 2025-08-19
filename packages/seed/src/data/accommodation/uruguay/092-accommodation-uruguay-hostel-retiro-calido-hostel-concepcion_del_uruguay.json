@@ -2,7 +2,7 @@
     "id": "092-accommodation-uruguay-hostel-retiro-calido-hostel-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-calido-hostel-concepcion_del_uruguay",
-    "name": "retiro-calido-hostel",
+    "name": "Retiro Cálido Hostel",
     "summary": "Siente la calidez de hogar en Retiro Cálido Hostel, un espacio acogedor en Concepción del Uruguay, perfecto para viajeros que valoran un ambiente amigable y tranquilo.",
     "type": "HOSTEL",
     "description": "Siente la calidez de hogar en Retiro Cálido Hostel, un espacio acogedor en Concepción del Uruguay, perfecto para viajeros que valoran un ambiente amigable y tranquilo. Ubicado en un barrio tradicional, ofrece una experiencia local auténtica, a poca distancia de los puntos de interés.\n\nEl hostel dispone de dormitorios compartidos con literas (4 y 8 camas) y algunas habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes son el corazón del hostel: una cocina equipada, un comedor, un living con TV y libros, y un patio pequeño pero encantador ideal para relajarse o conversar.\n\nEl ambiente es relajado y promueve la interacción entre huéspedes. La ubicación en un barrio residencial te permite descansar bien por la noche, pero estás a una distancia corta en auto o colectivo del centro histórico, la costanera y la Terminal de Ómnibus. Un lugar sencillo y cálido para tu estadía en 'La Histórica'.",
@@ -18,26 +18,16 @@
         "website": "https://retirocalidohostel.tur.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 6800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 6800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4807",
-            "long": "-58.2224"
+            "latitude": -32.4807,
+            "longitude": -58.2224
         },
         "street": "Calle Los Naranjos",
         "number": "25",
@@ -85,8 +75,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -94,7 +82,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "11:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 25,
@@ -162,6 +152,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

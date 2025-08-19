@@ -2,7 +2,7 @@
     "id": "101-accommodation-uruguay-cabin-sueno-soleado-cabana-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-soleado-cabana-concepcion_del_uruguay",
-    "name": "sueno-soleado-cabana",
+    "name": "Sueño Soleado",
     "summary": "Disfruta de la luminosidad y un ambiente encantador en Sueño Soleado, una cabaña de madera ubicada en un entorno tranquilo cerca de Concepción del Uruguay.",
     "type": "CABIN",
     "description": "Disfruta de la luminosidad y un ambiente encantador en Sueño Soleado, una cabaña de madera ubicada en un entorno tranquilo cerca de Concepción del Uruguay. Ideal para parejas o familias que buscan un espacio acogedor, rodeado de naturaleza y con fácil acceso a las atracciones de la ciudad y el río.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, pudiendo alojar hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada con heladera, anafe, microondas y utensilios básicos. Los grandes ventanales permiten la entrada de mucha luz natural.\n\nEl exterior ofrece una galería techada con parrilla, perfecta para disfrutar de asados. Está rodeada de un jardín con césped y árboles, un espacio agradable para relajarse. La ubicación permite un acceso rápido en auto al centro de Concepción del Uruguay, la costanera y las playas. Un lugar simple y luminoso para una escapada relajante.",
@@ -21,25 +21,16 @@
         "facebook": "https://facebook.com/suenosoleadocabana"
     },
     "price": {
-        "basePrice": {
-            "price": 15500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2800,
-                "currency": "ARS"
-            },
-            "taxPercent": 21
-        }
+        "price": 15500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4832",
-            "long": "-58.2287"
+            "latitude": -32.4832,
+            "longitude": -58.2287
         },
         "street": "Camino Vecinal Sur S/N",
         "number": "S/N",
@@ -87,14 +78,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -164,6 +155,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

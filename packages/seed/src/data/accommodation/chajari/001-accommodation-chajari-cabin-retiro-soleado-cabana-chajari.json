@@ -2,7 +2,7 @@
     "id": "001-accommodation-chajari-cabin-retiro-soleado-cabana-chajari",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-soleado-cabana-chajari",
-    "name": "retiro-soleado-cabana",
+    "name": "Retiro Soleado",
     "summary": "Escondida entre naranjos y mandarinos, a solo 5 km del centro de Chajarí, Retiro Soleado ofrece una experiencia auténtica en una cabaña de madera construida con técnicas tradicionales combinadas con comodidades modernas.",
     "type": "CABIN",
     "description": "Escondida entre naranjos y mandarinos, a solo 5 km del centro de Chajarí, Retiro Soleado ofrece una experiencia auténtica en una cabaña de madera construida con técnicas tradicionales combinadas con comodidades modernas. Esta acogedora cabaña de 70 m² es el refugio perfecto para parejas o familias pequeñas que buscan paz, contacto con la naturaleza y la cultura citrícola característica de la región.\n\nLa cabaña cuenta con un dormitorio principal con cama queen size y vistas al naranjal, y un entrepiso abierto con dos camas individuales, ideal para niños o huéspedes adicionales. El baño completo incluye una amplia ducha con vista al jardín privado. El espacio de living-comedor con su estufa a leña crea un ambiente cálido y acogedor durante las noches frescas, mientras que la cocina completamente equipada permite a los huéspedes preparar desde platos sencillos hasta elaboradas comidas utilizando productos locales.\n\nEl verdadero encanto de Retiro Soleado se encuentra en sus espacios exteriores. Una amplia galería techada rodea la cabaña, ofreciendo un lugar perfecto para disfrutar del desayuno mientras se observan los pájaros o para relajarse en las hamacas durante las tardes cálidas. El jardín privado incluye un fogón para noches estrelladas, un quincho con asador tradicional, y acceso directo a senderos que serpentean entre las plantaciones de cítricos.\n\nDurante su estadía, podrá participar en actividades agrícolas (según temporada), como la cosecha de mandarinas, naranjas o limones; explorar los senderos naturales que recorren la propiedad de 3 hectáreas; o simplemente relajarse en este entorno tranquilo, distante del estrés urbano pero lo suficientemente cerca para disfrutar de todas las comodidades de la ciudad, incluido el complejo termal de Chajarí que se encuentra a 12 minutos en auto.",
@@ -23,44 +23,16 @@
         "twitter": "https://twitter.com/retirosoleadocabana"
     },
     "price": {
-        "basePrice": {
-            "price": 16000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 3000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 10,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 20,
-                "minNights": 30
-            },
-            "lastMinute": {
-                "percentage": 15,
-                "minNights": 1
-            }
-        }
+        "price": 16000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3228",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-30.7521",
-            "long": "-58.0429"
+            "latitude": -30.7521,
+            "longitude": -58.0429
         },
         "street": "Ruta Provincial 3",
         "number": "Km 5",
@@ -132,8 +104,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -141,7 +111,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "13:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "15:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -254,6 +226,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

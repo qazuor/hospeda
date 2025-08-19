@@ -2,7 +2,7 @@
     "id": "056-accommodation-paranacito-hostel-refugio-agradable-hostel-villa_paranacito",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-agradable-hostel-villa_paranacito",
-    "name": "refugio-agradable-hostel",
+    "name": "Refugio Agradable Hostel",
     "summary": "Encuentra un espacio agradable y económico para tu estadía en Refugio Agradable Hostel, ubicado en el pueblo de Paranacito.",
     "type": "HOSTEL",
     "description": "Encuentra un espacio agradable y económico para tu estadía en Refugio Agradable Hostel, ubicado en el pueblo de Paranacito. Ideal para mochileros y viajeros que buscan un lugar amigable y bien ubicado para explorar el Delta y disfrutar de la vida local.\n\nEl hostel ofrece dormitorios compartidos (4 y 6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos limpios y con agua caliente. Las áreas comunes incluyen una cocina equipada para uso de los huéspedes, un comedor social y un living con TV. Dispone de un pequeño patio.\n\nSu ubicación en el pueblo permite acceder caminando a comercios y servicios. Estás a poca distancia en auto de los puntos de acceso al Delta y las actividades fluviales. Es una base práctica y económica para explorar la zona, con un ambiente relajado.",
@@ -20,26 +20,16 @@
         "facebook": "https://facebook.com/refugioagradablehostel"
     },
     "price": {
-        "basePrice": {
-            "price": 7000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 7000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.7070",
-            "long": "-58.6477"
+            "latitude": -33.707,
+            "longitude": -58.6477
         },
         "street": "Calle Principal",
         "number": "150",
@@ -81,8 +71,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -90,7 +78,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "11:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 18,
@@ -149,6 +139,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

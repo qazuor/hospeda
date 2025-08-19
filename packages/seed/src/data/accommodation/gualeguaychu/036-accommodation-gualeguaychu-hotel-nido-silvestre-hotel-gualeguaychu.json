@@ -2,7 +2,7 @@
     "id": "036-accommodation-gualeguaychu-hotel-nido-silvestre-hotel-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-silvestre-hotel-gualeguaychu",
-    "name": "nido-silvestre-hotel",
+    "name": "Nido Silvestre Hotel",
     "summary": "Sumérgete en un ambiente natural en Nido Silvestre Hotel, ubicado en una zona tranquila de Gualeguaychú con un entorno verde cercano.",
     "type": "HOTEL",
     "description": "Sumérgete en un ambiente natural en Nido Silvestre Hotel, ubicado en una zona tranquila de Gualeguaychú con un entorno verde cercano. Ideal para quienes buscan combinar el confort de un hotel con la serenidad de la naturaleza, con fácil acceso a las playas, la ciudad y el Carnaval.\n\nEl hotel cuenta con 22 habitaciones confortables, muchas de ellas con vista al jardín o al entorno arbolado. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y familiares.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para relajarse. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto a las playas del río Uruguay, al centro de la ciudad y al Corsódromo. Nido Silvestre es la opción ideal para una estancia relajante en contacto con la belleza natural de Gualeguaychú, con el Carnaval cerca en temporada.",
@@ -17,26 +17,16 @@
         "preferredPhone": "MOBILE"
     },
     "price": {
-        "basePrice": {
-            "price": 23000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 23000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0075",
-            "long": "-58.5127"
+            "latitude": -33.0075,
+            "longitude": -58.5127
         },
         "street": "Avenida Parque Sur",
         "number": "1500",
@@ -84,15 +74,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 45,
@@ -164,6 +154,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

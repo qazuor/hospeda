@@ -2,7 +2,7 @@
     "id": "009-accommodation-colon-cabin-refugio-maravilloso-cabana-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-maravilloso-cabana-colon",
-    "name": "refugio-maravilloso-cabana",
+    "name": "Refugio Maravilloso",
     "summary": "Descubre un verdadero santuario en Refugio Maravilloso, una cabaña apartada en un entorno natural idílico cerca de Colón.",
     "type": "CABIN",
     "description": "Descubre un verdadero santuario en Refugio Maravilloso, una cabaña apartada en un entorno natural idílico cerca de Colón. Diseñada para ofrecer paz y privacidad, esta cabaña es el escape perfecto para parejas o familias que buscan reconectar con la naturaleza y disfrutar de momentos especiales en un lugar verdaderamente maravilloso.\n\nLa cabaña cuenta con un dormitorio principal espacioso, un baño completo y un área de living-comedor integrada con una cocina totalmente equipada. Los grandes ventanales permiten que la luz natural inunde el espacio y ofrecen vistas espectaculares al paisaje circundante. La decoración es cálida y confortable, con detalles rústicos que complementan el entorno.\n\nEl exterior es simplemente impresionante. Una amplia terraza de madera con una pequeña piscina o hot tub (según la estación) es el lugar ideal para relajarse y disfrutar de las vistas al atardecer. Cuenta con asador y mobiliario exterior para disfrutar de comidas al aire libre. El extenso jardín ofrece senderos privados para caminatas y la posibilidad de avistar aves locales. La paz y la belleza del lugar te harán sentir en un refugio maravilloso.\n\nAunque ofrece total privacidad, la cabaña se encuentra a una distancia conveniente en auto del centro de Colón, sus playas y las Termas, permitiéndote disfrutar de lo mejor de ambos mundos: la serenidad del campo y el acceso a las atracciones urbanas y turísticas.",
@@ -22,40 +22,16 @@
         "twitter": "https://twitter.com/refugiomaravillosocabanaok"
     },
     "price": {
-        "basePrice": {
-            "price": 26000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 4500,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 25,
-                "minNights": 30
-            }
-        }
+        "price": 26000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2267",
-            "long": "-58.1517"
+            "latitude": -32.2267,
+            "longitude": -58.1517
         },
         "street": "Camino Rural F",
         "number": "S/N",
@@ -109,15 +85,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "15:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -201,6 +177,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

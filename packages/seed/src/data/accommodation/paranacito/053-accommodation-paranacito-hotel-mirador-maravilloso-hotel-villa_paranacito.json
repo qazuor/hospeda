@@ -2,7 +2,7 @@
     "id": "053-accommodation-paranacito-hotel-mirador-maravilloso-hotel-villa_paranacito",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-maravilloso-hotel-villa_paranacito",
-    "name": "mirador-maravilloso-hotel",
+    "name": "Mirador Maravilloso Hotel",
     "summary": "Disfruta de vistas maravillosas al río y el Delta en Mirador Maravilloso Hotel, ubicado estratégicamente en Paranacito.",
     "type": "HOTEL",
     "description": "Disfruta de vistas maravillosas al río y el Delta en Mirador Maravilloso Hotel, ubicado estratégicamente en Paranacito. Ideal para quienes buscan confort y vistas panorámicas al entorno natural del Delta. Un lugar para relajarse y contemplar el paisaje único.\n\nEl hotel cuenta con 16 habitaciones confortables, muchas de ellas con balcón y vista panorámica al río o a las islas. Equipadas con aire acondicionado, calefacción, TV y baño privado. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de una terraza con solárium con las mejores vistas, perfecta para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en un comedor con vista al exterior. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación permite acceder fácilmente a los puntos de interés de Paranacito y es una excelente base para explorar el Delta en lancha. Mirador Maravilloso Hotel es la opción ideal para una estancia con vistas inigualables en el corazón del Delta.",
@@ -21,26 +21,16 @@
         "twitter": "https://twitter.com/miradormaravillosohotel"
     },
     "price": {
-        "basePrice": {
-            "price": 23000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 23000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2826",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.7056",
-            "long": "-58.6551"
+            "latitude": -33.7056,
+            "longitude": -58.6551
         },
         "street": "Ribera del Paraná S/N",
         "number": "S/N",
@@ -88,15 +78,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 32,
@@ -169,6 +159,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

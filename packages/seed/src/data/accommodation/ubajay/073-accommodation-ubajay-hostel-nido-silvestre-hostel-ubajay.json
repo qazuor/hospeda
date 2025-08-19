@@ -2,7 +2,7 @@
     "id": "073-accommodation-ubajay-hostel-nido-silvestre-hostel-ubajay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "nido-silvestre-hostel-ubajay",
-    "name": "nido-silvestre-hostel",
+    "name": "Nido Silvestre Hostel",
     "summary": "Descubre un rincón con espíritu natural en Nido Silvestre Hostel, ubicado en las afueras de Ubajay, ideal para viajeros que disfrutan de la naturaleza y buscan un ambiente relajado y económico.",
     "type": "HOSTEL",
     "description": "Descubre un rincón con espíritu natural en Nido Silvestre Hostel, ubicado en las afueras de Ubajay, ideal para viajeros que disfrutan de la naturaleza y buscan un ambiente relajado y económico. Un lugar para desconectar y explorar el entorno silvestre cercano, con fácil acceso al Parque Nacional El Palmar.\n\nEl hostel ofrece dormitorios compartidos (6 camas) y habitaciones privadas dobles. Cuenta con baños compartidos. Las áreas comunes incluyen una cocina básica compartida, un comedor y un espacio de estar sencillo. Dispone de un patio con algo de vegetación.\n\nSu ubicación en las afueras ofrece más tranquilidad y cercanía a caminos rurales y al Parque Nacional El Palmar. Estás a poca distancia en auto del centro de Ubajay y del Parque Nacional. Es una base económica para explorar la zona, con un ambiente más cercano a la naturaleza que un hostel céntrico.",
@@ -22,21 +22,16 @@
         "twitter": "https://twitter.com/nidosilvestrehostel"
     },
     "price": {
-        "basePrice": {
-            "price": 7200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": 21
-        }
+        "price": 7200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.3724",
-            "long": "-58.2901"
+            "latitude": -32.3724,
+            "longitude": -58.2901
         },
         "street": "Camino Rural E",
         "number": "S/N",
@@ -78,8 +73,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -87,7 +80,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "11:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 15,
@@ -152,6 +147,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

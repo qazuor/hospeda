@@ -2,7 +2,7 @@
     "id": "024-accommodation-concordia-apartment-sueno-calido-apartment-concordia",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-calido-apartment-concordia",
-    "name": "sueno-calido-apartment",
+    "name": "Sueño Cálido",
     "summary": "Disfruta de la calidez y el confort en Sueño Cálido Apartamento, un espacio moderno ubicado en una zona residencial de Concordia.",
     "type": "APARTMENT",
     "description": "Disfruta de la calidez y el confort en Sueño Cálido Apartamento, un espacio moderno ubicado en una zona residencial de Concordia. Ideal para parejas o viajeros que buscan un lugar tranquilo y bien equipado para descansar, con fácil acceso a las termas y atracciones de la ciudad.\n\nEl apartamento cuenta con un dormitorio principal con cama doble, un baño completo, y un área de living-comedor integrada con cocina equipada (heladera, microondas, anafe). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es acogedora y funcional.\n\nSituado en un edificio moderno, ofrece un refugio cómodo. Estás a pocos minutos en auto de las Termas de Concordia y el centro de la ciudad. Es una base práctica y confortable para tu visita, ofreciendo la paz de un barrio residencial con la cercanía a los puntos de interés.",
@@ -22,30 +22,16 @@
         "twitter": "https://twitter.com/suenocalidoapartment"
     },
     "price": {
-        "basePrice": {
-            "price": 12500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 12500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3200",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.3884",
-            "long": "-58.0221"
+            "latitude": -31.3884,
+            "longitude": -58.0221
         },
         "street": "Calle Los Fresnos",
         "number": "150",
@@ -89,14 +75,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -171,6 +157,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

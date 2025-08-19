@@ -2,7 +2,7 @@
     "id": "079-accommodation-ubajay-apartment-sendero-calido-apartment-ubajay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sendero-calido-apartment-ubajay",
-    "name": "sendero-calido-apartment",
+    "name": "Sendero Cálido",
     "summary": "Disfruta de la calidez y el confort en Sendero Cálido Apartamento, un espacio moderno ubicado en un barrio residencial de Ubajay.",
     "type": "APARTMENT",
     "description": "Disfruta de la calidez y el confort en Sendero Cálido Apartamento, un espacio moderno ubicado en un barrio residencial de Ubajay. Ideal para parejas o viajeros que buscan un lugar tranquilo y bien equipado para descansar, con fácil acceso al centro y al Parque Nacional El Palmar.\n\nEl apartamento cuenta con un dormitorio principal con cama doble, un baño completo, y un área de living-comedor integrada con cocina equipada (heladera, microondas, anafe). Dispone de sofá cama, permitiendo una capacidad de hasta 3 personas. La decoración es acogedora y funcional.\n\nSituado en un edificio moderno, ofrece un refugio cómodo. Estás a pocos minutos en auto del centro de Ubajay y del Parque Nacional El Palmar. Es una base práctica y confortable para tu visita, ofreciendo la paz de un barrio residencial con la cercanía a los puntos de interés.",
@@ -22,30 +22,16 @@
         "twitter": "https://twitter.com/senderocalidoapartment"
     },
     "price": {
-        "basePrice": {
-            "price": 12500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 12500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.3681",
-            "long": "-58.2906"
+            "latitude": -32.3681,
+            "longitude": -58.2906
         },
         "street": "Calle Los Lapachos",
         "number": "180",
@@ -89,14 +75,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -158,6 +144,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

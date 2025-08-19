@@ -2,7 +2,7 @@
     "id": "067-accommodation-san-jose-country-house-retiro-natural-country-house-san_jose",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-natural-country-house-san_jose",
-    "name": "retiro-natural-country-house",
+    "name": "Retiro Natural",
     "summary": "Adéntrate en la serenidad del campo entrerriano en Retiro Natural, una cómoda casa de campo ubicada en un entorno natural apacible cerca de San José.",
     "type": "COUNTRY_HOUSE",
     "description": "Adéntrate en la serenidad del campo entrerriano en Retiro Natural, una cómoda casa de campo ubicada en un entorno natural apacible cerca de San José. Ideal para familias y grupos que buscan un retiro tranquilo, rodeado de naturaleza, con amplios espacios para relajarse y disfrutar al aire libre, a poca distancia del Parque Nacional El Palmar.\n\nLa casa cuenta con tres dormitorios y dos baños completos, ofreciendo privacidad y espacio para hasta 8 personas. El living-comedor es amplio, integrado con una cocina bien equipada. La decoración es sencilla y funcional, pensada para una estancia relajada.\n\nEl exterior dispone de un amplio jardín parquizado, ideal para actividades al aire libre. Cuenta con una galería techada con asador y una mesa grande, perfecta para disfrutar de comidas. También cuenta con una piscina para refrescarse en verano. Es un entorno seguro y tranquilo para relajarse. Aunque ofrece privacidad, la casa está a una distancia razonable en auto de San José y del Parque Nacional El Palmar.",
@@ -23,36 +23,16 @@
         "twitter": "https://twitter.com/retironaturalcountryhouse"
     },
     "price": {
-        "basePrice": {
-            "price": 30000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 5500,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            }
-        }
+        "price": 30000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.1988",
-            "long": "-58.7439"
+            "latitude": -32.1988,
+            "longitude": -58.7439
         },
         "street": "Camino a El Palmar S/N",
         "number": "S/N",
@@ -112,15 +92,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "15:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "13:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "15:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 8,
@@ -188,6 +168,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

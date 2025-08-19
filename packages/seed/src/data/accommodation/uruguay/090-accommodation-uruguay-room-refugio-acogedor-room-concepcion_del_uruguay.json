@@ -2,7 +2,7 @@
     "id": "090-accommodation-uruguay-room-refugio-acogedor-room-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "refugio-acogedor-room-concepcion_del_uruguay",
-    "name": "refugio-acogedor-room",
+    "name": "Refugio Acogedor",
     "summary": "Siéntete bienvenido en Refugio Acogedor, una habitación privada en una casa familiar en un barrio tradicional de Concepción del Uruguay.",
     "type": "ROOM",
     "description": "Siéntete bienvenido en Refugio Acogedor, una habitación privada en una casa familiar en un barrio tradicional de Concepción del Uruguay. Ofrece un ambiente cálido, trato amable y la comodidad de un hogar, ideal para viajeros solos o parejas que buscan una base acogedora para explorar la ciudad.\n\nLa habitación es sencilla pero cómoda, con cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido con los anfitriones. Los huéspedes pueden utilizar una pequeña área de cocina básica con microondas y heladera para infusiones o comidas simples. El ambiente es muy hogareño.\n\nUbicado en un barrio residencial tranquilo, permite un buen descanso. Estás a una distancia razonable en auto o transporte público del centro, la costanera y otras atracciones. La hospitalidad de los anfitriones es un punto fuerte de este refugio acogedor.",
@@ -17,26 +17,16 @@
         "homeEmail": "hola@refugioacogedorroom.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 5200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 5200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4820",
-            "long": "-58.2247"
+            "latitude": -32.482,
+            "longitude": -58.2247
         },
         "street": "Calle Los Rosales",
         "number": "50",
@@ -72,14 +62,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -135,6 +125,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

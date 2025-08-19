@@ -2,7 +2,7 @@
     "id": "072-accommodation-ubajay-cabin-mirador-apacible-cabana-ubajay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-apacible-cabana-ubajay",
-    "name": "mirador-apacible-cabana",
+    "name": "Mirador Apacible",
     "summary": "Encuentra la paz y vistas apacibles en Mirador Apacible, una cómoda cabaña de madera ubicada en un entorno tranquilo de Ubajay, cerca del Parque Nacional El Palmar.",
     "type": "CABIN",
     "description": "Encuentra la paz y vistas apacibles en Mirador Apacible, una cómoda cabaña de madera ubicada en un entorno tranquilo de Ubajay, cerca del Parque Nacional El Palmar. Ideal para parejas o familias que buscan un refugio sereno y apacible con vistas al campo o zonas arboladas, y fácil acceso a la naturaleza.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es sencilla y rústica, invitando a la relajación.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación, con vistas abiertas al entorno. La ubicación en un barrio tranquilo de Ubajay permite un rápido acceso en auto al Parque Nacional El Palmar y al centro del pueblo. Mirador Apacible es tu base ideal para disfrutar de la tranquilidad y la naturaleza.",
@@ -20,30 +20,16 @@
         "twitter": "https://twitter.com/miradorapaciblecabana"
     },
     "price": {
-        "basePrice": {
-            "price": 15500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2800,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 15500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2845",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.3665",
-            "long": "-58.2965"
+            "latitude": -32.3665,
+            "longitude": -58.2965
         },
         "street": "Calle Los Horneros",
         "number": "50",
@@ -97,14 +83,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -183,6 +169,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

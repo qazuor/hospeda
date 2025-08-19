@@ -2,7 +2,7 @@
     "id": "011-accommodation-colon-cabin-retiro-agradable-cabana-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-agradable-cabana-colon",
-    "name": "retiro-agradable-cabana",
+    "name": "Retiro Agradable",
     "summary": "Encuentra tu espacio de paz en Retiro Agradable, una cabaña acogedora y bien equipada en un entorno tranquilo cerca de Colón.",
     "type": "CABIN",
     "description": "Encuentra tu espacio de paz en Retiro Agradable, una cabaña acogedora y bien equipada en un entorno tranquilo cerca de Colón. Perfecta para quienes buscan desconectar de la rutina y disfrutar de la naturaleza y las actividades que ofrece la región, con la comodidad de un hogar.\n\nLa cabaña cuenta con un diseño funcional, incluyendo un dormitorio con cama doble, un baño completo, y un estar-comedor integrado con cocina compacta pero completa. Dispone de sofá cama en el living, permitiendo alojar hasta 3-4 personas. La decoración es sencilla y cálida, creando un ambiente muy agradable para descansar.\n\nEn el exterior, podrás disfrutar de una galería con mobiliario y una parrilla, ideal para compartir comidas al aire libre. La cabaña está rodeada de un pequeño jardín con vegetación, ofreciendo un espacio privado para relajarse. El entorno es sereno, a corta distancia en auto de los principales puntos de interés de Colón, como la costanera, las playas y el complejo termal. Retiro Agradable es una excelente opción para una escapada relajante y conveniente.",
@@ -21,36 +21,16 @@
         "twitter": "https://twitter.com/retiroagradablecabanaok"
     },
     "price": {
-        "basePrice": {
-            "price": 13000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2500,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "lastMinute": {
-                "percentage": 10,
-                "minNights": 1
-            }
-        }
+        "price": 13000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2213",
-            "long": "-58.1488"
+            "latitude": -32.2213,
+            "longitude": -58.1488
         },
         "street": "Los Algarrobos",
         "number": "S/N",
@@ -92,14 +72,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -171,6 +151,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

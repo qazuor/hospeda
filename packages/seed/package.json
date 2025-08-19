@@ -21,7 +21,9 @@
         "seed": "tsx ./src/cli.ts",
         "seed:required": "tsx ./src/seeds/required.seed.ts",
         "seed:example": "tsx ./src/seeds/example.seed.ts",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "migrate:accommodation-prices": "tsx ./scripts/migrate-accommodation-prices.ts",
+        "validate:accommodations": "tsx ./scripts/validate-fix-accommodations.ts"
     },
     "dependencies": {
         "@repo/config": "workspace:*",

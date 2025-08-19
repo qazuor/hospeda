@@ -2,7 +2,7 @@
     "id": "025-accommodation-federacion-house-casa-termas-federacion",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "casa-termas-federacion",
-    "name": "casa-termas",
+    "name": "Casa Termas",
     "summary": "Casa Termas es una acogedora propiedad ubicada estratégicamente a solo 400 metros del Parque Termal de Federación, el principal atractivo de esta renovada ciudad entrerriana.",
     "type": "HOUSE",
     "description": "Casa Termas es una acogedora propiedad ubicada estratégicamente a solo 400 metros del Parque Termal de Federación, el principal atractivo de esta renovada ciudad entrerriana. Esta casa de estilo contemporáneo con toques regionales ofrece el equilibrio perfecto entre proximidad a las atracciones turísticas y la privacidad de un hogar completo para disfrutar en familia o con amigos.\n\nCon una superficie de 120 metros cuadrados, la propiedad se distribuye en una sola planta facilitando la accesibilidad. Cuenta con tres dormitorios cómodamente amueblados: el principal con cama queen y baño en suite, y dos dormitorios adicionales, uno con cama matrimonial y otro con dos camas individuales, ideales para niños o adultos. Un segundo baño completo da servicio a estas habitaciones. La casa puede alojar confortablemente hasta 6 personas.\n\nEl área social incluye un luminoso living-comedor con grandes ventanas que dan al jardín, equipado con cómodos sillones, smart TV y mesa para 6 comensales. La cocina integrada está completamente equipada con electrodomésticos modernos y utensilios necesarios para preparar desde un desayuno hasta una cena completa. El diseño interior prioriza los espacios amplios, la luz natural y utiliza una paleta de colores neutros con acentos en tonos turquesa que evocan las aguas termales de la zona.\n\nEl exterior es uno de los puntos fuertes de Casa Termas, con un jardín cuidadosamente mantenido, una galería cubierta con juego de sillones y hamacas para relajarse, y el infaltable asador argentino para disfrutar de tradicionales parrilladas. Una ducha exterior permite refrescarse después de un día de playa en el lago de Salto Grande, ubicado a solo 10 minutos en auto. El estacionamiento techado tiene capacidad para dos vehículos, brindando comodidad adicional a los huéspedes que llegan en auto.",
@@ -22,44 +22,16 @@
         "twitter": "https://twitter.com/casatermasar"
     },
     "price": {
-        "basePrice": {
-            "price": 28000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 5000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 25,
-                "minNights": 30
-            },
-            "lastMinute": {
-                "percentage": 10,
-                "minNights": 1
-            }
-        }
+        "price": 28000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0159",
-            "long": "-57.9015"
+            "latitude": -31.0159,
+            "longitude": -57.9015
         },
         "street": "Calle Los Jacarandás",
         "number": "745",
@@ -139,8 +111,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -148,7 +118,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 6,
@@ -267,6 +239,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

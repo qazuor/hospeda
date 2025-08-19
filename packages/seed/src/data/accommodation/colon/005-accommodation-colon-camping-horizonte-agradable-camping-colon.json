@@ -2,7 +2,7 @@
     "id": "005-accommodation-colon-camping-horizonte-agradable-camping-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "horizonte-agradable-camping-colon",
-    "name": "horizonte-agradable-camping",
+    "name": "Horizonte Agradable Camping",
     "summary": "Sumérgete en la naturaleza en Horizonte Agradable Camping, un tranquilo espacio a orillas del río Uruguay, a pocos minutos del centro de Colón.",
     "type": "CAMPING",
     "description": "Sumérgete en la naturaleza en Horizonte Agradable Camping, un tranquilo espacio a orillas del río Uruguay, a pocos minutos del centro de Colón. Ideal para campistas y amantes de la vida al aire libre que buscan un lugar sencillo y con acceso directo a la playa y actividades fluviales.\n\nNuestro camping ofrece parcelas amplias con sombra natural, equipadas con toma de luz y parrilla individual. Contamos con instalaciones básicas pero funcionales: baños y duchas con agua caliente, y una pileta para lavar vajilla. Es un lugar pensado para disfrutar de la experiencia de acampar, desconectar y conectar con el entorno natural.\n\nLa ubicación junto al río es nuestro mayor atractivo, con una zona de playa privada para nuestros huéspedes. Podrás disfrutar de días de sol y arena, nadar en el río, o lanzar tu kayak o tabla de SUP directamente desde el camping. Al atardecer, la vista del horizonte sobre el río es simplemente espectacular. Estamos cerca de zonas de pesca y ofrecemos información sobre alquiler de equipos.\n\nAunque estamos en un entorno natural, el centro de Colón y sus servicios están a una corta distancia en auto o bicicleta, permitiéndote abastecerte fácilmente y visitar las atracciones de la ciudad y las Termas de Colón. Un lugar perfecto para una escapada económica y en contacto con la naturaleza.",
@@ -21,22 +21,16 @@
         "twitter": "https://twitter.com/horizonteagradablecampingar"
     },
     "price": {
-        "basePrice": {
-            "price": 3500,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": 21,
-            "perPerson": 1500
-        }
+        "price": 3500,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2134",
-            "long": "-58.1445"
+            "latitude": -32.2134,
+            "longitude": -58.1445
         },
         "street": "Ribera del Uruguay",
         "number": "S/N",
@@ -78,15 +72,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "12:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "12:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 50,
@@ -99,7 +93,8 @@
             "Acceso directo a la playa",
             "Baños con agua caliente",
             "Ideal para carpas y motorhomes pequeños"
-        ]
+        ],
+        "bedrooms": 1
     },
     "seo": {
         "title": "Horizonte Agradable Camping - Camping a orillas del río en",
@@ -161,6 +156,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

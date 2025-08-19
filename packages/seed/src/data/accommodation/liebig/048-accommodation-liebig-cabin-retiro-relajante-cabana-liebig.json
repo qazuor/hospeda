@@ -2,7 +2,7 @@
     "id": "048-accommodation-liebig-cabin-retiro-relajante-cabana-liebig",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "retiro-relajante-cabana-liebig",
-    "name": "retiro-relajante-cabana",
+    "name": "Retiro Relajante",
     "summary": "Busca un espacio de relax en Retiro Relajante, una cómoda cabaña de madera ubicada en un entorno tranquilo de Liebig, cerca del río Uruguay.",
     "type": "CABIN",
     "description": "Busca un espacio de relax en Retiro Relajante, una cómoda cabaña de madera ubicada en un entorno tranquilo de Liebig, cerca del río Uruguay. Ideal para parejas o viajeros que buscan un refugio apacible y bien ubicado para acceder a la historia de la localidad y disfrutar del río.\n\nLa cabaña cuenta con un dormitorio principal con cama doble y un altillo con dos camas individuales, con capacidad para hasta 4 personas. Dispone de un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas, utensilios básicos). La decoración es sencilla y rústica, invitando a la relajación.\n\nEl exterior ofrece una galería con parrilla, perfecta para disfrutar de comidas al aire libre. Está rodeada de un jardín privado con césped y vegetación. La ubicación en un barrio tranquilo de Liebig permite un rápido acceso en auto o caminando a los restos históricos del Frigorífico Liebig y al acceso al río. Retiro Relajante es tu base ideal para combinar la historia y la tranquilidad del río.",
@@ -18,30 +18,16 @@
         "website": "https://www.retirorelajantecabana.net.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 15000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2800,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 15000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0494",
-            "long": "-58.1027"
+            "latitude": -31.0494,
+            "longitude": -58.1027
         },
         "street": "Calle Los Pescadores",
         "number": "50",
@@ -89,14 +75,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 4,
@@ -163,6 +149,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

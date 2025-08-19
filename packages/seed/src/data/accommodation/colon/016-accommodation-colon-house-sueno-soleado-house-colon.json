@@ -2,7 +2,7 @@
     "id": "016-accommodation-colon-house-sueno-soleado-house-colon",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-soleado-house-colon",
-    "name": "sueno-soleado-house",
+    "name": "Sueño Soleado House",
     "summary": "Disfruta de la luz y el confort en Sueño Soleado House, una espaciosa propiedad ubicada en un tranquilo barrio de Colón, ideal para quienes buscan amplitud y un ambiente luminoso para sus vacaciones.",
     "type": "HOUSE",
     "description": "Disfruta de la luz y el confort en Sueño Soleado House, una espaciosa propiedad ubicada en un tranquilo barrio de Colón, ideal para quienes buscan amplitud y un ambiente luminoso para sus vacaciones. Esta casa es perfecta para familias numerosas o grupos que desean espacio y comodidad cerca de las principales atracciones.\n\nLa casa cuenta con cuatro dormitorios bien equipados y tres baños completos, ofreciendo privacidad para todos los huéspedes. El living-comedor es muy amplio y luminoso, con grandes ventanales que dan al jardín, creando un ambiente acogedor para compartir. La cocina es independiente, totalmente equipada con horno, heladera con freezer y todos los electrodomésticos necesarios para preparar cualquier tipo de comida.\n\nEl exterior dispone de un gran jardín parquizado, ideal para que los niños jueguen o simplemente para relajarse al sol. Cuenta con una galería techada con asador y una mesa grande para disfrutar de comidas al aire libre. La propiedad ofrece espacio para estacionar varios vehículos dentro del predio. Su ubicación permite un rápido acceso en auto a la costanera, las playas y las Termas de Colón, combinando la serenidad del barrio con la cercanía a la diversión y el relax.",
@@ -18,40 +18,16 @@
         "website": "https://suenosoleadohouse.tur.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 29000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 5000,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 20,
-                "minNights": 30
-            }
-        }
+        "price": 29000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2840",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.2302",
-            "long": "-58.1523"
+            "latitude": -32.2302,
+            "longitude": -58.1523
         },
         "street": "Calle Los Girasoles",
         "number": "320",
@@ -117,15 +93,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 8,
@@ -206,6 +182,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

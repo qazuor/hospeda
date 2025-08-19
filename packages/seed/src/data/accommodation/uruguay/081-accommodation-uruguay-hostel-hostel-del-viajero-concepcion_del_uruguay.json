@@ -2,7 +2,7 @@
     "id": "081-accommodation-uruguay-hostel-hostel-del-viajero-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "hostel-del-viajero-concepcion_del_uruguay",
-    "name": "hostel-del-viajero",
+    "name": "Hostel del Viajero",
     "summary": "Ubicado en una casona colonial restaurada en pleno corazón histórico de Concepción del Uruguay, el Hostel del Viajero combina el encanto de la arquitectura tradicional con instalaciones modernas para satisfacer las necesidades de los viajeros actuales.",
     "type": "HOSTEL",
     "description": "Ubicado en una casona colonial restaurada en pleno corazón histórico de Concepción del Uruguay, el Hostel del Viajero combina el encanto de la arquitectura tradicional con instalaciones modernas para satisfacer las necesidades de los viajeros actuales. A solo dos cuadras de la plaza principal y a distancia caminable de los principales sitios históricos y la costanera, nuestra ubicación es estratégica para quienes desean explorar esta histórica ciudad entrerriana sin necesidad de transporte adicional.\n\nNuestro hostel ofrece varias opciones de alojamiento para adaptarse a diferentes presupuestos y preferencias: dormitorios compartidos de 4 y 6 camas con lockers individuales, y habitaciones privadas dobles y familiares para quienes prefieren mayor privacidad. Todas las opciones incluyen ropa de cama de calidad, enchufes individuales y luces de lectura. Los baños son compartidos, impecablemente mantenidos, y separados por género, con duchas de agua caliente disponibles 24 horas.\n\nLas áreas comunes son el corazón del Hostel del Viajero. La cocina comunitaria está completamente equipada para que los huéspedes puedan preparar sus propias comidas, y el comedor funciona como espacio de socialización durante todo el día. El patio interno con su antigua parra brinda un espacio verde refrescante con mesas, sillas y hamacas paraguayas para relajarse. Contamos también con una sala común con TV, juegos de mesa y una pequeña biblioteca de intercambio donde los viajeros pueden dejar un libro y llevarse otro.\n\nLos servicios incluyen WiFi gratuito en todas las áreas, computadora de uso libre para los huéspedes, guardaequipajes, información turística y asistencia para reservar excursiones y actividades. El desayuno continental está incluido en la tarifa y se sirve de 7:30 a 10:00, mientras que dos veces por semana organizamos cenas comunitarias opcionales que fomentan la interacción entre viajeros de todo el mundo.",
@@ -23,40 +23,16 @@
         "instagram": "https://instagram.com/hosteldelviajero"
     },
     "price": {
-        "basePrice": {
-            "price": 8000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        },
-        "discounts": {
-            "weekly": {
-                "percentage": 15,
-                "minNights": 7
-            },
-            "monthly": {
-                "percentage": 30,
-                "minNights": 30
-            },
-            "lastMinute": {
-                "percentage": 10,
-                "minNights": 1
-            }
-        }
+        "price": 8000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4913",
-            "long": "-58.2296"
+            "latitude": -32.4913,
+            "longitude": -58.2296
         },
         "street": "Calle de la Constitución",
         "number": "350",
@@ -122,8 +98,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
@@ -131,7 +105,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 26,
@@ -244,6 +220,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

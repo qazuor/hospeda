@@ -2,7 +2,7 @@
     "id": "089-accommodation-uruguay-room-paraiso-tranquilo-room-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-tranquilo-room-concepcion_del_uruguay",
-    "name": "paraiso-tranquilo-room",
+    "name": "Paraíso Tranquilo",
     "summary": "Encuentra un remanso de paz en Paraíso Tranquilo, una habitación privada en una casa con jardín ubicada en un barrio sereno de Concepción del Uruguay.",
     "type": "ROOM",
     "description": "Encuentra un remanso de paz en Paraíso Tranquilo, una habitación privada en una casa con jardín ubicada en un barrio sereno de Concepción del Uruguay. Ideal para viajeros que buscan un lugar silencioso para descansar y recargar energías, con la calidez de un hogar y acceso a espacios comunes.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, siempre limpio. Los huéspedes pueden usar una cocina básica compartida con heladera y microondas para preparar infusiones o comidas sencillas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial apacible, alejado del ruido del centro, pero a una distancia conveniente (en auto o transporte público) de las atracciones principales de la ciudad, la costanera y las playas. El jardín es un plus para disfrutar del aire libre. Una opción económica y tranquila para tu estadía en 'La Histórica'.",
@@ -22,26 +22,16 @@
         "twitter": "https://twitter.com/paraisotranquiloroom"
     },
     "price": {
-        "basePrice": {
-            "price": 5800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 5800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4815",
-            "long": "-58.2405"
+            "latitude": -32.4815,
+            "longitude": -58.2405
         },
         "street": "Calle Los Paraísos",
         "number": "305",
@@ -77,14 +67,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -146,6 +136,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

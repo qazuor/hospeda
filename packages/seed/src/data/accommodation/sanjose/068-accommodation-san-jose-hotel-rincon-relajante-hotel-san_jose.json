@@ -2,7 +2,7 @@
     "id": "068-accommodation-san-jose-hotel-rincon-relajante-hotel-san_jose",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rincon-relajante-hotel-san_jose",
-    "name": "rincon-relajante-hotel",
+    "name": "Rincón Relajante Hotel",
     "summary": "Encuentra la tranquilidad y el descanso en Rincón Relajante Hotel, ubicado en San José.",
     "type": "HOTEL",
     "description": "Encuentra la tranquilidad y el descanso en Rincón Relajante Hotel, ubicado en San José. Ideal para quienes buscan un lugar sereno para relajarse y explorar esta apacible ciudad y el Parque Nacional El Palmar. Ofrece un ambiente calmado y servicios pensados para tu bienestar.\n\nEl hotel cuenta con 18 habitaciones confortables, equipadas con aire acondicionado, calefacción, TV y baño privado. La decoración es sencilla y funcional, pensada para un descanso reparador. Ofrecemos habitaciones dobles, triples y cuádruples.\n\nEntre sus instalaciones, dispone de un jardín con piscina exterior y solárium, perfecto para momentos de relax. El hotel ofrece desayuno incluido en la tarifa, servido en su comedor. También cuenta con lobby y Wi-Fi gratuito. El estacionamiento es descubierto dentro del predio.\n\nSu ubicación es conveniente para acceder en pocos minutos en auto al centro de San José y con acceso rápido a la Ruta 14 para visitar el Parque Nacional El Palmar. Rincón Relajante es la opción ideal para una estancia dedicada al descanso y al bienestar en San José.",
@@ -22,26 +22,16 @@
         "twitter": "https://twitter.com/rinconrelajante"
     },
     "price": {
-        "basePrice": {
-            "price": 21000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 21000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.1941",
-            "long": "-58.7417"
+            "latitude": -32.1941,
+            "longitude": -58.7417
         },
         "street": "Calle 3 de Febrero",
         "number": "1100",
@@ -89,15 +79,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "13:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "11:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "22:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "13:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 40,
@@ -162,6 +152,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

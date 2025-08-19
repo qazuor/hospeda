@@ -2,7 +2,7 @@
     "id": "038-accommodation-gualeguaychu-room-paraiso-encantado-room-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-encantado-room-gualeguaychu",
-    "name": "paraiso-encantado-room",
+    "name": "Paraíso Encantado",
     "summary": "Descubre un rincón encantador en Paraíso Encantado, una habitación privada en una casa con jardín ubicada en un barrio residencial de Gualeguaychú.",
     "type": "ROOM",
     "description": "Descubre un rincón encantador en Paraíso Encantado, una habitación privada en una casa con jardín ubicada en un barrio residencial de Gualeguaychú. Ideal para viajeros que buscan un lugar tranquilo y agradable para descansar, con acceso a espacios verdes y a poca distancia de los puntos de interés de la ciudad y el Carnaval.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, pero a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. El jardín es un plus para disfrutar del aire libre. Una opción económica y agradable para tu estadía en Gualeguaychú.",
@@ -17,26 +17,16 @@
         "homeEmail": "reservas@paraisoencantadoroom.com.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 6200,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 6200,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0040",
-            "long": "-58.5129"
+            "latitude": -33.004,
+            "longitude": -58.5129
         },
         "street": "Calle Los Ceibos",
         "number": "220",
@@ -72,14 +62,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -136,6 +126,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

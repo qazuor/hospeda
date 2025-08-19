@@ -2,7 +2,7 @@
     "id": "046-accommodation-liebig-room-paraiso-natural-room-liebig",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "paraiso-natural-room-liebig",
-    "name": "paraiso-natural-room",
+    "name": "Paraíso Natural",
     "summary": "Descubre un rincón con encanto natural en Paraíso Natural, una habitación privada en una casa con jardín ubicada en un barrio tranquilo de Liebig.",
     "type": "ROOM",
     "description": "Descubre un rincón con encanto natural en Paraíso Natural, una habitación privada en una casa con jardín ubicada en un barrio tranquilo de Liebig. Ideal para viajeros que buscan un lugar apacible para descansar, con acceso a espacios verdes y a poca distancia del pueblo histórico y el río Uruguay.\n\nLa habitación ofrece una cama doble, placard y ventilador/calefactor. Tendrás acceso a un baño compartido, limpio y funcional. Los huéspedes pueden utilizar un espacio básico de cocina con microondas y heladera para preparar infusiones o comidas rápidas, y un espacio de estar común.\n\nLa casa se encuentra en un barrio residencial, lo que garantiza tranquilidad, y cerca de zonas con vegetación. Estás a una distancia conveniente en auto o caminando de los restos históricos del Frigorífico Liebig y del acceso al río. El jardín es un plus para disfrutar del aire libre. Una opción económica y agradable para tu estadía en Liebig.",
@@ -18,26 +18,16 @@
         "website": "https://www.paraisonaturalroom.net.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 5800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 5800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3206",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-31.0432",
-            "long": "-58.1003"
+            "latitude": -31.0432,
+            "longitude": -58.1003
         },
         "street": "Calle Los Sauces",
         "number": "70",
@@ -73,14 +63,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "20:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 2,
@@ -138,6 +128,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

@@ -2,7 +2,7 @@
     "id": "099-accommodation-uruguay-hotel-rio-soleado-hotel-concepcion_del_uruguay",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "rio-soleado-hotel-concepcion_del_uruguay",
-    "name": "rio-soleado-hotel",
+    "name": "Rio Soleado Hotel",
     "summary": "Disfruta de la brisa y la luz del río Uruguay en Rio Soleado Hotel, ubicado a solo una cuadra de la costanera de Concepción del Uruguay.",
     "type": "HOTEL",
     "description": "Disfruta de la brisa y la luz del río Uruguay en Rio Soleado Hotel, ubicado a solo una cuadra de la costanera de Concepción del Uruguay. Este hotel moderno ofrece una estancia cómoda y luminosa, ideal para quienes desean estar cerca de la acción del río y al mismo tiempo tener fácil acceso al centro histórico.\n\nEl hotel cuenta con 22 habitaciones, muchas de ellas con vista parcial o total al río. Todas están equipadas con aire acondicionado, calefacción, TV por cable, minibar y baño privado con secador de pelo. Ofrecemos habitaciones individuales, dobles y triples.\n\nEntre sus instalaciones, destacamos una terraza con solárium desde donde se puede apreciar el río. El hotel ofrece desayuno continental incluido en la tarifa, servido en un área común. También dispone de lobby con Wi-Fi gratuito en todo el edificio. Cuenta con estacionamiento descubierto limitado.\n\nSu ubicación privilegiada te permite acceder caminando a la costanera, la Isla del Puerto y disfrutar de las actividades al aire libre. El centro histórico, con sus museos y edificios emblemáticos, se encuentra a pocas cuadras. Rio Soleado Hotel es una excelente opción para disfrutar de Concepción del Uruguay, con el río siempre cerca.",
@@ -23,21 +23,16 @@
         "twitter": "https://twitter.com/riosoleado"
     },
     "price": {
-        "basePrice": {
-            "price": 21000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": 21
-        }
+        "price": 21000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "3260",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.4834",
-            "long": "-58.2344"
+            "latitude": -32.4834,
+            "longitude": -58.2344
         },
         "street": "Calle Artigas",
         "number": "50",
@@ -85,8 +80,6 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "11:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "12:00",
         "lateCheckinAccepted": true,
@@ -94,7 +87,9 @@
         "lateCheckoutAccepted": true,
         "lateCheckoutTime": "12:00",
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "14:00",
+        "checkOutTime": "11:00"
     },
     "extraInfo": {
         "capacity": 45,
@@ -169,6 +164,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

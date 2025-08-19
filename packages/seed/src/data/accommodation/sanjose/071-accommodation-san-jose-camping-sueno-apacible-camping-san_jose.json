@@ -2,7 +2,7 @@
     "id": "071-accommodation-san-jose-camping-sueno-apacible-camping-san_jose",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "sueno-apacible-camping-san_jose",
-    "name": "sueno-apacible-camping",
+    "name": "Sueño Apacible Camping",
     "summary": "Busca un lugar apacible para tu experiencia de camping en Sueño Apacible Camping, ubicado en un entorno sereno cerca de San José, a orillas de un arroyo.",
     "type": "CAMPING",
     "description": "Busca un lugar apacible para tu experiencia de camping en Sueño Apacible Camping, ubicado en un entorno sereno cerca de San José, a orillas de un arroyo. Ideal para campistas que buscan tranquilidad y un contacto directo con la naturaleza, con fácil acceso al Parque Nacional El Palmar.\n\nEl camping ofrece parcelas con buena sombra natural, equipadas con parrilla individual y acceso a toma de luz. Las instalaciones incluyen baños con duchas de agua caliente y un sector para lavado de vajilla. Es un camping sencillo, diseñado para disfrutar del aire libre y la paz del entorno.\n\nSu ubicación junto a un arroyo ofrece acceso directo al agua, ideal para pesca y simplemente disfrutar del sonido. El entorno es muy tranquilo y natural. Estás a poca distancia en auto de San José y del Parque Nacional El Palmar. Un lugar apacible para una aventura en la naturaleza.",
@@ -18,32 +18,16 @@
         "website": "https://www.suenoapaciblecamping.net.ar"
     },
     "price": {
-        "basePrice": {
-            "price": 3800,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            },
-            "perPerson": {
-                "price": 1600,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 3800,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2847",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-32.1911",
-            "long": "-58.7414"
+            "latitude": -32.1911,
+            "longitude": -58.7414
         },
         "street": "Camino al Arroyo S/N",
         "number": "S/N",
@@ -85,15 +69,15 @@
         ]
     },
     "schedule": {
-        "checkinTime": "12:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": true,
         "earlyCheckinTime": "10:00",
         "lateCheckinAccepted": true,
         "lateCheckinTime": "19:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": false,
-        "selfCheckout": false
+        "selfCheckout": false,
+        "checkInTime": "12:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 40,
@@ -106,7 +90,8 @@
             "Acceso directo al arroyo",
             "Entorno tranquilo y natural",
             "Cerca del Parque Nacional El Palmar"
-        ]
+        ],
+        "bedrooms": 1
     },
     "seo": {
         "title": "Sueño Apacible Camping - Naturaleza y arroyo en San José ",
@@ -150,6 +135,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }

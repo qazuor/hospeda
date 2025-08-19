@@ -2,7 +2,7 @@
     "id": "034-accommodation-gualeguaychu-apartment-mirador-tranquilo-apartment-gualeguaychu",
     "$schema": "../../../schemas/accommodation.schema.json",
     "slug": "mirador-tranquilo-apartment-gualeguaychu",
-    "name": "mirador-tranquilo-apartment",
+    "name": "Mirador Tranquilo",
     "summary": "Disfruta de la calma y una perspectiva serena de Gualeguaychú en Mirador Tranquilo, un apartamento ubicado en un piso alto con vistas parciales a la ciudad o zonas verdes.",
     "type": "APARTMENT",
     "description": "Disfruta de la calma y una perspectiva serena de Gualeguaychú en Mirador Tranquilo, un apartamento ubicado en un piso alto con vistas parciales a la ciudad o zonas verdes. Ideal para viajeros que valoran un ambiente tranquilo, luminoso y con las comodidades de un apartamento moderno, con fácil acceso a las atracciones principales.\n\nEl apartamento cuenta con un dormitorio con cama doble, un baño completo y un espacio integrado de living-comedor con cocina equipada (heladera, anafe, microondas). Dispone de sofá cama, permitiendo alojar hasta 3 personas. Los ventanales permiten la entrada de luz y ofrecen las vistas parciales. Dispone de aire acondicionado y calefacción.\n\nUbicado en un edificio con ascensor en una zona residencial tranquila, ofrece un retiro pacífico. Estás a una distancia conveniente en auto o transporte público del centro de Gualeguaychú, la costanera, las playas y el Corsódromo. Mirador Tranquilo es una opción serena y confortable para tu estadía.",
@@ -21,30 +21,16 @@
         "twitter": "https://twitter.com/miradortranquiloapartment"
     },
     "price": {
-        "basePrice": {
-            "price": 13000,
-            "currency": "ARS"
-        },
-        "additionalFees": {
-            "cleaning": {
-                "amount": 2200,
-                "currency": "ARS"
-            },
-            "taxPercent": {
-                "price": 21,
-                "currency": "ARS",
-                "isOptional": true,
-                "isPerStay": false
-            }
-        }
+        "price": 13000,
+        "currency": "ARS"
     },
     "location": {
         "state": "Entre Ríos",
         "zipCode": "2820",
         "country": "Argentina",
         "coordinates": {
-            "lat": "-33.0015",
-            "long": "-58.5228"
+            "latitude": -33.0015,
+            "longitude": -58.5228
         },
         "street": "Calle Jujuy",
         "number": "800",
@@ -94,14 +80,14 @@
         ]
     },
     "schedule": {
-        "checkinTime": "14:00",
-        "checkoutTime": "10:00",
         "earlyCheckinAccepted": false,
         "lateCheckinAccepted": true,
         "lateCheckinTime": "21:00",
         "lateCheckoutAccepted": false,
         "selfCheckin": true,
-        "selfCheckout": true
+        "selfCheckout": true,
+        "checkInTime": "14:00",
+        "checkOutTime": "10:00"
     },
     "extraInfo": {
         "capacity": 3,
@@ -177,6 +163,6 @@
     "lifecycleState": "ACTIVE",
     "visibility": "PUBLIC",
     "reviewsCount": 0,
-    "averageRating": 0.0,
+    "averageRating": 0,
     "moderationState": "APPROVED"
 }
