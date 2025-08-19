@@ -328,7 +328,35 @@ describe('Metrics Middleware', () => {
                 expect.objectContaining({
                     endpoint: 'GET /slow',
                     responseTime: expect.any(Number),
+                    threshold: expect.any(Number),
+                    isAuthEndpoint: false,
                     status: expect.any(Number)
+                }),
+                'Slow request detected'
+            );
+        });
+
+        it('should use higher threshold for auth endpoints', async () => {
+            const { logger } = await import('@repo/logger');
+
+            // Ensure the mock is properly set up after clearAllMocks
+            vi.mocked(logger.warn).mockImplementation(() => {});
+
+            app.use(metricsMiddleware);
+            app.get('/auth/slow', async (c) => {
+                await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5s - slow but under auth threshold
+                return c.json({ success: true });
+            });
+
+            await app.request('/auth/slow');
+
+            // Wait longer for async logging to complete
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            // Should NOT log as slow because auth threshold is 2000ms
+            expect(logger.warn).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    endpoint: 'GET /auth/slow'
                 }),
                 'Slow request detected'
             );

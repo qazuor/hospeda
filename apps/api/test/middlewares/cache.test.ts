@@ -5,7 +5,7 @@
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { cache } from 'hono/cache';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCacheMiddleware } from '../../src/middlewares/cache';
 
 // Mock Hono cache
@@ -507,6 +507,166 @@ describe('Cache Middleware', () => {
 
             const key = keyGenerator?.(context as unknown as Context);
             expect(key).toBe('public-/api/v1/public/accommodations');
+        });
+    });
+
+    describe('Runtime Auto-Detection', () => {
+        let originalCaches: any;
+
+        beforeEach(() => {
+            // Store original caches value
+            originalCaches = (globalThis as any).caches;
+            vi.clearAllMocks();
+            vi.resetModules();
+        });
+
+        afterEach(() => {
+            // Restore original caches value
+            if (originalCaches !== undefined) {
+                (globalThis as any).caches = originalCaches;
+            } else {
+                (globalThis as any).caches = undefined;
+            }
+            vi.resetModules();
+        });
+
+        it('should disable cache when CACHE_ENABLED=false (Case 1)', async () => {
+            // Mock logger
+            const mockLogger = {
+                info: vi.fn(),
+                warn: vi.fn(),
+                debug: vi.fn(),
+                error: vi.fn()
+            };
+
+            vi.doMock('../../src/utils/logger', () => ({
+                apiLogger: mockLogger
+            }));
+
+            // Mock env with cache disabled
+            vi.doMock('../../src/utils/env', () => ({
+                getCacheConfig: () => ({
+                    enabled: false,
+                    publicEndpoints: [],
+                    privateEndpoints: [],
+                    noCacheEndpoints: [],
+                    maxAge: 300,
+                    staleWhileRevalidate: 60,
+                    staleIfError: 86400,
+                    etagEnabled: true,
+                    lastModifiedEnabled: true
+                })
+            }));
+
+            // Set up caches API (should be ignored)
+            (globalThis as any).caches = { open: vi.fn() };
+
+            const { createCacheMiddleware: freshCreateMiddleware } = await import(
+                '../../src/middlewares/cache'
+            );
+
+            const middleware = freshCreateMiddleware();
+
+            // Should log info message
+            expect(mockLogger.info).toHaveBeenCalledWith(
+                'Cache middleware disabled via configuration (CACHE_ENABLED=false)'
+            );
+
+            // Should return a pass-through middleware
+            const mockNext = vi.fn();
+            await middleware(createMockContext('/test') as Context, mockNext);
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should enable cache when CACHE_ENABLED=true and runtime supports it (Case 2)', async () => {
+            // Mock logger
+            const mockLogger = {
+                info: vi.fn(),
+                warn: vi.fn(),
+                debug: vi.fn(),
+                error: vi.fn()
+            };
+
+            vi.doMock('../../src/utils/logger', () => ({
+                apiLogger: mockLogger
+            }));
+
+            // Mock env with cache enabled
+            vi.doMock('../../src/utils/env', () => ({
+                getCacheConfig: () => ({
+                    enabled: true,
+                    publicEndpoints: ['/api/v1/public/accommodations'],
+                    privateEndpoints: ['/api/v1/public/users'],
+                    noCacheEndpoints: ['/health/db'],
+                    maxAge: 300,
+                    staleWhileRevalidate: 60,
+                    staleIfError: 86400,
+                    etagEnabled: true,
+                    lastModifiedEnabled: true
+                })
+            }));
+
+            // Set up caches API (runtime supports it)
+            (globalThis as any).caches = { open: vi.fn() };
+
+            const { createCacheMiddleware: freshCreateMiddleware } = await import(
+                '../../src/middlewares/cache'
+            );
+
+            freshCreateMiddleware();
+
+            // Should log info message about enabling cache
+            expect(mockLogger.info).toHaveBeenCalledWith(
+                'Cache middleware enabled: Web Standards Cache API detected and available'
+            );
+        });
+
+        it('should disable cache when CACHE_ENABLED=true but runtime does not support it (Case 3)', async () => {
+            // Mock logger
+            const mockLogger = {
+                info: vi.fn(),
+                warn: vi.fn(),
+                debug: vi.fn(),
+                error: vi.fn()
+            };
+
+            vi.doMock('../../src/utils/logger', () => ({
+                apiLogger: mockLogger
+            }));
+
+            // Mock env with cache enabled
+            vi.doMock('../../src/utils/env', () => ({
+                getCacheConfig: () => ({
+                    enabled: true,
+                    publicEndpoints: [],
+                    privateEndpoints: [],
+                    noCacheEndpoints: [],
+                    maxAge: 300,
+                    staleWhileRevalidate: 60,
+                    staleIfError: 86400,
+                    etagEnabled: true,
+                    lastModifiedEnabled: true
+                })
+            }));
+
+            // Remove caches API (runtime doesn't support it - like Node.js)
+            (globalThis as any).caches = undefined;
+
+            const { createCacheMiddleware: freshCreateMiddleware } = await import(
+                '../../src/middlewares/cache'
+            );
+
+            const middleware = freshCreateMiddleware();
+
+            // Should log warning message
+            expect(mockLogger.warn).toHaveBeenCalledWith(
+                'Cache middleware disabled: Web Standards Cache API not available in this runtime (Node.js). Cache would be enabled in compatible runtimes like Cloudflare Workers, Deno, or browsers.'
+            );
+
+            // Should return a pass-through middleware
+            const mockNext = vi.fn();
+            await middleware(createMockContext('/test') as Context, mockNext);
+            expect(mockNext).toHaveBeenCalled();
         });
     });
 });

@@ -10,6 +10,7 @@ process.env.TESTING_RATE_LIMIT = 'true';
 // Mock environment BEFORE any imports
 vi.mock('../../src/utils/env', () => {
     const mockEnv = {
+        // General rate limiting
         RATE_LIMIT_ENABLED: true,
         RATE_LIMIT_WINDOW_MS: 1000, // 1 second for testing
         RATE_LIMIT_MAX_REQUESTS: 3, // 3 requests per window
@@ -18,16 +19,80 @@ vi.mock('../../src/utils/env', () => {
         RATE_LIMIT_SKIP_FAILED_REQUESTS: false,
         RATE_LIMIT_STANDARD_HEADERS: true,
         RATE_LIMIT_LEGACY_HEADERS: false,
-        RATE_LIMIT_MESSAGE: 'Too many requests, please try again later.'
+        RATE_LIMIT_MESSAGE: 'Too many requests, please try again later.',
+
+        // Auth rate limiting
+        RATE_LIMIT_AUTH_ENABLED: true,
+        RATE_LIMIT_AUTH_WINDOW_MS: 1000,
+        RATE_LIMIT_AUTH_MAX_REQUESTS: 5, // Higher limit for auth
+        RATE_LIMIT_AUTH_MESSAGE: 'Too many authentication requests, please try again later.',
+
+        // Public API rate limiting
+        RATE_LIMIT_PUBLIC_ENABLED: true,
+        RATE_LIMIT_PUBLIC_WINDOW_MS: 1000,
+        RATE_LIMIT_PUBLIC_MAX_REQUESTS: 10, // Higher limit for public API
+        RATE_LIMIT_PUBLIC_MESSAGE: 'Too many API requests, please try again later.',
+
+        // Admin rate limiting
+        RATE_LIMIT_ADMIN_ENABLED: true,
+        RATE_LIMIT_ADMIN_WINDOW_MS: 1000,
+        RATE_LIMIT_ADMIN_MAX_REQUESTS: 2, // Lower limit for admin
+        RATE_LIMIT_ADMIN_MESSAGE: 'Too many admin requests, please try again later.'
+    };
+
+    const getRateLimitConfig = (endpointType = 'general') => {
+        const baseConfig = {
+            keyGenerator: mockEnv.RATE_LIMIT_KEY_GENERATOR,
+            skipSuccessful: mockEnv.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS,
+            skipFailed: mockEnv.RATE_LIMIT_SKIP_FAILED_REQUESTS,
+            standardHeaders: mockEnv.RATE_LIMIT_STANDARD_HEADERS,
+            legacyHeaders: mockEnv.RATE_LIMIT_LEGACY_HEADERS
+        };
+
+        switch (endpointType) {
+            case 'auth':
+                return {
+                    ...baseConfig,
+                    enabled: mockEnv.RATE_LIMIT_AUTH_ENABLED,
+                    windowMs: mockEnv.RATE_LIMIT_AUTH_WINDOW_MS,
+                    maxRequests: mockEnv.RATE_LIMIT_AUTH_MAX_REQUESTS,
+                    message: mockEnv.RATE_LIMIT_AUTH_MESSAGE
+                };
+            case 'public':
+                return {
+                    ...baseConfig,
+                    enabled: mockEnv.RATE_LIMIT_PUBLIC_ENABLED,
+                    windowMs: mockEnv.RATE_LIMIT_PUBLIC_WINDOW_MS,
+                    maxRequests: mockEnv.RATE_LIMIT_PUBLIC_MAX_REQUESTS,
+                    message: mockEnv.RATE_LIMIT_PUBLIC_MESSAGE
+                };
+            case 'admin':
+                return {
+                    ...baseConfig,
+                    enabled: mockEnv.RATE_LIMIT_ADMIN_ENABLED,
+                    windowMs: mockEnv.RATE_LIMIT_ADMIN_WINDOW_MS,
+                    maxRequests: mockEnv.RATE_LIMIT_ADMIN_MAX_REQUESTS,
+                    message: mockEnv.RATE_LIMIT_ADMIN_MESSAGE
+                };
+            default:
+                return {
+                    ...baseConfig,
+                    enabled: mockEnv.RATE_LIMIT_ENABLED,
+                    windowMs: mockEnv.RATE_LIMIT_WINDOW_MS,
+                    maxRequests: mockEnv.RATE_LIMIT_MAX_REQUESTS,
+                    message: mockEnv.RATE_LIMIT_MESSAGE
+                };
+        }
     };
 
     return {
-        env: mockEnv
+        env: mockEnv,
+        getRateLimitConfig
     };
 });
 
 import { Hono } from 'hono';
-import { clearRateLimitStore, createRateLimitMiddleware } from '../../src/middlewares/rate-limit';
+import { clearRateLimitStore, rateLimitMiddleware } from '../../src/middlewares/rate-limit';
 
 describe('Rate Limit Middleware', () => {
     let app: Hono;
@@ -37,7 +102,7 @@ describe('Rate Limit Middleware', () => {
         clearRateLimitStore();
 
         app = new Hono();
-        app.use(createRateLimitMiddleware());
+        app.use('*', rateLimitMiddleware);
         app.get('/test', (c) => c.json({ message: 'success' }));
         app.post('/test', (c) => c.json({ message: 'posted' }));
         app.put('/test', (c) => c.json({ message: 'updated' }));
@@ -445,6 +510,90 @@ describe('Rate Limit Middleware', () => {
 
             expect(successful).toHaveLength(3);
             expect(rateLimited).toHaveLength(2);
+        });
+    });
+
+    describe('Differentiated Rate Limiting', () => {
+        beforeEach(() => {
+            clearRateLimitStore();
+            app = new Hono();
+            app.use('*', rateLimitMiddleware);
+
+            // Setup different endpoint types
+            app.get('/test', (c) => c.json({ success: true })); // general (3 requests)
+            app.get('/auth/login', (c) => c.json({ success: true })); // auth (5 requests)
+            app.get('/public/data', (c) => c.json({ success: true })); // public (10 requests)
+            app.get('/admin/users', (c) => c.json({ success: true })); // admin (2 requests)
+        });
+
+        it('should apply different limits for auth endpoints', async () => {
+            // Auth endpoints should allow 5 requests
+            for (let i = 0; i < 5; i++) {
+                const res = await app.request('/auth/login');
+                expect(res.status).toBe(200);
+            }
+
+            // 6th request should be rate limited
+            const res = await app.request('/auth/login');
+            expect(res.status).toBe(429);
+
+            const data = await res.json();
+            expect(data.error.message).toBe(
+                'Too many authentication requests, please try again later.'
+            );
+        });
+
+        it('should apply different limits for public endpoints', async () => {
+            // Public endpoints should allow 10 requests
+            for (let i = 0; i < 10; i++) {
+                const res = await app.request('/public/data');
+                expect(res.status).toBe(200);
+            }
+
+            // 11th request should be rate limited
+            const res = await app.request('/public/data');
+            expect(res.status).toBe(429);
+
+            const data = await res.json();
+            expect(data.error.message).toBe('Too many API requests, please try again later.');
+        });
+
+        it('should apply different limits for admin endpoints', async () => {
+            // Admin endpoints should allow only 2 requests
+            for (let i = 0; i < 2; i++) {
+                const res = await app.request('/admin/users');
+                expect(res.status).toBe(200);
+            }
+
+            // 3rd request should be rate limited
+            const res = await app.request('/admin/users');
+            expect(res.status).toBe(429);
+
+            const data = await res.json();
+            expect(data.error.message).toBe('Too many admin requests, please try again later.');
+        });
+
+        it('should include endpoint type in rate limit headers', async () => {
+            const res = await app.request('/auth/login');
+            expect(res.status).toBe(200);
+            expect(res.headers.get('X-RateLimit-Type')).toBe('auth');
+            expect(res.headers.get('X-RateLimit-Limit')).toBe('5');
+        });
+
+        it('should track different endpoint types independently', async () => {
+            // Use up general endpoint limit (3 requests)
+            for (let i = 0; i < 3; i++) {
+                const res = await app.request('/test');
+                expect(res.status).toBe(200);
+            }
+
+            // General endpoint should be rate limited
+            const generalRes = await app.request('/test');
+            expect(generalRes.status).toBe(429);
+
+            // But auth endpoint should still work (different limit and counter)
+            const authRes = await app.request('/auth/login');
+            expect(authRes.status).toBe(200);
         });
     });
 });
