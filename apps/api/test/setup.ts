@@ -611,6 +611,131 @@ beforeAll(async () => {
             }
         }
 
+        // Amenity service mock for new Amenity routes
+        class AmenityService {
+            async create(_actor: unknown, body: Record<string, unknown>) {
+                return {
+                    data: {
+                        id: 'amenity_mock_id',
+                        name: String((body as any).name || 'Amenity Mock'),
+                        type: String((body as any).type || 'GENERAL_APPLIANCES'),
+                        slug: (body as any).slug || 'amenity-mock',
+                        isFeatured: Boolean((body as any).isFeatured ?? false)
+                    }
+                };
+            }
+            async update(_actor: unknown, id: string, body: Record<string, unknown>) {
+                return {
+                    data: {
+                        id,
+                        name: String((body as any).name || 'Amenity Updated')
+                    }
+                };
+            }
+            async softDelete(_actor: unknown, id: string) {
+                return { data: { id, deletedAt: new Date().toISOString() } };
+            }
+            async restore(_actor: unknown, id: string) {
+                return { data: { id } };
+            }
+            async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+                return { data: { items: [], total: 0 } };
+            }
+            async getById(_actor: unknown, id: string) {
+                if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
+                return { data: { id, name: 'Amenity', type: 'GENERAL_APPLIANCES' } };
+            }
+            async search(
+                _actor: unknown,
+                _params: {
+                    filters?: { name?: string; type?: string };
+                    pagination?: { page?: number; pageSize?: number };
+                }
+            ) {
+                return { data: { items: [], total: 0 } };
+            }
+            async getAccommodationsByAmenity(_actor: unknown, _params: { amenityId: string }) {
+                return { data: { accommodations: [] } };
+            }
+            async getAmenitiesForAccommodation(
+                _actor: unknown,
+                _params: { accommodationId: string }
+            ) {
+                return { data: { amenities: [] } };
+            }
+            async addAmenityToAccommodation(
+                _actor: unknown,
+                _params: {
+                    accommodationId: string;
+                    amenityId: string;
+                    isOptional?: boolean;
+                    additionalCost?: unknown;
+                    additionalCostPercent?: number;
+                }
+            ) {
+                return { data: { relation: { amenityId: _params.amenityId } } };
+            }
+            async removeAmenityFromAccommodation(
+                _actor: unknown,
+                _params: { accommodationId: string; amenityId: string }
+            ) {
+                return { data: { relation: { amenityId: _params.amenityId } } };
+            }
+        }
+
+        // --- New review services for tests ---
+        class AccommodationReviewService {
+            async create(_actor: unknown, body: Record<string, unknown>) {
+                return {
+                    data: {
+                        id: 'acc_review_mock_id',
+                        accommodationId: String(
+                            (body as any).destinationId ||
+                                (body as any).accommodationId ||
+                                'acc_mock_id'
+                        ),
+                        userId: String((body as any).userId || 'user_mock'),
+                        rating: (body as any).rating ?? {
+                            cleanliness: 5,
+                            hospitality: 5,
+                            services: 5,
+                            accuracy: 5,
+                            communication: 5,
+                            location: 5
+                        },
+                        title: (body as any).title ?? 'Review Title',
+                        content: (body as any).content ?? 'Review content'
+                    }
+                };
+            }
+            async listByAccommodation(
+                _actor: unknown,
+                input: { accommodationId: string; page?: number; pageSize?: number }
+            ) {
+                const page = input.page ?? 1;
+                const pageSize = input.pageSize ?? 10;
+                return { data: { items: [], total: 0, page, pageSize } } as any;
+            }
+        }
+
+        class DestinationReviewService {
+            async create(_actor: unknown, body: Record<string, unknown>) {
+                return {
+                    data: {
+                        id: 'dest_review_mock_id',
+                        destinationId: String((body as any).destinationId || 'dest_mock_id'),
+                        userId: String((body as any).userId || 'user_mock'),
+                        rating: (body as any).rating ?? {},
+                        title: (body as any).title ?? 'Destination Review Title',
+                        content: (body as any).content ?? 'Destination review content'
+                    }
+                };
+            }
+            async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
+                return { data: { items: [], total: 0 } };
+            }
+        }
+
         class EventService {
             async create(_actor: unknown, body: Record<string, unknown>) {
                 return {
@@ -784,7 +909,16 @@ beforeAll(async () => {
             }
         }
 
-        return { PostService, AccommodationService, DestinationService, EventService, UserService };
+        return {
+            PostService,
+            AccommodationService,
+            DestinationService,
+            EventService,
+            UserService,
+            AccommodationReviewService,
+            DestinationReviewService,
+            AmenityService
+        };
     });
 });
 
