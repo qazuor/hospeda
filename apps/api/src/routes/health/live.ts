@@ -5,9 +5,9 @@
  * TODO: Fix route factory security headers and re-migrate
  */
 import { createRoute, z } from '@hono/zod-openapi';
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 
-const app = createApp();
+const app = createRouter();
 
 // Liveness check route
 const liveRoute = createRoute({

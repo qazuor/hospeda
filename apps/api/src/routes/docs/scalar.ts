@@ -4,9 +4,9 @@
  */
 import { createRoute } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 
-const app = createApp();
+const app = createRouter();
 
 // Scalar API Reference documentation route
 const scalarRoute = createRoute({

@@ -4,9 +4,9 @@
  */
 import { createRoute, z } from '@hono/zod-openapi';
 import { getDb, sql } from '@repo/db';
-import createApp from '../../utils/create-app';
+import { createRouter } from '../../utils/create-app';
 
-const app = createApp();
+const app = createRouter();
 
 // Database health check schema
 const DatabaseHealthDataSchema = z.object({
