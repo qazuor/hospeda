@@ -1,0 +1,23 @@
+---
+interface Props {
+    level?: 1 | 2 | 3 | 4 | 5 | 6;
+    class?: string;
+    children: any;
+}
+
+const { level = 2, class: className = '', children } = Astro.props;
+const Tag = `h${level}` as keyof HTMLElementTagNameMap;
+
+const baseClasses = {
+    1: 'heading-xl',
+    2: 'heading-lg',
+    3: 'heading-md',
+    4: 'heading-sm',
+    5: 'text-lg font-semibold',
+    6: 'text-base font-semibold',
+};
+---
+
+<Tag class={`${baseClasses[level]} ${className}`}>
+    {children}
+</Tag>

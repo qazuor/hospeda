@@ -1,0 +1,217 @@
+---
+import { UserMenu } from '@repo/auth-ui';
+import MainLayout from '../layout/MainLayout.astro';
+
+// Check if user is authenticated using Clerk's server-side helpers
+const { auth } = Astro.locals;
+const { userId } = auth();
+
+// If not authenticated, redirect to sign in
+if (!userId) {
+    return Astro.redirect('/auth/signin/');
+}
+
+const title = 'Mi Perfil - Hospeda';
+const description = 'Gestiona tu perfil y configuración de cuenta en Hospeda.';
+---
+
+<MainLayout title={title} description={description}>
+    <main class='min-h-screen bg-gray-50 py-8'>
+        <div class='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8'>
+            <!-- Header -->
+            <div class='bg-white shadow rounded-lg mb-8'>
+                <div class='px-6 py-4 border-b border-gray-200'>
+                    <div class='flex items-center justify-between'>
+                        <div>
+                            <h1 class='text-2xl font-bold text-gray-900'>Mi Perfil</h1>
+                            <p class='mt-1 text-sm text-gray-600'>
+                                Gestiona tu información personal y configuración de cuenta
+                            </p>
+                        </div>
+                        <div class='flex items-center space-x-4'>
+                            <UserMenu
+                                client:load
+                                apiBaseUrl={import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:3002'}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+                <!-- Profile Information -->
+                <div class='lg:col-span-2'>
+                    <div class='bg-white shadow rounded-lg'>
+                        <div class='px-6 py-4 border-b border-gray-200'>
+                            <h2 class='text-lg font-medium text-gray-900'>Información Personal</h2>
+                        </div>
+                        <div class='px-6 py-4'>
+                            <div class='space-y-6'>
+                                <div>
+                                    <label class='block text-sm font-medium text-gray-700'>ID de Usuario</label>
+                                    <div class='mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md'>
+                                        <code class='text-sm text-gray-600'>{userId}</code>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class='block text-sm font-medium text-gray-700'
+                                        >Estado de Autenticación</label
+                                    >
+                                    <div class='mt-1 flex items-center'>
+                                        <div class='flex items-center'>
+                                            <div class='w-2 h-2 bg-green-500 rounded-full mr-2'></div>
+                                            <span class='text-sm text-gray-600'>Autenticado</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class='border-t border-gray-200 pt-6'>
+                                    <p class='text-sm text-gray-500'>
+                                        Tu información personal se gestiona a través de Clerk. Usa el menú de usuario en
+                                        la esquina superior derecha para actualizar tu perfil.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Sidebar -->
+                <div class='space-y-6'>
+                    <!-- Account Actions -->
+                    <div class='bg-white shadow rounded-lg'>
+                        <div class='px-6 py-4 border-b border-gray-200'>
+                            <h3 class='text-lg font-medium text-gray-900'>Acciones de Cuenta</h3>
+                        </div>
+                        <div class='px-6 py-4'>
+                            <div class='space-y-3'>
+                                <a
+                                    href='/dashboard/'
+                                    class='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors'
+                                >
+                                    <div class='flex items-center'>
+                                        <svg
+                                            class='w-4 h-4 mr-3 text-gray-400'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                stroke-linecap='round'
+                                                stroke-linejoin='round'
+                                                stroke-width='2'
+                                                d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+                                            ></path>
+                                        </svg>
+                                        Ver Dashboard
+                                    </div>
+                                </a>
+
+                                <button
+                                    class='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors'
+                                >
+                                    <div class='flex items-center'>
+                                        <svg
+                                            class='w-4 h-4 mr-3 text-gray-400'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                stroke-linecap='round'
+                                                stroke-linejoin='round'
+                                                stroke-width='2'
+                                                d='M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z'></path>
+                                        </svg>
+                                        Mis Favoritos
+                                    </div>
+                                </button>
+
+                                <button
+                                    class='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors'
+                                >
+                                    <div class='flex items-center'>
+                                        <svg
+                                            class='w-4 h-4 mr-3 text-gray-400'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                stroke-linecap='round'
+                                                stroke-linejoin='round'
+                                                stroke-width='2'
+                                                d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
+                                            ></path>
+                                            <path
+                                                stroke-linecap='round'
+                                                stroke-linejoin='round'
+                                                stroke-width='2'
+                                                d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'></path>
+                                        </svg>
+                                        Configuración
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Help & Support -->
+                    <div class='bg-white shadow rounded-lg'>
+                        <div class='px-6 py-4 border-b border-gray-200'>
+                            <h3 class='text-lg font-medium text-gray-900'>Ayuda y Soporte</h3>
+                        </div>
+                        <div class='px-6 py-4'>
+                            <div class='space-y-3'>
+                                <a
+                                    href='/contacto'
+                                    class='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors'
+                                >
+                                    <div class='flex items-center'>
+                                        <svg
+                                            class='w-4 h-4 mr-3 text-gray-400'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                stroke-linecap='round'
+                                                stroke-linejoin='round'
+                                                stroke-width='2'
+                                                d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'
+                                            ></path>
+                                        </svg>
+                                        Contactar Soporte
+                                    </div>
+                                </a>
+
+                                <a
+                                    href='/blog'
+                                    class='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors'
+                                >
+                                    <div class='flex items-center'>
+                                        <svg
+                                            class='w-4 h-4 mr-3 text-gray-400'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                stroke-linecap='round'
+                                                stroke-linejoin='round'
+                                                stroke-width='2'
+                                                d='M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'
+                                            ></path>
+                                        </svg>
+                                        Guías y Tutoriales
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</MainLayout>

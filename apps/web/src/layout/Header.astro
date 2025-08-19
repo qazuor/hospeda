@@ -1,0 +1,92 @@
+---
+import { useTranslations } from '@/utils/i18n';
+import ThemeToggle from '@/layout/ThemeToggle.astro';
+import {
+    getHomeUrl,
+    getAccommodationsIndexUrl,
+    getDestinationsIndexUrl,
+    getEventsIndexUrl,
+    getBlogIndexUrl,
+} from '@/utils';
+import { normalizeTrailingSlash } from '@reunmedia/astro-normalize-trailing-slash';
+import { UserNav } from '@/components/auth/UserNav';
+
+interface Props {
+    lang: string;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<header class='sticky top-0 z-50 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm'>
+    <div class='container flex h-16 items-center justify-between'>
+        <a href={getHomeUrl()} class='flex items-center space-x-2' aria-label='Hosped.ar - Home'>
+            <img src='/logo.webp' alt='Hosped.ar Logo' class='h-10 w-10' loading='lazy' />
+            <div class='text-primary-700 dark:text-primary-300 font-display text-2xl font-bold hospedarLogo'>
+                Hosped.ar
+            </div>
+        </a>
+
+        <nav class='hidden md:flex items-center space-x-6' aria-label='Main Navigation'>
+            <a href={getHomeUrl()} class='nav-link'>{t('nav.home')}</a>
+            <a href={getAccommodationsIndexUrl()} class='nav-link'>{t('nav.accommodations')}</a>
+            <a href={getDestinationsIndexUrl()} class='nav-link'>{t('nav.destinations')}</a>
+            <a href={getEventsIndexUrl()} class='nav-link'>{t('nav.events')}</a>
+            <a href={getBlogIndexUrl()} class='nav-link'>{t('nav.blog')}</a>
+        </nav>
+
+        <div class='flex items-center space-x-4'>
+            <UserNav client:load />
+            <ThemeToggle />
+
+            <!-- Mobile menu toggle button -->
+            <button
+                id='mobile-menu-button'
+                class='md:hidden p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none'
+                aria-label='Toggle mobile menu'
+            >
+                <svg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6' viewBox='0 0 24 24' fill='currentColor'>
+                    <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16M4 18h16'
+                    ></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id='mobile-menu' class='md:hidden hidden bg-white dark:bg-gray-900 shadow-md'>
+        <div class='container py-3'>
+            <nav aria-label='Mobile Navigation'>
+                <ul class='space-y-3'>
+                    <li><a href={getHomeUrl()} class='mobile-link'>{t('nav.home')}</a></li>
+                    <li>
+                        <a href={getAccommodationsIndexUrl()} class='mobile-link'>{t('nav.accommodations')}</a>
+                    </li>
+                    <li>
+                        <a href={getDestinationsIndexUrl()} class='mobile-link'>{t('nav.destinations')}</a>
+                    </li>
+                    <li><a href={getEventsIndexUrl()} class='mobile-link'>{t('nav.events')}</a></li>
+                    <li><a href={getBlogIndexUrl()} class='mobile-link'>{t('nav.blog')}</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('mobile-menu-button');
+        const menu = document.getElementById('mobile-menu');
+
+        if (btn && menu) {
+            btn.addEventListener('click', () => {
+                menu.classList.toggle('hidden');
+                const icon = btn.querySelector('svg');
+                if (icon) {
+                    icon.innerHTML = menu.classList.contains('hidden')
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />'
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />';
+                }
+            });
+        }
+    </script>
+</header>

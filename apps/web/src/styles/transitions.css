@@ -1,0 +1,126 @@
+/* Custom Page Transitions - Works with prerendered pages */
+
+/* Loading Overlay */
+.page-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.page-loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.dark .page-loading-overlay {
+    background: rgba(17, 24, 39, 0.95);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top: 3px solid #06b6d4;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.dark .loading-spinner {
+    border-color: #374151;
+    border-top-color: #06b6d4;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Progress Bar */
+.page-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #06b6d4, #10b981);
+    z-index: 10000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    width: 100%;
+}
+
+.page-progress-bar.loading {
+    animation: progress-loading 2s ease-in-out;
+}
+
+@keyframes progress-loading {
+    0% {
+        transform: translateX(-100%);
+    }
+    50% {
+        transform: translateX(-20%);
+    }
+    100% {
+        transform: translateX(0%);
+    }
+}
+
+/* Page Fade Transitions */
+.page-content {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.page-content.fade-out {
+    opacity: 0;
+}
+
+/* Prevent flash of unstyled content */
+html {
+    background-color: white;
+}
+
+html.dark {
+    background-color: #111827;
+}
+
+/* Smooth transitions for theme changes */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Link hover effects for better UX */
+a[href]:not([href^="mailto:"]):not([href^="tel:"]):not([href^="http"]):hover {
+    transition: opacity 0.2s ease;
+}
+
+/* Prefetch indicator */
+a[data-prefetched] {
+    position: relative;
+}
+
+a[data-prefetched]::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #10b981;
+    opacity: 0.3;
+}

@@ -1,11 +1,52 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+export const prerender = true;
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils';
+
+import HomeSearch from '@/components/hero/HomeSearch.astro';
+import CallToActions from '@/components/sections/CallToActions.astro';
+import FeaturedAccommodations from '@/components/sections/FeaturedAccommodations.astro';
+import FeaturedDestinations from '@/components/sections/FeaturedDestinations.astro';
+import LatestPosts from '@/components/sections/LatestPosts.astro';
+import Testimonials from '@/components/sections/Testimonials.astro';
+import UpcomingEvents from '@/components/sections/UpcomingEvents.astro';
+import { getHomeData } from '@/data/db';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const data = await getHomeData();
 ---
 
-<Layout>
-	<Welcome />
+<Layout title={t('home.title')} description={t('home.description')}>
+    <HomeSearch />
+
+    <FeaturedDestinations
+        title={t('home.featuredDestinations.title')}
+        subtitle={t('home.featuredDestinations.description')}
+        destinations={data.destinations}
+    />
+
+    <FeaturedAccommodations
+        title={t('home.featuredAccommodations.title')}
+        subtitle={t('home.featuredAccommodations.description')}
+        accommodations={data.accommodations}
+    />
+
+    <UpcomingEvents
+        title={t('home.upcomingEvents.title')}
+        subtitle={t('home.upcomingEvents.description')}
+        events={data.events}
+    />
+
+    <LatestPosts title={t('home.latestPosts.title')} subtitle={t('home.latestPosts.description')} posts={data.posts} />
+
+    <Testimonials
+        title={t('home.testimonials.title')}
+        subtitle={t('home.testimonials.description')}
+        testimonials={data.testimonials}
+    />
+
+    <CallToActions />
 </Layout>

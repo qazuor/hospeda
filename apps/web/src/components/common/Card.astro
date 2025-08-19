@@ -1,0 +1,22 @@
+---
+interface Props {
+    hoverable?: boolean;
+    padding?: 'none' | 'sm' | 'md' | 'lg';
+    as?: keyof HTMLElementTagNameMap;
+    class?: string;
+}
+
+const { hoverable = false, padding = 'md', as = 'div', class: className } = Astro.props as Props;
+
+const Tag = as;
+const paddingClass = {
+    none: '',
+    sm: 'p-2',
+    md: 'p-4',
+    lg: 'p-6',
+}[padding];
+---
+
+<Tag class:list={['card', paddingClass, hoverable && 'hover:shadow-lg transition-shadow', className]}>
+    <slot />
+</Tag>

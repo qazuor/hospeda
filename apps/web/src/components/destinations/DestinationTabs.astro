@@ -1,0 +1,28 @@
+---
+const { activeTab = 'accommodations', baseUrl = '/destinos/slug' } = Astro.props;
+
+const tabs = [
+    { key: 'accommodations', label: 'Alojamientos' },
+    { key: 'events', label: 'Eventos' },
+    { key: 'reviews', label: 'Reseñas' },
+    { key: 'gallery', label: 'Galería' },
+];
+---
+
+<div class='flex space-x-4 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto'>
+    {
+        tabs.map((tab) => (
+            <a
+                href={`${baseUrl}/${tab.key}`}
+                class={[
+                    'px-4 py-2 whitespace-nowrap font-medium',
+                    tab.key === activeTab
+                        ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-400'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200',
+                ].join(' ')}
+            >
+                {tab.label}
+            </a>
+        ))
+    }
+</div>

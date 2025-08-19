@@ -1,0 +1,63 @@
+---
+import Icon from '@/components/common/Icon.astro';
+import RatingStars from '@/components/shared/RatingStars.astro';
+import { formatDate } from '@/utils';
+
+const { event } = Astro.props;
+const formattedDate = event.date ? formatDate(new Date(event.date)) : '';
+---
+
+<article class="prose lg:prose-lg dark:prose-invert max-w-4xl mx-auto px-4 sm:px-6 lg:px-0">
+  <header class="mb-8">
+    <h1 class="heading-xl mb-2">{event.name}</h1>
+
+    <div class="text-gray-600 dark:text-gray-400 text-sm flex items-center gap-4 flex-wrap">
+      {event.date && (
+        <span class="flex items-center gap-1">
+          <Icon name="calendar" class="w-4 h-4" />
+          {formattedDate}
+        </span>
+      )}
+
+      {event.destination?.name && (
+        <span class="flex items-center gap-1">
+          <Icon name="map-pin" class="w-4 h-4" />
+          {event.destination.name}
+        </span>
+      )}
+
+      {event.rating && (
+        <span class="flex items-center gap-1">
+          <Icon name="star" class="w-4 h-4 text-yellow-500" />
+          <RatingStars rating={event.rating} />
+        </span>
+      )}
+    </div>
+  </header>
+
+  {event.featuredImage?.url && (
+    <figure class="mb-8">
+      <img
+        src={event.featuredImage.url}
+        alt={event.name}
+        class="w-full h-auto rounded-md shadow-md"
+      />
+    </figure>
+  )}
+
+  {event.description && (
+    <section>
+      <h2 class="heading-md mb-4">Descripción</h2>
+      <div>{event.description}</div>
+    </section>
+  )}
+
+  {event.location?.coordinates && (
+    <section class="mt-8">
+      <h2 class="heading-md mb-4">Ubicación</h2>
+      <div id="map" class="w-full h-64 bg-gray-200 rounded-md">
+        <!-- Aquí iría una isla React para el mapa si se requiere -->
+      </div>
+    </section>
+  )}
+</article>

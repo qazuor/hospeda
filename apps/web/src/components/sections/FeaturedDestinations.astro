@@ -1,0 +1,40 @@
+---
+import DestinationCard from '@/components/destinations/DestinationCard.astro';
+import { getDestinationsIndexUrl, getLangFromUrl, useTranslations } from '@/utils';
+import type { DestinationType } from '@repo/types';
+
+interface Props {
+    destinations: DestinationType[];
+    title: string;
+    subtitle?: string;
+    showSeeAll?: boolean;
+}
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { destinations, title, subtitle, showSeeAll = true } = Astro.props;
+---
+
+<section class='py-12'>
+    <div class='container'>
+        <div class='text-center mb-12'>
+            <h2 class='text-3xl font-bold mb-4'>{title}</h2>
+            <p class='text-gray-600 dark:text-gray-400 max-w-2xl mx-auto'>
+                {subtitle}
+            </p>
+        </div>
+        <div class='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6'>
+            {destinations.map((destination) => <DestinationCard key={destination.slug} destination={destination} />)}
+        </div>
+        {
+            showSeeAll && (
+                <div class='text-center mt-10'>
+                    <a href={getDestinationsIndexUrl()} class='btn-outline dark:text-white text-gray-900'>
+                        {t('destination.seeAll')}
+                    </a>
+                </div>
+            )
+        }
+    </div>
+</section>

@@ -1,0 +1,103 @@
+---
+export const prerender = true;
+
+import AccommodationContactForm from '@/components/accommodations/AccommodationContactForm.client';
+import AccommodationFaq from '@/components/accommodations/AccommodationFaq.astro';
+import AccommodationGallery from '@/components/accommodations/AccommodationGallery.astro';
+import AccommodationRating from '@/components/accommodations/AccommodationRating.astro';
+import { getAccommodationBySlug, getAllAccommodations } from '@/data/db';
+import Layout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils/i18n';
+import type { AccommodationType } from '@repo/types';
+import type { GetStaticPaths } from 'astro';
+
+/**
+ * Generate static paths for all accommodation pages
+ * This enables prerendering of all accommodation detail pages at build time
+ */
+export const getStaticPaths: GetStaticPaths = async () => {
+    try {
+        // Get all accommodations to generate static paths
+        const accommodations = await getAllAccommodations();
+
+        return accommodations.map((accommodation) => ({
+            params: {
+                slug: accommodation.slug,
+            },
+            props: {
+                accommodation,
+            },
+        }));
+    } catch (error) {
+        console.error('Error generating static paths for accommodations:', error);
+        return [];
+    }
+};
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+// Get accommodation from props (passed by getStaticPaths) or fallback to API call
+const { accommodation: propsAccommodation } = Astro.props as { accommodation?: AccommodationType };
+const { slug } = Astro.params;
+
+let accommodation: AccommodationType | null = propsAccommodation || null;
+
+// Fallback for development or if props are not available
+if (!accommodation && slug && typeof slug === 'string') {
+    accommodation = await getAccommodationBySlug({ slug });
+}
+
+if (!accommodation) {
+    return Astro.redirect('/404');
+}
+
+const faqs = accommodation.faqs ?? [];
+---
+
+<Layout>
+    <section class='bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 py-8'>
+        <div class='container mx-auto px-4'>
+            <div class='flex flex-col md:flex-row justify-between items-start gap-4 mb-6'>
+                <div>
+                    <h1 class='text-3xl md:text-4xl font-bold mb-2'>{accommodation.name}</h1>
+                    <p class='text-gray-600 dark:text-gray-400'>
+                        {accommodation.location?.city}, {accommodation.location?.state}
+                    </p>
+                </div>
+                <!-- <FavoriteButton entityId={accommodation.id} entityType='ACCOMMODATION' client:load /> -->
+            </div>
+
+            {accommodation.media?.gallery && <AccommodationGallery images={accommodation.media?.gallery} />}
+
+            <div class='mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>
+                <div class='lg:col-span-2'>
+                    <AccommodationRating
+                        rating={accommodation.averageRating ?? 0}
+                        reviewCount={accommodation.reviews?.length ?? accommodation.reviewsCount ?? 0}
+                    />
+                    <div class='mt-8'>
+                        <h2 class='text-xl font-bold mb-2'>{t('accommodations.description')}</h2>
+                        <p class='text-gray-700 dark:text-gray-300 whitespace-pre-line'>{accommodation.description}</p>
+                    </div>
+
+                    {
+                        faqs.length > 0 && (
+                            <div class='mt-8'>
+                                <h2 class='text-xl font-bold mb-4'>{t('accommodations.faqs')}</h2>
+                                <AccommodationFaq faqs={faqs} />
+                            </div>
+                        )
+                    }
+                </div>
+
+                <div class='lg:col-span-1'>
+                    <div class='bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md p-6 sticky top-24'>
+                        <h3 class='text-lg font-bold mb-4'>{t('accommodations.contactTitle')}</h3>
+                        <AccommodationContactForm accommodationId={accommodation.id} client:load />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</Layout>

@@ -1,0 +1,111 @@
+---
+import type { ImageType } from '@repo/types';
+
+interface Props {
+    images: ImageType[];
+    class?: string;
+}
+
+const { images, class: className = '' } = Astro.props;
+---
+
+<div class={`relative overflow-hidden rounded-lg ${className}`}>
+    {images.length > 0 && (
+        <div class="flex transition-transform duration-300 ease-in-out" id="slider-container">
+            {images.map((image, index) => (
+                <div class="w-full flex-shrink-0" key={index}>
+                    <img
+                        src={image.url}
+                        alt={image.alt || `Image ${index + 1}`}
+                        class="h-64 w-full object-cover md:h-80 lg:h-96"
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                    />
+                </div>
+            ))}
+        </div>
+    )}
+    
+    {images.length > 1 && (
+        <>
+            <!-- Navigation buttons -->
+            <button
+                class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
+                onclick="previousSlide()"
+                aria-label="Previous image"
+            >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            
+            <button
+                class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
+                onclick="nextSlide()"
+                aria-label="Next image"
+            >
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+            
+            <!-- Dots indicator -->
+            <div class="absolute bottom-4 left-1/2 flex -translate-x-1/2 space-x-2">
+                {images.map((_, index) => (
+                    <button
+                        class="h-2 w-2 rounded-full bg-white/50 transition-colors hover:bg-white/80"
+                        onclick={`goToSlide(${index})`}
+                        aria-label={`Go to image ${index + 1}`}
+                        key={index}
+                    />
+                ))}
+            </div>
+        </>
+    )}
+</div>
+
+<script>
+    let currentSlide = 0;
+    const totalSlides = document.querySelectorAll('#slider-container > div').length;
+    const container = document.getElementById('slider-container');
+    
+    function updateSlider() {
+        if (container) {
+            container.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            // Update dots
+            const dots = document.querySelectorAll('[onclick*="goToSlide"]');
+            dots.forEach((dot, index) => {
+                if (index === currentSlide) {
+                    dot.classList.remove('bg-white/50');
+                    dot.classList.add('bg-white');
+                } else {
+                    dot.classList.remove('bg-white');
+                    dot.classList.add('bg-white/50');
+                }
+            });
+        }
+    }
+    
+    function nextSlide() {
+        currentSlide = (currentSlide + 1) % totalSlides;
+        updateSlider();
+    }
+    
+    function previousSlide() {
+        currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+        updateSlider();
+    }
+    
+    function goToSlide(index) {
+        currentSlide = index;
+        updateSlider();
+    }
+    
+    // Make functions global
+    window.nextSlide = nextSlide;
+    window.previousSlide = previousSlide;
+    window.goToSlide = goToSlide;
+    
+    // Initialize
+    updateSlider();
+</script>

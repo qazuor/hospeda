@@ -1,0 +1,64 @@
+---
+import AccommodationCard from '@/components/accommodations/AccommodationCard.astro';
+import { getAccommodationsIndexUrl, getLangFromUrl, useTranslations } from '@/utils';
+import type { AccommodationType } from '@repo/types';
+
+interface Props {
+    accommodations: AccommodationType[];
+    title: string;
+    subtitle?: string;
+    showSeeAll?: boolean;
+}
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const { accommodations, title, subtitle, showSeeAll = true } = Astro.props;
+---
+
+<section class='py-12 bg-slate-100'>
+    <div class='container'>
+        <div class='text-center mb-6'>
+            <h2 class='text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-3'>
+                {title}
+            </h2>
+            <p class='text-gray-600 dark:text-gray-300 text-sm sm:text-base max-w-2xl mx-auto px-4'>
+                {subtitle}
+            </p>
+            {
+                showSeeAll && (
+                    <a
+                        href={getAccommodationsIndexUrl()}
+                        class='text-primary-500 hover:text-primary-600 font-medium hidden md:block'
+                    >
+                        {t('accommodations.seeAll')}
+                    </a>
+                )
+            }
+        </div>
+
+        <div class='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
+            {
+                accommodations.map((accommodation: AccommodationType, index: number) => (
+                    <div
+                        class={`${
+                            index === accommodations.length - 1 && accommodations.length % 2 !== 0
+                                ? 'sm:col-span-2 sm:justify-self-center sm:max-w-sm lg:col-span-1 lg:justify-self-stretch lg:max-w-none'
+                                : ''
+                        }`}
+                    >
+                        <AccommodationCard accommodation={accommodation} />
+                    </div>
+                ))
+            }
+        </div>
+        <div class='text-center mt-10 md:hidden'>
+            <a
+                href={getAccommodationsIndexUrl()}
+                class='bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-6 py-2.5 sm:px-8 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto'
+            >
+                Ver todos los alojamientos
+            </a>
+        </div>
+    </div>
+</section>

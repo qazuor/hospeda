@@ -1,0 +1,20 @@
+---
+// IconStar.astro
+export interface Props {
+    size?: number | string;
+    className?: string;
+}
+
+const { size = 24, className = '' } = Astro.props;
+---
+
+<svg
+    xmlns='http://www.w3.org/2000/svg'
+    fill='currentColor'
+    viewBox='0 0 24 24'
+    width={size}
+    height={size}
+    class={`text-yellow-400 ${className}`}
+>
+    <path d='M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27V4.24L14.81 8.63 22 9.24z'></path>
+</svg>

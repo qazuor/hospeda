@@ -1,0 +1,150 @@
+---
+import Badge from '@/components/common/Badge.astro';
+import Card from '@/components/common/Card.astro';
+import CardContent from '@/components/common/CardContent.astro';
+import CarIcon from '@/components/icons/CarIcon.astro';
+import CoffeeIcon from '@/components/icons/CoffeeIcon.astro';
+import MapPinIcon from '@/components/icons/MapPinIcon.astro';
+import StarIcon from '@/components/icons/StarIcon.astro';
+import WavesIcon from '@/components/icons/WavesIcon.astro';
+import WifiIcon from '@/components/icons/WifiIcon.astro';
+import { FavoriteButton } from '@/components/shared/FavoriteButton.client';
+import { TranslationKeys } from '@/i18n/translation-keys';
+import { formatPrice, getAccommodationUrl, getLangFromUrl, useTranslations } from '@/utils';
+import { AccommodationType } from '@repo/types';
+
+interface Props {
+    accommodation: AccommodationType;
+}
+
+const { accommodation } = Astro.props;
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const url = getAccommodationUrl(accommodation);
+
+// Stars are rendered inline in the template to avoid JSX inside frontmatter
+
+const featureIcons: Record<string, any> = {
+    wifi: WifiIcon,
+    estacionamiento: CarIcon,
+    desayuno: CoffeeIcon,
+    piscina: WavesIcon,
+};
+---
+
+<Card
+    class='relative overflow-hidden hover:shadow-lg dark:hover:shadow-xl dark:hover:shadow-gray-900/20 transition-all duration-300 group cursor-pointer h-full border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/10 bg-white dark:bg-gray-800'
+>
+    <a
+        href={url}
+        class='block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 rounded-md'
+        aria-label={`View accommodation: ${accommodation.name}`}
+    >
+        <div class='relative'>
+            <img
+                src={accommodation.media?.featuredImage?.url || '/placeholder.svg'}
+                alt={accommodation.name}
+                class='w-full h-32 sm:h-40 lg:h-44 object-cover group-hover:scale-105 group-hover:brightness-110 dark:group-hover:brightness-125 transition-all duration-500 ease-out'
+            />
+            <div class='absolute top-2 left-2'>
+                <Badge
+                    color='secondary'
+                    class='bg-white/90 dark:bg-gray-900/90 text-gray-800 dark:text-gray-200 text-xs px-2 py-0.5 group-hover:bg-white dark:group-hover:bg-gray-900 group-hover:shadow-md transition-all duration-300'
+                >
+                    {t(`accommodations.types.${accommodation.type.toLowerCase()}` as TranslationKeys)}
+                </Badge>
+            </div>
+            {
+                accommodation.price?.price && (
+                    <div class='absolute top-2 right-2'>
+                        <Badge class='bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-xs px-2 py-0.5 group-hover:bg-blue-700 dark:group-hover:bg-blue-600 group-hover:shadow-lg transition-all duration-300'>
+                            {formatPrice({
+                                price: accommodation.price?.price ?? 0,
+                                currency: accommodation.price?.currency,
+                            })}
+                        </Badge>
+                    </div>
+                )
+            }
+            {/* Nombre sobre la imagen */}
+            <div
+                class='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/100 to-transparent group-hover:from-black/80 p-3 pt-20 transition-all duration-300'
+            >
+                <h3 class='font-semibold text-sm sm:text-base text-white line-clamp-1 leading-tight'>
+                    {accommodation.name}
+                </h3>
+                <div class='flex items-center text-white/90 text-xs mt-0.5'>
+                    <MapPinIcon class='w-3 h-3 mr-1 flex-shrink-0' />
+                    <span class='truncate'>{accommodation.destination?.name}</span>
+                </div>
+            </div>
+        </div>
+
+        <CardContent class='p-3 group-hover:bg-gray-50/50 dark:group-hover:bg-gray-700/50 transition-all duration-300'>
+            <div class='space-y-2'>
+                {/* Descripción */}
+                <p class='text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed'>
+                    {accommodation.summary}
+                </p>
+
+                {/* Rating y precio en mobile */}
+                <div class='flex items-center justify-between'>
+                    <div class='flex items-center gap-1'>
+                        {
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <StarIcon
+                                    class={`w-3 h-3 ${i < (accommodation.averageRating ?? 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
+                                />
+                            ))
+                        }
+                        <span class='text-xs text-gray-600 dark:text-gray-400 ml-1'>
+                            ({accommodation.reviewsCount ?? accommodation.reviews?.length ?? 0})
+                        </span>
+                    </div>
+                    {
+                        !accommodation.price?.price && (
+                            <span class='text-xs text-blue-600 dark:text-blue-400 font-medium'>Consultar precio</span>
+                        )
+                    }
+                </div>
+
+                {/* Features compactas */}
+                <div class='flex flex-wrap gap-1'>
+                    {
+                        accommodation.features?.slice(0, 3).map((feature) => {
+                            const key =
+                                feature.hostReWriteName?.toLowerCase() ?? feature.feature?.name?.toLowerCase() ?? '';
+                            const IconComponent = key ? featureIcons[key] : undefined;
+                            const label = feature;
+                            return (
+                                <div class='flex items-center gap-1 text-xs text-gray-900 dark:text-gray-400 bg-blue-100 dark:bg-gray-700 px-2 py-1 rounded group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-all duration-200'>
+                                    {IconComponent && <IconComponent class='w-2.5 h-2.5' />}
+                                    <span class='capitalize text-xs'>{label}</span>
+                                </div>
+                            );
+                        })
+                    }
+                    {
+                        accommodation.features?.length && accommodation.features?.length > 3 && (
+                            <div class='text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded'>
+                                +{accommodation.features?.length - 3}
+                            </div>
+                        )
+                    }
+                </div>
+            </div>
+        </CardContent>
+    </a>
+
+    <div class='absolute right-2 top-2 z-20'>
+        <FavoriteButton
+            client:only
+            entityId={accommodation.id}
+            entityType='ACCOMMODATION'
+            initialBookmarked={false}
+            size={20}
+        />
+    </div>
+</Card>

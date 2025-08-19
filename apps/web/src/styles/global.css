@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply antialiased;
+    }
+    p {
+        @apply leading-relaxed;
+    }
+}
+
+@layer components {
+    .container {
+        @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+    }
+    .card {
+        @apply rounded-md bg-white p-4 shadow-md dark:bg-slate-900;
+    }
+    .card-hover {
+        @apply card transition-transform hover:scale-[1.01] hover:shadow-lg;
+    }
+    .text-muted {
+        @apply text-sm text-slate-500;
+    }
+}

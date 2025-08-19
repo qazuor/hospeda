@@ -1,0 +1,17 @@
+---
+import Slider from '@/components/common/Slider.astro';
+import type { ImageType } from '@repo/types';
+
+// import 'keen-slider/keen-slider.min.css';
+// import { useKeenSlider } from 'keen-slider/react';
+
+interface Props {
+    images: ImageType[];
+}
+
+const { images } = Astro.props;
+---
+
+<div class='relative'>
+    <Slider images={images} />
+</div>

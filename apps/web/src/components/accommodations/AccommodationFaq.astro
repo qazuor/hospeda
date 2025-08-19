@@ -1,0 +1,30 @@
+---
+interface FaqItem {
+    question: string;
+    answer: string;
+}
+
+interface Props {
+    faqs: FaqItem[];
+}
+
+const { faqs } = Astro.props;
+---
+
+{
+    faqs.length > 0 && (
+        <section class='my-8'>
+            <h2 class='heading-md mb-4'>Preguntas frecuentes</h2>
+            <div class='space-y-4'>
+                {faqs.map((faq, i) => (
+                    <details class='border border-gray-200 dark:border-gray-700 rounded-lg p-4 group'>
+                        <summary class='cursor-pointer font-medium text-gray-800 dark:text-gray-100 group-open:text-primary-600'>
+                            {faq.question}
+                        </summary>
+                        <div class='mt-2 text-sm text-gray-600 dark:text-gray-300'>{faq.answer}</div>
+                    </details>
+                ))}
+            </div>
+        </section>
+    )
+}
