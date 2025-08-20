@@ -1,7 +1,4 @@
 ---
-import Badge from '@/components/common/Badge.astro';
-import Card from '@/components/common/Card.astro';
-import CardContent from '@/components/common/CardContent.astro';
 import MapPinIcon from '@/components/icons/MapPinIcon.astro';
 import StarIcon from '@/components/icons/StarIcon.astro';
 import { FavoriteButton } from '@/components/shared/FavoriteButton.client';
@@ -20,79 +17,133 @@ const t = useTranslations(lang);
 const url = getDestinationUrl(destination);
 ---
 
-<Card
-    class='relative overflow-hidden hover:shadow-lg dark:hover:shadow-xl dark:hover:shadow-gray-900/20 transition-all duration-300 group cursor-pointer h-full border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/10 bg-white dark:bg-gray-800'
+<div
+    class='group relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 cursor-pointer border border-gray-100 dark:border-gray-700'
 >
     <a
         href={url}
-        class='block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 rounded-md'
-        aria-label={`View destination: ${destination.name}`}
+        class='block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-3xl'
+        aria-label={`Explorar destino: ${destination.name}`}
     >
-        <div class='relative'>
+        <!-- Image Section with Overlay -->
+        <div class='relative h-64 overflow-hidden'>
             <img
                 src={destination.media?.featuredImage?.url || '/placeholder.svg'}
                 alt={destination.name}
-                class='w-full h-32 sm:h-40 lg:h-44 object-cover group-hover:scale-105 group-hover:brightness-110 dark:group-hover:brightness-125 transition-all duration-500 ease-out'
+                class='w-full h-full object-cover group-hover:scale-125 transition-transform duration-700 ease-out'
             />
-            <div class='absolute top-2 left-2'>
-                <Badge
-                    color='secondary'
-                    class='bg-white/90 dark:bg-gray-900/90 text-gray-800 dark:text-gray-200 text-xs px-2 py-0.5 group-hover:bg-white dark:group-hover:bg-gray-900 group-hover:shadow-md transition-all duration-300'
-                >
-                    {destination.country?.name}
-                </Badge>
+
+            <!-- Gradient Overlay -->
+            <div
+                class='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:from-black/60 transition-all duration-500'
+            >
             </div>
 
-            {/* Nombre sobre la imagen */}
-            <div
-                class='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/100 to-transparent group-hover:from-black/80 p-3 pt-20 transition-all duration-300'
-            >
-                <h3 class='font-semibold text-sm sm:text-base text-white line-clamp-1 leading-tight'>
+            <!-- Favorite Button -->
+            <div class='absolute top-4 right-4 z-10'>
+                <FavoriteButton
+                    client:only
+                    entityId={destination.id}
+                    entityType='DESTINATION'
+                    initialBookmarked={false}
+                    size={22}
+                />
+            </div>
+
+            <!-- Country Badge -->
+            <div class='absolute top-4 left-4'>
+                <div
+                    class='bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm text-gray-900 dark:text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg border border-white/20'
+                >
+                    {destination.country?.name || 'Argentina'}
+                </div>
+            </div>
+
+            <!-- Accommodations Count Badge -->
+            <div class='absolute bottom-4 right-4'>
+                <div
+                    class='bg-primary-500/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-lg'
+                >
+                    {destination.accommodationsCount ?? 0} alojamientos
+                </div>
+            </div>
+
+            <!-- Title and Location Overlay -->
+            <div class='absolute bottom-0 left-0 right-0 p-6'>
+                <h3
+                    class='text-white font-bold text-xl mb-2 line-clamp-1 group-hover:text-primary-200 transition-colors duration-300'
+                >
                     {destination.name}
                 </h3>
-                <div class='flex items-center text-white/90 text-xs mt-0.5'>
-                    <MapPinIcon class='w-3 h-3 mr-1 flex-shrink-0' />
-                    <span class='truncate'>{destination.region?.name}</span>
+                <div class='flex items-center text-white/90 text-sm'>
+                    <MapPinIcon class='w-4 h-4 mr-2 flex-shrink-0' />
+                    <span class='truncate'>{destination.region?.name || destination.country?.name}</span>
+                </div>
+
+                <!-- Rating in overlay -->
+                <div class='flex items-center mt-3'>
+                    <div class='flex items-center'>
+                        {
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <StarIcon
+                                    class={`w-4 h-4 ${i < (destination.averageRating ?? 0) ? 'fill-yellow-400 text-yellow-400' : 'text-white/40'}`}
+                                />
+                            ))
+                        }
+                    </div>
+                    <span class='text-white/90 text-sm ml-2 font-medium'>
+                        {destination.averageRating ? destination.averageRating.toFixed(1) : '0.0'}
+                    </span>
+                    <span class='text-white/70 text-xs ml-1'>
+                        ({destination.reviewsCount ?? destination.reviews?.length ?? 0})
+                    </span>
                 </div>
             </div>
         </div>
 
-        <CardContent class='p-3 group-hover:bg-gray-50/50 dark:group-hover:bg-gray-700/50 transition-all duration-300'>
-            <div class='space-y-2'>
-                {/* Descripción */}
-                <p class='text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed'>
-                    {destination.summary}
-                </p>
+        <!-- Content Section (Hidden by default, shown on hover) -->
+        <div
+            class='absolute inset-x-0 bottom-0 bg-white dark:bg-gray-800 p-6 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out rounded-t-3xl shadow-2xl'
+        >
+            <!-- Description -->
+            <p class='text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 line-clamp-3'>
+                {
+                    destination.summary ||
+                        `Descubre ${destination.name}, un destino increíble lleno de experiencias únicas y paisajes espectaculares que te cautivarán.`
+                }
+            </p>
 
-                {/* Rating */}
-                <div class='flex items-center gap-1'>
-                    {
-                        Array.from({ length: 5 }).map((_, i) => (
-                            <StarIcon
-                                class={`w-3 h-3 ${i < (destination.averageRating ?? 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
-                            />
-                        ))
-                    }
-                    <span class='text-xs text-gray-600 dark:text-gray-400 ml-1'>
-                        ({destination.reviewsCount ?? destination.reviews?.length ?? 0})
-                    </span>
+            <!-- Stats Grid -->
+            <div class='grid grid-cols-2 gap-4 mb-4'>
+                <div class='text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-xl'>
+                    <div class='text-lg font-bold text-primary-600 dark:text-primary-400'>
+                        {destination.accommodationsCount ?? 0}
+                    </div>
+                    <div class='text-xs text-gray-600 dark:text-gray-400'>Alojamientos</div>
                 </div>
-
-                {/* Accommodations count */}
-                <div class='text-xs text-gray-500 dark:text-gray-400'>
-                    {destination.accommodationsCount ?? 0} accommodations available
+                <div class='text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-xl'>
+                    <div class='text-lg font-bold text-secondary-600 dark:text-secondary-400'>
+                        {destination.reviewsCount ?? 0}
+                    </div>
+                    <div class='text-xs text-gray-600 dark:text-gray-400'>Reseñas</div>
                 </div>
             </div>
-        </CardContent>
-    </a>
 
-    <div class='absolute right-2 top-2 z-20'>
-        <FavoriteButton
-            client:only
-            entityId={destination.id}
-            entityType='DESTINATION'
-            initialBookmarked={false}
-            size={20}
-        />
-    </div>
-</Card>
+            <!-- Explore Button -->
+            <div class='flex items-center justify-center'>
+                <div
+                    class='bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center'
+                >
+                    Explorar destino
+                    <svg class='w-4 h-4 ml-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path
+                            stroke-linecap='round'
+                            stroke-linejoin='round'
+                            stroke-width='2'
+                            d='M17 8l4 4m0 0l-4 4m4-4H3'></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </a>
+</div>
