@@ -16,25 +16,65 @@ const t = useTranslations(lang);
 const { destinations, title, subtitle, showSeeAll = true } = Astro.props;
 ---
 
-<section class='py-12'>
+<section
+    class='py-16 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900'
+>
     <div class='container'>
-        <div class='text-center mb-12'>
-            <h2 class='text-3xl font-bold mb-4'>{title}</h2>
-            <p class='text-gray-600 dark:text-gray-400 max-w-2xl mx-auto'>
+        <div class='text-center mb-16'>
+            <h2 class='text-4xl font-bold mb-6 text-gray-900 dark:text-white'>
+                {title}
+            </h2>
+            <p class='text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed'>
                 {subtitle}
             </p>
-        </div>
-        <div class='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6'>
-            {destinations.map((destination) => <DestinationCard key={destination.slug} destination={destination} />)}
-        </div>
-        {
-            showSeeAll && (
-                <div class='text-center mt-10'>
-                    <a href={getDestinationsIndexUrl()} class='btn-outline dark:text-white text-gray-900'>
+            {
+                showSeeAll && (
+                    <a
+                        href={getDestinationsIndexUrl()}
+                        class='text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-semibold text-sm inline-flex items-center mt-4 transition-colors'
+                    >
                         {t('destination.seeAll')}
+                        <svg class='w-4 h-4 ml-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5l7 7-7 7' />
+                        </svg>
                     </a>
-                </div>
-            )
-        }
+                )
+            }
+        </div>
+
+        <!-- Destinations Grid -->
+        <div class='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16'>
+            {
+                destinations.map((destination) => (
+                    <div class='transform transition-all duration-300'>
+                        <DestinationCard destination={destination} />
+                    </div>
+                ))
+            }
+        </div>
+
+        <!-- Call to Action -->
+        <div class='text-center'>
+            <div class='bg-gradient-to-r from-primary-500 to-secondary-500 rounded-3xl p-8 text-white shadow-2xl'>
+                <h3 class='text-2xl font-bold mb-4'>¿No encuentras tu destino ideal?</h3>
+                <p class='text-primary-100 mb-6 max-w-2xl mx-auto'>
+                    Explora nuestra colección completa de destinos únicos en Argentina y encuentra el lugar perfecto
+                    para tu próxima aventura.
+                </p>
+                <a
+                    href={getDestinationsIndexUrl()}
+                    class='inline-flex items-center bg-white text-primary-600 px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl'
+                >
+                    Explorar todos los destinos
+                    <svg class='w-5 h-5 ml-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                        <path
+                            stroke-linecap='round'
+                            stroke-linejoin='round'
+                            stroke-width='2'
+                            d='M17 8l4 4m0 0l-4 4m4-4H3'></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
     </div>
 </section>

@@ -4,17 +4,17 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 ---
 
-<section class='relative bg-gradient-to-br from-primary-500 to-secondary-500 text-white'>
-    <div class='absolute inset-0 bg-black/30'></div>
+<section class='relative bg-gradient-to-br from-primary-600 via-primary-500 to-secondary-600 text-white'>
+    <div class='absolute inset-0 bg-black/20'></div>
 
     <div class='container mx-auto px-4 py-16 md:py-24 relative z-10'>
-        <div class='max-w-3xl mx-auto text-center'>
+        <div class='mx-auto text-center'>
             <h1 class='text-4xl md:text-5xl lg:text-6xl font-bold mb-6'>{t('home.hero.title')}</h1>
             <p class='text-xl mb-8'>
                 {t('home.hero.subtitle')}
             </p>
 
-            <div class='bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 md:p-6 max-w-2xl mx-auto'>
+            <div class='bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 md:p-6 max-w-4xl mx-auto'>
                 <form class='grid grid-cols-1 gap-4 md:grid-cols-4'>
                     <div class='md:col-span-2'>
                         <label for='location' class='block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1'
@@ -53,7 +53,7 @@ const t = useTranslations(lang);
                     <div class='md:col-span-4'>
                         <button
                             type='submit'
-                            class='w-full bg-accent-500 hover:bg-accent-600 text-white py-3 px-6 rounded-lg font-medium transition duration-300 transform hover:scale-105'
+                            class='w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-lg font-semibold transition duration-300 transform hover:scale-105 shadow-md hover:shadow-lg'
                         >
                             <span class='flex items-center justify-center'>
                                 <svg
