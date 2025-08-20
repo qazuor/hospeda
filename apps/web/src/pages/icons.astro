@@ -1,0 +1,358 @@
+---
+export const prerender = true;
+
+import { IconSearchAndFilter } from '@/components/IconSearchAndFilter';
+import MainLayout from '@/layout/MainLayout.astro';
+import {
+    FavoriteIcon,
+    HomeIcon,
+    // Social Icons
+    InstagramIcon,
+    MapIcon,
+    PhoneIcon,
+    StarIcon,
+    WhatsappIcon,
+    WifiIcon,
+} from '@repo/icons';
+
+const title = 'Iconos - Hospeda';
+const description = 'Catálogo completo de iconos disponibles en el sistema Hospeda';
+
+// Organizar iconos por categorías (solo nombres para React)
+const iconCategories = [
+    {
+        title: 'Entidades',
+        description: 'Iconos para entidades del negocio',
+        icons: [
+            { name: 'AccommodationIcon' },
+            { name: 'ContentIcon' },
+            { name: 'DestinationIcon' },
+            { name: 'EventIcon' },
+            { name: 'EventLocationIcon' },
+            { name: 'EventOrganizerIcon' },
+            { name: 'PermissionIcon' },
+            { name: 'PostIcon' },
+            { name: 'PostSponsorIcon' },
+            { name: 'PostSponsorshipIcon' },
+        ],
+    },
+    {
+        title: 'Administración',
+        description: 'Iconos para el panel de administración',
+        icons: [
+            { name: 'AnalyticsIcon' },
+            { name: 'DashboardIcon' },
+            { name: 'ListIcon' },
+            { name: 'SectionIcon' },
+            { name: 'TagIcon' },
+            { name: 'TagsIcon' },
+            { name: 'ViewAllIcon' },
+        ],
+    },
+    {
+        title: 'Comodidades',
+        description: 'Iconos para amenities de alojamientos',
+        icons: [
+            { name: 'AirConditioningIcon' },
+            { name: 'BalconyIcon' },
+            { name: 'BbqGrillIcon' },
+            { name: 'BedLinensIcon' },
+            { name: 'BicyclesIcon' },
+            { name: 'BlackoutCurtainsIcon' },
+            { name: 'BreakfastIcon' },
+            { name: 'CoffeeMakerIcon' },
+            { name: 'ElectricBlanketIcon' },
+            { name: 'ElectricFireplaceIcon' },
+            { name: 'ElevatorIcon' },
+            { name: 'FanIcon' },
+            { name: 'FireplaceIcon' },
+            { name: 'GymIcon' },
+            { name: 'HairDryerIcon' },
+            { name: 'HeatingIcon' },
+            { name: 'InternationalAdaptersIcon' },
+            { name: 'JacuzziIcon' },
+            { name: 'KettleIcon' },
+            { name: 'KitchenIcon' },
+            { name: 'MicrowaveIcon' },
+            { name: 'MiniBarIcon' },
+            { name: 'ParkingIcon' },
+            { name: 'PlaygroundIcon' },
+            { name: 'PoolIcon' },
+            { name: 'RefrigeratorIcon' },
+            { name: 'RoomTvIcon' },
+            { name: 'SafeIcon' },
+            { name: 'SharedKitchenIcon' },
+            { name: 'SmartTvIcon' },
+            { name: 'SoapDispenserIcon' },
+            { name: 'StoveIcon' },
+            { name: 'TerraceIcon' },
+            { name: 'TowelsIcon' },
+            { name: 'TvIcon' },
+            { name: 'UnderfloorHeatingIcon' },
+            { name: 'UtensilsIcon' },
+            { name: 'WasherIcon' },
+            { name: 'WaterDispenserIcon' },
+            { name: 'WifiIcon' },
+            // Outdoor amenities
+            { name: 'BeachUmbrellaIcon' },
+            { name: 'HeatedPoolIcon' },
+            { name: 'OrganicGardenIcon' },
+            { name: 'OutdoorFurnitureIcon' },
+            { name: 'OutdoorKitchenIcon' },
+            { name: 'PrivateGardenIcon' },
+            { name: 'RiverViewIcon' },
+            { name: 'SaunaIcon' },
+            { name: 'SharedPatioIcon' },
+        ],
+    },
+    {
+        title: 'Características',
+        description: 'Iconos para características de propiedades',
+        icons: [
+            { name: 'CentralAreaIcon' },
+            { name: 'EcologicalIcon' },
+            { name: 'FamilySuitableIcon' },
+            { name: 'ModernStyleIcon' },
+            { name: 'NaturalEnvironmentIcon' },
+            { name: 'PanoramicViewIcon' },
+            { name: 'PavedAccessIcon' },
+            { name: 'PetFriendlyIcon' },
+            { name: 'RenewableEnergyIcon' },
+            { name: 'RiverFrontIcon' },
+            { name: 'RuralAreaIcon' },
+            { name: 'RusticStyleIcon' },
+            { name: 'SmartHomeIcon' },
+            { name: 'SpaFrontIcon' },
+        ],
+    },
+    {
+        title: 'Atracciones',
+        description: 'Iconos para atracciones turísticas',
+        icons: [
+            { name: 'AgriculturalCenterIcon' },
+            { name: 'AmphitheaterIcon' },
+            { name: 'AviariumIcon' },
+            { name: 'BeachIcon' },
+            { name: 'CasinoIcon' },
+            { name: 'CathedralIcon' },
+            { name: 'CulturalCenterIcon' },
+            { name: 'EducationalFarmIcon' },
+            { name: 'MuseumIcon' },
+            { name: 'NatureReserveIcon' },
+            { name: 'ParkIcon' },
+            { name: 'RestaurantIcon' },
+            { name: 'ShoppingCenterIcon' },
+            { name: 'SportsComplexIcon' },
+            { name: 'ThermalSpaIcon' },
+            { name: 'WetlandsIcon' },
+        ],
+    },
+    {
+        title: 'Comunicación',
+        description: 'Iconos para medios de comunicación',
+        icons: [{ name: 'ChatIcon' }, { name: 'ContactoIcon' }, { name: 'LanguageIcon' }, { name: 'PhoneIcon' }],
+    },
+    {
+        title: 'Redes Sociales',
+        description: 'Iconos para redes sociales',
+        icons: [{ name: 'FacebookIcon' }, { name: 'InstagramIcon' }, { name: 'WebIcon' }, { name: 'WhatsappIcon' }],
+    },
+    {
+        title: 'Acciones',
+        description: 'Iconos para acciones del usuario',
+        icons: [{ name: 'AskToAiIcon' }, { name: 'CopyIcon' }, { name: 'FaqsIcon' }],
+    },
+    {
+        title: 'Reservas',
+        description: 'Iconos para sistema de reservas y booking',
+        icons: [
+            { name: 'AvailableIcon' },
+            { name: 'CancelledIcon' },
+            { name: 'CheckInIcon' },
+            { name: 'CheckOutIcon' },
+            { name: 'ConfirmedIcon' },
+            { name: 'GuestsIcon' },
+            { name: 'PendingIcon' },
+            { name: 'ReserveIcon' },
+            { name: 'RoomsIcon' },
+            { name: 'UnavailableIcon' },
+        ],
+    },
+    {
+        title: 'Sistema',
+        description: 'Iconos del sistema y navegación',
+        icons: [
+            { name: 'AddIcon' },
+            { name: 'AddressIcon' },
+            { name: 'AdminIcon' },
+            { name: 'AlertTriangleIcon' },
+            { name: 'BreadcrumbsIcon' },
+            { name: 'CloseIcon' },
+            { name: 'CreateIcon' },
+            { name: 'DarkThemeIcon' },
+            { name: 'DebugIcon' },
+            { name: 'DropdownIcon' },
+            { name: 'FavoriteIcon' },
+            { name: 'HamburgerIcon' },
+            { name: 'HomeIcon' },
+            { name: 'HuespedIcon' },
+            { name: 'HuespedesIcon' },
+            { name: 'LightThemeIcon' },
+            { name: 'LogoutIcon' },
+            { name: 'MapIcon' },
+            { name: 'MenuIcon' },
+            { name: 'NotificationIcon' },
+            { name: 'SearchIcon' },
+            { name: 'SettingsIcon' },
+            { name: 'StarIcon' },
+            { name: 'UserIcon' },
+            { name: 'UsersIcon' },
+        ],
+    },
+];
+
+// Contar total de iconos
+const totalIcons = iconCategories.reduce((total, category) => total + category.icons.length, 0);
+---
+
+<MainLayout title={title} description={description}>
+    <div class='min-h-screen bg-gray-50 dark:bg-gray-900 py-8'>
+        <div class='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+            <!-- Header -->
+            <div class='text-center mb-12'>
+                <h1 class='text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4'>Catálogo de Iconos</h1>
+                <p class='text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto'>
+                    Todos los iconos disponibles en el paquete <code
+                        class='bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-sm'>@repo/icons</code
+                    >
+                </p>
+                <div class='mt-6 text-sm text-gray-500 dark:text-gray-400'>
+                    <p>Basados en <strong>SVGs puros de Lucide</strong> sin dependencias externas</p>
+                    <p class='mt-2'>✅ Sin hidratación • ✅ Accesibles • ✅ Optimizados para SSR</p>
+                    <p class='mt-1 text-lg font-semibold text-blue-600 dark:text-blue-400'>
+                        {totalIcons} iconos disponibles
+                    </p>
+                </div>
+            </div>
+
+            <!-- Astro Usage Example -->
+            <div class='bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8'>
+                <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>Uso en Astro (Sin Hidratación)</h2>
+                <p class='text-gray-600 dark:text-gray-400 mb-4'>
+                    Los iconos funcionan directamente en Astro sin necesidad de hidratación del lado del cliente:
+                </p>
+
+                <!-- Live Examples -->
+                <div class='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6'>
+                    <div class='flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+                        <WifiIcon size='lg' className='text-blue-500 mb-2' />
+                        <span class='text-xs text-gray-600 dark:text-gray-400'>WifiIcon</span>
+                    </div>
+                    <div class='flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+                        <HomeIcon size='lg' className='text-green-500 mb-2' />
+                        <span class='text-xs text-gray-600 dark:text-gray-400'>HomeIcon</span>
+                    </div>
+                    <div class='flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+                        <StarIcon size='lg' className='text-yellow-500 mb-2' />
+                        <span class='text-xs text-gray-600 dark:text-gray-400'>StarIcon</span>
+                    </div>
+                    <div class='flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+                        <FavoriteIcon size='lg' className='text-red-500 mb-2' />
+                        <span class='text-xs text-gray-600 dark:text-gray-400'>FavoriteIcon</span>
+                    </div>
+                    <div class='flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+                        <MapIcon size='lg' className='text-purple-500 mb-2' />
+                        <span class='text-xs text-gray-600 dark:text-gray-400'>MapIcon</span>
+                    </div>
+                    <div class='flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+                        <PhoneIcon size='lg' className='text-indigo-500 mb-2' />
+                        <span class='text-xs text-gray-600 dark:text-gray-400'>PhoneIcon</span>
+                    </div>
+                    <div class='flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+                        <InstagramIcon size='lg' className='text-pink-500 mb-2' />
+                        <span class='text-xs text-gray-600 dark:text-gray-400'>InstagramIcon</span>
+                    </div>
+                    <div class='flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg'>
+                        <WhatsappIcon size='lg' className='text-emerald-500 mb-2' />
+                        <span class='text-xs text-gray-600 dark:text-gray-400'>WhatsappIcon</span>
+                    </div>
+                </div>
+
+                <!-- Code Example -->
+                <div class='bg-gray-900 rounded-lg p-4 overflow-x-auto'>
+                    <pre
+                        class='text-sm text-gray-300'><code>{`---
+// En cualquier archivo .astro - NO requiere hidratación
+import { WifiIcon, HomeIcon, StarIcon } from '@repo/icons';
+---
+
+<!-- Uso directo en el template -->
+<div class="amenities">
+    <WifiIcon size="md" className="text-blue-500" />
+    <HomeIcon size="lg" color="#10B981" />
+    <StarIcon size="xl" className="text-yellow-400 hover:text-yellow-500" />
+</div>`}</code></pre>
+                </div>
+            </div>
+
+            <!-- Interactive Icon Search and Filter -->
+            <div id='icon-search-container'>
+                <IconSearchAndFilter iconCategories={iconCategories} client:load />
+
+                <!-- Fallback content while loading -->
+                <noscript>
+                    <div class='rounded-lg bg-white p-8 text-center shadow-lg dark:bg-gray-800'>
+                        <p class='text-gray-600 dark:text-gray-400'>
+                            JavaScript es requerido para usar el buscador de iconos.
+                        </p>
+                    </div>
+                </noscript>
+            </div>
+
+            <!-- Usage Instructions -->
+            <div
+                class='bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-lg p-6 mt-8'
+            >
+                <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>Instrucciones de Uso</h2>
+
+                <div class='grid md:grid-cols-2 gap-6'>
+                    <div>
+                        <h3 class='text-lg font-semibold text-gray-900 dark:text-white mb-2'>En Astro</h3>
+                        <div class='bg-gray-900 rounded-lg p-4'>
+                            <pre
+                                class='text-sm text-gray-300'><code>{`---
+import { WifiIcon } from '@repo/icons';
+---
+
+<WifiIcon size="md" className="text-blue-500" />`}</code></pre>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class='text-lg font-semibold text-gray-900 dark:text-white mb-2'>En React</h3>
+                        <div class='bg-gray-900 rounded-lg p-4'>
+                            <pre
+                                class='text-sm text-gray-300'><code>{`import { WifiIcon } from '@repo/icons';
+
+export function MyComponent() {
+  return <WifiIcon size="md" className="text-blue-500" />;
+}`}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class='mt-6 p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg'>
+                    <h4 class='font-semibold text-blue-900 dark:text-blue-100 mb-2'>Tamaños Disponibles</h4>
+                    <div class='flex items-center gap-4 text-sm text-blue-800 dark:text-blue-200'>
+                        <span><code>xs</code> (16px)</span>
+                        <span><code>sm</code> (20px)</span>
+                        <span><code>md</code> (24px)</span>
+                        <span><code>lg</code> (32px)</span>
+                        <span><code>xl</code> (48px)</span>
+                        <span>o cualquier número en pixels</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</MainLayout>
