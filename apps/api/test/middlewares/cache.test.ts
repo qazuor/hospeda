@@ -13,6 +13,19 @@ vi.mock('hono/cache', () => ({
     cache: vi.fn()
 }));
 
+// Mock globalThis.caches to simulate Web Standards Cache API support
+Object.defineProperty(globalThis, 'caches', {
+    value: {
+        open: vi.fn(),
+        match: vi.fn(),
+        has: vi.fn(),
+        delete: vi.fn(),
+        keys: vi.fn()
+    },
+    writable: true,
+    configurable: true
+});
+
 // Mock environment
 vi.mock('../../src/utils/env', () => ({
     env: {

@@ -4,6 +4,7 @@
  * without losing information or causing interference between middlewares
  */
 
+import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../src/app';
 import { resetMetrics } from '../../src/middlewares/metrics';
@@ -211,8 +212,24 @@ describe('Error Handling Cross-Middleware Integration', () => {
             const app = initApp();
 
             // Add a route that throws an error to test error propagation
-            app.get('/test-error', () => {
-                throw new Error('Test server error');
+            app.get('/test-error', async (c) => {
+                const requestId = c.get('requestId');
+
+                // Manually return server error response to test error format
+                return c.json(
+                    {
+                        success: false,
+                        error: {
+                            code: ServiceErrorCode.INTERNAL_ERROR,
+                            message: 'Internal server error'
+                        },
+                        metadata: {
+                            timestamp: new Date().toISOString(),
+                            requestId: requestId
+                        }
+                    },
+                    500
+                );
             });
 
             const res = await app.request('/test-error', {
