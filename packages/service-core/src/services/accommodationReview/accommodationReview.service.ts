@@ -174,4 +174,53 @@ export class AccommodationReviewService extends BaseCrudService<
             }
         });
     }
+
+    /**
+     * Gets paginated reviews with user information included.
+     * Validates permissions via _canList and returns reviews with user data.
+     * @param actor - The actor performing the action
+     * @param input - Object containing optional pagination and filters
+     * @returns Paginated list of reviews with user information
+     */
+    public async listWithUser(
+        actor: Actor,
+        input: {
+            page?: number;
+            pageSize?: number;
+            filters?: Record<string, unknown>;
+        } = {}
+    ): Promise<
+        ServiceOutput<
+            PaginatedListOutput<
+                AccommodationReviewType & {
+                    user?: { id: string; firstName?: string; lastName?: string; email: string };
+                }
+            >
+        >
+    > {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listWithUser',
+            input: { actor, ...input },
+            schema: z
+                .object({
+                    page: z.number().int().min(1).optional(),
+                    pageSize: z.number().int().min(1).max(100).optional(),
+                    filters: z.record(z.string(), z.unknown()).optional()
+                })
+                .strict(),
+            execute: async (validData, validatedActor) => {
+                await this._canList(validatedActor);
+                const { page, pageSize, filters = {} } = validData;
+
+                // Default filters for public access
+                const defaultFilters = {
+                    deletedAt: null,
+                    ...filters
+                };
+
+                const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
+                return result;
+            }
+        });
+    }
 }
