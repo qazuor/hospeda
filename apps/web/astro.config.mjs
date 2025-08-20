@@ -1,8 +1,8 @@
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
-import tailwind from '@astrojs/tailwind';
 import vercel from '@astrojs/vercel';
 import clerk from '@clerk/astro';
+import tailwindcss from '@tailwindcss/vite';
 import devtoolBreakpoints from 'astro-devtool-breakpoints';
 import astroFontPicker from 'astro-font-picker';
 import lighthouse from 'astro-lighthouse';
@@ -16,7 +16,6 @@ import reunmedianormalizeTrailingSlash from '@reunmedia/astro-normalize-trailing
 // https://astro.build/config
 export default defineConfig({
     integrations: [
-        tailwind({ config: { applyBaseStyles: true } }),
         react(),
         clerk(),
         sitemap(),
@@ -36,6 +35,10 @@ export default defineConfig({
         port: 4321
     },
     vite: {
+        css: {
+            transformer: 'lightningcss'
+        },
+        plugins: [tailwindcss()],
         resolve: {
             alias: {
                 '@repo/auth-ui': new URL('../../packages/auth-ui/src', import.meta.url).pathname,
