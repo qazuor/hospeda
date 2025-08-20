@@ -1,4 +1,5 @@
 ---
+import { MenuIcon } from '@repo/icons';
 import { useTranslations } from '@/utils/i18n';
 import ThemeToggle from '@/layout/ThemeToggle.astro';
 import {
@@ -7,6 +8,8 @@ import {
     getDestinationsIndexUrl,
     getEventsIndexUrl,
     getBlogIndexUrl,
+    getSearchUrl,
+    getContactUrl,
 } from '@/utils';
 import { normalizeTrailingSlash } from '@reunmedia/astro-normalize-trailing-slash';
 import { UserNav } from '@/components/auth/UserNav';
@@ -34,6 +37,8 @@ const t = useTranslations(lang);
             <a href={getDestinationsIndexUrl()} class='nav-link'>{t('nav.destinations')}</a>
             <a href={getEventsIndexUrl()} class='nav-link'>{t('nav.events')}</a>
             <a href={getBlogIndexUrl()} class='nav-link'>{t('nav.blog')}</a>
+            <a href={getSearchUrl()} class='nav-link'>{t('nav.search')}</a>
+            <a href={getContactUrl()} class='nav-link'>{t('nav.contact')}</a>
         </nav>
 
         <div class='flex items-center space-x-4'>
@@ -46,10 +51,7 @@ const t = useTranslations(lang);
                 class='md:hidden p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none'
                 aria-label='Toggle mobile menu'
             >
-                <svg xmlns='http://www.w3.org/2000/svg' class='w-6 h-6' viewBox='0 0 24 24' fill='currentColor'>
-                    <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16M4 18h16'
-                    ></path>
-                </svg>
+                <MenuIcon className='w-6 h-6' />
             </button>
         </div>
     </div>
@@ -68,6 +70,8 @@ const t = useTranslations(lang);
                     </li>
                     <li><a href={getEventsIndexUrl()} class='mobile-link'>{t('nav.events')}</a></li>
                     <li><a href={getBlogIndexUrl()} class='mobile-link'>{t('nav.blog')}</a></li>
+                    <li><a href={getSearchUrl()} class='mobile-link'>{t('nav.search')}</a></li>
+                    <li><a href={getContactUrl()} class='mobile-link'>{t('nav.contact')}</a></li>
                 </ul>
             </nav>
         </div>

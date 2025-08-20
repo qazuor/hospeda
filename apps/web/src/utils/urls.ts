@@ -6,7 +6,7 @@ import { normalizeTrailingSlash } from '@reunmedia/astro-normalize-trailing-slas
  * By default: `/blog/[slug]`
  */
 export function getPostUrl(post: Pick<PostType, 'slug'>): string {
-    return normalizeTrailingSlash(`/blog/${post.slug}`);
+    return normalizeTrailingSlash(`/publicaciones/${post.slug}`);
 }
 
 /**
@@ -45,4 +45,30 @@ export const getHomeUrl = (): string => getUrl('/');
 export const getAccommodationsIndexUrl = (): string => getUrl('/alojamientos');
 export const getDestinationsIndexUrl = (): string => getUrl('/destinos');
 export const getEventsIndexUrl = (): string => getUrl('/eventos');
-export const getBlogIndexUrl = (): string => getUrl('/blog');
+export const getBlogIndexUrl = (): string => getUrl('/publicaciones');
+export const getSearchUrl = (): string => getUrl('/busqueda');
+export const getContactUrl = (): string => getUrl('/contacto');
+
+/**
+ * Returns the URL for accommodations index with pagination.
+ */
+export const getAccommodationsIndexUrlWithPage = (page: number): string =>
+    getUrl(`${getAccommodationsIndexUrl()}page/${page}`);
+
+/**
+ * Returns the URL for destinations index with pagination.
+ */
+export const getDestinationsIndexUrlWithPage = (page: number): string =>
+    getUrl(`${getDestinationsIndexUrl()}page/${page}`);
+
+/**
+ * Returns the URL for events index with pagination.
+ */
+export const getEventsIndexUrlWithPage = (page: number): string =>
+    getUrl(`${getEventsIndexUrl()}page/${page}`);
+
+/**
+ * Returns the URL for blog index with pagination.
+ */
+export const getBlogIndexUrlWithPage = (page: number): string =>
+    getUrl(`${getBlogIndexUrl()}page/${page}`);
