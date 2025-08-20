@@ -36,3 +36,19 @@ export const BaseSearchSchema = z.object({
     pagination: PaginationSchema.optional(),
     sort: z.array(SortSchema).optional()
 });
+
+/**
+ * Schema for list operations with user relations.
+ * Used for fetching paginated lists with user information included.
+ *
+ * @property {number} [page] - The page number to retrieve (1-based).
+ * @property {number} [pageSize] - The number of items per page (max 100).
+ * @property {Record<string, unknown>} [filters] - Additional filters to apply.
+ */
+export const ListWithUserSchema = z
+    .object({
+        page: z.number().int().min(1).optional(),
+        pageSize: z.number().int().min(1).max(100).optional(),
+        filters: z.record(z.unknown()).optional()
+    })
+    .strict();
