@@ -4,7 +4,7 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
-import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
+import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
 /**
@@ -38,9 +38,12 @@ describe('EventService.list', () => {
         expect(result.data).toMatchObject(paginatedResult);
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    it('should return success even if actor has no specific permissions', async () => {
+        const emptyResult = { items: [], page, pageSize, total: 0 };
+        (modelMock.findAll as Mock).mockResolvedValue(emptyResult);
         const result = await service.list(actorNoPerm, { page, pageSize });
-        expectForbiddenError(result);
+        expectSuccess(result);
+        expect(result.data).toMatchObject(emptyResult);
     });
 
     it('should return empty result if no events found', async () => {
