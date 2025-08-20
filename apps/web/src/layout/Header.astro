@@ -19,7 +19,7 @@ const { lang } = Astro.props;
 const t = useTranslations(lang);
 ---
 
-<header class='sticky top-0 z-50 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm'>
+<header class='sticky top-0 z-50 w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800'>
     <div class='container flex h-16 items-center justify-between'>
         <a href={getHomeUrl()} class='flex items-center space-x-2' aria-label='Hosped.ar - Home'>
             <img src='/logo.webp' alt='Hosped.ar Logo' class='h-10 w-10' loading='lazy' />

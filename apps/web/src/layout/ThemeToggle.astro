@@ -1,5 +1,5 @@
 ---
-import { toggleTheme } from '@/store/themeStore';
+// Theme toggle component - no server-side imports needed
 ---
 
 <button
@@ -44,12 +44,25 @@ import { toggleTheme } from '@/store/themeStore';
     const themeToggle = document.getElementById('theme-toggle');
 
     if (themeToggle) {
+        // Set initial aria-label
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        themeToggle.setAttribute('aria-label', isDarkMode ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+
         themeToggle.addEventListener('click', () => {
             const isDark = document.documentElement.classList.toggle('dark');
 
+            // Save theme preference
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
 
+            // Update aria-label
             themeToggle.setAttribute('aria-label', isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+
+            // Trigger a custom event for other components that might need to know
+            window.dispatchEvent(
+                new CustomEvent('theme-changed', {
+                    detail: { theme: isDark ? 'dark' : 'light' },
+                }),
+            );
         });
     }
 </script>
