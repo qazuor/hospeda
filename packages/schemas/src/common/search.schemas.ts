@@ -49,6 +49,6 @@ export const ListWithUserSchema = z
     .object({
         page: z.number().int().min(1).optional(),
         pageSize: z.number().int().min(1).max(100).optional(),
-        filters: z.record(z.unknown()).optional()
+        filters: z.record(z.string(), z.unknown()).optional()
     })
     .strict();
