@@ -5,7 +5,12 @@ export * from './common/id.schema.js';
 export * from './common/location.schema.js';
 export * from './common/media.schema.js';
 export * from './common/price.schema.js';
-export { BaseSearchSchema, SortDirectionSchema, SortSchema } from './common/search.schemas.js';
+export {
+    BaseSearchSchema,
+    ListWithUserSchema,
+    SortDirectionSchema,
+    SortSchema
+} from './common/search.schemas.js';
 export * from './common/social.schema.js';
 export * from './entities/index.js';
 export * from './enums/index.js';
