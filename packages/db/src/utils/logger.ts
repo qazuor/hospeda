@@ -15,7 +15,10 @@ export const dbLogger = baseLogger;
  * @param result - The query result
  */
 export const logQuery = (table: string, action: string, params: unknown, result: unknown) => {
-    dbLogger.info({ table, action, params, result }, `[DB] ${table}.${action} OK`);
+    dbLogger.info(
+        { table, action, params: JSON.stringify(params, ' '), result: JSON.stringify(result) },
+        `[DB] ${table}.${action} OK`
+    );
 };
 
 /**

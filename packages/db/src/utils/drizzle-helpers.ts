@@ -1,4 +1,4 @@
-import { type SQL, and, eq } from 'drizzle-orm';
+import { type SQL, type SQLWrapper, and, eq, isNull } from 'drizzle-orm';
 
 /**
  * Builds a WHERE clause for Drizzle ORM from a plain object.
@@ -14,8 +14,11 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
         .filter(([_, value]) => value !== undefined)
         .map(([key, value]) => {
             if (Object.prototype.hasOwnProperty.call(tableRecord, key)) {
-                // @ts-expect-error: dynamic access to Drizzle column
-                return eq(tableRecord[key], value);
+                const column = tableRecord[key] as SQLWrapper;
+                if (value === null) {
+                    return isNull(column);
+                }
+                return eq(column, value);
             }
             return undefined;
         })
