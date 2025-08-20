@@ -43,13 +43,6 @@ export function checkCanDeleteDestinationReview(actor: Actor): void {
 
 export function checkCanViewDestinationReview(actor: Actor): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    if (
-        !actor.permissions ||
-        !actor.permissions.includes(PermissionEnum.DESTINATION_REVIEW_CREATE)
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Actor lacks permission to view destination reviews'
-        );
-    }
+    // Allow any actor to view destination reviews; visibility filtering happens elsewhere
+    return;
 }

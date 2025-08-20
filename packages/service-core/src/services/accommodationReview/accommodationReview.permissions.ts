@@ -43,17 +43,10 @@ export function checkCanDeleteAccommodationReview(actor: Actor): void {
 
 /**
  * Throws if the actor cannot view an accommodation review.
- * (No specific permission, so only checks actor presence)
+ * Allows public access to reviews for any authenticated actor.
  */
 export function checkCanViewAccommodationReview(actor: Actor): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    if (
-        !actor.permissions ||
-        !actor.permissions.includes(PermissionEnum.ACCOMMODATION_REVIEW_CREATE)
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Actor lacks permission to view accommodation reviews'
-        );
-    }
+    // Allow any actor to view accommodation reviews; visibility filtering happens elsewhere
+    return;
 }

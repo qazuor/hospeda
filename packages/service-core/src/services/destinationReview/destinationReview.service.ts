@@ -1,8 +1,8 @@
 import { DestinationModel, DestinationReviewModel } from '@repo/db';
 import type { DestinationReviewType, NewDestinationReviewInputType } from '@repo/types';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { DestinationService } from '../destination/destination.service';
 import { calculateStatsFromReviews } from './destinationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './destinationReview.normalizers';
@@ -124,5 +124,54 @@ export class DestinationReviewService extends BaseCrudService<
     ): Promise<{ count: number }> {
         // TODO: Implement logic to update stats after delete if needed
         return result;
+    }
+
+    /**
+     * Gets paginated reviews with user information included.
+     * Validates permissions via _canList and returns reviews with user data.
+     * @param actor - The actor performing the action
+     * @param input - Object containing optional pagination and filters
+     * @returns Paginated list of reviews with user information
+     */
+    public async listWithUser(
+        actor: Actor,
+        input: {
+            page?: number;
+            pageSize?: number;
+            filters?: Record<string, unknown>;
+        } = {}
+    ): Promise<
+        ServiceOutput<
+            PaginatedListOutput<
+                DestinationReviewType & {
+                    user?: { id: string; firstName?: string; lastName?: string; email: string };
+                }
+            >
+        >
+    > {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listWithUser',
+            input: { actor, ...input },
+            schema: z
+                .object({
+                    page: z.number().int().min(1).optional(),
+                    pageSize: z.number().int().min(1).max(100).optional(),
+                    filters: z.record(z.string(), z.unknown()).optional()
+                })
+                .strict(),
+            execute: async (validData, validatedActor) => {
+                await this._canList(validatedActor);
+                const { page, pageSize, filters = {} } = validData;
+
+                // Default filters for public access
+                const defaultFilters = {
+                    deletedAt: null,
+                    ...filters
+                };
+
+                const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
+                return result;
+            }
+        });
     }
 }
