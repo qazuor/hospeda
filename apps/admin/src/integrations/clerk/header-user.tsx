@@ -1,11 +1,58 @@
-import { useAuthContext } from '@/contexts/auth-context';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { useAuth, useUser } from '@clerk/clerk-react';
 
 /**
  * Optimized header user component using AuthContext
  * Shows user info and sign out button when authenticated
+ * Falls back to Clerk hooks if AuthContext is not available (e.g., during auth transitions)
  */
 export default function HeaderUser() {
-    const { isAuthenticated, isLoading, user, signOut } = useAuthContext();
+    // Try to use AuthContext first, fall back to Clerk hooks if not available
+    let isAuthenticated: boolean;
+    let isLoading: boolean;
+    let user: {
+        id: string;
+        displayName?: string;
+        firstName?: string;
+        lastName?: string;
+        avatar?: string;
+        email?: string;
+        role: string;
+    } | null;
+    let signOut: () => Promise<void>;
+
+    try {
+        const authContext = useAuthContext();
+        isAuthenticated = authContext.isAuthenticated;
+        isLoading = authContext.isLoading;
+        user = authContext.user;
+        signOut = authContext.signOut;
+    } catch {
+        // AuthContext not available, use Clerk hooks directly
+        const clerkAuth = useAuth();
+        const clerkUser = useUser();
+
+        isAuthenticated = clerkAuth.isSignedIn ?? false;
+        isLoading = !clerkAuth.isLoaded || !clerkUser.isLoaded;
+        user = clerkUser.user
+            ? {
+                  id: clerkUser.user.id,
+                  displayName:
+                      clerkUser.user.fullName ||
+                      `${clerkUser.user.firstName || ''} ${clerkUser.user.lastName || ''}`.trim() ||
+                      'Usuario',
+                  firstName: clerkUser.user.firstName || undefined,
+                  lastName: clerkUser.user.lastName || undefined,
+                  avatar: clerkUser.user.imageUrl,
+                  email: clerkUser.user.primaryEmailAddress?.emailAddress,
+                  role: 'USER' // Default role when using fallback
+              }
+            : null;
+        signOut = async () => {
+            await clerkAuth.signOut();
+            window.location.href = '/auth/signin';
+        };
+    }
 
     if (isLoading) {
         return (

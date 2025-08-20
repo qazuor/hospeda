@@ -8,7 +8,7 @@ import {
     useHasAnyRole,
     useHasPermission,
     useHasRole
-} from '@/contexts/auth-context';
+} from '@/hooks/use-auth-context';
 
 export { useAuthContext, useHasAnyRole, useHasPermission, useHasRole };
 
