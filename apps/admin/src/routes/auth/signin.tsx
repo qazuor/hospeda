@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { SignInForm } from '@repo/auth-ui';
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
@@ -13,6 +14,7 @@ function SignInPage(): React.JSX.Element {
     const router = useRouter();
     const { signOut, isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
+    const { t } = useTranslations();
     const redirect =
         (router.state.location.search as Record<string, string | undefined>)?.redirect || '/';
 
@@ -176,7 +178,7 @@ function SignInPage(): React.JSX.Element {
             <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
                 <div className="text-center">
                     <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
-                    <p className="text-gray-600">Completing sign in...</p>
+                    <p className="text-gray-600">{t('admin-auth.signin.completingSignIn')}</p>
                 </div>
             </div>
         );
@@ -191,8 +193,12 @@ function SignInPage(): React.JSX.Element {
                         <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/50 to-emerald-600/30" />
                         <div className="h-full w-full animate-pulse bg-gradient-to-br from-cyan-200 to-emerald-200" />
                         <div className="absolute bottom-8 left-8 text-white">
-                            <h2 className="mb-2 font-bold text-3xl">Welcome back</h2>
-                            <p className="text-cyan-100">Manage your accommodations with ease</p>
+                            <h2 className="mb-2 font-bold text-3xl">
+                                {t('admin-auth.signin.welcomeBack')}
+                            </h2>
+                            <p className="text-cyan-100">
+                                {t('admin-auth.signin.manageAccommodations')}
+                            </p>
                         </div>
                     </div>
 
@@ -207,9 +213,11 @@ function SignInPage(): React.JSX.Element {
                                         className="h-16 w-auto"
                                     />
                                 </div>
-                                <h1 className="font-bold text-3xl text-gray-900">Sign in</h1>
+                                <h1 className="font-bold text-3xl text-gray-900">
+                                    {t('admin-auth.signin.heading')}
+                                </h1>
                                 <p className="mt-2 text-gray-600">
-                                    Welcome back! Please sign in to your account
+                                    {t('admin-auth.signin.subtitle')}
                                 </p>
                             </div>
 
@@ -239,12 +247,12 @@ function SignInPage(): React.JSX.Element {
 
                             <div className="text-center">
                                 <p className="text-gray-600">
-                                    Don't have an account?{' '}
+                                    {t('admin-auth.signin.dontHaveAccount')}{' '}
                                     <Link
                                         to="/auth/signup"
                                         className="font-medium text-cyan-600 transition-colors hover:text-cyan-500"
                                     >
-                                        Sign up
+                                        {t('admin-auth.signin.signUpLink')}
                                     </Link>
                                 </p>
                                 {/* Debug button - remove in production */}
@@ -255,7 +263,7 @@ function SignInPage(): React.JSX.Element {
                                         type="button"
                                         title="Clear all sessions and reload page"
                                     >
-                                        Clear Session
+                                        {t('admin-auth.signin.clearSession')}
                                     </button>
                                 </div>
                             </div>

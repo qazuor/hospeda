@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { SignUpForm } from '@repo/auth-ui';
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -9,6 +10,7 @@ export const Route = createFileRoute('/auth/signup')({
 
 function SignUpPage(): React.JSX.Element {
     const router = useRouter();
+    const { t } = useTranslations();
     const redirect =
         (router.state.location.search as Record<string, string | undefined>)?.redirect || '/';
 
@@ -29,8 +31,12 @@ function SignUpPage(): React.JSX.Element {
                         <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/50 to-cyan-600/30" />
                         <div className="h-full w-full animate-pulse bg-gradient-to-br from-emerald-200 to-cyan-200" />
                         <div className="absolute bottom-8 left-8 text-white">
-                            <h2 className="mb-2 font-bold text-3xl">Join us today</h2>
-                            <p className="text-emerald-100">Start managing your accommodations</p>
+                            <h2 className="mb-2 font-bold text-3xl">
+                                {t('admin-auth.signup.joinToday')}
+                            </h2>
+                            <p className="text-emerald-100">
+                                {t('admin-auth.signup.startManaging')}
+                            </p>
                         </div>
                     </div>
 
@@ -45,9 +51,11 @@ function SignUpPage(): React.JSX.Element {
                                         className="h-16 w-auto"
                                     />
                                 </div>
-                                <h1 className="font-bold text-3xl text-gray-900">Create account</h1>
+                                <h1 className="font-bold text-3xl text-gray-900">
+                                    {t('admin-auth.signup.heading')}
+                                </h1>
                                 <p className="mt-2 text-gray-600">
-                                    Get started with your free account today
+                                    {t('admin-auth.signup.subtitle')}
                                 </p>
                             </div>
 
@@ -77,12 +85,12 @@ function SignUpPage(): React.JSX.Element {
 
                             <div className="text-center">
                                 <p className="text-gray-600">
-                                    Already have an account?{' '}
+                                    {t('admin-auth.signup.alreadyHaveAccount')}{' '}
                                     <Link
                                         to="/auth/signin"
                                         className="font-medium text-emerald-600 transition-colors hover:text-emerald-500"
                                     >
-                                        Sign in
+                                        {t('admin-auth.signup.signInLink')}
                                     </Link>
                                 </p>
                             </div>

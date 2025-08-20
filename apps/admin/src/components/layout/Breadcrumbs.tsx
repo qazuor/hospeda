@@ -1,6 +1,6 @@
 import { menuTree } from '@/lib/menu';
+import { BreadcrumbsIcon } from '@repo/icons';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { ChevronRight } from 'lucide-react';
 
 const getLabelForPath = (path: string): string => {
     for (const item of menuTree) {
@@ -39,7 +39,7 @@ export const Breadcrumbs = () => {
                     key={p}
                     className="inline-flex items-center"
                 >
-                    <ChevronRight className="mx-2 h-4 w-4" />
+                    <BreadcrumbsIcon className="mx-2 h-4 w-4" />
                     <Link
                         to={p}
                         className="hover:underline"

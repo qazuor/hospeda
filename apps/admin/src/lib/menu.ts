@@ -6,7 +6,7 @@ export type MenuItem = {
     readonly title: string;
     /** Route path starting with '/' */
     readonly to?: string;
-    /** Icon element (lucide-react) */
+    /** Icon element (@repo/icons) */
     readonly icon?: ReactNode;
     /** Permission or list of permissions required */
     readonly permission?: PermissionEnum | readonly PermissionEnum[];

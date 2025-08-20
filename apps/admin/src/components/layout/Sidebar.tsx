@@ -1,26 +1,27 @@
+import { useTranslations } from '@/hooks/use-translations';
 import type { PermissionValue } from '@/lib/menu';
 import { filterMenuByPermissions, menuTree } from '@/lib/menu';
 import { cn } from '@/lib/utils';
-import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import {
-    BarChart3,
-    Bug,
-    Building2,
-    CalendarDays,
-    FileText,
-    FolderKanban,
-    Handshake,
-    LayoutDashboard,
-    List,
-    MapPin,
-    PlusSquare,
-    Search,
-    Settings as SettingsIcon,
-    Shield,
-    Tag,
-    Users,
-    X
-} from 'lucide-react';
+    AccommodationIcon,
+    AddIcon,
+    AdminIcon,
+    AnalyticsIcon,
+    CloseIcon,
+    ContentIcon,
+    DashboardIcon,
+    DebugIcon,
+    EventIcon,
+    ListIcon,
+    MapIcon,
+    PostIcon,
+    PostSponsorIcon,
+    SearchIcon,
+    SettingsIcon,
+    TagIcon,
+    UsersIcon
+} from '@repo/icons';
+import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 
 export type SidebarProps = {
@@ -43,6 +44,7 @@ export type SidebarProps = {
 export const Sidebar = ({ open, onClose }: SidebarProps) => {
     const { location } = useRouterState();
     const router = useRouter();
+    const { t } = useTranslations();
     // TODO: Replace with real user permissions from Clerk session/ctx
     const userPermissions: PermissionValue[] | undefined = undefined;
     const items = filterMenuByPermissions(menuTree, userPermissions);
@@ -50,66 +52,66 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
     const getIcon = (title: string) => {
         switch (title) {
             case 'Dashboard':
-                return <LayoutDashboard className="h-5 w-5" />;
+                return <DashboardIcon className="h-5 w-5" />;
             case 'Contenido':
-                return <FolderKanban className="h-5 w-5" />;
+                return <ContentIcon className="h-5 w-5" />;
             case 'Alojamientos':
-                return <Building2 className="h-5 w-5" />;
+                return <AccommodationIcon className="h-5 w-5" />;
             case 'Destinos':
-                return <MapPin className="h-5 w-5" />;
+                return <MapIcon className="h-5 w-5" />;
             case 'Eventos':
-                return <CalendarDays className="h-5 w-5" />;
+                return <EventIcon className="h-5 w-5" />;
             case 'Publicaciones':
-                return <FileText className="h-5 w-5" />;
+                return <PostIcon className="h-5 w-5" />;
             case 'Users':
-                return <Users className="h-5 w-5" />;
+                return <UsersIcon className="h-5 w-5" />;
             case 'Admin':
-                return <Shield className="h-5 w-5" />;
+                return <AdminIcon className="h-5 w-5" />;
             case 'Sponsors':
-                return <Handshake className="h-5 w-5" />;
+                return <PostSponsorIcon className="h-5 w-5" />;
             case 'Analiticas':
-                return <BarChart3 className="h-5 w-5" />;
+                return <AnalyticsIcon className="h-5 w-5" />;
             // Profile/Settings moved to header
             default:
-                return <FolderKanban className="h-5 w-5" />;
+                return <ContentIcon className="h-5 w-5" />;
         }
     };
 
     const getChildIcon = (parent: string, child: string) => {
         const childLower = child.toLowerCase();
-        if (/(agregar|new|create)/.test(childLower)) return <PlusSquare className="h-4 w-4" />;
-        if (/(lista|list|all)/.test(childLower)) return <List className="h-4 w-4" />;
+        if (/(agregar|new|create)/.test(childLower)) return <AddIcon className="h-4 w-4" />;
+        if (/(lista|list|all)/.test(childLower)) return <ListIcon className="h-4 w-4" />;
         if (parent === 'Contenido') {
             if (/amenit/.test(childLower)) return <SettingsIcon className="h-4 w-4" />;
-            if (/feature/.test(childLower)) return <FolderKanban className="h-4 w-4" />;
-            if (/attraction/.test(childLower)) return <Tag className="h-4 w-4" />;
+            if (/feature/.test(childLower)) return <ContentIcon className="h-4 w-4" />;
+            if (/attraction/.test(childLower)) return <TagIcon className="h-4 w-4" />;
         }
-        if (parent === 'Alojamientos') return <Building2 className="h-4 w-4" />;
-        if (parent === 'Destinos') return <MapPin className="h-4 w-4" />;
+        if (parent === 'Alojamientos') return <AccommodationIcon className="h-4 w-4" />;
+        if (parent === 'Destinos') return <MapIcon className="h-4 w-4" />;
         if (parent === 'Eventos') {
-            if (/organizer/.test(childLower)) return <Users className="h-4 w-4" />;
-            if (/location/.test(childLower)) return <MapPin className="h-4 w-4" />;
-            return <CalendarDays className="h-4 w-4" />;
+            if (/organizer/.test(childLower)) return <UsersIcon className="h-4 w-4" />;
+            if (/location/.test(childLower)) return <MapIcon className="h-4 w-4" />;
+            return <EventIcon className="h-4 w-4" />;
         }
-        if (parent === 'Publicaciones') return <FileText className="h-4 w-4" />;
+        if (parent === 'Publicaciones') return <PostIcon className="h-4 w-4" />;
         if (parent === 'Users')
             return /agregar|new|create/.test(childLower) ? (
-                <PlusSquare className="h-4 w-4" />
+                <AddIcon className="h-4 w-4" />
             ) : (
-                <Users className="h-4 w-4" />
+                <UsersIcon className="h-4 w-4" />
             );
         if (parent === 'Admin') {
-            if (/permiso/.test(childLower)) return <Shield className="h-4 w-4" />;
-            if (/tag/.test(childLower)) return <Tag className="h-4 w-4" />;
-            if (/seo/.test(childLower)) return <Search className="h-4 w-4" />;
+            if (/permiso/.test(childLower)) return <AdminIcon className="h-4 w-4" />;
+            if (/tag/.test(childLower)) return <TagIcon className="h-4 w-4" />;
+            if (/seo/.test(childLower)) return <SearchIcon className="h-4 w-4" />;
             if (/portal|setting/.test(childLower)) return <SettingsIcon className="h-4 w-4" />;
         }
         if (parent === 'Analiticas') {
-            if (/debug/.test(childLower)) return <Bug className="h-4 w-4" />;
-            return <BarChart3 className="h-4 w-4" />;
+            if (/debug/.test(childLower)) return <DebugIcon className="h-4 w-4" />;
+            return <AnalyticsIcon className="h-4 w-4" />;
         }
-        if (parent === 'Sponsors') return <Handshake className="h-4 w-4" />;
-        return <FolderKanban className="h-4 w-4" />;
+        if (parent === 'Sponsors') return <PostSponsorIcon className="h-4 w-4" />;
+        return <ContentIcon className="h-4 w-4" />;
     };
 
     const headerRoutes = ['/me/profile', '/me/settings', '/notifications'] as const;
@@ -161,14 +163,14 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
             aria-label="Primary"
         >
             <div className="flex h-14 items-center justify-between px-3 md:hidden">
-                <span className="font-semibold text-sm">Navigation</span>
+                <span className="font-semibold text-sm">{t('admin-nav.sidebar.navigation')}</span>
                 <button
-                    aria-label="Close menu"
+                    aria-label={t('admin-common.aria.closeMenu')}
                     className="inline-flex items-center justify-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     type="button"
                     onClick={onClose}
                 >
-                    <X className="h-5 w-5" />
+                    <CloseIcon className="h-5 w-5" />
                 </button>
             </div>
 
