@@ -1,0 +1,182 @@
+---
+import Pagination from '@/components/ui/Pagination.astro';
+import { getAccommodations } from '@/data/db/accommodation';
+import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils';
+import { getAccommodationUrl, getAccommodationsIndexUrlWithPage } from '@/utils/urls';
+import type { AccommodationType } from '@repo/types';
+
+export interface Props {
+    page: number;
+    locals?: any;
+}
+
+const { page, locals } = Astro.props;
+const pageSize = 12;
+
+const { accommodations, total, totalPages } = await getAccommodations({
+    locals,
+    page,
+    pageSize
+});
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const title = page === 1 ? t('accommodations.title') : `${t('accommodations.title')} - Página ${page}`;
+const description = page === 1 
+    ? t('accommodations.description')
+    : `${t('accommodations.description')} Página ${page}.`;
+---
+
+<MainLayout title={title} description={description}>
+    <div class='min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200'>
+        <!-- Hero Section -->
+        <section
+            class='bg-gradient-to-r from-orange-600 to-red-600 dark:from-orange-700 dark:to-red-700 text-white py-16'
+        >
+            <div class='container mx-auto px-4 text-center'>
+                                    <h1 class='text-4xl md:text-5xl font-bold mb-4'>{t('accommodations.heading')}</h1>
+                                    <p class='text-xl md:text-2xl text-orange-100 max-w-3xl mx-auto'>
+                        {t('accommodations.subheading')}
+                    </p>
+            </div>
+        </section>
+
+        <!-- Filters Section -->
+        <section class='bg-gray-50 dark:bg-gray-800 py-8 border-b border-gray-200 dark:border-gray-700'>
+            <div class='container mx-auto px-4'>
+                <div class='flex flex-wrap gap-4 items-center justify-between'>
+                    <div class='flex flex-wrap gap-2'>
+                        <button class='px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors'>
+                            {t('accommodations.filters.all')}
+                        </button>
+                        <button class='px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors'>
+                            {t('accommodations.filters.hotels')}
+                        </button>
+                        <button class='px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors'>
+                            {t('accommodations.filters.cabins')}
+                        </button>
+                        <button class='px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors'>
+                            {t('accommodations.filters.apartments')}
+                        </button>
+                        <button class='px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors'>
+                            {t('accommodations.filters.hostels')}
+                        </button>
+                    </div>
+                    <div class='text-sm text-gray-600 dark:text-gray-400'>
+                        {total} {t('accommodations.found')}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accommodations Grid -->
+        <section class='py-12'>
+            <div class='container mx-auto px-4'>
+                {
+                    accommodations.length > 0 ? (
+                        <div class='space-y-12'>
+                            <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+                                {accommodations.map((accommodation: AccommodationType) => (
+                                <article class='bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden'>
+                                    <div class='aspect-video bg-gradient-to-br from-orange-400 to-red-500 relative'>
+                                        {accommodation.media?.featuredImage ? (
+                                            <img
+                                                src={accommodation.media.featuredImage.url}
+                                                alt={accommodation.name}
+                                                class='w-full h-full object-cover'
+                                                loading='lazy'
+                                            />
+                                        ) : accommodation.media?.gallery && accommodation.media.gallery.length > 0 && accommodation.media.gallery[0] ? (
+                                            <img
+                                                src={accommodation.media.gallery[0].url}
+                                                alt={accommodation.name}
+                                                class='w-full h-full object-cover'
+                                                loading='lazy'
+                                            />
+                                        ) : (
+                                            <div class='w-full h-full flex items-center justify-center text-white'>
+                                                <svg class='w-12 h-12' fill='currentColor' viewBox='0 0 20 20'>
+                                                    <path
+                                                        fill-rule='evenodd'
+                                                        d='M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z'
+                                                        clip-rule='evenodd'
+                                                    />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <div class='absolute top-2 left-2'>
+                                            <span class='bg-orange-600 text-white text-xs px-2 py-1 rounded'>
+                                                {accommodation.type || 'Alojamiento'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class='p-4'>
+                                        <h3 class='text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-1'>
+                                            {accommodation.name}
+                                        </h3>
+                                        <p class='text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2'>
+                                            {accommodation.description || 'Descubre este increíble alojamiento.'}
+                                        </p>
+                                        <div class='flex items-center justify-between'>
+                                            <div class='flex items-center text-sm text-gray-500 dark:text-gray-400'>
+                                                <svg class='w-4 h-4 mr-1' fill='currentColor' viewBox='0 0 20 20'>
+                                                    <path
+                                                        fill-rule='evenodd'
+                                                        d='M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z'
+                                                        clip-rule='evenodd'
+                                                    />
+                                                </svg>
+                                                {accommodation.location?.city || accommodation.location?.state || 'Ubicación'}
+                                            </div>
+                                            <a
+                                                href={getAccommodationUrl(accommodation)}
+                                                class='text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium text-sm transition-colors'
+                                            >
+                                                Ver más →
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                                ))}
+                            </div>
+
+                            <!-- Pagination -->
+                            <Pagination 
+                                page={page} 
+                                totalPages={totalPages} 
+                                getPageUrl={getAccommodationsIndexUrlWithPage}
+                                theme="orange"
+                            />
+                        </div>
+                    ) : (
+                        <div class='text-center py-12'>
+                            <div class='max-w-md mx-auto'>
+                                <svg
+                                    class='w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        stroke-linecap='round'
+                                        stroke-linejoin='round'
+                                        stroke-width='2'
+                                        d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
+                                    />
+                                </svg>
+                                <h3 class='text-lg font-medium text-gray-900 dark:text-white mb-2'>
+                                    {t('accommodations.emptyTitle')}
+                                </h3>
+                                <p class='text-gray-600 dark:text-gray-400'>
+                                    {t('accommodations.emptyMessage')}
+                                </p>
+                            </div>
+                        </div>
+                    )
+                }
+            </div>
+        </section>
+    </div>
+</MainLayout>

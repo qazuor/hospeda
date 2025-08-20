@@ -1,0 +1,303 @@
+---
+export const prerender = true;
+
+import { getAllDestinations, getDestinationBySlug } from '@/data/db/destinations';
+import MainLayout from '@/layout/MainLayout.astro';
+import { getAccommodationsIndexUrl, getDestinationsIndexUrl } from '@/utils/urls';
+
+export async function getStaticPaths() {
+    const destinations = await getAllDestinations();
+    return destinations.map((destination) => ({
+        params: { slug: destination.slug },
+    }));
+}
+
+const { slug } = Astro.params;
+
+if (!slug) {
+    return Astro.redirect(getDestinationsIndexUrl());
+}
+
+const { destination } = await getDestinationBySlug({
+    locals: Astro.locals,
+    slug,
+});
+
+if (!destination) {
+    return Astro.redirect('/destinos');
+}
+
+const title = `${destination.name} - Destino Turístico`;
+const description = destination.description || `Descubre ${destination.name}, un increíble destino turístico.`;
+---
+
+<MainLayout title={title} description={description}>
+    <div class='min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200'>
+        <!-- Hero Section -->
+        <section class='relative h-96 md:h-[500px] overflow-hidden'>
+            {
+                destination.images && destination.images.length > 0 ? (
+                    <img src={destination.images[0]} alt={destination.name} class='w-full h-full object-cover' />
+                ) : (
+                    <div class='w-full h-full bg-gradient-to-br from-teal-400 to-blue-500' />
+                )
+            }
+            <div class='absolute inset-0 bg-black bg-opacity-40'></div>
+            <div class='absolute inset-0 flex items-center justify-center'>
+                <div class='text-center text-white max-w-4xl mx-auto px-4'>
+                    <h1 class='text-4xl md:text-6xl font-bold mb-4'>{destination.name}</h1>
+                    <p class='text-xl md:text-2xl text-gray-200'>
+                        {
+                            destination.region && destination.country
+                                ? `${destination.region}, ${destination.country}`
+                                : destination.country || 'Destino Turístico'
+                        }
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Breadcrumb -->
+        <nav class='bg-gray-50 dark:bg-gray-800 py-4 border-b border-gray-200 dark:border-gray-700'>
+            <div class='container mx-auto px-4'>
+                <ol class='flex items-center space-x-2 text-sm'>
+                    <li>
+                        <a
+                            href='/'
+                            class='text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300'
+                            >Inicio</a
+                        >
+                    </li>
+                    <li class='text-gray-500 dark:text-gray-400'>/</li>
+                    <li>
+                        <a
+                            href={getDestinationsIndexUrl()}
+                            class='text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300'
+                            >Destinos</a
+                        >
+                    </li>
+                    <li class='text-gray-500 dark:text-gray-400'>/</li>
+                    <li class='text-gray-900 dark:text-white font-medium'>{destination.name}</li>
+                </ol>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <div class='container mx-auto px-4 py-12'>
+            <div class='grid grid-cols-1 lg:grid-cols-3 gap-12'>
+                <!-- Main Content -->
+                <div class='lg:col-span-2'>
+                    <!-- Description -->
+                    <section class='mb-12'>
+                        <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-6'>Sobre este destino</h2>
+                        <div class='prose prose-lg dark:prose-invert max-w-none'>
+                            <p class='text-gray-700 dark:text-gray-300 leading-relaxed'>
+                                {
+                                    destination.description ||
+                                        `${destination.name} es un destino turístico increíble que ofrece experiencias únicas para todos los visitantes. 
+                                Con su rica cultura, paisajes espectaculares y hospitalidad excepcional, este lugar te cautivará desde el primer momento.`
+                                }
+                            </p>
+                        </div>
+                    </section>
+
+                    <!-- Image Gallery -->
+                    {
+                        destination.images && destination.images.length > 1 && (
+                            <section class='mb-12'>
+                                <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-6'>Galería</h2>
+                                <div class='grid grid-cols-2 md:grid-cols-3 gap-4'>
+                                    {destination.images.slice(1).map((image, index) => (
+                                        <div class='aspect-square overflow-hidden rounded-lg'>
+                                            <img
+                                                src={image}
+                                                alt={`${destination.name} - Imagen ${index + 2}`}
+                                                class='w-full h-full object-cover hover:scale-105 transition-transform duration-300'
+                                                loading='lazy'
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )
+                    }
+
+                    <!-- Attractions -->
+                    <section class='mb-12'>
+                        <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-6'>Qué hacer</h2>
+                        <div class='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                            <div class='bg-gray-50 dark:bg-gray-800 rounded-lg p-6'>
+                                <div class='flex items-center mb-4'>
+                                    <svg
+                                        class='w-8 h-8 text-teal-600 dark:text-teal-400 mr-3'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            stroke-width='2'
+                                            d='M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M10.5 3L12 2l1.5 1H21v6H3V3h7.5z'
+                                        ></path>
+                                    </svg>
+                                    <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>
+                                        Sitios Históricos
+                                    </h3>
+                                </div>
+                                <p class='text-gray-600 dark:text-gray-400'>
+                                    Explora la rica historia y patrimonio cultural del destino.
+                                </p>
+                            </div>
+                            <div class='bg-gray-50 dark:bg-gray-800 rounded-lg p-6'>
+                                <div class='flex items-center mb-4'>
+                                    <svg
+                                        class='w-8 h-8 text-teal-600 dark:text-teal-400 mr-3'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            stroke-width='2'
+                                            d='M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
+                                        ></path>
+                                    </svg>
+                                    <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Naturaleza</h3>
+                                </div>
+                                <p class='text-gray-600 dark:text-gray-400'>
+                                    Disfruta de paisajes naturales y actividades al aire libre.
+                                </p>
+                            </div>
+                            <div class='bg-gray-50 dark:bg-gray-800 rounded-lg p-6'>
+                                <div class='flex items-center mb-4'>
+                                    <svg
+                                        class='w-8 h-8 text-teal-600 dark:text-teal-400 mr-3'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            stroke-width='2'
+                                            d='M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7'
+                                        ></path>
+                                    </svg>
+                                    <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Gastronomía</h3>
+                                </div>
+                                <p class='text-gray-600 dark:text-gray-400'>
+                                    Degusta la deliciosa cocina local y especialidades regionales.
+                                </p>
+                            </div>
+                            <div class='bg-gray-50 dark:bg-gray-800 rounded-lg p-6'>
+                                <div class='flex items-center mb-4'>
+                                    <svg
+                                        class='w-8 h-8 text-teal-600 dark:text-teal-400 mr-3'
+                                        fill='none'
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                    >
+                                        <path
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            stroke-width='2'
+                                            d='M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3'
+                                        ></path>
+                                    </svg>
+                                    <h3 class='text-lg font-semibold text-gray-900 dark:text-white'>Cultura</h3>
+                                </div>
+                                <p class='text-gray-600 dark:text-gray-400'>
+                                    Sumérgete en las tradiciones y expresiones culturales locales.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Sidebar -->
+                <div class='lg:col-span-1'>
+                    <!-- Quick Info -->
+                    <div
+                        class='bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700'
+                    >
+                        <h3 class='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
+                            Información del destino
+                        </h3>
+                        <div class='space-y-4'>
+                            {
+                                destination.country && (
+                                    <div class='flex items-center'>
+                                        <svg
+                                            class='w-5 h-5 text-gray-400 dark:text-gray-500 mr-3'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                stroke-linecap='round'
+                                                stroke-linejoin='round'
+                                                stroke-width='2'
+                                                d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
+                                            />
+                                        </svg>
+                                        <span class='text-gray-700 dark:text-gray-300'>{destination.country}</span>
+                                    </div>
+                                )
+                            }
+                            {
+                                destination.region && (
+                                    <div class='flex items-center'>
+                                        <svg
+                                            class='w-5 h-5 text-gray-400 dark:text-gray-500 mr-3'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            viewBox='0 0 24 24'
+                                        >
+                                            <path
+                                                stroke-linecap='round'
+                                                stroke-linejoin='round'
+                                                stroke-width='2'
+                                                d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
+                                            />
+                                        </svg>
+                                        <span class='text-gray-700 dark:text-gray-300'>{destination.region}</span>
+                                    </div>
+                                )
+                            }
+                            <div class='flex items-center'>
+                                <svg
+                                    class='w-5 h-5 text-gray-400 dark:text-gray-500 mr-3'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                >
+                                    <path
+                                        stroke-linecap='round'
+                                        stroke-linejoin='round'
+                                        stroke-width='2'
+                                        d='M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z'
+                                    ></path>
+                                </svg>
+                                <span class='text-gray-700 dark:text-gray-300'>Clima templado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CTA -->
+                    <div class='bg-gradient-to-br from-teal-500 to-blue-600 rounded-lg p-6 text-white'>
+                        <h3 class='text-lg font-semibold mb-3'>¿Listo para tu aventura?</h3>
+                        <p class='text-teal-100 mb-4'>Encuentra el alojamiento perfecto para tu estadía.</p>
+                        <a
+                            href={getAccommodationsIndexUrl()}
+                            class='block w-full bg-white text-teal-600 text-center py-3 px-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors'
+                        >
+                            Ver alojamientos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</MainLayout>

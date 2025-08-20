@@ -1,0 +1,27 @@
+---
+import PostListPage from '@/components/pages/PostListPage.astro';
+import { getPosts } from '@/data/db/posts';
+import { getBlogIndexUrl } from '@/utils/urls';
+
+const { page: pageParam } = Astro.params;
+const page = Number(pageParam) || 1;
+
+// Redirect page 1 to the main index
+if (page === 1) {
+    return Astro.redirect(getBlogIndexUrl());
+}
+
+// Check if page is out of bounds
+const { total } = await getPosts({
+    locals: Astro.locals,
+    page: 1,
+    pageSize: 12,
+});
+const totalPages = Math.ceil(total / 12);
+
+if (page > totalPages && totalPages > 0) {
+    return Astro.redirect(getBlogIndexUrl());
+}
+---
+
+<PostListPage page={page} locals={Astro.locals} />

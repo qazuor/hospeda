@@ -1,0 +1,99 @@
+---
+export interface Props {
+    page: number;
+    totalPages: number;
+    getPageUrl: (pageNum: number) => string;
+    theme?: 'teal' | 'purple' | 'emerald' | 'orange' | 'blue';
+}
+
+const { page, totalPages, getPageUrl, theme = 'blue' } = Astro.props;
+
+// Helper functions
+const showNextButton = () => {
+    return page < totalPages;
+};
+
+const showPageButton = (pageNum: number) => {
+    return pageNum <= totalPages;
+};
+
+const showNavigation = () => {
+    return totalPages > 1;
+};
+
+const showPrevButton = (currentPage: number) => {
+    return currentPage > 1;
+};
+
+// Theme color mappings
+const themeColors = {
+    teal: 'bg-teal-600 text-white',
+    purple: 'bg-purple-600 text-white',
+    emerald: 'bg-emerald-600 text-white',
+    orange: 'bg-orange-600 text-white',
+    blue: 'bg-blue-600 text-white',
+};
+
+const activeButtonClass = themeColors[theme];
+const inactiveButtonClass =
+    'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700';
+---
+
+{
+    showNavigation() && (
+        <div class='flex justify-center mt-12'>
+            <nav class='flex items-center space-x-2'>
+                {showPrevButton(page) && (
+                    <a
+                        href={getPageUrl(page - 1)}
+                        class={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${inactiveButtonClass}`}
+                        aria-label='Ir a la pagina anterior'
+                        title='Ir a la pagina anterior'
+                    >
+                        Anterior
+                    </a>
+                )}
+
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
+                    if (showPageButton(pageNum)) {
+                        if (pageNum === page) {
+                            return (
+                                <em
+                                    class={`px-3 py-2 text-sm font-bold cursor-default not-italic rounded-md transition-colors ${activeButtonClass}`}
+                                    aria-label={`Pagina actual, pagina ${pageNum}`}
+                                    title={`Pagina actual, pagina ${pageNum}`}
+                                >
+                                    {pageNum}
+                                </em>
+                            );
+                        } else {
+                            return (
+                                <a
+                                    href={getPageUrl(pageNum)}
+                                    class={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${inactiveButtonClass}`}
+                                    aria-label={`Ir a la pagina ${pageNum}`}
+                                    title={`Ir a la pagina ${pageNum}`}
+                                >
+                                    {pageNum}
+                                </a>
+                            );
+                        }
+                    }
+                    return null;
+                })}
+
+                {showNextButton() && (
+                    <a
+                        href={getPageUrl(page + 1)}
+                        class={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${inactiveButtonClass}`}
+                        aria-label='Ir a la pagina siguiente'
+                        title='Ir a la pagina siguiente'
+                    >
+                        Siguiente
+                    </a>
+                )}
+            </nav>
+        </div>
+    )
+}

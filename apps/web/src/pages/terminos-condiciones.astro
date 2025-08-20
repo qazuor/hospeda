@@ -1,0 +1,146 @@
+---
+export const prerender = true;
+
+import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const title = t('terms.title');
+const description = t('terms.description');
+---
+
+<MainLayout title={title} description={description}>
+    <div class='min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200'>
+        <!-- Header -->
+        <section class='bg-gray-50 dark:bg-gray-800 py-12 border-b border-gray-200 dark:border-gray-700'>
+            <div class='container mx-auto px-4'>
+                <h1 class='text-4xl font-bold text-gray-900 dark:text-white mb-4'>
+                    {t('terms.heading')}
+                </h1>
+                <p class='text-lg text-gray-600 dark:text-gray-400'>{t('terms.lastUpdated')}</p>
+            </div>
+        </section>
+
+        <!-- Content -->
+        <section class='py-12'>
+            <div class='container mx-auto px-4 max-w-4xl'>
+                <div class='prose prose-lg dark:prose-invert max-w-none'>
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.acceptance.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.acceptance.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.serviceDescription.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.serviceDescription.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.accountRegistration.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-4'>
+                        {t('terms.sections.accountRegistration.intro')}
+                    </p>
+                    <ul class='list-disc list-inside text-gray-700 dark:text-gray-300 mb-6 space-y-2'>
+                        <li>{t('terms.sections.accountRegistration.responsibilities.password')}</li>
+                        <li>{t('terms.sections.accountRegistration.responsibilities.activities')}</li>
+                        <li>{t('terms.sections.accountRegistration.responsibilities.unauthorized')}</li>
+                        <li>{t('terms.sections.accountRegistration.responsibilities.information')}</li>
+                    </ul>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.bookingsPayments.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-4'>
+                        {t('terms.sections.bookingsPayments.intro')}
+                    </p>
+                    <ul class='list-disc list-inside text-gray-700 dark:text-gray-300 mb-6 space-y-2'>
+                        <li>{t('terms.sections.bookingsPayments.conditions.fees')}</li>
+                        <li>{t('terms.sections.bookingsPayments.conditions.cancellation')}</li>
+                        <li>{t('terms.sections.bookingsPayments.conditions.rules')}</li>
+                        <li>{t('terms.sections.bookingsPayments.conditions.payments')}</li>
+                    </ul>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.userResponsibilities.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-4'>
+                        {t('terms.sections.userResponsibilities.intro')}
+                    </p>
+                    <ul class='list-disc list-inside text-gray-700 dark:text-gray-300 mb-6 space-y-2'>
+                        <li>{t('terms.sections.userResponsibilities.commitments.legal')}</li>
+                        <li>{t('terms.sections.userResponsibilities.commitments.rights')}</li>
+                        <li>{t('terms.sections.userResponsibilities.commitments.content')}</li>
+                        <li>{t('terms.sections.userResponsibilities.commitments.property')}</li>
+                        <li>{t('terms.sections.userResponsibilities.commitments.reviews')}</li>
+                    </ul>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.cancellationPolicies.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.cancellationPolicies.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.liabilityLimitation.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.liabilityLimitation.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.intellectualProperty.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.intellectualProperty.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.termsModifications.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.termsModifications.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.termination.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.termination.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.applicableLaw.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.applicableLaw.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('terms.sections.contact.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('terms.sections.contact.intro')}
+                    </p>
+                    <div class='bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700'>
+                        <p class='text-gray-700 dark:text-gray-300'>
+                            <strong>{t('terms.sections.contact.details.email')}</strong>
+                            {t('terms.sections.contact.details.emailValue')}<br />
+                            <strong>{t('terms.sections.contact.details.address')}</strong>
+                            {t('terms.sections.contact.details.addressValue')}<br />
+                            <strong>{t('terms.sections.contact.details.phone')}</strong>
+                            {t('terms.sections.contact.details.phoneValue')}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</MainLayout>

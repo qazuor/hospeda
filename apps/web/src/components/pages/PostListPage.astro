@@ -1,0 +1,188 @@
+---
+import Pagination from '@/components/ui/Pagination.astro';
+import { getPosts } from '@/data/db/posts';
+import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils';
+import { getBlogIndexUrlWithPage, getPostUrl } from '@/utils/urls';
+import type { PostType } from '@repo/types';
+
+export interface Props {
+    page: number;
+    locals?: any;
+}
+
+const { page, locals } = Astro.props;
+const pageSize = 12;
+
+const { posts, total, totalPages } = await getPosts({
+    locals,
+    page,
+    pageSize
+});
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const title = page === 1 ? t('blog.title') : `${t('blog.title')} - Página ${page}`;
+const description = page === 1 
+    ? t('blog.description')
+    : `${t('blog.description')} Página ${page}.`;
+
+// Helper function to format date
+const formatDate = (date: Date | string) => {
+    const d = new Date(date);
+    return d.toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+    });
+};
+
+const getReadingTime = (content: string) => {
+    const wordsPerMinute = 200;
+    const wordCount = content.split(' ').length;
+    const readingTime = Math.ceil(wordCount / wordsPerMinute);
+    return readingTime;
+};
+---
+
+<MainLayout title={title} description={description}>
+    <div class="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+        <!-- Hero Section -->
+        <section class="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-700 dark:to-teal-700 text-white py-16">
+            <div class="container mx-auto px-4 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">{t('blog.heading')}</h1>
+                <p class="text-xl md:text-2xl text-emerald-100 max-w-3xl mx-auto">
+                    {t('blog.subheading')}
+                </p>
+            </div>
+        </section>
+
+        <!-- Filters Section -->
+        <section class="bg-gray-50 dark:bg-gray-800 py-8 border-b border-gray-200 dark:border-gray-700">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex flex-wrap gap-2">
+                        <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                            {t('blog.filters.all')}
+                        </button>
+                        <button class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            {t('blog.filters.guides')}
+                        </button>
+                        <button class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            {t('blog.filters.tips')}
+                        </button>
+                        <button class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            {t('blog.filters.experiences')}
+                        </button>
+                        <button class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            {t('blog.filters.news')}
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        {total} {t('blog.found')}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Posts Grid -->
+        <section class="py-12">
+            <div class="container mx-auto px-4">
+                {posts.length > 0 ? (
+                    <div class="space-y-12">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {posts.map((post: PostType) => (
+                                <article class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                                    <div class="aspect-video bg-gradient-to-br from-emerald-400 to-teal-500 relative">
+                                        {post.media && post.media.featuredImage ? (
+                                            <img 
+                                                src={post.media?.featuredImage?.url} 
+                                                alt={post.title}
+                                                class="w-full h-full object-cover"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div class="w-full h-full flex items-center justify-center text-white">
+                                                <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <div class="absolute top-2 left-2">
+                                            <span class="bg-emerald-600 text-white text-xs px-2 py-1 rounded">
+                                                {post.category || 'Artículo'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="p-6">
+                                        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            {formatDate(post.publishedAt || post.createdAt)}
+                                            {post.content && (
+                                                <>
+                                                    <span class="mx-2">•</span>
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    {getReadingTime(post.content)} {t('blog.card.readingTime')}
+                                                </>
+                                            )}
+                                        </div>
+                                        
+                                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3 line-clamp-2">
+                                            {post.title}
+                                        </h3>
+                                        
+                                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
+                                            {post.excerpt || post.summary || 'Descubre más sobre este interesante artículo y las experiencias que compartimos contigo.'}
+                                        </p>
+                                        
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                {post.authorName && (
+                                                    <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                        </svg>
+                                                        {post.authorName}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <a 
+                                                href={getPostUrl(post)}
+                                                class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium text-sm transition-colors"
+                                            >
+                                                {t('blog.card.readMore')} →
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+
+                        <!-- Pagination -->
+                        <Pagination 
+                            page={page} 
+                            totalPages={totalPages} 
+                            getPageUrl={getBlogIndexUrlWithPage}
+                            theme="emerald"
+                        />
+                    </div>
+                ) : (
+                    <div class="text-center py-12">
+                        <div class="max-w-md mx-auto">
+                            <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('blog.emptyTitle')}</h3>
+                            <p class="text-gray-600 dark:text-gray-400">{t('blog.emptyMessage')}</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </section>
+    </div>
+</MainLayout>
