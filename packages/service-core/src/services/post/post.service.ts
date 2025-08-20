@@ -291,9 +291,11 @@ export class PostService extends BaseCrudService<
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canList(actor: Actor): void {
-        if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: not authenticated');
+        if (!actor) {
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
         }
+        // Listing is allowed for any actor; results are filtered by visibility elsewhere.
+        return;
     }
 
     /**
@@ -385,7 +387,13 @@ export class PostService extends BaseCrudService<
             execute: async (validated: z.infer<typeof GetPostNewsInputSchema>, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
-                if (validated.visibility) where.visibility = validated.visibility;
+
+                // If no visibility is specified, default to PUBLIC for guest users
+                if (validated.visibility) {
+                    where.visibility = validated.visibility;
+                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                    where.visibility = 'PUBLIC';
+                }
                 if (validated.fromDate || validated.toDate) {
                     const expiresAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) expiresAtFilter.gte = validated.fromDate;
@@ -415,7 +423,13 @@ export class PostService extends BaseCrudService<
             execute: async (validated: z.infer<typeof GetPostFeaturedInputSchema>, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
-                if (validated.visibility) where.visibility = validated.visibility;
+
+                // If no visibility is specified, default to PUBLIC for guest users
+                if (validated.visibility) {
+                    where.visibility = validated.visibility;
+                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                    where.visibility = 'PUBLIC';
+                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
@@ -445,8 +459,13 @@ export class PostService extends BaseCrudService<
             execute: async (validated: z.infer<typeof GetPostByCategoryInputSchema>, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
-                if ('visibility' in validated && validated.visibility)
+
+                // If no visibility is specified, default to PUBLIC for guest users
+                if ('visibility' in validated && validated.visibility) {
                     where.visibility = validated.visibility;
+                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                    where.visibility = 'PUBLIC';
+                }
                 if (
                     ('fromDate' in validated && validated.fromDate) ||
                     ('toDate' in validated && validated.toDate)
@@ -486,7 +505,13 @@ export class PostService extends BaseCrudService<
                 const where: Record<string, unknown> = {
                     relatedAccommodationId: validated.accommodationId
                 };
-                if (validated.visibility) where.visibility = validated.visibility;
+
+                // If no visibility is specified, default to PUBLIC for guest users
+                if (validated.visibility) {
+                    where.visibility = validated.visibility;
+                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                    where.visibility = 'PUBLIC';
+                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
@@ -521,7 +546,13 @@ export class PostService extends BaseCrudService<
                 const where: Record<string, unknown> = {
                     relatedDestinationId: validated.destinationId
                 };
-                if (validated.visibility) where.visibility = validated.visibility;
+
+                // If no visibility is specified, default to PUBLIC for guest users
+                if (validated.visibility) {
+                    where.visibility = validated.visibility;
+                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                    where.visibility = 'PUBLIC';
+                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
@@ -551,7 +582,13 @@ export class PostService extends BaseCrudService<
             execute: async (validated: z.infer<typeof GetPostByRelatedEventInputSchema>, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
-                if (validated.visibility) where.visibility = validated.visibility;
+
+                // If no visibility is specified, default to PUBLIC for guest users
+                if (validated.visibility) {
+                    where.visibility = validated.visibility;
+                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                    where.visibility = 'PUBLIC';
+                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
