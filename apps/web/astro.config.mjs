@@ -47,6 +47,8 @@ export default defineConfig({
                 '@repo/db': new URL('../../packages/db/src', import.meta.url).pathname,
                 '@repo/utils': new URL('../../packages/utils/src', import.meta.url).pathname,
                 '@repo/logger': new URL('../../packages/logger/src', import.meta.url).pathname,
+                '@repo/icons': new URL('../../packages/icons/src', import.meta.url).pathname,
+                '@repo/i18n': new URL('../../packages/i18n/src', import.meta.url).pathname,
                 '@repo/service-common': new URL(
                     '../../packages/service-common/src',
                     import.meta.url

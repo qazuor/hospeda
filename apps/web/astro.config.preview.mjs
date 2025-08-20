@@ -1,8 +1,8 @@
 import node from '@astrojs/node';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
-import tailwind from '@astrojs/tailwind';
 import clerk from '@clerk/astro';
+import tailwindcss from '@tailwindcss/vite';
 import devtoolBreakpoints from 'astro-devtool-breakpoints';
 import astroFontPicker from 'astro-font-picker';
 import lighthouse from 'astro-lighthouse';
@@ -16,7 +16,6 @@ import reunmedianormalizeTrailingSlash from '@reunmedia/astro-normalize-trailing
 // Configuration for preview/testing - uses Node adapter instead of Vercel
 export default defineConfig({
     integrations: [
-        tailwind({ config: { applyBaseStyles: true } }),
         react(),
         clerk(),
         sitemap(),
@@ -34,6 +33,10 @@ export default defineConfig({
     trailingSlash: 'always',
     site: process.env.PUBLIC_SITE_URL ?? 'http://localhost:4321',
     vite: {
+        css: {
+            transformer: 'lightningcss'
+        },
+        plugins: [tailwindcss()],
         resolve: {
             alias: {
                 '@repo/auth-ui': '/home/qazuor/projects/WEBS/hospeda/packages/auth-ui/src',
