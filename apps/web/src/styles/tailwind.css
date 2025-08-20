@@ -5,19 +5,19 @@
     html {
         font-family: Inter, system-ui, sans-serif;
     }
-    
+
     body {
         background-color: rgb(255 255 255); /* white */
         color: rgb(17 24 39); /* gray-900 */
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
-    
+
     html.dark body {
         background-color: rgb(17 24 39); /* gray-900 */
         color: rgb(243 244 246); /* gray-100 */
     }
-    
+
     p {
         line-height: 1.625;
     }
@@ -28,138 +28,138 @@
     .container {
         @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
     }
-    
+
     .card {
         @apply rounded-md p-4 shadow-md transition-transform;
         background-color: rgb(255 255 255); /* white */
     }
-    
+
     .dark .card {
         background-color: rgb(15 23 42); /* slate-900 */
     }
-    
+
     .card-hover {
         @apply rounded-md p-4 shadow-md transition-transform hover:scale-[1.01] hover:shadow-lg;
         background-color: rgb(255 255 255); /* white */
     }
-    
+
     .dark .card-hover {
         background-color: rgb(15 23 42); /* slate-900 */
     }
-    
+
     .text-muted {
         @apply text-sm text-slate-500;
     }
-    
+
     /* Navigation Links */
     .nav-link {
         @apply font-medium transition-colors duration-200 relative text-sm;
         color: rgb(75 85 99); /* gray-600 */
     }
-    
+
     .dark .nav-link {
         color: rgb(209 213 219); /* gray-300 */
     }
-    
+
     .nav-link:hover {
         color: #0d9488; /* primary-600 */
     }
-    
+
     .dark .nav-link:hover {
         color: #2dd4bf; /* primary-400 */
     }
-    
+
     .nav-link:hover::after {
         @apply absolute bottom-0 left-0 w-full h-0.5 transform scale-x-100 transition-transform duration-200;
-        content: '';
+        content: "";
         background-color: #0d9488; /* primary-600 */
     }
-    
+
     .dark .nav-link:hover::after {
         background-color: #2dd4bf; /* primary-400 */
     }
-    
+
     .nav-link::after {
         @apply absolute bottom-0 left-0 w-full h-0.5 transform scale-x-0 transition-transform duration-200;
-        content: '';
+        content: "";
         background-color: #0d9488; /* primary-600 */
     }
-    
+
     .dark .nav-link::after {
         background-color: #2dd4bf; /* primary-400 */
     }
-    
+
     .mobile-link {
         @apply block py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors duration-200 font-medium text-sm;
         color: rgb(75 85 99); /* gray-600 */
     }
-    
+
     .dark .mobile-link {
         color: rgb(209 213 219); /* gray-300 */
     }
-    
+
     .mobile-link:hover {
         color: #0d9488; /* primary-600 */
     }
-    
+
     .dark .mobile-link:hover {
         color: #2dd4bf; /* primary-400 */
     }
-    
+
     /* Button Base */
     .btn {
         @apply inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
     }
-    
+
     /* Button Variants */
     .btn-primary {
         @apply text-white focus:ring-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200;
         background: linear-gradient(to right, #14b8a6, #0ea5e9); /* primary-500 to secondary-500 */
         --tw-ring-color: #14b8a6; /* primary-500 */
     }
-    
+
     .btn-primary:hover {
         background: linear-gradient(to right, #0d9488, #0284c7); /* primary-600 to secondary-600 */
     }
-    
+
     .btn-secondary {
         @apply bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 shadow-sm hover:shadow-md;
     }
-    
+
     .btn-accent {
         @apply text-white focus:ring-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200;
         background: linear-gradient(to right, #f2750a, #e35d05); /* accent-500 to accent-600 */
         --tw-ring-color: #f2750a; /* accent-500 */
     }
-    
+
     .btn-accent:hover {
         background: linear-gradient(to right, #e35d05, #bc4508); /* accent-600 to accent-700 */
     }
-    
+
     .btn-outline {
         @apply bg-transparent border focus:ring-2 transition-colors duration-200;
         color: #0d9488; /* primary-600 */
         border-color: #0d9488; /* primary-600 */
         --tw-ring-color: #14b8a6; /* primary-500 */
     }
-    
+
     .btn-outline:hover {
         background-color: #f0fdfa; /* primary-50 */
     }
-    
+
     .dark .btn-outline {
         color: #2dd4bf; /* primary-400 */
         border-color: #2dd4bf; /* primary-400 */
     }
-    
+
     .dark .btn-outline:hover {
         background-color: rgba(4, 47, 46, 0.2); /* primary-900/20 */
     }
-    
+
     .btn-ghost {
         @apply bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500 dark:text-gray-300 dark:hover:bg-gray-800;
     }
-    
+
     /* Logo Styles */
     .hospedarLogo {
         background: linear-gradient(to right, #0d9488, #14b8a6, #0ea5e9); /* primary-600 via primary-500 to secondary-500 */
