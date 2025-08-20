@@ -163,6 +163,23 @@ export async function seedAccommodations() {
 
 ---
 
+## ⚙️ Variables de entorno relevantes para seed
+
+```bash
+# Conexión a base de datos
+DATABASE_URL=postgres://...
+
+# Enlace del Super Admin con el proveedor de autenticación (recomendado)
+# Proveedor primario (por defecto: CLERK)
+SEED_AUTH_PROVIDER=CLERK
+# ID de usuario del proveedor (por ejemplo, id de usuario de Clerk) para el Super Admin
+SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID=
+```
+
+Estas variables permiten que el usuario Super Admin creado por el seed quede enlazado con el usuario del proveedor de autenticación, habilitando el mapeo consistente IdP→DB desde el inicio.
+
+---
+
 ## 🛡️ Recomendaciones técnicas y buenas prácticas
 
 * Siempre validar que los archivos JSON tengan estructura válida y completa.
