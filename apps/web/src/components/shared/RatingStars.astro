@@ -1,7 +1,5 @@
 ---
-import EmptyStar from '@/components/icons/rating/EmptyStar.astro';
-import FullStar from '@/components/icons/rating/FullStar.astro';
-import HalfStar from '@/components/icons/rating/HalfStar.astro';
+import { StarIcon } from '@repo/icons';
 
 interface Props {
     rating: number; // 0..starCount (puede tener decimales)
@@ -22,7 +20,16 @@ const emptyStars = starCount - fullStars - (hasHalfStar ? 1 : 0);
 ---
 
 <div class={`inline-flex items-center gap-1 ${className}`}>
-    {Array.from({ length: fullStars }).map(() => <FullStar size={iconSize} className='text-yellow-400' />)}
-    {hasHalfStar && <HalfStar size={iconSize} className='text-yellow-400' />}
-    {Array.from({ length: emptyStars }).map(() => <EmptyStar size={iconSize} className='text-gray-300' />)}
+    {Array.from({ length: fullStars }).map(() => <StarIcon size={iconSize} className='text-yellow-400 fill-current' />)}
+    {
+        hasHalfStar && (
+            <div class='relative'>
+                <StarIcon size={iconSize} className='text-gray-300' />
+                <div class='absolute inset-0 overflow-hidden' style='width: 50%'>
+                    <StarIcon size={iconSize} className='text-yellow-400 fill-current' />
+                </div>
+            </div>
+        )
+    }
+    {Array.from({ length: emptyStars }).map(() => <StarIcon size={iconSize} className='text-gray-300' />)}
 </div>

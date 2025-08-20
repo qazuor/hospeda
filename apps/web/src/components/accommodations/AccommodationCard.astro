@@ -1,13 +1,8 @@
 ---
-import CarIcon from '@/components/icons/CarIcon.astro';
-import CoffeeIcon from '@/components/icons/CoffeeIcon.astro';
-import MapPinIcon from '@/components/icons/MapPinIcon.astro';
-import StarIcon from '@/components/icons/StarIcon.astro';
-import WavesIcon from '@/components/icons/WavesIcon.astro';
-import WifiIcon from '@/components/icons/WifiIcon.astro';
 import { FavoriteButton } from '@/components/shared/FavoriteButton.client';
 import { TranslationKeys } from '@/i18n/translation-keys';
 import { formatPrice, getAccommodationUrl, getLangFromUrl, useTranslations } from '@/utils';
+import { CoffeeMakerIcon, MapIcon, ParkingIcon, PoolIcon, StarIcon, WifiIcon } from '@repo/icons';
 import { AccommodationType } from '@repo/types';
 
 interface Props {
@@ -25,9 +20,9 @@ const url = getAccommodationUrl(accommodation);
 
 const featureIcons: Record<string, any> = {
     wifi: WifiIcon,
-    estacionamiento: CarIcon,
-    desayuno: CoffeeIcon,
-    piscina: WavesIcon,
+    estacionamiento: ParkingIcon,
+    desayuno: CoffeeMakerIcon,
+    piscina: PoolIcon,
 };
 ---
 
@@ -91,7 +86,7 @@ const featureIcons: Record<string, any> = {
                     {accommodation.name}
                 </h3>
                 <div class='flex items-center text-gray-600 dark:text-gray-400 text-sm'>
-                    <MapPinIcon class='w-4 h-4 mr-1.5 flex-shrink-0' />
+                    <MapIcon class='w-4 h-4 mr-1.5 flex-shrink-0' />
                     <span class='truncate'>{accommodation.destination?.name}</span>
                 </div>
             </div>
