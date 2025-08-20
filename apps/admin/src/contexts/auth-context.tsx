@@ -30,7 +30,7 @@ interface AuthState {
 /**
  * Authentication context methods
  */
-interface AuthContextValue extends AuthState {
+export interface AuthContextValue extends AuthState {
     refreshSession: () => Promise<void>;
     clearSession: () => void;
     signOut: () => Promise<void>;
