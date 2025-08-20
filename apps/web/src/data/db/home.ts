@@ -87,58 +87,94 @@ export const getHomeData = async ({
     const accommodationReviews = accommodationReviewsRes.data?.items ?? [];
     const destinationReviews = destinationReviewsRes.data?.items ?? [];
 
-    // Transform reviews into unified testimonial format
-    const accommodationTestimonials: TestimonialType[] = accommodationReviews.map((review) => {
-        // Calculate average rating if it's an object
-        const avgRating =
-            typeof review.rating === 'object'
-                ? Object.values(review.rating).reduce((sum, val) => sum + val, 0) /
-                  Object.values(review.rating).length
-                : review.rating;
+    // Get unique accommodation and destination IDs to fetch names
+    const accommodationIds = [...new Set(accommodationReviews.map((r) => r.accommodationId))];
+    const destinationIds = [...new Set(destinationReviews.map((r) => r.destinationId))];
 
-        // Get user name from the user relation
-        const userName = review.user
-            ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() ||
-              review.user.email.split('@')[0]
-            : `Usuario ${review.userId.slice(0, 8)}`;
+    // Fetch accommodation and destination names
+    const [accommodationNames, destinationNames] = await Promise.all([
+        Promise.all(
+            accommodationIds.map(async (id) => {
+                const result = await accommodationService.getById(actor, id);
+                return { id, name: result.data?.name || 'Alojamiento' };
+            })
+        ),
+        Promise.all(
+            destinationIds.map(async (id) => {
+                const result = await destinationService.getById(actor, id);
+                return { id, name: result.data?.name || 'Destino' };
+            })
+        )
+    ]);
 
-        return {
-            id: review.id,
-            rating: avgRating,
-            comment: review.content || review.title,
-            authorName: userName,
-            authorLocation: undefined,
-            relatedName: review.accommodation?.name,
-            relatedType: 'accommodation' as const,
-            createdAt: review.createdAt
-        };
-    });
+    // Create lookup maps
+    const accommodationNameMap = new Map(accommodationNames.map((item) => [item.id, item.name]));
+    const destinationNameMap = new Map(destinationNames.map((item) => [item.id, item.name]));
 
-    const destinationTestimonials: TestimonialType[] = destinationReviews.map((review) => {
-        // Calculate average rating if it's an object
-        const avgRating =
-            typeof review.rating === 'object'
-                ? Object.values(review.rating).reduce((sum, val) => sum + val, 0) /
-                  Object.values(review.rating).length
-                : review.rating;
+    // Transform reviews into unified testimonial format, filtering out reviews without content
+    const accommodationTestimonials: TestimonialType[] = accommodationReviews
+        .filter((review) => review.content || review.title) // Only include reviews with content
+        .map((review) => {
+            // Calculate average rating if it's an object
+            const avgRating =
+                typeof review.rating === 'object'
+                    ? Object.values(review.rating).reduce((sum, val) => sum + val, 0) /
+                      Object.values(review.rating).length
+                    : review.rating;
 
-        // Get user name from the user relation
-        const userName = review.user
-            ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() ||
-              review.user.email.split('@')[0]
-            : `Usuario ${review.userId.slice(0, 8)}`;
+            // Get user name from the user relation
+            const userName = review.user
+                ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() ||
+                  review.user.email?.split('@')[0] ||
+                  'Usuario Anónimo'
+                : `Usuario ${review.userId.slice(0, 8)}`;
 
-        return {
-            id: review.id,
-            rating: avgRating,
-            comment: review.content || review.title,
-            authorName: userName,
-            authorLocation: undefined,
-            relatedName: review.destination?.name,
-            relatedType: 'destination' as const,
-            createdAt: review.createdAt
-        };
-    });
+            // Get comment from content or title (we filtered to ensure at least one exists)
+            const comment = review.content || review.title || '';
+
+            return {
+                id: review.id,
+                rating: avgRating,
+                comment,
+                authorName: userName,
+                authorLocation: undefined,
+                relatedName: accommodationNameMap.get(review.accommodationId) || 'Alojamiento',
+                relatedType: 'accommodation' as const,
+                createdAt: review.createdAt
+            };
+        });
+
+    const destinationTestimonials: TestimonialType[] = destinationReviews
+        .filter((review) => review.content || review.title) // Only include reviews with content
+        .map((review) => {
+            // Calculate average rating if it's an object
+            const avgRating =
+                typeof review.rating === 'object'
+                    ? Object.values(review.rating).reduce((sum, val) => sum + val, 0) /
+                      Object.values(review.rating).length
+                    : review.rating;
+
+            // Get user name from the user relation
+            const userName = review.user
+                ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() ||
+                  review.user.email?.split('@')[0] ||
+                  'Usuario Anónimo'
+                : `Usuario ${review.userId.slice(0, 8)}`;
+
+            // Get comment from content or title (we filtered to ensure at least one exists)
+            const comment = review.content || review.title || '';
+
+            return {
+                id: review.id,
+                rating: avgRating,
+                comment,
+                authorName: userName,
+                authorLocation: undefined,
+                relatedName: destinationNameMap.get(review.destinationId) || 'Destino',
+                relatedType: 'destination' as const,
+                createdAt: review.createdAt
+            };
+        });
 
     // Combine and sort by creation date, avoiding duplicates of the same accommodation/destination
     const allTestimonials = [...accommodationTestimonials, ...destinationTestimonials].sort(
