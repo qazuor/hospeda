@@ -1,24 +1,25 @@
+import { useTranslations } from '@/hooks/use-translations';
 import ClerkHeader from '@/integrations/clerk/header-user';
 import { menuTree } from '@/lib/menu';
-import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import {
-    BarChart3,
-    Bell,
-    Building2,
-    CalendarDays,
-    FileText,
-    FolderKanban,
-    Handshake,
-    LayoutDashboard,
-    MapPin,
-    Menu,
-    PanelsTopLeft,
-    Search,
-    Settings,
-    Shield,
-    User,
-    Users
-} from 'lucide-react';
+    AccommodationIcon,
+    AdminIcon,
+    AnalyticsIcon,
+    ContentIcon,
+    DashboardIcon,
+    EventIcon,
+    MapIcon,
+    MenuIcon,
+    NotificationIcon,
+    PostIcon,
+    PostSponsorIcon,
+    SearchIcon,
+    SectionIcon,
+    SettingsIcon,
+    UserIcon,
+    UsersIcon
+} from '@repo/icons';
+import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export type TopbarProps = {
@@ -35,6 +36,7 @@ export type TopbarProps = {
 export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
     const { location } = useRouterState();
     const router = useRouter();
+    const { t } = useTranslations();
     const sectionIcon = useMemo(() => {
         const top = (() => {
             const direct = menuTree.find((it) => it.to === location.href);
@@ -47,27 +49,27 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
         const iconProps = { className: 'h-5 w-5' };
         switch (top) {
             case 'Dashboard':
-                return <LayoutDashboard {...iconProps} />;
+                return <DashboardIcon {...iconProps} />;
             case 'Contenido':
-                return <FolderKanban {...iconProps} />;
+                return <ContentIcon {...iconProps} />;
             case 'Alojamientos':
-                return <Building2 {...iconProps} />;
+                return <AccommodationIcon {...iconProps} />;
             case 'Destinos':
-                return <MapPin {...iconProps} />;
+                return <MapIcon {...iconProps} />;
             case 'Eventos':
-                return <CalendarDays {...iconProps} />;
+                return <EventIcon {...iconProps} />;
             case 'Publicaciones':
-                return <FileText {...iconProps} />;
+                return <PostIcon {...iconProps} />;
             case 'Users':
-                return <Users {...iconProps} />;
+                return <UsersIcon {...iconProps} />;
             case 'Admin':
-                return <Shield {...iconProps} />;
+                return <AdminIcon {...iconProps} />;
             case 'Sponsors':
-                return <Handshake {...iconProps} />;
+                return <PostSponsorIcon {...iconProps} />;
             case 'Analiticas':
-                return <BarChart3 {...iconProps} />;
+                return <AnalyticsIcon {...iconProps} />;
             default:
-                return <PanelsTopLeft {...iconProps} />;
+                return <SectionIcon {...iconProps} />;
         }
     }, [location]);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -94,12 +96,12 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
         <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-14 items-center gap-3 px-3 md:px-4">
                 <button
-                    aria-label="Toggle menu"
+                    aria-label={t('admin-common.aria.toggleMenu')}
                     className="inline-flex items-center justify-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
                     type="button"
                     onClick={onToggleSidebar}
                 >
-                    <Menu className="h-5 w-5" />
+                    <MenuIcon className="h-5 w-5" />
                 </button>
 
                 <Link
@@ -107,12 +109,12 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
                     className="flex items-center gap-2 font-semibold text-sm"
                 >
                     {sectionIcon}
-                    <span className="hidden sm:inline">Admin</span>
+                    <span className="hidden sm:inline">{t('admin-nav.topbar.admin')}</span>
                 </Link>
 
                 <div className="ml-auto flex items-center gap-2">
                     <div className="hidden items-center gap-2 rounded-md border bg-card px-2 py-1.5 text-muted-foreground text-sm sm:flex">
-                        <Search className="h-4 w-4" />
+                        <SearchIcon className="h-4 w-4" />
                         <span>Search…</span>
                     </div>
                     <div
@@ -129,19 +131,21 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
                     >
                         <button
                             type="button"
-                            aria-label="Notifications"
-                            title="Notifications"
+                            aria-label={t('admin-common.aria.notifications')}
+                            title={t('admin-nav.topbar.notifications')}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground"
                             onClick={() => setShowNotifications((v) => !v)}
                         >
-                            <Bell className="h-5 w-5" />
+                            <NotificationIcon className="h-5 w-5" />
                         </button>
                         {showNotifications ? (
                             <div className="absolute right-0 mt-2 w-80 rounded-md border bg-popover p-2 text-sm shadow">
-                                <div className="mb-2 font-semibold">Notifications</div>
+                                <div className="mb-2 font-semibold">
+                                    {t('admin-nav.topbar.notifications')}
+                                </div>
                                 <ul className="space-y-1">
                                     <li className="rounded-md px-2 py-1 hover:bg-accent/50">
-                                        No new notifications
+                                        {t('admin-common.notifications.noNew')}
                                     </li>
                                 </ul>
                                 <div className="mt-2 border-t pt-2 text-right">
@@ -158,19 +162,19 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
                     </div>
                     <Link
                         to="/me/profile"
-                        aria-label="Profile"
-                        title="Profile"
+                        aria-label={t('admin-common.aria.profile')}
+                        title={t('admin-nav.topbar.profile')}
                         className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground sm:inline-flex"
                     >
-                        <User className="h-5 w-5" />
+                        <UserIcon className="h-5 w-5" />
                     </Link>
                     <Link
                         to="/me/settings"
-                        aria-label="Settings"
-                        title="Settings"
+                        aria-label={t('admin-common.aria.settings')}
+                        title={t('admin-nav.topbar.settings')}
                         className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground sm:inline-flex"
                     >
-                        <Settings className="h-5 w-5" />
+                        <SettingsIcon className="h-5 w-5" />
                     </Link>
                     <ClerkHeader />
                 </div>

@@ -1,4 +1,5 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
+import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/dashboard')({
@@ -6,24 +7,26 @@ export const Route = createFileRoute('/dashboard')({
 });
 
 function Dashboard() {
+    const { t } = useTranslations();
+
     return (
         <SidebarPageLayout
-            title="Dashboard"
+            title={t('admin-dashboard.title')}
             actions={
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
                         className="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                        aria-label="Refresh"
+                        aria-label={t('admin-common.aria.refresh')}
                     >
-                        Refresh
+                        {t('admin-dashboard.actions.refresh')}
                     </button>
                     <button
                         type="button"
                         className="inline-flex items-center justify-center rounded-md bg-accent px-3 py-2 text-accent-foreground text-sm hover:brightness-95"
-                        aria-label="Create"
+                        aria-label={t('admin-common.aria.create')}
                     >
-                        Create
+                        {t('admin-dashboard.actions.create')}
                     </button>
                 </div>
             }
@@ -31,25 +34,25 @@ function Dashboard() {
             {/* KPI Cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <KpiCard
-                    title="Visitors"
+                    title={t('admin-dashboard.kpis.visitors')}
                     value="8.2k"
                     trend="+12.4%"
                     gradient="from-sky-500 to-cyan-500"
                 />
                 <KpiCard
-                    title="Posts"
+                    title={t('admin-dashboard.kpis.posts')}
                     value="324"
                     trend="+3.1%"
                     gradient="from-violet-500 to-fuchsia-500"
                 />
                 <KpiCard
-                    title="Accommodations"
+                    title={t('admin-dashboard.kpis.accommodations')}
                     value="142"
                     trend="+1.8%"
                     gradient="from-emerald-500 to-lime-500"
                 />
                 <KpiCard
-                    title="Events"
+                    title={t('admin-dashboard.kpis.events')}
                     value="56"
                     trend="-0.9%"
                     gradient="from-amber-500 to-orange-500"
@@ -59,17 +62,19 @@ function Dashboard() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {/* Simple bars chart placeholder */}
                 <div className="rounded-lg border p-4 lg:col-span-2">
-                    <h2 className="mb-3 font-semibold text-sm">Traffic (last 7 days)</h2>
+                    <h2 className="mb-3 font-semibold text-sm">
+                        {t('admin-dashboard.charts.traffic')}
+                    </h2>
                     <div className="flex h-48 items-end justify-between gap-2">
                         {(
                             [
-                                { label: 'Mon', value: 30 },
-                                { label: 'Tue', value: 45 },
-                                { label: 'Wed', value: 60 },
-                                { label: 'Thu', value: 80 },
-                                { label: 'Fri', value: 55 },
-                                { label: 'Sat', value: 70 },
-                                { label: 'Sun', value: 95 }
+                                { label: t('admin-dashboard.charts.days.mon'), value: 30 },
+                                { label: t('admin-dashboard.charts.days.tue'), value: 45 },
+                                { label: t('admin-dashboard.charts.days.wed'), value: 60 },
+                                { label: t('admin-dashboard.charts.days.thu'), value: 80 },
+                                { label: t('admin-dashboard.charts.days.fri'), value: 55 },
+                                { label: t('admin-dashboard.charts.days.sat'), value: 70 },
+                                { label: t('admin-dashboard.charts.days.sun'), value: 95 }
                             ] as const
                         ).map(({ label, value }) => (
                             <div
@@ -88,14 +93,16 @@ function Dashboard() {
 
                 {/* Recent activity */}
                 <div className="rounded-lg border p-4">
-                    <h2 className="mb-3 font-semibold text-sm">Recent activity</h2>
+                    <h2 className="mb-3 font-semibold text-sm">
+                        {t('admin-dashboard.activity.title')}
+                    </h2>
                     <ul className="space-y-2">
                         {(
                             [
-                                'New post published: Summer in Patagonia',
-                                'Accommodation updated: Mountain View Cabin',
-                                'New review on: City Loft Apartment',
-                                'Event created: Jazz Night at The Bay'
+                                t('admin-dashboard.activity.items.newPost'),
+                                t('admin-dashboard.activity.items.accommodationUpdated'),
+                                t('admin-dashboard.activity.items.newReview'),
+                                t('admin-dashboard.activity.items.eventCreated')
                             ] as const
                         ).map((text) => (
                             <li

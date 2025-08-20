@@ -24,7 +24,8 @@ export default defineConfig({
             '@repo/logger': resolve(__dirname, '../../packages/logger/src'),
             '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
             '@repo/config': resolve(__dirname, '../../packages/config/src'),
-            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src')
+            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
+            '@repo/icons': resolve(__dirname, '../../packages/icons/src')
         },
         dedupe: ['react', 'react-dom']
     },
@@ -38,7 +39,8 @@ export default defineConfig({
             '@repo/logger',
             '@repo/utils',
             '@repo/config',
-            '@repo/service-core'
+            '@repo/service-core',
+            '@repo/icons'
             // '@repo/auth-ui' // Removido del exclude para permitir optimización
         ]
     },
