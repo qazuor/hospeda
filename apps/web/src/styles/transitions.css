@@ -110,6 +110,7 @@ a[href]:not([href^="mailto:"]):not([href^="tel:"]):not([href^="http"]):hover {
 }
 
 /* Prefetch indicator */
+/*
 a[data-prefetched] {
     position: relative;
 }
@@ -124,3 +125,4 @@ a[data-prefetched]::after {
     background: #10b981;
     opacity: 0.3;
 }
+*/
