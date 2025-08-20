@@ -1,0 +1,23 @@
+{
+    "slider": {
+        "previousImage": "Imagen anterior",
+        "nextImage": "Siguiente imagen",
+        "goToImage": "Ir a imagen {number}"
+    },
+    "loading": {
+        "text": "Cargando...",
+        "spinner": "Cargando"
+    },
+    "errors": {
+        "general": "Ha ocurrido un error",
+        "network": "Error de conexión",
+        "notFound": "No encontrado"
+    },
+    "actions": {
+        "backTo": "Volver a",
+        "goTo": "Ir a",
+        "viewAll": "Ver todo",
+        "seeMore": "Ver más",
+        "readMore": "Leer más"
+    }
+}

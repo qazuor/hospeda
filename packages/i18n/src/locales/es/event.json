@@ -1,0 +1,32 @@
+{
+    "title": "Eventos y Actividades",
+    "description": "Descubre eventos emocionantes y actividades únicas. No te pierdas las mejores experiencias.",
+    "heading": "Eventos y Actividades",
+    "subheading": "Descubre experiencias únicas y eventos emocionantes que harán tu viaje inolvidable",
+    "found": "eventos encontrados",
+    "emptyTitle": "No hay eventos disponibles",
+    "emptyMessage": "Pronto agregaremos eventos emocionantes para ti.",
+    "filters": {
+        "all": "Todos",
+        "upcoming": "Próximos",
+        "cultural": "Culturales",
+        "sports": "Deportivos",
+        "gastronomic": "Gastronómicos"
+    },
+    "card": {
+        "free": "Gratis",
+        "checkPrice": "Consultar precio",
+        "seeDetails": "Ver detalles"
+    },
+    "list": {
+        "title": "Eventos"
+    },
+    "details": {
+        "about": "Sobre el evento",
+        "date": "Fecha",
+        "location": "Ubicación",
+        "organizer": "Organizador",
+        "contact": "Contacto",
+        "price": "Precio"
+    }
+}

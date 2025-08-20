@@ -1,0 +1,41 @@
+{
+    "title": "Búsqueda - Hospeda",
+    "description": "Busca y encuentra el alojamiento perfecto para tu próximo viaje. Filtra por ubicación, precio y comodidades.",
+    "heading": "Buscar Alojamientos",
+    "subheading": "Encuentra el lugar perfecto para tu próxima aventura",
+    "form": {
+        "destination": "Destino",
+        "destinationPlaceholder": "¿A dónde quieres ir?",
+        "checkin": "Llegada",
+        "checkout": "Salida",
+        "search": "Buscar"
+    },
+    "filters": {
+        "title": "Filtros",
+        "priceRange": "Precio por noche",
+        "propertyType": "Tipo de alojamiento",
+        "amenities": "Comodidades",
+        "types": {
+            "hotel": "Hotel",
+            "apartment": "Apartamento",
+            "house": "Casa"
+        },
+        "amenitiesList": {
+            "wifi": "WiFi gratuito",
+            "pool": "Piscina",
+            "parking": "Estacionamiento"
+        }
+    },
+    "results": {
+        "title": "Resultados de búsqueda",
+        "searchFor": "Búsqueda:",
+        "in": "en",
+        "perNight": "por noche",
+        "reviews": "reseñas",
+        "seeDetails": "Ver detalles",
+        "emptyTitle": "Comienza tu búsqueda",
+        "emptyMessage": "Ingresa un destino para encontrar alojamientos increíbles.",
+        "sampleDescription": "Un alojamiento cómodo y bien ubicado con todas las comodidades que necesitas.",
+        "sampleName": "Hotel Ejemplo"
+    }
+}

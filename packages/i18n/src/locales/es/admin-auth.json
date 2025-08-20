@@ -1,0 +1,25 @@
+{
+    "signin": {
+        "title": "Iniciar Sesión",
+        "heading": "Iniciar Sesión",
+        "subtitle": "¡Bienvenido de vuelta! Por favor inicia sesión en tu cuenta",
+        "welcomeBack": "Bienvenido de vuelta",
+        "manageAccommodations": "Gestiona tus alojamientos con facilidad",
+        "completingSignIn": "Completando inicio de sesión...",
+        "dontHaveAccount": "¿No tienes una cuenta?",
+        "signUpLink": "Registrarse",
+        "clearSession": "Limpiar Sesión"
+    },
+    "signup": {
+        "title": "Crear Cuenta",
+        "heading": "Crear Cuenta",
+        "subtitle": "Comienza con tu cuenta gratuita hoy mismo",
+        "joinToday": "Únete hoy",
+        "startManaging": "Comienza a gestionar tus alojamientos",
+        "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+        "signInLink": "Iniciar sesión"
+    },
+    "common": {
+        "logo": "Logo"
+    }
+}

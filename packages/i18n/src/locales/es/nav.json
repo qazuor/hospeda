@@ -1,0 +1,17 @@
+{
+    "home": "Inicio",
+    "accommodations": "Alojamientos",
+    "destinations": "Destinos",
+    "events": "Eventos",
+    "blog": "Blog",
+    "search": "Búsqueda",
+    "contact": "Contacto",
+    "about": "Quiénes somos",
+    "legal": "Condiciones de uso",
+    "benefits": {
+        "title": "Beneficios",
+        "guests": "Para huéspedes",
+        "hosts": "Para anfitriones",
+        "merchants": "Para comercios"
+    }
+}

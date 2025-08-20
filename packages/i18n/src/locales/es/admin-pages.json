@@ -1,0 +1,23 @@
+{
+    "titles": {
+        "myAccommodations": "Mis Alojamientos",
+        "myProfile": "Mi Perfil",
+        "mySettings": "Mi Configuración",
+        "notifications": "Notificaciones",
+        "sponsors": "Patrocinadores",
+        "accommodationFeatures": "Características de Alojamientos",
+        "accommodationAmenities": "Comodidades de Alojamientos",
+        "destinationAttractions": "Atracciones de Destinos",
+        "eventOrganizers": "Organizadores de Eventos",
+        "eventLocations": "Ubicaciones de Eventos",
+        "accommodationsList": "Alojamientos - Lista",
+        "accommodationsNew": "Alojamientos - Nuevo",
+        "destinationsList": "Destinos - Lista",
+        "destinationsNew": "Destinos - Nuevo",
+        "eventsList": "Eventos - Lista",
+        "eventsNew": "Eventos - Nuevo",
+        "postsList": "Publicaciones - Lista",
+        "postsNew": "Publicaciones - Nuevo",
+        "usersNew": "Usuarios - Nuevo"
+    }
+}

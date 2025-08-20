@@ -1,0 +1,28 @@
+{
+    "title": "Publicaciones y Blog",
+    "description": "Descubre artículos interesantes, guías de viaje y consejos útiles para tu próxima aventura.",
+    "heading": "Publicaciones y Blog",
+    "subheading": "Descubre historias inspiradoras, guías de viaje y consejos útiles para tu próxima aventura",
+    "found": "publicaciones encontradas",
+    "emptyTitle": "No hay publicaciones disponibles",
+    "emptyMessage": "Pronto compartiremos contenido interesante contigo.",
+    "filters": {
+        "all": "Todos",
+        "guides": "Guías de viaje",
+        "tips": "Consejos",
+        "experiences": "Experiencias",
+        "news": "Noticias"
+    },
+    "card": {
+        "readMore": "Leer más",
+        "readingTime": "min lectura"
+    },
+    "list": {
+        "title": "Notas y artículos"
+    },
+    "details": {
+        "related": "Notas relacionadas",
+        "share": "Compartir",
+        "author": "Autor"
+    }
+}

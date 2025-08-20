@@ -1,0 +1,36 @@
+{
+    "title": "Destinos Turísticos",
+    "description": "Descubre los mejores destinos turísticos. Explora lugares únicos y planifica tu próxima aventura.",
+    "heading": "Destinos Turísticos",
+    "subheading": "Descubre lugares increíbles y vive experiencias únicas en los mejores destinos del mundo",
+    "found": "destinos encontrados",
+    "emptyTitle": "No hay destinos disponibles",
+    "emptyMessage": "Pronto agregaremos destinos increíbles para ti.",
+    "filters": {
+        "all": "Todos",
+        "beach": "Playa",
+        "mountain": "Montaña",
+        "city": "Ciudad"
+    },
+    "card": {
+        "seeMore": "Ver más",
+        "location": "Ubicación"
+    },
+    "seeAll": "Ver todos los destinos",
+    "list": {
+        "title": "Destinos turísticos"
+    },
+    "details": {
+        "about": "Sobre",
+        "attractions": "Atracciones principales",
+        "accommodations": "Alojamientos destacados",
+        "location": "Ubicación",
+        "rating": "Valoración general"
+    },
+    "tabs": {
+        "about": "Información",
+        "accommodations": "Alojamientos",
+        "posts": "Notas",
+        "events": "Eventos"
+    }
+}

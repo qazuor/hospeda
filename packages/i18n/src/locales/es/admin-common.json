@@ -1,0 +1,25 @@
+{
+    "notifications": {
+        "title": "Notificaciones",
+        "closeToast": "Cerrar notificación",
+        "noNew": "No hay nuevas notificaciones"
+    },
+    "aria": {
+        "primary": "Principal",
+        "closeMenu": "Cerrar menú",
+        "toggleMenu": "Alternar menú",
+        "notifications": "Notificaciones",
+        "profile": "Perfil",
+        "settings": "Configuración",
+        "breadcrumb": "Ruta de navegación",
+        "refresh": "Actualizar",
+        "create": "Crear",
+        "sortColumn": "Ordenar columna",
+        "tableView": "Vista de tabla",
+        "gridView": "Vista de cuadrícula",
+        "search": "Buscar",
+        "closeToast": "Cerrar notificación",
+        "closeSidebarOverlay": "Cerrar superposición de barra lateral",
+        "clearAllSessions": "Limpiar todas las sesiones y recargar página"
+    }
+}

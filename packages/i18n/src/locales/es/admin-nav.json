@@ -1,0 +1,16 @@
+{
+    "sidebar": {
+        "navigation": "Navegación",
+        "closeMenu": "Cerrar menú"
+    },
+    "topbar": {
+        "toggleMenu": "Alternar menú",
+        "admin": "Admin",
+        "notifications": "Notificaciones",
+        "profile": "Perfil",
+        "settings": "Configuración"
+    },
+    "breadcrumbs": {
+        "breadcrumb": "Ruta de navegación"
+    }
+}

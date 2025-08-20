@@ -1,0 +1,38 @@
+{
+    "title": "Alojamientos en Entre Ríos",
+    "description": "Descubrí los mejores alojamientos en Entre Ríos, Argentina. Desde cabañas hasta hoteles, tenemos opciones para todos los gustos y presupuestos.",
+    "hero": {
+        "title": "Descubre alojamientos únicos en Entre Ríos",
+        "subtitle": "Encuentra hospedajes cómodos y accesibles en la costa del río Uruguay para disfrutar de tus vacaciones.",
+        "destination": {
+            "title": "Destino",
+            "placeHolder": "¿Adónde vas?"
+        },
+        "checkin": "Llegada",
+        "checkout": "Salida",
+        "search": "Buscar"
+    },
+    "search": {
+        "placeholder": "¿Adónde vas?"
+    },
+    "featuredAccommodations": {
+        "title": "Alojamientos destacados",
+        "description": "Los mejores lugares para hospedarte en la costa del río Uruguay, seleccionados por nuestros usuarios. "
+    },
+    "featuredDestinations": {
+        "title": "Destinos populares",
+        "description": "Explora los lugares más atractivos de la costa del río Uruguay en Entre Ríos y encuentra el alojamiento perfecto para tus vacaciones. "
+    },
+    "upcomingEvents": {
+        "title": "Próximos eventos",
+        "description": "No te pierdas los eventos más importantes de la región."
+    },
+    "latestPosts": {
+        "title": "Últimos artículos",
+        "description": "Conocé más sobre Entre Ríos y sus alrededores."
+    },
+    "testimonials": {
+        "title": "Lo que dicen nuestros usuarios",
+        "description": "Historias de quienes ya disfrutaron de nuestros alojamientos."
+    }
+}

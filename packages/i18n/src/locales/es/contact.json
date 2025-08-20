@@ -1,0 +1,33 @@
+{
+    "title": "Contacto - Hospeda",
+    "description": "Ponte en contacto con nosotros. Estamos aquí para ayudarte con cualquier pregunta sobre alojamientos y viajes.",
+    "heading": "Contáctanos",
+    "subheading": "Estamos aquí para ayudarte. Ponte en contacto con nosotros para cualquier consulta",
+    "form": {
+        "title": "Envíanos un mensaje",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "email": "Email",
+        "message": "Mensaje",
+        "submit": "Enviar mensaje",
+        "placeholders": {
+            "firstName": "Tu nombre",
+            "lastName": "Tu apellido",
+            "email": "tu@email.com",
+            "message": "Escribe tu mensaje aquí..."
+        }
+    },
+    "info": {
+        "title": "Información de contacto",
+        "address": {
+            "label": "Dirección",
+            "value": "Calle Principal 123\nCiudad, País 12345"
+        },
+        "email": {
+            "label": "Email",
+            "value": "contacto@hospeda.com"
+        }
+    },
+    "success": "¡Gracias por contactarnos!",
+    "error": "Ocurrió un error al enviar el mensaje."
+}
