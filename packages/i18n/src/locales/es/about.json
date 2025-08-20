@@ -1,0 +1,52 @@
+{
+    "title": "Quiénes Somos - Hospeda",
+    "description": "Conoce nuestra historia, misión y el equipo detrás de Hospeda. Conectamos viajeros con alojamientos únicos desde 2020.",
+    "hero": {
+        "heading": "Quiénes Somos",
+        "subheading": "Conectamos viajeros con experiencias de alojamiento únicas desde 2020"
+    },
+    "story": {
+        "title": "Nuestra Historia",
+        "paragraph1": "Hospeda nació de una pasión compartida por los viajes y la hospitalidad. Fundada en 2020, nuestra plataforma conecta a viajeros de todo el mundo con alojamientos únicos y experiencias auténticas.",
+        "paragraph2": "Creemos que cada viaje debe ser una aventura memorable, y que el lugar donde te hospedas juega un papel fundamental en esa experiencia. Por eso, trabajamos incansablemente para ofrecer una amplia variedad de opciones de alojamiento que se adapten a todos los gustos y presupuestos."
+    },
+    "mission": {
+        "title": "Misión y Visión",
+        "mission": {
+            "title": "Nuestra Misión",
+            "content": "Facilitar conexiones auténticas entre viajeros y anfitriones, creando experiencias de hospedaje únicas que enriquezcan la vida de ambas partes."
+        },
+        "vision": {
+            "title": "Nuestra Visión",
+            "content": "Ser la plataforma líder en alojamientos alternativos, promoviendo el turismo sostenible y las experiencias culturales genuinas."
+        }
+    },
+    "values": {
+        "title": "Nuestros Valores",
+        "authenticity": {
+            "title": "Autenticidad",
+            "description": "Promovemos experiencias genuinas y conexiones reales entre viajeros y comunidades locales."
+        },
+        "sustainability": {
+            "title": "Sostenibilidad",
+            "description": "Fomentamos prácticas de turismo responsable que beneficien tanto al medio ambiente como a las comunidades locales."
+        },
+        "innovation": {
+            "title": "Innovación",
+            "description": "Utilizamos tecnología de vanguardia para mejorar continuamente la experiencia de nuestros usuarios."
+        },
+        "community": {
+            "title": "Comunidad",
+            "description": "Construimos una comunidad global de viajeros y anfitriones unidos por la pasión de explorar y compartir."
+        }
+    },
+    "team": {
+        "title": "Nuestro Equipo",
+        "description": "Conoce a las personas apasionadas que hacen posible Hospeda",
+        "cta": {
+            "title": "¿Listo para tu próxima aventura?",
+            "description": "Descubre alojamientos únicos y comienza a planificar tu viaje perfecto",
+            "button": "Explorar alojamientos"
+        }
+    }
+}

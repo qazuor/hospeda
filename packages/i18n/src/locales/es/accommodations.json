@@ -1,0 +1,52 @@
+{
+    "title": "Alojamientos",
+    "description": "Descubre alojamientos únicos y encuentra el lugar perfecto para tu próxima aventura.",
+    "emptyTitle": "No hay alojamientos disponibles",
+    "emptyMessage": "Pronto agregaremos más opciones de hospedaje para ti.",
+    "heading": "Alojamientos",
+    "subheading": "Descubre alojamientos únicos y encuentra el lugar perfecto para tu próxima aventura",
+    "found": "alojamientos encontrados",
+    "seeAll": "Ver todos los alojamientos →",
+    "filters": {
+        "title": "Filtros",
+        "all": "Todos",
+        "hotels": "Hoteles",
+        "cabins": "Cabañas",
+        "apartments": "Apartamentos",
+        "hostels": "Hostales"
+    },
+    "sort": {
+        "title": "Ordenar",
+        "default": "Recomendados",
+        "price.asc": "Precio: Menor a mayor",
+        "price.desc": "Precio: Mayor a menor"
+    },
+    "card": {
+        "guests": "Huéspedes",
+        "bedrooms": "Habitaciones",
+        "bathrooms": "Baños",
+        "per.night": "por noche"
+    },
+    "details": {
+        "about": "Descripción",
+        "features": "Características",
+        "amenities": "Comodidades",
+        "schedule": "Horarios",
+        "location": "Ubicación",
+        "reviews": "Reseñas"
+    },
+    "types": {
+        "apartment": "Apartamento",
+        "house": "Casa",
+        "country_house": "Casa quinta",
+        "cabin": "Cabaña",
+        "hotel": "Hotel",
+        "hostel": "Hostal",
+        "camping": "Camping",
+        "room": "Habitación",
+        "motel": "Motel",
+        "resort": "Complejo turístico"
+    },
+    "faqs": "Preguntas frecuentes",
+    "contactTitle": "Contacto"
+}

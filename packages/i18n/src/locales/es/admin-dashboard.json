@@ -1,0 +1,34 @@
+{
+    "title": "Panel de Control",
+    "actions": {
+        "refresh": "Actualizar",
+        "create": "Crear"
+    },
+    "kpis": {
+        "visitors": "Visitantes",
+        "posts": "Publicaciones",
+        "accommodations": "Alojamientos",
+        "events": "Eventos"
+    },
+    "charts": {
+        "traffic": "Tráfico (últimos 7 días)",
+        "days": {
+            "mon": "Lun",
+            "tue": "Mar",
+            "wed": "Mié",
+            "thu": "Jue",
+            "fri": "Vie",
+            "sat": "Sáb",
+            "sun": "Dom"
+        }
+    },
+    "activity": {
+        "title": "Actividad reciente",
+        "items": {
+            "newPost": "Nueva publicación: Verano en la Patagonia",
+            "accommodationUpdated": "Alojamiento actualizado: Cabaña Vista a la Montaña",
+            "newReview": "Nueva reseña en: Apartamento Loft Urbano",
+            "eventCreated": "Evento creado: Noche de Jazz en La Bahía"
+        }
+    }
+}

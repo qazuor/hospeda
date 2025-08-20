@@ -1,0 +1,39 @@
+{
+    "dashboard": "Panel de Control",
+    "content": {
+        "title": "Contenido",
+        "destinationAttractions": "Atracciones de Destinos",
+        "accommodationAmenities": "Comodidades de Alojamientos",
+        "accommodationFeatures": "Características de Alojamientos"
+    },
+    "accommodations": {
+        "title": "Alojamientos",
+        "add": "Agregar",
+        "list": "Lista"
+    },
+    "destinations": {
+        "title": "Destinos",
+        "add": "Agregar",
+        "list": "Lista"
+    },
+    "events": {
+        "title": "Eventos",
+        "add": "Agregar",
+        "list": "Lista",
+        "organizers": "Organizadores de Eventos",
+        "locations": "Ubicaciones de Eventos"
+    },
+    "posts": {
+        "title": "Publicaciones",
+        "add": "Agregar",
+        "list": "Lista"
+    },
+    "users": {
+        "title": "Usuarios",
+        "add": "Agregar",
+        "list": "Lista"
+    },
+    "admin": "Administración",
+    "sponsors": "Patrocinadores",
+    "analytics": "Analíticas"
+}
