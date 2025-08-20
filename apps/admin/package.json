@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "vite dev --port 3000 --force",
+        "dev": "vite dev --port 3000",
         "dev:clean": "rm -rf node_modules/.vite && pnpm dev",
         "dev:watch": "nodemon --watch '../../packages' --ext 'ts,tsx,js,jsx' --exec 'rm -rf node_modules/.vite' --delay 500ms & pnpm dev",
         "start": "node .output/server/index.mjs",
@@ -20,7 +20,6 @@
     "dependencies": {
         "@clerk/clerk-react": "5.42.0",
         "@faker-js/faker": "9.6.0",
-        "@modelcontextprotocol/sdk": "1.17.0",
         "@repo/auth-ui": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/types": "workspace:*",
