@@ -1,0 +1,214 @@
+---
+export const prerender = true;
+
+import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils';
+import { getAccommodationsIndexUrl } from '@/utils/urls';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const title = t('about.title');
+const description = t('about.description');
+---
+
+<MainLayout title={title} description={description}>
+    <div class='min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200'>
+        <!-- Hero Section -->
+        <section
+            class='bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700 text-white py-20'
+        >
+            <div class='container mx-auto px-4 text-center'>
+                <h1 class='text-4xl md:text-6xl font-bold mb-6'>{t('about.hero.heading')}</h1>
+                <p class='text-xl md:text-2xl text-indigo-100 max-w-3xl mx-auto'>
+                    {t('about.hero.subheading')}
+                </p>
+            </div>
+        </section>
+
+        <!-- Our Story -->
+        <section class='py-16'>
+            <div class='container mx-auto px-4'>
+                <div class='max-w-4xl mx-auto'>
+                    <h2 class='text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center'>
+                        {t('about.story.title')}
+                    </h2>
+                    <div class='prose prose-lg dark:prose-invert mx-auto'>
+                        <p class='text-gray-700 dark:text-gray-300 leading-relaxed mb-6'>
+                            {t('about.story.paragraph1')}
+                        </p>
+                        <p class='text-gray-700 dark:text-gray-300 leading-relaxed mb-6'>
+                            {t('about.story.paragraph2')}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mission & Vision -->
+        <section class='py-16 bg-gray-50 dark:bg-gray-800'>
+            <div class='container mx-auto px-4'>
+                <div class='grid grid-cols-1 md:grid-cols-2 gap-12'>
+                    <div class='text-center'>
+                        <div class='w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6'>
+                            <svg class='w-8 h-8 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path
+                                    stroke-linecap='round'
+                                    stroke-linejoin='round'
+                                    stroke-width='2'
+                                    d='M13 10V3L4 14h7v7l9-11h-7z'></path>
+                            </svg>
+                        </div>
+                        <h3 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>Nuestra Misión</h3>
+                        <p class='text-gray-600 dark:text-gray-400'>
+                            Facilitar conexiones auténticas entre viajeros y anfitriones, creando experiencias de
+                            alojamiento memorables que enriquezcan la vida de las personas.
+                        </p>
+                    </div>
+                    <div class='text-center'>
+                        <div class='w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-6'>
+                            <svg class='w-8 h-8 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path
+                                    stroke-linecap='round'
+                                    stroke-linejoin='round'
+                                    stroke-width='2'
+                                    d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'></path>
+                                <path
+                                    stroke-linecap='round'
+                                    stroke-linejoin='round'
+                                    stroke-width='2'
+                                    d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>Nuestra Visión</h3>
+                        <p class='text-gray-600 dark:text-gray-400'>
+                            Ser la plataforma líder que transforme la manera en que las personas viajan y se hospedan,
+                            promoviendo el turismo sostenible y responsable.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Values -->
+        <section class='py-16'>
+            <div class='container mx-auto px-4'>
+                <h2 class='text-3xl font-bold text-gray-900 dark:text-white mb-12 text-center'>Nuestros Valores</h2>
+                <div class='grid grid-cols-1 md:grid-cols-3 gap-8'>
+                    <div class='text-center'>
+                        <div
+                            class='w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mx-auto mb-4'
+                        >
+                            <svg
+                                class='w-6 h-6 text-blue-600 dark:text-blue-400'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    stroke-linecap='round'
+                                    stroke-linejoin='round'
+                                    stroke-width='2'
+                                    d='M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class='text-xl font-semibold text-gray-900 dark:text-white mb-3'>Hospitalidad</h3>
+                        <p class='text-gray-600 dark:text-gray-400'>
+                            Creemos en la calidez humana y en hacer que cada huésped se sienta bienvenido.
+                        </p>
+                    </div>
+                    <div class='text-center'>
+                        <div
+                            class='w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mx-auto mb-4'
+                        >
+                            <svg
+                                class='w-6 h-6 text-green-600 dark:text-green-400'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    stroke-linecap='round'
+                                    stroke-linejoin='round'
+                                    stroke-width='2'
+                                    d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class='text-xl font-semibold text-gray-900 dark:text-white mb-3'>Confianza</h3>
+                        <p class='text-gray-600 dark:text-gray-400'>
+                            Construimos relaciones basadas en la transparencia y la seguridad mutua.
+                        </p>
+                    </div>
+                    <div class='text-center'>
+                        <div
+                            class='w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mx-auto mb-4'
+                        >
+                            <svg
+                                class='w-6 h-6 text-purple-600 dark:text-purple-400'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                            >
+                                <path
+                                    stroke-linecap='round'
+                                    stroke-linejoin='round'
+                                    stroke-width='2'
+                                    d='M13 10V3L4 14h7v7l9-11h-7z'></path>
+                            </svg>
+                        </div>
+                        <h3 class='text-xl font-semibold text-gray-900 dark:text-white mb-3'>Innovación</h3>
+                        <p class='text-gray-600 dark:text-gray-400'>
+                            Mejoramos constantemente para ofrecer la mejor experiencia tecnológica.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Team -->
+        <section class='py-16 bg-gray-50 dark:bg-gray-800'>
+            <div class='container mx-auto px-4'>
+                <h2 class='text-3xl font-bold text-gray-900 dark:text-white mb-12 text-center'>Nuestro Equipo</h2>
+                <div class='grid grid-cols-1 md:grid-cols-3 gap-8'>
+                    {
+                        Array.from({ length: 6 }, (_, i) => (
+                            <div class='bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 text-center border border-gray-200 dark:border-gray-700'>
+                                <div class='w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-xl font-bold'>
+                                    {String.fromCharCode(65 + i)}
+                                </div>
+                                <h3 class='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
+                                    Miembro del Equipo {i + 1}
+                                </h3>
+                                <p class='text-gray-600 dark:text-gray-400 text-sm mb-3'>
+                                    {['CEO', 'CTO', 'Diseñador UX', 'Desarrollador', 'Marketing', 'Soporte'][i]}
+                                </p>
+                                <p class='text-gray-500 dark:text-gray-500 text-sm'>
+                                    Apasionado por crear experiencias excepcionales para nuestros usuarios.
+                                </p>
+                            </div>
+                        ))
+                    }
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class='py-16'>
+            <div class='container mx-auto px-4 text-center'>
+                <h2 class='text-3xl font-bold text-gray-900 dark:text-white mb-6'>¿Listo para tu próxima aventura?</h2>
+                <p class='text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto'>
+                    Únete a miles de viajeros que ya confían en nosotros para encontrar el alojamiento perfecto.
+                </p>
+                <a
+                    href={getAccommodationsIndexUrl()}
+                    class='inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200'
+                >
+                    Explorar alojamientos
+                </a>
+            </div>
+        </section>
+    </div>
+</MainLayout>

@@ -1,0 +1,197 @@
+---
+import Pagination from '@/components/ui/Pagination.astro';
+import { getEvents } from '@/data/db/events';
+import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils';
+import { getEventUrl, getEventsIndexUrlWithPage } from '@/utils/urls';
+import type { EventType } from '@repo/types';
+
+export interface Props {
+    page: number;
+    locals?: any;
+}
+
+const { page, locals } = Astro.props;
+const pageSize = 12;
+
+const { events, total, totalPages } = await getEvents({
+    locals,
+    page,
+    pageSize
+});
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const title = page === 1 ? t('event.title') : `${t('event.title')} - Página ${page}`;
+const description = page === 1 
+    ? t('event.description')
+    : `${t('event.description')} Página ${page}.`;
+
+// Helper function to format date
+const formatDate = (date: Date | string) => {
+    const d = new Date(date);
+    return d.toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+    });
+};
+
+const formatTime = (date: Date | string) => {
+    const d = new Date(date);
+    return d.toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+};
+---
+
+<MainLayout title={title} description={description}>
+    <div class="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+        <!-- Hero Section -->
+        <section class="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-700 dark:to-pink-700 text-white py-16">
+            <div class="container mx-auto px-4 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">{t('event.heading')}</h1>
+                <p class="text-xl md:text-2xl text-purple-100 max-w-3xl mx-auto">
+                    {t('event.subheading')}
+                </p>
+            </div>
+        </section>
+
+        <!-- Filters Section -->
+        <section class="bg-gray-50 dark:bg-gray-800 py-8 border-b border-gray-200 dark:border-gray-700">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex flex-wrap gap-2">
+                        <button class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            {t('event.filters.all')}
+                        </button>
+                        <button class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            {t('event.filters.upcoming')}
+                        </button>
+                        <button class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            {t('event.filters.cultural')}
+                        </button>
+                        <button class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            {t('event.filters.sports')}
+                        </button>
+                        <button class="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                            {t('event.filters.gastronomic')}
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                        {total} {t('event.found')}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Events Grid -->
+        <section class="py-12">
+            <div class="container mx-auto px-4">
+                {events.length > 0 ? (
+                    <div class="space-y-12">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {events.map((event: EventType) => (
+                                <article class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                                    <div class="aspect-video bg-gradient-to-br from-purple-400 to-pink-500 relative">
+                                        {event.media && event.media.featuredImage ? (
+                                            <img 
+                                                src={event.media?.featuredImage?.url} 
+                                                alt={event.title}
+                                                class="w-full h-full object-cover"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div class="w-full h-full flex items-center justify-center text-white">
+                                                <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <div class="absolute top-2 left-2">
+                                            <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                                                {event.category || 'Evento'}
+                                            </span>
+                                        </div>
+                                        {event.startDate && (
+                                            <div class="absolute top-2 right-2">
+                                                <div class="bg-white text-gray-900 text-xs px-2 py-1 rounded font-medium">
+                                                    {formatDate(event.startDate)}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div class="p-4">
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-1">
+                                            {event.title}
+                                        </h3>
+                                        <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+                                            {event.description || 'Únete a este increíble evento y vive una experiencia única.'}
+                                        </p>
+                                        
+                                        <div class="space-y-2 mb-4">
+                                            {event.startDate && (
+                                                <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                    {formatTime(event.startDate)}
+                                                </div>
+                                            )}
+                                            {event.location && (
+                                                <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                    </svg>
+                                                    {event.location}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-between">
+                                            {event.price !== undefined ? (
+                                                <div class="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                                                    {event.price === 0 ? t('event.card.free') : `$${event.price.toLocaleString()}`}
+                                                </div>
+                                            ) : (
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                    {t('event.card.checkPrice')}
+                                                </div>
+                                            )}
+                                            <a 
+                                                href={getEventUrl(event)}
+                                                class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium text-sm transition-colors"
+                                            >
+                                                {t('event.card.seeDetails')} →
+                                            </a>
+                                        </div>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+
+                        <!-- Pagination -->
+                        <Pagination 
+                            page={page} 
+                            totalPages={totalPages} 
+                            getPageUrl={getEventsIndexUrlWithPage}
+                            theme="purple"
+                        />
+                    </div>
+                ) : (
+                    <div class="text-center py-12">
+                        <div class="max-w-md mx-auto">
+                            <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('event.emptyTitle')}</h3>
+                            <p class="text-gray-600 dark:text-gray-400">{t('event.emptyMessage')}</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </section>
+    </div>
+</MainLayout>

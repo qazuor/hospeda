@@ -1,0 +1,13 @@
+---
+import DestinationListPage from '@/components/pages/DestinationListPage.astro';
+import { getDestinationsIndexUrlWithPage } from '@/utils/urls';
+
+const page = Number(Astro.url.searchParams.get('page')) || 1;
+
+// Redirect to new pagination URL structure if page > 1
+if (page > 1) {
+    return Astro.redirect(getDestinationsIndexUrlWithPage(page));
+}
+---
+
+<DestinationListPage page={1} locals={Astro.locals} />

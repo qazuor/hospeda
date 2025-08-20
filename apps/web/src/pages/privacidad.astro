@@ -1,0 +1,163 @@
+---
+export const prerender = true;
+
+import MainLayout from '@/layout/MainLayout.astro';
+import { getLangFromUrl, useTranslations } from '@/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const title = t('privacy.title');
+const description = t('privacy.description');
+---
+
+<MainLayout title={title} description={description}>
+    <div class='min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200'>
+        <!-- Header -->
+        <section class='bg-gray-50 dark:bg-gray-800 py-12 border-b border-gray-200 dark:border-gray-700'>
+            <div class='container mx-auto px-4'>
+                <h1 class='text-4xl font-bold text-gray-900 dark:text-white mb-4'>
+                    {t('privacy.heading')}
+                </h1>
+                <p class='text-lg text-gray-600 dark:text-gray-400'>{t('privacy.lastUpdated')}</p>
+            </div>
+        </section>
+
+        <!-- Content -->
+        <section class='py-12'>
+            <div class='container mx-auto px-4 max-w-4xl'>
+                <div class='prose prose-lg dark:prose-invert max-w-none'>
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.informationCollection.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-4'>
+                        {t('privacy.sections.informationCollection.intro')}
+                    </p>
+                    <ul class='list-disc list-inside text-gray-700 dark:text-gray-300 mb-6 space-y-2'>
+                        <li>{t('privacy.sections.informationCollection.items.registration')}</li>
+                        <li>{t('privacy.sections.informationCollection.items.profile')}</li>
+                        <li>{t('privacy.sections.informationCollection.items.payment')}</li>
+                        <li>{t('privacy.sections.informationCollection.items.support')}</li>
+                        <li>{t('privacy.sections.informationCollection.items.reviews')}</li>
+                    </ul>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.automaticCollection.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-4'>
+                        {t('privacy.sections.automaticCollection.intro')}
+                    </p>
+                    <ul class='list-disc list-inside text-gray-700 dark:text-gray-300 mb-6 space-y-2'>
+                        <li>{t('privacy.sections.automaticCollection.items.device')}</li>
+                        <li>{t('privacy.sections.automaticCollection.items.ip')}</li>
+                        <li>{t('privacy.sections.automaticCollection.items.navigation')}</li>
+                        <li>{t('privacy.sections.automaticCollection.items.cookies')}</li>
+                    </ul>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.informationUse.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-4'>
+                        {t('privacy.sections.informationUse.intro')}
+                    </p>
+                    <ul class='list-disc list-inside text-gray-700 dark:text-gray-300 mb-6 space-y-2'>
+                        <li>{t('privacy.sections.informationUse.purposes.services')}</li>
+                        <li>{t('privacy.sections.informationUse.purposes.bookings')}</li>
+                        <li>{t('privacy.sections.informationUse.purposes.communication')}</li>
+                        <li>{t('privacy.sections.informationUse.purposes.personalization')}</li>
+                        <li>{t('privacy.sections.informationUse.purposes.marketing')}</li>
+                        <li>{t('privacy.sections.informationUse.purposes.security')}</li>
+                    </ul>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.informationSharing.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-4'>
+                        {t('privacy.sections.informationSharing.intro')}
+                    </p>
+                    <ul class='list-disc list-inside text-gray-700 dark:text-gray-300 mb-6 space-y-2'>
+                        <li>{t('privacy.sections.informationSharing.circumstances.hosts')}</li>
+                        <li>{t('privacy.sections.informationSharing.circumstances.providers')}</li>
+                        <li>{t('privacy.sections.informationSharing.circumstances.legal')}</li>
+                        <li>{t('privacy.sections.informationSharing.circumstances.consent')}</li>
+                        <li>{t('privacy.sections.informationSharing.circumstances.business')}</li>
+                    </ul>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.cookiesTracking.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('privacy.sections.cookiesTracking.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.dataSecurity.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('privacy.sections.dataSecurity.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.yourRights.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-4'>
+                        {t('privacy.sections.yourRights.intro')}
+                    </p>
+                    <ul class='list-disc list-inside text-gray-700 dark:text-gray-300 mb-6 space-y-2'>
+                        <li>{t('privacy.sections.yourRights.rights.access')}</li>
+                        <li>{t('privacy.sections.yourRights.rights.correct')}</li>
+                        <li>{t('privacy.sections.yourRights.rights.delete')}</li>
+                        <li>{t('privacy.sections.yourRights.rights.object')}</li>
+                        <li>{t('privacy.sections.yourRights.rights.portability')}</li>
+                        <li>{t('privacy.sections.yourRights.rights.withdraw')}</li>
+                    </ul>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.dataRetention.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('privacy.sections.dataRetention.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.internationalTransfers.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('privacy.sections.internationalTransfers.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.minors.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('privacy.sections.minors.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.policyChanges.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('privacy.sections.policyChanges.content')}
+                    </p>
+
+                    <h2 class='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
+                        {t('privacy.sections.contact.title')}
+                    </h2>
+                    <p class='text-gray-700 dark:text-gray-300 mb-6'>
+                        {t('privacy.sections.contact.intro')}
+                    </p>
+                    <div class='bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700'>
+                        <p class='text-gray-700 dark:text-gray-300'>
+                            <strong>{t('privacy.sections.contact.details.email')}</strong>
+                            {t('privacy.sections.contact.details.emailValue')}<br />
+                            <strong>{t('privacy.sections.contact.details.address')}</strong>
+                            {t('privacy.sections.contact.details.addressValue')}<br />
+                            <strong>{t('privacy.sections.contact.details.phone')}</strong>
+                            {t('privacy.sections.contact.details.phoneValue')}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</MainLayout>
