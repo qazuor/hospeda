@@ -30,7 +30,7 @@ describe('Authentication Integration Tests', () => {
             expect(data.success).toBe(true);
             expect(data.data.isAuthenticated).toBe(false);
             expect(data.data.userId).toBeNull();
-            expect(data.data.actor.id).toBe('guest');
+            expect(data.data.actor.id).toBe('00000000-0000-4000-8000-000000000000');
             expect(data.data.actor.role).toBe('GUEST');
             expect(data.data.actor.permissions).toContain('access.apiPublic');
         });
@@ -48,7 +48,7 @@ describe('Authentication Integration Tests', () => {
             expect(data.success).toBe(true);
             expect(data.data.isAuthenticated).toBe(false);
             expect(data.data.userId).toBeNull();
-            expect(data.data.actor.id).toBe('guest');
+            expect(data.data.actor.id).toBe('00000000-0000-4000-8000-000000000000');
             expect(data.data.actor.role).toBe('GUEST');
         });
 
@@ -66,7 +66,7 @@ describe('Authentication Integration Tests', () => {
             expect(data.success).toBe(true);
             expect(data.data.isAuthenticated).toBe(false);
             expect(data.data.userId).toBeNull();
-            expect(data.data.actor.id).toBe('guest');
+            expect(data.data.actor.id).toBe('00000000-0000-4000-8000-000000000000');
             expect(data.data.actor.role).toBe('GUEST');
         });
 
