@@ -110,9 +110,9 @@ describe('accommodationReview.permissions', () => {
                 )
             ).toThrow();
         });
-        it('throws if actor lacks permission', () => {
+        it('does not throw if actor has no specific permissions (public access)', () => {
             const actor = createActor({ permissions: [] });
-            expect(() => checkCanViewAccommodationReview(actor)).toThrow();
+            expect(() => checkCanViewAccommodationReview(actor)).not.toThrow();
         });
         it('does not throw if actor has permission', () => {
             const actor = createActor({

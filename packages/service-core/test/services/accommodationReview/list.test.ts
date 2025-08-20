@@ -12,7 +12,7 @@ import { AccommodationReviewService } from '../../../src/services/accommodationR
 import type { ServiceContext } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
-import { expectForbiddenError, expectSuccess } from '../../helpers/assertions';
+import { expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
 /**
@@ -72,16 +72,45 @@ describe('list', () => {
         expect(result.data?.items?.[0]?.id).toBe(review.id);
     });
 
-    it('returns FORBIDDEN if actor lacks permission', async () => {
+    it('returns success even if actor has no specific permissions (public access)', async () => {
         // Arrange
         const actor = createActor({
             id: getMockId('user', 'actor-2') as UserId,
             permissions: []
         });
+        const mockReview: AccommodationReviewType = {
+            id: getMockId('accommodationReview', 'review-1') as AccommodationReviewId,
+            accommodationId: getMockId('accommodation', 'accommodation-1') as AccommodationId,
+            userId: getMockId('user', 'user-1') as UserId,
+            title: 'Great stay',
+            content: 'Had a wonderful time at this accommodation.',
+            rating: {
+                overall: 4.5,
+                cleanliness: 4,
+                hospitality: 5,
+                services: 3,
+                accuracy: 4,
+                communication: 5,
+                location: 4
+            },
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: undefined,
+            createdById: getMockId('user', 'user-1') as UserId,
+            updatedById: getMockId('user', 'user-1') as UserId,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            adminInfo: undefined
+        };
+        const mockReviews = [mockReview];
+        (reviewModel.findAll as Mock).mockResolvedValue({
+            items: mockReviews,
+            total: 1
+        });
         // Act
         const result = await service.list(actor, { page: 1, pageSize: 10 });
         // Assert
-        expectForbiddenError(result);
-        expect(reviewModel.findAll as Mock).not.toHaveBeenCalled();
+        expectSuccess(result);
+        expect(result.data?.items).toEqual(mockReviews);
+        expect(reviewModel.findAll as Mock).toHaveBeenCalled();
     });
 });
