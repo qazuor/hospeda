@@ -1,19 +1,29 @@
 import { ensureDatabase } from '@/server/db';
 import {
+    AccommodationReviewService,
     AccommodationService,
+    DestinationReviewService,
     DestinationService,
     EventService,
     PostService
 } from '@repo/service-core';
-import type {
-    AccommodationReviewType,
-    AccommodationType,
-    DestinationType,
-    EventType,
-    PostType
-} from '@repo/types';
+import type { AccommodationType, DestinationType, EventType, PostType } from '@repo/types';
 
 import { getCurrentUser } from '@/data/user';
+
+/**
+ * Unified testimonial type combining accommodation and destination reviews
+ */
+export type TestimonialType = {
+    id: string;
+    rating: number;
+    comment: string;
+    authorName: string;
+    authorLocation?: string;
+    relatedName: string; // accommodation or destination name
+    relatedType: 'accommodation' | 'destination';
+    createdAt: Date;
+};
 
 /**
  * Returns the data required by the Home page sections.
@@ -21,7 +31,7 @@ import { getCurrentUser } from '@/data/user';
  * - accommodations: featured accommodations (client-side filtered from first page)
  * - events: upcoming events from today
  * - posts: featured posts
- * - testimonials: accommodation reviews (placeholder until wired)
+ * - testimonials: combined accommodation and destination reviews
  */
 type LocalsAuth = () => { userId?: string | null } | undefined | null;
 
@@ -32,7 +42,7 @@ export const getHomeData = async ({
     accommodations: AccommodationType[];
     events: EventType[];
     posts: PostType[];
-    testimonials: AccommodationReviewType[];
+    testimonials: TestimonialType[];
 }> => {
     ensureDatabase();
     const { actor } = await getCurrentUser({ locals });
@@ -65,8 +75,88 @@ export const getHomeData = async ({
     });
     const accommodations: AccommodationType[] = topRatedRes.data ?? [];
 
-    // Testimonials: source from accommodation reviews service would be ideal, placeholder empty for now
-    const testimonials: AccommodationReviewType[] = [];
+    // Testimonials: Get recent reviews from both accommodations and destinations
+    const accommodationReviewService = new AccommodationReviewService({});
+    const destinationReviewService = new DestinationReviewService({});
+
+    const [accommodationReviewsRes, destinationReviewsRes] = await Promise.all([
+        accommodationReviewService.listWithUser(actor, { page: 1, pageSize: 15 }),
+        destinationReviewService.listWithUser(actor, { page: 1, pageSize: 15 })
+    ]);
+
+    const accommodationReviews = accommodationReviewsRes.data?.items ?? [];
+    const destinationReviews = destinationReviewsRes.data?.items ?? [];
+
+    // Transform reviews into unified testimonial format
+    const accommodationTestimonials: TestimonialType[] = accommodationReviews.map((review) => {
+        // Calculate average rating if it's an object
+        const avgRating =
+            typeof review.rating === 'object'
+                ? Object.values(review.rating).reduce((sum, val) => sum + val, 0) /
+                  Object.values(review.rating).length
+                : review.rating;
+
+        // Get user name from the user relation
+        const userName = review.user
+            ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() ||
+              review.user.email.split('@')[0]
+            : `Usuario ${review.userId.slice(0, 8)}`;
+
+        return {
+            id: review.id,
+            rating: avgRating,
+            comment: review.content || review.title,
+            authorName: userName,
+            authorLocation: undefined,
+            relatedName: review.accommodation?.name,
+            relatedType: 'accommodation' as const,
+            createdAt: review.createdAt
+        };
+    });
+
+    const destinationTestimonials: TestimonialType[] = destinationReviews.map((review) => {
+        // Calculate average rating if it's an object
+        const avgRating =
+            typeof review.rating === 'object'
+                ? Object.values(review.rating).reduce((sum, val) => sum + val, 0) /
+                  Object.values(review.rating).length
+                : review.rating;
+
+        // Get user name from the user relation
+        const userName = review.user
+            ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim() ||
+              review.user.email.split('@')[0]
+            : `Usuario ${review.userId.slice(0, 8)}`;
+
+        return {
+            id: review.id,
+            rating: avgRating,
+            comment: review.content || review.title,
+            authorName: userName,
+            authorLocation: undefined,
+            relatedName: review.destination?.name,
+            relatedType: 'destination' as const,
+            createdAt: review.createdAt
+        };
+    });
+
+    // Combine and sort by creation date, avoiding duplicates of the same accommodation/destination
+    const allTestimonials = [...accommodationTestimonials, ...destinationTestimonials].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    // Remove duplicates based on related entity (accommodation/destination)
+    const seenEntities = new Set<string>();
+    const uniqueTestimonials = allTestimonials.filter((testimonial) => {
+        const entityKey = `${testimonial.relatedType}-${testimonial.relatedName}`;
+        if (seenEntities.has(entityKey)) {
+            return false; // Skip duplicate
+        }
+        seenEntities.add(entityKey);
+        return true;
+    });
+
+    const testimonials: TestimonialType[] = uniqueTestimonials.slice(0, 6); // Limit to 6 testimonials
 
     return { destinations, accommodations, events, posts, testimonials };
 };
