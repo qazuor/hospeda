@@ -108,9 +108,9 @@ describe('destinationReview.permissions', () => {
                 checkCanViewDestinationReview(null as unknown as import('../../../src/types').Actor)
             ).toThrow();
         });
-        it('throws if actor lacks permission', () => {
+        it('does not throw if actor has no specific permissions (public access)', () => {
             const actor = createActor({ permissions: [] });
-            expect(() => checkCanViewDestinationReview(actor)).toThrow();
+            expect(() => checkCanViewDestinationReview(actor)).not.toThrow();
         });
         it('does not throw if actor has permission', () => {
             const actor = createActor({

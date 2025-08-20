@@ -1,10 +1,12 @@
 import { PostModel } from '@repo/db';
-import { RoleEnum } from '@repo/types';
+import type { PostId } from '@repo/types';
+import { RoleEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
-import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
+import { getMockId } from '../../factories/utilsFactory';
+import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -40,15 +42,26 @@ describe('PostService.list', () => {
         expect(firstResult.id).toBe(firstPost.id);
     });
 
-    it('should return FORBIDDEN if actor is not authenticated', async () => {
-        const forbiddenActor = createActor({
+    it('should return success even for guest users (public access)', async () => {
+        const guestActor = createActor({
             permissions: [],
             id: undefined,
             role: RoleEnum.GUEST
         });
-        const result = await service.list(forbiddenActor, { page: 1, pageSize: 20 });
-        expectForbiddenError(result);
-        expect(modelMock.findAll as Mock).not.toHaveBeenCalled();
+        const mockPosts = [
+            createMockPost({
+                id: getMockId('post', 'post-1') as PostId,
+                visibility: VisibilityEnum.PUBLIC
+            })
+        ];
+        (modelMock.findAll as Mock).mockResolvedValue({
+            items: mockPosts,
+            total: 1
+        });
+        const result = await service.list(guestActor, { page: 1, pageSize: 20 });
+        expectSuccess(result);
+        expect(result.data?.items).toEqual(mockPosts);
+        expect(modelMock.findAll as Mock).toHaveBeenCalled();
     });
 
     it('should return an empty list if there are no posts', async () => {
