@@ -298,6 +298,10 @@ export const createErrorHandler = () => {
                 errorCode = ServiceErrorCode.VALIDATION_ERROR;
                 errorMessage = 'Invalid JSON format in request body';
                 statusCode = 400;
+            } else if (error.message === 'Malformed JSON in request body') {
+                errorCode = ServiceErrorCode.VALIDATION_ERROR;
+                errorMessage = 'Invalid JSON format in request body';
+                statusCode = 400;
             } else {
                 errorCode = ServiceErrorCode.INTERNAL_ERROR;
                 statusCode = 500;

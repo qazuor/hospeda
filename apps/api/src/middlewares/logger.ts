@@ -26,11 +26,11 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
 
     // Use structured apiLogger for consistency
     if (status >= 500) {
-        apiLogger.error(`❌ HTTP ERROR => ${logMessage}`);
+        apiLogger.error(`❌ HTTP ERROR => ${logMessage}`, 'ERROR');
     } else if (status >= 400) {
-        apiLogger.warn(`⚠️ HTTP WARNING => ${logMessage}`);
+        apiLogger.warn(`⚠️ HTTP WARNING => ${logMessage}`, 'WARNING');
     } else {
-        apiLogger.info(`✅ HTTP SUCCESS => ${logMessage}`);
+        apiLogger.info(`✅ HTTP SUCCESS => ${logMessage}`, 'SUCCESS');
     }
 
     // Log response body in debug mode for errors
