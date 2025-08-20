@@ -16,26 +16,104 @@ const t = useTranslations(lang);
 const { events, title, subtitle, showSeeAll = true } = Astro.props;
 ---
 
-<section class='py-12'>
+<section
+    class='py-16 bg-gradient-to-br from-primary-50 via-white to-secondary-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900'
+>
     <div class='container'>
-        <div class='text-center mb-12'>
-            <h2 class='text-3xl font-bold mb-4'>
+        <div class='text-center mb-16'>
+            <h2 class='text-4xl font-bold mb-6 text-gray-900 dark:text-white'>
                 {title}
-                {
-                    showSeeAll && (
-                        <a href={getEventsIndexUrl()} class='text-primary-600 hover:underline text-sm font-medium'>
-                            {t('common.seeAll')}
-                        </a>
-                    )
-                }
             </h2>
-            <p class='text-gray-600 dark:text-gray-400 max-w-2xl mx-auto'>
+            <p class='text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-6'>
                 {subtitle}
             </p>
+            {
+                showSeeAll && (
+                    <a
+                        href={getEventsIndexUrl()}
+                        class='text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-semibold text-sm inline-flex items-center transition-colors'
+                    >
+                        {t('common.seeAll')}
+                        <svg class='w-4 h-4 ml-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5l7 7-7 7' />
+                        </svg>
+                    </a>
+                )
+            }
         </div>
 
-        <div class='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
-            {events.map((event) => <EventCard key={event.id} event={event} />)}
+        <!-- Events Grid -->
+        <div class='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-16'>
+            {
+                events.map((event) => (
+                    <div class='transform transition-all duration-300'>
+                        <EventCard event={event} />
+                    </div>
+                ))
+            }
         </div>
+
+        <!-- Empty State -->
+        {
+            events.length === 0 && (
+                <div class='text-center py-16'>
+                    <div class='bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-12 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-600 max-w-md mx-auto'>
+                        <div class='w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center mx-auto mb-6'>
+                            <svg class='w-8 h-8 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path
+                                    stroke-linecap='round'
+                                    stroke-linejoin='round'
+                                    stroke-width='2'
+                                    d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
+                                />
+                            </svg>
+                        </div>
+                        <h3 class='text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100'>
+                            Próximos eventos en camino
+                        </h3>
+                        <p class='text-gray-600 dark:text-gray-400'>
+                            Estamos organizando eventos increíbles para ti. ¡Mantente atento a las novedades!
+                        </p>
+                    </div>
+                </div>
+            )
+        }
+
+        <!-- Call to Action -->
+        {
+            events.length > 0 && (
+                <div class='text-center'>
+                    <div class='bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 rounded-3xl p-8 border border-gray-200 dark:border-gray-600 shadow-lg'>
+                        <h3 class='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>¿Organizas eventos?</h3>
+                        <p class='text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto'>
+                            Únete a nuestra plataforma y comparte tus eventos con miles de viajeros que buscan
+                            experiencias únicas en Argentina.
+                        </p>
+                        <div class='flex flex-col sm:flex-row gap-4 justify-center items-center'>
+                            <a
+                                href={getEventsIndexUrl()}
+                                class='inline-flex items-center bg-gradient-to-r from-primary-500 to-secondary-500 text-white px-8 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl'
+                            >
+                                Ver todos los eventos
+                                <svg class='w-5 h-5 ml-2' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                    <path
+                                        stroke-linecap='round'
+                                        stroke-linejoin='round'
+                                        stroke-width='2'
+                                        d='M17 8l4 4m0 0l-4 4m4-4H3'
+                                    />
+                                </svg>
+                            </a>
+                            <a
+                                href='/contacto'
+                                class='inline-flex items-center border-2 border-primary-500 text-primary-600 dark:text-primary-400 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:bg-primary-500 hover:text-white'
+                            >
+                                Publicar evento
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
     </div>
 </section>
