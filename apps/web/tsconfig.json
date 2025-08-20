@@ -12,6 +12,8 @@
             "@/*": ["./src/*"],
             "@repo/config": ["../../packages/config/src/index.ts"],
             "@repo/config/*": ["../../packages/config/src/*"],
+            "@repo/icons": ["../../packages/icons/src/index.ts"],
+            "@repo/icons/*": ["../../packages/icons/src/*"],
             "@repo/db": ["../../packages/db/src/index.ts"],
             "@repo/db/*": ["../../packages/db/src/*"],
             "@repo/service-core": ["../../packages/service-core/src/index.ts"],
@@ -24,6 +26,8 @@
             "@repo/types/*": ["../../packages/types/src/*"],
             "@repo/utils": ["../../packages/utils/src/index.ts"],
             "@repo/utils/*": ["../../packages/utils/src/*"],
+            "@repo/i18n": ["../../packages/i18n/src/index.ts"],
+            "@repo/i18n/*": ["../../packages/i18n/src/*"],
             "@repo/tailwind-config": ["../../packages/tailwind-config/src/index.ts"],
             "@repo/tailwind-config/*": ["../../packages/tailwind-config/src/*"]
         }

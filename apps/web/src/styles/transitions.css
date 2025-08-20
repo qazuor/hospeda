@@ -8,7 +8,7 @@
     right: 0;
     bottom: 0;
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(3px);
     z-index: 9999;
     display: flex;
     align-items: center;
@@ -19,7 +19,7 @@
 }
 
 .page-loading-overlay.active {
-    opacity: 1;
+    opacity: 0.9;
     visibility: visible;
 }
 
@@ -29,10 +29,10 @@
 
 /* Loading Spinner */
 .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid #e5e7eb;
-    border-top: 3px solid #06b6d4;
+    width: 100px;
+    height: 100px;
+    border: 20px solid #e5e7eb;
+    border-top: 20px solid #06b6d4;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -56,8 +56,8 @@
     position: fixed;
     top: 0;
     left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #06b6d4, #10b981);
+    height: 10px;
+    background: linear-gradient(90deg, rgb(69, 138, 223), rgb(0, 216, 144));
     z-index: 10000;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
