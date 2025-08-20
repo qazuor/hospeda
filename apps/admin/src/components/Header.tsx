@@ -9,29 +9,6 @@ export default function Header() {
                 <div className="px-2 font-bold">
                     <Link to="/">Home</Link>
                 </div>
-
-                {/* Demo routes temporarily commented out due to TypeScript errors
-				<div className="px-2 font-bold">
-					<Link to="/demo/start/server-funcs">Start - Server Functions</Link>
-				</div>
-
-				<div className="px-2 font-bold">
-					<Link to="/demo/start/api-request">Start - API Request</Link>
-				</div>
-
-				<div className="px-2 font-bold">
-					<Link to="/demo/clerk">Clerk</Link>
-				</div>
-
-				<div className="px-2 font-bold">
-					<Link to="/demo/mcp-todos">MCP</Link>
-				</div>
-
-				<div className="px-2 font-bold">
-					<Link to="/demo/table">TanStack Table</Link>
-				</div>
-				*/}
-
                 <div className="px-2 font-bold">
                     <Link to="/dashboard">Dashboard</Link>
                 </div>

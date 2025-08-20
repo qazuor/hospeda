@@ -24,15 +24,11 @@ export default defineConfig({
             '@repo/logger': resolve(__dirname, '../../packages/logger/src'),
             '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
             '@repo/config': resolve(__dirname, '../../packages/config/src'),
-            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
-            '@repo/auth-ui': resolve(__dirname, '../../packages/auth-ui/src')
-            // ⚠️ NO alias a 'react/jsx-runtime'
+            '@repo/service-core': resolve(__dirname, '../../packages/service-core/src')
         },
         dedupe: ['react', 'react-dom']
     },
     optimizeDeps: {
-        // Nada especial para react/jsx-runtime
-        // (si querés mantener force por workspace, ok)
         force: true,
         include: ['react/jsx-runtime', 'react/jsx-dev-runtime'],
         exclude: [
@@ -42,10 +38,9 @@ export default defineConfig({
             '@repo/logger',
             '@repo/utils',
             '@repo/config',
-            '@repo/service-core',
-            '@repo/auth-ui'
+            '@repo/service-core'
+            // '@repo/auth-ui' // Removido del exclude para permitir optimización
         ]
-        // NO include/exclude de 'react/jsx-runtime'
     },
     server: {
         watch: {

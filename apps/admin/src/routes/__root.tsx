@@ -6,7 +6,8 @@ import * as React from 'react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ToastProvider } from '@/components/ui/ToastProvider';
-import { AuthProvider, useAuthContext } from '@/contexts/auth-context';
+import { AuthProvider } from '@/contexts/auth-context';
+import { useAuthContext } from '@/hooks/use-auth-context';
 import { adminLogger } from '@/utils/logger';
 
 import ClerkProvider from '../integrations/clerk/provider';
