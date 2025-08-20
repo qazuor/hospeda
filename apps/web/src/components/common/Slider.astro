@@ -1,5 +1,6 @@
 ---
 import type { ImageType } from '@repo/types';
+import { useTranslations, getLangFromUrl } from '@/utils/i18n';
 
 interface Props {
     images: ImageType[];
@@ -7,6 +8,8 @@ interface Props {
 }
 
 const { images, class: className = '' } = Astro.props;
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <div class={`relative overflow-hidden rounded-lg ${className}`}>
@@ -31,7 +34,7 @@ const { images, class: className = '' } = Astro.props;
             <button
                 class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
                 onclick="previousSlide()"
-                aria-label="Previous image"
+                aria-label={t('ui.slider.previousImage')}
             >
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -41,7 +44,7 @@ const { images, class: className = '' } = Astro.props;
             <button
                 class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
                 onclick="nextSlide()"
-                aria-label="Next image"
+                aria-label={t('ui.slider.nextImage')}
             >
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -54,7 +57,7 @@ const { images, class: className = '' } = Astro.props;
                     <button
                         class="h-2 w-2 rounded-full bg-white/50 transition-colors hover:bg-white/80"
                         onclick={`goToSlide(${index})`}
-                        aria-label={`Go to image ${index + 1}`}
+                        aria-label={t('ui.slider.goToImage', { number: index + 1 })}
                         key={index}
                     />
                 ))}

@@ -1,6 +1,6 @@
 'use client';
-import { HeartIcon } from '@/components/icons/HeartIcon';
 import { useBookmark } from '@/hooks/useBookmark';
+import { FavoriteIcon } from '@repo/icons';
 import { useEffect } from 'react';
 
 /**
@@ -71,11 +71,11 @@ export function FavoriteButton({
             onClick={handleClick}
             className={buttonClass}
         >
-            <HeartIcon
-                variant={isBookmarked ? 'solid' : 'outline'}
+            <FavoriteIcon
                 size={size}
+                className={isBookmarked ? 'fill-current' : ''}
             />
-            {isLoading && <span className="sr-only">Loading...</span>}
+            {isLoading && <span className="sr-only">Cargando...</span>}
         </button>
     );
 }

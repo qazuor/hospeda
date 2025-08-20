@@ -1,8 +1,7 @@
 ---
-import MapPinIcon from '@/components/icons/MapPinIcon.astro';
-import StarIcon from '@/components/icons/StarIcon.astro';
 import { FavoriteButton } from '@/components/shared/FavoriteButton.client';
 import { getDestinationUrl, getLangFromUrl, useTranslations } from '@/utils';
+import { MapIcon, StarIcon } from '@repo/icons';
 import { DestinationType } from '@repo/types';
 
 interface Props {
@@ -76,7 +75,7 @@ const url = getDestinationUrl(destination);
                     {destination.name}
                 </h3>
                 <div class='flex items-center text-white/90 text-sm'>
-                    <MapPinIcon class='w-4 h-4 mr-2 flex-shrink-0' />
+                    <MapIcon class='w-4 h-4 mr-2 flex-shrink-0' />
                     <span class='truncate'>{destination.region?.name || destination.country?.name}</span>
                 </div>
 

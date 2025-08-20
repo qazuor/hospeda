@@ -1,6 +1,6 @@
 ---
-import Icon from '@/components/common/Icon.astro';
 import { formatDate } from '@/utils';
+import { EventIcon } from '@repo/icons';
 import type { PostType } from '@repo/types';
 
 const { post }: { post: PostType } = Astro.props;
@@ -12,7 +12,7 @@ const formattedDate = post.createdAt ? formatDate(new Date(post.createdAt)) : ''
     <header class='mb-6 border-b border-gray-200 dark:border-gray-700 pb-4'>
         <h1 class='heading-lg mb-2'>{post.name}</h1>
         <p class='text-muted flex items-center gap-1'>
-            <Icon name='calendar' class='w-4 h-4' />
+            <EventIcon class='w-4 h-4' />
             {formattedDate}
         </p>
     </header>
