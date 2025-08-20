@@ -5,6 +5,7 @@
  */
 
 import { createRoute, z } from '@hono/zod-openapi';
+import { ServiceErrorCode } from '@repo/types';
 import type { Context, MiddlewareHandler } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import { createRouter } from './create-app';
@@ -143,7 +144,25 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createRouter>, options?: R
             // Store route options for middleware consumption
             // biome-ignore lint/suspicious/noExplicitAny: Context extension for route options
             (c as any).routeOptions = options;
-            await next();
+            try {
+                await next();
+            } catch (error) {
+                // Handle malformed JSON errors that occur during validation
+                if (error instanceof Error && error.message === 'Malformed JSON in request body') {
+                    return c.json(
+                        {
+                            success: false,
+                            error: {
+                                code: ServiceErrorCode.VALIDATION_ERROR,
+                                message: 'Invalid JSON format in request body'
+                            }
+                        },
+                        400
+                    );
+                }
+                // For other errors, let them propagate to be handled by global error handler
+                throw error;
+            }
         });
     }
 
