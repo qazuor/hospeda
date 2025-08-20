@@ -2,7 +2,7 @@
 import Footer from '@/layout/Footer.astro';
 import Header from '@/layout/Header.astro';
 import { ensureDatabase } from '@/server/db';
-import '@/styles/global.css';
+import '@/styles/tailwind.css';
 import '@/styles/transitions.css';
 import { getLangFromUrl } from '@/utils';
 
@@ -58,18 +58,44 @@ const { title, description, keywords } = Astro.props;
             rel='stylesheet'
         />
         <link href='https://fonts.googleapis.com/css2?family=Madimi+One&display=swap' rel='stylesheet' />
+
+        <!-- Theme initialization script - runs immediately to prevent flash -->
+        <script is:inline>
+            (() => {
+                const getInitialTheme = () => {
+                    if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+                        return localStorage.getItem('theme');
+                    }
+                    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                };
+
+                const theme = getInitialTheme();
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                localStorage.setItem('theme', theme);
+            })();
+        </script>
     </head>
 
-    <body
-        class='min-h-screen flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300'
-    >
+    <body class='min-h-screen flex flex-col transition-colors duration-300'>
         <Header lang={lang} />
         <main class='flex-grow page-content'>
             <slot name='hero' />
             <slot />
         </main>
         <Footer lang={lang} />
-        <script type='module' src='/scripts/theme.js'></script>
         <script type='module' src='/scripts/page-transitions.js'></script>
+
+        <!-- Theme system preference listener -->
+        <script is:inline>
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    document.documentElement.classList.toggle('dark', e.matches);
+                }
+            });
+        </script>
     </body>
 </html>
