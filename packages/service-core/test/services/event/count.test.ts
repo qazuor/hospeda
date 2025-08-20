@@ -3,7 +3,7 @@ import { PermissionEnum, VisibilityEnum } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createUser } from '../../factories/userFactory';
-import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
+import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
@@ -32,9 +32,11 @@ describe('EventService.count', () => {
         expect(result.data?.count).toBe(countResult.count);
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    it('should return success even if actor has no specific permissions', async () => {
+        asMock(modelMock.count).mockResolvedValue(0);
         const result = await service.count(actorNoPerm, { filters });
-        expectForbiddenError(result);
+        expectSuccess(result);
+        expect(result.data?.count).toBe(0);
     });
 
     it('should return count 0 if no events found', async () => {

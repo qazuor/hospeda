@@ -52,12 +52,12 @@ describe('EventService permissions', () => {
         expect(() => checkCanViewEvent(baseActor, privateEvent)).toThrow();
     });
 
-    it('should allow list if actor has EVENT_LIST', () => {
+    it('should allow list for any authenticated actor', () => {
         const actor = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
         expect(() => checkCanListEvents(actor)).not.toThrow();
     });
-    it('should forbid list if actor lacks EVENT_LIST', () => {
-        expect(() => checkCanListEvents(baseActor)).toThrow();
+    it('should allow list even if actor has no specific permissions', () => {
+        expect(() => checkCanListEvents(baseActor)).not.toThrow();
     });
 
     it('should allow restore if actor has EVENT_RESTORE', () => {

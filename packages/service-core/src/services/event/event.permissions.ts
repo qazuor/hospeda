@@ -77,12 +77,8 @@ export function checkCanViewEvent(actor: Actor, event: EventType): void {
  */
 export function checkCanListEvents(actor: Actor): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    if (!actor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Permission denied to list/search events'
-        );
-    }
+    // Listing is allowed for any authenticated actor; results are filtered by visibility elsewhere.
+    return;
 }
 
 /**
