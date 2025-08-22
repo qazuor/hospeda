@@ -1,11 +1,14 @@
 // Standardized logger helpers for DB layer
-import { logger as baseLogger } from '@repo/logger';
+import { type ILogger, LoggerColors, logger as baseLogger } from '@repo/logger';
 
 /**
  * Logger instance used by DB helpers.
  * Exported for testing so spies can hook into the exact instance used.
  */
-export const dbLogger = baseLogger;
+const dbLogger = baseLogger.registerCategory('db', 'DB', {
+    color: LoggerColors.MAGENTA,
+    truncateLongText: true
+});
 
 /**
  * Logs a successful database query with context.
@@ -15,7 +18,7 @@ export const dbLogger = baseLogger;
  * @param result - The query result
  */
 export const logQuery = (table: string, action: string, params: unknown, result: unknown) => {
-    dbLogger.info({ table, action, params, result }, `[DB] ${table}.${action} OK`);
+    dbLogger.info({ table, action, params, result }, `${table}.${action} OK`);
 };
 
 /**
@@ -25,7 +28,7 @@ export const logQuery = (table: string, action: string, params: unknown, result:
  * @param params - The action parameters
  */
 export const logAction = (table: string, action: string, params: unknown) => {
-    dbLogger.info({ table, action, params }, `[DB] ${table}.${action}`);
+    dbLogger.info({ table, action, params }, `${table}.${action}`);
 };
 
 /**
@@ -38,6 +41,16 @@ export const logAction = (table: string, action: string, params: unknown) => {
 export const logError = (table: string, action: string, params: unknown, error: Error) => {
     dbLogger.error(
         { table, action, params, error: error.message, stack: error.stack },
-        `[DB] ${table}.${action} ERROR`
+        `${table}.${action} ERROR`
     );
 };
+
+/**
+ * Extends the base `ILogger` interface with a service-specific `permission` method.
+ */
+type DbLogger = ILogger;
+
+const typedDbLogger = dbLogger as unknown as DbLogger;
+
+export { typedDbLogger as dbLogger };
+export type { DbLogger };
