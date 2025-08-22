@@ -103,6 +103,10 @@ This document lists all environment variables used by the Hospeda API, organized
 | `CLERK_PUBLISHABLE_KEY` | `string` | - | Clerk publishable key |
 | `CLERK_SECRET_KEY` | `string` | - | Clerk secret key |
 | `CLERK_WEBHOOK_SECRET` | `string` | - | Clerk webhook secret |
+| `SEED_AUTH_PROVIDER` | `'CLERK' \| 'AUTH0' \| 'CUSTOM'` | `CLERK` | Primary auth provider used by seeds to link Super Admin |
+| `SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID` | `string` | - | Provider user id to link Super Admin in DB |
+| `SEED_AUTH_PROVIDER` | `'CLERK' \| 'AUTH0' \| 'CUSTOM'` | `CLERK` | Primary auth provider used by seeds to link Super Admin |
+| `SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID` | `string` | - | Provider user id to link Super Admin in DB |
 
 ## 🗄️ Database Configuration
 
