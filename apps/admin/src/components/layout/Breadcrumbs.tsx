@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { menuTree } from '@/lib/menu';
 import { BreadcrumbsIcon } from '@repo/icons';
 import { Link, useRouterState } from '@tanstack/react-router';
@@ -16,8 +17,10 @@ const getLabelForPath = (path: string): string => {
 };
 
 export const Breadcrumbs = () => {
+    const { t } = useTranslations();
     const { location } = useRouterState();
-    const segments = location.href.split('/').filter(Boolean);
+    // Use pathname instead of href to exclude query parameters
+    const segments = location.pathname.split('/').filter(Boolean);
     const paths: string[] = [];
     segments.forEach((_, idx) => {
         paths.push(`/${segments.slice(0, idx + 1).join('/')}`);
@@ -25,14 +28,14 @@ export const Breadcrumbs = () => {
 
     return (
         <nav
-            aria-label="Breadcrumb"
+            aria-label={t('ui.accessibility.breadcrumb')}
             className="flex items-center text-muted-foreground text-sm"
         >
             <Link
                 to="/dashboard"
                 className="hover:underline"
             >
-                Home
+                {t('ui.navigation.home')}
             </Link>
             {paths.map((p) => (
                 <span

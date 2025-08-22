@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { type ReactNode, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
@@ -17,6 +18,7 @@ export type AppLayoutProps = {
  * - The topbar contains the menu button, branding, global search placeholder, and user actions.
  */
 export const AppLayout = ({ children }: AppLayoutProps) => {
+    const { t } = useTranslations();
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
     const handleToggleSidebar = () => setIsSidebarOpen((prev) => !prev);
@@ -31,7 +33,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                 {/* Mobile overlay when the sidebar is open */}
                 {isSidebarOpen ? (
                     <button
-                        aria-label="Close sidebar overlay"
+                        aria-label={t('ui.accessibility.closeSidebarOverlay')}
                         className="fixed inset-0 z-30 bg-black/40 md:hidden"
                         type="button"
                         onClick={handleCloseSidebar}

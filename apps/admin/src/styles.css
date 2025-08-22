@@ -134,3 +134,7 @@ code {
         @apply bg-background text-foreground;
     }
 }
+
+.text-xss {
+    font-size: 0.5rem;
+}
