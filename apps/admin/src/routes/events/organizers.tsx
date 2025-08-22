@@ -1,10 +1,7 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { createFileRoute } from '@tanstack/react-router';
+import {
+    EventOrganizersPageComponent,
+    EventOrganizersRoute
+} from '@/features/event-organizers/config/event-organizers.config';
 
-export const Route = createFileRoute('/events/organizers')({
-    component: () => (
-        <SidebarPageLayout title="Event Organizers">
-            <div>TODO: add content</div>
-        </SidebarPageLayout>
-    )
-});
+export const Route = EventOrganizersRoute;
+export default EventOrganizersPageComponent;

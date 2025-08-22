@@ -1,10 +1,10 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { createFileRoute } from '@tanstack/react-router';
+/**
+ * Amenities list page - using generic entity list system
+ */
+import {
+    AmenitiesPageComponent,
+    AmenitiesRoute
+} from '@/features/amenities/config/amenities.config';
 
-export const Route = createFileRoute('/content/accommodation-amenities')({
-    component: () => (
-        <SidebarPageLayout title="Accommodation Amenities">
-            <div>TODO: add content</div>
-        </SidebarPageLayout>
-    )
-});
+export const Route = AmenitiesRoute;
+export default AmenitiesPageComponent;
