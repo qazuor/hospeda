@@ -13,21 +13,64 @@ const DestinationListItemClientSchema = z
         averageRating: z.number().optional(),
         reviewsCount: z.number().optional(),
         accommodationsCount: z.number().optional(),
-        featuredImage: z.string().url().optional()
+        featuredImage: z.string().url().optional(),
+        attractions: z.array(z.string()).optional(), // Array of attraction names
+        media: z
+            .object({
+                featuredImage: z
+                    .object({
+                        url: z.string().url(),
+                        caption: z.string().optional(),
+                        description: z.string().optional()
+                    })
+                    .optional(),
+                gallery: z
+                    .array(
+                        z.object({
+                            url: z.string().url(),
+                            caption: z.string().optional(),
+                            description: z.string().optional()
+                        })
+                    )
+                    .optional()
+            })
+            .optional()
     })
-    .strict();
+    .passthrough(); // Allow additional fields from the API
 
 const PaginatedDestinationsSchema = z
     .object({
-        data: z.array(DestinationListItemClientSchema),
-        total: z.number(),
-        page: z.number(),
-        pageSize: z.number()
+        success: z.boolean(),
+        data: z.object({
+            items: z.array(DestinationListItemClientSchema),
+            pagination: z.object({
+                page: z.number(),
+                limit: z.number(),
+                total: z.number(),
+                totalPages: z.number()
+            })
+        }),
+        metadata: z.object({
+            timestamp: z.string(),
+            requestId: z.string(),
+            total: z.number(),
+            count: z.number()
+        })
     })
     .strict();
 
 export type Destination = z.infer<typeof DestinationListItemClientSchema>;
-export type GetDestinationsOutput = z.infer<typeof PaginatedDestinationsSchema>;
+
+// Raw API response type
+type ApiResponse = z.infer<typeof PaginatedDestinationsSchema>;
+
+// Adapted response type for compatibility with existing code
+export type GetDestinationsOutput = {
+    data: Destination[];
+    total: number;
+    page: number;
+    pageSize: number;
+};
 
 export type GetDestinationsInput = {
     readonly page: number;
@@ -47,12 +90,22 @@ export const getDestinations = async ({
 }: GetDestinationsInput): Promise<GetDestinationsOutput> => {
     const params = new URLSearchParams();
     params.set('page', String(page));
-    params.set('pageSize', String(pageSize));
-    if (q) params.set('q', q);
+    params.set('limit', String(pageSize)); // API uses 'limit' instead of 'pageSize'
+    if (q) params.set('search', q); // API uses 'search' instead of 'q'
     if (sort && sort.length > 0) params.set('sort', JSON.stringify(sort));
 
     const { data } = await fetchApi<unknown>({
         path: `/api/v1/public/destinations?${params.toString()}`
     });
-    return PaginatedDestinationsSchema.parse(data);
+
+    // Parse the API response
+    const apiResponse: ApiResponse = PaginatedDestinationsSchema.parse(data);
+
+    // Adapt to the expected format
+    return {
+        data: apiResponse.data.items,
+        total: apiResponse.data.pagination.total,
+        page: apiResponse.data.pagination.page,
+        pageSize: apiResponse.data.pagination.limit
+    };
 };
