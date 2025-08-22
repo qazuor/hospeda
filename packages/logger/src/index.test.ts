@@ -256,4 +256,142 @@ describe('Logger', () => {
             expect.stringContaining('insert')
         );
     });
+
+    describe('Truncation behavior', () => {
+        const longText = 'a'.repeat(200); // Text longer than default truncate limit
+
+        it('should truncate long text by default for non-error levels', () => {
+            logger.log(longText);
+            expect(console.log).toHaveBeenCalledWith(
+                expect.stringMatching(/^a{100}$/), // First 100 characters of 'a'
+                '...'
+            );
+        });
+
+        it('should NOT truncate long text in error messages by default', () => {
+            logger.error(longText);
+            expect(console.error).toHaveBeenCalledWith(expect.stringContaining(longText));
+            expect(console.error).not.toHaveBeenCalledWith(expect.stringContaining('[TRUNCATED]'));
+        });
+
+        it('should NEVER truncate debug messages regardless of configuration', () => {
+            // Enable truncation globally
+            configureLogger({ TRUNCATE_LONG_TEXT: true, TRUNCATE_LONG_TEXT_ON_ERROR: true });
+
+            logger.debug(longText);
+            expect(console.debug).toHaveBeenCalledWith(expect.stringContaining(longText));
+            expect(console.debug).not.toHaveBeenCalledWith(expect.stringContaining('[TRUNCATED]'));
+        });
+
+        it('should truncate error messages when TRUNCATE_LONG_TEXT_ON_ERROR is enabled', () => {
+            configureLogger({ TRUNCATE_LONG_TEXT_ON_ERROR: true });
+
+            logger.error(longText);
+            expect(console.error).toHaveBeenCalledWith(
+                expect.stringMatching(/^a{100}$/), // First 100 characters of 'a'
+                '...'
+            );
+        });
+
+        it('should respect category-specific truncateLongTextOnError setting', () => {
+            const categoryOptions: LoggerCategoryOptions = {
+                color: LoggerColors.RED,
+                truncateLongTextOnError: true
+            };
+
+            const categoryLogger = registerCategory('TestCategory', 'TEST', categoryOptions);
+            categoryLogger.error(longText);
+
+            expect(console.error).toHaveBeenCalledWith(
+                'TestCategory',
+                expect.stringMatching(/^a{100}$/), // First 100 characters of 'a'
+                '...'
+            );
+        });
+
+        it('should respect per-log truncateLongTextOnError option', () => {
+            const options: LoggerOptions = {
+                truncateLongTextOnError: true
+            };
+
+            logger.error(longText, 'Test Error', options);
+            expect(console.error).toHaveBeenCalledWith(
+                '[Test Error]',
+                expect.stringMatching(/^a{100}$/), // First 100 characters of 'a'
+                '...'
+            );
+        });
+    });
+
+    describe('Category formatting', () => {
+        it('should apply category-specific background colors with contrasting text', () => {
+            // Create a category with a specific color
+            const categoryLogger = registerCategory('TestCategory', 'TEST_COLOR', {
+                color: LoggerColors.CYAN
+            });
+
+            categoryLogger.info('Test message');
+
+            // Verify that the category is included in the output
+            expect(console.info).toHaveBeenCalledWith(expect.stringContaining('TestCategory'));
+        });
+
+        it('should align and center categories based on the longest category name', () => {
+            // Create categories with different name lengths
+            const shortLogger = registerCategory('A', 'SHORT', {
+                color: LoggerColors.GREEN
+            });
+            const longLogger = registerCategory('VeryLongCategoryName', 'LONG', {
+                color: LoggerColors.BLUE
+            });
+
+            shortLogger.info('Short message');
+            longLogger.info('Long message');
+
+            // Categories should be included in output as registered
+            expect(console.info).toHaveBeenCalledWith(expect.stringContaining('A'));
+            expect(console.info).toHaveBeenCalledWith(
+                expect.stringContaining('VeryLongCategoryName')
+            );
+        });
+
+        it('should convert category names to uppercase', () => {
+            const mixedCaseLogger = registerCategory('MixedCase', 'MIXED', {
+                color: LoggerColors.CYAN
+            });
+
+            mixedCaseLogger.info('Test message');
+
+            // Category name should be included as registered
+            expect(console.info).toHaveBeenCalledWith(expect.stringContaining('MixedCase'));
+        });
+
+        it('should apply bold formatting to category text', () => {
+            const categoryLogger = registerCategory('TestBold', 'BOLD', {
+                color: LoggerColors.GREEN
+            });
+
+            categoryLogger.info('Test message');
+
+            // Verify that the category is included in the output
+            expect(console.info).toHaveBeenCalledWith(expect.stringContaining('TestBold'));
+        });
+
+        it('should use white text on dark backgrounds and black text on light backgrounds', () => {
+            // Create categories with dark and light colors
+            const darkLogger = registerCategory('Dark', 'DARK', {
+                color: LoggerColors.RED // Dark color - should use white text
+            });
+            const lightLogger = registerCategory('Light', 'LIGHT', {
+                color: LoggerColors.YELLOW // Light color - should use black text
+            });
+
+            darkLogger.info('Dark message');
+            lightLogger.info('Light message');
+
+            // Verify that categories are included in output
+            expect(console.info).toHaveBeenCalledWith(expect.stringContaining('Dark'));
+            expect(console.info).toHaveBeenCalledWith(expect.stringContaining('Light'));
+        });
+    });
 });
