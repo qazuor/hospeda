@@ -11,13 +11,58 @@
     "errors": {
         "general": "Ha ocurrido un error",
         "network": "Error de conexión",
-        "notFound": "No encontrado"
+        "notFound": "No encontrado",
+        "pageNotFound": "Página no encontrada",
+        "pageNotFoundDescription": "Lo sentimos, no pudimos encontrar la página que estás buscando.",
+        "authenticationError": "Error de autenticación",
+        "failedToLoad": "Error al cargar {resource}",
+        "unknownError": "Error desconocido",
+        "noRecordsFound": "No se encontraron registros"
     },
     "actions": {
         "backTo": "Volver a",
         "goTo": "Ir a",
         "viewAll": "Ver todo",
         "seeMore": "Ver más",
-        "readMore": "Leer más"
+        "readMore": "Leer más",
+        "goBackHome": "Volver al inicio",
+        "goBack": "Volver",
+        "retry": "Reintentar",
+        "clearSession": "Limpiar sesión"
+    },
+    "navigation": {
+        "navigation": "Navegación",
+        "home": "Inicio"
+    },
+    "accessibility": {
+        "logo": "Logo",
+        "closeMenu": "Cerrar menú",
+        "closeSidebarOverlay": "Cerrar superposición del menú lateral",
+        "primary": "Principal",
+        "breadcrumb": "Migas de pan",
+        "sortColumn": "Ordenar columna",
+        "rowsPerPage": "Filas por página",
+        "tableView": "Vista de tabla",
+        "gridView": "Vista de cuadrícula",
+        "search": "Buscar",
+        "closeToast": "Cerrar notificación",
+        "clearAllSessionsAndReload": "Limpiar todas las sesiones y recargar página"
+    },
+    "pages": {
+        "myProfile": "Mi Perfil",
+        "mySettings": "Mi Configuración",
+        "todoAddContent": "TODO: agregar contenido"
+    },
+    "table": {
+        "pageInfo": "Página {page} de {pageCount}",
+        "rows": "Filas",
+        "prev": "Anterior",
+        "next": "Siguiente",
+        "tableView": "Tabla",
+        "gridView": "Cuadrícula",
+        "searchPlaceholder": "Buscar (mín. {minChars} caracteres)...",
+        "searchClear": "Limpiar búsqueda",
+        "searching": "Buscando...",
+        "columns": "Columnas"
     }
 }
