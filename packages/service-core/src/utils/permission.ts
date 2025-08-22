@@ -83,6 +83,10 @@ const permissionDescriptions: Partial<Record<PermissionEnum, string>> = {
  * @returns `true` if the actor has the permission, `false` otherwise.
  */
 export const hasPermission = (actor: Actor, permission: PermissionEnum): boolean => {
+    // Handle case where permissions is undefined or not an array
+    if (!actor.permissions || !Array.isArray(actor.permissions)) {
+        return false;
+    }
     return actor.permissions.includes(permission);
 };
 

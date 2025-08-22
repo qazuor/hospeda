@@ -126,4 +126,41 @@ export class PostSponsorService extends BaseCrudService<
         const count = await this.model.count(where);
         return { count };
     }
+
+    /**
+     * Searches for sponsors for list display.
+     * @param actor - The actor performing the action
+     * @param params - The search parameters
+     * @returns Sponsors list
+     */
+    public async searchForList(
+        actor: Actor,
+        params: SearchPostSponsorInput
+    ): Promise<{ items: PostSponsorType[]; total: number }> {
+        this._canSearch(actor);
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+
+        const where: Record<string, unknown> = {};
+
+        if (filters.type) {
+            where.type = filters.type;
+        }
+        if (filters.name) {
+            where.name = { $ilike: `%${filters.name}%` };
+        }
+        if (filters.q) {
+            where.$or = [
+                { name: { $ilike: `%${filters.q}%` } },
+                { description: { $ilike: `%${filters.q}%` } }
+            ];
+        }
+
+        const result = await this.model.findAll(where, { page, pageSize });
+        return {
+            items: result.items,
+            total: result.total
+        };
+    }
 }

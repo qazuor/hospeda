@@ -5,6 +5,7 @@ import {
     UpdateDestinationServiceSchema
 } from '@repo/schemas';
 import type { AccommodationType, DestinationRatingType, DestinationType } from '@repo/types';
+
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -143,6 +144,46 @@ export class DestinationService extends BaseCrudService<
     }
 
     // --- Domain-specific methods ---
+
+    /**
+     * Searches for destinations with attractions mapped to string arrays for list display.
+     * @param actor - The actor performing the search
+     * @param params - Search parameters (filters, pagination, etc.)
+     * @returns A paginated list of destinations with attractions as string arrays
+     */
+    async searchForList(
+        actor: Actor,
+        params: z.infer<typeof DestinationFilterInputSchema>
+    ): Promise<{
+        items: Array<Omit<DestinationType, 'attractions'> & { attractions: string[] }>;
+        total: number;
+    }> {
+        // Check permissions
+        this._canSearch(actor);
+
+        // Extract parameters
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+
+        // Use the model method that includes attractions
+        const result = await this.model.searchWithAttractions({
+            filters,
+            page,
+            pageSize
+        });
+
+        // Map the result to the expected format
+        const mappedItems = result.items.map((destination) => ({
+            ...destination,
+            attractions: destination.attractionNames
+        }));
+
+        return {
+            items: mappedItems,
+            total: result.total
+        };
+    }
     /**
      * Returns all accommodations for a given destination.
      * @param actor - The actor performing the action
