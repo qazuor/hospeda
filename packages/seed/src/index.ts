@@ -1,3 +1,16 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { config as envConfig } from 'dotenv';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables FIRST, before any other imports that use them
+envConfig({
+    path: path.resolve(__dirname, '../../../.env.local')
+});
+
 import { configureLogger } from '@repo/logger';
 import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
@@ -189,7 +202,7 @@ export async function runSeed(options: SeedOptions): Promise<void> {
             await runExampleSeeds(seedContext);
         }
 
-        logger.success(`${STATUS_ICONS.Complete} Seed process complete.`);
+        logger.success({ msg: `${STATUS_ICONS.Complete} Seed process complete.` });
         summaryTracker.trackProcessStep(
             'Complete Process',
             'success',

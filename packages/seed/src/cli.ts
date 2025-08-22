@@ -1,7 +1,21 @@
 #!/usr/bin/env node
+
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+// Load environment variables first
+import { config } from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+config({ path: path.resolve(__dirname, '../../../.env.local') });
+
+import { dbLogger } from '@repo/db';
 import { runSeed } from './index.js';
 import { STATUS_ICONS } from './utils/icons.js';
 import { logger } from './utils/logger.js';
+
+dbLogger.log(!!process.env.DATABASE_URL, '🔍 CLI: DATABASE_URL loaded');
 
 // Basic CLI argument parsing
 const args = process.argv.slice(2);

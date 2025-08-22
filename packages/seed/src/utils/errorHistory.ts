@@ -206,7 +206,7 @@ class ErrorHistory {
         const separator = '='.repeat(100);
         const subSeparator = '-'.repeat(100);
 
-        logger.info(`\n${STATUS_ICONS.Error} ERROR SUMMARY`);
+        logger.error(`\n${STATUS_ICONS.Error} ERROR SUMMARY`);
         logger.info(separator);
 
         // Print session duration
@@ -215,8 +215,8 @@ class ErrorHistory {
 
         // Print error counts by severity
         const severityCounts = this.getErrorCountBySeverity();
-        logger.info(`   • Errors: ${severityCounts.error}`);
-        logger.info(`   • Warnings: ${severityCounts.warning}`);
+        logger.error(`   • Errors: ${severityCounts.error}`);
+        logger.warn(`   • Warnings: ${severityCounts.warning}`);
         logger.info(`   • Info: ${severityCounts.info}`);
 
         logger.info(subSeparator);
@@ -235,11 +235,17 @@ class ErrorHistory {
                           : STATUS_ICONS.Info;
 
                 const timeStr = error.timestamp.toLocaleTimeString();
-                logger.info(`   ${icon} [${timeStr}] ${error.context}: ${error.message}`);
+                logger[
+                    error.severity === 'error'
+                        ? 'error'
+                        : error.severity === 'warning'
+                          ? 'warn'
+                          : 'info'
+                ](`   ${icon} [${timeStr}] ${error.context}: ${error.message}`);
 
                 // Show additional details if available
                 if (error.details && error.details !== error.message) {
-                    logger.info(`      Details: ${error.details}`);
+                    logger.error(`      Details: ${error.details}`);
                 }
             }
         }
@@ -256,11 +262,13 @@ class ErrorHistory {
                       ? STATUS_ICONS.Warning
                       : STATUS_ICONS.Info;
 
-            logger.info(`\n   ${icon} ${severity.toUpperCase()} (${severityErrors.length}):`);
+            logger[severity === 'error' ? 'error' : severity === 'warning' ? 'warn' : 'info'](
+                `\n   ${icon} ${severity.toUpperCase()} (${severityErrors.length}):`
+            );
 
             for (const error of severityErrors) {
                 const timeStr = error.timestamp.toLocaleTimeString();
-                logger.info(
+                logger.error(
                     `      [${timeStr}] ${error.entityType} (${error.context}): ${error.message}`
                 );
             }

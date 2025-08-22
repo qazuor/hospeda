@@ -122,9 +122,9 @@ async function processTagRelations(
                     const entityName = entity.name || entity.title || entity.id;
                     const tagName = context.idMapper.getDisplayName('tags', seedTagId);
                     successfulRelations++;
-                    logger.success(
-                        `[${successfulRelations} of ${totalRelations}] - ${STATUS_ICONS.Success} Linked tag "${tagName}" to ${entityType} "${entityName}"`
-                    );
+                    logger.success({
+                        msg: `[${successfulRelations} of ${totalRelations}] - ${STATUS_ICONS.Success} Linked tag "${tagName}" to ${entityType} "${entityName}"`
+                    });
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
                     logger.error(
@@ -203,7 +203,7 @@ export async function seedTagRelations(context: SeedContext): Promise<void> {
         }
 
         logger.info(`${subSeparator}`);
-        logger.success(`${STATUS_ICONS.Success} Tag relations processing completed`);
+        logger.success({ msg: `${STATUS_ICONS.Success} Tag relations processing completed` });
     } catch (error) {
         logger.info(`${subSeparator}`);
         logger.error(`${STATUS_ICONS.Error} Tag relations processing failed`);

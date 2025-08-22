@@ -496,9 +496,9 @@ export async function seedRolePermissions(): Promise<void> {
                                 : ` ${STATUS_ICONS.User}`;
 
                     created++;
-                    logger.success(
-                        `[${created + skipped} of ${totalRolePermissions}] - Created role permission: ${role} → ${permission}${roleIcon}`
-                    );
+                    logger.success({
+                        msg: `[${created + skipped} of ${totalRolePermissions}] - Created role permission: ${role} → ${permission}${roleIcon}`
+                    });
 
                     // Track in summary
                     summaryTracker.trackSuccess('Role Permissions');
@@ -518,9 +518,9 @@ export async function seedRolePermissions(): Promise<void> {
         }
 
         logger.info(`${separator}`);
-        logger.success(
-            `${STATUS_ICONS.Success}  ROLE PERMISSION ASSIGNMENT COMPLETED: ${created} created, ${skipped} skipped`
-        );
+        logger.success({
+            msg: `${STATUS_ICONS.Success}  ROLE PERMISSION ASSIGNMENT COMPLETED: ${created} created, ${skipped} skipped`
+        });
     } catch (error) {
         logger.error(
             `${STATUS_ICONS.Error}  ERROR IN ROLE PERMISSION ASSIGNMENT: ${(error as Error).message}`

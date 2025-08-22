@@ -239,7 +239,9 @@ export const seedAccommodations = createSeedFactory({
                             answer: faq.answer
                         }
                     });
-                    logger.success(`[${i + 1} of ${faqs.length}] - Created FAQ: "${faq.question}"`);
+                    logger.success({
+                        msg: `[${i + 1} of ${faqs.length}] - Created FAQ: "${faq.question}"`
+                    });
                 } catch (error) {
                     const err = error as { code?: string; message?: string };
                     if (err.code === 'ALREADY_EXISTS') {
@@ -288,9 +290,9 @@ export const seedAccommodations = createSeedFactory({
                         },
                         context.actor
                     );
-                    logger.success(
-                        `[${i + 1} of ${iaData.length}] - Created AI data: "${aiEntry.title}"`
-                    );
+                    logger.success({
+                        msg: `[${i + 1} of ${iaData.length}] - Created AI data: "${aiEntry.title}"`
+                    });
                 } catch (error) {
                     const err = error as { code?: string; message?: string };
                     if (err.code === 'ALREADY_EXISTS') {

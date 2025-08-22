@@ -71,7 +71,7 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>
         console.log('\n\n');
-        logger.success(`${STATUS_ICONS.Success}  REQUIRED DATA LOAD COMPLETED`);
+        logger.success({ msg: `${STATUS_ICONS.Success}  REQUIRED DATA LOAD COMPLETED` });
     } catch (error) {
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: <explanation>

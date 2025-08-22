@@ -125,9 +125,9 @@ export const createServiceRelationBuilder = <TEntity>(
                 await method.call(service, actor, params);
 
                 createdCount++;
-                logger.success(
-                    `[${createdCount + skippedCount} of ${seedRelationIds.length}] - Created ${config.relationType} relation: ${mainEntityInfo} → ${relatedEntityInfo}`
-                );
+                logger.success({
+                    msg: `[${createdCount + skippedCount} of ${seedRelationIds.length}] - Created ${config.relationType} relation: ${mainEntityInfo} → ${relatedEntityInfo}`
+                });
 
                 // Track success in summary
                 summaryTracker.trackSuccess(`${config.relationType} Relations`);

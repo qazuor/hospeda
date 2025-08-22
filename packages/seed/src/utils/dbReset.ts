@@ -129,8 +129,8 @@ export async function resetDatabase(exclude: string[] = []): Promise<void> {
     idMapper.clearAll();
 
     logger.info(`${subSeparator}`);
-    logger.success(
-        `${STATUS_ICONS.Success} Database reset completed: ${deletedCount} tables deleted, ${skippedCount} skipped`
-    );
+    logger.success({
+        msg: `${STATUS_ICONS.Success} Database reset completed: ${deletedCount} tables deleted, ${skippedCount} skipped`
+    });
     logger.info(`${separator}`);
 }
