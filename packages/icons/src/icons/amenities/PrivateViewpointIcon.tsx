@@ -1,0 +1,49 @@
+import type { IconProps } from '../../types';
+import { ICON_SIZES } from '../../types';
+
+/**
+ * PrivateViewpointIcon icon component
+ *
+ * @example
+ * ```tsx
+ * import { PrivateViewpointIcon } from '@repo/icons';
+ *
+ * // Basic usage
+ * <PrivateViewpointIcon />
+ *
+ * // With custom size and color
+ * <PrivateViewpointIcon size="lg" color="#3B82F6" />
+ *
+ * // With Tailwind classes
+ * <PrivateViewpointIcon className="text-blue-500 hover:text-blue-600" />
+ * ```
+ */
+export const PrivateViewpointIcon = ({
+    size = 'md',
+    color = 'currentColor',
+    className = '',
+    'aria-label': ariaLabel,
+    ...props
+}: IconProps) => (
+    <svg
+        width={typeof size === 'string' ? ICON_SIZES[size] : size}
+        height={typeof size === 'string' ? ICON_SIZES[size] : size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-label={ariaLabel}
+        {...props}
+    >
+        <title>{ariaLabel || 'Private Viewpoint'}</title>
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+        <circle
+            cx="12"
+            cy="12"
+            r="3"
+        />
+    </svg>
+);
