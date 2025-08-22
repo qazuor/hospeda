@@ -1,0 +1,113 @@
+{
+    "signIn": {
+        "title": "Iniciar Sesión",
+        "subtitle": "Accede a tu cuenta",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "emailPlaceholder": "tu@email.com",
+        "passwordPlaceholder": "Tu contraseña",
+        "signInButton": "Iniciar Sesión",
+        "signInWithGoogle": "Continuar con Google",
+        "signInWithFacebook": "Continuar con Facebook",
+        "or": "o",
+        "loading": "Iniciando sesión...",
+        "dontHaveAccount": "¿No tienes cuenta?",
+        "signUpLink": "Regístrate aquí",
+        "forgotPassword": "¿Olvidaste tu contraseña?",
+        "errors": {
+            "invalidCredentials": "Credenciales inválidas",
+            "emailRequired": "El correo electrónico es requerido",
+            "passwordRequired": "La contraseña es requerida",
+            "invalidEmail": "Correo electrónico inválido",
+            "accountNotFound": "Cuenta no encontrada",
+            "tooManyAttempts": "Demasiados intentos. Inténtalo más tarde",
+            "networkError": "Error de conexión. Verifica tu internet",
+            "unknownError": "Error desconocido. Inténtalo de nuevo"
+        }
+    },
+    "signUp": {
+        "title": "Crear Cuenta",
+        "subtitle": "Únete a nuestra plataforma",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "confirmPassword": "Confirmar contraseña",
+        "firstNamePlaceholder": "Tu nombre",
+        "lastNamePlaceholder": "Tu apellido",
+        "emailPlaceholder": "tu@email.com",
+        "passwordPlaceholder": "Mínimo 8 caracteres",
+        "confirmPasswordPlaceholder": "Confirma tu contraseña",
+        "signUpButton": "Crear Cuenta",
+        "signUpWithGoogle": "Registrarse con Google",
+        "signUpWithFacebook": "Registrarse con Facebook",
+        "or": "o",
+        "loading": "Creando cuenta...",
+        "alreadyHaveAccount": "¿Ya tienes cuenta?",
+        "signInLink": "Inicia sesión aquí",
+        "termsAcceptance": "Al registrarte, aceptas nuestros {termsLink} y {privacyLink}",
+        "termsOfService": "Términos de Servicio",
+        "privacyPolicy": "Política de Privacidad",
+        "emailVerification": {
+            "title": "Verifica tu correo",
+            "description": "Te hemos enviado un código de verificación a {email}",
+            "codePlaceholder": "Código de verificación",
+            "verifyButton": "Verificar",
+            "resendCode": "Reenviar código",
+            "changeEmail": "Cambiar correo"
+        },
+        "errors": {
+            "emailRequired": "El correo electrónico es requerido",
+            "passwordRequired": "La contraseña es requerida",
+            "firstNameRequired": "El nombre es requerido",
+            "lastNameRequired": "El apellido es requerido",
+            "invalidEmail": "Correo electrónico inválido",
+            "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+            "passwordsDoNotMatch": "Las contraseñas no coinciden",
+            "emailAlreadyExists": "Ya existe una cuenta con este correo",
+            "weakPassword": "La contraseña es muy débil",
+            "networkError": "Error de conexión. Verifica tu internet",
+            "unknownError": "Error desconocido. Inténtalo de nuevo"
+        }
+    },
+    "userMenu": {
+        "welcome": "Bienvenido",
+        "profile": "Mi Perfil",
+        "settings": "Configuración",
+        "dashboard": "Panel de Control",
+        "myAccommodations": "Mis Alojamientos",
+        "notifications": "Notificaciones",
+        "help": "Ayuda",
+        "signOut": "Cerrar Sesión",
+        "loading": "Cargando...",
+        "errors": {
+            "loadingProfile": "Error al cargar perfil",
+            "signOutError": "Error al cerrar sesión"
+        }
+    },
+    "signOut": {
+        "button": "Cerrar Sesión",
+        "loading": "Cerrando sesión...",
+        "confirmation": {
+            "title": "¿Cerrar sesión?",
+            "description": "¿Estás seguro que quieres cerrar tu sesión?",
+            "confirm": "Sí, cerrar sesión",
+            "cancel": "Cancelar"
+        },
+        "errors": {
+            "networkError": "Error de conexión al cerrar sesión",
+            "unknownError": "Error desconocido al cerrar sesión"
+        }
+    },
+    "common": {
+        "loading": "Cargando...",
+        "error": "Error",
+        "retry": "Reintentar",
+        "cancel": "Cancelar",
+        "continue": "Continuar",
+        "back": "Atrás",
+        "next": "Siguiente",
+        "finish": "Finalizar",
+        "close": "Cerrar"
+    }
+}
