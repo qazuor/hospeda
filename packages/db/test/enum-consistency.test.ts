@@ -1,8 +1,14 @@
+import path from 'node:path';
 import { AllEnums } from '@repo/types';
-import 'dotenv/config';
+import { config as envConfig } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initializeDb } from '../src/client';
+
+// Load environment variables from root .env.local file
+envConfig({
+    path: path.resolve(__dirname, '../../../.env.local')
+});
 
 // Utility to get enum values from the database
 const getDbEnumValues = async (pool: Pool, enumName: string): Promise<string[]> => {
