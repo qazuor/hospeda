@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: hospeda_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hospeda_dev
+      POSTGRES_USER: hospeda_user
+      POSTGRES_PASSWORD: hospeda_pass
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - hospeda_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hospeda_user -d hospeda_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - Web interface for PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: hospeda_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - hospeda_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Redis (optional - for caching)
+  redis:
+    image: redis:7-alpine
+    container_name: hospeda_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hospeda_network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  hospeda_network:
+    driver: bridge

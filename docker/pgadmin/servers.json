@@ -1,0 +1,15 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "Hospeda Local",
+            "Group": "Servers",
+            "Host": "postgres",
+            "Port": 5432,
+            "MaintenanceDB": "hospeda_dev",
+            "Username": "hospeda_user",
+            "Password": "hospeda_pass",
+            "SSLMode": "prefer",
+            "Favorite": true
+        }
+    }
+}
