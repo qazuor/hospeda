@@ -27,12 +27,13 @@
     },
     "dependencies": {
         "@repo/config": "workspace:*",
+        "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",
+        "@repo/service-core": "workspace:*",
         "@repo/types": "workspace:*",
         "@repo/utils": "workspace:*",
-        "@repo/db": "workspace:*",
-        "@repo/service-core": "workspace:*",
+        "dotenv": "^17.2.1",
         "pg": "^8.11.1",
         "zod": "^4.0.8"
     },

@@ -21,7 +21,8 @@
     },
     "dependencies": {
         "lucide-react": "^0.540.0",
-        "@repo/types": "workspace:*"
+        "@repo/types": "workspace:*",
+        "@repo/i18n": "workspace:*"
     },
     "peerDependencies": {
         "@clerk/clerk-react": "^5.40.0 || ^5.42.0",
