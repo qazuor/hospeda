@@ -36,10 +36,74 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     // Log response body in debug mode for errors
     if (env.LOG_LEVEL === 'debug' && status >= 400) {
         try {
-            const responseText = await c.res.clone().text();
-            apiLogger.error(`📄 Error Response Body: ${responseText}`);
-        } catch {
-            apiLogger.error('💥 Failed to log response body');
+            const responseClone = c.res.clone();
+            const contentType = responseClone.headers.get('content-type') || '';
+            const contentEncoding = responseClone.headers.get('content-encoding') || '';
+
+            // Skip if content is compressed
+            if (
+                contentEncoding.includes('gzip') ||
+                contentEncoding.includes('deflate') ||
+                contentEncoding.includes('br')
+            ) {
+                apiLogger.error(
+                    `📄 Error Response: Content-Encoding ${contentEncoding} (compressed, body not logged)`
+                );
+                return;
+            }
+
+            // Only log text-based content types
+            if (
+                contentType.includes('application/json') ||
+                contentType.includes('text/') ||
+                contentType.includes('application/xml') ||
+                contentType === '' || // Sometimes error responses don't have content-type
+                contentType.includes('application/problem+json')
+            ) {
+                const responseText = await responseClone.text();
+
+                // Skip if response is empty
+                if (!responseText || responseText.trim() === '') {
+                    apiLogger.error('📄 Error Response Body: (empty)');
+                    return;
+                }
+
+                // Check if the text contains binary/non-printable characters
+                const hasBinaryContent = responseText.split('').some((char) => {
+                    const code = char.charCodeAt(0);
+                    return (
+                        (code >= 0 && code <= 8) ||
+                        (code >= 14 && code <= 31) ||
+                        (code >= 127 && code <= 255)
+                    );
+                });
+                if (hasBinaryContent) {
+                    apiLogger.error('📄 Error Response: Binary content detected (body not logged)');
+                    return;
+                }
+
+                try {
+                    // Try to parse and pretty-print JSON
+                    const jsonResponse = JSON.parse(responseText);
+                    apiLogger.error(
+                        '📄 Error Response Body:',
+                        JSON.stringify(jsonResponse, null, 2)
+                    );
+                } catch {
+                    // If not JSON, log as text (truncate if too long)
+                    const truncatedText =
+                        responseText.length > 1000
+                            ? `${responseText.substring(0, 1000)}... (truncated)`
+                            : responseText;
+                    apiLogger.error(`📄 Error Response Body: ${truncatedText}`);
+                }
+            } else {
+                apiLogger.error(
+                    `📄 Error Response: Content-Type ${contentType} (non-text content, body not logged)`
+                );
+            }
+        } catch (error) {
+            apiLogger.error('💥 Failed to log response body:', String(error));
         }
     }
 };
