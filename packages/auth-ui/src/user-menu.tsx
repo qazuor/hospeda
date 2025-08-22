@@ -1,4 +1,4 @@
-import { useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { useState } from 'react';
 
 interface UserMenuProps {
@@ -6,6 +6,7 @@ interface UserMenuProps {
 }
 
 export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
+    const { signOut } = useAuth();
     const { isLoaded, user } = useUser();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -22,7 +23,7 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
 
     const handleSignOut = async () => {
         try {
-            // Call API signout endpoint if provided
+            // Call API signout endpoint if provided (for Astro app)
             if (apiBaseUrl) {
                 try {
                     await fetch(`${apiBaseUrl}/api/v1/public/auth/signout`, {
@@ -35,8 +36,13 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
                 }
             }
 
-            // Redirect to home
-            window.location.href = '/';
+            // Use Clerk signOut for proper session management
+            await signOut();
+
+            // Clerk will handle redirect automatically, but fallback to home if needed
+            if (!window.location.pathname.includes('/auth')) {
+                window.location.href = '/';
+            }
         } catch (error) {
             console.error('Sign out error:', error);
         }
@@ -133,7 +139,11 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
 
                         <div className="py-2">
                             <a
-                                href="/dashboard/"
+                                href={
+                                    window.location.pathname.includes('/admin')
+                                        ? '/destinations'
+                                        : '/dashboard/'
+                                }
                                 className="flex items-center px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-50"
                                 onClick={() => setIsOpen(false)}
                             >
@@ -155,7 +165,11 @@ export const UserMenu = ({ apiBaseUrl }: UserMenuProps) => {
                             </a>
 
                             <a
-                                href="/profile/"
+                                href={
+                                    window.location.pathname.includes('/admin')
+                                        ? '/me/profile'
+                                        : '/profile/'
+                                }
                                 className="flex items-center px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-50"
                                 onClick={() => setIsOpen(false)}
                             >
