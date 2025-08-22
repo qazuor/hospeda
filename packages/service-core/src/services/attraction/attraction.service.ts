@@ -391,4 +391,52 @@ export class AttractionService extends BaseCrudRelatedService<
         const count = await this.model.count(where);
         return { count };
     }
+
+    /**
+     * Searches for attractions with destination counts.
+     * @param actor - The actor performing the action
+     * @param params - The search parameters
+     * @returns Attractions with destination counts
+     */
+    public async searchForList(
+        actor: Actor,
+        params: z.infer<typeof SearchAttractionSchema>
+    ): Promise<{
+        items: Array<AttractionType & { destinationCount?: number }>;
+        total: number;
+    }> {
+        this._canSearch(actor);
+        const filters = params.filters ?? {};
+        const pagination = params.pagination ?? { page: 1, pageSize: 10 };
+        const { name, slug, isFeatured, isBuiltin, destinationId } = filters;
+        const page = pagination.page ?? 1;
+        const pageSize = pagination.pageSize ?? 10;
+
+        const where: Record<string, unknown> = {};
+        if (name) where.name = name;
+        if (slug) where.slug = slug;
+        if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
+        if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
+        if (destinationId) where.destinationId = destinationId;
+
+        const { items, total } = await this.model.findAll(where, { page, pageSize });
+
+        // Get destination counts for each attraction
+        const itemsWithCounts = await Promise.all(
+            items.map(async (attraction) => {
+                const { items: relations } = await this.relatedModel.findAll({
+                    attractionId: attraction.id as AttractionId
+                });
+                return {
+                    ...attraction,
+                    destinationCount: relations.length
+                };
+            })
+        );
+
+        return {
+            items: itemsWithCounts,
+            total
+        };
+    }
 }

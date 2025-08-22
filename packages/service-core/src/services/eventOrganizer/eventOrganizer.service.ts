@@ -120,4 +120,33 @@ export class EventOrganizerService extends BaseCrudService<
         const count = await this.model.count(where);
         return { count };
     }
+
+    /**
+     * Searches for event organizers for list display.
+     * @param actor - The actor performing the action
+     * @param params - The search parameters
+     * @returns Event organizers list
+     */
+    public async searchForList(
+        actor: Actor,
+        params: z.infer<typeof SearchEventOrganizerSchema>
+    ): Promise<{ items: EventOrganizerType[]; total: number }> {
+        this._canSearch(actor);
+        const { filters = {}, page = 1, pageSize = 20 } = params;
+
+        const where: Record<string, unknown> = {};
+
+        if (filters.name) {
+            where.name = { $ilike: `%${filters.name}%` };
+        }
+        if (filters.q) {
+            where.$or = [{ name: { $ilike: `%${filters.q}%` } }];
+        }
+
+        const result = await this.model.findAll(where, { page, pageSize });
+        return {
+            items: result.items,
+            total: result.total
+        };
+    }
 }

@@ -149,4 +149,44 @@ export class EventLocationService extends BaseCrudService<
             );
         }
     }
+
+    /**
+     * Searches for event locations for list display.
+     * @param actor - The actor performing the action
+     * @param params - The search parameters
+     * @returns Event locations list
+     */
+    public async searchForList(
+        actor: Actor,
+        params: z.infer<typeof SearchEventLocationSchema>
+    ): Promise<{ items: EventLocationType[]; total: number }> {
+        this._canSearch(actor);
+        const { filters = {}, page = 1, pageSize = 10 } = params;
+
+        const where: Record<string, unknown> = {};
+
+        if (filters.city) {
+            where.city = { $ilike: `%${filters.city}%` };
+        }
+        if (filters.state) {
+            where.state = { $ilike: `%${filters.state}%` };
+        }
+        if (filters.country) {
+            where.country = { $ilike: `%${filters.country}%` };
+        }
+        if (filters.q) {
+            where.$or = [
+                { city: { $ilike: `%${filters.q}%` } },
+                { state: { $ilike: `%${filters.q}%` } },
+                { country: { $ilike: `%${filters.q}%` } },
+                { placeName: { $ilike: `%${filters.q}%` } }
+            ];
+        }
+
+        const result = await this.model.findAll(where, { page, pageSize });
+        return {
+            items: result.items,
+            total: result.total
+        };
+    }
 }
