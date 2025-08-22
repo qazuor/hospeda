@@ -1,4 +1,4 @@
-import { UserIdentityModel, UserModel } from '@repo/db';
+import { AccommodationModel, EventModel, PostModel, UserIdentityModel, UserModel } from '@repo/db';
 import {
     CreateUserSchema,
     UpdateUserSchema,
@@ -594,5 +594,60 @@ export class UserService extends BaseCrudService<
         const { filters = {} } = params;
         const count = await this.model.count(filters);
         return { count };
+    }
+
+    /**
+     * Searches for users with accommodation, event, and post counts.
+     * @param actor - The actor performing the action
+     * @param params - The search parameters
+     * @returns Users with counts
+     */
+    public async searchForList(
+        actor: Actor,
+        params: z.infer<typeof UserFilterInputSchema>
+    ): Promise<{
+        items: Array<
+            UserType & {
+                accommodationCount?: number;
+                eventsCount?: number;
+                postsCount?: number;
+            }
+        >;
+        total: number;
+    }> {
+        this._canSearch(actor);
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+
+        const result = await this.model.findAll(filters, { page, pageSize });
+
+        // Get counts for each user
+        const accommodationModel = new AccommodationModel();
+        const eventModel = new EventModel();
+        const postModel = new PostModel();
+
+        const itemsWithCounts = await Promise.all(
+            result.items.map(async (user) => {
+                const [accommodationResult, eventResult, postResult] = await Promise.all([
+                    accommodationModel.findAll({ ownerId: user.id }),
+                    eventModel.findAll({ organizerId: user.id }),
+                    postModel.findAll({ authorId: user.id })
+                ]);
+
+                return {
+                    ...user,
+                    accommodationCount:
+                        accommodationResult.total || accommodationResult.items.length,
+                    eventsCount: eventResult.total || eventResult.items.length,
+                    postsCount: postResult.total || postResult.items.length
+                };
+            })
+        );
+
+        return {
+            items: itemsWithCounts,
+            total: result.total
+        };
     }
 }

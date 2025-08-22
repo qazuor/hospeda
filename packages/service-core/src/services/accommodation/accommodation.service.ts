@@ -279,6 +279,37 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Search accommodations for list display with destination and owner relations
+     */
+    public async searchForList(
+        actor: Actor,
+        params: z.infer<typeof SearchAccommodationServiceSchema>
+    ): Promise<{
+        items: Array<
+            Omit<AccommodationType, 'destination' | 'owner'> & {
+                destination?: { id: string; name: string; slug: string };
+                owner?: { id: string; displayName: string };
+            }
+        >;
+        total: number;
+    }> {
+        this._canSearch(actor);
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+
+        const result = await this.model.searchWithRelations({
+            filters,
+            pagination: { page, pageSize }
+        });
+
+        return {
+            items: result.items,
+            total: result.total
+        };
+    }
+
+    /**
      * Returns top-rated accommodations, optionally filtered by destination, type, and featured flag.
      * The output is a compact summary tailored for cards/lists and includes joined amenities/features only when related.
      * @param actor - The actor performing the action

@@ -176,6 +176,55 @@ export class FeatureService extends BaseCrudRelatedService<
         return { count };
     }
 
+    /**
+     * Searches for features with accommodation counts.
+     * @param actor - The actor performing the action
+     * @param params - The search parameters with optional filters
+     * @returns Features with accommodation counts
+     */
+    public async searchForList(
+        actor: Actor,
+        params: {
+            filters?: { name?: string; slug?: string; isFeatured?: boolean; isBuiltin?: boolean };
+            pagination?: { page?: number; pageSize?: number };
+        } = {}
+    ): Promise<{
+        items: Array<FeatureType & { accommodationCount?: number }>;
+        total: number;
+    }> {
+        this._canSearch(actor);
+        const { filters = {}, pagination } = params;
+        const { name, slug, isFeatured, isBuiltin } = filters;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+
+        const where: Record<string, unknown> = {};
+        if (name) where.name = name;
+        if (slug) where.slug = slug;
+        if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
+        if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
+
+        const { items, total } = await this.model.findAll(where, { page, pageSize });
+
+        // Get accommodation counts for each feature
+        const itemsWithCounts = await Promise.all(
+            items.map(async (feature) => {
+                const { items: relations } = await this.relatedModel.findAll({
+                    featureId: feature.id as FeatureId
+                });
+                return {
+                    ...feature,
+                    accommodationCount: relations.length
+                };
+            })
+        );
+
+        return {
+            items: itemsWithCounts,
+            total
+        };
+    }
+
     protected createDefaultRelatedModel(): RAccommodationFeatureModel {
         return new RAccommodationFeatureModel();
     }

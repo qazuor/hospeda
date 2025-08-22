@@ -311,6 +311,45 @@ export class AmenityService extends BaseCrudRelatedService<
     }
 
     /**
+     * Searches for amenities with accommodation counts.
+     * @param actor - The actor performing the action
+     * @param params - The search parameters
+     * @returns Amenities with accommodation counts
+     */
+    public async searchForList(
+        actor: Actor,
+        params: SearchAmenityInput
+    ): Promise<{
+        items: Array<AmenityType & { accommodationCount?: number }>;
+        total: number;
+    }> {
+        this._canSearch(actor);
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+
+        const result = await this.model.findAll(filters, { page, pageSize });
+
+        // Get accommodation counts for each amenity
+        const itemsWithCounts = await Promise.all(
+            result.items.map(async (amenity) => {
+                const { items: relations } = await this.relatedModel.findAll({
+                    amenityId: amenity.id as AmenityId
+                });
+                return {
+                    ...amenity,
+                    accommodationCount: relations.length
+                };
+            })
+        );
+
+        return {
+            items: itemsWithCounts,
+            total: result.total
+        };
+    }
+
+    /**
      * Executes a count of amenities based on the provided parameters and actor.
      *
      * @param params - The search parameters (filters).
