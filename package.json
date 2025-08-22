@@ -28,7 +28,20 @@
         "prepare": "husky install",
         "build:api": "pnpm --filter hospeda-api build",
         "prepare:api:prod": "pnpm exec tsx scripts/generate-api-prod-package.ts",
-        "deploy:api": "pnpm build:api && pnpm prepare:api:prod && flyctl deploy --config apps/api/fly.toml --dockerfile Dockerfile.api"
+        "deploy:api": "pnpm build:api && pnpm prepare:api:prod && flyctl deploy --config apps/api/fly.toml --dockerfile Dockerfile.api",
+        "db:start": "docker-compose up -d postgres redis",
+        "db:stop": "docker-compose stop postgres redis",
+        "db:restart": "pnpm db:stop && pnpm db:start",
+        "db:reset": "docker-compose down -v && docker-compose up -d postgres redis && sleep 10 && pnpm db:migrate",
+        "db:fresh": "sudo docker-compose down -v && sudo docker-compose up -d postgres redis && sleep 10 && pnpm db:generate && pnpm db:migrate && pnpm db:seed",
+        "db:fresh-no-sudo": "docker-compose down -v && docker-compose up -d postgres redis && sleep 10 && pnpm db:generate && pnpm db:migrate && pnpm db:seed",
+        "db:logs": "docker-compose logs -f postgres",
+        "db:migrate": "pnpm --filter @repo/db db:migrate",
+        "db:generate": "pnpm --filter @repo/db db:generate",
+        "db:studio": "pnpm --filter @repo/db db:studio",
+        "db:seed": "pnpm --filter @repo/seed seed --reset --required --example",
+        "pgadmin:start": "docker-compose up -d pgadmin",
+        "pgadmin:stop": "docker-compose stop pgadmin"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
