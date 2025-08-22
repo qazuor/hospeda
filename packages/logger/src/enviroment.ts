@@ -78,6 +78,12 @@ export function getConfigFromEnv(categoryKey?: string): Partial<BaseLoggerConfig
         getNumberEnv(`${prefix}TRUNCATE_LONG_TEXT_AT`) ?? getNumberEnv('LOG_TRUNCATE_LONG_TEXT_AT');
     if (truncateLongTextAt !== null) result.TRUNCATE_LONG_TEXT_AT = truncateLongTextAt;
 
+    const truncateLongTextOnError =
+        getBooleanEnv(`${prefix}TRUNCATE_LONG_TEXT_ON_ERROR`) ??
+        getBooleanEnv('LOG_TRUNCATE_LONG_TEXT_ON_ERROR');
+    if (truncateLongTextOnError !== null)
+        result.TRUNCATE_LONG_TEXT_ON_ERROR = truncateLongTextOnError;
+
     const stringifyObjects =
         getBooleanEnv(`${prefix}STRINGIFY_OBJECTS`) ?? getBooleanEnv('LOG_STRINGIFY_OBJECTS');
     if (stringifyObjects !== null) result.STRINGIFY_OBJECTS = stringifyObjects;

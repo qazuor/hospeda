@@ -90,6 +90,11 @@ export interface BaseLoggerConfig {
     TRUNCATE_LONG_TEXT_AT: number;
 
     /**
+     * Whether to truncate long text on error messages
+     */
+    TRUNCATE_LONG_TEXT_ON_ERROR: boolean;
+
+    /**
      * Whether to stringify objects
      */
     STRINGIFY_OBJECTS: boolean;
@@ -128,6 +133,11 @@ export interface LoggerCategoryOptions {
      * At what length to truncate text for this category
      */
     truncateLongTextAt?: number;
+
+    /**
+     * Whether to truncate long text on error messages for this category
+     */
+    truncateLongTextOnError?: boolean;
 
     /**
      * Minimum log level for this category
@@ -178,6 +188,11 @@ export interface LoggerOptions {
      * At what length to truncate text for this entry
      */
     truncateLongTextAt?: number;
+
+    /**
+     * Whether to truncate long text on error messages for this entry
+     */
+    truncateLongTextOnError?: boolean;
 
     /**
      * Whether to stringify objects for this entry
