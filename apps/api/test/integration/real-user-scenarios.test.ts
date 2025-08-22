@@ -76,6 +76,17 @@ vi.mock('@repo/service-core', () => {
                 total: 1
             }
         }),
+        searchForList: vi.fn().mockResolvedValue({
+            items: [
+                {
+                    id: 'acc_123',
+                    name: 'Test Accommodation',
+                    slug: 'test-accommodation',
+                    description: 'A test accommodation for scenarios'
+                }
+            ],
+            total: 1
+        }),
         getById: vi.fn().mockResolvedValue({
             data: {
                 id: 'acc_123',
@@ -690,7 +701,7 @@ describe('Real User Scenarios End-to-End', () => {
                 }
             });
 
-            expect([200, 404, 429]).toContain(exploreRes.status);
+            expect([200, 429]).toContain(exploreRes.status);
             const exploreRequestId = exploreRes.headers.get('x-request-id');
 
             // Step 3: Detailed lookup
