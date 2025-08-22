@@ -116,13 +116,13 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
 
     const headerRoutes = ['/me/profile', '/me/settings', '/notifications'] as const;
     const isHeaderRoute = useMemo(
-        () => headerRoutes.some((r) => location.href.startsWith(r)),
-        [location.href, headerRoutes]
+        () => headerRoutes.some((r) => location.pathname.startsWith(r)),
+        [location.pathname, headerRoutes]
     );
 
     const selectedTopFromLocation = useMemo(() => {
         if (isHeaderRoute) return undefined;
-        const path = location.href;
+        const path = location.pathname;
         const direct = items.find((it) => it.to && it.to === path);
         if (direct) return direct.title;
         for (const it of items) {
@@ -132,7 +132,7 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
             }
         }
         return items[0]?.title;
-    }, [items, location.href, isHeaderRoute]);
+    }, [items, location.pathname, isHeaderRoute]);
 
     const [selectedTitle, setSelectedTitle] = useState<string | undefined>(selectedTopFromLocation);
     const [hoveredTitle, setHoveredTitle] = useState<string | undefined>(undefined);
@@ -223,7 +223,7 @@ export const Sidebar = ({ open, onClose }: SidebarProps) => {
                                 <div className="space-y-1">
                                     {viewedItem.children?.map((child) => {
                                         if (!child.to) return null;
-                                        const isActive = location.href === child.to;
+                                        const isActive = location.pathname === child.to;
                                         return (
                                             <Link
                                                 key={child.to}

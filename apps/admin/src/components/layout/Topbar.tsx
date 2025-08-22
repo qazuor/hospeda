@@ -39,10 +39,10 @@ export const Topbar = ({ onToggleSidebar }: TopbarProps) => {
     const { t } = useTranslations();
     const sectionIcon = useMemo(() => {
         const top = (() => {
-            const direct = menuTree.find((it) => it.to === location.href);
+            const direct = menuTree.find((it) => it.to === location.pathname);
             if (direct) return direct.title;
             for (const it of menuTree) {
-                if (it.children?.some((c) => c.to === location.href)) return it.title;
+                if (it.children?.some((c) => c.to === location.pathname)) return it.title;
             }
             return undefined;
         })();
