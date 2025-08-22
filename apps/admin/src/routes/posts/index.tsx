@@ -1,10 +1,7 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { createFileRoute } from '@tanstack/react-router';
+/**
+ * Posts list page - using generic entity list system
+ */
+import { PostsPageComponent, PostsRoute } from '@/features/posts/config/posts.config';
 
-export const Route = createFileRoute('/posts/')({
-    component: () => (
-        <SidebarPageLayout title="Posts - List">
-            <div>TODO: add content</div>
-        </SidebarPageLayout>
-    )
-});
+export const Route = PostsRoute;
+export default PostsPageComponent;

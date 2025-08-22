@@ -1,10 +1,8 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { createFileRoute } from '@tanstack/react-router';
+// TODO: Implement user access route
+/**
+ * Users list page - using generic entity list system
+ */
+import { UsersPageComponent, UsersRoute } from '@/features/users/config/users.config';
 
-export const Route = createFileRoute('/access/users/')({
-    component: () => (
-        <SidebarPageLayout title="Users - List">
-            <div>TODO: add content</div>
-        </SidebarPageLayout>
-    )
-});
+export const Route = UsersRoute;
+export default UsersPageComponent;

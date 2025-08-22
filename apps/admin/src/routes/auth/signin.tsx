@@ -261,7 +261,7 @@ function SignInPage(): React.JSX.Element {
                                         onClick={handleClearSession}
                                         className="rounded bg-yellow-500 px-2 py-1 text-white text-xs hover:bg-yellow-600"
                                         type="button"
-                                        title="Clear all sessions and reload page"
+                                        title={t('ui.accessibility.clearAllSessionsAndReload')}
                                     >
                                         {t('admin-auth.signin.clearSession')}
                                     </button>
@@ -345,7 +345,7 @@ function SignInPage(): React.JSX.Element {
                                     type="button"
                                     title="Clear all sessions and reload page"
                                 >
-                                    Clear Session
+                                    {t('ui.actions.clearSession')}
                                 </button>
                             </div>
                         </div>

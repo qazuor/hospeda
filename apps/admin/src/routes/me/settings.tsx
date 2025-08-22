@@ -1,10 +1,17 @@
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
+import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/me/settings')({
-    component: () => (
-        <MainPageLayout title="My Settings">
-            <div>TODO: add content</div>
+const MySettingsPage = () => {
+    const { t } = useTranslations();
+
+    return (
+        <MainPageLayout title={t('ui.pages.mySettings')}>
+            <div>{t('ui.pages.todoAddContent')}</div>
         </MainPageLayout>
-    )
+    );
+};
+
+export const Route = createFileRoute('/me/settings')({
+    component: MySettingsPage
 });

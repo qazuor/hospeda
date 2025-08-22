@@ -1,10 +1,7 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { createFileRoute } from '@tanstack/react-router';
+import {
+    EventLocationsPageComponent,
+    EventLocationsRoute
+} from '@/features/event-locations/config/event-locations.config';
 
-export const Route = createFileRoute('/events/locations')({
-    component: () => (
-        <SidebarPageLayout title="Event Locations">
-            <div>TODO: add content</div>
-        </SidebarPageLayout>
-    )
-});
+export const Route = EventLocationsRoute;
+export default EventLocationsPageComponent;

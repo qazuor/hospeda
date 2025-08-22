@@ -1,10 +1,7 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { createFileRoute } from '@tanstack/react-router';
+/**
+ * Events list page - using generic entity list system
+ */
+import { EventsPageComponent, EventsRoute } from '@/features/events/config/events.config';
 
-export const Route = createFileRoute('/events/')({
-    component: () => (
-        <SidebarPageLayout title="Events - List">
-            <div>TODO: add content</div>
-        </SidebarPageLayout>
-    )
-});
+export const Route = EventsRoute;
+export default EventsPageComponent;

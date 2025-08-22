@@ -1,10 +1,4 @@
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { createFileRoute } from '@tanstack/react-router';
+import { SponsorsPageComponent, SponsorsRoute } from '@/features/sponsors/config/sponsors.config';
 
-export const Route = createFileRoute('/sponsors')({
-    component: () => (
-        <SidebarPageLayout title="Sponsors">
-            <div>TODO: add content</div>
-        </SidebarPageLayout>
-    )
-});
+export const Route = SponsorsRoute;
+export default SponsorsPageComponent;

@@ -8,6 +8,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { AuthProvider } from '@/contexts/auth-context';
 import { useAuthContext } from '@/hooks/use-auth-context';
+import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
 
 import ClerkProvider from '../integrations/clerk/provider';
@@ -15,29 +16,31 @@ import ClerkProvider from '../integrations/clerk/provider';
 import appCss from '../styles.css?url';
 
 function NotFoundComponent() {
+    const { t } = useTranslations();
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50">
             <div className="text-center">
                 <div className="mb-4">
                     <h1 className="font-bold text-9xl text-gray-200">404</h1>
                 </div>
-                <h2 className="mb-2 font-semibold text-2xl text-gray-900">Page not found</h2>
-                <p className="mb-8 text-gray-600">
-                    Sorry, we couldn't find the page you're looking for.
-                </p>
+                <h2 className="mb-2 font-semibold text-2xl text-gray-900">
+                    {t('ui.errors.pageNotFound')}
+                </h2>
+                <p className="mb-8 text-gray-600">{t('ui.errors.pageNotFoundDescription')}</p>
                 <div className="space-x-4">
                     <a
                         href="/"
                         className="inline-flex items-center rounded-md bg-cyan-600 px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
                     >
-                        Go back home
+                        {t('ui.actions.goBackHome')}
                     </a>
                     <button
                         type="button"
                         onClick={() => window.history.back()}
                         className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
                     >
-                        Go back
+                        {t('ui.actions.goBack')}
                     </button>
                 </div>
             </div>
@@ -109,6 +112,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const path = router.state.location.pathname;
     const isAuthRoute = path.startsWith('/auth');
+    const { t } = useTranslations();
 
     // Use our optimized auth context instead of direct API calls
     const { isLoading, isAuthenticated, error, refreshSession } = useAuthContext();
@@ -145,7 +149,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (isLoading) {
         return (
             <div className="flex min-h-[60vh] items-center justify-center p-6 text-center">
-                <div className="text-muted-foreground text-sm">Loading...</div>
+                <div className="text-muted-foreground text-sm">{t('ui.loading.text')}</div>
             </div>
         );
     }
@@ -155,7 +159,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         return (
             <div className="flex min-h-[60vh] items-center justify-center p-6 text-center">
                 <div className="text-red-600 text-sm">
-                    Authentication error: {error}
+                    {t('ui.errors.authenticationError')}: {error}
                     <button
                         type="button"
                         onClick={() => {
@@ -164,7 +168,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
                         }}
                         className="ml-2 text-blue-600 underline"
                     >
-                        Retry
+                        {t('ui.actions.retry')}
                     </button>
                 </div>
             </div>
