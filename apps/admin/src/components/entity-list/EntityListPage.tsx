@@ -83,7 +83,7 @@ export const createEntityListPage = <TData extends { id: string }>(
      */
     const EntityListPageComponent = () => {
         const { t } = useTranslations();
-        const navigate = useNavigate({ from: config.basePath });
+        const navigate = useNavigate();
         const search = Route.useSearch();
 
         // Local state for debounced search
@@ -115,8 +115,10 @@ export const createEntityListPage = <TData extends { id: string }>(
 
                 if (queryToSend !== search.q) {
                     navigate({
-                        search: (prev) => ({ ...prev, q: queryToSend, page: 1 })
-                    });
+                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
+                        search: (prev: any) => ({ ...prev, q: queryToSend, page: 1 })
+                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
+                    } as any);
                 }
 
                 setIsSearching(false);
@@ -224,8 +226,10 @@ export const createEntityListPage = <TData extends { id: string }>(
 
         // Handlers
         const updateSearch = useCallback(
-            (updater: (prev: typeof search) => typeof search) => {
-                navigate({ search: updater });
+            // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
+            (updater: (prev: any) => any) => {
+                // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
+                navigate({ search: updater } as any);
             },
             [navigate]
         );
@@ -272,9 +276,9 @@ export const createEntityListPage = <TData extends { id: string }>(
                     <DataTableToolbar
                         key={`search-config-${searchConfig.minChars}`}
                         view={search.view}
-                        onViewChange={viewConfig.allowViewToggle ? handleViewChange : undefined}
+                        onViewChange={viewConfig.allowViewToggle ? handleViewChange : () => {}}
                         query={localQuery}
-                        onQueryChange={searchConfig.enabled ? handleQueryChange : undefined}
+                        onQueryChange={searchConfig.enabled ? handleQueryChange : () => {}}
                         isSearching={isSearching}
                         onClearSearch={handleClearSearch}
                         searchMinChars={searchConfig.minChars}
@@ -330,7 +334,8 @@ export const createEntityListPage = <TData extends { id: string }>(
     };
 
     // Create route
-    const Route = createFileRoute(`${config.basePath}/`)({
+    // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
+    const Route = createFileRoute(`${config.basePath}/` as any)({
         validateSearch,
         component: EntityListPageComponent
     });

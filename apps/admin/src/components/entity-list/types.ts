@@ -7,7 +7,6 @@ import type {
     ListOrientation,
     WidgetRenderer
 } from '@/components/table/DataTable';
-import type { createFileRoute } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import type { z } from 'zod';
 
@@ -123,7 +122,8 @@ export type ColumnTypeToTSType<T extends ColumnConfig['columnType']> = T extends
 /**
  * Helper type to generate Row type from columns config
  */
-export type GenerateRowType<T extends readonly ColumnConfig[]> = {
+// biome-ignore lint/suspicious/noExplicitAny: Generic type constraint compatibility
+export type GenerateRowType<T extends readonly ColumnConfig<any>[]> = {
     [K in T[number] as K['accessorKey']]?: ColumnTypeToTSType<K['columnType']>;
 } & {
     readonly id: string;
@@ -193,5 +193,6 @@ export type EntityConfig<TData = unknown> = {
  */
 export type EntityListComponents = {
     readonly component: () => ReactNode;
-    readonly route: ReturnType<typeof createFileRoute>;
+    // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
+    readonly route: any;
 };

@@ -1,4 +1,3 @@
-import '@github/relative-time-element';
 import type { ReactNode } from 'react';
 
 type TimeAgoCellProps = {
@@ -40,14 +39,12 @@ export const TimeAgoCell = ({ value }: TimeAgoCellProps): ReactNode => {
 
         return (
             <div className="flex flex-col">
-                <relative-time
-                    datetime={isoString}
-                    format="relative"
+                <span
                     className="text-gray-900 dark:text-gray-100"
                     title={date.toLocaleString()}
                 >
                     {formattedDate}
-                </relative-time>
+                </span>
                 <time
                     dateTime={isoString}
                     className="text-gray-500 text-xss dark:text-gray-400"
@@ -60,25 +57,3 @@ export const TimeAgoCell = ({ value }: TimeAgoCellProps): ReactNode => {
         return <span className="text-gray-400 dark:text-gray-500">Invalid date</span>;
     }
 };
-
-// Extend the JSX namespace to include the relative-time element
-declare global {
-    namespace JSX {
-        interface IntrinsicElements {
-            'relative-time': {
-                datetime: string;
-                format?: 'datetime' | 'relative' | 'duration' | 'micro' | 'elapsed';
-                tense?: 'auto' | 'past' | 'future';
-                precision?: 'year' | 'month' | 'day' | 'hour' | 'minute' | 'second';
-                threshold?: string;
-                prefix?: string;
-                formatStyle?: 'long' | 'short' | 'narrow';
-                lang?: string;
-                'no-title'?: boolean;
-                className?: string;
-                title?: string;
-                children?: React.ReactNode;
-            };
-        }
-    }
-}

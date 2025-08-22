@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import {
     type ColumnDef,
@@ -8,11 +9,122 @@ import {
     useReactTable
 } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
+import { useCallback, useMemo } from 'react';
+import {
+    BadgeCell,
+    BooleanCell,
+    CompoundCell,
+    DateCell,
+    EntityCell,
+    GalleryCell,
+    ImageCell,
+    LinkCell,
+    ListCell,
+    NumberCell,
+    PriceCell,
+    StringCell,
+    TimeAgoCell,
+    WidgetCell
+} from './cells';
 
 export type DataTableSort = ReadonlyArray<{
     readonly id: string;
     readonly desc: boolean;
 }>;
+
+export enum BadgeColor {
+    // Semantic colors
+    DEFAULT = 'default',
+    PRIMARY = 'primary',
+    SECONDARY = 'secondary',
+    SUCCESS = 'success',
+    WARNING = 'warning',
+    ERROR = 'error',
+
+    // Specific colors
+    BLUE = 'blue',
+    RED = 'red',
+    GREEN = 'green',
+    YELLOW = 'yellow',
+    PURPLE = 'purple',
+    PINK = 'pink',
+    INDIGO = 'indigo',
+    CYAN = 'cyan',
+    TEAL = 'teal',
+    ORANGE = 'orange',
+    GRAY = 'gray',
+    SLATE = 'slate'
+}
+
+export enum ColumnType {
+    STRING = 'string',
+    NUMBER = 'number',
+    DATE = 'date',
+    TIME_AGO = 'timeAgo',
+    BOOLEAN = 'boolean',
+    BADGE = 'badge',
+    LINK = 'link',
+    ENTITY = 'entity',
+    LIST = 'list',
+    WIDGET = 'widget',
+    PRICE = 'price',
+    COMPOUND = 'compound',
+    IMAGE = 'image',
+    GALLERY = 'gallery'
+}
+
+export enum EntityType {
+    ACCOMMODATION = 'accommodation',
+    DESTINATION = 'destination',
+    EVENT = 'event',
+    EVENT_LOCATION = 'event-location',
+    EVENT_ORGANIZER = 'event-organizer',
+    POST = 'post',
+    USER = 'user',
+    SPONSOR = 'sponsor',
+    ATTRACTION = 'attraction',
+    FEATURE = 'feature',
+    AMENITY = 'amenity'
+}
+
+export type EntityOption = {
+    readonly entityType: EntityType;
+    readonly color?: BadgeColor;
+};
+
+export enum CompoundLayout {
+    HORIZONTAL = 'horizontal',
+    VERTICAL = 'vertical'
+}
+
+export enum ListOrientation {
+    ROW = 'row',
+    COLUMN = 'column'
+}
+
+export type CompoundColumnConfig = {
+    readonly id: string;
+    readonly accessorKey: string;
+    readonly columnType?: ColumnType;
+    readonly badgeOptions?: readonly BadgeOption[];
+    readonly entityOptions?: EntityOption;
+};
+
+export type CompoundOption = {
+    readonly columns: readonly CompoundColumnConfig[];
+    readonly layout: CompoundLayout;
+    readonly separator?: string;
+};
+
+export type WidgetRenderer<TData> = (row: TData) => ReactNode;
+
+export type BadgeOption = {
+    readonly value: string;
+    readonly label: string;
+    readonly color: BadgeColor;
+};
+
+export type LinkHandler<TData> = (row: TData) => void;
 
 export type DataTableColumn<TData> = {
     readonly id: string;
@@ -21,6 +133,16 @@ export type DataTableColumn<TData> = {
     readonly cell?: (ctx: { readonly row: TData }) => ReactNode;
     readonly enableSorting?: boolean;
     readonly enableHiding?: boolean;
+    readonly startVisibleOnTable?: boolean; // Controls initial visibility in table view (default: true)
+    readonly startVisibleOnGrid?: boolean; // Controls initial visibility in grid view (default: true)
+    readonly columnType?: ColumnType;
+    readonly badgeOptions?: readonly BadgeOption[];
+    readonly linkHandler?: LinkHandler<TData>;
+    readonly entityOptions?: EntityOption;
+    readonly listSeparator?: string;
+    readonly listOrientation?: ListOrientation;
+    readonly widgetRenderer?: WidgetRenderer<TData>;
+    readonly compoundOptions?: CompoundOption;
 };
 
 export type DataTableProps<TData> = {
@@ -46,6 +168,90 @@ export type DataTableProps<TData> = {
  * DataTable is a thin wrapper over TanStack Table providing a stable public API.
  * Migrate the internals freely without affecting consumers.
  */
+/**
+ * Renders a table cell based on the column type configuration.
+ * Exported for use in other components like GridCard.
+ */
+export function renderCellByType<TData>(
+    column: DataTableColumn<TData>,
+    value: unknown,
+    row: TData
+): ReactNode {
+    // If custom cell renderer is provided, use it
+    if (column.cell) {
+        return column.cell({ row });
+    }
+
+    // Render based on column type
+    switch (column.columnType) {
+        case ColumnType.STRING:
+            return <StringCell value={value} />;
+        case ColumnType.NUMBER:
+            return <NumberCell value={value} />;
+        case ColumnType.BOOLEAN:
+            return <BooleanCell value={value} />;
+        case ColumnType.BADGE:
+            return (
+                <BadgeCell
+                    value={value}
+                    options={column.badgeOptions}
+                />
+            );
+        case ColumnType.LINK:
+            return (
+                <LinkCell
+                    value={value}
+                    row={row}
+                    linkHandler={column.linkHandler}
+                />
+            );
+        case ColumnType.DATE:
+            return <DateCell value={value} />;
+        case ColumnType.TIME_AGO:
+            return <TimeAgoCell value={value} />;
+        case ColumnType.ENTITY:
+            return (
+                <EntityCell
+                    value={value}
+                    row={row}
+                    linkHandler={column.linkHandler}
+                    entityOptions={column.entityOptions}
+                />
+            );
+        case ColumnType.LIST:
+            return (
+                <ListCell
+                    value={value}
+                    separator={column.listSeparator}
+                    orientation={column.listOrientation}
+                />
+            );
+        case ColumnType.WIDGET:
+            return (
+                <WidgetCell
+                    row={row}
+                    widgetRenderer={column.widgetRenderer}
+                />
+            );
+        case ColumnType.PRICE:
+            return <PriceCell value={value} />;
+        case ColumnType.COMPOUND:
+            return (
+                <CompoundCell
+                    row={row}
+                    compoundOptions={column.compoundOptions}
+                />
+            );
+        case ColumnType.IMAGE:
+            return <ImageCell value={value} />;
+        case ColumnType.GALLERY:
+            return <GalleryCell value={value} />;
+        default:
+            // Fallback to string rendering
+            return <StringCell value={value} />;
+    }
+}
+
 export const DataTable = <TData,>({
     columns,
     data,
@@ -61,38 +267,63 @@ export const DataTable = <TData,>({
     columnVisibility,
     onColumnVisibilityChange
 }: DataTableProps<TData>) => {
-    const internalColumns: ColumnDef<TData>[] = columns.map((col) => ({
-        id: col.id,
-        accessorKey: col.accessorKey,
-        header: () => col.header,
-        cell: (info) =>
-            col.cell ? col.cell({ row: info.row.original }) : String(info.getValue() ?? ''),
-        enableSorting: col.enableSorting ?? true,
-        enableHiding: col.enableHiding ?? true
-    }));
+    const { t } = useTranslations();
 
-    const sortingState: SortingState = sort.map((s) => ({
-        id: s.id,
-        desc: s.desc
-    }));
+    const internalColumns: ColumnDef<TData>[] = useMemo(
+        () =>
+            columns.map((col) => ({
+                id: col.id,
+                accessorKey: col.accessorKey,
+                header: () => col.header,
+                cell: (info) => renderCellByType(col, info.getValue(), info.row.original),
+                enableSorting: col.enableSorting ?? true,
+                enableHiding: col.enableHiding ?? true
+            })),
+        [columns]
+    );
 
-    const table = useReactTable<TData>({
-        data: data as TData[],
-        columns: internalColumns,
-        getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        onSortingChange: (updater) => {
+    const sortingState: SortingState = useMemo(
+        () =>
+            sort.map((s) => ({
+                id: s.id,
+                desc: s.desc
+            })),
+        [sort]
+    );
+
+    const handleSortingChange = useCallback(
+        (updater: SortingState | ((old: SortingState) => SortingState)) => {
             const next = typeof updater === 'function' ? updater(sortingState) : updater;
             onSortChange(next.map((s) => ({ id: s.id, desc: s.desc })));
         },
+        [sortingState, onSortChange]
+    );
+
+    const handleColumnVisibilityChange = useCallback(
+        (
+            updater:
+                | Record<string, boolean>
+                | ((old: Record<string, boolean>) => Record<string, boolean>)
+        ) => {
+            const next = typeof updater === 'function' ? updater(columnVisibility) : updater;
+            onColumnVisibilityChange(next as Record<string, boolean>);
+        },
+        [columnVisibility, onColumnVisibilityChange]
+    );
+
+    const memoizedData = useMemo(() => data as TData[], [data]);
+
+    const table = useReactTable<TData>({
+        data: memoizedData,
+        columns: internalColumns,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        onSortingChange: handleSortingChange,
         state: {
             sorting: sortingState,
             columnVisibility
         },
-        onColumnVisibilityChange: (updater) => {
-            const next = typeof updater === 'function' ? updater(columnVisibility) : updater;
-            onColumnVisibilityChange(next as Record<string, boolean>);
-        }
+        onColumnVisibilityChange: handleColumnVisibilityChange
     });
 
     const pageCount = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
@@ -120,7 +351,7 @@ export const DataTable = <TData,>({
                                                         'inline-flex items-center gap-1 underline-offset-4 hover:underline'
                                                     )}
                                                     onClick={header.column.getToggleSortingHandler()}
-                                                    aria-label="Sort column"
+                                                    aria-label={t('ui.accessibility.sortColumn')}
                                                 >
                                                     {flexRender(
                                                         header.column.columnDef.header,
@@ -153,7 +384,7 @@ export const DataTable = <TData,>({
                                     className="px-3 py-4"
                                     colSpan={columns.length}
                                 >
-                                    Loading...
+                                    {t('ui.loading.text')}
                                 </td>
                             </tr>
                         ) : data.length === 0 ? (
@@ -162,7 +393,7 @@ export const DataTable = <TData,>({
                                     className="px-3 py-6"
                                     colSpan={columns.length}
                                 >
-                                    No records found
+                                    {t('ui.errors.noRecordsFound')}
                                 </td>
                             </tr>
                         ) : (
@@ -191,16 +422,16 @@ export const DataTable = <TData,>({
 
             <div className="flex items-center justify-between">
                 <div className="text-muted-foreground text-sm">
-                    Page {page} of {pageCount}
+                    {t('ui.table.pageInfo', { page, pageCount })}
                 </div>
                 <div className="flex items-center gap-2">
                     <label className="flex items-center gap-2 text-sm">
-                        <span>Rows:</span>
+                        <span>{t('ui.table.rows')}:</span>
                         <select
                             className="rounded border px-2 py-1"
                             value={pageSize}
                             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                            aria-label="Rows per page"
+                            aria-label={t('ui.accessibility.rowsPerPage')}
                         >
                             {[10, 20, 30, 50].map((n) => (
                                 <option
@@ -219,7 +450,7 @@ export const DataTable = <TData,>({
                             onClick={() => onPageChange(Math.max(1, page - 1))}
                             disabled={page <= 1}
                         >
-                            Prev
+                            {t('ui.table.prev')}
                         </button>
                         <button
                             type="button"
@@ -227,7 +458,7 @@ export const DataTable = <TData,>({
                             onClick={() => onPageChange(Math.min(pageCount, page + 1))}
                             disabled={page >= pageCount}
                         >
-                            Next
+                            {t('ui.table.next')}
                         </button>
                     </div>
                 </div>
