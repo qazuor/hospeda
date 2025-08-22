@@ -5,16 +5,11 @@
 
 import { z } from '@hono/zod-openapi';
 import { UserService } from '@repo/service-core';
+import type { Context } from 'hono';
+import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createListRoute } from '../../utils/route-factory';
-import { UserSchema } from './schemas';
 
-const userService = new UserService({ logger: apiLogger });
-
-/**
- * Example: List users endpoint using ResponseFactory.createListResponses
- * This demonstrates how to handle paginated responses with proper typing
- */
 export const listUsersRoute = createListRoute({
     method: 'get',
     path: '/',
@@ -23,33 +18,27 @@ export const listUsersRoute = createListRoute({
     tags: ['Users'],
     requestQuery: {
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
-        search: z.string().optional()
+        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
     },
-    responseSchema: UserSchema,
-    handler: async (ctx, _params, _body, query) => {
-        const queryData = query as { page?: number; limit?: number; search?: string };
+    responseSchema: z.object({ id: z.string().uuid() }).partial(),
+    handler: async (ctx: Context, _params, _body, query) => {
+        const actor = getActorFromContext(ctx);
+        const q = query as { page?: number; limit?: number };
+        const page = q.page ?? 1;
+        const pageSize = q.limit ?? 10;
 
-        // Get actor from context (assuming it's set by auth middleware)
-        const actor = ctx.get('actor');
-
-        // Call the real user service
-        const result = await userService.list(actor, {
-            page: queryData.page || 1,
-            pageSize: queryData.limit || 10
+        const service = new UserService({ logger: apiLogger });
+        const result = await service.searchForList(actor, {
+            pagination: { page, pageSize }
         });
 
-        if (result.error) {
-            throw new Error(result.error.message);
-        }
-
         return {
-            items: result.data?.items || [],
+            items: result.items,
             pagination: {
-                page: queryData.page || 1,
-                limit: queryData.limit || 10,
-                total: result.data?.total || 0,
-                totalPages: Math.ceil((result.data?.total || 0) / (queryData.limit || 10))
+                page,
+                limit: pageSize,
+                total: result.total,
+                totalPages: Math.ceil(result.total / pageSize)
             }
         };
     }

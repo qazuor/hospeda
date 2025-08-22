@@ -1,9 +1,13 @@
 import type { AppOpenAPI } from '../types';
 import { apiLogger } from '../utils/logger';
 import { accommodationRoutes } from './accommodation';
+import { attractionRoutes } from './attraction';
 import { destinationRoutes } from './destination';
 import { eventRoutes } from './event';
+import { eventLocationRoutes } from './event-location';
+import { eventOrganizerRoutes } from './event-organizer';
 import { postRoutes } from './post';
+import { sponsorRoutes } from './sponsor';
 
 // Debug: Add logging around accommodation route import
 apiLogger.debug('🏠 Loading accommodation routes...');
@@ -92,6 +96,22 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('🔗 Registering feature routes...');
         app.route('/api/v1/public', featureRoutes);
         apiLogger.debug('✅ Feature routes registered successfully');
+
+        apiLogger.debug('🔗 Registering attraction routes...');
+        app.route('/api/v1/public', attractionRoutes);
+        apiLogger.debug('✅ Attraction routes registered successfully');
+
+        apiLogger.debug('🔗 Registering sponsor routes...');
+        app.route('/api/v1/public', sponsorRoutes);
+        apiLogger.debug('✅ Sponsor routes registered successfully');
+
+        apiLogger.debug('🔗 Registering event organizer routes...');
+        app.route('/api/v1/public', eventOrganizerRoutes);
+        apiLogger.debug('✅ Event organizer routes registered successfully');
+
+        apiLogger.debug('🔗 Registering event location routes...');
+        app.route('/api/v1/public', eventLocationRoutes);
+        apiLogger.debug('✅ Event location routes registered successfully');
     } catch (error) {
         apiLogger.error('❌ Failed to register routes:', String(error));
         throw error;
