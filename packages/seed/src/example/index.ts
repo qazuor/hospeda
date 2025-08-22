@@ -79,7 +79,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedTags(context);
         await seedTagRelations(context);
 
-        logger.success(`${STATUS_ICONS.Success} Example data load completed.`);
+        logger.success({ msg: `${STATUS_ICONS.Success} Example data load completed.` });
     } catch (error) {
         logger.error(`${STATUS_ICONS.Error} Example data load interrupted`);
         logger.error(`   Error: ${(error as Error).message}`);

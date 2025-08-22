@@ -64,9 +64,9 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         });
 
         if (existingSuperAdmin) {
-            logger.success(
-                `${STATUS_ICONS.UserSuperAdmin} Super admin found: "${existingSuperAdmin.displayName || 'Super Admin'}" (ID: ${existingSuperAdmin.id})`
-            );
+            logger.success({
+                msg: `${STATUS_ICONS.UserSuperAdmin} Super admin found: "${existingSuperAdmin.displayName || 'Super Admin'}" (ID: ${existingSuperAdmin.id})`
+            });
             logger.info(`${subSeparator}`);
 
             summaryTracker.trackProcessStep('Super Admin', 'success', 'Existing super admin found');
@@ -121,9 +121,9 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
         const realSuperAdminId = createdUser.id;
 
-        logger.success(
-            `${STATUS_ICONS.UserSuperAdmin} Super admin created: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
-        );
+        logger.success({
+            msg: `${STATUS_ICONS.UserSuperAdmin} Super admin created: "${createdUser.displayName || 'Super Admin'}" (ID: ${realSuperAdminId})`
+        });
         logger.info(`${subSeparator}`);
 
         summaryTracker.trackProcessStep(

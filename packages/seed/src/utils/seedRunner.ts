@@ -85,7 +85,7 @@ export async function seedRunner<T>({
                     ? `[${currentIndex} of ${totalItems}] - ${icon} ${entityInfo}`
                     : `[${currentIndex} of ${totalItems}] - ${icon} ${entityName} #${currentIndex}`;
 
-                logger.success(successMessage);
+                logger.success({ msg: successMessage });
                 successCount++;
             }
         } catch (err) {
@@ -125,9 +125,9 @@ export async function seedRunner<T>({
     logger.info(`${SUBSECTION_SEPARATOR}`);
 
     if (errorCount === 0) {
-        logger.success(
-            `${STATUS_ICONS.Success} ${entityName}: ${successCount} items processed successfully`
-        );
+        logger.success({
+            msg: `${STATUS_ICONS.Success} ${entityName}: ${successCount} items processed successfully`
+        });
     } else {
         logger.warn(
             `${STATUS_ICONS.Warning}  ${entityName}: ${successCount} successful, ${errorCount} errors`

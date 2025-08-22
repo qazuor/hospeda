@@ -49,9 +49,9 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
                     throw new Error(`Invalid manifest type: ${type}`);
                 }
                 await validateManifestVsFolder(entityName, files, type);
-                logger.success(
-                    `${STATUS_ICONS.Success} ${entityName}: ${files.length} files validated`
-                );
+                logger.success({
+                    msg: `${STATUS_ICONS.Success} ${entityName}: ${files.length} files validated`
+                });
             } catch (error) {
                 totalErrors++;
                 const errorMessage = error instanceof Error ? error.message : String(error);
@@ -68,7 +68,7 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
     logger.info(`${subSeparator}`);
 
     if (totalErrors === 0) {
-        logger.success(`${STATUS_ICONS.Success} All manifests validated successfully`);
+        logger.success({ msg: `${STATUS_ICONS.Success} All manifests validated successfully` });
     } else {
         logger.warn(
             `${STATUS_ICONS.Warning}  ${totalValidations - totalErrors} successful validations, ${totalErrors} errors`

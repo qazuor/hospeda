@@ -1,4 +1,4 @@
-import { initializeDb } from '@repo/db';
+import { dbLogger, initializeDb } from '@repo/db';
 import { Pool } from 'pg';
 
 /**
@@ -14,6 +14,16 @@ export const initSeedDb = () => {
     if (pool) {
         return; // Already initialized
     }
+
+    // Verify DATABASE_URL is available
+    if (!process.env.DATABASE_URL) {
+        throw new Error(
+            'DATABASE_URL environment variable is not set. Make sure .env.local is loaded.'
+        );
+    }
+
+    dbLogger.log(!!process.env.DATABASE_URL, '🔍 DATABASE_URL found');
+    dbLogger.log(process.env.DATABASE_URL, '🔍 DATABASE_URL value');
 
     // Create PostgreSQL connection pool
     pool = new Pool({
