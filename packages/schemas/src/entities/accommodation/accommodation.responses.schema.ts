@@ -37,7 +37,23 @@ export const AccommodationListItemSchema = AccommodationCoreSchema.pick({
 
     // Location for search/filtering
     city: z.string().optional(),
-    country: z.string().optional()
+    country: z.string().optional(),
+
+    // Relations for list display
+    destination: z
+        .object({
+            id: z.string(),
+            name: z.string(),
+            slug: z.string()
+        })
+        .optional(),
+
+    owner: z
+        .object({
+            id: z.string(),
+            displayName: z.string()
+        })
+        .optional()
 });
 
 /**
