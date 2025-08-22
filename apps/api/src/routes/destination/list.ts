@@ -22,20 +22,23 @@ export const destinationListRoute = createListRoute({
     responseSchema: DestinationListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const queryData = query as { page?: number; limit?: number };
+        const queryData = query as { page?: number; limit?: number; search?: string };
         const page = queryData.page ?? 1;
         const pageSize = queryData.limit ?? 10;
+        const search = queryData.search;
 
-        const result = await destinationService.list(actor, { page, pageSize });
-        if (result.error) throw new Error(result.error.message);
+        const result = await destinationService.searchForList(actor, {
+            pagination: { page, pageSize },
+            ...(search && { filters: { q: search } })
+        });
 
         return {
-            items: result.data?.items || [],
+            items: result.items,
             pagination: {
                 page,
                 limit: pageSize,
-                total: result.data?.total || 0,
-                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
+                total: result.total,
+                totalPages: Math.ceil(result.total / pageSize)
             }
         };
     },

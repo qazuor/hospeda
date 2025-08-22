@@ -25,15 +25,16 @@ export const amenityListRoute = createListRoute({
         const page = q.page ?? 1;
         const pageSize = q.limit ?? 10;
         const service = new AmenityService({ logger: apiLogger });
-        const result = await service.list(actor, { page, pageSize });
-        if (result.error) throw new Error(result.error.message);
+        const result = await service.searchForList(actor, {
+            pagination: { page, pageSize }
+        });
         return {
-            items: result.data.items,
+            items: result.items,
             pagination: {
                 page,
                 limit: pageSize,
-                total: result.data.total,
-                totalPages: Math.ceil(result.data.total / pageSize)
+                total: result.total,
+                totalPages: Math.ceil(result.total / pageSize)
             }
         };
     }
