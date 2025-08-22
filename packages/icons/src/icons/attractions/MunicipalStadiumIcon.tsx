@@ -1,0 +1,51 @@
+import type { IconProps } from '../../types';
+import { ICON_SIZES } from '../../types';
+
+/**
+ * MunicipalStadiumIcon icon component
+ *
+ * @example
+ * ```tsx
+ * import { MunicipalStadiumIcon } from '@repo/icons';
+ *
+ * // Basic usage
+ * <MunicipalStadiumIcon />
+ *
+ * // With custom size and color
+ * <MunicipalStadiumIcon size="lg" color="#3B82F6" />
+ *
+ * // With Tailwind classes
+ * <MunicipalStadiumIcon className="text-blue-500 hover:text-blue-600" />
+ * ```
+ */
+export const MunicipalStadiumIcon = ({
+    size = 'md',
+    color = 'currentColor',
+    className = '',
+    'aria-label': ariaLabel,
+    ...props
+}: IconProps) => (
+    <svg
+        width={typeof size === 'string' ? ICON_SIZES[size] : size}
+        height={typeof size === 'string' ? ICON_SIZES[size] : size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-label={ariaLabel}
+        {...props}
+    >
+        <title>{ariaLabel || 'Municipal Stadium'}</title>
+        <rect
+            width="18"
+            height="18"
+            x="3"
+            y="3"
+            rx="2"
+        />
+        <path d="M9 9h6v6H9V9Z" />
+    </svg>
+);
