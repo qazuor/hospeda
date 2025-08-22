@@ -42,7 +42,7 @@ describe('logger helpers', () => {
         logQuery('User', 'find', { id: 1 }, { result: 'ok' });
         expect(infoSpy).toHaveBeenCalledWith(
             { table: 'User', action: 'find', params: { id: 1 }, result: { result: 'ok' } },
-            '[DB] User.find OK'
+            'User.find OK'
         );
     });
 
@@ -50,7 +50,7 @@ describe('logger helpers', () => {
         logAction('User', 'create', { name: 'foo' });
         expect(infoSpy).toHaveBeenCalledWith(
             { table: 'User', action: 'create', params: { name: 'foo' } },
-            '[DB] User.create'
+            'User.create'
         );
     });
 
@@ -65,7 +65,7 @@ describe('logger helpers', () => {
                 error: 'fail',
                 stack: error.stack
             },
-            '[DB] User.delete ERROR'
+            'User.delete ERROR'
         );
     });
 
@@ -73,13 +73,10 @@ describe('logger helpers', () => {
         logQuery('', '', undefined, undefined);
         expect(infoSpy).toHaveBeenCalledWith(
             { table: '', action: '', params: undefined, result: undefined },
-            '[DB] . OK'
+            '. OK'
         );
         logAction('', '', undefined);
-        expect(infoSpy).toHaveBeenCalledWith(
-            { table: '', action: '', params: undefined },
-            '[DB] .'
-        );
+        expect(infoSpy).toHaveBeenCalledWith({ table: '', action: '', params: undefined }, '.');
     });
 
     it('handles error without stack', () => {
@@ -87,7 +84,7 @@ describe('logger helpers', () => {
         logError('T', 'A', undefined, error);
         expect(errorSpy).toHaveBeenCalledWith(
             { table: 'T', action: 'A', params: undefined, error: 'fail', stack: undefined },
-            '[DB] T.A ERROR'
+            'T.A ERROR'
         );
     });
 });
