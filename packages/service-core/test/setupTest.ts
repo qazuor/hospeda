@@ -32,9 +32,41 @@ vi.mock('@repo/logger', () => {
         registerLogMethod: vi.fn()
     };
 
+    // Mock LoggerColors enum
+    const LoggerColors = {
+        BLACK: 'BLACK',
+        RED: 'RED',
+        GREEN: 'GREEN',
+        YELLOW: 'YELLOW',
+        BLUE: 'BLUE',
+        MAGENTA: 'MAGENTA',
+        CYAN: 'CYAN',
+        WHITE: 'WHITE',
+        GRAY: 'GRAY',
+        BLACK_BRIGHT: 'BLACK_BRIGHT',
+        RED_BRIGHT: 'RED_BRIGHT',
+        GREEN_BRIGHT: 'GREEN_BRIGHT',
+        YELLOW_BRIGHT: 'YELLOW_BRIGHT',
+        BLUE_BRIGHT: 'BLUE_BRIGHT',
+        MAGENTA_BRIGHT: 'MAGENTA_BRIGHT',
+        CYAN_BRIGHT: 'CYAN_BRIGHT',
+        WHITE_BRIGHT: 'WHITE_BRIGHT'
+    };
+
+    // Mock LogLevel enum
+    const LogLevel = {
+        LOG: 'LOG',
+        INFO: 'INFO',
+        WARN: 'WARN',
+        ERROR: 'ERROR',
+        DEBUG: 'DEBUG'
+    };
+
     return {
         default: mockedLogger,
-        logger: mockedLogger
+        logger: mockedLogger,
+        LoggerColors,
+        LogLevel
     };
 });
 
