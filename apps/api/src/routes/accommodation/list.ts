@@ -36,23 +36,19 @@ export const accommodationListRoute = createListRoute({
         const page = queryData.page ?? 1;
         const pageSize = queryData.limit ?? 10;
 
-        // Call the real accommodation service
-        const result = await accommodationService.list(actor, {
-            page,
-            pageSize
+        // Call the real accommodation service with relations
+        const result = await accommodationService.searchForList(actor, {
+            pagination: { page, pageSize },
+            filters: queryData.search ? { destinationId: queryData.search } : undefined
         });
 
-        if (result.error) {
-            throw new Error(result.error.message);
-        }
-
         return {
-            items: result.data?.items || [],
+            items: result.items || [],
             pagination: {
                 page,
                 limit: pageSize,
-                total: result.data?.total || 0,
-                totalPages: Math.ceil((result.data?.total || 0) / pageSize)
+                total: result.total || 0,
+                totalPages: Math.ceil((result.total || 0) / pageSize)
             }
         };
     },

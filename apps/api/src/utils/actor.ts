@@ -41,5 +41,14 @@ export const getActorFromContext = (c: Context): Actor => {
         apiLogger.warn('No actor found in context, using guest actor as fallback');
         return createGuestActor();
     }
+
+    // Ensure permissions array is always defined
+    if (!actor.permissions || !Array.isArray(actor.permissions)) {
+        apiLogger.warn(
+            `Actor has invalid permissions, initializing as empty array (actorId: ${actor.id})`
+        );
+        actor.permissions = [];
+    }
+
     return actor;
 };
