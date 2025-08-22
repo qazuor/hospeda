@@ -4,7 +4,7 @@
  */
 
 import chalk from 'chalk';
-import { getCategoryByKey } from './categories.js';
+import { getCategoryByKey, getMaxCategoryNameLength } from './categories.js';
 import { getConfig } from './config.js';
 import { LogLevel, type LoggerColorType, type LoggerOptions } from './types.js';
 
@@ -50,8 +50,81 @@ export const levelBgColors = {
  * @returns chalk color function
  */
 export function getColorFunction(color: LoggerColorType): ChalkFunction {
-    // Use chalk's dynamic access pattern to get the color function
-    return chalk[color as keyof typeof chalk] as ChalkFunction;
+    // Map LoggerColors enum values to chalk color names
+    const colorMap: Record<LoggerColorType, keyof typeof chalk> = {
+        BLACK: 'black',
+        RED: 'red',
+        GREEN: 'green',
+        YELLOW: 'yellow',
+        BLUE: 'blue',
+        MAGENTA: 'magenta',
+        CYAN: 'cyan',
+        WHITE: 'white',
+        GRAY: 'gray',
+        BLACK_BRIGHT: 'blackBright',
+        RED_BRIGHT: 'redBright',
+        GREEN_BRIGHT: 'greenBright',
+        YELLOW_BRIGHT: 'yellowBright',
+        BLUE_BRIGHT: 'blueBright',
+        MAGENTA_BRIGHT: 'magentaBright',
+        CYAN_BRIGHT: 'cyanBright',
+        WHITE_BRIGHT: 'whiteBright'
+    };
+
+    const chalkColorName = colorMap[color];
+    return chalk[chalkColorName] as ChalkFunction;
+}
+
+/**
+ * Determine if a color needs white or black text for good contrast
+ * @param color - Color type from LoggerColors enum
+ * @returns true if white text should be used, false for black text
+ */
+function shouldUseWhiteText(color: LoggerColorType): boolean {
+    // Colors that are dark and need white text
+    const darkColors: LoggerColorType[] = ['BLACK', 'RED', 'BLUE', 'MAGENTA'];
+
+    return darkColors.includes(color);
+}
+
+/**
+ * Get background color function with appropriate text color for category
+ * @param color - Color type from LoggerColors enum
+ * @returns chalk function that applies background color with contrasting text
+ */
+export function getCategoryBackgroundFunction(color: LoggerColorType): ChalkFunction {
+    // Map LoggerColors enum values to chalk background color names
+    const bgColorMap: Record<LoggerColorType, keyof typeof chalk> = {
+        BLACK: 'bgBlack',
+        RED: 'bgRed',
+        GREEN: 'bgGreen',
+        YELLOW: 'bgYellow',
+        BLUE: 'bgBlue',
+        MAGENTA: 'bgMagenta',
+        CYAN: 'bgCyan',
+        WHITE: 'bgWhite',
+        GRAY: 'bgGray',
+        BLACK_BRIGHT: 'bgBlackBright',
+        RED_BRIGHT: 'bgRedBright',
+        GREEN_BRIGHT: 'bgGreenBright',
+        YELLOW_BRIGHT: 'bgYellowBright',
+        BLUE_BRIGHT: 'bgBlueBright',
+        MAGENTA_BRIGHT: 'bgMagentaBright',
+        CYAN_BRIGHT: 'bgCyanBright',
+        WHITE_BRIGHT: 'bgWhiteBright'
+    };
+
+    const bgColorName = bgColorMap[color];
+    const useWhiteText = shouldUseWhiteText(color);
+
+    // Create a function that applies both background and appropriate text color
+    return (text: string) => {
+        const bgFunction = chalk[bgColorName] as ChalkFunction;
+        const textFunction = useWhiteText ? chalk.white : chalk.black;
+        // Apply bold formatting to the text
+        const boldTextFunction = textFunction.bold;
+        return bgFunction(boldTextFunction(text));
+    };
 }
 
 /**
@@ -168,11 +241,21 @@ export function formatLogMessage(
 
     // Add category if not DEFAULT
     if (categoryKey !== 'DEFAULT') {
-        const categoryText = `${category.name} `;
+        // Get maximum category name length for alignment
+        const maxLength = getMaxCategoryNameLength();
+        // Convert to uppercase and center the text
+        const upperCaseName = category.name.toUpperCase();
+        const totalPadding = maxLength - upperCaseName.length;
+        const leftPadding = Math.floor(totalPadding / 2);
+        const rightPadding = totalPadding - leftPadding;
+        const centeredCategoryName =
+            ' '.repeat(leftPadding) + upperCaseName + ' '.repeat(rightPadding);
+        const categoryText = ` ${centeredCategoryName} `;
+
         if (useColors) {
-            // Use level color for category background and black text
-            const categoryColor = levelBgColors[level].black;
-            parts.push(categoryColor(categoryText));
+            // Use category-specific background color with contrasting text
+            const categoryBgFunction = getCategoryBackgroundFunction(category.options.color);
+            parts.push(categoryBgFunction(categoryText));
         } else {
             parts.push(categoryText);
         }
@@ -219,13 +302,29 @@ export function formatLogMessage(
               ? category.options.expandObjectLevels
               : config.EXPAND_OBJECT_LEVELS;
 
-    // Determine truncation settings
-    const truncateText =
-        options?.truncateLongText !== undefined
-            ? options.truncateLongText
-            : category.options.truncateLongText !== undefined
-              ? category.options.truncateLongText
-              : config.TRUNCATE_LONG_TEXT;
+    // Determine truncation settings based on log level
+    let truncateText: boolean;
+
+    if (level === LogLevel.DEBUG) {
+        // Debug never truncates, regardless of configuration
+        truncateText = false;
+    } else if (level === LogLevel.ERROR) {
+        // Error messages use truncateLongTextOnError configuration
+        truncateText =
+            options?.truncateLongTextOnError !== undefined
+                ? options.truncateLongTextOnError
+                : category.options.truncateLongTextOnError !== undefined
+                  ? category.options.truncateLongTextOnError
+                  : config.TRUNCATE_LONG_TEXT_ON_ERROR;
+    } else {
+        // Other levels use regular truncateLongText configuration
+        truncateText =
+            options?.truncateLongText !== undefined
+                ? options.truncateLongText
+                : category.options.truncateLongText !== undefined
+                  ? category.options.truncateLongText
+                  : config.TRUNCATE_LONG_TEXT;
+    }
 
     const truncateAt =
         options?.truncateLongTextAt !== undefined
@@ -275,12 +374,29 @@ export function formatLogArgs(
             : category.options.expandObjectLevels !== undefined
               ? category.options.expandObjectLevels
               : config.EXPAND_OBJECT_LEVELS;
-    const truncateText =
-        options?.truncateLongText !== undefined
-            ? options.truncateLongText
-            : category.options.truncateLongText !== undefined
-              ? category.options.truncateLongText
-              : config.TRUNCATE_LONG_TEXT;
+    // Determine truncation settings based on log level
+    let truncateText: boolean;
+
+    if (level === LogLevel.DEBUG) {
+        // Debug never truncates, regardless of configuration
+        truncateText = false;
+    } else if (level === LogLevel.ERROR) {
+        // Error messages use truncateLongTextOnError configuration
+        truncateText =
+            options?.truncateLongTextOnError !== undefined
+                ? options.truncateLongTextOnError
+                : category.options.truncateLongTextOnError !== undefined
+                  ? category.options.truncateLongTextOnError
+                  : config.TRUNCATE_LONG_TEXT_ON_ERROR;
+    } else {
+        // Other levels use regular truncateLongText configuration
+        truncateText =
+            options?.truncateLongText !== undefined
+                ? options.truncateLongText
+                : category.options.truncateLongText !== undefined
+                  ? category.options.truncateLongText
+                  : config.TRUNCATE_LONG_TEXT;
+    }
     const truncateAt =
         options?.truncateLongTextAt !== undefined
             ? options.truncateLongTextAt

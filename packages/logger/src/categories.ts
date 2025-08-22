@@ -79,6 +79,25 @@ export function getCategoryByKey(key: string): LoggerCategory {
 }
 
 /**
+ * Get all registered categories
+ * @returns Array of all registered categories
+ */
+export function getAllCategories(): LoggerCategory[] {
+    return Array.from(categories.values());
+}
+
+/**
+ * Get the maximum category name length for alignment
+ * @returns Maximum length of category names
+ */
+export function getMaxCategoryNameLength(): number {
+    const allCategories = getAllCategories();
+    if (allCategories.length === 0) return 0;
+
+    return Math.max(...allCategories.map((cat) => cat.name.length));
+}
+
+/**
  * Clear all registered categories
  */
 export function clearCategories(): void {
