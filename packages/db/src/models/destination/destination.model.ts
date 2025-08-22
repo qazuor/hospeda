@@ -1,8 +1,10 @@
 import type { DestinationType } from '@repo/types';
-import { type SQL, and, asc, count, desc, eq } from 'drizzle-orm';
+import { type SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
+import { attractions } from '../../schemas/destination/attraction.dbschema';
 import { destinations } from '../../schemas/destination/destination.dbschema';
+import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
@@ -87,6 +89,100 @@ export class DestinationModel extends BaseModel<DestinationType> {
     }
 
     /**
+     * Searches for destinations with attractions populated for list display.
+     * @param params - Search parameters (filters, sort, pagination)
+     * @returns Promise resolving to an object with items (including attraction names) and total count
+     */
+    async searchWithAttractions(params: {
+        filters?: Record<string, unknown>;
+        orderBy?: Record<string, 'asc' | 'desc'>;
+        page?: number;
+        pageSize?: number;
+    }): Promise<{ items: Array<DestinationType & { attractionNames: string[] }>; total: number }> {
+        const db = getDb();
+        const { filters = {}, orderBy = { name: 'asc' }, page = 1, pageSize = 20 } = params;
+        try {
+            // Build Drizzle where clause from filters
+            const whereClauses: SQL<unknown>[] = [];
+
+            // Handle text search parameter 'q'
+            if (filters.q && typeof filters.q === 'string') {
+                const searchTerm = `%${filters.q}%`;
+                const searchClauses = [ilike(destinations.name, searchTerm)].filter(
+                    (clause): clause is SQL<unknown> => clause !== undefined
+                );
+
+                if (searchClauses.length > 0) {
+                    const orClause = or(...searchClauses);
+                    if (orClause) {
+                        whereClauses.push(orClause);
+                    }
+                }
+            }
+
+            // Handle other filters (simple equality)
+            for (const [key, value] of Object.entries(filters).filter(([key]) => key !== 'q')) {
+                if (value !== undefined && value !== null && destinations[key]) {
+                    whereClauses.push(eq(destinations[key], value));
+                }
+            }
+
+            const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
+
+            // Build order array using Drizzle's asc/desc
+            const orderArr = Object.entries(orderBy).map(([field, dir]) =>
+                dir === 'asc' ? asc(destinations[field]) : desc(destinations[field])
+            );
+
+            const offset = (page - 1) * pageSize;
+
+            // Get destinations first
+            const destinationItems = await db
+                .select()
+                .from(destinations)
+                .where(where)
+                .orderBy(...orderArr)
+                .limit(pageSize)
+                .offset(offset);
+
+            // Get attraction names for each destination
+            const destinationsWithAttractions = await Promise.all(
+                destinationItems.map(async (destination) => {
+                    const attractionResults = await db
+                        .select({ name: attractions.name })
+                        .from(rDestinationAttraction)
+                        .innerJoin(
+                            attractions,
+                            eq(rDestinationAttraction.attractionId, attractions.id)
+                        )
+                        .where(eq(rDestinationAttraction.destinationId, destination.id));
+
+                    return {
+                        ...destination,
+                        attractionNames: attractionResults.map((a) => a.name)
+                    };
+                })
+            );
+
+            const totalResult = await db.select({ count: count() }).from(destinations).where(where);
+            return {
+                items: destinationsWithAttractions as Array<
+                    DestinationType & { attractionNames: string[] }
+                >,
+                total: totalResult[0]?.count ?? 0
+            };
+        } catch (error) {
+            logError(this.entityName, 'searchWithAttractions', params, error as Error);
+            throw new DbError(
+                this.entityName,
+                'searchWithAttractions',
+                params,
+                (error as Error).message
+            );
+        }
+    }
+
+    /**
      * Searches for destinations with optional filters, sorting, and pagination.
      * @param params - Search parameters (filters, sort, pagination)
      * @returns Promise resolving to an object with items and total count
@@ -100,12 +196,31 @@ export class DestinationModel extends BaseModel<DestinationType> {
         const db = getDb();
         const { filters = {}, orderBy = { name: 'asc' }, page = 1, pageSize = 20 } = params;
         try {
-            // Build Drizzle where clause from filters (simple equality only)
-            const whereClauses: SQL<unknown>[] = Object.entries(filters)
-                .map(([key, value]) =>
-                    value !== undefined && value !== null ? eq(destinations[key], value) : undefined
-                )
-                .filter((clause): clause is SQL<unknown> => clause !== undefined);
+            // Build Drizzle where clause from filters
+            const whereClauses: SQL<unknown>[] = [];
+
+            // Handle text search parameter 'q'
+            if (filters.q && typeof filters.q === 'string') {
+                const searchTerm = `%${filters.q}%`;
+                const searchClauses = [ilike(destinations.name, searchTerm)].filter(
+                    (clause): clause is SQL<unknown> => clause !== undefined
+                );
+
+                if (searchClauses.length > 0) {
+                    const orClause = or(...searchClauses);
+                    if (orClause) {
+                        whereClauses.push(orClause);
+                    }
+                }
+            }
+
+            // Handle other filters (simple equality)
+            for (const [key, value] of Object.entries(filters).filter(([key]) => key !== 'q')) {
+                if (value !== undefined && value !== null && destinations[key]) {
+                    whereClauses.push(eq(destinations[key], value));
+                }
+            }
+
             const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
 
             // Build order array using Drizzle's asc/desc
@@ -140,12 +255,31 @@ export class DestinationModel extends BaseModel<DestinationType> {
         const db = getDb();
         const { filters = {} } = params;
         try {
-            // Build Drizzle where clause from filters (simple equality only)
-            const whereClauses: SQL<unknown>[] = Object.entries(filters)
-                .map(([key, value]) =>
-                    value !== undefined && value !== null ? eq(destinations[key], value) : undefined
-                )
-                .filter((clause): clause is SQL<unknown> => clause !== undefined);
+            // Build Drizzle where clause from filters
+            const whereClauses: SQL<unknown>[] = [];
+
+            // Handle text search parameter 'q'
+            if (filters.q && typeof filters.q === 'string') {
+                const searchTerm = `%${filters.q}%`;
+                const searchClauses = [ilike(destinations.name, searchTerm)].filter(
+                    (clause): clause is SQL<unknown> => clause !== undefined
+                );
+
+                if (searchClauses.length > 0) {
+                    const orClause = or(...searchClauses);
+                    if (orClause) {
+                        whereClauses.push(orClause);
+                    }
+                }
+            }
+
+            // Handle other filters (simple equality)
+            for (const [key, value] of Object.entries(filters).filter(([key]) => key !== 'q')) {
+                if (value !== undefined && value !== null && destinations[key]) {
+                    whereClauses.push(eq(destinations[key], value));
+                }
+            }
+
             const where = whereClauses.length > 0 ? and(...whereClauses) : undefined;
             const totalResult = await db.select({ count: count() }).from(destinations).where(where);
             return { count: totalResult[0]?.count ?? 0 };

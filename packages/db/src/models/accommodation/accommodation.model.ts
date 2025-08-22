@@ -110,6 +110,88 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
     }
 
     /**
+     * Search accommodations with destination and owner relations
+     */
+    public async searchWithRelations(params: AccommodationSearchType): Promise<{
+        items: Array<
+            AccommodationType & {
+                destination?: { id: string; name: string; slug: string };
+                owner?: { id: string; displayName: string };
+            }
+        >;
+        total: number;
+    }> {
+        const db = getDb();
+        const { filters, sort, pagination } = params;
+
+        const whereClauses = [];
+        if (filters?.ownerId) {
+            whereClauses.push(eq(this.table.ownerId, filters.ownerId));
+        }
+        if (filters?.types && filters.types.length > 0) {
+            whereClauses.push(inArray(this.table.type, filters.types));
+        }
+        if (filters?.priceMin !== undefined) {
+            whereClauses.push(gte(this.table.price, filters.priceMin));
+        }
+        if (filters?.priceMax !== undefined) {
+            whereClauses.push(lte(this.table.price, filters.priceMax));
+        }
+        if (filters?.destinationId) {
+            whereClauses.push(eq(this.table.destinationId, filters.destinationId));
+        }
+
+        const where = and(...whereClauses);
+
+        const orderBy =
+            sort?.map((s: SortType) => {
+                const column = accommodations[s.field as keyof typeof accommodations];
+                if (!column) throw new Error(`Invalid sort field: ${s.field}`);
+                return s.direction === 'ASC' ? asc(column) : desc(column);
+            }) ?? [];
+
+        const page = pagination?.page ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
+
+        // Get accommodations with relations
+        const results = await db.query.accommodations.findMany({
+            where,
+            with: {
+                destination: {
+                    columns: {
+                        id: true,
+                        name: true,
+                        slug: true
+                    }
+                },
+                owner: {
+                    columns: {
+                        id: true,
+                        displayName: true
+                    }
+                }
+            },
+            orderBy,
+            limit: pageSize,
+            offset: (page - 1) * pageSize
+        });
+
+        // Get total count
+        const totalQuery = db.select({ count: count() }).from(this.table).where(where);
+        const totalResult = await totalQuery;
+
+        return {
+            items: results as Array<
+                AccommodationType & {
+                    destination?: { id: string; name: string; slug: string };
+                    owner?: { id: string; displayName: string };
+                }
+            >,
+            total: totalResult[0]?.count ?? 0
+        };
+    }
+
+    /**
      * Finds top-rated accommodations with optional filters and relations loaded.
      * Orders by averageRating DESC then reviewsCount DESC and limits the result size.
      */
