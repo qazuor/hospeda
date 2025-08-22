@@ -14,7 +14,10 @@ export {
     trans,
     type Locale,
     type Namespace
-} from './config.js';
+} from './config';
 
 // TypeScript types for translation keys
-export type { TranslationKey, TranslationKeys } from './types.js';
+export type { TranslationKey, TranslationKeys } from './types';
+
+// React hooks for translations
+export { useTranslations } from './hooks/use-translations';

@@ -19,6 +19,7 @@ export const namespaces = [
     'nav',
     'footer',
     'accommodations',
+    'auth-ui',
     'blog',
     'destinations',
     'events',
@@ -94,6 +95,7 @@ import adminMenuEs from './locales/es/admin-menu.json';
 import adminNavEs from './locales/es/admin-nav.json';
 import adminPagesEs from './locales/es/admin-pages.json';
 import adminTablesEs from './locales/es/admin-tables.json';
+import authUiEs from './locales/es/auth-ui.json';
 import benefitsEs from './locales/es/benefits.json';
 import blogEs from './locales/es/blog.json';
 import commonEs from './locales/es/common.json';
@@ -118,6 +120,7 @@ const rawTranslations = {
     es: {
         about: aboutEs,
         accommodations: accommodationsEs,
+        'auth-ui': authUiEs,
         benefits: benefitsEs,
         blog: blogEs,
         common: commonEs,
