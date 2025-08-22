@@ -17,12 +17,15 @@ export const DestinationListItemSchema = DestinationSchema.pick({
     visibility: true,
     averageRating: true,
     reviewsCount: true,
-    accommodationsCount: true
+    accommodationsCount: true,
+    media: true
 }).extend({
     // Optional lightweight media/location details for cards and SERPs
     featuredImage: z.string().url().optional(),
     city: z.string().optional(),
-    country: z.string().optional()
+    country: z.string().optional(),
+    // Array of attraction names for list display
+    attractions: z.array(z.string()).optional()
 });
 export type DestinationListItem = z.infer<typeof DestinationListItemSchema>;
 
