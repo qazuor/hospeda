@@ -4,7 +4,7 @@
  */
 import { initializeDb } from '@repo/db';
 import { Pool } from 'pg';
-import { env } from './env';
+import { env, getDatabasePoolConfig } from './env';
 import { apiLogger } from './logger';
 
 /**
@@ -33,13 +33,22 @@ export const initializeDatabase = async (): Promise<void> => {
 
         apiLogger.info('Initializing database connection...');
 
-        // Create PostgreSQL connection pool
+        // Get database pool configuration from environment variables
+        const poolConfig = getDatabasePoolConfig();
+
+        apiLogger.info(
+            'Database pool configuration:',
+            JSON.stringify({
+                maxConnections: poolConfig.max,
+                idleTimeoutMs: poolConfig.idleTimeoutMillis,
+                connectionTimeoutMs: poolConfig.connectionTimeoutMillis
+            })
+        );
+
+        // Create PostgreSQL connection pool with configurable settings
         pool = new Pool({
             connectionString: env.DATABASE_URL,
-            // Connection pool configuration
-            max: 10, // Maximum number of connections
-            idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-            connectionTimeoutMillis: 2000 // Timeout for new connections
+            ...poolConfig
         });
 
         // Test the connection

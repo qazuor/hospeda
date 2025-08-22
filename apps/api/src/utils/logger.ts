@@ -8,7 +8,7 @@ import logger, { type ILogger, LoggerColors, LogLevel } from '@repo/logger';
 import { env } from './env';
 
 const apiLogger = logger.registerCategory('API', 'API', {
-    color: LoggerColors.MAGENTA_BRIGHT,
+    color: LoggerColors.BLUE,
     truncateLongText: env.API_LOG_TRUNCATE_LONG_TEXT,
     truncateLongTextAt: env.API_LOG_TRUNCATE_LONG_TEXT_AT,
     save: env.API_LOG_SAVE,

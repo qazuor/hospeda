@@ -6,6 +6,7 @@
  */
 import { getAuth } from '@hono/clerk-auth';
 import type { Actor } from '@repo/service-core';
+import { PermissionEnum, RoleEnum } from '@repo/types';
 import type { MiddlewareHandler } from 'hono';
 import { createGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
@@ -29,10 +30,16 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 const dbUser = await userCache.getUser(auth.userId);
 
                 if (dbUser) {
+                    // Ensure SUPER_ADMIN has all permissions
+                    let permissions = dbUser.permissions || [];
+                    if (dbUser.role === RoleEnum.SUPER_ADMIN) {
+                        permissions = Object.values(PermissionEnum);
+                    }
+
                     actor = {
                         id: dbUser.id,
                         role: dbUser.role,
-                        permissions: dbUser.permissions
+                        permissions
                     };
                 } else {
                     // Fallback to GUEST if user not found

@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 /**
  * Environment configuration with validation
  * Centralized environment variables with Zod validation
@@ -6,10 +7,19 @@ import { config } from 'dotenv';
 import { z } from 'zod';
 
 // Load environment variables from .env files
-const envFiles = ['.env.local', '.env'];
+// First try to load from root directory, then fallback to local files
+const rootDir = resolve(__dirname, '../../../..');
+const envFiles = [
+    resolve(rootDir, '.env.local'),
+    resolve(rootDir, '.env'),
+    '.env.local', // Fallback to local files
+    '.env'
+];
+
 if (process.env.NODE_ENV === 'test') {
-    envFiles.unshift('.env.test');
+    envFiles.unshift(resolve(rootDir, '.env.test'), '.env.test');
 }
+
 config({ path: envFiles });
 
 const EnvSchema = z.object({
@@ -157,6 +167,11 @@ const EnvSchema = z.object({
 
     // Database Configuration (optional)
     DATABASE_URL: z.string().optional(),
+
+    // Database Pool Configuration
+    DB_POOL_MAX_CONNECTIONS: z.coerce.number().positive().default(10),
+    DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().positive().default(30000), // 30 seconds
+    DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().positive().default(2000), // 2 seconds
 
     // Auth Configuration (optional)
     CLERK_PUBLISHABLE_KEY: z.string().optional(),
@@ -349,4 +364,13 @@ export const getResponseConfig = () => ({
     includeMetadata: env.RESPONSE_INCLUDE_METADATA,
     successMessage: env.RESPONSE_SUCCESS_MESSAGE,
     errorMessage: env.RESPONSE_ERROR_MESSAGE
+});
+
+/**
+ * Parse database pool configuration
+ */
+export const getDatabasePoolConfig = () => ({
+    max: env.DB_POOL_MAX_CONNECTIONS,
+    idleTimeoutMillis: env.DB_POOL_IDLE_TIMEOUT_MS,
+    connectionTimeoutMillis: env.DB_POOL_CONNECTION_TIMEOUT_MS
 });
