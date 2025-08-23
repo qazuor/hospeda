@@ -15,7 +15,7 @@ vi.mock('@hono/clerk-auth', () => ({
 vi.mock('../../src/utils/env', () => ({
     env: {
         CLERK_SECRET_KEY: 'test-secret-key',
-        CLERK_PUBLISHABLE_KEY: 'test-publishable-key'
+        PUBLIC_CLERK_PUBLISHABLE_KEY: 'test-publishable-key'
     }
 }));
 
@@ -125,7 +125,7 @@ describe('Auth Middleware', () => {
             vi.doMock('../../src/utils/env', () => ({
                 env: {
                     CLERK_SECRET_KEY: undefined,
-                    CLERK_PUBLISHABLE_KEY: undefined
+                    PUBLIC_CLERK_PUBLISHABLE_KEY: undefined
                 }
             }));
 
@@ -134,7 +134,7 @@ describe('Auth Middleware', () => {
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
             expect(() => clerkAuth()).toThrow(
-                'Clerk environment variables (CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
+                'Clerk environment variables (CLERK_SECRET_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
             );
         });
 
@@ -143,7 +143,7 @@ describe('Auth Middleware', () => {
             vi.doMock('../../src/utils/env', () => ({
                 env: {
                     CLERK_SECRET_KEY: '',
-                    CLERK_PUBLISHABLE_KEY: ''
+                    PUBLIC_CLERK_PUBLISHABLE_KEY: ''
                 }
             }));
 
@@ -152,7 +152,7 @@ describe('Auth Middleware', () => {
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
             expect(() => clerkAuth()).toThrow(
-                'Clerk environment variables (CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
+                'Clerk environment variables (CLERK_SECRET_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
             );
         });
     });
