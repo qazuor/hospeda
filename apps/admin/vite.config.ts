@@ -9,6 +9,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
+    envDir: resolve(__dirname, '../../'),
     plugins: [
         tsconfigPaths({ projects: ['./tsconfig.json'] }),
         tailwindcss(),
@@ -60,6 +61,12 @@ export default defineConfig({
         }
     },
     define: {
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+        // Map Vite-specific variables to universal ones
+        'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(
+            process.env.PUBLIC_CLERK_PUBLISHABLE_KEY
+        ),
+        'import.meta.env.VITE_ADMIN_API_BASE_URL': JSON.stringify(process.env.PUBLIC_API_BASE_URL),
+        'import.meta.env.VITE_DEBUG_ACTOR_ID': JSON.stringify(process.env.DEBUG_ACTOR_ID)
     }
 });
