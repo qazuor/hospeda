@@ -15,6 +15,7 @@ import reunmedianormalizeTrailingSlash from '@reunmedia/astro-normalize-trailing
 
 // https://astro.build/config
 export default defineConfig({
+    envDir: new URL('../../', import.meta.url).pathname,
     integrations: [
         react(),
         clerk(),
