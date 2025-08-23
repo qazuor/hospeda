@@ -9,11 +9,11 @@ import { env } from './env';
 
 const apiLogger = logger.registerCategory('API', 'API', {
     color: LoggerColors.BLUE,
-    truncateLongText: env.API_LOG_TRUNCATE_LONG_TEXT,
-    truncateLongTextAt: env.API_LOG_TRUNCATE_LONG_TEXT_AT,
-    save: env.API_LOG_SAVE,
-    expandObjectLevels: env.API_LOG_EXPAND_OBJECT_LEVELS ? -1 : 0,
-    stringifyObj: env.API_LOG_STRINGIFY_OBJECTS
+    truncateLongText: env.LOG_TRUNCATE_TEXT,
+    truncateLongTextAt: env.LOG_TRUNCATE_AT,
+    save: env.LOG_SAVE,
+    expandObjectLevels: env.LOG_EXPAND_OBJECTS ? -1 : 0,
+    stringifyObj: env.LOG_STRINGIFY
 });
 
 /**
