@@ -805,6 +805,98 @@ importers:
         specifier: ^4.1.5
         version: 4.1.12
 
+  packages/tools-todo-linear:
+    dependencies:
+      '@linear/sdk':
+        specifier: ^25.0.0
+        version: 25.0.0
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
+      '@repo/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../types
+      chalk:
+        specifier: ^5.4.1
+        version: 5.6.0
+      chokidar:
+        specifier: ^4.0.1
+        version: 4.0.3
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
+      glob:
+        specifier: ^11.0.0
+        version: 11.0.3
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.17.2
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.0(tsx@4.20.4)(typescript@5.9.2)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.2
+      vitest:
+        specifier: ^3.1.3
+        version: 3.2.4(@types/node@22.17.2)(jsdom@26.0.0)(tsx@4.20.4)
+
+  packages/tools-todo-linear-old:
+    dependencies:
+      '@linear/sdk':
+        specifier: ^25.0.0
+        version: 25.0.0
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
+      '@repo/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../types
+      chalk:
+        specifier: ^5.4.1
+        version: 5.6.0
+      chokidar:
+        specifier: ^4.0.1
+        version: 4.0.3
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
+      glob:
+        specifier: ^11.0.0
+        version: 11.0.3
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.17.2
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.0(tsx@4.20.4)(typescript@5.9.2)
+      tsx:
+        specifier: ^4.19.2
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.2
+      vitest:
+        specifier: ^3.1.3
+        version: 3.2.4(@types/node@22.17.2)(jsdom@26.0.0)(tsx@4.20.4)
+
   packages/types:
     dependencies:
       '@repo/config':
@@ -2862,6 +2954,14 @@ packages:
     resolution: {integrity: sha512-FSLYm6F3TSQnqHE1EMQUVVgi2XjbCvsESwwXfugHFpBnhyF1uhJOtu0Psp/BB/qqazfdkk7f5fVcu7WuXl3t8Q==}
     dev: false
 
+  /@graphql-typed-document-node/core@3.2.0(graphql@15.10.1):
+    resolution: {integrity: sha512-mB9oAsNCm9aM3/SOv4YtBMqZbYj10R7dkq8byBqxGY/ncFwhf2oQzMV+LCRlWoDSEBJ3COiR1yeDvMtsoOsuFQ==}
+    peerDependencies:
+      graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
+    dependencies:
+      graphql: 15.10.1
+    dev: false
+
   /@hono/clerk-auth@3.0.3(hono@4.9.2)(react@19.1.1):
     resolution: {integrity: sha512-N671mw3ulvxqxY8ou8D8ojVT7EKljXE6RjdC2egWExMcrQAglMSTvqvU096MbOT5zvWtc8QMo3SKiyTXn30BrQ==}
     engines: {node: '>=16.x.x'}
@@ -3155,6 +3255,17 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  /@linear/sdk@25.0.0:
+    resolution: {integrity: sha512-GjD0NXTyLVLzSweYhqTi0XXkUiRQQ2uQVVPDbc1MzknrEBMT+DaBNSwfR8j22xMxfUhthq8leq0OSc5o5zo2fA==}
+    engines: {node: '>=12.x', yarn: 1.x}
+    dependencies:
+      '@graphql-typed-document-node/core': 3.2.0(graphql@15.10.1)
+      graphql: 15.10.1
+      isomorphic-unfetch: 3.1.0
+    transitivePeerDependencies:
+      - encoding
+    dev: false
 
   /@mapbox/node-pre-gyp@2.0.0:
     resolution: {integrity: sha512-llMXd39jtP0HpQLVI37Bf1m2ADlEb35GYSh1SDSLsBhR+5iCxiNGlT31yqbNtVHygHAtMy6dWFERpU2JgufhPg==}
@@ -8046,6 +8157,11 @@ packages:
   /graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  /graphql@15.10.1:
+    resolution: {integrity: sha512-BL/Xd/T9baO6NFzoMpiMD7YUZ62R6viR5tp/MULVEnbYJXZA//kRNW7J0j1w/wXArgL0sCxhDfK5dczSKn3+cg==}
+    engines: {node: '>= 10.x'}
+    dev: false
+
   /gzip-size@7.0.0:
     resolution: {integrity: sha512-O1Ld7Dr+nqPnmGpdhzLmMTQ4vAsD+rHwMm1NLUmoUFFymBOMKxCCrtDxqdBRYXdeEPEi3SyoR4TizJLQrnKBNA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -8600,6 +8716,15 @@ packages:
 
   /isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+
+  /isomorphic-unfetch@3.1.0:
+    resolution: {integrity: sha512-geDJjpoZ8N0kWexiwkX8F9NkTsXhetLPVbZFQ+JTW239QNOwvB0gniuR1Wc6f0AMTn7/mFGyXvHTifrCp/GH8Q==}
+    dependencies:
+      node-fetch: 2.7.0
+      unfetch: 4.2.0
+    transitivePeerDependencies:
+      - encoding
+    dev: false
 
   /istanbul-lib-coverage@3.2.2:
     resolution: {integrity: sha512-O8dpsF+r0WV/8MNRKfnmrtCWhuKjxrq2w+jpzBL5UZKTi2LeVWnWOmWRxFlesJONmc+wLAGvKQZEOanko0LFTg==}
@@ -12110,6 +12235,10 @@ packages:
       ohash: 2.0.11
       pathe: 2.0.3
       ufo: 1.6.1
+    dev: false
+
+  /unfetch@4.2.0:
+    resolution: {integrity: sha512-F9p7yYCn6cIW9El1zi0HI6vqpeIvBsr3dSuRO6Xuppb1u5rXpCPmMvLSyECLhybr9isec8Ohl0hPekMVrEinDA==}
     dev: false
 
   /unicode-properties@1.4.1:
