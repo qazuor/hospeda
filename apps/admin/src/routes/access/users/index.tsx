@@ -1,4 +1,3 @@
-// TODO: Implement user access route
 /**
  * Users list page - using generic entity list system
  */
