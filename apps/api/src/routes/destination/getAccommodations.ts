@@ -17,7 +17,7 @@ export const getDestinationAccommodationsRoute = createCRUDRoute({
         id: DestinationIdSchema
     },
     // We return an array of raw accommodations (service returns typed array). Keep response as any[] to avoid big schema here.
-    // TODO: Add a dedicated response schema if needed.
+    // TODO [ea1cc49c-e231-4577-9e5a-ea0a60c0a7ad]: Add a dedicated response schema if needed.
     responseSchema: DestinationIdSchema as unknown as import('@hono/zod-openapi').z.ZodTypeAny, // placeholder; route-factory requires a schema
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);

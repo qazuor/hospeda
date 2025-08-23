@@ -22,7 +22,7 @@ export const searchAmenitiesRoute = createListRoute({
     description: 'Search amenities by filters and pagination',
     tags: ['Amenities'],
     requestQuery: searchQuerySchema,
-    // TODO: Replace with AmenityListItem schema when available
+    // TODO [c3b456f7-332e-4482-9148-c24aa519adb8]: Replace with AmenityListItem schema when available
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

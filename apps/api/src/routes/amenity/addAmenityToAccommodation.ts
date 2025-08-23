@@ -22,7 +22,7 @@ export const addAmenityToAccommodationRoute = createCRUDRoute({
         additionalCost: z.object({ amount: z.number(), currency: z.string() }).optional(),
         additionalCostPercent: z.number().min(0).max(100).optional()
     }),
-    // TODO: Replace with a proper relation schema when available
+    // TODO [84dc893e-c95e-42d3-810a-91b9e8f7bda9]: Replace with a proper relation schema when available
     responseSchema: z.object({ relation: z.object({ amenityId: z.string().uuid() }).partial() }),
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);

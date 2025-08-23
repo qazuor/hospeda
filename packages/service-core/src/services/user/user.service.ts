@@ -351,7 +351,7 @@ export class UserService extends BaseCrudService<
      * Permission: Only super admin can soft delete users (stub).
      */
     protected _canSoftDelete(actor: Actor, _entity: UserType): void {
-        // TODO: Implement soft delete permission logic if needed
+        // TODO [19c8665a-b3fb-4aaa-b46c-853ffae0bdfb]: Implement soft delete permission logic if needed
         if (actor.role !== RoleEnum.SUPER_ADMIN) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -364,7 +364,7 @@ export class UserService extends BaseCrudService<
      * Permission: Only super admin can hard delete users (stub).
      */
     protected _canHardDelete(actor: Actor, _entity: UserType): void {
-        // TODO: Implement hard delete permission logic if needed
+        // TODO [f8f1a214-5ce5-4ebd-93c4-956bfcc3d301]: Implement hard delete permission logic if needed
         if (actor.role !== RoleEnum.SUPER_ADMIN) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -377,7 +377,7 @@ export class UserService extends BaseCrudService<
      * Permission: Only self or super admin can view a user (stub).
      */
     protected _canView(actor: Actor, entity: UserType): void {
-        // TODO: Adjust logic if public view is allowed
+        // TODO [c4c2066f-f00b-40e5-90fd-17e0753c79ac]: Adjust logic if public view is allowed
         if (actor.role !== RoleEnum.SUPER_ADMIN && actor.id !== entity.id) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -390,7 +390,7 @@ export class UserService extends BaseCrudService<
      * Permission: Only super admin can update visibility (stub).
      */
     protected _canUpdateVisibility(actor: Actor, _entity: UserType, _newVisibility: unknown): void {
-        // TODO: Implement visibility update permission logic if needed
+        // TODO [a538cb6e-09ab-4ebe-908a-53bc15b3307f]: Implement visibility update permission logic if needed
         if (actor.role !== RoleEnum.SUPER_ADMIN) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,

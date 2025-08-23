@@ -3,7 +3,7 @@
  * Each function throws ServiceError(FORBIDDEN) if the actor lacks permission.
  * Follows the pattern of other service permission helpers.
  */
-// TODO: Implement permission checks for create, update, delete, restore, view, etc.
+// TODO [44ae3671-d643-4ec7-b8a3-1f5fec8c90f3]: Implement permission checks for create, update, delete, restore, view, etc.
 
 import type { EventType } from '@repo/types';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';

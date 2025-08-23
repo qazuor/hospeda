@@ -17,7 +17,7 @@ export const amenityListRoute = createListRoute({
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
         limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
     },
-    // TODO: Replace with AmenityListItem schema when available in @repo/schemas
+    // TODO [7b8073ae-c661-4c27-9a1f-dd416b1064c9]: Replace with AmenityListItem schema when available in @repo/schemas
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

@@ -91,7 +91,7 @@ export class AccommodationReviewService extends BaseCrudService<
         _params: z.infer<typeof UpdateAccommodationReviewSchema>,
         _actor: Actor
     ): Promise<import('../../types').PaginatedListOutput<AccommodationReviewType>> {
-        // TODO: Implement search logic using Drizzle ORM
+        // TODO [e79b0be8-6523-4a9c-8a21-fd2072dc0111]: Implement search logic using Drizzle ORM
         throw new Error('Not implemented');
     }
 
@@ -99,7 +99,7 @@ export class AccommodationReviewService extends BaseCrudService<
         _params: z.infer<typeof UpdateAccommodationReviewSchema>,
         _actor: Actor
     ): Promise<{ count: number }> {
-        // TODO: Implement count logic using Drizzle ORM
+        // TODO [e7aeadab-6753-4620-ada0-a77cc0d10bf7]: Implement count logic using Drizzle ORM
         throw new Error('Not implemented');
     }
 
@@ -131,7 +131,7 @@ export class AccommodationReviewService extends BaseCrudService<
         // Find the deleted review (assume last deleted)
         // If you have the review ID, use it; otherwise, you may need to pass it explicitly
         // For now, recalculate stats for all accommodations (safe fallback)
-        // TODO: Optimize to get the accommodationId of the deleted review
+        // TODO [c82548af-a514-4756-b168-e36a8c39060b]: Optimize to get the accommodationId of the deleted review
         // Option 1: If you have the review ID, fetch it (example below):
         // const deletedReview = await this.model.findById(reviewId);
         // if (deletedReview) await this.recalculateAndUpdateAccommodationStats(deletedReview.accommodationId);

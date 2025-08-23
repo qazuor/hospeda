@@ -75,7 +75,7 @@ export class PostSponsorshipService extends BaseCrudService<
         checkCanCountPostSponsorship(actor);
     }
     protected _canUpdateVisibility(_actor: Actor, _entity: unknown, _newVisibility: unknown) {
-        // TODO: Implement visibility update permissions if needed
+        // TODO [7ac399d9-c091-4cf9-bf7f-8d7d443bc265]: Implement visibility update permissions if needed
     }
 
     protected async _executeSearch(

@@ -23,8 +23,8 @@ export const POST: APIRoute = async ({ request }) => {
         const body = await request.json();
         const validated = BookmarkRequestSchema.parse(body);
 
-        // TODO: Get user ID from Clerk session
-        // TODO: Call the bookmark service
+        // TODO [34117865-6428-4928-815b-a2fecb0cb78c]: Get user ID from Clerk session
+        // TODO [cb468420-9293-44cc-936b-a84425610742]: Call the bookmark service
         // This would typically call your service layer
 
         // Simulate API call delay
