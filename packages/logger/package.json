@@ -16,7 +16,7 @@
         "build": "tsup",
         "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
         "typecheck": "tsc --noEmit --project ./tsconfig.json",
-        "test": "vitest run",
+        "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
         "lint": "biome check .",
         "format": "biome format --write .",
