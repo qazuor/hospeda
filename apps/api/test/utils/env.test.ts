@@ -208,14 +208,14 @@ describe('Environment Configuration', () => {
 
         it('should coerce string booleans to booleans', async () => {
             process.env = {
-                API_LOG_SAVE: 'true',
+                LOG_SAVE: 'true',
                 CACHE_ENABLED: 'true',
                 RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: 'true'
             };
 
             const { env } = await import('../../src/utils/env');
 
-            expect(env.API_LOG_SAVE).toBe(true);
+            expect(env.LOG_SAVE).toBe(true);
             expect(env.CACHE_ENABLED).toBe(true);
             expect(env.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS).toBe(true);
         });
@@ -236,18 +236,18 @@ describe('Environment Configuration', () => {
 
         it('should handle optional CLERK keys', async () => {
             process.env = {
-                CLERK_PUBLISHABLE_KEY: 'pk_test_key',
+                PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_key',
                 CLERK_SECRET_KEY: 'sk_test_key'
             };
             const { env } = await import('../../src/utils/env');
-            expect(env.CLERK_PUBLISHABLE_KEY).toBe('pk_test_key');
+            expect(env.PUBLIC_CLERK_PUBLISHABLE_KEY).toBe('pk_test_key');
             expect(env.CLERK_SECRET_KEY).toBe('sk_test_key');
         });
 
         it('should handle missing CLERK keys', async () => {
             process.env = {};
             const { env } = await import('../../src/utils/env');
-            expect(env.CLERK_PUBLISHABLE_KEY).toBeUndefined();
+            expect(env.PUBLIC_CLERK_PUBLISHABLE_KEY).toBeUndefined();
             expect(env.CLERK_SECRET_KEY).toBeUndefined();
         });
     });
