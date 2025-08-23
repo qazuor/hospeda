@@ -13,7 +13,7 @@ beforeAll(() => {
     process.env.NODE_ENV = 'test';
 
     // Mock environment variables for testing
-    process.env.VITE_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
+    process.env.PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
 });
 
 // Cleanup after each test

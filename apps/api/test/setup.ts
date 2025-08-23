@@ -20,7 +20,7 @@ beforeAll(async () => {
     process.env.PORT = '3001';
     process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
     process.env.CLERK_SECRET_KEY = 'test_clerk_secret';
-    process.env.CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
+    process.env.PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
 
     // Note: Validation is enabled by default for tests
     // Individual routes can opt-out using routeOptions.skipValidation

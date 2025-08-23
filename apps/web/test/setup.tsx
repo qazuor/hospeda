@@ -13,7 +13,7 @@ beforeAll(() => {
     process.env.NODE_ENV = 'test';
 
     // Mock environment variables for testing
-    process.env.CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
+    process.env.PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
     process.env.CLERK_SECRET_KEY = 'test_clerk_secret';
     process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
 });

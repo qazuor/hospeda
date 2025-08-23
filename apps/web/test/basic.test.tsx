@@ -28,7 +28,7 @@ describe('Web App - Basic Tests', () => {
 
     it('should have correct environment setup', () => {
         expect(process.env.NODE_ENV).toBe('test');
-        expect(process.env.CLERK_PUBLISHABLE_KEY).toBe('test_clerk_publishable');
+        expect(process.env.PUBLIC_CLERK_PUBLISHABLE_KEY).toBe('test_clerk_publishable');
         expect(process.env.DATABASE_URL).toBe('postgresql://test:test@localhost:5432/test_db');
     });
 
