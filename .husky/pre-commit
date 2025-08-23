@@ -11,3 +11,19 @@ if [ -n "$STAGED_FILES" ]; then
 else
   echo "No staged files to check with Biome."
 fi
+
+# Sync TODO comments with Linear
+echo "📝 Syncing TODO comments with Linear..."
+
+# Capture currently staged files before sync
+STAGED_FILES_BEFORE=$(git diff --cached --name-only)
+
+if pnpm todo:sync --quiet 2>/dev/null; then
+  echo "✅ TODO sync completed successfully"
+  # Re-add only the files that were originally staged
+  if [ -n "$STAGED_FILES_BEFORE" ]; then
+    echo "$STAGED_FILES_BEFORE" | xargs git add
+  fi
+else
+  echo "⚠️  TODO sync failed or not configured - continuing with commit"
+fi

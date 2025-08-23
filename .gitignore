@@ -18,6 +18,9 @@ coverage
 .DS_Store
 *.pem
 
+# TODO-Linear tracking file
+.todo-linear-tracking.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*
