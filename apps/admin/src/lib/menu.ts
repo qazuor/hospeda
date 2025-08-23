@@ -52,7 +52,7 @@ export const filterMenuByPermissions = (
         .filter(Boolean) as MenuItem[];
 };
 
-// TODO: Wire icons in Sidebar to keep this file headless (no JSX icons here)
+// TODO [f82eb1b7-c132-4ca8-b760-506bc5540853]: Wire icons in Sidebar to keep this file headless (no JSX icons here)
 export const menuTree: readonly MenuItem[] = [
     {
         title: 'Dashboard',

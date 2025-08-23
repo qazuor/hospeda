@@ -58,7 +58,7 @@ export const updateUserRoute = createCRUDRoute({
         // Invalidate cache for the updated user
         // Note: We need to find the user's Clerk ID to invalidate properly
         // For now, we'll invalidate all cache as a simple solution
-        // TODO: Improve this by storing Clerk ID mapping or adding a method to get Clerk ID by user ID
+        // TODO [2ec9475e-ee56-494f-85ba-ec0ac6892668]: Improve this by storing Clerk ID mapping or adding a method to get Clerk ID by user ID
         if (result.data?.authProviderUserId) {
             userCache.invalidate(result.data.authProviderUserId);
         }

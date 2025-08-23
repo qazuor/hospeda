@@ -11,6 +11,6 @@ export const checkPostSponsorshipUnique = async (
     // model: PostSponsorshipModel
     ..._args: unknown[]
 ): Promise<void> => {
-    // TODO: Implement uniqueness check using model
+    // TODO [cfe438ff-cdcb-4e50-8331-06511655c256]: Implement uniqueness check using model
     // Example: if (await model.findOne({ postId, sponsorId })) throw new Error('Duplicate sponsorship');
 };

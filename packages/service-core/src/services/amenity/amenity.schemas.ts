@@ -5,7 +5,7 @@ import { z } from 'zod';
  * Zod schema for creating a new amenity. Omits server-generated and audit fields.
  * Fields: name (min 2 chars), type, optional icon, optional description, optional isBuiltin, optional slug, optional isFeatured.
  */
-// TODO: If a shared AmenitySchema exists, import it from the correct path and use it here.
+// TODO [75059143-458b-44e2-88de-2ee1f49b4bed]: If a shared AmenitySchema exists, import it from the correct path and use it here.
 export const CreateAmenitySchema = z
     .object({
         name: z.string().min(2),

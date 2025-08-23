@@ -13,4 +13,4 @@ export * from './recurrence.enum.schema.js';
 export * from './role.enum.schema.js';
 export * from './tag-color.enum.schema.js';
 export * from './visibility.enum.schema.js';
-// TODO: add auth-provider enum schema if we need to expose it to clients (z.nativeEnum(AuthProviderEnum))
+// TODO [3dba642c-6850-4d68-9f56-2f3462635ad2]: add auth-provider enum schema if we need to expose it to clients (z.nativeEnum(AuthProviderEnum))
