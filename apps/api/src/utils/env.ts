@@ -36,15 +36,15 @@ const EnvSchema = z.object({
         .default('info'),
     ENABLE_REQUEST_LOGGING: z.coerce.boolean().default(true),
 
-    // API Logging Configuration
-    API_LOG_INCLUDE_TIMESTAMPS: z.coerce.boolean().default(true),
-    API_LOG_INCLUDE_LEVEL: z.coerce.boolean().default(true),
-    API_LOG_USE_COLORS: z.coerce.boolean().default(true),
-    API_LOG_SAVE: z.coerce.boolean().default(false),
-    API_LOG_EXPAND_OBJECT_LEVELS: z.coerce.boolean().default(false),
-    API_LOG_TRUNCATE_LONG_TEXT: z.coerce.boolean().default(true),
-    API_LOG_TRUNCATE_LONG_TEXT_AT: z.coerce.number().default(200),
-    API_LOG_STRINGIFY_OBJECTS: z.coerce.boolean().default(false),
+    // Logging Configuration (Standardized)
+    LOG_INCLUDE_TIMESTAMPS: z.coerce.boolean().default(true),
+    LOG_INCLUDE_LEVEL: z.coerce.boolean().default(true),
+    LOG_USE_COLORS: z.coerce.boolean().default(true),
+    LOG_SAVE: z.coerce.boolean().default(false),
+    LOG_EXPAND_OBJECTS: z.coerce.boolean().default(false),
+    LOG_TRUNCATE_TEXT: z.coerce.boolean().default(true),
+    LOG_TRUNCATE_AT: z.coerce.number().default(1000),
+    LOG_STRINGIFY: z.coerce.boolean().default(false),
 
     // CORS Configuration
     CORS_ORIGINS: z
@@ -174,7 +174,7 @@ const EnvSchema = z.object({
     DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().positive().default(2000), // 2 seconds
 
     // Auth Configuration (optional)
-    CLERK_PUBLISHABLE_KEY: z.string().optional(),
+    PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
     CLERK_SECRET_KEY: z.string().optional(),
     CLERK_WEBHOOK_SECRET: z.string().optional()
 });

@@ -13,14 +13,14 @@ import { env } from '../utils/env';
  * @throws Error if required Clerk environment variables are not set
  */
 export const clerkAuth = () => {
-    if (!env.CLERK_SECRET_KEY || !env.CLERK_PUBLISHABLE_KEY) {
+    if (!env.CLERK_SECRET_KEY || !env.PUBLIC_CLERK_PUBLISHABLE_KEY) {
         throw new Error(
-            'Clerk environment variables (CLERK_SECRET_KEY, CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
+            'Clerk environment variables (CLERK_SECRET_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
         );
     }
 
     return clerkMiddleware({
         secretKey: env.CLERK_SECRET_KEY,
-        publishableKey: env.CLERK_PUBLISHABLE_KEY
+        publishableKey: env.PUBLIC_CLERK_PUBLISHABLE_KEY
     });
 };
