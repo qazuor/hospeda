@@ -1,0 +1,51 @@
+{
+    "name": "@repo/tools-todo-linear",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "description": "TODO/HACK/DEBUG synchronization with Linear - v2 with filesystem tracking",
+    "keywords": ["todo", "linear", "tracking", "sync"],
+    "author": "hospeda-team",
+    "license": "MIT",
+    "bin": {
+        "todo-sync": "./dist/scripts/sync.js",
+        "todo-watch": "./dist/scripts/watch.js"
+    },
+    "files": ["dist"],
+    "scripts": {
+        "build": "tsup",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules dist",
+        "todo:setup": "tsx src/scripts/setup.ts",
+        "todo:sync": "tsx src/scripts/sync.ts",
+        "todo:sync:verbose": "tsx src/scripts/sync.ts verbose",
+        "todo:watch": "tsx src/scripts/watch.ts",
+        "todo:clean": "tsx src/scripts/clean.ts"
+    },
+    "dependencies": {
+        "@linear/sdk": "^25.0.0",
+        "chokidar": "^4.0.1",
+        "glob": "^11.0.0",
+        "chalk": "^5.4.1",
+        "dotenv": "^16.5.0",
+        "@repo/config": "workspace:*",
+        "@repo/logger": "workspace:*",
+        "@repo/types": "workspace:*"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^22.15.3",
+        "tsx": "^4.19.2",
+        "tsup": "^8.4.0",
+        "typescript": "^5.8.3",
+        "vitest": "^3.1.3"
+    }
+}
