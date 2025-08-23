@@ -1,4 +1,3 @@
-// TODO: Implement accommodations route
 /**
  * Accommodations list page - using generic entity list system
  */
