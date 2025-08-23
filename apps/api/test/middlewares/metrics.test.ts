@@ -308,12 +308,21 @@ describe('Metrics Middleware', () => {
 
     describe('Performance monitoring', () => {
         it('should log slow requests', async () => {
+            // Set environment variables before importing modules
+            process.env.METRICS_SLOW_REQUEST_THRESHOLD_MS = '1000';
+
+            // Force re-import of env module to pick up new environment variables
+            vi.resetModules();
+
             const { logger } = await import('@repo/logger');
+            const { metricsMiddleware: freshMetricsMiddleware } = await import(
+                '../../src/middlewares/metrics'
+            );
 
             // Ensure the mock is properly set up after clearAllMocks
             vi.mocked(logger.warn).mockImplementation(() => {});
 
-            app.use(metricsMiddleware);
+            app.use(freshMetricsMiddleware);
             app.get('/slow', async (c) => {
                 await new Promise((resolve) => setTimeout(resolve, 1001)); // Simulate slow request
                 return c.json({ success: true });
@@ -337,12 +346,22 @@ describe('Metrics Middleware', () => {
         });
 
         it('should use higher threshold for auth endpoints', async () => {
+            // Set environment variables before importing modules
+            process.env.METRICS_SLOW_REQUEST_THRESHOLD_MS = '1000';
+            process.env.METRICS_SLOW_AUTH_THRESHOLD_MS = '2000';
+
+            // Force re-import of env module to pick up new environment variables
+            vi.resetModules();
+
             const { logger } = await import('@repo/logger');
+            const { metricsMiddleware: freshMetricsMiddleware } = await import(
+                '../../src/middlewares/metrics'
+            );
 
             // Ensure the mock is properly set up after clearAllMocks
             vi.mocked(logger.warn).mockImplementation(() => {});
 
-            app.use(metricsMiddleware);
+            app.use(freshMetricsMiddleware);
             app.get('/auth/slow', async (c) => {
                 await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5s - slow but under auth threshold
                 return c.json({ success: true });
