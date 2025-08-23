@@ -41,7 +41,13 @@
         "db:studio": "pnpm --filter @repo/db db:studio",
         "db:seed": "pnpm --filter @repo/seed seed --reset --required --example",
         "pgadmin:start": "docker-compose up -d pgadmin",
-        "pgadmin:stop": "docker-compose stop pgadmin"
+        "pgadmin:stop": "docker-compose stop pgadmin",
+        "todo:setup": "pnpm --filter @repo/tools-todo-linear todo:setup",
+        "todo:sync": "pnpm --filter @repo/tools-todo-linear todo:sync",
+        "todo:sync:verbose": "pnpm --filter @repo/tools-todo-linear todo:sync:verbose",
+        "todo:watch": "pnpm --filter @repo/tools-todo-linear todo:watch",
+        "todo:clean": "pnpm --filter @repo/tools-todo-linear todo:clean",
+        "todo:old:sync": "pnpm --filter @repo/tools-todo-linear-old todo:sync"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",

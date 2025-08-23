@@ -15,7 +15,7 @@
     },
     "scripts": {
         "generate-types": "tsx scripts/generate-types.ts",
-        "test": "vitest run",
+        "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "lint": "biome check .",

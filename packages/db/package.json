@@ -30,9 +30,9 @@
         "db:reset": "pnpm run db:drop && pnpm run db:push",
         "db:drop": "pnpm run drizzle-kit drop --config drizzle.config.ts",
         "db:push": "pnpm run drizzle-kit push:pg --config drizzle.config.ts",
-        "test": "vitest run",
+        "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
-        "test:file": "vitest run",
+        "test:file": "vitest run --passWithNoTests",
         "test:coverage": "vitest run --coverage"
     },
     "dependencies": {

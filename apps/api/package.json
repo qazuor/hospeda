@@ -12,9 +12,9 @@
         "lint": "biome check .",
         "format": "biome format --write .",
         "typecheck": "tsc --noEmit --project ./tsconfig.json",
-        "test": "vitest run",
+        "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
-        "test:file": "vitest run",
+        "test:file": "vitest run --passWithNoTests",
         "test:coverage": "vitest run --coverage",
         "test:cache": "node test-cache.js"
     },
