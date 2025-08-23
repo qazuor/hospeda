@@ -108,7 +108,7 @@ const featureIcons: Record<string, any> = {
                     }
                 </div>
                 <span class='text-sm text-gray-600 dark:text-gray-400 ml-2'>
-                    {accommodation.averageRating ? accommodation.averageRating.toFixed(1) : '0.0'}
+                    {accommodation.averageRating ? accommodation.averageRating : '0.0'}
                 </span>
                 <span class='text-xs text-gray-500 dark:text-gray-500 ml-1'>
                     ({accommodation.reviewsCount ?? accommodation.reviews?.length ?? 0} reseñas)

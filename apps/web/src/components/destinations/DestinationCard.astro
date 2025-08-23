@@ -91,7 +91,7 @@ const url = getDestinationUrl(destination);
                         }
                     </div>
                     <span class='text-white/90 text-sm ml-2 font-medium'>
-                        {destination.averageRating ? destination.averageRating.toFixed(1) : '0.0'}
+                        {destination.averageRating ? destination.averageRating : '0.0'}
                     </span>
                     <span class='text-white/70 text-xs ml-1'>
                         ({destination.reviewsCount ?? destination.reviews?.length ?? 0})
