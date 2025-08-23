@@ -42,7 +42,7 @@ describe('GET /accommodations/:id/stats', () => {
 
             // Schema validation might fail due to mock data structure differences
             if (!schemaValidation.success) {
-                // Debug: schemaValidation.error.issues contains validation details
+                // DEBUG [b6f62d18-3139-4aac-8e77-c1550e70ce76]: schemaValidation.error.issues contains validation details
             }
             // Make this flexible for now - schema issues are often mock-related
             expect(schemaValidation.success || statsData !== null).toBe(true);

@@ -1,6 +1,6 @@
-// TODO: Move all permission-related tests to user.permissions.test.ts. Move normalizer tests to user.normalizers.test.ts. Keep only non-permission, non-normalizer helpers here.
+// TODO [89c33cd6-8805-4a8e-9999-1cdeda65e5b3]: Move all permission-related tests to user.permissions.test.ts. Move normalizer tests to user.normalizers.test.ts. Keep only non-permission, non-normalizer helpers here.
 
-// TODO: Add generateUserSlug tests here, moved from generateSlug.test.ts. Keep only non-permission, non-normalizer helpers.
+// TODO [e511409a-d5f2-4648-a4a0-38016649f1ef]: Add generateUserSlug tests here, moved from generateSlug.test.ts. Keep only non-permission, non-normalizer helpers.
 
 import { UserModel } from '@repo/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
