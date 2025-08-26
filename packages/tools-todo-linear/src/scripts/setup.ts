@@ -12,8 +12,8 @@ import { findProjectRoot } from '../config/config.js';
 import logger from '../utils/logger.js';
 
 interface SetupConfig {
-    LINEAR_API_KEY: string;
-    LINEAR_TEAM_ID: string;
+    TODO_LINEAR_API_KEY: string;
+    TODO_LINEAR_TEAM_ID: string;
     TODO_LINEAR_DEFAULT_USER_EMAIL: string;
 }
 
@@ -58,18 +58,18 @@ async function promptForConfig(): Promise<SetupConfig> {
         // Linear API Key
         logger.info('1. Linear API Key');
         logger.info('   Go to Linear → Settings → API → Create new token');
-        const LINEAR_API_KEY = await question(chalk.white('   Enter your Linear API key: '));
+        const TODO_LINEAR_API_KEY = await question(chalk.white('   Enter your Linear API key: '));
 
-        if (!LINEAR_API_KEY.trim()) {
+        if (!TODO_LINEAR_API_KEY.trim()) {
             throw new Error('Linear API key is required');
         }
 
         // Linear Team ID
         logger.info('\n2. Linear Team ID');
         logger.info('   Go to Linear → Team Settings → General → Team ID');
-        const LINEAR_TEAM_ID = await question(chalk.white('   Enter your Linear Team ID: '));
+        const TODO_LINEAR_TEAM_ID = await question(chalk.white('   Enter your Linear Team ID: '));
 
-        if (!LINEAR_TEAM_ID.trim()) {
+        if (!TODO_LINEAR_TEAM_ID.trim()) {
             throw new Error('Linear Team ID is required');
         }
 
@@ -85,8 +85,8 @@ async function promptForConfig(): Promise<SetupConfig> {
         }
 
         return {
-            LINEAR_API_KEY: LINEAR_API_KEY.trim(),
-            LINEAR_TEAM_ID: LINEAR_TEAM_ID.trim(),
+            TODO_LINEAR_API_KEY: TODO_LINEAR_API_KEY.trim(),
+            TODO_LINEAR_TEAM_ID: TODO_LINEAR_TEAM_ID.trim(),
             TODO_LINEAR_DEFAULT_USER_EMAIL: TODO_LINEAR_DEFAULT_USER_EMAIL.trim()
         };
     } finally {
@@ -126,8 +126,8 @@ async function saveConfig(projectRoot: string, config: SetupConfig) {
     }
 
     // Update with new values
-    existingVars.set('LINEAR_API_KEY', config.LINEAR_API_KEY);
-    existingVars.set('LINEAR_TEAM_ID', config.LINEAR_TEAM_ID);
+    existingVars.set('TODO_LINEAR_API_KEY', config.TODO_LINEAR_API_KEY);
+    existingVars.set('TODO_LINEAR_TEAM_ID', config.TODO_LINEAR_TEAM_ID);
     existingVars.set('TODO_LINEAR_DEFAULT_USER_EMAIL', config.TODO_LINEAR_DEFAULT_USER_EMAIL);
 
     // Build new content
@@ -141,15 +141,15 @@ async function saveConfig(projectRoot: string, config: SetupConfig) {
 
     // Add TODO-Linear section
     newLines.push('# TODO-Linear Configuration');
-    newLines.push(`LINEAR_API_KEY=${config.LINEAR_API_KEY}`);
-    newLines.push(`LINEAR_TEAM_ID=${config.LINEAR_TEAM_ID}`);
+    newLines.push(`TODO_LINEAR_API_KEY=${config.TODO_LINEAR_API_KEY}`);
+    newLines.push(`TODO_LINEAR_TEAM_ID=${config.TODO_LINEAR_TEAM_ID}`);
     newLines.push(`TODO_LINEAR_DEFAULT_USER_EMAIL=${config.TODO_LINEAR_DEFAULT_USER_EMAIL}`);
     newLines.push('');
 
     // Add other existing variables (excluding the ones we just set)
     const todoLinearKeys = new Set([
-        'LINEAR_API_KEY',
-        'LINEAR_TEAM_ID',
+        'TODO_LINEAR_API_KEY',
+        'TODO_LINEAR_TEAM_ID',
         'TODO_LINEAR_DEFAULT_USER_EMAIL'
     ]);
     for (const [key, value] of existingVars) {
@@ -166,8 +166,8 @@ async function saveConfig(projectRoot: string, config: SetupConfig) {
 
     // Show what was configured
     logger.info('\n📋 Configuration summary:');
-    logger.info(`   Linear API Key: ${config.LINEAR_API_KEY.substring(0, 8)}...`);
-    logger.info(`   Linear Team ID: ${config.LINEAR_TEAM_ID}`);
+    logger.info(`   Linear API Key: ${config.TODO_LINEAR_API_KEY.substring(0, 8)}...`);
+    logger.info(`   Linear Team ID: ${config.TODO_LINEAR_TEAM_ID}`);
     logger.info(`   Default User Email: ${config.TODO_LINEAR_DEFAULT_USER_EMAIL}`);
 }
 
