@@ -10,12 +10,12 @@ const { Client } = pkg;
  * on the package's connection management.
  */
 async function main() {
-    if (!process.env.DATABASE_URL) {
-        console.error('DATABASE_URL environment variable is not set');
+    if (!process.env.HOSPEDA_DATABASE_URL) {
+        console.error('HOSPEDA_DATABASE_URL environment variable is not set');
         process.exit(1);
     }
 
-    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    const client = new Client({ connectionString: process.env.HOSPEDA_DATABASE_URL });
     await client.connect();
     // eslint-disable-next-line no-console -- Script status output
     console.info('Refreshing search_index materialized view…');

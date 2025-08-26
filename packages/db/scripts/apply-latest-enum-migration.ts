@@ -1,17 +1,17 @@
+import { logger } from '@repo/logger';
 import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { logger } from '@repo/logger';
 import { Pool } from 'pg';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const MIGRATIONS_DIR = path.resolve(__dirname, '../src/migrations');
-const DB_URL = process.env.DATABASE_URL;
+const DB_URL = process.env.HOSPEDA_DATABASE_URL;
 
 if (!DB_URL) {
-    logger.warn('DATABASE_URL not set in environment.');
+    logger.warn('HOSPEDA_DATABASE_URL not set in environment.');
     process.exit(1);
 }
 
