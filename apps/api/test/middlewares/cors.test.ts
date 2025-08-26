@@ -23,7 +23,8 @@ vi.mock('../../src/utils/env', () => ({
         allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
         exposeHeaders: ['Content-Length', 'X-Request-ID']
-    })
+    }),
+    validateApiEnv: vi.fn()
 }));
 
 describe('CORS Middleware', () => {

@@ -49,7 +49,8 @@ vi.mock('../../src/utils/env', () => ({
         staleIfError: 86400,
         etagEnabled: true,
         lastModifiedEnabled: true
-    })
+    }),
+    validateApiEnv: vi.fn()
 }));
 
 describe('Cache Middleware', () => {

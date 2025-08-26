@@ -9,20 +9,32 @@ import { securityHeadersMiddleware } from '../../src/middlewares/security';
 // Mock environment
 vi.mock('../../src/utils/env', () => {
     const mockEnv = {
-        SECURITY_ENABLED: true,
-        SECURITY_HEADERS_ENABLED: true,
-        SECURITY_CONTENT_SECURITY_POLICY:
+        API_SECURITY_ENABLED: true,
+        API_SECURITY_HEADERS_ENABLED: true,
+        API_SECURITY_CONTENT_SECURITY_POLICY:
             "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
-        SECURITY_STRICT_TRANSPORT_SECURITY: 'max-age=31536000; includeSubDomains',
-        SECURITY_X_FRAME_OPTIONS: 'SAMEORIGIN',
-        SECURITY_X_CONTENT_TYPE_OPTIONS: 'nosniff',
-        SECURITY_X_XSS_PROTECTION: '1; mode=block',
-        SECURITY_REFERRER_POLICY: 'strict-origin-when-cross-origin',
-        SECURITY_PERMISSIONS_POLICY: 'camera=(), microphone=(), geolocation=()'
+        API_SECURITY_STRICT_TRANSPORT_SECURITY: 'max-age=31536000; includeSubDomains',
+        API_SECURITY_X_FRAME_OPTIONS: 'SAMEORIGIN',
+        API_SECURITY_X_CONTENT_TYPE_OPTIONS: 'nosniff',
+        API_SECURITY_X_XSS_PROTECTION: '1; mode=block',
+        API_SECURITY_REFERRER_POLICY: 'strict-origin-when-cross-origin',
+        API_SECURITY_PERMISSIONS_POLICY: 'camera=(), microphone=(), geolocation=()'
     };
 
     return {
-        env: mockEnv
+        validateApiEnv: vi.fn(),
+        env: mockEnv,
+        getSecurityConfig: () => ({
+            enabled: mockEnv.API_SECURITY_ENABLED,
+            headersEnabled: mockEnv.API_SECURITY_HEADERS_ENABLED,
+            contentSecurityPolicy: mockEnv.API_SECURITY_CONTENT_SECURITY_POLICY,
+            strictTransportSecurity: mockEnv.API_SECURITY_STRICT_TRANSPORT_SECURITY,
+            xFrameOptions: mockEnv.API_SECURITY_X_FRAME_OPTIONS,
+            xContentTypeOptions: mockEnv.API_SECURITY_X_CONTENT_TYPE_OPTIONS,
+            xXssProtection: mockEnv.API_SECURITY_X_XSS_PROTECTION,
+            referrerPolicy: mockEnv.API_SECURITY_REFERRER_POLICY,
+            permissionsPolicy: mockEnv.API_SECURITY_PERMISSIONS_POLICY
+        })
     };
 });
 

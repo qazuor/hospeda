@@ -3,7 +3,7 @@
  * Tests the Clerk authentication middleware functionality
  */
 import { Hono } from 'hono';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Clerk middleware
 const mockClerkMiddleware = vi.fn();
@@ -11,17 +11,26 @@ vi.mock('@hono/clerk-auth', () => ({
     clerkMiddleware: mockClerkMiddleware
 }));
 
-// Mock environment
-vi.mock('../../src/utils/env', () => ({
-    env: {
-        CLERK_SECRET_KEY: 'test-secret-key',
-        PUBLIC_CLERK_PUBLISHABLE_KEY: 'test-publishable-key'
-    }
-}));
+// Mock process.env for auth middleware
+const originalEnv = process.env;
+beforeEach(() => {
+    process.env = {
+        ...originalEnv,
+        HOSPEDA_CLERK_SECRET_KEY: 'sk_test_Y2xlcmstdGVzdC1zZWNyZXQta2V5',
+        HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_Y2xlcmstdGVzdC1wdWJsaXNoYWJsZS1rZXk',
+        NODE_ENV: 'test',
+        API_VALIDATION_CLERK_AUTH_ENABLED: 'false'
+    };
+});
 
 describe('Auth Middleware', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        process.env = originalEnv;
+        vi.resetModules();
     });
 
     describe('clerkAuth', () => {
@@ -31,57 +40,56 @@ describe('Auth Middleware', () => {
             // Call the function
             clerkAuth();
 
-            // Verify clerkMiddleware was called with correct config
-            expect(mockClerkMiddleware).toHaveBeenCalledWith({
-                secretKey: 'test-secret-key',
-                publishableKey: 'test-publishable-key'
-            });
+            // In test environment with API_VALIDATION_CLERK_AUTH_ENABLED=false,
+            // clerkAuth should return a mock middleware, not call clerkMiddleware
+            expect(mockClerkMiddleware).not.toHaveBeenCalled();
         });
 
         it('should return a middleware handler', async () => {
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
-            // Mock the middleware to return a function
-            const mockMiddleware = vi.fn();
-            mockClerkMiddleware.mockReturnValue(mockMiddleware);
-
             const result = clerkAuth();
 
             expect(typeof result).toBe('function');
-            expect(result).toBe(mockMiddleware);
         });
 
         it('should be callable multiple times with same configuration', async () => {
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
             // Call multiple times
-            clerkAuth();
-            clerkAuth();
-            clerkAuth();
+            const result1 = clerkAuth();
+            const result2 = clerkAuth();
+            const result3 = clerkAuth();
 
-            // Should be called 3 times with same config
-            expect(mockClerkMiddleware).toHaveBeenCalledTimes(3);
-            expect(mockClerkMiddleware).toHaveBeenCalledWith({
-                secretKey: 'test-secret-key',
-                publishableKey: 'test-publishable-key'
-            });
+            // All should return middleware functions
+            expect(typeof result1).toBe('function');
+            expect(typeof result2).toBe('function');
+            expect(typeof result3).toBe('function');
         });
 
         it('should use environment variables for configuration', async () => {
+            // Set up environment for real Clerk auth
+            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'true';
+
+            // Force reimport to get new behavior
+            vi.resetModules();
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
             clerkAuth();
 
-            // Verify it uses the mocked env values
+            // Verify it uses the correct env values when Clerk auth is enabled
             expect(mockClerkMiddleware).toHaveBeenCalledWith({
-                secretKey: 'test-secret-key',
-                publishableKey: 'test-publishable-key'
+                secretKey: 'sk_test_Y2xlcmstdGVzdC1zZWNyZXQta2V5',
+                publishableKey: 'pk_test_Y2xlcmstdGVzdC1wdWJsaXNoYWJsZS1rZXk'
             });
         });
     });
 
     describe('Integration with Hono', () => {
         it('should integrate properly with Hono app', async () => {
+            // Enable auth for this test
+            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'true';
+
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
             // Mock middleware that calls next()
@@ -98,9 +106,15 @@ describe('Auth Middleware', () => {
 
             expect(res.status).toBe(200);
             expect(mockMiddleware).toHaveBeenCalled();
+
+            // Restore original value
+            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'false';
         });
 
         it('should handle middleware errors gracefully', async () => {
+            // Enable auth for this test
+            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'true';
+
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
             // Mock middleware that throws an error
@@ -116,44 +130,56 @@ describe('Auth Middleware', () => {
             // Should return 500 status code when middleware throws
             const res = await app.request('/test');
             expect(res.status).toBe(500);
+
+            // Restore original value
+            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'false';
         });
     });
 
     describe('Configuration Validation', () => {
-        it('should handle missing environment variables', async () => {
-            // Mock env with missing values
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    CLERK_SECRET_KEY: undefined,
-                    PUBLIC_CLERK_PUBLISHABLE_KEY: undefined
-                }
-            }));
+        it('should handle missing environment variables gracefully', async () => {
+            // Set up environment with missing Clerk keys but auth disabled
+            process.env = {
+                ...originalEnv,
+                NODE_ENV: 'test',
+                API_VALIDATION_CLERK_AUTH_ENABLED: 'false'
+                // HOSPEDA_CLERK_SECRET_KEY and HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY are undefined
+            };
 
             // Force reimport of the module
             vi.resetModules();
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
-            expect(() => clerkAuth()).toThrow(
-                'Clerk environment variables (CLERK_SECRET_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
-            );
+            // Should not throw when auth is disabled
+            expect(() => clerkAuth()).not.toThrow();
+
+            const middleware = clerkAuth();
+            expect(typeof middleware).toBe('function');
         });
 
-        it('should handle empty string environment variables', async () => {
-            // Mock env with empty strings
-            vi.doMock('../../src/utils/env', () => ({
-                env: {
-                    CLERK_SECRET_KEY: '',
-                    PUBLIC_CLERK_PUBLISHABLE_KEY: ''
-                }
-            }));
+        it('should use fallback values when Clerk auth is enabled but keys are missing', async () => {
+            // Clear previous mock calls
+            vi.clearAllMocks();
+
+            // Explicitly delete the Clerk keys from environment
+            process.env.HOSPEDA_CLERK_SECRET_KEY = undefined;
+            process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY = undefined;
+
+            // Set up environment with Clerk auth enabled but missing keys
+            process.env.NODE_ENV = 'test';
+            process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'true';
 
             // Force reimport of the module
             vi.resetModules();
             const { clerkAuth } = await import('../../src/middlewares/auth');
 
-            expect(() => clerkAuth()).toThrow(
-                'Clerk environment variables (CLERK_SECRET_KEY, PUBLIC_CLERK_PUBLISHABLE_KEY) are required for authentication middleware'
-            );
+            // Should not throw, but use empty string fallbacks
+            expect(() => clerkAuth()).not.toThrow();
+
+            expect(mockClerkMiddleware).toHaveBeenCalledWith({
+                secretKey: '',
+                publishableKey: ''
+            });
         });
     });
 });

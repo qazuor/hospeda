@@ -38,7 +38,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should track request metrics', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/test', (c) => c.json({ success: true }));
 
             await app.request('/test');
@@ -51,7 +51,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should track multiple requests to different endpoints', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/users', (c) => c.json({ users: [] }));
             app.post('/users', (c) => c.json({ created: true }));
 
@@ -71,7 +71,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should normalize dynamic routes', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/users/:id', (c) => c.json({ user: { id: c.req.param('id') } }));
 
             await app.request('/users/123');
@@ -86,7 +86,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should track response times', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/slow', async (c) => {
                 await new Promise((resolve) => setTimeout(resolve, 10));
                 return c.json({ success: true });
@@ -102,7 +102,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should track errors from thrown exceptions', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/error', () => {
                 throw new Error('Test error');
             });
@@ -120,7 +120,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should track errors from HTTP status codes', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/not-found', (c) => c.json({ error: 'Not found' }, 404));
             app.get('/server-error', (c) => c.json({ error: 'Server error' }, 500));
 
@@ -140,7 +140,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should track active connections', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/test', (c) => c.json({ success: true }));
 
             // Since we can't easily test concurrent requests in this setup,
@@ -152,7 +152,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should calculate error rates correctly', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/mixed', (c) => {
                 const random = Math.random();
                 if (random < 0.5) {
@@ -185,7 +185,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should limit response time history to prevent memory bloat', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/test', (c) => c.json({ success: true }));
 
             // Make more than 100 requests to test the limit
@@ -212,7 +212,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should calculate global error rate correctly', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/success', (c) => c.json({ success: true }));
             app.get('/error', (c) => c.json({ error: 'Error' }, 500));
 
@@ -229,7 +229,7 @@ describe('Metrics Middleware', () => {
 
     describe('getPrometheusMetrics', () => {
         it('should return metrics in Prometheus format', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/test', (c) => c.json({ success: true }));
 
             await app.request('/test');
@@ -243,7 +243,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should include all metric types in Prometheus format', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/success', (c) => c.json({ success: true }));
             app.get('/error', (c) => c.json({ error: 'Error' }, 500));
 
@@ -260,7 +260,7 @@ describe('Metrics Middleware', () => {
 
     describe('resetMetrics', () => {
         it('should reset all metrics to initial state', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/test', (c) => c.json({ success: true }));
 
             await app.request('/test');
@@ -280,7 +280,7 @@ describe('Metrics Middleware', () => {
 
     describe('UUID and ObjectId normalization', () => {
         it('should normalize UUID paths', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/users/:id', (c) => c.json({ user: { id: c.req.param('id') } }));
 
             await app.request('/users/123e4567-e89b-12d3-a456-426614174000');
@@ -293,7 +293,7 @@ describe('Metrics Middleware', () => {
         });
 
         it('should normalize ObjectId paths', async () => {
-            app.use(metricsMiddleware);
+            app.use(metricsMiddleware());
             app.get('/posts/:id', (c) => c.json({ post: { id: c.req.param('id') } }));
 
             await app.request('/posts/507f1f77bcf86cd799439011');
@@ -309,7 +309,7 @@ describe('Metrics Middleware', () => {
     describe('Performance monitoring', () => {
         it('should log slow requests', async () => {
             // Set environment variables before importing modules
-            process.env.METRICS_SLOW_REQUEST_THRESHOLD_MS = '1000';
+            process.env.API_METRICS_SLOW_REQUEST_THRESHOLD_MS = '1000';
 
             // Force re-import of env module to pick up new environment variables
             vi.resetModules();
@@ -322,7 +322,7 @@ describe('Metrics Middleware', () => {
             // Ensure the mock is properly set up after clearAllMocks
             vi.mocked(logger.warn).mockImplementation(() => {});
 
-            app.use(freshMetricsMiddleware);
+            app.use(freshMetricsMiddleware());
             app.get('/slow', async (c) => {
                 await new Promise((resolve) => setTimeout(resolve, 1001)); // Simulate slow request
                 return c.json({ success: true });
@@ -347,8 +347,8 @@ describe('Metrics Middleware', () => {
 
         it('should use higher threshold for auth endpoints', async () => {
             // Set environment variables before importing modules
-            process.env.METRICS_SLOW_REQUEST_THRESHOLD_MS = '1000';
-            process.env.METRICS_SLOW_AUTH_THRESHOLD_MS = '2000';
+            process.env.API_METRICS_SLOW_REQUEST_THRESHOLD_MS = '1000';
+            process.env.API_METRICS_SLOW_AUTH_THRESHOLD_MS = '2000';
 
             // Force re-import of env module to pick up new environment variables
             vi.resetModules();
@@ -361,7 +361,7 @@ describe('Metrics Middleware', () => {
             // Ensure the mock is properly set up after clearAllMocks
             vi.mocked(logger.warn).mockImplementation(() => {});
 
-            app.use(freshMetricsMiddleware);
+            app.use(freshMetricsMiddleware());
             app.get('/auth/slow', async (c) => {
                 await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5s - slow but under auth threshold
                 return c.json({ success: true });
