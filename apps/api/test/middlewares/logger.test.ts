@@ -21,7 +21,8 @@ vi.mock('../../src/utils/logger', () => ({
 vi.mock('../../src/utils/env', () => ({
     env: {
         LOG_LEVEL: 'info'
-    }
+    },
+    validateApiEnv: vi.fn()
 }));
 
 describe('Logger Middleware', () => {

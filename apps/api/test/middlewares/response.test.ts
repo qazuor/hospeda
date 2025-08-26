@@ -14,16 +14,61 @@ import {
 import { env } from '../../src/utils/env';
 
 // Mock environment
-vi.mock('../../src/utils/env', () => ({
-    env: {
+vi.mock('../../src/utils/env', () => {
+    const mockEnv = {
+        API_RESPONSE_FORMAT_ENABLED: true,
+        API_RESPONSE_INCLUDE_METADATA: true,
+        API_RESPONSE_INCLUDE_VERSION: true,
+        API_RESPONSE_INCLUDE_REQUEST_ID: true,
+        API_RESPONSE_API_VERSION: '1.0.0',
+        API_RESPONSE_ERROR_MESSAGE: 'Internal server error',
+        // Legacy names for backward compatibility with tests
         RESPONSE_FORMAT_ENABLED: true,
         RESPONSE_INCLUDE_METADATA: true,
         RESPONSE_INCLUDE_VERSION: true,
         RESPONSE_INCLUDE_REQUEST_ID: true,
         RESPONSE_API_VERSION: '1.0.0',
         RESPONSE_ERROR_MESSAGE: 'Internal server error'
-    }
-}));
+    };
+
+    const mockModule = {
+        env: mockEnv,
+        validateApiEnv: vi.fn(),
+        getResponseConfig: () => ({
+            formatEnabled:
+                mockModule.env.RESPONSE_FORMAT_ENABLED ??
+                mockModule.env.API_RESPONSE_FORMAT_ENABLED ??
+                true,
+            includeMetadata:
+                mockModule.env.RESPONSE_INCLUDE_METADATA ??
+                mockModule.env.API_RESPONSE_INCLUDE_METADATA ??
+                true,
+            includeVersion:
+                mockModule.env.RESPONSE_INCLUDE_VERSION ??
+                mockModule.env.API_RESPONSE_INCLUDE_VERSION ??
+                true,
+            includeRequestId:
+                mockModule.env.RESPONSE_INCLUDE_REQUEST_ID ??
+                mockModule.env.API_RESPONSE_INCLUDE_REQUEST_ID ??
+                true,
+            apiVersion:
+                mockModule.env.RESPONSE_API_VERSION ??
+                mockModule.env.API_RESPONSE_API_VERSION ??
+                '1.0.0',
+            errorMessage:
+                mockModule.env.RESPONSE_ERROR_MESSAGE ??
+                mockModule.env.API_RESPONSE_ERROR_MESSAGE ??
+                'Internal server error',
+            includeTimestamp:
+                mockModule.env.RESPONSE_INCLUDE_METADATA ??
+                mockModule.env.API_RESPONSE_INCLUDE_METADATA ??
+                true,
+            successMessage: 'Success'
+        })
+    };
+
+    return mockModule;
+});
 
 // Note: ServiceErrorCode is now imported directly via alias, no mock needed
 
@@ -56,9 +101,9 @@ describe('Response Middleware', () => {
 
         it('should handle successful responses without metadata when disabled', async () => {
             // Mock env to disable metadata
-            const originalIncludeMetadata = env.RESPONSE_INCLUDE_METADATA;
-            const originalIncludeVersion = env.RESPONSE_INCLUDE_VERSION;
-            const originalIncludeRequestId = env.RESPONSE_INCLUDE_REQUEST_ID;
+            const originalIncludeMetadata = env.API_RESPONSE_INCLUDE_METADATA;
+            const originalIncludeVersion = env.API_RESPONSE_INCLUDE_VERSION;
+            const originalIncludeRequestId = env.API_RESPONSE_INCLUDE_REQUEST_ID;
 
             // Temporarily disable metadata
             (env as any).RESPONSE_INCLUDE_METADATA = false;
@@ -222,7 +267,7 @@ describe('Response Middleware', () => {
 
         it('should skip formatting when disabled', async () => {
             // Mock env to disable formatting
-            const originalEnabled = env.RESPONSE_FORMAT_ENABLED;
+            const originalEnabled = env.API_RESPONSE_FORMAT_ENABLED;
 
             // Temporarily disable formatting
             (env as any).RESPONSE_FORMAT_ENABLED = false;

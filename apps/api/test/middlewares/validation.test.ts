@@ -20,7 +20,8 @@ vi.mock('../../src/utils/env', () => ({
         VALIDATION_SANITIZE_ALLOWED_CHARS: '/[\\w\\s\\-.,!?@#$%&*()+=]/g',
         VALIDATION_CLERK_AUTH_ENABLED: true,
         VALIDATION_CLERK_AUTH_HEADERS: 'authorization'
-    }
+    },
+    validateApiEnv: vi.fn()
 }));
 
 // Mock sanitization functions
