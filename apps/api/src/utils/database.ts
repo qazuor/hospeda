@@ -25,7 +25,7 @@ export const initializeDatabase = async (): Promise<void> => {
 
     try {
         // Check if DATABASE_URL is provided
-        if (!env.DATABASE_URL) {
+        if (!env.HOSPEDA_DATABASE_URL) {
             apiLogger.warn('DATABASE_URL not provided. Database operations will not be available.');
             apiLogger.warn('Services will use mock data or throw initialization errors.');
             return;
@@ -47,7 +47,7 @@ export const initializeDatabase = async (): Promise<void> => {
 
         // Create PostgreSQL connection pool with configurable settings
         pool = new Pool({
-            connectionString: env.DATABASE_URL,
+            connectionString: env.HOSPEDA_DATABASE_URL,
             ...poolConfig
         });
 

@@ -5,9 +5,12 @@
 import { serve } from '@hono/node-server';
 import { initApp } from './app';
 import { closeDatabase, initializeDatabase } from './utils/database';
-import { env } from './utils/env';
+import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { apiLogger } from './utils/logger';
+
+// Validate environment variables before starting the server
+validateApiEnv();
 
 const port = env.API_PORT;
 
