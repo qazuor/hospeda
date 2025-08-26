@@ -27,7 +27,7 @@ const staticClient = drizzle(null as unknown as Pool, { schema });
  * import { initializeDb } from '@repo/db';
  *
  * const pool = new Pool({
- *   connectionString: process.env.DATABASE_URL
+ *   connectionString: process.env.HOSPEDA_DATABASE_URL
  * });
  *
  * initializeDb(pool);
