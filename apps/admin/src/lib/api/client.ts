@@ -50,9 +50,9 @@ const getClerkToken = async (): Promise<string | undefined> => {
 };
 
 const getBaseUrl = (): string => {
-    // If not provided, fall back to empty string so Vite dev proxy can handle requests
-    const url = import.meta.env.VITE_ADMIN_API_BASE_URL as string | undefined;
-    return (url ?? '').replace(/\/$/, '');
+    // Use the API URL from environment or fallback to localhost:3001
+    const url = import.meta.env.VITE_API_URL as string | undefined;
+    return (url ?? 'http://localhost:3001').replace(/\/$/, '');
 };
 
 export const fetchApi = async <T>({
