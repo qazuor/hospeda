@@ -45,8 +45,7 @@ function AuthCallbackPage(): React.JSX.Element {
                 setStatus('syncing');
 
                 // Sync with backend
-                const apiBaseUrl =
-                    import.meta.env.VITE_ADMIN_API_BASE_URL || window.location.origin;
+                const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
                 const response = await fetch(`${apiBaseUrl}/api/v1/public/auth/sync`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
