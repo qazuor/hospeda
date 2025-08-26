@@ -27,8 +27,7 @@
         "check": "biome check --write .",
         "typecheck": "turbo run typecheck",
         "prepare": "husky install",
-        "setup:env": "node scripts/setup-env.js",
-        "postinstall": "node scripts/setup-env.js",
+
         "build:api": "pnpm --filter hospeda-api build",
         "prepare:api:prod": "pnpm exec tsx scripts/generate-api-prod-package.ts",
         "deploy:api": "pnpm build:api && pnpm prepare:api:prod && flyctl deploy --config apps/api/fly.toml --dockerfile Dockerfile.api",
