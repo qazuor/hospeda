@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('Post - like/unlike sequence', () => {
     let app: ReturnType<typeof initApp>;
@@ -7,6 +8,8 @@ describe('Post - like/unlike sequence', () => {
     const id = '123e4567-e89b-12d3-a456-426614174000';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 

@@ -3,10 +3,16 @@
  * Tests the refactored health routes with new validation system
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('Health Routes (Migrated)', () => {
+    beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
+    });
+
     describe('GET /health/live', () => {
         it('should return success response with correct format', async () => {
             const app = initApp();
