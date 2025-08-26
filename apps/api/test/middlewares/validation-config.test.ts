@@ -9,17 +9,18 @@ import { defaultValidationConfig, getValidationConfig } from '../../src/types/va
 // Mock env module
 vi.mock('../../src/utils/env', () => ({
     env: {
-        VALIDATION_MAX_BODY_SIZE: 5 * 1024 * 1024, // 5MB
-        VALIDATION_MAX_REQUEST_TIME: 15000, // 15s
-        VALIDATION_ALLOWED_CONTENT_TYPES: 'application/json,text/plain',
-        VALIDATION_REQUIRED_HEADERS: 'user-agent,content-type',
-        VALIDATION_CLERK_AUTH_ENABLED: false,
-        VALIDATION_CLERK_AUTH_HEADERS: 'authorization,x-api-key',
-        VALIDATION_SANITIZE_ENABLED: true,
-        VALIDATION_SANITIZE_MAX_STRING_LENGTH: 500,
-        VALIDATION_SANITIZE_REMOVE_HTML_TAGS: false,
-        VALIDATION_SANITIZE_ALLOWED_CHARS: '[a-zA-Z0-9]'
-    }
+        API_VALIDATION_MAX_BODY_SIZE: 5 * 1024 * 1024, // 5MB
+        API_VALIDATION_MAX_REQUEST_TIME: 15000, // 15s
+        API_VALIDATION_ALLOWED_CONTENT_TYPES: 'application/json,text/plain',
+        API_VALIDATION_REQUIRED_HEADERS: 'user-agent,content-type',
+        API_VALIDATION_CLERK_AUTH_ENABLED: false,
+        API_VALIDATION_CLERK_AUTH_HEADERS: 'authorization,x-api-key',
+        API_VALIDATION_SANITIZE_ENABLED: true,
+        API_VALIDATION_SANITIZE_MAX_STRING_LENGTH: 500,
+        API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: false,
+        API_VALIDATION_SANITIZE_ALLOWED_CHARS: '[a-zA-Z0-9]'
+    },
+    validateApiEnv: vi.fn()
 }));
 
 describe('Validation Configuration', () => {

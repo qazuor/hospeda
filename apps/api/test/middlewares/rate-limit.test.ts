@@ -11,81 +11,67 @@ process.env.TESTING_RATE_LIMIT = 'true';
 vi.mock('../../src/utils/env', () => {
     const mockEnv = {
         // General rate limiting
-        RATE_LIMIT_ENABLED: true,
-        RATE_LIMIT_WINDOW_MS: 1000, // 1 second for testing
-        RATE_LIMIT_MAX_REQUESTS: 3, // 3 requests per window
-        RATE_LIMIT_KEY_GENERATOR: 'ip',
-        RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: false,
-        RATE_LIMIT_SKIP_FAILED_REQUESTS: false,
-        RATE_LIMIT_STANDARD_HEADERS: true,
-        RATE_LIMIT_LEGACY_HEADERS: false,
-        RATE_LIMIT_MESSAGE: 'Too many requests, please try again later.',
+        API_RATE_LIMIT_ENABLED: true,
+        API_RATE_LIMIT_WINDOW_MS: 1000, // 1 second for testing
+        API_RATE_LIMIT_MAX_REQUESTS: 3, // 3 requests per window
+        API_RATE_LIMIT_KEY_GENERATOR: 'ip',
+        API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: false,
+        API_RATE_LIMIT_SKIP_FAILED_REQUESTS: false,
+        API_RATE_LIMIT_STANDARD_HEADERS: true,
+        API_RATE_LIMIT_LEGACY_HEADERS: false,
+        API_RATE_LIMIT_MESSAGE: 'Too many requests, please try again later.',
 
         // Auth rate limiting
-        RATE_LIMIT_AUTH_ENABLED: true,
-        RATE_LIMIT_AUTH_WINDOW_MS: 1000,
-        RATE_LIMIT_AUTH_MAX_REQUESTS: 5, // Higher limit for auth
-        RATE_LIMIT_AUTH_MESSAGE: 'Too many authentication requests, please try again later.',
+        API_RATE_LIMIT_AUTH_ENABLED: true,
+        API_RATE_LIMIT_AUTH_WINDOW_MS: 1000,
+        API_RATE_LIMIT_AUTH_MAX_REQUESTS: 5, // Higher limit for auth
+        API_RATE_LIMIT_AUTH_MESSAGE: 'Too many authentication requests, please try again later.',
 
         // Public API rate limiting
-        RATE_LIMIT_PUBLIC_ENABLED: true,
-        RATE_LIMIT_PUBLIC_WINDOW_MS: 1000,
-        RATE_LIMIT_PUBLIC_MAX_REQUESTS: 10, // Higher limit for public API
-        RATE_LIMIT_PUBLIC_MESSAGE: 'Too many API requests, please try again later.',
+        API_RATE_LIMIT_PUBLIC_ENABLED: true,
+        API_RATE_LIMIT_PUBLIC_WINDOW_MS: 1000,
+        API_RATE_LIMIT_PUBLIC_MAX_REQUESTS: 10, // Higher limit for public API
+        API_RATE_LIMIT_PUBLIC_MESSAGE: 'Too many API requests, please try again later.',
 
         // Admin rate limiting
-        RATE_LIMIT_ADMIN_ENABLED: true,
-        RATE_LIMIT_ADMIN_WINDOW_MS: 1000,
-        RATE_LIMIT_ADMIN_MAX_REQUESTS: 2, // Lower limit for admin
-        RATE_LIMIT_ADMIN_MESSAGE: 'Too many admin requests, please try again later.'
+        API_RATE_LIMIT_ADMIN_ENABLED: true,
+        API_RATE_LIMIT_ADMIN_WINDOW_MS: 1000,
+        API_RATE_LIMIT_ADMIN_MAX_REQUESTS: 2, // Lower limit for admin
+        API_RATE_LIMIT_ADMIN_MESSAGE: 'Too many admin requests, please try again later.'
     };
 
-    const getRateLimitConfig = (endpointType = 'general') => {
-        const baseConfig = {
-            keyGenerator: mockEnv.RATE_LIMIT_KEY_GENERATOR,
-            skipSuccessful: mockEnv.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS,
-            skipFailed: mockEnv.RATE_LIMIT_SKIP_FAILED_REQUESTS,
-            standardHeaders: mockEnv.RATE_LIMIT_STANDARD_HEADERS,
-            legacyHeaders: mockEnv.RATE_LIMIT_LEGACY_HEADERS
-        };
+    const getRateLimitConfig = () => ({
+        enabled: mockEnv.API_RATE_LIMIT_ENABLED,
+        windowMs: mockEnv.API_RATE_LIMIT_WINDOW_MS,
+        maxRequests: mockEnv.API_RATE_LIMIT_MAX_REQUESTS,
+        keyGenerator: mockEnv.API_RATE_LIMIT_KEY_GENERATOR,
+        skipSuccessfulRequests: mockEnv.API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS,
+        skipFailedRequests: mockEnv.API_RATE_LIMIT_SKIP_FAILED_REQUESTS,
+        standardHeaders: mockEnv.API_RATE_LIMIT_STANDARD_HEADERS,
+        legacyHeaders: mockEnv.API_RATE_LIMIT_LEGACY_HEADERS,
+        message: mockEnv.API_RATE_LIMIT_MESSAGE,
 
-        switch (endpointType) {
-            case 'auth':
-                return {
-                    ...baseConfig,
-                    enabled: mockEnv.RATE_LIMIT_AUTH_ENABLED,
-                    windowMs: mockEnv.RATE_LIMIT_AUTH_WINDOW_MS,
-                    maxRequests: mockEnv.RATE_LIMIT_AUTH_MAX_REQUESTS,
-                    message: mockEnv.RATE_LIMIT_AUTH_MESSAGE
-                };
-            case 'public':
-                return {
-                    ...baseConfig,
-                    enabled: mockEnv.RATE_LIMIT_PUBLIC_ENABLED,
-                    windowMs: mockEnv.RATE_LIMIT_PUBLIC_WINDOW_MS,
-                    maxRequests: mockEnv.RATE_LIMIT_PUBLIC_MAX_REQUESTS,
-                    message: mockEnv.RATE_LIMIT_PUBLIC_MESSAGE
-                };
-            case 'admin':
-                return {
-                    ...baseConfig,
-                    enabled: mockEnv.RATE_LIMIT_ADMIN_ENABLED,
-                    windowMs: mockEnv.RATE_LIMIT_ADMIN_WINDOW_MS,
-                    maxRequests: mockEnv.RATE_LIMIT_ADMIN_MAX_REQUESTS,
-                    message: mockEnv.RATE_LIMIT_ADMIN_MESSAGE
-                };
-            default:
-                return {
-                    ...baseConfig,
-                    enabled: mockEnv.RATE_LIMIT_ENABLED,
-                    windowMs: mockEnv.RATE_LIMIT_WINDOW_MS,
-                    maxRequests: mockEnv.RATE_LIMIT_MAX_REQUESTS,
-                    message: mockEnv.RATE_LIMIT_MESSAGE
-                };
-        }
-    };
+        // Auth-specific
+        authEnabled: mockEnv.API_RATE_LIMIT_AUTH_ENABLED,
+        authWindowMs: mockEnv.API_RATE_LIMIT_AUTH_WINDOW_MS,
+        authMaxRequests: mockEnv.API_RATE_LIMIT_AUTH_MAX_REQUESTS,
+        authMessage: mockEnv.API_RATE_LIMIT_AUTH_MESSAGE,
+
+        // Public API-specific
+        publicEnabled: mockEnv.API_RATE_LIMIT_PUBLIC_ENABLED,
+        publicWindowMs: mockEnv.API_RATE_LIMIT_PUBLIC_WINDOW_MS,
+        publicMaxRequests: mockEnv.API_RATE_LIMIT_PUBLIC_MAX_REQUESTS,
+        publicMessage: mockEnv.API_RATE_LIMIT_PUBLIC_MESSAGE,
+
+        // Admin-specific
+        adminEnabled: mockEnv.API_RATE_LIMIT_ADMIN_ENABLED,
+        adminWindowMs: mockEnv.API_RATE_LIMIT_ADMIN_WINDOW_MS,
+        adminMaxRequests: mockEnv.API_RATE_LIMIT_ADMIN_MAX_REQUESTS,
+        adminMessage: mockEnv.API_RATE_LIMIT_ADMIN_MESSAGE
+    });
 
     return {
+        validateApiEnv: vi.fn(),
         env: mockEnv,
         getRateLimitConfig
     };

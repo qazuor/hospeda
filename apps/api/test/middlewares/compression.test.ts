@@ -28,7 +28,8 @@ vi.mock('../../src/utils/env', () => ({
         chunkSize: 16384,
         filter: ['text/*', 'application/json', 'application/xml', 'application/javascript'],
         excludeEndpoints: ['/health/db', '/docs']
-    })
+    }),
+    validateApiEnv: vi.fn()
 }));
 
 describe('Compression Middleware', () => {
@@ -188,7 +189,7 @@ describe('Compression Middleware', () => {
 
     describe('Integration with Hono app', () => {
         it('should integrate with Hono app without errors', async () => {
-            app.use(compressionMiddleware);
+            app.use(compressionMiddleware());
             app.get('/test', (c) => c.json({ message: 'Hello World' }));
 
             const res = await app.request('/test', {
@@ -206,7 +207,7 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle requests without Accept-Encoding header', async () => {
-            app.use(compressionMiddleware);
+            app.use(compressionMiddleware());
             app.get('/test', (c) => c.json({ message: 'Hello World' }));
 
             const res = await app.request('/test');
@@ -216,7 +217,7 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle large response bodies', async () => {
-            app.use(compressionMiddleware);
+            app.use(compressionMiddleware());
             app.get('/large', (c) => {
                 // Create a large response (over threshold)
                 const largeData = {
@@ -243,7 +244,7 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle small response bodies', async () => {
-            app.use(compressionMiddleware);
+            app.use(compressionMiddleware());
             app.get('/small', (c) => c.json({ message: 'small' }));
 
             const res = await app.request('/small', {
@@ -266,7 +267,7 @@ describe('Compression Middleware', () => {
         });
 
         it('should handle different content types', async () => {
-            app.use(compressionMiddleware);
+            app.use(compressionMiddleware());
             app.get('/json', (c) => c.json({ type: 'json' }));
             app.get('/text', (c) => c.text('Hello World'));
             app.get('/html', (c) => c.html('<h1>Hello World</h1>'));
@@ -289,7 +290,7 @@ describe('Compression Middleware', () => {
 
     describe('Error handling', () => {
         it('should handle middleware errors gracefully', async () => {
-            app.use(compressionMiddleware);
+            app.use(compressionMiddleware());
             app.get('/error', () => {
                 throw new Error('Test error');
             });
@@ -301,7 +302,7 @@ describe('Compression Middleware', () => {
         });
 
         it('should not interfere with normal error responses', async () => {
-            app.use(compressionMiddleware);
+            app.use(compressionMiddleware());
             app.get('/client-error', (c) => c.json({ error: 'Bad Request' }, 400));
             app.get('/server-error', (c) => c.json({ error: 'Internal Error' }, 500));
 
@@ -376,7 +377,7 @@ describe('Compression Middleware', () => {
         });
 
         it('should work with default configuration', async () => {
-            app.use(compressionMiddleware);
+            app.use(compressionMiddleware());
             app.get('/test', (c) => c.json({ message: 'Hello World' }));
 
             const res = await app.request('/test');
