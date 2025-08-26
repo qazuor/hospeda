@@ -89,4 +89,4 @@ export const createCacheMiddleware = () => {
  * Default cache middleware instance
  * Uses environment-based configuration
  */
-export const cacheMiddleware = createCacheMiddleware();
+export const cacheMiddleware = () => createCacheMiddleware();
