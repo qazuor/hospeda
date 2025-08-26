@@ -2,7 +2,7 @@
 
 interface ImportMetaEnv {
     // Database (server-side only)
-    readonly DATABASE_URL: string;
+    readonly HOSPEDA_DATABASE_URL: string;
 
     // API Configuration (exposed by @repo/config plugin)
     readonly PUBLIC_API_URL: string;
