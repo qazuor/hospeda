@@ -22,7 +22,7 @@ export const clerkWebhookRoute = createSimpleRoute({
         const svixId = c.req.header('svix-id') ?? '';
         const svixTimestamp = c.req.header('svix-timestamp') ?? '';
         const svixSignature = c.req.header('svix-signature') ?? '';
-        if (!env.CLERK_WEBHOOK_SECRET) {
+        if (!env.HOSPEDA_CLERK_WEBHOOK_SECRET) {
             apiLogger.error('CLERK_WEBHOOK_SECRET not configured');
             return new Response(
                 JSON.stringify({
@@ -34,7 +34,7 @@ export const clerkWebhookRoute = createSimpleRoute({
         }
 
         const payloadText = await c.req.text();
-        const wh = new Webhook(env.CLERK_WEBHOOK_SECRET);
+        const wh = new Webhook(env.HOSPEDA_CLERK_WEBHOOK_SECRET);
         let evt: { type: string; data: Record<string, unknown> };
         try {
             evt = wh.verify(payloadText, {
