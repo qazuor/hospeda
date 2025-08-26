@@ -1,13 +1,17 @@
-# Get staged files that match our patterns
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|jsx|ts|tsx)$' || true)
+# Get staged files that match our patterns (exclude deleted files)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|jsx|ts|tsx|css|scss|md|astro)$' || true)
 
 # Only run Biome if there are staged files matching our patterns
 if [ -n "$STAGED_FILES" ]; then
   echo "🔍 Running Biome on staged files..."
   echo "$STAGED_FILES" | xargs npx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true
 
-  # Re-add files that were modified by Biome
-  echo "$STAGED_FILES" | xargs git add
+  # Re-add files that were modified by Biome (only existing files)
+  for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+      git add "$file"
+    fi
+  done
 else
   echo "No staged files to check with Biome."
 fi
@@ -15,14 +19,18 @@ fi
 # Sync TODO comments with Linear
 echo "📝 Syncing TODO comments with Linear..."
 
-# Capture currently staged files before sync
-STAGED_FILES_BEFORE=$(git diff --cached --name-only)
+# Capture currently staged files before sync (exclude deleted files)
+STAGED_FILES_BEFORE=$(git diff --cached --name-only --diff-filter=ACMR)
 
 if pnpm todo:sync --quiet 2>/dev/null; then
   echo "✅ TODO sync completed successfully"
-  # Re-add only the files that were originally staged
+  # Re-add only the files that were originally staged and still exist
   if [ -n "$STAGED_FILES_BEFORE" ]; then
-    echo "$STAGED_FILES_BEFORE" | xargs git add
+    for file in $STAGED_FILES_BEFORE; do
+      if [ -f "$file" ]; then
+        git add "$file"
+      fi
+    done
   fi
 else
   echo "⚠️  TODO sync failed or not configured - continuing with commit"
