@@ -20,7 +20,7 @@ export const ensureDatabase = (): void => {
 
     // Use getEnv utility for better error handling
     try {
-        const connectionString = getEnv('DATABASE_URL');
+        const connectionString = getEnv('HOSPEDA_DATABASE_URL');
         logger.debug(
             {
                 hasConnectionString: !!connectionString,
@@ -38,7 +38,7 @@ export const ensureDatabase = (): void => {
         logger.info('Database initialized successfully');
     } catch (_error) {
         // In environments without DB (e.g., static preview), skip initialization gracefully
-        logger.warn('DATABASE_URL not found, skipping database initialization');
+        logger.warn('HOSPEDA_DATABASE_URL not found, skipping database initialization');
         return;
     }
 };
