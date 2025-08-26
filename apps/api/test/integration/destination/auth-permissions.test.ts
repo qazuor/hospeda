@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 /**
  * Auth/Permissions scenarios for Destination routes
@@ -10,6 +11,8 @@ describe('Destination - Auth & Permissions', () => {
     const base = '/api/v1/public/destinations';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 

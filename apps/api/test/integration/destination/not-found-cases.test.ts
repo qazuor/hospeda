@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('Destination - Not Found cases (404)', () => {
     let app: ReturnType<typeof initApp>;
@@ -9,6 +10,8 @@ describe('Destination - Not Found cases (404)', () => {
     const notFoundId = '87654321-4321-4321-8765-876543218765';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 

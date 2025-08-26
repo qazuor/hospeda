@@ -2,6 +2,7 @@ import { DestinationStatsSchema } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 const ApiStatsResponse = z.object({
     success: z.boolean(),
@@ -13,6 +14,8 @@ describe('GET /destinations/:id/stats (schema validation)', () => {
     const base = '/api/v1/public/destinations';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 
