@@ -30,7 +30,7 @@ const description = 'Inicia sesión en tu cuenta de Hospeda para acceder a todas
             <div class='bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10'>
                 <SignInFormWrapper
                     client:load
-                    apiBaseUrl={import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:3002'}
+                    apiBaseUrl={import.meta.env.PUBLIC_API_URL || 'http://localhost:3001'}
                     redirectTo='/'
                 />
             </div>
