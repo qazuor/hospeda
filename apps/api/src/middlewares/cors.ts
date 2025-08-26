@@ -18,7 +18,7 @@ export const createCorsMiddleware = (
 
     // Handle credentials based on origin (wildcard origin requires credentials: false)
     let credentials = corsConfig.allowCredentials;
-    if (corsConfig.origins === '*') {
+    if (corsConfig.origins.includes('*')) {
         credentials = false;
     }
 
@@ -32,11 +32,14 @@ export const createCorsMiddleware = (
         ...customConfig
     };
 
+    // CORS configuration is ready
+
     return cors(config);
 };
 
 /**
  * Default CORS middleware instance
  * Uses environment-based configuration
+ * Created lazily to ensure environment variables are loaded
  */
-export const corsMiddleware = createCorsMiddleware();
+export const corsMiddleware = () => createCorsMiddleware();

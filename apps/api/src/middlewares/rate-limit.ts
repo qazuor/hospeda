@@ -3,7 +3,7 @@
  * Implements different rate limits for auth, public, admin, and general endpoints
  */
 import type { Context, Next } from 'hono';
-import { getRateLimitConfig } from '../utils/env';
+import { getRateLimitConfig as getBaseRateLimitConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 // In-memory store for rate limiting
@@ -32,6 +32,54 @@ const getEndpointType = (path: string): 'auth' | 'public' | 'admin' | 'general' 
         return 'public';
     }
     return 'general';
+};
+
+/**
+ * Gets rate limiting configuration for a specific endpoint type
+ * @param endpointType - The type of endpoint
+ * @returns Rate limiting configuration for the endpoint type
+ */
+const getRateLimitConfig = (endpointType: 'auth' | 'public' | 'admin' | 'general') => {
+    const baseConfig = getBaseRateLimitConfig();
+
+    switch (endpointType) {
+        case 'auth':
+            return {
+                enabled: baseConfig.authEnabled,
+                windowMs: baseConfig.authWindowMs,
+                maxRequests: baseConfig.authMaxRequests,
+                message: baseConfig.authMessage,
+                standardHeaders: baseConfig.standardHeaders,
+                legacyHeaders: baseConfig.legacyHeaders
+            };
+        case 'public':
+            return {
+                enabled: baseConfig.publicEnabled,
+                windowMs: baseConfig.publicWindowMs,
+                maxRequests: baseConfig.publicMaxRequests,
+                message: baseConfig.publicMessage,
+                standardHeaders: baseConfig.standardHeaders,
+                legacyHeaders: baseConfig.legacyHeaders
+            };
+        case 'admin':
+            return {
+                enabled: baseConfig.adminEnabled,
+                windowMs: baseConfig.adminWindowMs,
+                maxRequests: baseConfig.adminMaxRequests,
+                message: baseConfig.adminMessage,
+                standardHeaders: baseConfig.standardHeaders,
+                legacyHeaders: baseConfig.legacyHeaders
+            };
+        default:
+            return {
+                enabled: baseConfig.enabled,
+                windowMs: baseConfig.windowMs,
+                maxRequests: baseConfig.maxRequests,
+                message: baseConfig.message,
+                standardHeaders: baseConfig.standardHeaders,
+                legacyHeaders: baseConfig.legacyHeaders
+            };
+    }
 };
 
 /**

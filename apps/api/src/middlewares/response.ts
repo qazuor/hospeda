@@ -4,7 +4,7 @@ import { ServiceErrorCode } from '@repo/types';
  * Ensures consistent response format across the API
  */
 import type { Context, MiddlewareHandler } from 'hono';
-import { env } from '../utils/env';
+import { getResponseConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 // Standard API response types
@@ -45,22 +45,23 @@ const formatSuccessResponse = <T>(
     pagination?: PaginationData,
     requestId?: string
 ): ApiResponse<T> => {
+    const responseConfig = getResponseConfig();
     const response: ApiResponse<T> = {
         success: true,
         data
     };
 
     // Add metadata if enabled
-    if (env.RESPONSE_INCLUDE_METADATA) {
+    if (responseConfig.includeMetadata) {
         response.metadata = {
             timestamp: new Date().toISOString()
         };
 
-        if (env.RESPONSE_INCLUDE_VERSION) {
-            response.metadata.version = env.RESPONSE_API_VERSION;
+        if (responseConfig.includeVersion) {
+            response.metadata.version = responseConfig.apiVersion;
         }
 
-        if (requestId && env.RESPONSE_INCLUDE_REQUEST_ID) {
+        if (requestId && responseConfig.includeRequestId) {
             response.metadata.requestId = requestId;
         }
 
@@ -82,6 +83,7 @@ const formatErrorResponse = (
     details?: unknown,
     requestId?: string
 ): ApiResponse => {
+    const responseConfig = getResponseConfig();
     const response: ApiResponse = {
         success: false,
         error: {
@@ -92,16 +94,16 @@ const formatErrorResponse = (
     };
 
     // Add metadata if enabled
-    if (env.RESPONSE_INCLUDE_METADATA) {
+    if (responseConfig.includeMetadata) {
         response.metadata = {
             timestamp: new Date().toISOString()
         };
 
-        if (env.RESPONSE_INCLUDE_VERSION) {
-            response.metadata.version = env.RESPONSE_API_VERSION;
+        if (responseConfig.includeVersion) {
+            response.metadata.version = responseConfig.apiVersion;
         }
 
-        if (requestId && env.RESPONSE_INCLUDE_REQUEST_ID) {
+        if (requestId && responseConfig.includeRequestId) {
             response.metadata.requestId = requestId;
         }
     }
@@ -114,13 +116,14 @@ const formatErrorResponse = (
  * TODO: Preserve CORS headers that were set by CORS middleware
  */
 const addResponseHeaders = (c: Context): Record<string, string> => {
+    const responseConfig = getResponseConfig();
     const headers: Record<string, string> = {};
 
-    if (env.RESPONSE_INCLUDE_VERSION) {
-        headers['X-API-Version'] = env.RESPONSE_API_VERSION;
+    if (responseConfig.includeVersion) {
+        headers['X-API-Version'] = responseConfig.apiVersion;
     }
 
-    if (env.RESPONSE_INCLUDE_REQUEST_ID) {
+    if (responseConfig.includeRequestId) {
         const requestId = c.get('requestId');
         if (requestId) {
             headers['X-Request-ID'] = requestId;
@@ -151,7 +154,8 @@ const addResponseHeaders = (c: Context): Record<string, string> => {
  * Ensures all API responses follow a consistent format
  */
 export const responseFormattingMiddleware: MiddlewareHandler = async (c, next) => {
-    if (!env.RESPONSE_FORMAT_ENABLED) {
+    const responseConfig = getResponseConfig();
+    if (!responseConfig.formatEnabled) {
         await next();
         return;
     }
@@ -244,6 +248,9 @@ export const sendFormattedResponse = <T>(
  */
 export const createErrorHandler = () => {
     return (error: Error, c: Context) => {
+        // Get response configuration
+        const responseConfig = getResponseConfig();
+
         // Log the error for debugging
         apiLogger.error({
             message: '🚨 Caught error:',
@@ -255,13 +262,13 @@ export const createErrorHandler = () => {
             requestId: c.get('requestId')
         });
 
-        if (!env.RESPONSE_FORMAT_ENABLED) {
+        if (!responseConfig.formatEnabled) {
             throw error; // Let Hono handle it
         }
 
         // Format error responses
         let errorCode = ServiceErrorCode.INTERNAL_ERROR;
-        let errorMessage = env.RESPONSE_ERROR_MESSAGE;
+        let errorMessage = responseConfig.errorMessage;
         let statusCode = 500;
 
         // Handle different types of errors

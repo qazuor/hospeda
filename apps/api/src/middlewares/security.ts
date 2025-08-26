@@ -4,7 +4,7 @@
  */
 import type { Context, Next } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
-import { env } from '../utils/env';
+import { getSecurityConfig } from '../utils/env';
 
 /**
  * Security headers middleware that applies consistent security headers
@@ -21,10 +21,14 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
     // const path = c.req.path; // Available for future use
     // const requestId = c.get('requestId') || 'unknown'; // Available for future use
 
+    // Get security configuration
+    const securityConfig = getSecurityConfig();
+
     // In production, always apply security headers for safety
     // In other environments, respect the configuration
     const shouldApplyHeaders =
-        env.NODE_ENV === 'production' || (env.SECURITY_ENABLED && env.SECURITY_HEADERS_ENABLED);
+        process.env.NODE_ENV === 'production' ||
+        (securityConfig.enabled && securityConfig.headersEnabled);
 
     if (!shouldApplyHeaders) {
         await next();
@@ -51,11 +55,11 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
             mediaSrc: ["'self'"],
             frameSrc: ["'self'"]
         },
-        strictTransportSecurity: env.SECURITY_STRICT_TRANSPORT_SECURITY,
-        xFrameOptions: env.SECURITY_X_FRAME_OPTIONS,
-        xContentTypeOptions: env.SECURITY_X_CONTENT_TYPE_OPTIONS,
-        xXssProtection: env.SECURITY_X_XSS_PROTECTION,
-        referrerPolicy: env.SECURITY_REFERRER_POLICY,
+        strictTransportSecurity: securityConfig.strictTransportSecurity,
+        xFrameOptions: securityConfig.xFrameOptions,
+        xContentTypeOptions: securityConfig.xContentTypeOptions,
+        xXssProtection: securityConfig.xXssProtection,
+        referrerPolicy: securityConfig.referrerPolicy,
         permissionsPolicy: {
             camera: false,
             microphone: false,

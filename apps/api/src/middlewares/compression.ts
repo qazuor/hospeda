@@ -49,4 +49,4 @@ export const createCompressionMiddleware = () => {
  * Default compression middleware instance
  * Uses environment-based configuration
  */
-export const compressionMiddleware = createCompressionMiddleware();
+export const compressionMiddleware = () => createCompressionMiddleware();

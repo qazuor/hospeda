@@ -4,7 +4,6 @@
  * Uses structured apiLogger for consistency
  */
 import type { MiddlewareHandler } from 'hono';
-import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
@@ -13,8 +12,18 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     const url = c.req.url;
     // const path = c.req.path; // Available for future use
 
-    if (env.LOG_LEVEL === 'debug') {
+    if (process.env.API_LOG_LEVEL === 'debug') {
         apiLogger.debug(`🔍 Incoming request: ${method} ${url}`);
+
+        // Special logging for OPTIONS requests (CORS preflight)
+        if (method === 'OPTIONS') {
+            const origin = c.req.header('Origin');
+            const requestMethod = c.req.header('Access-Control-Request-Method');
+            const requestHeaders = c.req.header('Access-Control-Request-Headers');
+            apiLogger.debug(
+                `🌐 CORS Preflight: Origin=${origin}, Method=${requestMethod}, Headers=${requestHeaders}`
+            );
+        }
     }
 
     await next();
@@ -34,7 +43,7 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     }
 
     // Log response body in debug mode for errors
-    if (env.LOG_LEVEL === 'debug' && status >= 400) {
+    if (process.env.API_LOG_LEVEL === 'debug' && status >= 400) {
         try {
             const responseClone = c.res.clone();
             const contentType = responseClone.headers.get('content-type') || '';
