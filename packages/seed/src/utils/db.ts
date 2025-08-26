@@ -16,18 +16,18 @@ export const initSeedDb = () => {
     }
 
     // Verify DATABASE_URL is available
-    if (!process.env.DATABASE_URL) {
+    if (!process.env.HOSPEDA_DATABASE_URL) {
         throw new Error(
-            'DATABASE_URL environment variable is not set. Make sure .env.local is loaded.'
+            'HOSPEDA_DATABASE_URL environment variable is not set. Make sure .env.local is loaded.'
         );
     }
 
-    dbLogger.log(!!process.env.DATABASE_URL, '🔍 DATABASE_URL found');
-    dbLogger.log(process.env.DATABASE_URL, '🔍 DATABASE_URL value');
+    dbLogger.log(!!process.env.HOSPEDA_DATABASE_URL, '🔍 HOSPEDA_DATABASE_URL found');
+    dbLogger.log(process.env.HOSPEDA_DATABASE_URL, '🔍 HOSPEDA_DATABASE_URL value');
 
     // Create PostgreSQL connection pool
     pool = new Pool({
-        connectionString: process.env.DATABASE_URL
+        connectionString: process.env.HOSPEDA_DATABASE_URL
     });
 
     // Initialize the database with the pool

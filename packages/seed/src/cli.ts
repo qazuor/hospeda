@@ -15,7 +15,7 @@ import { runSeed } from './index.js';
 import { STATUS_ICONS } from './utils/icons.js';
 import { logger } from './utils/logger.js';
 
-dbLogger.log(!!process.env.DATABASE_URL, '🔍 CLI: DATABASE_URL loaded');
+dbLogger.log(!!process.env.HOSPEDA_DATABASE_URL, '🔍 CLI: HOSPEDA_DATABASE_URL loaded');
 
 // Basic CLI argument parsing
 const args = process.argv.slice(2);
