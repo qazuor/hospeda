@@ -1,25 +1,25 @@
 /// <reference types="astro/client" />
 
 interface ImportMetaEnv {
-    // Database
+    // Database (server-side only)
     readonly DATABASE_URL: string;
 
-    // API Configuration
-    readonly PUBLIC_API_BASE_URL: string;
+    // API Configuration (exposed by @repo/config plugin)
+    readonly PUBLIC_API_URL: string;
 
-    // Authentication
+    // Authentication (exposed by @repo/config plugin)
     readonly PUBLIC_CLERK_PUBLISHABLE_KEY: string;
     readonly CLERK_SECRET_KEY: string;
 
-    // Site Configuration
+    // Site Configuration (exposed by @repo/config plugin)
     readonly PUBLIC_SITE_URL: string;
     readonly PUBLIC_DEFAULT_LOCALE: string;
     readonly PUBLIC_SUPPORTED_LOCALES: string;
 
-    // Monitoring
-    readonly PUBLIC_SENTRY_DSN: string;
-    readonly SENTRY_ENVIRONMENT: string;
-    readonly SENTRY_RELEASE: string;
+    // Monitoring (optional)
+    readonly PUBLIC_SENTRY_DSN?: string;
+    readonly SENTRY_ENVIRONMENT?: string;
+    readonly SENTRY_RELEASE?: string;
 }
 
 interface ImportMeta {

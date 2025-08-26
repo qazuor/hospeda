@@ -123,8 +123,8 @@ function clearStoredSession(): void {
  */
 async function fetchUserSession(): Promise<UserSession | null> {
     try {
-        // Use the API base URL from environment or default to localhost:3002
-        const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:3002';
+        // Use the API base URL from environment or default to localhost:3001
+        const apiBaseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
 
         const response = await fetch(`${apiBaseUrl}/api/v1/public/auth/me`, {
             method: 'GET',
@@ -284,7 +284,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             // Call backend to cleanup server-side state
             try {
-                const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:3002';
+                const apiBaseUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
                 await fetch(`${apiBaseUrl}/api/v1/public/auth/signout`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
