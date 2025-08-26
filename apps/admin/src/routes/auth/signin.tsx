@@ -75,8 +75,7 @@ function SignInPage(): React.JSX.Element {
                 setIsHandlingCallback(true);
 
                 try {
-                    const apiBaseUrl =
-                        import.meta.env.VITE_ADMIN_API_BASE_URL || window.location.origin;
+                    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
                     adminLogger.info(
                         `${apiBaseUrl}/api/v1/public/auth/sync`,
                         'Making sync request to'
@@ -318,7 +317,7 @@ function SignInPage(): React.JSX.Element {
                         <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
                             <SignInForm
                                 onSynced={() => router.navigate({ to: redirect })}
-                                apiBaseUrl={import.meta.env.VITE_ADMIN_API_BASE_URL}
+                                apiBaseUrl={import.meta.env.VITE_API_URL}
                             />
                             {/* Clerk CAPTCHA element */}
                             <div
