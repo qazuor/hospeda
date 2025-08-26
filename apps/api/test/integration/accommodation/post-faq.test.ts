@@ -4,6 +4,7 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('POST /accommodations/:id/faqs', () => {
     let app: ReturnType<typeof initApp>;
@@ -12,6 +13,8 @@ describe('POST /accommodations/:id/faqs', () => {
     const nonExistentUuid = '99999999-9999-9999-9999-999999999999';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 
