@@ -57,17 +57,17 @@ export default function createApp() {
         .use(wrapMiddleware(loggerMiddleware))
 
         // Security and access control
-        .use(wrapMiddleware(corsMiddleware))
+        .use(wrapMiddleware(corsMiddleware()))
         .use(wrapMiddleware(securityHeadersMiddleware))
         .use(wrapMiddleware(rateLimitMiddleware))
 
         // Performance and optimization
-        .use(wrapMiddleware(compressionMiddleware))
-        .use(wrapMiddleware(cacheMiddleware))
-        .use(wrapMiddleware(metricsMiddleware))
+        .use(wrapMiddleware(compressionMiddleware()))
+        .use(wrapMiddleware(cacheMiddleware()))
+        .use(wrapMiddleware(metricsMiddleware()))
 
         // Request processing
-        .use(wrapMiddleware(validationMiddleware))
+        .use(wrapMiddleware(validationMiddleware()))
         .use(wrapMiddleware(responseFormattingMiddleware))
 
         // Authentication and authorization
@@ -97,8 +97,8 @@ export function createDocApp() {
     app.use(wrapMiddleware(requestId()));
     app.use(serveEmojiFavicon('📝'));
     app.use(wrapMiddleware(loggerMiddleware)); // Needed for request logging
-    app.use(wrapMiddleware(corsMiddleware)); // Needed for cross-origin requests and assets
-    app.use(wrapMiddleware(compressionMiddleware)); // Helps with large documentation assets
+    app.use(wrapMiddleware(corsMiddleware())); // Needed for cross-origin requests and assets
+    app.use(wrapMiddleware(compressionMiddleware())); // Helps with large documentation assets
 
     // Skip these middlewares that can interfere with documentation:
     // - rateLimitMiddleware (can block documentation loading)
