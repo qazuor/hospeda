@@ -31,15 +31,10 @@ beforeAll(async () => {
             envModule.validateApiEnv();
         } else {
             // Module is mocked, skip validation
-            console.debug('Environment validation skipped: module is mocked');
         }
-    } catch (error) {
+    } catch (_error) {
         // Environment validation failed or module is mocked
         // This is expected in some test scenarios
-        console.debug(
-            'Environment validation skipped in test setup:',
-            error instanceof Error ? error.message : String(error)
-        );
     }
 
     // Note: Validation is enabled by default for tests
