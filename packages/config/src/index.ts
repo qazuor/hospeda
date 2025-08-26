@@ -1,9 +1,19 @@
+/**
+ * @repo/config - Centralized configuration utilities for the monorepo
+ *
+ * This package provides utilities for managing environment variables
+ * and configuration across different apps in the monorepo.
+ */
+
 export {
-    getLoggerConfigs as getLoggerClientConfigs,
-    getMainConfigs as getMainClientConfigs
-} from './client.js';
-export {
-    getDBConfigs,
-    getLoggerConfigs as getLoggerServerConfigs,
-    getMainConfigs as getMainServerConfigs
-} from './server.js';
+    EnvValidationError,
+    commonEnvMappings,
+    commonEnvSchemas,
+    createStartupValidator,
+    exposeSharedEnv,
+    getEnv,
+    getEnvBoolean,
+    getEnvNumber,
+    validateEnv,
+    type EnvMapping
+} from './env.js';
