@@ -1,73 +1,92 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# =========================
+# OS / Editor noise
+# =========================
+.DS_Store
+*.swp
+*.swo
 
-# dependencies
-node_modules
+# =========================
+# Dependencias
+# =========================
+**/node_modules/
 .pnp
 .pnp.js
 
-# build
-dist
-build
+# =========================
+# Builds y artefactos
+# =========================
+# genéricos
+**/dist/
+**/build/
+dist-ssr
+.output
+
+# frameworks / runtimes
 .next
 out
+.astro
+.nitro
+.vinxi
+.tanstack
 
-# testing
+# =========================
+# Cachés y toolings
+# =========================
+# Vite
+**/.vite/
+**/node_modules/.vite/
+
+# TurboRepo
+.turbo
+
+# =========================
+# Testing / Coverage
+# =========================
 coverage
 
-# misc
-.DS_Store
-*.pem
-
-# TODO-Linear tracking file
-.todo-linear-tracking.json
-
-# debug
+# =========================
+# Logs y debug
+# =========================
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.local  # archivos de debug locales genéricos
 
-# local env files
+# =========================
+# Variables de entorno
+# (solo locales; los secrets reales van en tu gestor)
+# =========================
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# turbo
-.turbo
-
-# ui
-dist/
-
-.env
-
-NOTES.txt
-*.tsbuildinfo
-
+# =========================
+# Hosting / Integraciones
+# =========================
 .vercel
-.astro
 
-# Vite cache
-**/.vite
-**/node_modules/.vite
-
-
-packages/db/src/migrations/meta/_journal.json
-apps/api/package.prod.json
-
-
-# IDE
+# =========================
+# IDE / Editor configs
+# =========================
 .idea
 .vscode
-*.swp
-*.swo
+*.tsbuildinfo
 
-packages/seed/mappings/id-mappings.json
-
-dist-ssr
-*.local
-.nitro
-.tanstack
-.output
-.vinxi
+# =========================
+# Archivos del proyecto (custom)
+# =========================
+NOTES.txt
+.todo-linear-tracking.json
 mcp-todos.json
+packages/seed/mappings/id-mappings.json
+apps/api/package.prod.json
+
+# =========================
+# Drizzle ORM
+# - Mantener SÍ o SÍ: drizzle/migrations/*.sql en el repo
+# - Ignorar: meta/snapshots y journals (estado local)
+# =========================
+**/drizzle/meta/
+**/migrations/meta/
