@@ -28,7 +28,7 @@ const arrayDiff = (a: string[], b: string[]) => a.filter((v) => !b.includes(v));
 
 const main = async () => {
     logger.info('Starting enum migration generation...');
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pool = new Pool({ connectionString: process.env.HOSPEDA_DATABASE_URL });
     const dbEnums: Record<string, string[]> = {};
     const tsEnums: Record<string, string[]> = {};
     const actions: Array<{ type: string; enumName: string; sql: string }> = [];

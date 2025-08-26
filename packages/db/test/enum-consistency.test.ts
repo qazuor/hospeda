@@ -25,7 +25,7 @@ describe('Enum consistency between TypeScript and database', () => {
     let pool: Pool;
 
     beforeAll(() => {
-        pool = new Pool({ connectionString: process.env.DATABASE_URL });
+        pool = new Pool({ connectionString: process.env.HOSPEDA_DATABASE_URL });
         initializeDb(pool);
     });
 

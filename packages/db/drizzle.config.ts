@@ -15,6 +15,6 @@ export default {
     out: './src/migrations',
     driver: 'pg',
     dbCredentials: {
-        connectionString: process.env.DATABASE_URL || ''
+        connectionString: process.env.HOSPEDA_DATABASE_URL || ''
     }
 } satisfies Config;
