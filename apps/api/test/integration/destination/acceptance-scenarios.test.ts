@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 /**
  * Given-When-Then style acceptance flows for Destination.
@@ -9,6 +10,8 @@ describe('Destination - Acceptance Scenarios', () => {
     const base = '/api/v1/public/destinations';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 

@@ -1,11 +1,14 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('Destination - Create with wrong Content-Type', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/public/destinations';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 

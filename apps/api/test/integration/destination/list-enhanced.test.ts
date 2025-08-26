@@ -6,6 +6,7 @@ import { DestinationListItemSchema } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 // Response schema for list endpoint (Destination)
 const DestinationListResponseSchema = z.object({
@@ -30,6 +31,8 @@ describe('GET /destinations (Enhanced List)', () => {
     const baseUrl = '/api/v1/public/destinations';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 
