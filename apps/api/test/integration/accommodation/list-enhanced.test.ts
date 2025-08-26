@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { initApp } from '../../../src/app';
 import { accommodationListItemSchema } from '../../../src/routes/accommodation/schemas';
+import { validateApiEnv } from '../../../src/utils/env';
 
 // Response schema for list endpoint
 const AccommodationListResponseSchema = z.object({
@@ -30,6 +31,8 @@ describe('GET /accommodations (Enhanced List)', () => {
     const baseUrl = '/api/v1/public/accommodations';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 

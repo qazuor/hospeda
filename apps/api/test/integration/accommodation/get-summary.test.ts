@@ -5,6 +5,7 @@
 import { AccommodationSummarySchema } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('GET /accommodations/:id/summary', () => {
     let app: ReturnType<typeof initApp>;
@@ -13,6 +14,8 @@ describe('GET /accommodations/:id/summary', () => {
     const nonExistentUuid = '87654321-4321-4321-8765-876543218765';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 
