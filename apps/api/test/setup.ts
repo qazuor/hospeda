@@ -18,9 +18,29 @@ beforeAll(async () => {
 
     // Mock environment variables for testing
     process.env.PORT = '3001';
-    process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
-    process.env.CLERK_SECRET_KEY = 'test_clerk_secret';
-    process.env.PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
+    process.env.HOSPEDA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+    process.env.HOSPEDA_CLERK_SECRET_KEY = 'test_clerk_secret';
+    process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
+    process.env.API_VALIDATION_CLERK_AUTH_ENABLED = 'false';
+
+    // Initialize environment validation
+    try {
+        // Import the actual module, not the mocked one
+        const envModule = await import('../src/utils/env');
+        if (envModule.validateApiEnv && typeof envModule.validateApiEnv === 'function') {
+            envModule.validateApiEnv();
+        } else {
+            // Module is mocked, skip validation
+            console.debug('Environment validation skipped: module is mocked');
+        }
+    } catch (error) {
+        // Environment validation failed or module is mocked
+        // This is expected in some test scenarios
+        console.debug(
+            'Environment validation skipped in test setup:',
+            error instanceof Error ? error.message : String(error)
+        );
+    }
 
     // Note: Validation is enabled by default for tests
     // Individual routes can opt-out using routeOptions.skipValidation

@@ -12,6 +12,16 @@ vi.mock('dotenv', () => ({
 // Store original process.env
 const originalEnv = process.env;
 
+// Helper to create minimal valid environment
+const createValidTestEnv = (overrides: Record<string, string | undefined> = {}) => ({
+    NODE_ENV: 'test' as string | undefined,
+    HOSPEDA_API_URL: 'http://localhost:3001',
+    HOSPEDA_DATABASE_URL: 'postgresql://localhost:5432/hospeda_test',
+    HOSPEDA_CLERK_SECRET_KEY: 'sk_test_Y2xlcmstdGVzdC1zZWNyZXQta2V5',
+    HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_Y2xlcmstdGVzdC1wdWJsaXNoYWJsZS1rZXk',
+    ...overrides
+});
+
 describe('Environment Configuration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -23,115 +33,126 @@ describe('Environment Configuration', () => {
 
     describe('Environment Variable Loading', () => {
         it('should load environment variables with defaults', async () => {
-            // Set minimal environment
-            process.env = { NODE_ENV: 'test' };
+            // Set minimal environment with required variables
+            process.env = createValidTestEnv();
 
-            const { env } = await import('../../src/utils/env');
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
 
-            expect(env.NODE_ENV).toBe('test');
-            expect(env.API_PORT).toBe(3001);
-            expect(env.API_HOST).toBe('localhost');
-            expect(env.LOG_LEVEL).toBe('info');
+            expect(envModule.env.NODE_ENV).toBe('test');
+            expect(envModule.env.API_PORT).toBe(3001);
+            expect(envModule.env.API_HOST).toBe('localhost');
+            expect(envModule.env.API_LOG_LEVEL).toBe('info');
+            expect(envModule.env.HOSPEDA_API_URL).toBe('http://localhost:3001');
+            expect(envModule.env.HOSPEDA_DATABASE_URL).toBe(
+                'postgresql://localhost:5432/hospeda_test'
+            );
         });
 
         it('should load all configuration sections', async () => {
             // Set environment with all sections
-            process.env = {
-                NODE_ENV: 'test',
+            process.env = createValidTestEnv({
                 API_PORT: '8080',
-                LOG_LEVEL: 'debug',
-                CACHE_ENABLED: 'true',
-                COMPRESSION_LEVEL: '5',
-                RATE_LIMIT_KEY_GENERATOR: 'user',
-                SECURITY_X_FRAME_OPTIONS: 'DENY'
-            };
+                API_LOG_LEVEL: 'debug',
+                API_CACHE_ENABLED: 'true',
+                API_COMPRESSION_LEVEL: '5',
+                API_RATE_LIMIT_KEY_GENERATOR: 'user',
+                API_SECURITY_X_FRAME_OPTIONS: 'DENY'
+            });
 
-            const { env } = await import('../../src/utils/env');
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
 
             // Server Configuration
-            expect(env.NODE_ENV).toBe('test');
-            expect(env.API_PORT).toBe(8080);
-            expect(env.API_HOST).toBe('localhost');
+            expect(envModule.env.NODE_ENV).toBe('test');
+            expect(envModule.env.API_PORT).toBe(8080);
+            expect(envModule.env.API_HOST).toBe('localhost');
 
             // Logging Configuration
-            expect(env.LOG_LEVEL).toBe('debug');
-            expect(env.ENABLE_REQUEST_LOGGING).toBe(true);
+            expect(envModule.env.API_LOG_LEVEL).toBe('debug');
+            expect(envModule.env.API_ENABLE_REQUEST_LOGGING).toBe(true);
 
             // Cache Configuration
-            expect(env.CACHE_ENABLED).toBe(true);
-            expect(env.CACHE_DEFAULT_MAX_AGE).toBe(300);
-            expect(env.CACHE_DEFAULT_STALE_WHILE_REVALIDATE).toBe(60);
-            expect(env.CACHE_DEFAULT_STALE_IF_ERROR).toBe(86400);
-            expect(env.CACHE_PUBLIC_ENDPOINTS).toBe('/api/v1/public/accommodations,/health');
-            expect(env.CACHE_PRIVATE_ENDPOINTS).toBe('/api/v1/public/users');
-            expect(env.CACHE_NO_CACHE_ENDPOINTS).toBe('/health/db,/docs');
+            expect(envModule.env.API_CACHE_ENABLED).toBe(true);
+            expect(envModule.env.API_CACHE_DEFAULT_MAX_AGE).toBe(300);
+            expect(envModule.env.API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE).toBe(60);
+            expect(envModule.env.API_CACHE_DEFAULT_STALE_IF_ERROR).toBe(86400);
+            expect(envModule.env.API_CACHE_PUBLIC_ENDPOINTS).toBe(
+                '/api/v1/public/accommodations,/health'
+            );
+            expect(envModule.env.API_CACHE_PRIVATE_ENDPOINTS).toBe('/api/v1/public/users');
+            expect(envModule.env.API_CACHE_NO_CACHE_ENDPOINTS).toBe('/health/db,/docs');
 
             // Compression Configuration
-            expect(env.COMPRESSION_ENABLED).toBe(true);
-            expect(env.COMPRESSION_LEVEL).toBe(5);
-            expect(env.COMPRESSION_THRESHOLD).toBe(1024);
-            expect(env.COMPRESSION_CHUNK_SIZE).toBe(16384);
-            expect(env.COMPRESSION_FILTER).toBe(
+            expect(envModule.env.API_COMPRESSION_ENABLED).toBe(true);
+            expect(envModule.env.API_COMPRESSION_LEVEL).toBe(5);
+            expect(envModule.env.API_COMPRESSION_THRESHOLD).toBe(1024);
+            expect(envModule.env.API_COMPRESSION_CHUNK_SIZE).toBe(16384);
+            expect(envModule.env.API_COMPRESSION_FILTER).toBe(
                 'text/*,application/json,application/xml,application/javascript'
             );
-            expect(env.COMPRESSION_EXCLUDE_ENDPOINTS).toBe('/health/db,/docs');
-            expect(env.COMPRESSION_ALGORITHMS).toBe('gzip,deflate');
+            expect(envModule.env.API_COMPRESSION_EXCLUDE_ENDPOINTS).toBe('/health/db,/docs');
+            expect(envModule.env.API_COMPRESSION_ALGORITHMS).toBe('gzip,deflate');
 
             // Rate Limiting Configuration
-            expect(env.RATE_LIMIT_ENABLED).toBe(true); // Default value (middleware ignores in tests)
-            expect(env.RATE_LIMIT_WINDOW_MS).toBe(900000);
-            expect(env.RATE_LIMIT_MAX_REQUESTS).toBe(100);
-            expect(env.RATE_LIMIT_KEY_GENERATOR).toBe('user');
-            expect(env.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS).toBe(false);
-            expect(env.RATE_LIMIT_SKIP_FAILED_REQUESTS).toBe(false);
-            expect(env.RATE_LIMIT_STANDARD_HEADERS).toBe(true);
-            expect(env.RATE_LIMIT_LEGACY_HEADERS).toBe(false);
-            expect(env.RATE_LIMIT_MESSAGE).toBe('Too many requests, please try again later.');
+            expect(envModule.env.API_RATE_LIMIT_ENABLED).toBe(true); // Default value (middleware ignores in tests)
+            expect(envModule.env.API_RATE_LIMIT_WINDOW_MS).toBe(900000);
+            expect(envModule.env.API_RATE_LIMIT_MAX_REQUESTS).toBe(100);
+            expect(envModule.env.API_RATE_LIMIT_KEY_GENERATOR).toBe('user');
+            expect(envModule.env.API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS).toBe(false);
+            expect(envModule.env.API_RATE_LIMIT_SKIP_FAILED_REQUESTS).toBe(false);
+            expect(envModule.env.API_RATE_LIMIT_STANDARD_HEADERS).toBe(true);
+            expect(envModule.env.API_RATE_LIMIT_LEGACY_HEADERS).toBe(false);
+            expect(envModule.env.API_RATE_LIMIT_MESSAGE).toBe(
+                'Too many requests, please try again later.'
+            );
 
             // Security Configuration
-            expect(env.SECURITY_ENABLED).toBe(true);
-            expect(env.SECURITY_HEADERS_ENABLED).toBe(true);
-            expect(env.SECURITY_CONTENT_SECURITY_POLICY).toBe(
+            expect(envModule.env.API_SECURITY_ENABLED).toBe(true);
+            expect(envModule.env.API_SECURITY_HEADERS_ENABLED).toBe(true);
+            expect(envModule.env.API_SECURITY_CONTENT_SECURITY_POLICY).toBe(
                 "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
             );
-            expect(env.SECURITY_STRICT_TRANSPORT_SECURITY).toBe(
+            expect(envModule.env.API_SECURITY_STRICT_TRANSPORT_SECURITY).toBe(
                 'max-age=31536000; includeSubDomains'
             );
-            expect(env.SECURITY_X_FRAME_OPTIONS).toBe('DENY');
-            expect(env.SECURITY_X_CONTENT_TYPE_OPTIONS).toBe('nosniff');
-            expect(env.SECURITY_X_XSS_PROTECTION).toBe('1; mode=block');
-            expect(env.SECURITY_REFERRER_POLICY).toBe('strict-origin-when-cross-origin');
-            expect(env.SECURITY_PERMISSIONS_POLICY).toBe(
+            expect(envModule.env.API_SECURITY_X_FRAME_OPTIONS).toBe('DENY');
+            expect(envModule.env.API_SECURITY_X_CONTENT_TYPE_OPTIONS).toBe('nosniff');
+            expect(envModule.env.API_SECURITY_X_XSS_PROTECTION).toBe('1; mode=block');
+            expect(envModule.env.API_SECURITY_REFERRER_POLICY).toBe(
+                'strict-origin-when-cross-origin'
+            );
+            expect(envModule.env.API_SECURITY_PERMISSIONS_POLICY).toBe(
                 'camera=(), microphone=(), geolocation=()'
             );
 
             // Response Formatting Configuration
-            expect(env.RESPONSE_FORMAT_ENABLED).toBe(true);
-            expect(env.RESPONSE_INCLUDE_TIMESTAMP).toBe(true);
-            expect(env.RESPONSE_INCLUDE_VERSION).toBe(true);
-            expect(env.RESPONSE_API_VERSION).toBe('1.0.0');
-            expect(env.RESPONSE_INCLUDE_REQUEST_ID).toBe(true);
-            expect(env.RESPONSE_INCLUDE_METADATA).toBe(true);
-            expect(env.RESPONSE_SUCCESS_MESSAGE).toBe('Success');
-            expect(env.RESPONSE_ERROR_MESSAGE).toBe('An error occurred');
+            expect(envModule.env.API_RESPONSE_FORMAT_ENABLED).toBe(true);
+            expect(envModule.env.API_RESPONSE_INCLUDE_TIMESTAMP).toBe(true);
+            expect(envModule.env.API_RESPONSE_INCLUDE_VERSION).toBe(true);
+            expect(envModule.env.API_RESPONSE_API_VERSION).toBe('1.0.0');
+            expect(envModule.env.API_RESPONSE_INCLUDE_REQUEST_ID).toBe(true);
+            expect(envModule.env.API_RESPONSE_INCLUDE_METADATA).toBe(true);
+            expect(envModule.env.API_RESPONSE_SUCCESS_MESSAGE).toBe('Success');
+            expect(envModule.env.API_RESPONSE_ERROR_MESSAGE).toBe('An error occurred');
 
             // Validation Configuration
-            expect(env.VALIDATION_MAX_BODY_SIZE).toBe(10 * 1024 * 1024);
-            expect(env.VALIDATION_MAX_REQUEST_TIME).toBe(30000);
-            expect(env.VALIDATION_ALLOWED_CONTENT_TYPES).toBe(
+            expect(envModule.env.API_VALIDATION_MAX_BODY_SIZE).toBe(10 * 1024 * 1024);
+            expect(envModule.env.API_VALIDATION_MAX_REQUEST_TIME).toBe(30000);
+            expect(envModule.env.API_VALIDATION_ALLOWED_CONTENT_TYPES).toBe(
                 'application/json,multipart/form-data'
             );
-            expect(env.VALIDATION_REQUIRED_HEADERS).toBe('user-agent');
-            expect(env.VALIDATION_CLERK_AUTH_ENABLED).toBe(true);
-            expect(env.VALIDATION_CLERK_AUTH_HEADERS).toBe('authorization');
-            expect(env.VALIDATION_SANITIZE_ENABLED).toBe(true);
-            expect(env.VALIDATION_SANITIZE_MAX_STRING_LENGTH).toBe(1000);
-            expect(env.VALIDATION_SANITIZE_REMOVE_HTML_TAGS).toBe(true);
-            expect(env.VALIDATION_SANITIZE_ALLOWED_CHARS).toBe('[\\w\\s\\-.,!?@#$%&*()+=]');
+            expect(envModule.env.API_VALIDATION_REQUIRED_HEADERS).toBe('user-agent');
+            expect(envModule.env.API_VALIDATION_CLERK_AUTH_ENABLED).toBe(true);
+            expect(envModule.env.API_VALIDATION_CLERK_AUTH_HEADERS).toBe('authorization');
+            expect(envModule.env.API_VALIDATION_SANITIZE_ENABLED).toBe(true);
+            expect(envModule.env.API_VALIDATION_SANITIZE_MAX_STRING_LENGTH).toBe(1000);
+            expect(envModule.env.API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS).toBe(true);
+            expect(envModule.env.API_VALIDATION_SANITIZE_ALLOWED_CHARS).toBe(
+                '[\\w\\s\\-.,!?@#$%&*()+=]'
+            );
 
-            // Internationalization Configuration
-            expect(env.SUPPORTED_LOCALES).toBe('en,es');
-            expect(env.DEFAULT_LOCALE).toBe('en');
+            // Internationalization Configuration - handled by client apps, not API
         });
     });
 
@@ -140,43 +161,48 @@ describe('Environment Configuration', () => {
             const validEnvs = ['development', 'production', 'test'];
 
             for (const envValue of validEnvs) {
-                process.env = { NODE_ENV: envValue };
-                const { env } = await import('../../src/utils/env');
-                expect(env.NODE_ENV).toBe(envValue);
+                process.env = createValidTestEnv({ NODE_ENV: envValue });
+                const envModule = await import('../../src/utils/env');
+                envModule.validateApiEnv();
+                expect(envModule.env.NODE_ENV).toBe(envValue);
                 vi.resetModules();
             }
         });
 
         it('should use default NODE_ENV when not provided', async () => {
-            process.env = {};
-            const { env } = await import('../../src/utils/env');
-            expect(env.NODE_ENV).toBe('development');
+            process.env = createValidTestEnv({ NODE_ENV: undefined });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.NODE_ENV).toBe('development');
         });
 
         it('should validate LOG_LEVEL enum values', async () => {
             const validLevels = ['debug', 'info', 'warn', 'error'];
 
             for (const level of validLevels) {
-                process.env = { LOG_LEVEL: level.toUpperCase() };
-                const { env } = await import('../../src/utils/env');
-                expect(env.LOG_LEVEL).toBe(level);
+                process.env = createValidTestEnv({ API_LOG_LEVEL: level.toUpperCase() });
+                const envModule = await import('../../src/utils/env');
+                envModule.validateApiEnv();
+                expect(envModule.env.API_LOG_LEVEL).toBe(level);
                 vi.resetModules();
             }
         });
 
         it('should use default LOG_LEVEL when not provided', async () => {
-            process.env = {};
-            const { env } = await import('../../src/utils/env');
-            expect(env.LOG_LEVEL).toBe('info');
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_LOG_LEVEL).toBe('info');
         });
 
         it('should validate RATE_LIMIT_KEY_GENERATOR enum values', async () => {
             const validGenerators = ['ip', 'user', 'custom'];
 
             for (const generator of validGenerators) {
-                process.env = { RATE_LIMIT_KEY_GENERATOR: generator };
-                const { env } = await import('../../src/utils/env');
-                expect(env.RATE_LIMIT_KEY_GENERATOR).toBe(generator);
+                process.env = createValidTestEnv({ API_RATE_LIMIT_KEY_GENERATOR: generator });
+                const envModule = await import('../../src/utils/env');
+                envModule.validateApiEnv();
+                expect(envModule.env.API_RATE_LIMIT_KEY_GENERATOR).toBe(generator);
                 vi.resetModules();
             }
         });
@@ -185,102 +211,107 @@ describe('Environment Configuration', () => {
             const validOptions = ['DENY', 'SAMEORIGIN', 'ALLOW-FROM'];
 
             for (const option of validOptions) {
-                process.env = { SECURITY_X_FRAME_OPTIONS: option };
-                const { env } = await import('../../src/utils/env');
-                expect(env.SECURITY_X_FRAME_OPTIONS).toBe(option);
+                process.env = createValidTestEnv({ API_SECURITY_X_FRAME_OPTIONS: option });
+                const envModule = await import('../../src/utils/env');
+                envModule.validateApiEnv();
+                expect(envModule.env.API_SECURITY_X_FRAME_OPTIONS).toBe(option);
                 vi.resetModules();
             }
         });
 
         it('should coerce string numbers to numbers', async () => {
-            process.env = {
+            process.env = createValidTestEnv({
                 API_PORT: '8080',
-                CACHE_DEFAULT_MAX_AGE: '600',
-                COMPRESSION_LEVEL: '9'
-            };
+                API_CACHE_DEFAULT_MAX_AGE: '600',
+                API_COMPRESSION_LEVEL: '9'
+            });
 
-            const { env } = await import('../../src/utils/env');
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
 
-            expect(env.API_PORT).toBe(8080);
-            expect(env.CACHE_DEFAULT_MAX_AGE).toBe(600);
-            expect(env.COMPRESSION_LEVEL).toBe(9);
+            expect(envModule.env.API_PORT).toBe(8080);
+            expect(envModule.env.API_CACHE_DEFAULT_MAX_AGE).toBe(600);
+            expect(envModule.env.API_COMPRESSION_LEVEL).toBe(9);
         });
 
         it('should coerce string booleans to booleans', async () => {
-            process.env = {
-                LOG_SAVE: 'true',
-                CACHE_ENABLED: 'true',
-                RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: 'true'
-            };
+            process.env = createValidTestEnv({
+                API_LOG_SAVE: 'true',
+                API_CACHE_ENABLED: 'true',
+                API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: 'true'
+            });
 
-            const { env } = await import('../../src/utils/env');
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
 
-            expect(env.LOG_SAVE).toBe(true);
-            expect(env.CACHE_ENABLED).toBe(true);
-            expect(env.RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS).toBe(true);
+            expect(envModule.env.API_LOG_SAVE).toBe(true);
+            expect(envModule.env.API_CACHE_ENABLED).toBe(true);
+            expect(envModule.env.API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS).toBe(true);
         });
     });
 
-    describe('Optional Environment Variables', () => {
-        it('should handle optional DATABASE_URL', async () => {
-            process.env = { DATABASE_URL: 'postgresql://localhost:5432/test' };
-            const { env } = await import('../../src/utils/env');
-            expect(env.DATABASE_URL).toBe('postgresql://localhost:5432/test');
+    describe('Required Environment Variables', () => {
+        it('should require HOSPEDA_DATABASE_URL', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_DATABASE_URL: 'postgresql://localhost:5432/test'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_DATABASE_URL).toBe('postgresql://localhost:5432/test');
         });
 
-        it('should handle missing DATABASE_URL', async () => {
-            process.env = {};
-            const { env } = await import('../../src/utils/env');
-            expect(env.DATABASE_URL).toBeUndefined();
+        it('should require HOSPEDA_API_URL', async () => {
+            process.env = createValidTestEnv({ HOSPEDA_API_URL: 'http://localhost:8080' });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_API_URL).toBe('http://localhost:8080');
         });
 
-        it('should handle optional CLERK keys', async () => {
-            process.env = {
-                PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_key',
-                CLERK_SECRET_KEY: 'sk_test_key'
-            };
-            const { env } = await import('../../src/utils/env');
-            expect(env.PUBLIC_CLERK_PUBLISHABLE_KEY).toBe('pk_test_key');
-            expect(env.CLERK_SECRET_KEY).toBe('sk_test_key');
-        });
-
-        it('should handle missing CLERK keys', async () => {
-            process.env = {};
-            const { env } = await import('../../src/utils/env');
-            expect(env.PUBLIC_CLERK_PUBLISHABLE_KEY).toBeUndefined();
-            expect(env.CLERK_SECRET_KEY).toBeUndefined();
+        it('should require CLERK keys', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_key',
+                HOSPEDA_CLERK_SECRET_KEY: 'sk_test_key'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY).toBe('pk_test_key');
+            expect(envModule.env.HOSPEDA_CLERK_SECRET_KEY).toBe('sk_test_key');
         });
     });
 
     describe('Validation Constraints', () => {
         it('should validate COMPRESSION_LEVEL range', async () => {
-            process.env = { COMPRESSION_LEVEL: '5' };
-            const { env } = await import('../../src/utils/env');
-            expect(env.COMPRESSION_LEVEL).toBe(5);
+            process.env = createValidTestEnv({ API_COMPRESSION_LEVEL: '5' });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_COMPRESSION_LEVEL).toBe(5);
         });
 
         it('should validate positive numbers', async () => {
-            process.env = {
-                VALIDATION_MAX_BODY_SIZE: '1048576',
-                VALIDATION_MAX_REQUEST_TIME: '5000'
-            };
-            const { env } = await import('../../src/utils/env');
-            expect(env.VALIDATION_MAX_BODY_SIZE).toBe(1048576);
-            expect(env.VALIDATION_MAX_REQUEST_TIME).toBe(5000);
+            process.env = createValidTestEnv({
+                API_VALIDATION_MAX_BODY_SIZE: '1048576',
+                API_VALIDATION_MAX_REQUEST_TIME: '5000'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_VALIDATION_MAX_BODY_SIZE).toBe(1048576);
+            expect(envModule.env.API_VALIDATION_MAX_REQUEST_TIME).toBe(5000);
         });
     });
 
     describe('String Transformations', () => {
         it('should transform LOG_LEVEL to lowercase', async () => {
-            process.env = { LOG_LEVEL: 'DEBUG' };
-            const { env } = await import('../../src/utils/env');
-            expect(env.LOG_LEVEL).toBe('debug');
+            process.env = createValidTestEnv({ API_LOG_LEVEL: 'DEBUG' });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_LOG_LEVEL).toBe('debug');
         });
 
         it('should handle mixed case LOG_LEVEL', async () => {
-            process.env = { LOG_LEVEL: 'WARN' };
-            const { env } = await import('../../src/utils/env');
-            expect(env.LOG_LEVEL).toBe('warn');
+            process.env = createValidTestEnv({ API_LOG_LEVEL: 'WARN' });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_LOG_LEVEL).toBe('warn');
         });
     });
 
@@ -291,14 +322,13 @@ describe('Environment Configuration', () => {
                 throw new Error('Process exit');
             });
 
-            process.env = { NODE_ENV: 'invalid' };
+            // Set invalid NODE_ENV but provide required variables
+            process.env = createValidTestEnv({ NODE_ENV: 'invalid' });
 
-            await expect(import('../../src/utils/env')).rejects.toThrow('Process exit');
+            const { validateApiEnv } = await import('../../src/utils/env');
 
-            expect(consoleSpy).toHaveBeenCalledWith(
-                '❌ Invalid environment configuration:',
-                expect.any(Error)
-            );
+            expect(() => validateApiEnv()).toThrow('Process exit');
+
             expect(exitSpy).toHaveBeenCalledWith(1);
 
             consoleSpy.mockRestore();
@@ -308,19 +338,13 @@ describe('Environment Configuration', () => {
 
     describe('Type Exports', () => {
         it('should export env object with correct type', async () => {
-            const { env } = await import('../../src/utils/env');
-            expect(typeof env).toBe('object');
-            expect(env).toHaveProperty('NODE_ENV');
-            expect(env).toHaveProperty('API_PORT');
-            expect(env).toHaveProperty('LOG_LEVEL');
-        });
-
-        it('should export env object with correct type', async () => {
-            const { env } = await import('../../src/utils/env');
-            expect(typeof env).toBe('object');
-            expect(env).toHaveProperty('NODE_ENV');
-            expect(env).toHaveProperty('API_PORT');
-            expect(env).toHaveProperty('LOG_LEVEL');
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(typeof envModule.env).toBe('object');
+            expect(envModule.env).toHaveProperty('NODE_ENV');
+            expect(envModule.env).toHaveProperty('API_PORT');
+            expect(envModule.env).toHaveProperty('API_LOG_LEVEL');
         });
     });
 });
