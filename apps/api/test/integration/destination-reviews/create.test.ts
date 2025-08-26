@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 /**
  * Integration: POST /destinations/{destinationId}/reviews
@@ -9,6 +10,8 @@ describe('POST /destinations/{destinationId}/reviews', () => {
     const base = '/api/v1/public/destinations';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 
