@@ -26,6 +26,7 @@
         "@github/relative-time-element": "^4.4.8",
         "@pablotheblink/flashyjs": "^1.0.5",
         "@repo/auth-ui": "workspace:*",
+        "@repo/config": "workspace:*",
         "@repo/i18n": "workspace:*",
         "@repo/icons": "workspace:*",
         "@repo/logger": "workspace:*",
