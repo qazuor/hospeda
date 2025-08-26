@@ -14,7 +14,7 @@ const UserNavContent = (): ReactNode => {
     return (
         <div className="flex items-center space-x-4">
             <SimpleUserMenu
-                apiBaseUrl={import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:3002'}
+                apiBaseUrl={import.meta.env.PUBLIC_API_URL || 'http://localhost:3001'}
                 redirectTo="/"
                 refreshAuthContext={authContext.refreshSession}
             />
