@@ -5,15 +5,28 @@
  */
 
 import logger, { type ILogger, LoggerColors, LogLevel } from '@repo/logger';
-import { env } from './env';
+
+// Safe environment access for logger initialization
+const safeGetEnvBoolean = (key: string, defaultValue: boolean): boolean => {
+    const value = process.env[key];
+    if (value === undefined) return defaultValue;
+    return value === 'true';
+};
+
+const safeGetEnvNumber = (key: string, defaultValue: number): number => {
+    const value = process.env[key];
+    if (value === undefined) return defaultValue;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? defaultValue : parsed;
+};
 
 const apiLogger = logger.registerCategory('API', 'API', {
     color: LoggerColors.BLUE,
-    truncateLongText: env.LOG_TRUNCATE_TEXT,
-    truncateLongTextAt: env.LOG_TRUNCATE_AT,
-    save: env.LOG_SAVE,
-    expandObjectLevels: env.LOG_EXPAND_OBJECTS ? -1 : 0,
-    stringifyObj: env.LOG_STRINGIFY
+    truncateLongText: safeGetEnvBoolean('LOG_TRUNCATE_TEXT', true),
+    truncateLongTextAt: safeGetEnvNumber('LOG_TRUNCATE_AT', 1000),
+    save: safeGetEnvBoolean('LOG_SAVE', false),
+    expandObjectLevels: safeGetEnvBoolean('LOG_EXPAND_OBJECTS', false) ? -1 : 0,
+    stringifyObj: safeGetEnvBoolean('LOG_STRINGIFY', false)
 });
 
 /**
