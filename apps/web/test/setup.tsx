@@ -14,8 +14,8 @@ beforeAll(() => {
 
     // Mock environment variables for testing
     process.env.PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_clerk_publishable';
-    process.env.CLERK_SECRET_KEY = 'test_clerk_secret';
-    process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+    process.env.HOSPEDA_CLERK_SECRET_KEY = 'test_clerk_secret';
+    process.env.HOSPEDA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
 });
 
 // Cleanup after each test
