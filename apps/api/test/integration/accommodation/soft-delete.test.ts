@@ -4,6 +4,7 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('DELETE /accommodations/:id (Soft Delete)', () => {
     let app: ReturnType<typeof initApp>;
@@ -12,6 +13,8 @@ describe('DELETE /accommodations/:id (Soft Delete)', () => {
     const nonExistentId = '87654321-4321-4321-8765-876543218765';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 

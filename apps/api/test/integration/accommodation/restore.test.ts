@@ -4,6 +4,7 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('POST /accommodations/:id/restore', () => {
     let app: ReturnType<typeof initApp>;
@@ -13,6 +14,8 @@ describe('POST /accommodations/:id/restore', () => {
     const neverDeletedId = 'never123-1234-4567-8901-123456789012';
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 
