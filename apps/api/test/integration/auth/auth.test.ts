@@ -5,11 +5,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import type { AppOpenAPI } from '../../../src/types';
+import { validateApiEnv } from '../../../src/utils/env';
 
 describe('Authentication Integration Tests', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {
+        // Initialize environment variables before running tests
+        validateApiEnv();
         app = initApp();
     });
 
