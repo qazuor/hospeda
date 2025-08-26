@@ -3,40 +3,30 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
-        },
-        "./client": {
-            "import": "./dist/client.js",
-            "require": "./dist/client.cjs"
-        },
-        "./server": {
-            "import": "./dist/server.js",
-            "require": "./dist/server.cjs"
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
         }
     },
-    "files": ["dist"],
     "scripts": {
-        "build": "tsup src/index.ts src/client.ts src/server.ts --format esm --dts",
-        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
+        "build": "tsup",
+        "dev": "tsup --watch",
         "typecheck": "tsc --noEmit",
         "lint": "biome check .",
-        "format": "biome format --write .",
-        "check": "biome check --write .",
-        "clean": "rm -rf node_modules dist"
+        "lint:fix": "biome check . --write",
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest --passWithNoTests"
     },
     "dependencies": {
         "dotenv": "^16.5.0",
-        "zod": "^4.0.8"
+        "vite": "^6.3.5",
+        "zod": "^3.23.8"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^22.15.3",
-        "tsup": "^8.4.0",
-        "typescript": "^5.8.3"
+        "tsup": "^8.3.5",
+        "typescript": "^5.7.2",
+        "vitest": "^2.1.8"
     }
 }
