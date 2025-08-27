@@ -75,7 +75,39 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-    const queryClient = new QueryClient();
+    // Create QueryClient with optimized defaults
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: {
+                staleTime: 5 * 60 * 1000, // 5 minutes
+                gcTime: 30 * 60 * 1000, // 30 minutes
+                retry: (failureCount, error) => {
+                    // Don't retry on 4xx errors
+                    if (error && typeof error === 'object' && 'status' in error) {
+                        const status = error.status as number;
+                        if (status >= 400 && status < 500) {
+                            return false;
+                        }
+                    }
+                    return failureCount < 3;
+                },
+                retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+            },
+            mutations: {
+                retry: (failureCount, error) => {
+                    // Don't retry mutations on client errors
+                    if (error && typeof error === 'object' && 'status' in error) {
+                        const status = error.status as number;
+                        if (status >= 400 && status < 500) {
+                            return false;
+                        }
+                    }
+                    return failureCount < 2;
+                }
+            }
+        }
+    });
+
     return (
         <html lang="en">
             <head>
