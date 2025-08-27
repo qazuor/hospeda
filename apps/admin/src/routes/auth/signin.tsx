@@ -1,4 +1,5 @@
 import { useTranslations } from '@/hooks/use-translations';
+import { fetchApi } from '@/lib/api/client';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { SignInForm } from '@repo/auth-ui';
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
@@ -75,46 +76,25 @@ function SignInPage(): React.JSX.Element {
                 setIsHandlingCallback(true);
 
                 try {
-                    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-                    adminLogger.info(
-                        `${apiBaseUrl}/api/v1/public/auth/sync`,
-                        'Making sync request to'
-                    );
+                    adminLogger.info('/api/v1/public/auth/sync', 'Making sync request to');
 
-                    const response = await fetch(`${apiBaseUrl}/api/v1/public/auth/sync`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include'
+                    const response = await fetchApi({
+                        path: '/api/v1/public/auth/sync',
+                        method: 'POST'
                     });
 
-                    adminLogger.info(
-                        { status: response.status, statusText: response.statusText },
-                        'Sync response status'
-                    );
-                    adminLogger.debug(
-                        Object.fromEntries(response.headers.entries()),
-                        'Sync response headers'
-                    );
+                    adminLogger.info({ status: response.status }, 'Sync response status');
+                    adminLogger.debug(response.data, 'Sync response data');
 
-                    const responseText = await response.text();
-                    adminLogger.debug(responseText, 'Sync response text');
-
-                    let result: unknown;
-                    try {
-                        result = JSON.parse(responseText);
-                    } catch (parseError) {
-                        adminLogger.error(parseError, 'Failed to parse sync response as JSON');
-                        throw new Error(`Invalid JSON response: ${responseText}`);
-                    }
-
-                    adminLogger.info(result, 'OAuth sync result');
+                    adminLogger.info(response.data, 'OAuth sync result');
 
                     if (
-                        response.ok &&
-                        result &&
-                        typeof result === 'object' &&
-                        'success' in result &&
-                        (result as { success: boolean }).success
+                        response.status >= 200 &&
+                        response.status < 300 &&
+                        response.data &&
+                        typeof response.data === 'object' &&
+                        'success' in response.data &&
+                        (response.data as { success: boolean }).success
                     ) {
                         adminLogger.info(redirect, 'OAuth sync successful, redirecting to');
                         // Clear OAuth flag on success

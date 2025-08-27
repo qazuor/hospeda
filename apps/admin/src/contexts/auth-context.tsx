@@ -1,3 +1,4 @@
+import { fetchApi } from '@/lib/api/client';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { type ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { adminLogger } from '../utils/logger';
@@ -126,25 +127,21 @@ function clearStoredSession(): void {
  */
 async function fetchUserSession(): Promise<UserSession | null> {
     try {
-        // Use the API base URL from environment or default to localhost:3001
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-        const response = await fetch(`${apiBaseUrl}/api/v1/public/auth/me`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include' // Include cookies for Clerk authentication
+        const response = await fetchApi<UserSession>({
+            path: '/api/v1/public/auth/me',
+            method: 'GET'
         });
 
-        if (!response.ok) {
+        if (response.status < 200 || response.status >= 300) {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        const result = await response.json();
-
-        if (result.success && result.data?.isAuthenticated && result.data?.actor) {
-            const actor = result.data.actor;
+        if (
+            response.data?.success &&
+            response.data?.data?.isAuthenticated &&
+            response.data?.data?.actor
+        ) {
+            const actor = response.data.data.actor;
             return {
                 id: actor.id,
                 role: actor.role,
@@ -293,11 +290,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Call backend to cleanup server-side state
             // This helps ensure clean state for next sign-in
             try {
-                const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-                await fetch(`${apiBaseUrl}/api/v1/public/auth/signout`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
+                await fetchApi({
+                    path: '/api/v1/public/auth/signout',
+                    method: 'POST'
                 });
                 adminLogger.info('✅ Server-side cleanup completed during sign out');
             } catch (cleanupError) {

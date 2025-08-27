@@ -1,3 +1,4 @@
+import { fetchApi } from '@/lib/api/client';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -45,17 +46,14 @@ function AuthCallbackPage(): React.JSX.Element {
                 setStatus('syncing');
 
                 // Sync with backend
-                const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-                const response = await fetch(`${apiBaseUrl}/api/v1/public/auth/sync`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include'
+                const response = await fetchApi({
+                    path: '/api/v1/public/auth/sync',
+                    method: 'POST'
                 });
 
-                const result = await response.json();
-                adminLogger.info(result, 'Sync result');
+                adminLogger.info(response.data, 'Sync result');
 
-                if (response.ok && result.success) {
+                if (response.status >= 200 && response.status < 300 && response.data?.success) {
                     adminLogger.info('Sync successful, redirecting to dashboard');
                     setStatus('redirecting');
 
