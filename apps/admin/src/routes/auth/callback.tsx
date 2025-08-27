@@ -53,7 +53,12 @@ function AuthCallbackPage(): React.JSX.Element {
 
                 adminLogger.info(response.data, 'Sync result');
 
-                if (response.status >= 200 && response.status < 300 && response.data?.success) {
+                if (
+                    response.status >= 200 &&
+                    response.status < 300 &&
+                    // biome-ignore lint/suspicious/noExplicitAny: API response structure is dynamic
+                    (response.data as any)?.success
+                ) {
                     adminLogger.info('Sync successful, redirecting to dashboard');
                     setStatus('redirecting');
 
@@ -62,8 +67,9 @@ function AuthCallbackPage(): React.JSX.Element {
                         (router.state.location.search as { redirect?: string })?.redirect || '/';
                     await router.navigate({ to: redirect });
                 } else {
-                    adminLogger.error(result, 'Sync failed');
-                    setError(result.error?.message || 'Failed to sync user data');
+                    adminLogger.error('Sync failed', 'Response was not successful');
+                    // biome-ignore lint/suspicious/noExplicitAny: API response structure is dynamic
+                    setError((response.data as any)?.error?.message || 'Failed to sync user data');
                     setStatus('error');
                 }
             } catch (err) {

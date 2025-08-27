@@ -105,7 +105,7 @@ function SignInPage(): React.JSX.Element {
                         await new Promise((resolve) => setTimeout(resolve, 500));
                         await router.navigate({ to: redirect });
                     } else {
-                        adminLogger.error(result, 'OAuth sync failed');
+                        adminLogger.error('OAuth sync failed', 'Response was not successful');
                         setIsHandlingCallback(false);
                     }
                 } catch (error) {
