@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
@@ -8,8 +10,6 @@ import astroFontPicker from 'astro-font-picker';
 import lighthouse from 'astro-lighthouse';
 import og from 'astro-og';
 import { defineConfig } from 'astro/config';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { z } from 'zod';
 
 import reunmedianormalizeTrailingSlash from '@reunmedia/astro-normalize-trailing-slash';
