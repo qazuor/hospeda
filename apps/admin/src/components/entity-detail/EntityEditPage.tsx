@@ -18,6 +18,25 @@ type EntityEditPageProps<TData, TEditData> = {
  * Generic entity edit page component using TanStack Form
  */
 /**
+ * Type definitions for API error structures
+ */
+type ApiErrorBody = {
+    message?: string;
+    error?:
+        | string
+        | {
+              message?: string;
+              details?: string;
+          };
+};
+
+type ApiError = {
+    status?: number | string;
+    body?: string | ApiErrorBody;
+    message?: string;
+};
+
+/**
  * Format error message based on environment
  */
 const formatErrorMessage = (error: unknown): { title: string; message: string } => {
@@ -28,7 +47,7 @@ const formatErrorMessage = (error: unknown): { title: string; message: string } 
     let statusCode = '';
 
     if (error && typeof error === 'object') {
-        const errorObj = error as Record<string, unknown>;
+        const errorObj = error as ApiError;
 
         // Extract status code
         if (errorObj.status) {
@@ -238,7 +257,7 @@ export const EntityEditPage = <TData, TEditData>({
 
             try {
                 // Use our controlled mutation
-                await updateMutation.mutateAsync(finalData);
+                await updateMutation.mutateAsync(finalData as TEditData);
 
                 // Invalidate queries manually
                 queryClient.invalidateQueries({
@@ -308,30 +327,32 @@ export const EntityEditPage = <TData, TEditData>({
     const sections = [...config.sections].sort((a, b) => a.order - b.order);
 
     const renderFormField = (field: FieldConfig) => {
-        const fieldName = field.name as keyof TEditData;
+        const fieldName = field.name;
 
         switch (field.type) {
             case FieldType.TEXT:
                 return (
                     <form.Field
                         key={field.name}
-                        name={fieldName}
+                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Form requires any for dynamic field names
+                        name={fieldName as any}
                     >
                         {(fieldApi) => (
                             <div>
                                 <label
-                                    htmlFor={fieldApi.name}
+                                    htmlFor={String(fieldApi.name)}
                                     className="mb-1 block font-medium text-gray-700 text-sm"
                                 >
                                     {field.label}
                                     {field.required && <span className="ml-1 text-red-500">*</span>}
                                 </label>
                                 <input
-                                    id={fieldApi.name}
+                                    id={String(fieldApi.name)}
                                     type="text"
-                                    value={fieldApi.state.value || ''}
+                                    value={String(fieldApi.state.value || '')}
                                     onBlur={fieldApi.handleBlur}
-                                    onChange={(e) => fieldApi.handleChange(e.target.value)}
+                                    // biome-ignore lint/suspicious/noExplicitAny: TanStack Form handleChange requires any
+                                    onChange={(e) => fieldApi.handleChange(e.target.value as any)}
                                     placeholder={field.placeholder}
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
@@ -354,23 +375,25 @@ export const EntityEditPage = <TData, TEditData>({
                 return (
                     <form.Field
                         key={field.name}
-                        name={fieldName}
+                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Form requires any for dynamic field names
+                        name={fieldName as any}
                     >
                         {(fieldApi) => (
                             <div>
                                 <label
-                                    htmlFor={fieldApi.name}
+                                    htmlFor={String(fieldApi.name)}
                                     className="mb-1 block font-medium text-gray-700 text-sm"
                                 >
                                     {field.label}
                                     {field.required && <span className="ml-1 text-red-500">*</span>}
                                 </label>
                                 <textarea
-                                    id={fieldApi.name}
+                                    id={String(fieldApi.name)}
                                     rows={4}
-                                    value={fieldApi.state.value || ''}
+                                    value={String(fieldApi.state.value || '')}
                                     onBlur={fieldApi.handleBlur}
-                                    onChange={(e) => fieldApi.handleChange(e.target.value)}
+                                    // biome-ignore lint/suspicious/noExplicitAny: TanStack Form handleChange requires any
+                                    onChange={(e) => fieldApi.handleChange(e.target.value as any)}
                                     placeholder={field.placeholder}
                                     className="resize-vertical w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
@@ -393,22 +416,24 @@ export const EntityEditPage = <TData, TEditData>({
                 return (
                     <form.Field
                         key={field.name}
-                        name={fieldName}
+                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Form requires any for dynamic field names
+                        name={fieldName as any}
                     >
                         {(fieldApi) => (
                             <div>
                                 <label
-                                    htmlFor={fieldApi.name}
+                                    htmlFor={String(fieldApi.name)}
                                     className="mb-1 block font-medium text-gray-700 text-sm"
                                 >
                                     {field.label}
                                     {field.required && <span className="ml-1 text-red-500">*</span>}
                                 </label>
                                 <select
-                                    id={fieldApi.name}
-                                    value={fieldApi.state.value || ''}
+                                    id={String(fieldApi.name)}
+                                    value={String(fieldApi.state.value || '')}
                                     onBlur={fieldApi.handleBlur}
-                                    onChange={(e) => fieldApi.handleChange(e.target.value)}
+                                    // biome-ignore lint/suspicious/noExplicitAny: TanStack Form handleChange requires any
+                                    onChange={(e) => fieldApi.handleChange(e.target.value as any)}
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Select {field.label.toLowerCase()}...</option>
@@ -440,21 +465,25 @@ export const EntityEditPage = <TData, TEditData>({
                 return (
                     <form.Field
                         key={field.name}
-                        name={fieldName}
+                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Form requires any for dynamic field names
+                        name={fieldName as any}
                     >
                         {(fieldApi) => (
                             <div>
                                 <div className="flex items-center space-x-2">
                                     <input
-                                        id={fieldApi.name}
+                                        id={String(fieldApi.name)}
                                         type="checkbox"
-                                        checked={!!fieldApi.state.value}
+                                        checked={Boolean(fieldApi.state.value)}
                                         onBlur={fieldApi.handleBlur}
-                                        onChange={(e) => fieldApi.handleChange(e.target.checked)}
+                                        onChange={(e) =>
+                                            // biome-ignore lint/suspicious/noExplicitAny: TanStack Form handleChange requires any
+                                            fieldApi.handleChange(e.target.checked as any)
+                                        }
                                         className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                     />
                                     <label
-                                        htmlFor={fieldApi.name}
+                                        htmlFor={String(fieldApi.name)}
                                         className="text-gray-700 text-sm"
                                     >
                                         {field.label}
@@ -482,12 +511,13 @@ export const EntityEditPage = <TData, TEditData>({
                 return (
                     <form.Field
                         key={field.name}
-                        name={fieldName}
+                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Form requires any for dynamic field names
+                        name={fieldName as any}
                     >
                         {(fieldApi) => (
                             <div>
                                 <label
-                                    htmlFor={fieldApi.name}
+                                    htmlFor={String(fieldApi.name)}
                                     className="mb-1 block font-medium text-gray-700 text-sm"
                                 >
                                     {field.label}
@@ -497,21 +527,27 @@ export const EntityEditPage = <TData, TEditData>({
                                 {/* Render specific select component based on field name */}
                                 {field.name === 'ownerId' && (
                                     <OwnerSelect
-                                        value={fieldApi.state.value || ''}
-                                        onValueChange={fieldApi.handleChange}
+                                        value={String(fieldApi.state.value || '')}
+                                        onValueChange={(value) =>
+                                            // biome-ignore lint/suspicious/noExplicitAny: TanStack Form handleChange requires any
+                                            fieldApi.handleChange(value as any)
+                                        }
                                         disabled={false}
                                         required={field.required}
-                                        error={fieldApi.state.meta.errors?.[0]}
+                                        error={fieldApi.state.meta.errors?.[0]?.toString()}
                                     />
                                 )}
 
                                 {field.name === 'destinationId' && (
                                     <DestinationSelect
-                                        value={fieldApi.state.value || ''}
-                                        onValueChange={fieldApi.handleChange}
+                                        value={String(fieldApi.state.value || '')}
+                                        onValueChange={(value) =>
+                                            // biome-ignore lint/suspicious/noExplicitAny: TanStack Form handleChange requires any
+                                            fieldApi.handleChange(value as any)
+                                        }
                                         disabled={false}
                                         required={field.required}
-                                        error={fieldApi.state.meta.errors?.[0]}
+                                        error={fieldApi.state.meta.errors?.[0]?.toString()}
                                     />
                                 )}
 
@@ -541,23 +577,25 @@ export const EntityEditPage = <TData, TEditData>({
                 return (
                     <form.Field
                         key={field.name}
-                        name={fieldName}
+                        // biome-ignore lint/suspicious/noExplicitAny: TanStack Form requires any for dynamic field names
+                        name={fieldName as any}
                     >
                         {(fieldApi) => (
                             <div>
                                 <label
-                                    htmlFor={fieldApi.name}
+                                    htmlFor={String(fieldApi.name)}
                                     className="mb-1 block font-medium text-gray-700 text-sm"
                                 >
                                     {field.label}
                                     {field.required && <span className="ml-1 text-red-500">*</span>}
                                 </label>
                                 <input
-                                    id={fieldApi.name}
+                                    id={String(fieldApi.name)}
                                     type="text"
-                                    value={fieldApi.state.value || ''}
+                                    value={String(fieldApi.state.value || '')}
                                     onBlur={fieldApi.handleBlur}
-                                    onChange={(e) => fieldApi.handleChange(e.target.value)}
+                                    // biome-ignore lint/suspicious/noExplicitAny: TanStack Form handleChange requires any
+                                    onChange={(e) => fieldApi.handleChange(e.target.value as any)}
                                     placeholder={field.placeholder}
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
