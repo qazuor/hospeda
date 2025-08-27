@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { Breadcrumbs, type EntityBreadcrumbContext } from './Breadcrumbs';
 
+// Re-export the type for external use
+export type { EntityBreadcrumbContext };
+
 export type BasePageLayoutProps = {
     readonly title: string;
     readonly actions?: ReactNode;
