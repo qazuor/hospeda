@@ -30,8 +30,6 @@ export const createBaseSchema = () => {
             .min(30, 'Description must be at least 30 characters')
             .max(2000, 'Description must be at most 2000 characters'),
         isFeatured: z.boolean().default(false),
-        isActive: z.boolean().default(true),
-        isPublished: z.boolean().default(false),
         createdAt: z.coerce.date(),
         updatedAt: z.coerce.date(),
         createdById: z.string(),
@@ -51,8 +49,6 @@ export const createListItemSchema = (baseSchema: z.ZodObject<z.ZodRawShape>) => 
         name: true,
         summary: true,
         isFeatured: true,
-        isActive: true,
-        isPublished: true,
         createdAt: true,
         updatedAt: true
     });
@@ -95,8 +91,6 @@ export const createSearchFiltersSchema = () => {
     return z.object({
         search: z.string().optional(),
         isFeatured: z.boolean().optional(),
-        isActive: z.boolean().optional(),
-        isPublished: z.boolean().optional(),
         createdById: z.string().optional(),
         dateFrom: z.coerce.date().optional(),
         dateTo: z.coerce.date().optional()
@@ -149,8 +143,6 @@ export const createSummarySchema = () => {
         name: z.string(),
         summary: z.string(),
         isFeatured: z.boolean(),
-        isActive: z.boolean(),
-        isPublished: z.boolean(),
         createdAt: z.coerce.date(),
         updatedAt: z.coerce.date()
     });
