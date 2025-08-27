@@ -175,8 +175,10 @@ export abstract class BaseModel<T> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         const safeData = data ?? {};
+
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+
             const result = await db.update(this.table).set(safeData).where(whereClause).returning();
             try {
                 logQuery(this.entityName, 'update', { where: safeWhere, data: safeData }, result);

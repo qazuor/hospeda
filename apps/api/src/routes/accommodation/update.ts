@@ -38,7 +38,7 @@ export const updateAccommodationRoute = createCRUDRoute({
         // Cast body to the correct type (it's already validated by the requestBody schema)
         const validatedBody = body as z.infer<typeof accommodationUpdateSchema>;
 
-        // Call the real accommodation service
+        // Call the accommodation service
         const result = await accommodationService.update(actor, params.id as string, validatedBody);
 
         if (result.error) {
