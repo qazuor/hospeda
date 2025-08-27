@@ -136,12 +136,16 @@ async function fetchUserSession(): Promise<UserSession | null> {
             throw new Error(`HTTP ${response.status}`);
         }
 
+        // Check if response has the expected structure
+        // biome-ignore lint/suspicious/noExplicitAny: API response structure is dynamic
+        const responseData = response.data as any;
+
         if (
-            response.data?.success &&
-            response.data?.data?.isAuthenticated &&
-            response.data?.data?.actor
+            responseData?.success &&
+            responseData?.data?.isAuthenticated &&
+            responseData?.data?.actor
         ) {
-            const actor = response.data.data.actor;
+            const actor = responseData.data.actor;
             return {
                 id: actor.id,
                 role: actor.role,
