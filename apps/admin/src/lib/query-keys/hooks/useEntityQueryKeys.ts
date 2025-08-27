@@ -123,6 +123,29 @@ export const useEntityQueryKeys = (entityName: string) => {
     );
 
     /**
+     * Get cached data for a specific list query
+     * @param queryKey - Query key for the list
+     */
+    const getListData = useCallback(
+        <T>(queryKey: readonly unknown[]): T | undefined => {
+            return queryClient.getQueryData<T>(queryKey);
+        },
+        [queryClient]
+    );
+
+    /**
+     * Set cached data for a specific list query
+     * @param queryKey - Query key for the list
+     * @param data - Data to cache
+     */
+    const setListData = useCallback(
+        <T>(queryKey: readonly unknown[], data: T | ((old: T | undefined) => T)) => {
+            return queryClient.setQueryData<T>(queryKey, data);
+        },
+        [queryClient]
+    );
+
+    /**
      * Prefetch detail data
      * @param id - Entity ID
      * @param queryFn - Function to fetch the data
@@ -200,6 +223,8 @@ export const useEntityQueryKeys = (entityName: string) => {
         removeDetail,
         getDetailData,
         setDetailData,
+        getListData,
+        setListData,
 
         // Prefetching
         prefetchDetail,
