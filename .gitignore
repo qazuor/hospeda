@@ -83,6 +83,9 @@ mcp-todos.json
 packages/seed/mappings/id-mappings.json
 apps/api/package.prod.json
 
+# TanStack Router generated files
+**/routeTree.gen.ts
+
 # =========================
 # Drizzle ORM
 # - Mantener SÍ o SÍ: drizzle/migrations/*.sql en el repo
