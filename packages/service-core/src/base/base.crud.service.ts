@@ -579,6 +579,7 @@ export abstract class BaseCrudService<
                     ...processedData,
                     updatedById: validActor.id as UserId
                 } as unknown as Partial<TEntity>;
+
                 const where = { id: updateId };
 
                 // Check for at least one valid field to update (excluding audit fields)
@@ -590,18 +591,21 @@ export abstract class BaseCrudService<
                     'deletedAt',
                     'deletedById'
                 ];
+
                 const filteredPayload = Object.fromEntries(
                     Object.entries(payload).filter(([_, v]) => v !== undefined)
                 ) as Partial<TEntity>;
+
                 const filteredPayloadKeys = Object.keys(filteredPayload).filter(
                     (k) => !auditFields.includes(k)
                 );
+
                 const hasValidField = filteredPayloadKeys.length > 0;
+
                 // Patch: always call model.update, even if no valid fields (for test homogeneity)
                 const finalPayload = hasValidField
                     ? filteredPayload
                     : ({ updatedById: validActor.id as UserId } as unknown as Partial<TEntity>);
-
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
                 const updatedEntity = await this.model.update(where as any, finalPayload);
 
