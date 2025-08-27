@@ -19,7 +19,7 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
 
     // Routes
     basePath: '/accommodations',
-    detailPath: '/accommodations/[slug]',
+    detailPath: '/accommodations/[id]',
 
     // Schemas
     listItemSchema: AccommodationListItemSchema,
