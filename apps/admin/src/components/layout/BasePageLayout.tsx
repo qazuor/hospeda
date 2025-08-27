@@ -1,18 +1,21 @@
 import type { ReactNode } from 'react';
-import { Breadcrumbs } from './Breadcrumbs';
+import { Breadcrumbs, type EntityBreadcrumbContext } from './Breadcrumbs';
 
 export type BasePageLayoutProps = {
     readonly title: string;
     readonly actions?: ReactNode;
     readonly children: ReactNode;
     readonly class?: string;
+    /** Entity context for breadcrumb customization */
+    readonly entityContext?: EntityBreadcrumbContext;
 };
 
 export const BasePageLayout = ({
     title,
     actions,
     children,
-    class: className
+    class: className,
+    entityContext
 }: BasePageLayoutProps) => {
     return (
         <section className={`space-y-4 p-6${className ? ` ${className}` : ''}`}>
@@ -20,7 +23,7 @@ export const BasePageLayout = ({
                 <h1 className="font-semibold text-2xl">{title}</h1>
                 <div className="flex items-center gap-2">{actions}</div>
             </header>
-            <Breadcrumbs />
+            <Breadcrumbs entityContext={entityContext} />
             <div className="pt-2">{children}</div>
         </section>
     );
