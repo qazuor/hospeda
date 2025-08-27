@@ -109,6 +109,9 @@ importers:
       '@tanstack/react-table':
         specifier: 8.21.2
         version: 8.21.2(react-dom@19.1.1)(react@19.1.1)
+      '@tanstack/react-virtual':
+        specifier: ^3.13.12
+        version: 3.13.12(react-dom@19.1.1)(react@19.1.1)
       '@tanstack/router-plugin':
         specifier: 1.131.26
         version: 1.131.26(@tanstack/react-router@1.131.26)(vite@6.3.5)
@@ -4722,6 +4725,17 @@ packages:
       react-dom: 19.1.1(react@19.1.1)
     dev: false
 
+  /@tanstack/react-virtual@3.13.12(react-dom@19.1.1)(react@19.1.1):
+    resolution: {integrity: sha512-Gd13QdxPSukP8ZrkbgS2RwoZseTTbQPLnQEn7HY/rqtM+8Zt95f7xKC7N0EsKs7aoz0WzZ+fditZux+F8EzYxA==}
+    peerDependencies:
+      react: 19.1.1
+      react-dom: 19.1.1
+    dependencies:
+      '@tanstack/virtual-core': 3.13.12
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
+    dev: false
+
   /@tanstack/router-core@1.131.26:
     resolution: {integrity: sha512-MED3i/vhHqBFfQZp309JduePtnJwG30KTM+swKgBWBwDoQHvYbtTWhJKPAm1EhkuFyIXuZo/mWTCwdzo/Te7pA==}
     engines: {node: '>=12'}
@@ -5003,6 +5017,10 @@ packages:
   /@tanstack/table-core@8.21.2:
     resolution: {integrity: sha512-uvXk/U4cBiFMxt+p9/G7yUWI/UbHYbyghLCjlpWZ3mLeIZiUBSKcUnw9UnKkdRz7Z/N4UBuFLWQdJCjUe7HjvA==}
     engines: {node: '>=12'}
+    dev: false
+
+  /@tanstack/virtual-core@3.13.12:
+    resolution: {integrity: sha512-1YBOJfRHV4sXUmWsFSf5rQor4Ss82G8dQWLRbnk3GA4jeP8hQt1hxXh0tmflpC0dz3VgEv/1+qwPyLeWkQuPFA==}
     dev: false
 
   /@tanstack/virtual-file-routes@1.131.2:
