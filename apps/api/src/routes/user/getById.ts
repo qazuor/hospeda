@@ -5,6 +5,7 @@
 
 import { z } from '@hono/zod-openapi';
 import { UserService } from '@repo/service-core';
+import { getActorFromContext } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 import { UserSchema } from './schemas';
@@ -27,8 +28,8 @@ export const getUserByIdRoute = createCRUDRoute({
     handler: async (ctx, params) => {
         const { id } = params;
 
-        // Get actor from context (assuming it's set by auth middleware)
-        const actor = ctx.get('actor');
+        // Get actor from context
+        const actor = getActorFromContext(ctx);
 
         // Call the real user service
         const result = await userService.getById(actor, id as string);
@@ -38,5 +39,11 @@ export const getUserByIdRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        skipAuth: true,
+        skipValidation: true,
+        cacheTTL: 60,
+        customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });
