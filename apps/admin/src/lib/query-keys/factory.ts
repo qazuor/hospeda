@@ -73,6 +73,18 @@ export const createEntityQueryKeys = (entityName: string) => {
             [...createEntityQueryKeys(entityName).searches(), { query, filters }] as const,
 
         /**
+         * Keys for virtualized list queries
+         */
+        virtualizedLists: () => [...createEntityQueryKeys(entityName).all, 'virtualized'] as const,
+
+        /**
+         * Specific virtualized list query
+         * @param params - Query parameters for virtualized list
+         */
+        virtualizedList: (params: Record<string, unknown>) =>
+            [...createEntityQueryKeys(entityName).virtualizedLists(), params] as const,
+
+        /**
          * Keys for statistics and aggregated data
          */
         stats: () => [...createEntityQueryKeys(entityName).all, 'stats'] as const,
