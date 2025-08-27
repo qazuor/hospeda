@@ -103,6 +103,13 @@ export type EntityDetailConfig<TData = unknown, TEditData = unknown> = {
         readonly canDelete?: boolean;
     };
 
+    // Relations configuration
+    readonly relations?: readonly {
+        readonly key: string;
+        readonly endpoint: string;
+        readonly displayName: string;
+    }[];
+
     // Layout configuration
     readonly layoutConfig: {
         readonly showBreadcrumbs?: boolean;
