@@ -41,5 +41,11 @@ export const listUsersRoute = createListRoute({
                 totalPages: Math.ceil(result.total / pageSize)
             }
         };
+    },
+    options: {
+        skipAuth: true,
+        skipValidation: true,
+        cacheTTL: 60,
+        customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });
