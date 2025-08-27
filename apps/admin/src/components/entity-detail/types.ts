@@ -80,6 +80,7 @@ export type EntityDetailConfig<TData = unknown, TEditData = unknown> = {
 
     // API endpoints
     readonly getEndpoint: string; // GET /api/v1/admin/accommodations/:id
+    readonly createEndpoint?: string; // POST /api/v1/admin/accommodations
     readonly updateEndpoint: string; // PUT /api/v1/admin/accommodations/:id
     readonly deleteEndpoint?: string; // DELETE /api/v1/admin/accommodations/:id
 
