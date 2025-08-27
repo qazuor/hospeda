@@ -17,8 +17,8 @@ export const createAccommodationsColumns = (): readonly ColumnConfig<Accommodati
             color: BadgeColor.BLUE
         },
         linkHandler: (row) => ({
-            to: '/accommodations/$slug',
-            params: { slug: row.slug }
+            to: '/accommodations/$id',
+            params: { id: row.id }
         })
     },
     {
