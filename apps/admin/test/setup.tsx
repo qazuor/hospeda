@@ -23,7 +23,7 @@ afterEach(() => {
 });
 
 // Mock Clerk authentication
-vi.mock('@clerk/clerk-react', () => ({
+vi.mock('@clerk/tanstack-react-start', () => ({
     useAuth: () => ({
         isSignedIn: true,
         userId: 'test_user_id',

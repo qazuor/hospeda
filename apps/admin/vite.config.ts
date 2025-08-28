@@ -53,7 +53,8 @@ const AdminEnvSchema = z
         VITE_CLERK_PUBLISHABLE_KEY: z
             .string()
             .min(1, 'Clerk publishable key is required')
-            .optional()
+            .optional(),
+        CLERK_SECRET_KEY: z.string().min(1, 'Clerk secret key is required').optional()
     })
     .refine((data) => data.HOSPEDA_API_URL || data.VITE_API_URL, {
         message: 'API_URL is required (either HOSPEDA_API_URL or VITE_API_URL)',
@@ -66,30 +67,14 @@ const AdminEnvSchema = z
                 'CLERK_PUBLISHABLE_KEY is required (either HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY or VITE_CLERK_PUBLISHABLE_KEY)',
             path: ['CLERK_PUBLISHABLE_KEY']
         }
-    );
-
-// biome-ignore lint/suspicious/noConsoleLog: <explanation>
-console.log('🔍 Validating Admin App environment variables...');
-
-// Debug info about environment variables
-const adminEnvKeys = Object.keys(process.env).filter(
-    (key) => key.startsWith('HOSPEDA_') || key.startsWith('VITE_') || key === 'NODE_ENV'
-);
-
-if (adminEnvKeys.length === 0) {
-    console.warn('⚠️  No relevant environment variables found for Admin App');
-    console.warn('🔍 Looking for variables starting with: HOSPEDA_, VITE_, NODE_ENV');
-} else {
-    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-    console.log(`🔍 Found ${adminEnvKeys.length} relevant environment variables for Admin App`);
-}
+    )
+    .refine((data) => data.CLERK_SECRET_KEY, {
+        message: 'CLERK_SECRET_KEY is required for server-side authentication',
+        path: ['CLERK_SECRET_KEY']
+    });
 
 try {
     AdminEnvSchema.parse(process.env);
-    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-    console.log('✅ Admin App environment validation passed');
-    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-    console.log('📊 Validated environment variables for Admin App');
 } catch (error) {
     console.error('❌ Admin App environment validation FAILED');
 
@@ -98,15 +83,6 @@ try {
             .map((err) => `  - ${err.path.join('.')}: ${err.message}`)
             .join('\n');
         console.error(`❌ Environment validation failed for Admin App:\n${errorMessages}`);
-
-        // Additional debug info
-        console.error('\n🐛 Debug info for Admin App:');
-        console.error(`📂 Current working directory: ${process.cwd()}`);
-        console.error(`🔍 NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
-        console.error(`📝 Total env vars: ${Object.keys(process.env).length}`);
-        console.error(`📂 Expected .env.local location: ${process.cwd()}/.env.local`);
-
-        console.error('\n💡 Check your .env.local file or Vercel environment variables.');
         process.exit(1);
     }
     console.error('❌ Unexpected error during Admin App environment validation:', error);
@@ -192,6 +168,17 @@ export default defineConfig({
         }
     },
     build: {
+        // Disable minification for debugging
+        minify: false,
+        // Keep readable variable names
+        rollupOptions: {
+            output: {
+                // Don't mangle variable names
+                compact: false,
+                // Keep function names readable
+                preserveModules: false
+            }
+        },
         commonjsOptions: {
             include: [/node_modules/, /packages\/.*/],
             transformMixedEsModules: true,
@@ -199,6 +186,7 @@ export default defineConfig({
         }
     },
     define: {
-        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+        'process.env.CLERK_SECRET_KEY': JSON.stringify(process.env.CLERK_SECRET_KEY || '')
     }
 });
