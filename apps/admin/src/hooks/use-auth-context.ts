@@ -7,7 +7,29 @@ import { useContext } from 'react';
 export function useAuthContext(): AuthContextValue {
     const context = useContext(AuthContext);
     if (!context) {
-        throw new Error('useAuthContext must be used within an AuthProvider');
+        // Add debug info to help identify where this is being called from
+        console.error('useAuthContext called but HospedaAuthContext not found');
+        console.error('Stack trace:', new Error().stack);
+
+        // ALWAYS return a fallback context instead of throwing
+        // This prevents the app from crashing during navigation
+        console.warn('Returning fallback AuthContext to prevent crash');
+        return {
+            isLoading: false,
+            isAuthenticated: false,
+            user: null,
+            clerkUser: null,
+            error: null,
+            refreshSession: async () => {
+                console.warn('refreshSession called on fallback context');
+            },
+            clearSession: () => {
+                console.warn('clearSession called on fallback context');
+            },
+            signOut: async () => {
+                console.warn('signOut called on fallback context');
+            }
+        };
     }
     return context;
 }
