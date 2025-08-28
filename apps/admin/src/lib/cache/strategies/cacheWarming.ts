@@ -99,14 +99,14 @@ export type WarmingResult = {
  *   triggers: [
  *     {
  *       type: 'route-change',
- *       condition: (ctx) => ctx.route === '/dashboard'
+ *       condition: (ctx) => ctx.route === "/dashboard"
  *     }
  *   ]
  * });
  *
  * // Trigger warming
  * await warmingManager.warmCache({
- *   route: '/dashboard',
+ *   route: "/dashboard",
  *   timestamp: Date.now()
  * });
  * ```
