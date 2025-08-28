@@ -1,7 +1,20 @@
 import { fetchApi } from '@/lib/api/client';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/tanstack-react-start';
 import { type ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { adminLogger } from '../utils/logger';
+
+/**
+ * Clerk user interface for type safety
+ */
+interface ClerkUser {
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    imageUrl?: string;
+    primaryEmailAddress?: {
+        emailAddress?: string;
+    };
+}
 
 /**
  * User session data stored in context and session storage
@@ -24,7 +37,7 @@ interface AuthState {
     isLoading: boolean;
     isAuthenticated: boolean;
     user: UserSession | null;
-    clerkUser: unknown; // Clerk user object
+    clerkUser: ClerkUser | null; // Clerk user object
     error: string | null;
 }
 
@@ -37,7 +50,7 @@ export interface AuthContextValue extends AuthState {
     signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const HospedaAuthContext = createContext<AuthContextValue | null>(null);
 
 /**
  * Session storage keys
@@ -127,10 +140,14 @@ function clearStoredSession(): void {
  */
 async function fetchUserSession(): Promise<UserSession | null> {
     try {
+        adminLogger.debug('Fetching user session from API...');
         const response = await fetchApi<UserSession>({
             path: '/api/v1/public/auth/me',
             method: 'GET'
         });
+
+        adminLogger.debug(`API response status: ${response.status}`);
+        adminLogger.debug('API response data:', JSON.stringify(response.data));
 
         if (response.status < 200 || response.status >= 300) {
             throw new Error(`HTTP ${response.status}`);
@@ -146,6 +163,7 @@ async function fetchUserSession(): Promise<UserSession | null> {
             responseData?.data?.actor
         ) {
             const actor = responseData.data.actor;
+            adminLogger.debug('User session fetched successfully:', JSON.stringify(actor));
             return {
                 id: actor.id,
                 role: actor.role,
@@ -159,8 +177,13 @@ async function fetchUserSession(): Promise<UserSession | null> {
             };
         }
 
+        adminLogger.debug('API response does not indicate authenticated user');
         return null;
-    } catch (_error) {
+    } catch (error) {
+        adminLogger.error(
+            'Error fetching user session:',
+            error instanceof Error ? error.message : String(error)
+        );
         return null;
     }
 }
@@ -173,8 +196,23 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-    const { isLoaded: clerkLoaded, isSignedIn, signOut: clerkSignOut } = useAuth();
-    const { user: clerkUser } = useUser();
+    // Safely get Clerk hooks with fallbacks
+    let clerkLoaded = false;
+    let isSignedIn = false;
+    let clerkSignOut: (() => Promise<void>) | undefined;
+    let clerkUser: ClerkUser | null = null;
+
+    try {
+        const authHook = useAuth();
+        const userHook = useUser();
+        clerkLoaded = authHook.isLoaded;
+        isSignedIn = authHook.isSignedIn || false;
+        clerkSignOut = authHook.signOut;
+        clerkUser = userHook.user as ClerkUser | null;
+    } catch (_error) {
+        // Clerk hooks not available, use defaults
+        adminLogger.warn('Clerk hooks not available, using defaults');
+    }
 
     // Track if we're on the client side (after hydration)
     const [isClient, setIsClient] = useState(false);
@@ -288,8 +326,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Clear local session storage
             clearSession();
 
-            // Sign out from Clerk
-            await clerkSignOut();
+            // Sign out from Clerk if available
+            if (clerkSignOut) {
+                await clerkSignOut();
+            }
 
             // Call backend to cleanup server-side state
             // This helps ensure clean state for next sign-in
@@ -371,8 +411,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         signOut
     };
 
-    return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+    return (
+        <HospedaAuthContext.Provider value={contextValue}>{children}</HospedaAuthContext.Provider>
+    );
 }
 
 // Export the context for use in hooks
-export { AuthContext };
+export { HospedaAuthContext as AuthContext };
