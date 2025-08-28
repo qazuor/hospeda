@@ -17,7 +17,8 @@
         "authenticationError": "Error de autenticación",
         "failedToLoad": "Error al cargar {resource}",
         "unknownError": "Error desconocido",
-        "noRecordsFound": "No se encontraron registros"
+        "noRecordsFound": "No se encontraron registros",
+        "somethingWentWrong": "Algo salió mal"
     },
     "actions": {
         "backTo": "Volver a",
@@ -28,7 +29,8 @@
         "goBackHome": "Volver al inicio",
         "goBack": "Volver",
         "retry": "Reintentar",
-        "clearSession": "Limpiar sesión"
+        "clearSession": "Limpiar sesión",
+        "reload": "Recargar"
     },
     "navigation": {
         "navigation": "Navegación",
