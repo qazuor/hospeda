@@ -1,5 +1,5 @@
 {
-    "include": ["**/*.ts", "**/*.tsx"],
+    "include": ["**/*.ts", "**/*.tsx", "src/routes/_authed/index.tsx1"],
     "compilerOptions": {
         "target": "ES2022",
         "jsx": "react-jsx",
