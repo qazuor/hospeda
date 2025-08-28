@@ -1,0 +1,10 @@
+import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
+import { createFileRoute } from '@tanstack/react-router';
+
+export const Route = createFileRoute('/_authed/access/permissions')({
+    component: () => (
+        <SidebarPageLayout title="Access - Permissions">
+            <div>TODO: add content</div>
+        </SidebarPageLayout>
+    )
+});
