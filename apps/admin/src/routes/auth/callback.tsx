@@ -1,5 +1,5 @@
 import { fetchApi } from '@/lib/api/client';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/tanstack-react-start';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { adminLogger } from '../../utils/logger';
