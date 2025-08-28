@@ -70,6 +70,15 @@ export const fetchApi = async <T>({
     const isJson = body !== undefined;
     const debugActorId = import.meta.env.VITE_DEBUG_ACTOR_ID as string | undefined;
     const bearer = await getClerkToken();
+
+    // Debug logs
+    adminLogger.debug(`Making API call to: ${url}`);
+    adminLogger.debug(`Bearer token present: ${!!bearer}`);
+    if (bearer) {
+        adminLogger.debug(`Bearer token length: ${bearer.length}`);
+        adminLogger.debug(`Bearer token preview: ${bearer.substring(0, 20)}...`);
+    }
+
     const res = await fetch(url, {
         method,
         headers: {
