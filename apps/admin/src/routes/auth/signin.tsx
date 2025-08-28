@@ -1,163 +1,96 @@
-import { useTranslations } from '@/hooks/use-translations';
-import { fetchApi } from '@/lib/api/client';
-import { useAuth, useUser } from '@clerk/clerk-react';
-import { SignInForm } from '@repo/auth-ui';
-import { Link, createFileRoute, useRouter } from '@tanstack/react-router';
+import { SignIn } from '@clerk/tanstack-react-start';
+import { Link, createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useAuthSync } from '../../hooks/use-auth-sync';
 import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
-import { adminLogger } from '../../utils/logger';
 
+/**
+ * AutoRedirect Component
+ * Automatically redirects to dashboard after a delay
+ */
+function AutoRedirect() {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (typeof window !== 'undefined') {
+                window.location.href = '/dashboard';
+            }
+        }, 3000); // 3 seconds delay
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    return null;
+}
+
+/**
+ * SignIn Route
+ * Uses Clerk's official SignIn component for TanStack Start
+ * Following the official TanStack + Clerk pattern
+ */
 export const Route = createFileRoute('/auth/signin')({
     component: SignInPage
 });
 
+/**
+ * SignInPage Component
+ * Layout with image on left and form on right
+ */
 function SignInPage(): React.JSX.Element {
-    const router = useRouter();
-    const { signOut, isSignedIn, isLoaded } = useAuth();
-    const { user } = useUser();
-    const { t } = useTranslations();
-    const redirect =
-        (router.state.location.search as Record<string, string | undefined>)?.redirect || '/';
-
     const [isClient, setIsClient] = useState(false);
     const [backgroundImage, setBackgroundImage] = useState<AuthBackgroundImage | null>(null);
-    const [isHandlingCallback, setIsHandlingCallback] = useState(false);
-
-    // Check if this is a callback from OAuth (has __clerk_handshake parameter or flag in sessionStorage)
-    const hasHandshakeParam = !!(
-        router.state.location.search as string & { __clerk_handshake?: string }
-    )?.__clerk_handshake;
-    const hasOAuthFlag =
-        typeof window !== 'undefined' && sessionStorage.getItem('oauth_in_progress') === 'true';
-    const isOAuthCallback = hasHandshakeParam || hasOAuthFlag;
-
-    // Set OAuth flag when handshake is detected
-    useEffect(() => {
-        if (hasHandshakeParam && typeof window !== 'undefined') {
-            sessionStorage.setItem('oauth_in_progress', 'true');
-        }
-    }, [hasHandshakeParam]);
-
-    adminLogger.debug(
-        {
-            hasHandshakeParam,
-            hasOAuthFlag,
-            isOAuthCallback,
-            isHandlingCallback,
-            isLoaded,
-            isSignedIn,
-            user: !!user,
-            searchParams: router.state.location.search,
-            pathname: router.state.location.pathname
-        },
-        'SignIn Debug'
-    );
+    const { isSyncing, shouldShowSignIn } = useAuthSync();
 
     useEffect(() => {
         setIsClient(true);
         setBackgroundImage(getRandomAuthImage());
     }, []);
 
-    // Handle OAuth callback
-    useEffect(() => {
-        const handleOAuthCallback = async () => {
-            if (!isLoaded || !isOAuthCallback || isHandlingCallback) return;
-
-            adminLogger.info(
-                {
-                    isSignedIn,
-                    user: !!user
-                },
-                'OAuth callback detected, checking auth status'
-            );
-
-            if (isSignedIn && user) {
-                adminLogger.info('User is signed in after OAuth, syncing with backend...');
-                setIsHandlingCallback(true);
-
-                try {
-                    adminLogger.info('/api/v1/public/auth/sync', 'Making sync request to');
-
-                    const response = await fetchApi({
-                        path: '/api/v1/public/auth/sync',
-                        method: 'POST'
-                    });
-
-                    adminLogger.info({ status: response.status }, 'Sync response status');
-                    adminLogger.debug(response.data, 'Sync response data');
-
-                    adminLogger.info(response.data, 'OAuth sync result');
-
-                    if (
-                        response.status >= 200 &&
-                        response.status < 300 &&
-                        response.data &&
-                        typeof response.data === 'object' &&
-                        'success' in response.data &&
-                        (response.data as { success: boolean }).success
-                    ) {
-                        adminLogger.info(redirect, 'OAuth sync successful, redirecting to');
-                        // Clear OAuth flag on success
-                        if (typeof window !== 'undefined') {
-                            sessionStorage.removeItem('oauth_in_progress');
-                        }
-                        // Small delay to ensure cookies are properly set
-                        await new Promise((resolve) => setTimeout(resolve, 500));
-                        await router.navigate({ to: redirect });
-                    } else {
-                        adminLogger.error('OAuth sync failed', 'Response was not successful');
-                        setIsHandlingCallback(false);
-                    }
-                } catch (error) {
-                    adminLogger.error(error, 'OAuth sync error');
-
-                    // If sync fails but user is authenticated in Clerk, still redirect
-                    // The AuthGate will handle the backend sync later
-                    if (isSignedIn && user) {
-                        adminLogger.warn(
-                            'Sync failed but user is authenticated, redirecting anyway...'
-                        );
-                        // Clear OAuth flag
-                        if (typeof window !== 'undefined') {
-                            sessionStorage.removeItem('oauth_in_progress');
-                        }
-                        await router.navigate({ to: redirect });
-                        return;
-                    }
-
-                    // Clear OAuth flag on error
-                    if (typeof window !== 'undefined') {
-                        sessionStorage.removeItem('oauth_in_progress');
-                    }
-                    setIsHandlingCallback(false);
-                }
-            }
-        };
-
-        void handleOAuthCallback();
-    }, [isLoaded, isSignedIn, user, isOAuthCallback, redirect, router, isHandlingCallback]);
-
-    const handleClearSession = async () => {
-        try {
-            adminLogger.info('Clearing Clerk session...');
-            await signOut({ sessionId: 'all' });
-            // Also clear local storage
-            localStorage.clear();
-            sessionStorage.clear();
-            // Reload the page
-            window.location.reload();
-        } catch (error) {
-            adminLogger.error(error, 'Clear session error');
-        }
-    };
-
-    // Show loading state for OAuth callback
-    if (isHandlingCallback) {
+    // Show loading state while syncing
+    if (isSyncing) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
-                <div className="text-center">
-                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
-                    <p className="text-gray-600">{t('admin-auth.signin.completingSignIn')}</p>
+            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+                <div className="flex min-h-screen items-center justify-center">
+                    <div className="text-center">
+                        <div className="mb-4">
+                            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
+                        </div>
+                        <h2 className="font-semibold text-gray-900 text-xl">
+                            Sincronizando sesión...
+                        </h2>
+                        <p className="mt-2 text-gray-600">Verificando tu autenticación</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Don't show sign-in form if user is already signed in
+    if (!shouldShowSignIn) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+                <div className="flex min-h-screen items-center justify-center">
+                    <div className="text-center">
+                        <div className="mb-4">
+                            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
+                        </div>
+                        <h2 className="font-semibold text-gray-900 text-xl">Redirigiendo...</h2>
+                        <p className="mt-2 text-gray-600">Ya estás autenticado</p>
+                        <p className="mt-1 text-gray-500 text-sm">
+                            Si no redirige automáticamente, haz clic{' '}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (typeof window !== 'undefined') {
+                                        window.location.href = '/dashboard';
+                                    }
+                                }}
+                                className="text-cyan-600 underline hover:text-cyan-500"
+                            >
+                                aquí
+                            </button>
+                        </p>
+                        <AutoRedirect />
+                    </div>
                 </div>
             </div>
         );
@@ -172,12 +105,8 @@ function SignInPage(): React.JSX.Element {
                         <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/50 to-emerald-600/30" />
                         <div className="h-full w-full animate-pulse bg-gradient-to-br from-cyan-200 to-emerald-200" />
                         <div className="absolute bottom-8 left-8 text-white">
-                            <h2 className="mb-2 font-bold text-3xl">
-                                {t('admin-auth.signin.welcomeBack')}
-                            </h2>
-                            <p className="text-cyan-100">
-                                {t('admin-auth.signin.manageAccommodations')}
-                            </p>
+                            <h2 className="mb-2 font-bold text-3xl">Welcome back</h2>
+                            <p className="text-cyan-100">Manage your accommodations with ease</p>
                         </div>
                     </div>
 
@@ -192,11 +121,9 @@ function SignInPage(): React.JSX.Element {
                                         className="h-16 w-auto"
                                     />
                                 </div>
-                                <h1 className="font-bold text-3xl text-gray-900">
-                                    {t('admin-auth.signin.heading')}
-                                </h1>
+                                <h1 className="font-bold text-3xl text-gray-900">Sign in</h1>
                                 <p className="mt-2 text-gray-600">
-                                    {t('admin-auth.signin.subtitle')}
+                                    Welcome back! Please sign in to your account
                                 </p>
                             </div>
 
@@ -217,34 +144,18 @@ function SignInPage(): React.JSX.Element {
                                         <div className="h-10 rounded-md bg-gray-200" />
                                     </div>
                                 </div>
-                                {/* Clerk CAPTCHA element */}
-                                <div
-                                    id="clerk-captcha"
-                                    style={{ display: 'none' }}
-                                />
                             </div>
 
                             <div className="text-center">
                                 <p className="text-gray-600">
-                                    {t('admin-auth.signin.dontHaveAccount')}{' '}
+                                    Don't have an account?{' '}
                                     <Link
                                         to="/auth/signup"
                                         className="font-medium text-cyan-600 transition-colors hover:text-cyan-500"
                                     >
-                                        {t('admin-auth.signin.signUpLink')}
+                                        Sign up
                                     </Link>
                                 </p>
-                                {/* Debug button - remove in production */}
-                                <div className="mt-4">
-                                    <button
-                                        onClick={handleClearSession}
-                                        className="rounded bg-yellow-500 px-2 py-1 text-white text-xs hover:bg-yellow-600"
-                                        type="button"
-                                        title={t('ui.accessibility.clearAllSessionsAndReload')}
-                                    >
-                                        {t('admin-auth.signin.clearSession')}
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -295,14 +206,12 @@ function SignInPage(): React.JSX.Element {
                         </div>
 
                         <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
-                            <SignInForm
-                                onSynced={() => router.navigate({ to: redirect })}
-                                apiBaseUrl={import.meta.env.VITE_API_URL}
-                            />
-                            {/* Clerk CAPTCHA element */}
-                            <div
-                                id="clerk-captcha"
-                                style={{ display: 'none' }}
+                            <SignIn
+                                routing="path"
+                                path="/auth/signin"
+                                signUpUrl="/auth/signup"
+                                fallbackRedirectUrl="/dashboard"
+                                forceRedirectUrl="/dashboard"
                             />
                         </div>
 
@@ -316,17 +225,6 @@ function SignInPage(): React.JSX.Element {
                                     Sign up
                                 </Link>
                             </p>
-                            {/* Debug button - remove in production */}
-                            <div className="mt-4">
-                                <button
-                                    onClick={handleClearSession}
-                                    className="rounded bg-yellow-500 px-2 py-1 text-white text-xs hover:bg-yellow-600"
-                                    type="button"
-                                    title="Clear all sessions and reload page"
-                                >
-                                    {t('ui.actions.clearSession')}
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
