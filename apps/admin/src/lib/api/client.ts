@@ -49,9 +49,23 @@ const getClerkToken = async (): Promise<string | undefined> => {
     }
 };
 
+const getEnvVar = (key: string): string | undefined => {
+    // Handle both import.meta.env (Vite) and process.env (Node.js)
+    if (
+        typeof window !== 'undefined' &&
+        'import' in globalThis &&
+        // biome-ignore lint/suspicious/noExplicitAny: Complex type checking for globalThis.import.meta
+        'meta' in (globalThis as any).import
+    ) {
+        // biome-ignore lint/suspicious/noExplicitAny: Complex type checking for globalThis.import.meta
+        return (globalThis as any).import.meta?.env?.[key];
+    }
+    return process.env?.[key];
+};
+
 const getBaseUrl = (): string => {
     // Use the API URL from environment or fallback to localhost:3001
-    const url = import.meta.env.VITE_API_URL as string | undefined;
+    const url = getEnvVar('VITE_API_URL');
     return (url ?? 'http://localhost:3001').replace(/\/$/, '');
 };
 
@@ -68,7 +82,7 @@ export const fetchApi = async <T>({
             ? path
             : `${base}${path.startsWith('/') ? path : `/${path}`}`;
     const isJson = body !== undefined;
-    const debugActorId = import.meta.env.VITE_DEBUG_ACTOR_ID as string | undefined;
+    const debugActorId = getEnvVar('VITE_DEBUG_ACTOR_ID');
     const bearer = await getClerkToken();
 
     // Debug logs
