@@ -3,7 +3,7 @@ import type {
     FieldConfig,
     SectionConfig
 } from '@/components/entity-detail/types';
-import { FieldType } from '@/components/entity-detail/types';
+import { FieldType, LayoutType } from '@/components/entity-detail/types';
 import { AccommodationTypeEnum, LifecycleStatusEnum, VisibilityEnum } from '@repo/types';
 import {
     type AccommodationDetail,
@@ -228,6 +228,20 @@ export const accommodationsDetailConfig: EntityDetailConfig<
     // Form configuration
     sections,
     fields,
+
+    // Main layout configuration
+    layout: {
+        type: LayoutType.GRID,
+        columns: {
+            mobile: 1,
+            tablet: 2,
+            desktop: 2
+        },
+        gap: {
+            x: 4,
+            y: 6
+        }
+    },
 
     // Permissions
     permissions: {
