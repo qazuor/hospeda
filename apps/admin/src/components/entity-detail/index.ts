@@ -1,13 +1,23 @@
-export { EntityCreatePage } from './EntityCreatePage';
-export { EntityEditPage } from './EntityEditPage';
-export { EntityViewPage } from './EntityViewPage';
-export { useEntityCreate } from './hooks/useEntityCreate';
-export { useEntityDetail } from './hooks/useEntityDetail';
-export { useEntityEdit } from './hooks/useEntityEdit';
-export { FieldType } from './types';
-export type {
-    EntityDetailComponents,
-    EntityDetailConfig,
-    FieldConfig,
-    SectionConfig
-} from './types';
+/**
+ * @file Entity Detail System Index
+ *
+ * Central export file for the complete entity detail configuration system.
+ * This includes layouts, field renderers, types, and utilities.
+ */
+
+// Core types and configurations
+export * from './types';
+
+// Layout system
+export * from './layouts';
+
+// Field rendering system
+export * from './field-renderers';
+
+// Utility functions and factories
+export { validateFieldConfig } from './field-renderers/FieldRenderer';
+export {
+    createGapClasses,
+    createResponsiveClasses,
+    useLayoutValidation
+} from './layouts/ConfigurableLayout';
