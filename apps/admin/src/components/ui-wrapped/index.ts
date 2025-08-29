@@ -28,6 +28,10 @@ export type { BadgeProps } from './Badge';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
+
+export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './Accordion';
+
 // TODO [76db460d-5700-4ff7-83a2-6f3ce5221c2b]: Implement these components in future iterations
 // export { Textarea } from './Textarea';
 // export type { TextareaProps } from './Textarea';
