@@ -15,6 +15,22 @@ export type { SelectViewFieldProps } from './SelectViewField';
 export { BooleanViewField } from './BooleanViewField';
 export type { BooleanViewFieldProps } from './BooleanViewField';
 
+// Advanced View Components
+export { EntitySelectViewField } from './EntitySelectViewField';
+export type { EntitySelectViewFieldProps } from './EntitySelectViewField';
+
+export { CurrencyViewField } from './CurrencyViewField';
+export type { CurrencyViewFieldProps } from './CurrencyViewField';
+
+export { RichTextViewField } from './RichTextViewField';
+export type { RichTextViewFieldProps } from './RichTextViewField';
+
+export { ImageViewField } from './ImageViewField';
+export type { ImageViewFieldProps } from './ImageViewField';
+
+export { GalleryViewField } from './GalleryViewField';
+export type { GalleryViewFieldProps } from './GalleryViewField';
+
 // TODO [ce0628b1-7dac-4219-b8fe-a0a121fe86b5]: Implement additional view field types
 // export { NumberViewField } from './NumberViewField';
 // export type { NumberViewFieldProps } from './NumberViewField';
