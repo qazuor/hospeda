@@ -28,24 +28,46 @@ export type { BadgeProps } from './Badge';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 
-// TODO [18b1705a-cf6d-4bea-8d8c-96a728853e4d]: Implement Tabs wrapper component
-// export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
+export type { TabsContentProps, TabsListProps, TabsProps, TabsTriggerProps } from './Tabs';
 
-// TODO [d566c551-4516-402a-b77e-4f06ece6572a]: Implement Accordion wrapper component
-// export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './Accordion';
+export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './Accordion';
+export type {
+    AccordionContentProps,
+    AccordionItemProps,
+    AccordionProps,
+    AccordionTriggerProps
+} from './Accordion';
 
-// TODO [76db460d-5700-4ff7-83a2-6f3ce5221c2b]: Implement these components in future iterations
-// export { Textarea } from './Textarea';
-// export type { TextareaProps } from './Textarea';
+export { Textarea } from './Textarea';
+export type { TextareaProps } from './Textarea';
 
-// export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
-// export type { SelectProps } from './Select';
+export {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectSeparator,
+    SelectTrigger,
+    SelectValue
+} from './Select';
+export type {
+    SelectContentProps,
+    SelectItemProps,
+    SelectLabelProps,
+    SelectProps,
+    SelectTriggerProps
+} from './Select';
 
-// export { Checkbox } from './Checkbox';
-// export type { CheckboxProps } from './Checkbox';
+export { Checkbox } from './Checkbox';
+export type { CheckboxProps } from './Checkbox';
 
-// export { Label } from './Label';
-// export type { LabelProps } from './Label';
+export { Label } from './Label';
+export type { LabelProps } from './Label';
+
+export { Switch } from './Switch';
+export type { SwitchProps } from './Switch';
 
 // Layout Components
 // export { Separator } from './Separator';
