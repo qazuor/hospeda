@@ -43,6 +43,27 @@ export enum PermissionEnum {
     ACCOMMODATION_IA_SUGGESTIONS_VIEW = 'accommodation.iaSuggestions.view', // Allows viewing AI suggestions for accommodations.
     ACCOMMODATION_IA_CONTENT_APPROVE = 'accommodation.iaContent.approve', // Allows approving AI-generated content for accommodations.
     ACCOMMODATION_SLUG_MANAGE = 'accommodation.slug.manage', // Allows managing accommodation slugs.
+
+    // ACCOMMODATION: Granular section permissions
+    ACCOMMODATION_BASIC_INFO_EDIT = 'accommodation.basicInfo.edit', // Allows editing basic accommodation information
+    ACCOMMODATION_CONTACT_INFO_EDIT = 'accommodation.contactInfo.edit', // Allows editing accommodation contact information
+    ACCOMMODATION_LOCATION_EDIT = 'accommodation.location.edit', // Allows editing accommodation location
+    ACCOMMODATION_SERVICES_EDIT = 'accommodation.services.edit', // Allows editing accommodation services and amenities
+    ACCOMMODATION_PRICE_EDIT = 'accommodation.price.edit', // Allows editing accommodation pricing
+    ACCOMMODATION_SCHEDULE_EDIT = 'accommodation.schedule.edit', // Allows editing accommodation schedule
+    ACCOMMODATION_MEDIA_EDIT = 'accommodation.media.edit', // Allows editing accommodation media
+    ACCOMMODATION_FAQS_EDIT = 'accommodation.faqs.edit', // Allows editing accommodation FAQs
+    ACCOMMODATION_STATES_EDIT = 'accommodation.states.edit', // Allows editing accommodation states
+    ACCOMMODATION_SEO_EDIT = 'accommodation.seo.edit', // Allows editing accommodation SEO information
+    ACCOMMODATION_ADMIN_INFO_EDIT = 'accommodation.adminInfo.edit', // Allows editing accommodation admin information
+
+    // ACCOMMODATION: Specific field permissions
+    ACCOMMODATION_OWNER_CHANGE = 'accommodation.owner.change', // Allows changing accommodation owner
+    ACCOMMODATION_FEATURED_TOGGLE = 'accommodation.featured.toggle', // Allows toggling featured status
+    ACCOMMODATION_VISIBILITY_CHANGE = 'accommodation.visibility.change', // Allows changing accommodation visibility
+    ACCOMMODATION_LIFECYCLE_CHANGE = 'accommodation.lifecycle.change', // Allows changing accommodation lifecycle state
+    ACCOMMODATION_MODERATION_CHANGE = 'accommodation.moderation.change', // Allows changing accommodation moderation state
+
     // Catalog management for amenities/features
     AMENITY_CREATE = 'amenity.create', // Allows creating a new amenity in the catalog.
     AMENITY_UPDATE = 'amenity.update', // Allows updating an amenity in the catalog.
