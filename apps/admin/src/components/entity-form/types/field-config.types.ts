@@ -81,6 +81,7 @@ export type DerivedFieldConfig = {
  */
 export type FieldTypeConfig =
     | TextFieldConfig
+    | TextareaFieldConfig
     | SelectFieldConfig
     | EntitySelectFieldConfig
     | CurrencyFieldConfig
@@ -97,6 +98,7 @@ export type FieldTypeConfig =
  * Text field specific configuration
  */
 export type TextFieldConfig = {
+    type: 'TEXT';
     minLength?: number;
     maxLength?: number;
     pattern?: string;
@@ -104,9 +106,22 @@ export type TextFieldConfig = {
 };
 
 /**
+ * Textarea field specific configuration
+ */
+export type TextareaFieldConfig = {
+    type: 'TEXTAREA';
+    minLength?: number;
+    maxLength?: number;
+    minRows?: number;
+    maxRows?: number;
+    resize?: boolean;
+};
+
+/**
  * Select field specific configuration
  */
 export type SelectFieldConfig = {
+    type: 'SELECT';
     options: SelectOption[];
     searchable?: boolean;
     clearable?: boolean;
@@ -117,6 +132,7 @@ export type SelectFieldConfig = {
  * Entity select field specific configuration
  */
 export type EntitySelectFieldConfig = {
+    type: 'ENTITY_SELECT';
     entityType: EntityTypeEnum;
     searchFn: (query: string) => Promise<SelectOption[]>;
     loadByIdsFn: (ids: string[]) => Promise<SelectOption[]>;
@@ -133,6 +149,7 @@ export type EntitySelectFieldConfig = {
  * Currency field specific configuration
  */
 export type CurrencyFieldConfig = {
+    type: 'CURRENCY';
     defaultCurrency?: string; // CurrencyEnum value
     allowedCurrencies?: string[]; // CurrencyEnum values
     showCurrencySymbol?: boolean;
@@ -145,6 +162,7 @@ export type CurrencyFieldConfig = {
  * Rich text field specific configuration
  */
 export type RichTextFieldConfig = {
+    type: 'RICH_TEXT';
     allowedFeatures?: RichTextFeatureEnum[];
     maxLength?: number;
     minLength?: number;
@@ -156,6 +174,7 @@ export type RichTextFieldConfig = {
  * Image field specific configuration
  */
 export type ImageFieldConfig = {
+    type: 'IMAGE';
     maxSize?: number; // in bytes
     allowedTypes?: string[]; // MIME types
     maxWidth?: number;
@@ -168,6 +187,7 @@ export type ImageFieldConfig = {
  * Gallery field specific configuration
  */
 export type GalleryFieldConfig = {
+    type: 'GALLERY';
     maxImages?: number;
     maxSize?: number; // in bytes per image
     allowedTypes?: string[]; // MIME types
@@ -180,6 +200,7 @@ export type GalleryFieldConfig = {
  * Number field specific configuration
  */
 export type NumberFieldConfig = {
+    type: 'NUMBER';
     min?: number;
     max?: number;
     step?: number;
@@ -190,6 +211,7 @@ export type NumberFieldConfig = {
  * Date field specific configuration
  */
 export type DateFieldConfig = {
+    type: 'DATE';
     minDate?: string | Date;
     maxDate?: string | Date;
     format?: string;
@@ -200,6 +222,7 @@ export type DateFieldConfig = {
  * Time field specific configuration
  */
 export type TimeFieldConfig = {
+    type: 'TIME';
     format?: '12h' | '24h';
     step?: number; // minutes
 };
@@ -208,6 +231,7 @@ export type TimeFieldConfig = {
  * Slider field specific configuration
  */
 export type SliderFieldConfig = {
+    type: 'SLIDER';
     min: number;
     max: number;
     step?: number;
@@ -219,6 +243,7 @@ export type SliderFieldConfig = {
  * JSON field specific configuration
  */
 export type JsonFieldConfig = {
+    type: 'JSON';
     schema?: ZodSchema; // Zod schema for validation
     pretty?: boolean; // Pretty print JSON
     height?: number; // Editor height in pixels
@@ -288,4 +313,7 @@ export type FieldConfig = {
     // Help text
     helpText?: string;
     helpTextKey?: string; // i18n key
+
+    // Type-specific configuration
+    typeConfig?: FieldTypeConfig;
 };

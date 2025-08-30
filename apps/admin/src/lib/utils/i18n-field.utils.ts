@@ -48,6 +48,7 @@ export const useFieldI18n = (fieldId: string, config?: I18nFieldConfig) => {
         label: getLabel(),
         description: getDescription(),
         placeholder: getPlaceholder(),
+        helper: getHelpText(),
         getErrorMessage,
         getHelpText,
         // Raw functions for dynamic usage
