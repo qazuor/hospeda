@@ -23,6 +23,22 @@ export type { CheckboxFieldProps } from './CheckboxField';
 export { SwitchField } from './SwitchField';
 export type { SwitchFieldProps } from './SwitchField';
 
+// Advanced Field Components
+export { EntitySelectField } from './EntitySelectField';
+export type { EntitySelectFieldProps } from './EntitySelectField';
+
+export { CurrencyField } from './CurrencyField';
+export type { CurrencyFieldProps, CurrencyValue } from './CurrencyField';
+
+export { RichTextField } from './RichTextField';
+export type { RichTextFeature, RichTextFieldProps } from './RichTextField';
+
+export { ImageField } from './ImageField';
+export type { ImageFieldProps, ImageValue } from './ImageField';
+
+export { GalleryField } from './GalleryField';
+export type { GalleryFieldProps, GalleryImage } from './GalleryField';
+
 // TODO [8edf207e-9040-427a-9da9-e1d86b6a7761]: Implement additional field types
 // export { NumberField } from './NumberField';
 // export type { NumberFieldProps } from './NumberField';
