@@ -28,9 +28,11 @@ export type { BadgeProps } from './Badge';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 
-export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
+// TODO [18b1705a-cf6d-4bea-8d8c-96a728853e4d]: Implement Tabs wrapper component
+// export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 
-export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './Accordion';
+// TODO [d566c551-4516-402a-b77e-4f06ece6572a]: Implement Accordion wrapper component
+// export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './Accordion';
 
 // TODO [76db460d-5700-4ff7-83a2-6f3ce5221c2b]: Implement these components in future iterations
 // export { Textarea } from './Textarea';
