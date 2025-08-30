@@ -33,6 +33,26 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_IA_SUGGESTIONS_VIEW,
         PermissionEnum.ACCOMMODATION_IA_CONTENT_APPROVE,
         PermissionEnum.ACCOMMODATION_SLUG_MANAGE,
+
+        // ACCOMMODATION: Granular section permissions
+        PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT,
+        PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT,
+        PermissionEnum.ACCOMMODATION_LOCATION_EDIT,
+        PermissionEnum.ACCOMMODATION_SERVICES_EDIT,
+        PermissionEnum.ACCOMMODATION_PRICE_EDIT,
+        PermissionEnum.ACCOMMODATION_SCHEDULE_EDIT,
+        PermissionEnum.ACCOMMODATION_MEDIA_EDIT,
+        PermissionEnum.ACCOMMODATION_FAQS_EDIT,
+        PermissionEnum.ACCOMMODATION_STATES_EDIT,
+        PermissionEnum.ACCOMMODATION_SEO_EDIT,
+        PermissionEnum.ACCOMMODATION_ADMIN_INFO_EDIT,
+
+        // ACCOMMODATION: Specific field permissions
+        PermissionEnum.ACCOMMODATION_OWNER_CHANGE,
+        PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
+        PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
+        PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
+        PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
         // Catalog management (amenities/features)
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
@@ -94,6 +114,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_COMMENT_CREATE,
         PermissionEnum.POST_VIEW_PRIVATE,
         PermissionEnum.POST_VIEW_DRAFT,
+        PermissionEnum.POST_VIEW_ALL,
 
         // USER: All permissions
         PermissionEnum.USER_READ_ALL,
@@ -183,6 +204,26 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_IA_SUGGESTIONS_VIEW,
         PermissionEnum.ACCOMMODATION_IA_CONTENT_APPROVE,
         PermissionEnum.ACCOMMODATION_SLUG_MANAGE,
+
+        // ACCOMMODATION: Granular section permissions
+        PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT,
+        PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT,
+        PermissionEnum.ACCOMMODATION_LOCATION_EDIT,
+        PermissionEnum.ACCOMMODATION_SERVICES_EDIT,
+        PermissionEnum.ACCOMMODATION_PRICE_EDIT,
+        PermissionEnum.ACCOMMODATION_SCHEDULE_EDIT,
+        PermissionEnum.ACCOMMODATION_MEDIA_EDIT,
+        PermissionEnum.ACCOMMODATION_FAQS_EDIT,
+        PermissionEnum.ACCOMMODATION_STATES_EDIT,
+        PermissionEnum.ACCOMMODATION_SEO_EDIT,
+        PermissionEnum.ACCOMMODATION_ADMIN_INFO_EDIT,
+
+        // ACCOMMODATION: Specific field permissions
+        PermissionEnum.ACCOMMODATION_OWNER_CHANGE,
+        PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
+        PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
+        PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
+        PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
         // Catalog management (amenities/features)
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
@@ -330,6 +371,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_COMMENT_CREATE,
         PermissionEnum.POST_VIEW_PRIVATE,
         PermissionEnum.POST_VIEW_DRAFT,
+        PermissionEnum.POST_VIEW_ALL,
 
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,
@@ -371,6 +413,22 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_GALLERY_MANAGE,
         PermissionEnum.ACCOMMODATION_CONTACT_UPDATE,
         PermissionEnum.ACCOMMODATION_SLUG_MANAGE,
+
+        // ACCOMMODATION: Granular section permissions (for own accommodations)
+        PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT,
+        PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT,
+        PermissionEnum.ACCOMMODATION_LOCATION_EDIT,
+        PermissionEnum.ACCOMMODATION_SERVICES_EDIT,
+        PermissionEnum.ACCOMMODATION_PRICE_EDIT,
+        PermissionEnum.ACCOMMODATION_SCHEDULE_EDIT,
+        PermissionEnum.ACCOMMODATION_MEDIA_EDIT,
+        PermissionEnum.ACCOMMODATION_FAQS_EDIT,
+        PermissionEnum.ACCOMMODATION_STATES_EDIT,
+        PermissionEnum.ACCOMMODATION_SEO_EDIT,
+        PermissionEnum.ACCOMMODATION_ADMIN_INFO_EDIT,
+
+        // ACCOMMODATION: Specific field permissions (limited)
+        PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
 
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,
