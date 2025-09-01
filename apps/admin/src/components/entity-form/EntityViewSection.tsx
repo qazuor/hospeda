@@ -27,7 +27,7 @@ export interface EntityViewSectionProps {
     /** Whether to show empty fields */
     showEmptyFields?: boolean;
     /** View mode */
-    mode?: 'card' | 'list' | 'compact';
+    mode?: 'card' | 'list' | 'compact' | 'detailed';
 }
 
 /**
