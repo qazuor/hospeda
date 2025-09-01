@@ -1,4 +1,5 @@
 import type { PermissionEnum } from '@repo/types';
+import type * as React from 'react';
 import type { LayoutTypeEnum } from '../enums/form-config.enums';
 import type { Actor, FieldConfig } from './field-config.types';
 
@@ -12,6 +13,10 @@ export type SectionConfig = {
     description?: string; // i18n key
     descriptionKey?: string; // alternative i18n key
     layout: LayoutTypeEnum;
+
+    // UI elements
+    icon?: React.ReactNode;
+    badge?: React.ReactNode;
 
     // Section-level permissions
     permissions?: {
