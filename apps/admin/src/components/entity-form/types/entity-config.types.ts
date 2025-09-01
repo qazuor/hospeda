@@ -45,11 +45,15 @@ export type AutosaveConfig = {
  * Main entity configuration type
  */
 export type EntityConfig = {
+    id: string;
+    title: string; // i18n key
+    description?: string; // i18n key
     entityType: string;
     entityName: string; // i18n key
     entityNamePlural: string; // i18n key
 
     // Sections for different modes
+    sections: SectionConfig[]; // Combined sections (will be filtered by mode)
     viewSections: SectionConfig[];
     editSections: SectionConfig[];
     createSections?: SectionConfig[]; // If different from edit
