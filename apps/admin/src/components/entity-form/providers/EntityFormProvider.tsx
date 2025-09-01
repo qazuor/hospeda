@@ -1,0 +1,293 @@
+import { useForm } from '@tanstack/react-form';
+import * as React from 'react';
+import {
+    EntityFormContext,
+    type EntityFormContextValue,
+    type EntityFormProviderProps
+} from '../context/EntityFormContext';
+import { AutosaveStrategyEnum, FormModeEnum } from '../enums/form-config.enums';
+
+/**
+ * Entity form provider component that manages form state and actions
+ */
+export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
+    config,
+    initialValues = {},
+    userPermissions,
+    mode = FormModeEnum.EDIT,
+    autosave = {
+        strategy: AutosaveStrategyEnum.MANUAL,
+        interval: 30000, // 30 seconds
+        enabled: false
+    },
+    onSave,
+    onSaveAndPublish,
+    onDiscard,
+    onFieldChange,
+    onFieldBlur,
+    onFieldFocus,
+    children
+}) => {
+    // Form state
+    const [formMode, setFormMode] = React.useState<FormModeEnum>(mode);
+    const [isLoading] = React.useState(false);
+    const [isSaving, setIsSaving] = React.useState(false);
+    const [activeSectionId, setActiveSectionId] = React.useState<string | undefined>(
+        config.sections[0]?.id
+    );
+    const [dirtyFields, setDirtyFields] = React.useState<Record<string, boolean>>({});
+    const [errors, setErrors] = React.useState<Record<string, string | undefined>>({});
+
+    // TanStack Form instance
+    const form = useForm({
+        defaultValues: initialValues,
+        onSubmit: async ({ value }) => {
+            setIsSaving(true);
+            try {
+                await onSave?.(value);
+                // Reset dirty state after successful save
+                setDirtyFields({});
+            } catch (error) {
+                console.error('Form save error:', error);
+                // TODO [3832ed9c-6912-4b73-ad35-9b33964ea20b]: Handle save errors properly
+            } finally {
+                setIsSaving(false);
+            }
+        }
+    });
+
+    // Autosave timer ref
+    const autosaveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    // Form actions
+    const setFieldValue = React.useCallback(
+        (fieldId: string, value: unknown) => {
+            form.setFieldValue(fieldId, value);
+
+            // Mark field as dirty
+            setDirtyFields((prev) => ({ ...prev, [fieldId]: true }));
+
+            // Call external callback
+            onFieldChange?.(fieldId, value);
+
+            // Handle autosave
+            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
+                if (autosaveTimerRef.current) {
+                    clearTimeout(autosaveTimerRef.current);
+                }
+                autosaveTimerRef.current = setTimeout(() => {
+                    handleSave();
+                }, autosave.interval);
+            }
+        },
+        [form, onFieldChange, autosave]
+    );
+
+    const handleFieldBlur = React.useCallback(
+        (fieldId: string) => {
+            // Validate field on blur
+            validateField(fieldId);
+
+            // Call external callback
+            onFieldBlur?.(fieldId);
+
+            // Handle autosave
+            if (autosave.enabled && autosave.strategy === AutosaveStrategyEnum.FIELD) {
+                handleSave();
+            }
+        },
+        [onFieldBlur, autosave]
+    );
+
+    const handleFieldFocus = React.useCallback(
+        (fieldId: string) => {
+            // Clear field error on focus
+            setErrors((prev) => ({ ...prev, [fieldId]: undefined }));
+
+            // Call external callback
+            onFieldFocus?.(fieldId);
+        },
+        [onFieldFocus]
+    );
+
+    const setMode = React.useCallback((newMode: FormModeEnum) => {
+        setFormMode(newMode);
+    }, []);
+
+    const setActiveSection = React.useCallback((sectionId: string) => {
+        setActiveSectionId(sectionId);
+    }, []);
+
+    const handleSave = React.useCallback(async () => {
+        setIsSaving(true);
+        try {
+            const values = form.getFieldValue('') as Record<string, unknown>;
+            await onSave?.(values);
+            // Reset dirty state after successful save
+            setDirtyFields({});
+            setErrors({});
+        } catch (error) {
+            console.error('Form save error:', error);
+            // TODO [32800a34-f88e-4433-9897-5f61bf6a7562]: Handle save errors properly
+        } finally {
+            setIsSaving(false);
+        }
+    }, [form, onSave]);
+
+    const handleSaveAndPublish = React.useCallback(async () => {
+        setIsSaving(true);
+        try {
+            const values = form.getFieldValue('') as Record<string, unknown>;
+            await onSaveAndPublish?.(values);
+            // Reset dirty state after successful save
+            setDirtyFields({});
+            setErrors({});
+        } catch (error) {
+            console.error('Form save and publish error:', error);
+            // TODO [a94ad5b5-aacd-4abb-a6f8-74ff9b387361]: Handle save errors properly
+        } finally {
+            setIsSaving(false);
+        }
+    }, [form, onSaveAndPublish]);
+
+    const handleDiscard = React.useCallback(() => {
+        form.reset();
+        setDirtyFields({});
+        setErrors({});
+        onDiscard?.();
+    }, [form, onDiscard]);
+
+    const handleReset = React.useCallback(() => {
+        form.reset();
+        setDirtyFields({});
+        setErrors({});
+    }, [form]);
+
+    const validateField = React.useCallback(
+        async (fieldId: string): Promise<string | undefined> => {
+            try {
+                // TODO [9bb3c263-1d2c-4df8-a649-9a7feb259975]: Implement field validation using Zod schemas
+                // This would extract the field schema from the main entity schema
+                // and validate the current field value
+
+                // For now, return undefined (no error)
+                const error = undefined;
+                setErrors((prev) => ({ ...prev, [fieldId]: error }));
+                return error;
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Validation error';
+                setErrors((prev) => ({ ...prev, [fieldId]: errorMessage }));
+                return errorMessage;
+            }
+        },
+        []
+    );
+
+    const validateForm = React.useCallback(async (): Promise<
+        Record<string, string | undefined>
+    > => {
+        try {
+            // TODO [6354df4b-a7a4-4f9d-9e2c-e52ce223a5cc]: Implement full form validation using entity Zod schema
+            // This would validate all fields and cross-field validations
+
+            const formErrors: Record<string, string | undefined> = {};
+            setErrors(formErrors);
+            return formErrors;
+        } catch (error) {
+            console.error('Form validation error:', error);
+            return {};
+        }
+    }, []);
+
+    const isFieldDirty = React.useCallback(
+        (fieldId: string): boolean => {
+            return Boolean(dirtyFields[fieldId]);
+        },
+        [dirtyFields]
+    );
+
+    const isSectionDirty = React.useCallback(
+        (sectionId: string): boolean => {
+            const section = config.sections.find((s) => s.id === sectionId);
+            if (!section) return false;
+
+            return section.fields.some((field) => dirtyFields[field.id]);
+        },
+        [config.sections, dirtyFields]
+    );
+
+    const hasUnsavedChanges = React.useCallback((): boolean => {
+        return Object.values(dirtyFields).some(Boolean);
+    }, [dirtyFields]);
+
+    // Cleanup autosave timer on unmount
+    React.useEffect(() => {
+        return () => {
+            if (autosaveTimerRef.current) {
+                clearTimeout(autosaveTimerRef.current);
+            }
+        };
+    }, []);
+
+    // Context value
+    const contextValue: EntityFormContextValue = React.useMemo(
+        () => ({
+            // State
+            config,
+            values: form.getFieldValue('') as Record<string, unknown>,
+            errors,
+            dirtyFields,
+            mode: formMode,
+            isLoading,
+            isSaving,
+            userPermissions,
+            activeSectionId,
+            autosave,
+            form,
+
+            // Actions
+            setFieldValue,
+            handleFieldBlur,
+            handleFieldFocus,
+            setMode,
+            setActiveSection,
+            save: handleSave,
+            saveAndPublish: handleSaveAndPublish,
+            discard: handleDiscard,
+            reset: handleReset,
+            validateField,
+            validateForm,
+            isFieldDirty,
+            isSectionDirty,
+            hasUnsavedChanges
+        }),
+        [
+            config,
+            form,
+            errors,
+            dirtyFields,
+            formMode,
+            isLoading,
+            isSaving,
+            userPermissions,
+            activeSectionId,
+            autosave,
+            setFieldValue,
+            handleFieldBlur,
+            handleFieldFocus,
+            setMode,
+            setActiveSection,
+            handleSave,
+            handleSaveAndPublish,
+            handleDiscard,
+            handleReset,
+            validateField,
+            validateForm,
+            isFieldDirty,
+            isSectionDirty,
+            hasUnsavedChanges
+        ]
+    );
+
+    return <EntityFormContext.Provider value={contextValue}>{children}</EntityFormContext.Provider>;
+};
