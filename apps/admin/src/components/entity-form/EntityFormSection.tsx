@@ -12,7 +12,7 @@ export interface EntityFormSectionProps {
     /** Form values */
     values: Record<string, unknown>;
     /** Form errors */
-    errors: Record<string, string>;
+    errors: Record<string, string | undefined>;
     /** Field change handler */
     onFieldChange: (fieldId: string, value: unknown) => void;
     /** Field blur handler */
