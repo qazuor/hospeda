@@ -1,6 +1,6 @@
 import { fetchApi } from '@/lib/api/client';
-import type { AccommodationCore } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AccommodationCore } from '../schemas/accommodation-client.schema';
 import {
     type AccommodationListFilters,
     type AccommodationSearchFilters,
@@ -30,8 +30,18 @@ export const useAccommodationQuery = (
     return useQuery({
         queryKey: accommodationQueryKeys.detail(id),
         queryFn: async (): Promise<AccommodationCore> => {
-            const response = await fetchApi({ path: `/accommodations/${id}` });
-            return (response.data as { accommodation: AccommodationCore }).accommodation;
+            const response = await fetchApi({ path: `/api/v1/public/accommodations/${id}` });
+
+            // The API returns: { success: true, data: AccommodationCore, metadata: {...} }
+            // We need to extract just the data part
+            const apiResponse = response.data as {
+                success: boolean;
+                data: AccommodationCore;
+                metadata: unknown;
+            };
+
+            // Return only the accommodation data, not the full API response
+            return apiResponse.data;
         },
         enabled: options?.enabled ?? Boolean(id),
         staleTime: options?.staleTime ?? 5 * 60 * 1000, // 5 minutes
@@ -81,12 +91,23 @@ export const useAccommodationListQuery = (
                 }
             }
 
-            const response = await fetchApi({ path: `/accommodations?${searchParams.toString()}` });
-            return response.data as {
-                accommodations: AccommodationCore[];
-                total: number;
-                page: number;
-                limit: number;
+            const response = await fetchApi({
+                path: `/api/v1/public/accommodations?${searchParams.toString()}`
+            });
+            const apiResponse = response.data as {
+                items: AccommodationCore[];
+                pagination: {
+                    page: number;
+                    limit: number;
+                    total: number;
+                    totalPages: number;
+                };
+            };
+            return {
+                accommodations: apiResponse.items,
+                total: apiResponse.pagination.total,
+                page: apiResponse.pagination.page,
+                limit: apiResponse.pagination.limit
             };
         },
         enabled: options?.enabled ?? true,
@@ -129,9 +150,10 @@ export const useAccommodationSearchQuery = (
             }
 
             const response = await fetchApi({
-                path: `/accommodations/search?${searchParams.toString()}`
+                path: `/api/v1/public/accommodations/search?${searchParams.toString()}`
             });
-            return (response.data as { accommodations: AccommodationCore[] }).accommodations;
+            const apiResponse = response.data as { items: AccommodationCore[] };
+            return apiResponse.items;
         },
         enabled: (options?.enabled ?? true) && query.length >= 2,
         staleTime: 30 * 1000, // 30 seconds for search
@@ -154,7 +176,7 @@ export const useAccommodationSectionQuery = (
         queryKey: accommodationQueryKeys.section(id, sectionId),
         queryFn: async (): Promise<Record<string, unknown>> => {
             const response = await fetchApi({
-                path: `/accommodations/${id}/sections/${sectionId}`
+                path: `/api/v1/public/accommodations/${id}/sections/${sectionId}`
             });
             return response.data as Record<string, unknown>;
         },
@@ -173,11 +195,11 @@ export const useCreateAccommodationMutation = () => {
     return useMutation({
         mutationFn: async (data: Partial<AccommodationCore>): Promise<AccommodationCore> => {
             const response = await fetchApi({
-                path: '/accommodations',
+                path: '/api/v1/public/accommodations',
                 method: 'POST',
                 body: data
             });
-            return (response.data as { accommodation: AccommodationCore }).accommodation;
+            return response.data as AccommodationCore;
         },
         onSuccess: (newAccommodation) => {
             // Invalidate lists to show the new accommodation
@@ -201,11 +223,20 @@ export const useUpdateAccommodationMutation = (id: string) => {
     return useMutation({
         mutationFn: async (data: Partial<AccommodationCore>): Promise<AccommodationCore> => {
             const response = await fetchApi({
-                path: `/accommodations/${id}`,
+                path: `/api/v1/public/accommodations/${id}`,
                 method: 'PATCH',
                 body: data
             });
-            return (response.data as { accommodation: AccommodationCore }).accommodation;
+
+            // The API returns: { success: true, data: AccommodationCore, metadata: {...} }
+            // We need to extract just the data part
+            const apiResponse = response.data as {
+                success: boolean;
+                data: AccommodationCore;
+                metadata: unknown;
+            };
+
+            return apiResponse.data;
         },
         onMutate: async (newData) => {
             // Cancel outgoing refetches
@@ -237,7 +268,7 @@ export const useUpdateAccommodationMutation = (id: string) => {
             }
         },
         onSuccess: (updatedAccommodation) => {
-            // Update the cache with server response
+            // Update the cache with the accommodation data
             queryClient.setQueryData(accommodationQueryKeys.detail(id), updatedAccommodation);
 
             // Invalidate lists to reflect changes
@@ -255,7 +286,7 @@ export const useUpdateAccommodationSectionMutation = (id: string, sectionId: str
     return useMutation({
         mutationFn: async (data: Record<string, unknown>): Promise<Record<string, unknown>> => {
             const response = await fetchApi({
-                path: `/accommodations/${id}/sections/${sectionId}`,
+                path: `/api/v1/public/accommodations/${id}/sections/${sectionId}`,
                 method: 'PATCH',
                 body: data
             });
@@ -280,7 +311,7 @@ export const useDeleteAccommodationMutation = () => {
     return useMutation({
         mutationFn: async (id: string): Promise<void> => {
             await fetchApi({
-                path: `/accommodations/${id}`,
+                path: `/api/v1/public/accommodations/${id}`,
                 method: 'DELETE'
             });
         },
@@ -316,7 +347,7 @@ export const useAccommodationValidation = () => {
                     }
 
                     const response = await fetchApi({
-                        path: `/accommodations/validate/unique?${searchParams.toString()}`
+                        path: `/api/v1/public/accommodations/validate/unique?${searchParams.toString()}`
                     });
                     return response.data as { isUnique: boolean };
                 },
