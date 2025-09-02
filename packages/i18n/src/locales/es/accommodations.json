@@ -48,5 +48,29 @@
         "resort": "Complejo turístico"
     },
     "faqs": "Preguntas frecuentes",
-    "contactTitle": "Contacto"
+    "contactTitle": "Contacto",
+    "entity": {
+        "name": "Alojamiento",
+        "namePlural": "Alojamientos",
+        "title": "Gestión de Alojamientos",
+        "description": "Administra la información de los alojamientos"
+    },
+    "sections": {
+        "basicInfo": {
+            "title": "Información Básica",
+            "description": "Datos principales del alojamiento"
+        },
+        "contactInfo": {
+            "title": "Información de Contacto",
+            "description": "Datos de contacto y redes sociales"
+        },
+        "location": {
+            "title": "Ubicación",
+            "description": "Dirección y coordenadas geográficas"
+        },
+        "states": {
+            "title": "Estados Administrativos",
+            "description": "Estados de moderación y administración"
+        }
+    }
 }
