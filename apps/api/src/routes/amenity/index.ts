@@ -1,5 +1,6 @@
 import { createRouter } from '../../utils/create-app';
 import { addAmenityToAccommodationRoute } from './addAmenityToAccommodation';
+import { amenityBatchRoute } from './batch';
 import { createAmenityRoute } from './create';
 import { getAccommodationsByAmenityRoute } from './getAccommodationsByAmenity';
 import { getAmenitiesForAccommodationRoute } from './getAmenitiesForAccommodation';
@@ -14,6 +15,7 @@ const app = createRouter();
 
 // Public routes
 app.route('/', amenityListRoute);
+app.route('/', amenityBatchRoute);
 app.route('/', amenityGetByIdRoute);
 app.route('/', getAccommodationsByAmenityRoute);
 app.route('/', getAmenitiesForAccommodationRoute);

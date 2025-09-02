@@ -1,4 +1,5 @@
 import { createRouter } from '../../utils/create-app';
+import { eventBatchRoute } from './batch';
 import { createEventRoute } from './create';
 import { getEventsByAuthorRoute } from './getByAuthor';
 import { getEventsByCategoryRoute } from './getByCategory';
@@ -18,6 +19,7 @@ import { updateEventRoute } from './update';
 const app = createRouter();
 
 app.route('/', eventListRoute);
+app.route('/', eventBatchRoute);
 app.route('/', eventGetByIdRoute);
 app.route('/', getEventSummaryRoute);
 app.route('/', getEventBySlugRoute);

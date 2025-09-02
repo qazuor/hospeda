@@ -4,6 +4,7 @@
  */
 import { createRouter } from '../../utils/create-app';
 import { addFaqRoute } from './addFaq';
+import { accommodationBatchRoute } from './batch';
 import { createAccommodationRoute } from './create';
 import { getByDestinationRoute } from './getByDestination';
 import { accommodationGetByIdRoute } from './getById';
@@ -14,6 +15,7 @@ import { getSummaryRoute } from './getSummary';
 import { getTopRatedByDestinationRoute } from './getTopRatedByDestination';
 import { hardDeleteAccommodationRoute } from './hardDelete';
 import { accommodationListRoute } from './list';
+import { patchAccommodationRoute } from './patch';
 import { removeFaqRoute } from './removeFaq';
 import { restoreAccommodationRoute } from './restore';
 import { accommodationReviewRoutes } from './reviews';
@@ -25,6 +27,7 @@ const app = createRouter();
 
 // Public routes (no authentication required)
 app.route('/', accommodationListRoute); // GET / - Uses createListRoute (self-contained)
+app.route('/', accommodationBatchRoute); // POST /batch - Uses createCRUDRoute (self-contained)
 app.route('/', accommodationGetByIdRoute); // GET /:id - Uses createCRUDRoute (self-contained)
 app.route('/', getAccommodationBySlugRoute); // GET /slug/:slug - Uses createCRUDRoute (self-contained)
 app.route('/', getStatsRoute); // GET /:id/stats - Uses createSimpleRoute (self-contained)
@@ -37,6 +40,7 @@ app.route('/', accommodationReviewRoutes); // /:accommodationId/reviews (list/cr
 // Protected routes (authentication required)
 app.route('/', createAccommodationRoute); // POST / - Uses createCRUDRoute (self-contained)
 app.route('/', updateAccommodationRoute); // PUT /:id - Uses createCRUDRoute (self-contained)
+app.route('/', patchAccommodationRoute); // PATCH /:id - Uses createCRUDRoute (self-contained)
 app.route('/', softDeleteAccommodationRoute); // DELETE /:id - Uses createCRUDRoute (self-contained)
 app.route('/', restoreAccommodationRoute); // POST /:id/restore - Uses createCRUDRoute (self-contained)
 app.route('/', addFaqRoute); // POST /:id/faqs - Uses createSimpleRoute (self-contained)
