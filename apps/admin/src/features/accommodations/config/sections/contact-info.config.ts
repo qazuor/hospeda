@@ -5,10 +5,11 @@ import {
 } from '@/components/entity-form/enums/form-config.enums';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { commonAsyncValidators } from '@/lib/utils/async-validation.utils';
-import { createI18nFieldConfig } from '@/lib/utils/i18n-field.utils';
+import { useConfigTranslations } from '@/lib/utils/config-i18n.utils';
+
 import { extractFieldSchema } from '@/lib/utils/schema-extraction.utils';
-import { AccommodationCoreSchema } from '@repo/schemas';
 import { PermissionEnum } from '@repo/types';
+import { AccommodationClientSchema } from '../../schemas/accommodation-client.schema';
 
 /**
  * Contact Information section configuration for accommodation entity
@@ -20,10 +21,14 @@ import { PermissionEnum } from '@repo/types';
  * - WhatsApp and messaging platforms
  */
 export const createContactInfoSectionConfig = (): SectionConfig => {
+    const { t } = useConfigTranslations();
+
     return {
         id: 'contact-info',
-        title: 'accommodation.sections.contactInfo.title',
-        description: 'accommodation.sections.contactInfo.description',
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        title: t('accommodations.sections.contactInfo.title' as any),
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        description: t('accommodations.sections.contactInfo.description' as any),
         layout: LayoutTypeEnum.GRID,
         permissions: {
             view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
@@ -36,7 +41,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'email'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'email'),
                 asyncValidation: {
                     validator: commonAsyncValidators.validEmail(true),
                     trigger: ValidationTriggerEnum.ON_BLUR
@@ -49,7 +54,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'email'
                 },
-                ...createI18nFieldConfig('accommodation.fields.email')
+                label: t('fields.email.label'),
+                description: t('fields.email.description'),
+                placeholder: t('fields.email.placeholder')
             },
 
             // Phone field
@@ -58,7 +65,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'phone'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'phone'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
@@ -67,7 +74,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'tel'
                 },
-                ...createI18nFieldConfig('accommodation.fields.phone')
+                label: t('fields.phone.label'),
+                description: t('fields.phone.description'),
+                placeholder: t('fields.phone.placeholder')
             },
 
             // Website field
@@ -76,7 +85,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'website'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'website'),
                 asyncValidation: {
                     validator: commonAsyncValidators.validUrl(false),
                     trigger: ValidationTriggerEnum.ON_BLUR
@@ -89,7 +98,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'url'
                 },
-                ...createI18nFieldConfig('accommodation.fields.website')
+                label: t('fields.website.label'),
+                description: t('fields.website.description'),
+                placeholder: t('fields.website.placeholder')
             },
 
             // Contact Person Name field
@@ -98,7 +109,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'contactPersonName'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'contactPersonName'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
@@ -107,7 +118,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'name'
                 },
-                ...createI18nFieldConfig('accommodation.fields.contactPersonName')
+                label: t('fields.contactPersonName.label'),
+                description: t('fields.contactPersonName.description'),
+                placeholder: t('fields.contactPersonName.placeholder')
             },
 
             // Contact Person Email field
@@ -116,7 +129,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'contactPersonEmail'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'contactPersonEmail'),
                 asyncValidation: {
                     validator: commonAsyncValidators.validEmail(false),
                     trigger: ValidationTriggerEnum.ON_BLUR
@@ -129,7 +142,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'email'
                 },
-                ...createI18nFieldConfig('accommodation.fields.contactPersonEmail')
+                label: t('fields.contactPersonEmail.label'),
+                description: t('fields.contactPersonEmail.description'),
+                placeholder: t('fields.contactPersonEmail.placeholder')
             },
 
             // Contact Person Phone field
@@ -138,7 +153,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'contactPersonPhone'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'contactPersonPhone'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
@@ -147,7 +162,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'tel'
                 },
-                ...createI18nFieldConfig('accommodation.fields.contactPersonPhone')
+                label: t('fields.contactPersonPhone.label'),
+                description: t('fields.contactPersonPhone.description'),
+                placeholder: t('fields.contactPersonPhone.placeholder')
             },
 
             // WhatsApp field
@@ -156,7 +173,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'whatsapp'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'whatsapp'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
@@ -165,7 +182,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'tel'
                 },
-                ...createI18nFieldConfig('accommodation.fields.whatsapp')
+                label: t('fields.whatsapp.label'),
+                description: t('fields.whatsapp.description'),
+                placeholder: t('fields.whatsapp.placeholder')
             },
 
             // Instagram field
@@ -174,7 +193,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'instagram'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'instagram'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
@@ -182,7 +201,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 typeConfig: {
                     type: 'TEXT'
                 },
-                ...createI18nFieldConfig('accommodation.fields.instagram')
+                label: t('fields.instagram.label'),
+                description: t('fields.instagram.description'),
+                placeholder: t('fields.instagram.placeholder')
             },
 
             // Facebook field
@@ -191,7 +212,7 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'facebook'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'facebook'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
@@ -199,7 +220,9 @@ export const createContactInfoSectionConfig = (): SectionConfig => {
                 typeConfig: {
                     type: 'TEXT'
                 },
-                ...createI18nFieldConfig('accommodation.fields.facebook')
+                label: t('fields.facebook.label'),
+                description: t('fields.facebook.description'),
+                placeholder: t('fields.facebook.placeholder')
             }
         ]
     };

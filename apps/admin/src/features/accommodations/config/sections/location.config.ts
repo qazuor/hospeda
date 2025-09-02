@@ -1,16 +1,19 @@
 import {
     EntityTypeEnum,
     FieldTypeEnum,
-    LayoutTypeEnum,
-    ValidationTriggerEnum
+    LayoutTypeEnum
 } from '@/components/entity-form/enums/form-config.enums';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import { commonAsyncValidators } from '@/lib/utils/async-validation.utils';
-import { createEntityFunctions } from '@/lib/utils/entity-search.utils';
-import { createI18nFieldConfig } from '@/lib/utils/i18n-field.utils';
+import { useConfigTranslations } from '@/lib/utils/config-i18n.utils';
+
 import { extractFieldSchema } from '@/lib/utils/schema-extraction.utils';
-import { AccommodationCoreSchema } from '@repo/schemas';
 import { PermissionEnum } from '@repo/types';
+import { AccommodationClientSchema } from '../../schemas/accommodation-client.schema';
+import {
+    stableDestinationLoadAllFn,
+    stableDestinationLoadByIdsFn,
+    stableDestinationSearchFn
+} from '../../utils/destination-functions';
 
 /**
  * Location section configuration for accommodation entity
@@ -22,30 +25,30 @@ import { PermissionEnum } from '@repo/types';
  * - Location-specific settings
  */
 export const createLocationSectionConfig = (): SectionConfig => {
-    // Create entity search functions
-    const destinationSearchFns = createEntityFunctions(EntityTypeEnum.DESTINATION);
+    const { t } = useConfigTranslations();
+
+    // Use static functions directly - they are already stable
+    // No need for useMemo since they are defined outside of any component
 
     return {
         id: 'location',
-        title: 'accommodation.sections.location.title',
-        description: 'accommodation.sections.location.description',
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        title: t('accommodations.sections.location.title' as any),
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        description: t('accommodations.sections.location.description' as any),
         layout: LayoutTypeEnum.GRID,
         permissions: {
             view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
             edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
         },
         fields: [
-            // Destination field (Entity Select)
+            // Destination field (Entity Select) - Using stable functions to prevent infinite loops
             {
                 id: 'destinationId',
                 type: FieldTypeEnum.ENTITY_SELECT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'destinationId'),
-                asyncValidation: {
-                    validator: commonAsyncValidators.destinationExists(),
-                    trigger: ValidationTriggerEnum.ON_CHANGE
-                },
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'destinationId'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -53,21 +56,29 @@ export const createLocationSectionConfig = (): SectionConfig => {
                 typeConfig: {
                     type: 'ENTITY_SELECT',
                     entityType: EntityTypeEnum.DESTINATION,
-                    searchFn: destinationSearchFns.searchFn,
-                    loadByIdsFn: destinationSearchFns.loadByIdsFn,
+                    searchFn: stableDestinationSearchFn, // For server-side search (fallback)
+                    loadByIdsFn: stableDestinationLoadByIdsFn,
+                    loadAllFn: stableDestinationLoadAllFn, // For client-side search
                     allowCreate: false, // Don't allow creating destinations from accommodation form
-                    multiple: false
+                    multiple: false,
+                    searchable: true, // Enable search functionality
+                    clearable: true, // Allow clearing the selection
+                    minSearchLength: 1, // Search from first character
+                    searchMode: 'client', // Use client-side search
+                    showAllWhenEmpty: true // Show all options when no search query
                 },
-                ...createI18nFieldConfig('accommodation.fields.destinationId')
+                label: t('fields.destinationId.label'),
+                description: t('fields.destinationId.description'),
+                placeholder: t('fields.destinationId.placeholder')
             },
 
             // Address field
             {
-                id: 'address',
+                id: 'location.address',
                 type: FieldTypeEnum.TEXT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'address'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'address'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -76,16 +87,18 @@ export const createLocationSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'street-address'
                 },
-                ...createI18nFieldConfig('accommodation.fields.address')
+                label: t('fields.address.label'),
+                description: t('fields.address.description'),
+                placeholder: t('fields.address.placeholder')
             },
 
             // City field
             {
-                id: 'city',
+                id: 'location.city',
                 type: FieldTypeEnum.TEXT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'city'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'city'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -94,16 +107,21 @@ export const createLocationSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'address-level2'
                 },
-                ...createI18nFieldConfig('accommodation.fields.city')
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                label: t('fields.city.label' as any),
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                description: t('fields.city.description' as any),
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                placeholder: t('fields.city.placeholder' as any)
             },
 
             // State/Province field
             {
-                id: 'state',
+                id: 'location.state',
                 type: FieldTypeEnum.TEXT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'state'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'state'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -112,16 +130,21 @@ export const createLocationSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'address-level1'
                 },
-                ...createI18nFieldConfig('accommodation.fields.state')
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                label: t('fields.state.label' as any),
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                description: t('fields.state.description' as any),
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                placeholder: t('fields.state.placeholder' as any)
             },
 
             // Country field
             {
-                id: 'country',
+                id: 'location.country',
                 type: FieldTypeEnum.TEXT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'country'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'country'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -130,16 +153,21 @@ export const createLocationSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'country-name'
                 },
-                ...createI18nFieldConfig('accommodation.fields.country')
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                label: t('fields.country.label' as any),
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                description: t('fields.country.description' as any),
+                // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+                placeholder: t('fields.country.placeholder' as any)
             },
 
             // Postal Code field
             {
-                id: 'postalCode',
+                id: 'location.postalCode',
                 type: FieldTypeEnum.TEXT,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'postalCode'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'postalCode'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -148,16 +176,18 @@ export const createLocationSectionConfig = (): SectionConfig => {
                     type: 'TEXT',
                     autocomplete: 'postal-code'
                 },
-                ...createI18nFieldConfig('accommodation.fields.postalCode')
+                label: t('fields.postalCode.label'),
+                description: t('fields.postalCode.description'),
+                placeholder: t('fields.postalCode.placeholder')
             },
 
             // Latitude field
             {
-                id: 'latitude',
+                id: 'location.latitude',
                 type: FieldTypeEnum.NUMBER,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'latitude'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'latitude'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -169,16 +199,18 @@ export const createLocationSectionConfig = (): SectionConfig => {
                     step: 0.000001,
                     precision: 6
                 },
-                ...createI18nFieldConfig('accommodation.fields.latitude')
+                label: t('fields.latitude.label'),
+                description: t('fields.latitude.description'),
+                placeholder: t('fields.latitude.placeholder')
             },
 
             // Longitude field
             {
-                id: 'longitude',
+                id: 'location.longitude',
                 type: FieldTypeEnum.NUMBER,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'longitude'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'longitude'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -190,16 +222,18 @@ export const createLocationSectionConfig = (): SectionConfig => {
                     step: 0.000001,
                     precision: 6
                 },
-                ...createI18nFieldConfig('accommodation.fields.longitude')
+                label: t('fields.longitude.label'),
+                description: t('fields.longitude.description'),
+                placeholder: t('fields.longitude.placeholder')
             },
 
             // Location Notes field
             {
-                id: 'locationNotes',
+                id: 'location.locationNotes',
                 type: FieldTypeEnum.TEXTAREA,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'locationNotes'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'locationNotes'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
@@ -209,7 +243,9 @@ export const createLocationSectionConfig = (): SectionConfig => {
                     minRows: 3,
                     maxLength: 500
                 },
-                ...createI18nFieldConfig('accommodation.fields.locationNotes')
+                label: t('fields.locationNotes.label'),
+                description: t('fields.locationNotes.description'),
+                placeholder: t('fields.locationNotes.placeholder')
             }
         ]
     };
