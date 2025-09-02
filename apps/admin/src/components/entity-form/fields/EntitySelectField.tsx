@@ -1,19 +1,31 @@
-import type { FieldConfig, SelectOption } from '@/components/entity-form/types/field-config.types';
-import {
-    Label,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui-wrapped';
-import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
-import { Loader2, Search, X } from 'lucide-react';
+/**
+ * @file EntitySelectField Component
+ *
+ * A field component for selecting entities with search functionality using the official shadcn/ui Combobox pattern.
+ * This component provides a searchable dropdown for selecting entities from an API.
+ */
+
+import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
 import * as React from 'react';
 
+import { Label } from '@/components/ui-wrapped';
+import { useToast } from '@/components/ui/ToastProvider';
+import { Button } from '@/components/ui/button';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+
+import type { FieldConfig, SelectOption } from '../types/field-config.types';
+
 /**
- * Props for EntitySelectField component
+ * Props for the EntitySelectField component
  */
 export interface EntitySelectFieldProps {
     /** Field configuration */
@@ -22,27 +34,22 @@ export interface EntitySelectFieldProps {
     value?: string | string[];
     /** Change handler */
     onChange?: (value: string | string[]) => void;
-    /** Blur handler */
-    onBlur?: () => void;
-    /** Focus handler */
-    onFocus?: () => void;
-    /** Whether the field has an error */
-    hasError?: boolean;
-    /** Error message to display */
-    errorMessage?: string;
     /** Whether the field is disabled */
     disabled?: boolean;
     /** Whether the field is required */
     required?: boolean;
+    /** Whether the field is in a loading state */
+    loading?: boolean;
+    /** Whether the field has an error */
+    hasError?: boolean;
+    /** Error message to display */
+    errorMessage?: string;
     /** Additional CSS classes */
     className?: string;
-    /** Loading state */
-    loading?: boolean;
 }
 
 /**
- * EntitySelectField component for selecting entities with search functionality
- * Handles ENTITY_SELECT and ENTITY_MULTISELECT field types from FieldConfig
+ * EntitySelectField component using the official shadcn/ui Combobox pattern
  */
 export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelectFieldProps>(
     (
@@ -50,65 +57,248 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
             config,
             value,
             onChange,
-            onBlur,
-            onFocus,
-            hasError = false,
-            errorMessage,
             disabled = false,
             required = false,
-            className,
             loading = false,
+            hasError = false,
+            errorMessage,
+            className,
             ...props
         },
         ref
     ) => {
-        const { label, description, placeholder, helper } = useFieldI18n(config.id, config.i18n);
+        // Extract configuration
+        const { id, label, description, placeholder, typeConfig } = config;
+        const entityConfig = typeConfig?.type === 'ENTITY_SELECT' ? typeConfig : null;
 
-        // Get entity select specific config
-        const entityConfig =
-            config.typeConfig?.type === 'ENTITY_SELECT' ? config.typeConfig : undefined;
+        // Hooks
+        const { addToast } = useToast();
 
-        // State for search and options
+        // Component state
+        const [open, setOpen] = React.useState(false);
         const [searchQuery, setSearchQuery] = React.useState('');
-        const [options, setOptions] = React.useState<SelectOption[]>([]);
+        const [searchOptions, setSearchOptions] = React.useState<SelectOption[]>([]);
+        const [selectedOptions, setSelectedOptions] = React.useState<SelectOption[]>([]);
+        const [allOptions, setAllOptions] = React.useState<SelectOption[]>([]); // For client-side search
         const [isSearching, setIsSearching] = React.useState(false);
-        const [isOpen, setIsOpen] = React.useState(false);
 
-        // Debounced search
+        // Refs for stable function references
+        const searchFnRef = React.useRef(entityConfig?.searchFn);
+        const loadByIdsFnRef = React.useRef(entityConfig?.loadByIdsFn);
+        const loadAllFnRef = React.useRef(entityConfig?.loadAllFn);
+        const loadedValuesRef = React.useRef<string>('');
+        const loadedAllRef = React.useRef<boolean>(false);
         const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-        const fieldId = `field-${config.id}`;
-        const errorId = hasError ? `${fieldId}-error` : undefined;
-        const descriptionId = description ? `${fieldId}-description` : undefined;
-        const helperId = helper ? `${fieldId}-helper` : undefined;
+        // Update refs when functions change
+        React.useEffect(() => {
+            searchFnRef.current = entityConfig?.searchFn;
+            loadByIdsFnRef.current = entityConfig?.loadByIdsFn;
+            loadAllFnRef.current = entityConfig?.loadAllFn;
+        }, [entityConfig?.searchFn, entityConfig?.loadByIdsFn, entityConfig?.loadAllFn]);
 
+        // Determine if multiple selection is allowed
         const isMultiple = entityConfig?.multiple || false;
         const values = Array.isArray(value) ? value : value ? [value] : [];
 
-        // Search function
+        // IDs for accessibility
+        const fieldId = `field-${id}`;
+        const descriptionId = description ? `${fieldId}-description` : undefined;
+        const errorId = hasError && errorMessage ? `${fieldId}-error` : undefined;
+
+        // Load selected options by IDs
+        React.useEffect(() => {
+            const valuesKey = values.sort().join(',');
+
+            // Skip if we've already loaded options for these exact values
+            if (loadedValuesRef.current === valuesKey) {
+                return;
+            }
+
+            if (values.length > 0) {
+                // First, try to find options in our existing data (allOptions or searchOptions)
+                const availableOptions = [...allOptions, ...searchOptions];
+                const foundOptions = values
+                    .map((val) => availableOptions.find((opt) => opt.value === val))
+                    .filter(Boolean) as SelectOption[];
+
+                // If we found all needed options locally, use them
+                if (foundOptions.length === values.length) {
+                    setSelectedOptions(foundOptions);
+                    loadedValuesRef.current = valuesKey;
+                    return;
+                }
+
+                // Only call API if we don't have all the options locally
+                if (loadByIdsFnRef.current) {
+                    loadByIdsFnRef
+                        .current(values)
+                        .then((newOptions) => {
+                            // Only update if the values haven't changed while we were loading
+                            const currentValuesKey = values.sort().join(',');
+                            if (currentValuesKey === valuesKey) {
+                                setSelectedOptions(newOptions);
+                                loadedValuesRef.current = valuesKey;
+                            }
+                        })
+                        .catch((error) => {
+                            const errorMsg = `Failed to load selected ${entityConfig?.entityType?.toLowerCase() || 'options'}: ${error.message || 'Unknown error'}`;
+                            addToast({
+                                title: 'Error Loading Selection',
+                                message: errorMsg,
+                                variant: 'error'
+                            });
+                        });
+                }
+            } else if (values.length === 0) {
+                // Clear options if no values
+                setSelectedOptions([]);
+                loadedValuesRef.current = '';
+            }
+        }, [values, allOptions, searchOptions, addToast, entityConfig?.entityType]);
+
+        // Search function with debouncing (defined early to avoid hoisting issues)
         const performSearch = React.useCallback(
             async (query: string) => {
-                if (!entityConfig?.searchFn) return;
+                const searchMode = entityConfig?.searchMode || 'server';
 
-                const minLength = entityConfig.minSearchLength || 2;
+                if (searchMode === 'client') {
+                    // Client-side search: filter from allOptions
+
+                    if (query.trim() === '') {
+                        // Show all options when empty if configured
+                        if (entityConfig?.showAllWhenEmpty) {
+                            setSearchOptions(allOptions);
+                        } else {
+                            setSearchOptions([]);
+                        }
+                        return;
+                    }
+
+                    const filtered = allOptions.filter((option) =>
+                        option.label.toLowerCase().includes(query.toLowerCase())
+                    );
+                    setSearchOptions(filtered);
+                    return;
+                }
+
+                // Server-side search
+                if (!entityConfig?.searchFn) {
+                    return;
+                }
+
+                const minLength = entityConfig.minSearchLength || 1;
                 if (query.length < minLength) {
-                    setOptions([]);
+                    // Show all options when empty if configured and we have them
+                    if (
+                        query.length === 0 &&
+                        entityConfig?.showAllWhenEmpty &&
+                        allOptions.length > 0
+                    ) {
+                        setSearchOptions(allOptions);
+                    } else {
+                        setSearchOptions([]);
+                    }
                     return;
                 }
 
                 setIsSearching(true);
                 try {
                     const results = await entityConfig.searchFn(query);
-                    setOptions(results);
+                    setSearchOptions(results);
                 } catch (error) {
-                    console.error('Entity search error:', error);
-                    setOptions([]);
+                    const errorMsg = `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+                    addToast({
+                        title: 'Search Error',
+                        message: errorMsg,
+                        variant: 'error'
+                    });
+                    setSearchOptions([]);
                 } finally {
                     setIsSearching(false);
                 }
             },
-            [entityConfig]
+            [entityConfig, allOptions, addToast]
         );
+
+        // Load all options for client-side search
+        React.useEffect(() => {
+            const searchMode = entityConfig?.searchMode || 'server';
+
+            if (searchMode === 'client' && !loadedAllRef.current && loadAllFnRef.current) {
+                loadAllFnRef
+                    .current()
+                    .then((options) => {
+                        setAllOptions(options);
+                        loadedAllRef.current = true;
+
+                        // Always set search options when loaded in client mode
+                        if (entityConfig?.showAllWhenEmpty) {
+                            setSearchOptions(options);
+                        }
+                    })
+                    .catch((error) => {
+                        const errorMsg = `Failed to load ${entityConfig?.entityType?.toLowerCase() || 'options'}: ${error.message || 'Unknown error'}`;
+                        addToast({
+                            title: 'Error Loading Options',
+                            message: errorMsg,
+                            variant: 'error'
+                        });
+                        setAllOptions([]);
+                        setSearchOptions([]);
+                    });
+            }
+        }, [
+            entityConfig?.searchMode,
+            addToast,
+            entityConfig?.entityType,
+            entityConfig?.showAllWhenEmpty
+        ]);
+
+        // Initial search trigger for client mode
+        React.useEffect(() => {
+            const searchMode = entityConfig?.searchMode || 'server';
+
+            // Trigger initial search for client mode to show all options when empty
+            if (
+                searchMode === 'client' &&
+                entityConfig?.showAllWhenEmpty &&
+                allOptions.length > 0 &&
+                !searchQuery.trim()
+            ) {
+                setSearchOptions(allOptions);
+            }
+        }, [allOptions, entityConfig?.searchMode, entityConfig?.showAllWhenEmpty, searchQuery]);
+
+        // Trigger search when popover opens
+        React.useEffect(() => {
+            if (
+                open &&
+                entityConfig?.searchMode === 'client' &&
+                entityConfig?.showAllWhenEmpty &&
+                !searchQuery.trim()
+            ) {
+                performSearch('');
+            }
+        }, [
+            open,
+            entityConfig?.searchMode,
+            entityConfig?.showAllWhenEmpty,
+            searchQuery,
+            performSearch
+        ]);
+
+        // Initial trigger for client mode when component mounts
+        React.useEffect(() => {
+            const searchMode = entityConfig?.searchMode || 'server';
+
+            if (searchMode === 'client' && entityConfig?.showAllWhenEmpty) {
+                // Trigger search after a small delay to ensure everything is loaded
+                setTimeout(() => {
+                    performSearch('');
+                }, 100);
+            }
+        }, [entityConfig?.searchMode, entityConfig?.showAllWhenEmpty, performSearch]); // Only run when these change
 
         // Debounced search effect
         React.useEffect(() => {
@@ -116,38 +306,41 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                 clearTimeout(searchTimeoutRef.current);
             }
 
-            const debounceMs = entityConfig?.searchDebounceMs || 300;
+            // Always perform search, even with empty query (for showAllWhenEmpty)
             searchTimeoutRef.current = setTimeout(() => {
                 performSearch(searchQuery);
-            }, debounceMs);
+            }, 300);
 
             return () => {
                 if (searchTimeoutRef.current) {
                     clearTimeout(searchTimeoutRef.current);
                 }
             };
-        }, [searchQuery, performSearch, entityConfig?.searchDebounceMs]);
+        }, [searchQuery, performSearch]);
 
-        // Load selected options by IDs
-        React.useEffect(() => {
-            if (values.length > 0 && entityConfig?.loadByIdsFn) {
-                entityConfig.loadByIdsFn(values).then(setOptions).catch(console.error);
+        // Handle selection
+        const handleSelect = (selectedValue: string) => {
+            // Handle clear selection
+            if (selectedValue === '__CLEAR_SELECTION__') {
+                onChange?.(isMultiple ? [] : '');
+                setOpen(false);
+                return;
             }
-        }, [values, entityConfig?.loadByIdsFn]);
 
-        const handleValueChange = (newValue: string) => {
             if (isMultiple) {
                 const currentValues = Array.isArray(value) ? value : [];
-                const updatedValues = currentValues.includes(newValue)
-                    ? currentValues.filter((v) => v !== newValue)
-                    : [...currentValues, newValue];
+                const updatedValues = currentValues.includes(selectedValue)
+                    ? currentValues.filter((v) => v !== selectedValue)
+                    : [...currentValues, selectedValue];
                 onChange?.(updatedValues);
             } else {
+                const newValue = selectedValue === value ? '' : selectedValue;
                 onChange?.(newValue);
-                setIsOpen(false);
+                setOpen(false);
             }
         };
 
+        // Handle remove value (for multiple selection)
         const handleRemoveValue = (valueToRemove: string) => {
             if (isMultiple && Array.isArray(value)) {
                 const updatedValues = value.filter((v) => v !== valueToRemove);
@@ -155,44 +348,30 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
             }
         };
 
-        const selectedOptions = options.filter((option) => values.includes(option.value));
-
-        const renderSelectedValue = () => {
-            if (selectedOptions.length === 0) {
-                return placeholder || 'Select...';
-            }
-
+        // Get display text for selected value(s)
+        const getDisplayText = () => {
             if (isMultiple) {
-                return `${selectedOptions.length} selected`;
+                return selectedOptions.length > 0
+                    ? `${selectedOptions.length} selected`
+                    : placeholder || 'Select items...';
+            }
+            const selectedOption = selectedOptions.find((opt) => opt.value === value);
+            return selectedOption?.label || placeholder || 'Select item...';
+        };
+
+        // Combine search results with selected options for display
+        const displayOptions = React.useMemo(() => {
+            const combined = [...selectedOptions];
+
+            // Add search results that aren't already selected
+            for (const searchOption of searchOptions) {
+                if (!combined.some((opt) => opt.value === searchOption.value)) {
+                    combined.push(searchOption);
+                }
             }
 
-            return selectedOptions[0]?.label;
-        };
-
-        const renderSelectedBadges = () => {
-            if (!isMultiple || selectedOptions.length === 0) return null;
-
-            return (
-                <div className="mt-2 flex flex-wrap gap-1">
-                    {selectedOptions.map((option) => (
-                        <div
-                            key={option.value}
-                            className="flex items-center gap-1 rounded bg-secondary px-2 py-1 text-secondary-foreground text-xs"
-                        >
-                            <span>{option.label}</span>
-                            <button
-                                type="button"
-                                onClick={() => handleRemoveValue(option.value)}
-                                className="rounded p-0.5 hover:bg-secondary-foreground/20"
-                                disabled={disabled}
-                            >
-                                <X className="h-3 w-3" />
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            );
-        };
+            return combined;
+        }, [searchOptions, selectedOptions]);
 
         return (
             <div className={cn('space-y-2', className)}>
@@ -201,7 +380,9 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                     <Label
                         htmlFor={fieldId}
                         className={cn(
-                            required && 'after:ml-0.5 after:text-destructive after:content-["*"]'
+                            'font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+                            required && 'after:ml-0.5 after:text-red-500 after:content-["*"]',
+                            hasError && 'text-red-600'
                         )}
                     >
                         {label}
@@ -218,151 +399,134 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                     </p>
                 )}
 
-                {/* Select Field */}
-                <Select
-                    value={isMultiple ? '' : (value as string) || ''}
-                    onValueChange={handleValueChange}
-                    disabled={disabled || loading}
-                    required={required}
-                    open={isOpen}
-                    onOpenChange={setIsOpen}
-                    {...props}
+                {/* Official shadcn/ui Combobox Pattern */}
+                <Popover
+                    open={open}
+                    onOpenChange={setOpen}
                 >
-                    <SelectTrigger
-                        ref={ref}
-                        id={fieldId}
-                        className={cn(
-                            hasError && 'border-destructive focus:ring-destructive',
-                            config.className
-                        )}
-                        aria-invalid={hasError}
-                        aria-describedby={cn(errorId, descriptionId, helperId).trim() || undefined}
-                        onBlur={onBlur}
-                        onFocus={onFocus}
+                    <PopoverTrigger asChild>
+                        <Button
+                            ref={ref}
+                            id={fieldId}
+                            variant="outline"
+                            // biome-ignore lint/a11y/useSemanticElements: <explanation>
+                            role="combobox"
+                            aria-expanded={open}
+                            aria-describedby={cn(descriptionId, errorId)}
+                            className={cn(
+                                'w-full justify-between',
+                                !value && 'text-muted-foreground',
+                                hasError &&
+                                    'border-red-500 focus:border-red-500 focus:ring-red-500',
+                                disabled && 'cursor-not-allowed opacity-50'
+                            )}
+                            disabled={disabled || loading}
+                            {...props}
+                        >
+                            <span className="truncate">{getDisplayText()}</span>
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                        className="max-h-[300px] w-[--radix-popover-trigger-width] p-0"
+                        align="start"
                     >
-                        <SelectValue>
-                            {loading ? (
-                                <div className="flex items-center gap-2">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Loading...
-                                </div>
-                            ) : (
-                                renderSelectedValue()
-                            )}
-                        </SelectValue>
-                    </SelectTrigger>
-
-                    <SelectContent>
-                        {/* Search Input */}
-                        {entityConfig?.searchable && (
-                            <div className="flex items-center border-b px-3 pb-2">
-                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                <input
-                                    className="flex h-8 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                                    placeholder="Search..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                        )}
-
-                        {/* Clear option if allowed */}
-                        {entityConfig?.clearable && !isMultiple && value && (
-                            <SelectItem value="">
-                                <span className="text-muted-foreground">Clear selection</span>
-                            </SelectItem>
-                        )}
-
-                        {/* Loading state */}
-                        {isSearching && (
-                            <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Searching...
-                            </div>
-                        )}
-
-                        {/* Options */}
-                        {!isSearching &&
-                            options.map((option) => (
-                                <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                    disabled={option.disabled}
-                                    className={cn(
-                                        option.disabled && 'cursor-not-allowed opacity-50',
-                                        isMultiple && values.includes(option.value) && 'bg-accent'
-                                    )}
-                                >
-                                    <div className="flex w-full items-center gap-2">
-                                        {(() => {
-                                            const icon = option.metadata?.icon;
-                                            if (icon && typeof icon === 'string') {
-                                                return (
-                                                    <span className="text-muted-foreground">
-                                                        {icon}
-                                                    </span>
-                                                );
-                                            }
-                                            return null;
-                                        })()}
-
-                                        <div className="flex flex-1 flex-col">
-                                            <span>{option.label}</span>
-                                            {option.description && (
-                                                <span className="text-muted-foreground text-xs">
-                                                    {option.description}
-                                                </span>
-                                            )}
+                        <Command shouldFilter={false}>
+                            <CommandInput
+                                placeholder={`Search ${entityConfig?.entityType?.toLowerCase() || 'items'}...`}
+                                value={searchQuery}
+                                onValueChange={setSearchQuery}
+                            />
+                            <CommandList>
+                                <CommandEmpty>
+                                    {isSearching ? (
+                                        <div className="flex items-center justify-center py-6">
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Searching...
                                         </div>
+                                    ) : (
+                                        'No results found.'
+                                    )}
+                                </CommandEmpty>
+                                <CommandGroup>
+                                    {/* Clear option */}
+                                    {entityConfig?.clearable && !isMultiple && value && (
+                                        <CommandItem
+                                            value="__CLEAR_SELECTION__"
+                                            onSelect={handleSelect}
+                                        >
+                                            <span className="text-muted-foreground">
+                                                Clear selection
+                                            </span>
+                                        </CommandItem>
+                                    )}
 
-                                        {isMultiple && values.includes(option.value) && (
-                                            <div className="ml-auto">
-                                                <div className="flex h-4 w-4 items-center justify-center rounded-sm bg-primary">
-                                                    <div className="h-2 w-2 rounded-sm bg-primary-foreground" />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </SelectItem>
-                            ))}
-
-                        {/* Empty state */}
-                        {!isSearching && options.length === 0 && searchQuery && (
-                            <div className="py-6 text-center text-muted-foreground text-sm">
-                                No results found for "{searchQuery}"
-                            </div>
-                        )}
-
-                        {/* No search query state */}
-                        {!isSearching &&
-                            options.length === 0 &&
-                            !searchQuery &&
-                            entityConfig?.searchable && (
-                                <div className="py-6 text-center text-muted-foreground text-sm">
-                                    Start typing to search...
-                                </div>
-                            )}
-                    </SelectContent>
-                </Select>
+                                    {/* Options */}
+                                    {displayOptions.map((option) => (
+                                        <CommandItem
+                                            key={option.value}
+                                            value={option.value}
+                                            onSelect={handleSelect}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    'mr-2 h-4 w-4',
+                                                    (
+                                                        isMultiple
+                                                            ? values.includes(option.value)
+                                                            : value === option.value
+                                                    )
+                                                        ? 'opacity-100'
+                                                        : 'opacity-0'
+                                                )}
+                                            />
+                                            <span>{option.label}</span>
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
 
                 {/* Selected badges for multiple selection */}
-                {renderSelectedBadges()}
-
-                {/* Helper Text */}
-                {helper && !hasError && (
-                    <p
-                        id={helperId}
-                        className="text-muted-foreground text-sm"
-                    >
-                        {helper}
-                    </p>
+                {isMultiple && selectedOptions.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                        {selectedOptions
+                            .filter((option) => values.includes(option.value))
+                            .map((option) => (
+                                <div
+                                    key={option.value}
+                                    className="flex items-center gap-1 rounded bg-secondary px-2 py-1 text-secondary-foreground text-xs"
+                                >
+                                    <span>{option.label}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveValue(option.value)}
+                                        className="rounded p-0.5 hover:bg-secondary-foreground/20"
+                                        disabled={disabled}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </div>
+                            ))}
+                    </div>
                 )}
 
-                {/* Error Message */}
+                {/* Loading indicator */}
+                {loading && (
+                    <div className="flex items-center justify-center py-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="ml-2 text-muted-foreground text-sm">Loading...</span>
+                    </div>
+                )}
+
+                {/* Error message */}
+                {/* Field validation error */}
                 {hasError && errorMessage && (
                     <p
                         id={errorId}
-                        className="text-destructive text-sm"
+                        className="text-red-600 text-sm"
                     >
                         {errorMessage}
                     </p>
