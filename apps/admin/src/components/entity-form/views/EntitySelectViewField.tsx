@@ -1,7 +1,7 @@
 import type { FieldConfig, SelectOption } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import { ExternalLink } from 'lucide-react';
 import * as React from 'react';
 
@@ -52,7 +52,9 @@ export const EntitySelectViewField = React.forwardRef<HTMLDivElement, EntitySele
         },
         ref
     ) => {
-        const { label, description } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
 
         // Get entity select specific config
         const entityConfig =
