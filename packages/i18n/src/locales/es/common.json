@@ -1,27 +1,58 @@
 {
-    "loading": "Cargando...",
-    "readMore": "Leer más",
-    "backToHome": "Volver al inicio",
-    "pricePerNight": "por noche",
-    "search": "Buscar",
+    "accommodations": "Alojamientos",
     "apply": "Aplicar",
+    "backHome": "Volver al inicio",
+    "backToHome": "Volver al inicio",
     "clear": "Limpiar",
-    "filters": "Filtros",
-    "sort": "Ordenar",
-    "submit": "Enviar",
-    "optional": "Opcional",
-    "required": "Requerido",
-    "error": {
-        "general": "Lo sentimos, algo salió mal.",
-        "404": "Página no encontrada."
+    "destinations": "Destinos",
+    "enums": {
+        "accommodationType": {
+            "apartment": "Apartamento",
+            "cabin": "Cabaña",
+            "camping": "Camping",
+            "country_house": "Casa de Campo",
+            "hostel": "Hostel",
+            "hotel": "Hotel",
+            "house": "Casa",
+            "motel": "Motel",
+            "resort": "Resort",
+            "room": "Habitación"
+        },
+        "lifecycleStatus": {
+            "active": "Activo",
+            "archived": "Archivado",
+            "draft": "Borrador"
+        },
+        "moderationStatus": {
+            "approved": "Aprobado",
+            "pending": "Pendiente",
+            "rejected": "Rechazado"
+        },
+        "visibility": {
+            "private": "Privado",
+            "public": "Público",
+            "restricted": "Restringido"
+        }
     },
+    "error": {
+        "404": "Página no encontrada.",
+        "general": "Lo sentimos, algo salió mal."
+    },
+    "filters": "Filtros",
+    "goHome": "Volver al inicio",
     "in": "en",
     "loadMore": "Cargar más",
-    "viewAll": "Ver todo",
-    "seeAll": "Ver todos →",
-    "backHome": "Volver al inicio",
-    "accommodations": "Alojamientos",
-    "destinations": "Destinos",
+    "loading": "Cargando...",
+    "no": "No",
+    "optional": "Opcional",
+    "pricePerNight": "por noche",
+    "readMore": "Leer más",
+    "required": "Requerido",
     "reviews": "reseñas",
-    "goHome": "Volver al inicio"
+    "search": "Buscar",
+    "seeAll": "Ver todos →",
+    "sort": "Ordenar",
+    "submit": "Enviar",
+    "viewAll": "Ver todo",
+    "yes": "Sí"
 }
