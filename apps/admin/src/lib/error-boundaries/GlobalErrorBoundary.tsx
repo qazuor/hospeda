@@ -38,8 +38,7 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error, resetE
             timestamp: new Date().toISOString()
         };
 
-        // biome-ignore lint/suspicious/noConsoleLog: Error reporting functionality
-        console.log('Error report:', errorReport);
+        adminLogger.error(errorReport, 'Error report');
 
         // For now, copy to clipboard
         navigator.clipboard
