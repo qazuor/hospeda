@@ -49,8 +49,10 @@ export const useCommonEnumOptions = () => {
         Object.values(enumObj).map((value) => ({
             value,
             // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
-            label: t(`enums.${prefix}.${value.toLowerCase()}` as any, { defaultValue: value }),
-            labelKey: `enums.${prefix}.${value.toLowerCase()}`
+            label: t(`common.enums.${prefix}.${value.toLowerCase()}` as any, {
+                defaultValue: value
+            }),
+            labelKey: `common.enums.${prefix}.${value.toLowerCase()}`
         }));
 
     return {

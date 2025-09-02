@@ -114,35 +114,85 @@ export const createEntityLoadByIdsFn = (config: EntityLoadConfig) => {
     return async (ids: string[]): Promise<SelectOption[]> => {
         if (ids.length === 0) return [];
 
-        const endpoint = config.endpoint || `/api/${config.entityType.toLowerCase()}s/batch`;
+        // Check if we have a batch endpoint or need to use individual calls
+        const hasBatchEndpoint = config.endpoint?.includes('/batch');
 
-        try {
-            const response = await fetchApi({
-                path: endpoint,
-                method: 'POST',
-                body: {
-                    ids,
-                    ...(config.includeFields && { fields: config.includeFields })
-                }
-            });
-
-            return (response.data as { data: EntitySearchItem[] }).data.map(
-                (item: EntitySearchItem) => ({
-                    value: item.id,
-                    label:
-                        item.name || item.title || item.label || `${config.entityType} ${item.id}`,
-                    description: item.description || item.summary,
-                    metadata: {
-                        ...item.metadata,
-                        slug: item.slug,
-                        type: item.type,
-                        status: item.status
+        if (hasBatchEndpoint) {
+            // Use batch endpoint
+            try {
+                const response = await fetchApi({
+                    path:
+                        config.endpoint ||
+                        `/api/v1/public/${config.entityType.toLowerCase()}s/batch`,
+                    method: 'POST',
+                    body: {
+                        ids,
+                        ...(config.includeFields && { fields: config.includeFields })
                     }
-                })
-            );
-        } catch (error) {
-            console.error(`Entity load by IDs error for ${config.entityType}:`, error);
-            return [];
+                });
+
+                return (response.data as { data: EntitySearchItem[] }).data.map(
+                    (item: EntitySearchItem) => ({
+                        value: item.id,
+                        label:
+                            item.name ||
+                            item.title ||
+                            item.label ||
+                            `${config.entityType} ${item.id}`,
+                        description: item.description || item.summary,
+                        metadata: {
+                            ...item.metadata,
+                            slug: item.slug,
+                            type: item.type,
+                            status: item.status
+                        }
+                    })
+                );
+            } catch (error) {
+                console.error(`Entity load by IDs error for ${config.entityType}:`, error);
+                return [];
+            }
+        } else {
+            // Use individual getById calls
+            const baseEndpoint =
+                config.endpoint || `/api/v1/public/${config.entityType.toLowerCase()}s`;
+
+            try {
+                const results = await Promise.all(
+                    ids.map(async (id) => {
+                        try {
+                            const response = await fetchApi({
+                                path: `${baseEndpoint}/${id}`
+                            });
+                            return response.data as EntitySearchItem;
+                        } catch (error) {
+                            console.error(`Failed to load ${config.entityType} ${id}:`, error);
+                            return null;
+                        }
+                    })
+                );
+
+                return results
+                    .filter((item): item is EntitySearchItem => item !== null)
+                    .map((item) => ({
+                        value: item.id,
+                        label:
+                            item.name ||
+                            item.title ||
+                            item.label ||
+                            `${config.entityType} ${item.id}`,
+                        description: item.description || item.summary,
+                        metadata: {
+                            ...item.metadata,
+                            slug: item.slug,
+                            type: item.type,
+                            status: item.status
+                        }
+                    }));
+            } catch (error) {
+                console.error(`Entity load by IDs error for ${config.entityType}:`, error);
+                return [];
+            }
         }
     };
 };
@@ -346,14 +396,17 @@ export const entityLoadConfigs: Record<EntityTypeEnum, EntityLoadConfig> = {
  */
 export const createEntityFunctions = (
     entityType: EntityTypeEnum,
-    customConfig?: Partial<EntitySearchConfig>
+    customConfig?: Partial<EntitySearchConfig & EntityLoadConfig>
 ) => {
     const searchConfig = {
         ...entitySearchConfigs[entityType],
         ...customConfig
     };
 
-    const loadConfig = entityLoadConfigs[entityType];
+    const loadConfig = {
+        ...entityLoadConfigs[entityType],
+        ...(customConfig?.endpoint && { endpoint: customConfig.endpoint })
+    };
 
     return {
         searchFn: createEntitySearchFn(searchConfig),
