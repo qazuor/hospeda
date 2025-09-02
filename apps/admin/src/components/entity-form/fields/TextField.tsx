@@ -1,7 +1,6 @@
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Input, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
 import * as React from 'react';
 
 /**
@@ -51,7 +50,11 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
         },
         ref
     ) => {
-        const { label, description, placeholder, helper } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
+        const placeholder = config.placeholder;
+        const helper = config.help;
 
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             onChange?.(e.target.value);
