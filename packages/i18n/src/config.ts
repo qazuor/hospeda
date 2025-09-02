@@ -33,6 +33,7 @@ export const namespaces = [
     'search',
     'terms',
     'ui',
+    'fields',
     // Admin namespaces
     'admin-auth',
     'admin-nav',
@@ -103,6 +104,7 @@ import contactEs from './locales/es/contact.json';
 import destinationEs from './locales/es/destination.json';
 import errorEs from './locales/es/error.json';
 import eventEs from './locales/es/event.json';
+import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
 import homeEs from './locales/es/home.json';
 import navEs from './locales/es/nav.json';
@@ -136,6 +138,7 @@ const rawTranslations = {
         search: searchEs,
         terms: termsEs,
         ui: uiEs,
+        fields: fieldsEs,
         // Admin translations
         'admin-auth': adminAuthEs,
         'admin-nav': adminNavEs,
