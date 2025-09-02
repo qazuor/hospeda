@@ -2,7 +2,7 @@ import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyFiel
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import * as React from 'react';
 
 /**
@@ -43,7 +43,9 @@ export const CurrencyViewField = React.forwardRef<HTMLDivElement, CurrencyViewFi
         },
         ref
     ) => {
-        const { label, description } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
 
         // Get currency specific config
         const currencyConfig =

@@ -2,7 +2,7 @@ import type { GalleryImage } from '@/components/entity-form/fields/GalleryField'
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import { Download, ExternalLink, ImageIcon, ZoomIn } from 'lucide-react';
 import * as React from 'react';
 
@@ -65,7 +65,9 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
         },
         ref
     ) => {
-        const { label, description } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
 
         // Get gallery specific config
         const galleryConfig = config.typeConfig?.type === 'GALLERY' ? config.typeConfig : undefined;
