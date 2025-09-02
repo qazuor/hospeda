@@ -1,0 +1,207 @@
+{
+    "name": {
+        "title": "Nombre",
+        "label": "Nombre del alojamiento",
+        "description": "Nombre descriptivo del alojamiento",
+        "placeholder": "Ingresa el nombre del alojamiento"
+    },
+    "slug": {
+        "title": "URL Amigable",
+        "label": "Slug",
+        "description": "URL amigable para el alojamiento",
+        "placeholder": "url-del-alojamiento",
+        "help": "prueba de help"
+    },
+    "description": {
+        "title": "Descripción",
+        "label": "Descripción completa",
+        "description": "Descripción detallada del alojamiento",
+        "placeholder": "Describe el alojamiento en detalle"
+    },
+    "type": {
+        "title": "Tipo",
+        "label": "Tipo de alojamiento",
+        "description": "Categoría del alojamiento",
+        "placeholder": "Selecciona el tipo"
+    },
+    "lifecycleState": {
+        "title": "Estado del Ciclo de Vida",
+        "label": "Estado",
+        "description": "Estado actual del alojamiento",
+        "placeholder": "Selecciona el estado"
+    },
+    "visibility": {
+        "title": "Visibilidad",
+        "label": "Visibilidad",
+        "description": "Nivel de visibilidad del alojamiento",
+        "placeholder": "Selecciona la visibilidad"
+    },
+    "shortDescription": {
+        "title": "Descripción Corta",
+        "label": "Resumen",
+        "description": "Descripción breve del alojamiento",
+        "placeholder": "Resumen breve del alojamiento"
+    },
+    "isFeatured": {
+        "title": "Destacado",
+        "label": "Alojamiento destacado",
+        "description": "Marcar como alojamiento destacado",
+        "placeholder": "¿Es destacado?"
+    },
+    "email": {
+        "title": "Email",
+        "label": "Correo electrónico",
+        "description": "Dirección de correo electrónico de contacto",
+        "placeholder": "ejemplo@correo.com"
+    },
+    "phone": {
+        "title": "Teléfono",
+        "label": "Número de teléfono",
+        "description": "Número de teléfono de contacto",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "website": {
+        "title": "Sitio Web",
+        "label": "Página web",
+        "description": "URL del sitio web oficial",
+        "placeholder": "https://ejemplo.com"
+    },
+    "contactPersonName": {
+        "title": "Persona de Contacto",
+        "label": "Nombre del contacto",
+        "description": "Nombre de la persona de contacto",
+        "placeholder": "Juan Pérez"
+    },
+    "contactPersonEmail": {
+        "title": "Email del Contacto",
+        "label": "Email de la persona de contacto",
+        "description": "Correo electrónico de la persona de contacto",
+        "placeholder": "contacto@ejemplo.com"
+    },
+    "contactPersonPhone": {
+        "title": "Teléfono del Contacto",
+        "label": "Teléfono de la persona de contacto",
+        "description": "Número de teléfono de la persona de contacto",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "whatsapp": {
+        "title": "WhatsApp",
+        "label": "Número de WhatsApp",
+        "description": "Número de WhatsApp para contacto",
+        "placeholder": "+54 9 11 1234-5678"
+    },
+    "instagram": {
+        "title": "Instagram",
+        "label": "Usuario de Instagram",
+        "description": "Nombre de usuario o URL de Instagram",
+        "placeholder": "@usuario o https://instagram.com/usuario"
+    },
+    "facebook": {
+        "title": "Facebook",
+        "label": "Página de Facebook",
+        "description": "URL de la página de Facebook",
+        "placeholder": "https://facebook.com/pagina"
+    },
+    "destinationId": {
+        "title": "Destino",
+        "label": "Destino turístico",
+        "description": "Destino al que pertenece el alojamiento",
+        "placeholder": "Selecciona un destino"
+    },
+    "address": {
+        "title": "Dirección",
+        "label": "Dirección completa",
+        "description": "Dirección física del alojamiento",
+        "placeholder": "Calle 123, Ciudad"
+    },
+    "city": {
+        "title": "Ciudad",
+        "label": "Ciudad",
+        "description": "Ciudad donde se ubica el alojamiento",
+        "placeholder": "Buenos Aires"
+    },
+    "state": {
+        "title": "Provincia/Estado",
+        "label": "Provincia o estado",
+        "description": "Provincia o estado del alojamiento",
+        "placeholder": "Buenos Aires"
+    },
+    "country": {
+        "title": "País",
+        "label": "País",
+        "description": "País donde se ubica el alojamiento",
+        "placeholder": "Argentina"
+    },
+    "postalCode": {
+        "title": "Código Postal",
+        "label": "Código postal",
+        "description": "Código postal del alojamiento",
+        "placeholder": "1234"
+    },
+    "latitude": {
+        "title": "Latitud",
+        "label": "Coordenada de latitud",
+        "description": "Coordenada geográfica de latitud",
+        "placeholder": "-34.6037"
+    },
+    "longitude": {
+        "title": "Longitud",
+        "label": "Coordenada de longitud",
+        "description": "Coordenada geográfica de longitud",
+        "placeholder": "-58.3816"
+    },
+    "locationNotes": {
+        "title": "Notas de Ubicación",
+        "label": "Notas adicionales",
+        "description": "Información adicional sobre la ubicación",
+        "placeholder": "Instrucciones especiales para llegar"
+    },
+    "moderationState": {
+        "title": "Estado de Moderación",
+        "label": "Estado de moderación",
+        "description": "Estado actual de la moderación",
+        "placeholder": "Selecciona el estado"
+    },
+    "moderationNotes": {
+        "title": "Notas de Moderación",
+        "label": "Notas del moderador",
+        "description": "Comentarios del proceso de moderación",
+        "placeholder": "Notas internas de moderación"
+    },
+    "assignedUserId": {
+        "title": "Usuario Asignado",
+        "label": "Usuario responsable",
+        "description": "Usuario asignado para gestionar este alojamiento",
+        "placeholder": "Selecciona un usuario"
+    },
+    "viewCount": {
+        "title": "Visualizaciones",
+        "label": "Número de visualizaciones",
+        "description": "Cantidad de veces que se ha visualizado",
+        "placeholder": "0"
+    },
+    "bookingCount": {
+        "title": "Reservas",
+        "label": "Número de reservas",
+        "description": "Cantidad total de reservas realizadas",
+        "placeholder": "0"
+    },
+    "internalNotes": {
+        "title": "Notas Internas",
+        "label": "Notas administrativas",
+        "description": "Notas internas para uso administrativo",
+        "placeholder": "Notas para uso interno"
+    },
+    "internalTags": {
+        "title": "Etiquetas Internas",
+        "label": "Etiquetas administrativas",
+        "description": "Etiquetas para clasificación interna",
+        "placeholder": "etiqueta1, etiqueta2"
+    },
+    "priority": {
+        "title": "Prioridad",
+        "label": "Nivel de prioridad",
+        "description": "Nivel de prioridad del alojamiento",
+        "placeholder": "1-10"
+    }
+}
