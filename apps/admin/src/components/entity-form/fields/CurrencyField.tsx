@@ -9,7 +9,7 @@ import {
     SelectValue
 } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import * as React from 'react';
 
 /**
@@ -70,7 +70,11 @@ export const CurrencyField = React.forwardRef<HTMLInputElement, CurrencyFieldPro
         },
         ref
     ) => {
-        const { label, description, placeholder, helper } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
+        const placeholder = config.placeholder;
+        const helper = config.help;
 
         // Get currency specific config
         const currencyConfig =

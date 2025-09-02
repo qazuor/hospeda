@@ -1,7 +1,7 @@
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import { ImageIcon, Upload, X } from 'lucide-react';
 import * as React from 'react';
 
@@ -62,7 +62,10 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
         },
         _ref
     ) => {
-        const { label, description, helper } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
+        const helper = config.help;
 
         // Get image specific config
         const imageConfig = config.typeConfig?.type === 'IMAGE' ? config.typeConfig : undefined;

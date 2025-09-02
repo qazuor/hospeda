@@ -8,7 +8,7 @@ import {
     SelectValue
 } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import * as React from 'react';
 
 /**
@@ -64,10 +64,22 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
         },
         ref
     ) => {
-        const { label, description, placeholder, helper } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
+        const placeholder = config.placeholder;
+        const helper = config.help;
 
         const handleValueChange = (newValue: string) => {
-            onChange?.(newValue);
+            // Handle special values
+            if (newValue === '__CLEAR__') {
+                onChange?.('');
+            } else if (newValue === '__EMPTY__' || newValue === '__LOADING__') {
+                // Ignore these special values
+                return;
+            } else {
+                onChange?.(newValue);
+            }
         };
 
         const fieldId = `field-${config.id}`;
@@ -134,48 +146,52 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
                     <SelectContent>
                         {/* Clear option if allowed */}
                         {allowClear && value && (
-                            <SelectItem value="">
+                            <SelectItem value="__CLEAR__">
                                 <span className="text-muted-foreground">Clear selection</span>
                             </SelectItem>
                         )}
 
                         {/* Options */}
-                        {options.map((option) => (
-                            <SelectItem
-                                key={option.value}
-                                value={option.value}
-                                disabled={option.disabled}
-                                className={cn(option.disabled && 'cursor-not-allowed opacity-50')}
-                            >
-                                <div className="flex items-center gap-2">
-                                    {(() => {
-                                        const icon = option.metadata?.icon;
-                                        if (icon && typeof icon === 'string') {
-                                            return (
-                                                <span className="text-muted-foreground">
-                                                    {icon}
-                                                </span>
-                                            );
-                                        }
-                                        return null;
-                                    })()}
+                        {options
+                            .filter((option) => option.value !== '' && option.value != null)
+                            .map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                    disabled={option.disabled}
+                                    className={cn(
+                                        option.disabled && 'cursor-not-allowed opacity-50'
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        {(() => {
+                                            const icon = option.metadata?.icon;
+                                            if (icon && typeof icon === 'string') {
+                                                return (
+                                                    <span className="text-muted-foreground">
+                                                        {icon}
+                                                    </span>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
 
-                                    <div className="flex flex-col">
-                                        <span>{option.label}</span>
-                                        {option.description && (
-                                            <span className="text-muted-foreground text-xs">
-                                                {option.description}
-                                            </span>
-                                        )}
+                                        <div className="flex flex-col">
+                                            <span>{option.label}</span>
+                                            {option.description && (
+                                                <span className="text-muted-foreground text-xs">
+                                                    {option.description}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </SelectItem>
-                        ))}
+                                </SelectItem>
+                            ))}
 
                         {/* Empty state */}
                         {!loading && options.length === 0 && (
                             <SelectItem
-                                value=""
+                                value="__EMPTY__"
                                 disabled
                             >
                                 <span className="text-muted-foreground">No options available</span>
@@ -185,7 +201,7 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
                         {/* Loading state */}
                         {loading && (
                             <SelectItem
-                                value=""
+                                value="__LOADING__"
                                 disabled
                             >
                                 <span className="text-muted-foreground">Loading options...</span>

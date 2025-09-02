@@ -1,7 +1,7 @@
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Checkbox, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import * as React from 'react';
 
 /**
@@ -51,7 +51,10 @@ export const CheckboxField = React.forwardRef<HTMLButtonElement, CheckboxFieldPr
         },
         ref
     ) => {
-        const { label, description, helper } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
+        const helper = config.help;
 
         const handleCheckedChange = (checked: boolean) => {
             onChange?.(checked);
