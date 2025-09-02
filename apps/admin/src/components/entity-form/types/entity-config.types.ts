@@ -19,7 +19,9 @@ export type EntityRouteConfig = {
  * Validation configuration for entity
  */
 export type EntityValidationConfig = {
-    entitySchema?: ZodSchema; // Main entity schema
+    entitySchema?: ZodSchema; // Main entity schema (fallback for compatibility)
+    viewSchema?: ZodSchema; // Schema for view mode (includes all fields)
+    editSchema?: ZodSchema; // Schema for edit mode (excludes readonly fields)
     sectionSchemas?: Record<string, ZodSchema>; // Section-specific schemas
     crossSectionValidation?: Array<{
         sections: string[];
@@ -46,11 +48,14 @@ export type AutosaveConfig = {
  */
 export type EntityConfig = {
     id: string;
-    title: string; // i18n key
-    description?: string; // i18n key
+
+    // Direct translations (explicit control)
+    title?: string;
+    description?: string;
+    entityName?: string;
+    entityNamePlural?: string;
+
     entityType: string;
-    entityName: string; // i18n key
-    entityNamePlural: string; // i18n key
 
     // Sections for different modes
     sections: SectionConfig[]; // Combined sections (will be filtered by mode)

@@ -1,3 +1,19 @@
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import {
+    CheckboxField,
+    CurrencyField,
+    EntitySelectField,
+    GalleryField,
+    ImageField,
+    RichTextField,
+    SelectField,
+    SwitchField,
+    TextField,
+    TextareaField
+} from '@/components/entity-form/fields';
+import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
+import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
+import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import { GridLayout } from '@/components/entity-form/layouts';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { cn } from '@/lib/utils';
@@ -62,14 +78,6 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
             );
         }, [config.permissions, userPermissions]);
 
-        // Check edit permissions (for future use when implementing dynamic field loading)
-        // const hasEditPermission = React.useMemo(() => {
-        //     if (!config.permissions?.edit || config.permissions.edit.length === 0) return true;
-        //     return config.permissions.edit.some((permission) =>
-        //         userPermissions.includes(permission)
-        //     );
-        // }, [config.permissions, userPermissions]);
-
         // Check visibility conditions
         const isVisible = React.useMemo(() => {
             if (!config.visibleIf) return hasViewPermission;
@@ -79,18 +87,9 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
             return hasViewPermission;
         }, [config.visibleIf, hasViewPermission]);
 
-        // Check if section is editable (for future use when implementing dynamic field loading)
-        // const isEditable = React.useMemo(() => {
-        //     if (!config.editableIf) return hasEditPermission && !disabled;
-        //
-        //     // TODO: Implement predicate evaluation
-        //     // For now, just check permissions
-        //     return hasEditPermission && !disabled;
-        // }, [config.editableIf, hasEditPermission, disabled]);
-
         // Filter visible and accessible fields
         const visibleFields = React.useMemo(() => {
-            return config.fields.filter((field) => {
+            const filtered = config.fields.filter((field) => {
                 // Check field permissions
                 if (field.permissions?.view && field.permissions.view.length > 0) {
                     const hasFieldPermission = field.permissions.view.some((permission) =>
@@ -103,6 +102,9 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
                 // For now, show all permitted fields
                 return true;
             });
+
+            // console.log('🔍 [EntityFormSection] Filtered visibleFields:', filtered);
+            return filtered;
         }, [config.fields, userPermissions]);
 
         // Dynamic import of field components based on type
@@ -111,47 +113,148 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
             const fieldError = errors[field.id];
             const hasError = Boolean(fieldError);
 
-            // Check if field is editable (for future use when implementing dynamic field loading)
-            // const isFieldEditable = React.useMemo(() => {
-            //     if (field.readonly) return false;
-            //     if (disabled) return false;
-            //
-            //     if (field.permissions?.edit && field.permissions.edit.length > 0) {
-            //         return field.permissions.edit.some((permission) =>
-            //             userPermissions.includes(permission)
-            //         );
-            //     }
-            //
-            //     return true;
-            // }, [field.readonly, field.permissions, disabled, userPermissions]);
+            // Field props for dynamic field component loading
+            const fieldProps = {
+                config: field,
+                value: fieldValue,
+                onChange: (value: unknown) => onFieldChange(field.id, value),
+                onBlur: () => onFieldBlur(field.id),
+                hasError,
+                errorMessage: fieldError,
+                disabled: disabled, // Use section disabled state
+                required: field.required,
+                className: field.className
+            };
 
-            // Field props for future use when implementing dynamic field loading
-            // const fieldProps = {
-            //     config: field,
-            //     value: fieldValue,
-            //     onChange: (value: unknown) => onFieldChange(field.id, value),
-            //     onBlur: () => onFieldBlur(field.id),
-            //     hasError,
-            //     errorMessage: fieldError,
-            //     disabled: !isFieldEditable,
-            //     required: field.required,
-            //     className: field.className,
-            // };
+            // Dynamic field component loading based on field.type
+            const renderFieldComponent = () => {
+                switch (field.type) {
+                    case FieldTypeEnum.TEXT:
+                        return (
+                            <TextField
+                                {...fieldProps}
+                                value={fieldValue as string}
+                            />
+                        );
 
-            // TODO [a35fe14e-e9ca-48cc-b21f-9ba14a4f162e]: Dynamic field component loading based on field.type
-            // For now, return a placeholder
-            return (
-                <div
-                    key={field.id}
-                    className="space-y-2"
-                >
-                    <div className="font-medium text-sm">{field.id}</div>
-                    <div className="text-muted-foreground text-xs">
-                        Type: {field.type} | Value: {String(fieldValue) || 'undefined'}
-                    </div>
-                    {hasError && <div className="text-destructive text-xs">{fieldError}</div>}
-                </div>
-            );
+                    case FieldTypeEnum.TEXTAREA:
+                        return (
+                            <TextareaField
+                                {...fieldProps}
+                                value={fieldValue as string}
+                            />
+                        );
+
+                    case FieldTypeEnum.SELECT:
+                        return (
+                            <SelectField
+                                {...fieldProps}
+                                value={fieldValue as string}
+                                options={
+                                    field.typeConfig?.type === 'SELECT'
+                                        ? field.typeConfig.options || []
+                                        : []
+                                }
+                            />
+                        );
+
+                    case FieldTypeEnum.ENTITY_SELECT:
+                        return (
+                            <EntitySelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.CURRENCY:
+                        return (
+                            <CurrencyField
+                                {...fieldProps}
+                                value={fieldValue as CurrencyValue}
+                            />
+                        );
+
+                    case FieldTypeEnum.RICH_TEXT:
+                        return (
+                            <RichTextField
+                                {...fieldProps}
+                                value={fieldValue as string}
+                            />
+                        );
+
+                    case FieldTypeEnum.IMAGE:
+                        return (
+                            <ImageField
+                                {...fieldProps}
+                                value={fieldValue as ImageValue}
+                            />
+                        );
+
+                    case FieldTypeEnum.GALLERY:
+                        return (
+                            <GalleryField
+                                {...fieldProps}
+                                value={fieldValue as GalleryImage[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.CHECKBOX:
+                        return (
+                            <CheckboxField
+                                {...fieldProps}
+                                value={fieldValue as boolean}
+                            />
+                        );
+
+                    case FieldTypeEnum.SWITCH:
+                        return (
+                            <SwitchField
+                                {...fieldProps}
+                                value={fieldValue as boolean}
+                            />
+                        );
+
+                    case FieldTypeEnum.NUMBER:
+                        // Use TextField for numbers for now
+                        return (
+                            <TextField
+                                {...fieldProps}
+                                value={fieldValue as string}
+                            />
+                        );
+
+                    case FieldTypeEnum.DATE:
+                        // Use TextField for dates for now
+                        return (
+                            <TextField
+                                {...fieldProps}
+                                value={fieldValue as string}
+                            />
+                        );
+
+                    case FieldTypeEnum.TIME:
+                        // Use TextField for time for now
+                        return (
+                            <TextField
+                                {...fieldProps}
+                                value={fieldValue as string}
+                            />
+                        );
+
+                    default:
+                        // Fallback for unknown field types
+                        return (
+                            <div className="space-y-2 border border-gray-300 p-4">
+                                <div className="font-medium text-sm">{field.id}</div>
+                                <div className="text-muted-foreground text-xs">
+                                    Unknown field type: {field.type}
+                                </div>
+                            </div>
+                        );
+                }
+            };
+
+            return <div key={field.id}>{renderFieldComponent()}</div>;
         };
 
         // Render section content based on layout
@@ -186,7 +289,12 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
             }
         };
 
+        // console.log('🔍 [EntityFormSection] isVisible:', isVisible);
+        // console.log('🔍 [EntityFormSection] hasViewPermission:', hasViewPermission);
+        // console.log('🔍 [EntityFormSection] visibleFields.length:', visibleFields.length);
+
         if (!isVisible) {
+            // console.log('🔍 [EntityFormSection] Section not visible, returning null');
             return null;
         }
 

@@ -8,10 +8,11 @@ import type { Actor, FieldConfig } from './field-config.types';
  */
 export type SectionConfig = {
     id: string;
-    title: string; // i18n key
-    titleKey?: string; // alternative i18n key
-    description?: string; // i18n key
-    descriptionKey?: string; // alternative i18n key
+
+    // Direct translations (explicit control)
+    title?: string;
+    description?: string;
+
     layout: LayoutTypeEnum;
 
     // UI elements

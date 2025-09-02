@@ -30,16 +30,6 @@ export type SelectOption = {
 };
 
 /**
- * i18n configuration for fields
- */
-export type I18nFieldConfig = {
-    labelKey?: string;
-    descriptionKey?: string;
-    placeholderKey?: string;
-    errorMessages?: Record<string, string>; // error key -> i18n key
-};
-
-/**
  * Async validation configuration
  */
 export type AsyncValidationConfig = {
@@ -92,6 +82,7 @@ export type FieldTypeConfig =
     | DateFieldConfig
     | TimeFieldConfig
     | SliderFieldConfig
+    | SwitchFieldConfig
     | JsonFieldConfig;
 
 /**
@@ -143,6 +134,10 @@ export type EntitySelectFieldConfig = {
     clearable?: boolean;
     minSearchLength?: number;
     searchDebounceMs?: number;
+    // New options for client vs server search
+    searchMode?: 'client' | 'server'; // Default: 'server'
+    loadAllFn?: () => Promise<SelectOption[]>; // For client-side search
+    showAllWhenEmpty?: boolean; // Show all options when no search query
 };
 
 /**
@@ -240,6 +235,16 @@ export type SliderFieldConfig = {
 };
 
 /**
+ * Switch field specific configuration
+ */
+export type SwitchFieldConfig = {
+    type: 'SWITCH';
+    size?: 'sm' | 'md' | 'lg';
+    color?: string;
+    disabled?: boolean;
+};
+
+/**
  * JSON field specific configuration
  */
 export type JsonFieldConfig = {
@@ -269,8 +274,12 @@ export type FieldConfig = {
     readonly?: boolean;
     hidden?: boolean;
 
-    // i18n configuration
-    i18n?: I18nFieldConfig;
+    // Direct translations (explicit control)
+    label?: string;
+    description?: string;
+    placeholder?: string;
+    help?: string;
+    title?: string;
 
     // Schema validation (extracted from main entity schema)
     schema?: ZodSchema;
