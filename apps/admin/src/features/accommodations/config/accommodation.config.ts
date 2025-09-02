@@ -1,6 +1,11 @@
 import type { EntityConfig } from '@/components/entity-form/types/entity-config.types';
-import { AccommodationCoreSchema } from '@repo/schemas';
+import { useConfigTranslations } from '@/lib/utils/config-i18n.utils';
 import { PermissionEnum } from '@repo/types';
+import {
+    AccommodationClientSchema,
+    AccommodationEditSchema,
+    AccommodationViewSchema
+} from '../schemas/accommodation-client.schema';
 import { basicInfoSectionConfig, createBasicInfoSectionConfig } from './sections/basic-info.config';
 import {
     contactInfoSectionConfig,
@@ -34,13 +39,19 @@ import { createStatesSectionConfig, statesSectionConfig } from './sections/state
  * Use this when you need dynamic enum options and search functions
  */
 export const createAccommodationEntityConfig = (): EntityConfig => {
+    const { t } = useConfigTranslations();
+
     return {
         id: 'accommodation',
         entityType: 'accommodation',
-        entityName: 'accommodation.entity.name',
-        entityNamePlural: 'accommodation.entity.namePlural',
-        title: 'accommodation.entity.title',
-        description: 'accommodation.entity.description',
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        entityName: t('accommodations.entity.name' as any),
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        entityNamePlural: t('accommodations.entity.namePlural' as any),
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        title: t('accommodations.entity.title' as any),
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        description: t('accommodations.entity.description' as any),
 
         // Entity-level permissions
         permissions: {
@@ -50,10 +61,14 @@ export const createAccommodationEntityConfig = (): EntityConfig => {
             delete: [PermissionEnum.ACCOMMODATION_DELETE_ANY]
         },
 
-        // Main validation schema
+        // Validation schemas for different modes
         validation: {
             // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-            entitySchema: AccommodationCoreSchema as any
+            viewSchema: AccommodationViewSchema as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
+            editSchema: AccommodationEditSchema as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
+            entitySchema: AccommodationClientSchema as any // Fallback for compatibility
         },
 
         // Route configuration
@@ -108,20 +123,13 @@ export const createAccommodationEntityConfig = (): EntityConfig => {
  * Note: This version has limited functionality for enum options and search functions
  * as it cannot use React hooks. Use createAccommodationEntityConfig() when possible.
  */
-export const accommodationEntityConfig: Omit<
-    EntityConfig,
-    'sections' | 'viewSections' | 'editSections'
-> & {
-    sections: (typeof basicInfoSectionConfig)[];
-    viewSections: (typeof basicInfoSectionConfig)[];
-    editSections: (typeof basicInfoSectionConfig)[];
-} = {
+export const accommodationEntityConfig = {
     id: 'accommodation',
     entityType: 'accommodation',
-    entityName: 'accommodation.entity.name',
-    entityNamePlural: 'accommodation.entity.namePlural',
-    title: 'accommodation.entity.title',
-    description: 'accommodation.entity.description',
+    entityName: 'accommodations.entity.name',
+    entityNamePlural: 'accommodations.entity.namePlural',
+    title: 'accommodations.entity.title',
+    description: 'accommodations.entity.description',
 
     // Entity-level permissions
     permissions: {
@@ -131,10 +139,14 @@ export const accommodationEntityConfig: Omit<
         delete: [PermissionEnum.ACCOMMODATION_DELETE_ANY]
     },
 
-    // Main validation schema
+    // Validation schemas for different modes
     validation: {
         // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-        entitySchema: AccommodationCoreSchema as any
+        viewSchema: AccommodationViewSchema as any,
+        // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
+        editSchema: AccommodationEditSchema as any,
+        // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
+        entitySchema: AccommodationClientSchema as any // Fallback for compatibility
     },
 
     // Route configuration
@@ -158,6 +170,7 @@ export const accommodationEntityConfig: Omit<
     },
 
     // Combined sections array (all sections in display order)
+    // Note: These are function references, not function calls
     sections: [
         basicInfoSectionConfig,
         contactInfoSectionConfig,

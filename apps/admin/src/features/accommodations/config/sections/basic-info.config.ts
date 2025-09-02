@@ -5,16 +5,16 @@ import {
 } from '@/components/entity-form/enums/form-config.enums';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { commonAsyncValidators } from '@/lib/utils/async-validation.utils';
-import { useCommonEnumOptions } from '@/lib/utils/enum-options.utils';
-import { createI18nFieldConfig } from '@/lib/utils/i18n-field.utils';
+import { useConfigTranslations } from '@/lib/utils/config-i18n.utils';
+
 import { extractFieldSchema } from '@/lib/utils/schema-extraction.utils';
-import { AccommodationCoreSchema } from '@repo/schemas';
 import {
     AccommodationTypeEnum,
     LifecycleStatusEnum,
     PermissionEnum,
     VisibilityEnum
 } from '@repo/types';
+import { AccommodationClientSchema } from '../../schemas/accommodation-client.schema';
 
 /**
  * Basic Information section configuration for accommodation entity
@@ -26,12 +26,14 @@ import {
  * - Basic content fields
  */
 export const createBasicInfoSectionConfig = (): SectionConfig => {
-    const enumOptions = useCommonEnumOptions();
+    const { t } = useConfigTranslations();
 
     return {
         id: 'basic-info',
-        title: 'accommodation.sections.basicInfo.title',
-        description: 'accommodation.sections.basicInfo.description',
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        title: t('accommodations.sections.basicInfo.title' as any),
+        // biome-ignore lint/suspicious/noExplicitAny: i18n keys are dynamic and type-safe at runtime
+        description: t('accommodations.sections.basicInfo.description' as any),
         layout: LayoutTypeEnum.GRID,
         permissions: {
             view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
@@ -44,7 +46,7 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'name'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'name'),
                 asyncValidation: {
                     validator: commonAsyncValidators.uniqueName('accommodation'),
                     trigger: ValidationTriggerEnum.ON_BLUR
@@ -56,7 +58,9 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 typeConfig: {
                     type: 'TEXT'
                 },
-                ...createI18nFieldConfig('accommodation.fields.name')
+                label: t('fields.name.label'),
+                description: t('fields.name.description'),
+                placeholder: t('fields.name.placeholder')
             },
 
             // Slug field
@@ -65,7 +69,7 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'slug'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'slug'),
                 asyncValidation: {
                     validator: commonAsyncValidators.uniqueSlug('accommodation'),
                     trigger: ValidationTriggerEnum.ON_BLUR
@@ -77,7 +81,9 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 typeConfig: {
                     type: 'TEXT'
                 },
-                ...createI18nFieldConfig('accommodation.fields.slug')
+                label: t('fields.slug.label'),
+                description: t('fields.slug.description'),
+                help: t('fields.slug.help')
             },
 
             // Description field
@@ -86,7 +92,7 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXTAREA,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'description'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'description'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
@@ -96,7 +102,9 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                     minRows: 4,
                     maxLength: 1000
                 },
-                ...createI18nFieldConfig('accommodation.fields.description')
+                label: t('fields.description.label'),
+                description: t('fields.description.description'),
+                placeholder: t('fields.description.placeholder')
             },
 
             // Accommodation Type field
@@ -105,18 +113,31 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.SELECT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'type'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'type'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
                 },
                 typeConfig: {
                     type: 'SELECT',
-                    options: enumOptions.getAccommodationTypeOptions(AccommodationTypeEnum),
+                    options: [
+                        { value: AccommodationTypeEnum.APARTMENT, label: 'Apartamento' },
+                        { value: AccommodationTypeEnum.HOUSE, label: 'Casa' },
+                        { value: AccommodationTypeEnum.COUNTRY_HOUSE, label: 'Casa de Campo' },
+                        { value: AccommodationTypeEnum.CABIN, label: 'Cabaña' },
+                        { value: AccommodationTypeEnum.HOTEL, label: 'Hotel' },
+                        { value: AccommodationTypeEnum.HOSTEL, label: 'Hostel' },
+                        { value: AccommodationTypeEnum.CAMPING, label: 'Camping' },
+                        { value: AccommodationTypeEnum.ROOM, label: 'Habitación' },
+                        { value: AccommodationTypeEnum.MOTEL, label: 'Motel' },
+                        { value: AccommodationTypeEnum.RESORT, label: 'Resort' }
+                    ],
                     searchable: false,
                     clearable: false
                 },
-                ...createI18nFieldConfig('accommodation.fields.type')
+                label: t('fields.type.label'),
+                description: t('fields.type.description'),
+                placeholder: t('fields.type.placeholder')
             },
 
             // Lifecycle Status field
@@ -125,18 +146,24 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.SELECT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'lifecycleState'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'lifecycleState'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE]
                 },
                 typeConfig: {
                     type: 'SELECT',
-                    options: enumOptions.getLifecycleStatusOptions(LifecycleStatusEnum),
+                    options: [
+                        { value: LifecycleStatusEnum.DRAFT, label: 'Borrador' },
+                        { value: LifecycleStatusEnum.ACTIVE, label: 'Activo' },
+                        { value: LifecycleStatusEnum.ARCHIVED, label: 'Archivado' }
+                    ],
                     searchable: false,
                     clearable: false
                 },
-                ...createI18nFieldConfig('accommodation.fields.lifecycleState')
+                label: t('fields.lifecycleState.label'),
+                description: t('fields.lifecycleState.description'),
+                placeholder: t('fields.lifecycleState.placeholder')
             },
 
             // Visibility field
@@ -145,18 +172,24 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.SELECT,
                 required: true,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'visibility'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'visibility'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE]
                 },
                 typeConfig: {
                     type: 'SELECT',
-                    options: enumOptions.getVisibilityOptions(VisibilityEnum),
+                    options: [
+                        { value: VisibilityEnum.PUBLIC, label: 'Público' },
+                        { value: VisibilityEnum.PRIVATE, label: 'Privado' },
+                        { value: VisibilityEnum.RESTRICTED, label: 'Restringido' }
+                    ],
                     searchable: false,
                     clearable: false
                 },
-                ...createI18nFieldConfig('accommodation.fields.visibility')
+                label: t('fields.visibility.label'),
+                description: t('fields.visibility.description'),
+                placeholder: t('fields.visibility.placeholder')
             },
 
             // Short Description field
@@ -165,7 +198,7 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                 type: FieldTypeEnum.TEXTAREA,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'shortDescription'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'shortDescription'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
@@ -175,30 +208,27 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
                     minRows: 2,
                     maxLength: 200
                 },
-                ...createI18nFieldConfig('accommodation.fields.shortDescription')
+                label: t('fields.shortDescription.label'),
+                description: t('fields.shortDescription.description'),
+                placeholder: t('fields.shortDescription.placeholder')
             },
 
             // Featured field
             {
-                id: 'featured',
-                type: FieldTypeEnum.SELECT,
+                id: 'isFeatured',
+                type: FieldTypeEnum.SWITCH,
                 required: false,
                 // biome-ignore lint/suspicious/noExplicitAny: Zod schema type compatibility issue
-                schema: extractFieldSchema(AccommodationCoreSchema as any, 'featured'),
+                schema: extractFieldSchema(AccommodationClientSchema as any, 'isFeatured'),
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE]
                 },
                 typeConfig: {
-                    type: 'SELECT',
-                    options: [
-                        { value: 'true', label: 'Yes', labelKey: 'common.yes' },
-                        { value: 'false', label: 'No', labelKey: 'common.no' }
-                    ],
-                    searchable: false,
-                    clearable: false
+                    type: 'SWITCH'
                 },
-                ...createI18nFieldConfig('accommodation.fields.featured')
+                label: t('fields.isFeatured.label'),
+                description: t('fields.isFeatured.description')
             }
         ]
     };
@@ -207,5 +237,6 @@ export const createBasicInfoSectionConfig = (): SectionConfig => {
 /**
  * Static basic info section configuration
  * Use this for immediate access without hook dependencies
+ * Note: This is a function reference, not a function call
  */
 export const basicInfoSectionConfig = createBasicInfoSectionConfig;
