@@ -96,11 +96,11 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
             // Show toast using Flashy.js
             toast(displayMessage, {
                 type: flashyType,
-                duration: durationMs || 5000,
+                duration: durationMs || 15000,
                 position: 'top-right',
                 closable: true,
-                animation: 'slide',
-                theme: 'light'
+                animation: 'fade',
+                theme: 'dark'
             });
         },
         [toast]
