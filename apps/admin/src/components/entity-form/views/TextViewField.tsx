@@ -1,7 +1,7 @@
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import * as React from 'react';
 
 /**
@@ -29,7 +29,9 @@ export const TextViewField = React.forwardRef<HTMLDivElement, TextViewFieldProps
         { config, value = '', className, showLabel = true, showDescription = false, ...props },
         ref
     ) => {
-        const { label, description } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
 
         const fieldId = `view-field-${config.id}`;
         const descriptionId = description ? `${fieldId}-description` : undefined;

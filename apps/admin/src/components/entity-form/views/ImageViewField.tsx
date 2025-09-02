@@ -2,7 +2,7 @@ import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
-import { useFieldI18n } from '@/lib/utils/i18n-field.utils';
+
 import { Download, ExternalLink, ImageIcon } from 'lucide-react';
 import * as React from 'react';
 
@@ -56,7 +56,9 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
         },
         ref
     ) => {
-        const { label, description } = useFieldI18n(config.id, config.i18n);
+        // Use direct translations from config
+        const label = config.label;
+        const description = config.description;
 
         // Get image specific config
         const imageConfig = config.typeConfig?.type === 'IMAGE' ? config.typeConfig : undefined;
