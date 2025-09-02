@@ -1,4 +1,5 @@
 import { createRouter } from '../../utils/create-app';
+import { postBatchRoute } from './batch';
 import { createPostRoute } from './create';
 import { getPostsByCategoryRoute } from './getByCategory';
 import { postGetByIdRoute } from './getById';
@@ -21,6 +22,7 @@ import { updatePostRoute } from './update';
 const app = createRouter();
 
 app.route('/', postListRoute);
+app.route('/', postBatchRoute);
 app.route('/', postGetByIdRoute);
 app.route('/', getPostBySlugRoute);
 app.route('/', getPostSummaryRoute);

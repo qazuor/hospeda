@@ -1,5 +1,6 @@
 import { createRouter } from '../../utils/create-app';
 import { addFeatureToAccommodationRoute } from './addFeatureToAccommodation';
+import { featureBatchRoute } from './batch';
 import { createFeatureRoute } from './create';
 import { getAccommodationsByFeatureRoute } from './getAccommodationsByFeature';
 import { getFeaturesForAccommodationRoute } from './getFeaturesForAccommodation';
@@ -15,6 +16,7 @@ const app = createRouter();
 
 // Public
 app.route('/', featureListRoute);
+app.route('/', featureBatchRoute);
 app.route('/', featureGetByIdRoute);
 // Relations
 app.route('/', getAccommodationsByFeatureRoute);
