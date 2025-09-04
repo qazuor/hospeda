@@ -1,5 +1,9 @@
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import type {
+    CurrencyFieldConfig,
+    FieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +53,9 @@ export const CurrencyViewField = React.forwardRef<HTMLDivElement, CurrencyViewFi
 
         // Get currency specific config
         const currencyConfig =
-            config.typeConfig?.type === 'CURRENCY' ? config.typeConfig : undefined;
+            config.type === FieldTypeEnum.CURRENCY
+                ? (config.typeConfig as CurrencyFieldConfig)
+                : undefined;
 
         const fieldId = `view-field-${config.id}`;
         const descriptionId = description ? `${fieldId}-description` : undefined;
