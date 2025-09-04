@@ -53,7 +53,7 @@ export interface EntityFormSectionProps {
  * EntityFormSection component for rendering form sections
  * Handles section layout, permissions, and field rendering
  */
-export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSectionProps>(
+const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSectionProps>(
     (
         {
             config,
@@ -352,4 +352,26 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
     }
 );
 
-EntityFormSection.displayName = 'EntityFormSection';
+EntityFormSectionComponent.displayName = 'EntityFormSection';
+
+/**
+ * Memoized EntityFormSection component
+ * Only re-renders when props actually change
+ */
+export const EntityFormSection = React.memo(EntityFormSectionComponent, (prevProps, nextProps) => {
+    // Custom comparison function for better performance
+    return (
+        prevProps.config.id === nextProps.config.id &&
+        prevProps.disabled === nextProps.disabled &&
+        prevProps.className === nextProps.className &&
+        // Deep comparison for values and errors would be expensive
+        // Let React handle these with shallow comparison
+        prevProps.values === nextProps.values &&
+        prevProps.errors === nextProps.errors &&
+        prevProps.onFieldChange === nextProps.onFieldChange &&
+        prevProps.onFieldBlur === nextProps.onFieldBlur &&
+        prevProps.userPermissions === nextProps.userPermissions &&
+        prevProps.currentUser === nextProps.currentUser &&
+        prevProps.entityData === nextProps.entityData
+    );
+});
