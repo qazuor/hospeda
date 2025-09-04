@@ -2,6 +2,8 @@ import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums'
 import {
     CheckboxField,
     CurrencyField,
+    // Specific entity select fields
+    DestinationSelectField,
     EntitySelectField,
     GalleryField,
     ImageField,
@@ -9,7 +11,8 @@ import {
     SelectField,
     SwitchField,
     TextField,
-    TextareaField
+    TextareaField,
+    UserSelectField
 } from '@/components/entity-form/fields';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
@@ -161,6 +164,23 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
                     case FieldTypeEnum.ENTITY_SELECT:
                         return (
                             <EntitySelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    // Specific entity select fields with encapsulated logic
+                    case FieldTypeEnum.DESTINATION_SELECT:
+                        return (
+                            <DestinationSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.USER_SELECT:
+                        return (
+                            <UserSelectField
                                 {...fieldProps}
                                 value={fieldValue as string | string[]}
                             />

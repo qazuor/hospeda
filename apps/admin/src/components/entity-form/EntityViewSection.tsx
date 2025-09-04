@@ -2,6 +2,10 @@ import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums'
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
+import {
+    loadDestinationsByIds,
+    loadUsersByIds
+} from '@/components/entity-form/fields/entity-selects/utils';
 import { GridLayout } from '@/components/entity-form/layouts';
 import type {
     EntitySelectFieldConfig,
@@ -167,18 +171,35 @@ export const EntityViewSection = React.forwardRef<HTMLDivElement, EntityViewSect
         React.useEffect(() => {
             const loadEntitySelectOptions = async () => {
                 const entitySelectFields = visibleFields.filter(
-                    (field) => field.type === FieldTypeEnum.ENTITY_SELECT
+                    (field) =>
+                        field.type === FieldTypeEnum.ENTITY_SELECT ||
+                        field.type === FieldTypeEnum.DESTINATION_SELECT ||
+                        field.type === FieldTypeEnum.USER_SELECT ||
+                        field.type === FieldTypeEnum.ACCOMMODATION_SELECT ||
+                        field.type === FieldTypeEnum.EVENT_SELECT ||
+                        field.type === FieldTypeEnum.POST_SELECT ||
+                        field.type === FieldTypeEnum.FEATURE_SELECT ||
+                        field.type === FieldTypeEnum.AMENITY_SELECT ||
+                        field.type === FieldTypeEnum.TAG_SELECT
                 );
 
                 for (const field of entitySelectFields) {
                     const fieldValue = values[field.id];
                     if (!fieldValue) continue;
 
-                    const entityConfig =
-                        field.type === FieldTypeEnum.ENTITY_SELECT
-                            ? (field.typeConfig as EntitySelectFieldConfig)
-                            : undefined;
-                    if (!entityConfig?.loadByIdsFn) continue;
+                    // Get load function based on field type
+                    let loadByIdsFn: ((ids: string[]) => Promise<SelectOption[]>) | undefined;
+
+                    if (field.type === FieldTypeEnum.ENTITY_SELECT) {
+                        const entityConfig = field.typeConfig as EntitySelectFieldConfig;
+                        loadByIdsFn = entityConfig?.loadByIdsFn;
+                    } else if (field.type === FieldTypeEnum.DESTINATION_SELECT) {
+                        loadByIdsFn = loadDestinationsByIds;
+                    } else if (field.type === FieldTypeEnum.USER_SELECT) {
+                        loadByIdsFn = loadUsersByIds;
+                    }
+
+                    if (!loadByIdsFn) continue;
 
                     const fieldValues = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
                     const stringValues = fieldValues.filter(
@@ -188,7 +209,7 @@ export const EntityViewSection = React.forwardRef<HTMLDivElement, EntityViewSect
                     if (stringValues.length === 0) continue;
 
                     try {
-                        const options = await entityConfig.loadByIdsFn(stringValues);
+                        const options = await loadByIdsFn(stringValues);
 
                         setEntitySelectOptions((prev) => ({
                             ...prev,
@@ -277,6 +298,14 @@ export const EntityViewSection = React.forwardRef<HTMLDivElement, EntityViewSect
                     );
 
                 case FieldTypeEnum.ENTITY_SELECT:
+                case FieldTypeEnum.DESTINATION_SELECT:
+                case FieldTypeEnum.USER_SELECT:
+                case FieldTypeEnum.ACCOMMODATION_SELECT:
+                case FieldTypeEnum.EVENT_SELECT:
+                case FieldTypeEnum.POST_SELECT:
+                case FieldTypeEnum.FEATURE_SELECT:
+                case FieldTypeEnum.AMENITY_SELECT:
+                case FieldTypeEnum.TAG_SELECT:
                     return (
                         <EntitySelectViewField
                             key={field.id}

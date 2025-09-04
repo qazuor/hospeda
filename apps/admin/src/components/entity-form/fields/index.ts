@@ -27,6 +27,9 @@ export type { SwitchFieldProps } from './SwitchField';
 export { EntitySelectField } from './EntitySelectField';
 export type { EntitySelectFieldProps } from './EntitySelectField';
 
+// Specific Entity Select Fields (with encapsulated logic)
+export * from './entity-selects';
+
 export { CurrencyField } from './CurrencyField';
 export type { CurrencyFieldProps, CurrencyValue } from './CurrencyField';
 
