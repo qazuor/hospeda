@@ -66,6 +66,8 @@ export interface EntityFormActions {
     isSectionDirty: (sectionId: string) => boolean;
     /** Check if form has unsaved changes */
     hasUnsavedChanges: () => boolean;
+    /** Set field errors */
+    setErrors: (errors: Record<string, string | undefined>) => void;
 }
 
 /**
