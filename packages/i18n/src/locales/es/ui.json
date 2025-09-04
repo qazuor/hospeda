@@ -34,7 +34,14 @@
     },
     "navigation": {
         "navigation": "Navegación",
-        "home": "Inicio"
+        "home": "Inicio",
+        "formProgress": "Progreso del formulario",
+        "sectionsComplete": "secciones completas",
+        "errors": "errores",
+        "fieldsComplete": "campos completos",
+        "readyToSubmit": "Listo para enviar",
+        "incompleteForm": "Formulario incompleto",
+        "requiredFieldsMissing": "Faltan campos obligatorios"
     },
     "accessibility": {
         "logo": "Logo",
@@ -85,5 +92,8 @@
             "searchError": "La búsqueda falló: {error}",
             "unknownError": "Error desconocido"
         }
+    },
+    "breadcrumbs": {
+        "progress": "Progreso"
     }
 }
