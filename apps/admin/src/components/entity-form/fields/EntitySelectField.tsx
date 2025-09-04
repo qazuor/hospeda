@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { useTranslations } from '@repo/i18n';
 
 import type { FieldConfig, SelectOption } from '../types/field-config.types';
 
@@ -78,6 +79,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
 
         // Hooks
         const { addToast } = useToast();
+        const { t } = useTranslations();
 
         // Component state
         const [open, setOpen] = React.useState(false);
@@ -147,9 +149,11 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                             }
                         })
                         .catch((error) => {
-                            const errorMsg = `Failed to load selected ${entityConfig?.entityType?.toLowerCase() || 'options'}: ${error.message || 'Unknown error'}`;
+                            const errorMsg = t('ui.entitySelect.errors.failedToLoadSelected', {
+                                error: error.message || t('ui.entitySelect.errors.unknownError')
+                            });
                             addToast({
-                                title: 'Error Loading Selection',
+                                title: t('ui.entitySelect.errors.loadingSelection'),
                                 message: errorMsg,
                                 variant: 'error'
                             });
@@ -160,7 +164,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                 setSelectedOptions([]);
                 loadedValuesRef.current = '';
             }
-        }, [values, allOptions, searchOptions, addToast, entityConfig?.entityType]);
+        }, [values, allOptions, searchOptions, addToast, t]);
 
         // Search function with debouncing (defined early to avoid hoisting issues)
         const performSearch = React.useCallback(
@@ -193,7 +197,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                 }
 
                 const minLength = entityConfig.minSearchLength || 1;
-                if (query.length < minLength) {
+                if (query.length <= minLength) {
                     // Show all options when empty if configured and we have them
                     if (
                         query.length === 0 &&
@@ -212,9 +216,14 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                     const results = await entityConfig.searchFn(query);
                     setSearchOptions(results);
                 } catch (error) {
-                    const errorMsg = `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+                    const errorMsg = t('ui.entitySelect.errors.searchError', {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : t('ui.entitySelect.errors.unknownError')
+                    });
                     addToast({
-                        title: 'Search Error',
+                        title: t('ui.entitySelect.errors.searchFailed'),
                         message: errorMsg,
                         variant: 'error'
                     });
@@ -223,29 +232,30 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                     setIsSearching(false);
                 }
             },
-            [entityConfig, allOptions, addToast]
+            [entityConfig, allOptions, addToast, t]
         );
 
-        // Load all options for client-side search
+        // Load all options for client-side search or initial options for server-side search
         React.useEffect(() => {
-            const searchMode = entityConfig?.searchMode || 'server';
-
-            if (searchMode === 'client' && !loadedAllRef.current && loadAllFnRef.current) {
+            if (!loadedAllRef.current && loadAllFnRef.current) {
                 loadAllFnRef
                     .current()
                     .then((options) => {
                         setAllOptions(options);
                         loadedAllRef.current = true;
 
-                        // Always set search options when loaded in client mode
+                        // Set search options when loaded if showAllWhenEmpty is enabled
                         if (entityConfig?.showAllWhenEmpty) {
                             setSearchOptions(options);
                         }
                     })
                     .catch((error) => {
-                        const errorMsg = `Failed to load ${entityConfig?.entityType?.toLowerCase() || 'options'}: ${error.message || 'Unknown error'}`;
+                        const errorMsg = t('ui.entitySelect.errors.failedToLoadOptions', {
+                            entityType: entityConfig?.entityType?.toLowerCase() || 'opciones',
+                            error: error.message || t('ui.entitySelect.errors.unknownError')
+                        });
                         addToast({
-                            title: 'Error Loading Options',
+                            title: t('ui.entitySelect.errors.loadingOptions'),
                             message: errorMsg,
                             variant: 'error'
                         });
@@ -253,23 +263,18 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                         setSearchOptions([]);
                     });
             }
-        }, [
-            entityConfig?.searchMode,
-            addToast,
-            entityConfig?.entityType,
-            entityConfig?.showAllWhenEmpty
-        ]);
+        }, [addToast, entityConfig?.entityType, entityConfig?.showAllWhenEmpty, t]);
 
-        // Initial search trigger for client mode
+        // Initial search trigger for client mode only
         React.useEffect(() => {
             const searchMode = entityConfig?.searchMode || 'server';
 
-            // Trigger initial search for client mode to show all options when empty
+            // Only for client mode: show all options when search is empty
             if (
                 searchMode === 'client' &&
                 entityConfig?.showAllWhenEmpty &&
                 allOptions.length > 0 &&
-                !searchQuery.trim()
+                searchQuery.trim() === ''
             ) {
                 setSearchOptions(allOptions);
             }
@@ -357,15 +362,21 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
         const getDisplayText = () => {
             if (isMultiple) {
                 return selectedOptions.length > 0
-                    ? `${selectedOptions.length} selected`
-                    : placeholder || 'Select items...';
+                    ? t('ui.entitySelect.selectedCount', { count: selectedOptions.length })
+                    : placeholder || t('ui.entitySelect.selectItems');
             }
             const selectedOption = selectedOptions.find((opt) => opt.value === value);
-            return selectedOption?.label || placeholder || 'Select item...';
+            return selectedOption?.label || placeholder || t('ui.entitySelect.selectItem');
         };
 
         // Combine search results with selected options for display
         const displayOptions = React.useMemo(() => {
+            // If there's an active search query, only show search results
+            if (searchQuery.trim()) {
+                return searchOptions;
+            }
+
+            // If no search query, show selected options + search results
             const combined = [...selectedOptions];
 
             // Add search results that aren't already selected
@@ -376,7 +387,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
             }
 
             return combined;
-        }, [searchOptions, selectedOptions]);
+        }, [searchOptions, selectedOptions, searchQuery]);
 
         return (
             <div className={cn('space-y-2', className)}>
@@ -438,7 +449,10 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                     >
                         <Command shouldFilter={false}>
                             <CommandInput
-                                placeholder={`Search ${entityConfig?.entityType?.toLowerCase() || 'items'}...`}
+                                placeholder={t('ui.entitySelect.searchPlaceholder', {
+                                    entityType:
+                                        entityConfig?.entityType?.toLowerCase() || 'elementos'
+                                })}
                                 value={searchQuery}
                                 onValueChange={setSearchQuery}
                             />
@@ -447,47 +461,74 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                                     {isSearching ? (
                                         <div className="flex items-center justify-center py-6">
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Searching...
+                                            {t('ui.entitySelect.searching')}
                                         </div>
                                     ) : (
-                                        'No results found.'
+                                        t('ui.entitySelect.noResultsFound')
                                     )}
                                 </CommandEmpty>
                                 <CommandGroup>
+                                    {/* Loading indicator */}
+                                    {isSearching && (
+                                        <CommandItem disabled>
+                                            <div className="flex w-full items-center justify-center py-2">
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                <span className="text-muted-foreground">
+                                                    {t('ui.entitySelect.searching')}
+                                                </span>
+                                            </div>
+                                        </CommandItem>
+                                    )}
+
                                     {/* Clear option */}
-                                    {entityConfig?.clearable && !isMultiple && value && (
-                                        <CommandItem
-                                            value="__CLEAR_SELECTION__"
-                                            onSelect={handleSelect}
-                                        >
-                                            <span className="text-muted-foreground">
-                                                Clear selection
-                                            </span>
+                                    {!isSearching &&
+                                        entityConfig?.clearable &&
+                                        !isMultiple &&
+                                        value && (
+                                            <CommandItem
+                                                value="__CLEAR_SELECTION__"
+                                                onSelect={handleSelect}
+                                            >
+                                                <span className="text-muted-foreground">
+                                                    {t('ui.entitySelect.clearSelection')}
+                                                </span>
+                                            </CommandItem>
+                                        )}
+
+                                    {/* No results message when search has no results */}
+                                    {!isSearching && searchQuery && searchOptions.length === 0 && (
+                                        <CommandItem disabled>
+                                            <div className="flex w-full items-center justify-center py-2">
+                                                <span className="text-muted-foreground">
+                                                    {t('ui.entitySelect.noResultsFound')}
+                                                </span>
+                                            </div>
                                         </CommandItem>
                                     )}
 
                                     {/* Options */}
-                                    {displayOptions.map((option) => (
-                                        <CommandItem
-                                            key={option.value}
-                                            value={option.value}
-                                            onSelect={handleSelect}
-                                        >
-                                            <Check
-                                                className={cn(
-                                                    'mr-2 h-4 w-4',
-                                                    (
-                                                        isMultiple
-                                                            ? values.includes(option.value)
-                                                            : value === option.value
-                                                    )
-                                                        ? 'opacity-100'
-                                                        : 'opacity-0'
-                                                )}
-                                            />
-                                            <span>{option.label}</span>
-                                        </CommandItem>
-                                    ))}
+                                    {!isSearching &&
+                                        displayOptions.map((option) => (
+                                            <CommandItem
+                                                key={option.value}
+                                                value={option.value}
+                                                onSelect={handleSelect}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        'mr-2 h-4 w-4',
+                                                        (
+                                                            isMultiple
+                                                                ? values.includes(option.value)
+                                                                : value === option.value
+                                                        )
+                                                            ? 'opacity-100'
+                                                            : 'opacity-0'
+                                                    )}
+                                                />
+                                                <span>{option.label}</span>
+                                            </CommandItem>
+                                        ))}
                                 </CommandGroup>
                             </CommandList>
                         </Command>
@@ -522,7 +563,9 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                 {loading && (
                     <div className="flex items-center justify-center py-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="ml-2 text-muted-foreground text-sm">Loading...</span>
+                        <span className="ml-2 text-muted-foreground text-sm">
+                            {t('ui.entitySelect.loading')}
+                        </span>
                     </div>
                 )}
 
