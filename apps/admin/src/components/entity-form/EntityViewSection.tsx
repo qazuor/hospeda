@@ -57,7 +57,7 @@ export interface EntityViewSectionProps {
  * EntityViewSection component for rendering view sections
  * Handles section layout, permissions, and field display
  */
-export const EntityViewSection = React.forwardRef<HTMLDivElement, EntityViewSectionProps>(
+const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSectionProps>(
     (
         {
             config,
@@ -513,4 +513,20 @@ export const EntityViewSection = React.forwardRef<HTMLDivElement, EntityViewSect
     }
 );
 
-EntityViewSection.displayName = 'EntityViewSection';
+EntityViewSectionComponent.displayName = 'EntityViewSection';
+
+/**
+ * Memoized EntityViewSection component
+ * Only re-renders when props actually change
+ */
+export const EntityViewSection = React.memo(EntityViewSectionComponent, (prevProps, nextProps) => {
+    // Custom comparison function for better performance
+    return (
+        prevProps.config.id === nextProps.config.id &&
+        prevProps.className === nextProps.className &&
+        prevProps.values === nextProps.values &&
+        prevProps.userPermissions === nextProps.userPermissions &&
+        prevProps.currentUser === nextProps.currentUser &&
+        prevProps.entityData === nextProps.entityData
+    );
+});
