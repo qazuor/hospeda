@@ -1,3 +1,4 @@
+import { useTranslations } from '@repo/i18n';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import {
@@ -28,6 +29,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
     onFieldFocus,
     children
 }) => {
+    const { t } = useTranslations();
     // Form state
     const [formMode, setFormMode] = React.useState<FormModeEnum>(mode);
     const [isLoading] = React.useState(false);
@@ -38,9 +40,14 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
     const [dirtyFields, setDirtyFields] = React.useState<Record<string, boolean>>({});
     const [errors, setErrors] = React.useState<Record<string, string | undefined>>({});
 
+    // Debug logging (temporarily disabled)
+    // adminLogger.log(
+    //     `[EntityFormProvider] Initialization: hasInitialValues=${!!initialValues}, initialValues=${initialValues ? Object.keys(initialValues).join(',') : 'undefined'}`
+    // );
+
     // TanStack Form instance
     const form = useForm({
-        defaultValues: initialValues,
+        defaultValues: initialValues || {},
         onSubmit: async ({ value }) => {
             setIsSaving(true);
             try {
@@ -118,26 +125,70 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         setActiveSectionId(sectionId);
     }, []);
 
+    const validateForm = React.useCallback(async (): Promise<
+        Record<string, string | undefined>
+    > => {
+        try {
+            const formErrors: Record<string, string | undefined> = {};
+            const values = form.state.values as Record<string, unknown>;
+
+            // Validate all fields in all sections
+            for (const section of config.sections) {
+                for (const field of section.fields) {
+                    const value = values[field.id];
+
+                    // Check required fields
+                    if (field.required) {
+                        if (value === undefined || value === null || value === '') {
+                            formErrors[field.id] = t('error.field.required', {
+                                field: field.label
+                            });
+                        }
+                    }
+
+                    // Additional field-specific validations can be added here
+                    // TODO [8b7679d7-b418-4e49-9bf6-32abe66f29ef]: Implement Zod schema validation for more complex rules
+                }
+            }
+
+            return formErrors;
+        } catch (error) {
+            console.error('Form validation error:', error);
+            return {};
+        }
+    }, [form.state.values, config.sections, t]);
+
     const handleSave = React.useCallback(async () => {
         setIsSaving(true);
         try {
-            const values = form.getFieldValue('') as Record<string, unknown>;
+            // Validate form before saving
+            const formErrors = await validateForm();
+            const hasErrors = Object.values(formErrors).some((error) => Boolean(error));
+
+            if (hasErrors) {
+                // Don't save if there are validation errors
+                setErrors(formErrors);
+                throw new Error(t('error.form.validation-failed'));
+            }
+
+            const values = form.state.values as Record<string, unknown>;
             await onSave?.(values);
             // Reset dirty state after successful save
             setDirtyFields({});
             setErrors({});
         } catch (error) {
             console.error('Form save error:', error);
-            // TODO [32800a34-f88e-4433-9897-5f61bf6a7562]: Handle save errors properly
+            // Re-throw error so it can be handled by the calling component
+            throw error;
         } finally {
             setIsSaving(false);
         }
-    }, [form, onSave]);
+    }, [form, onSave, validateForm, t]);
 
     const handleSaveAndPublish = React.useCallback(async () => {
         setIsSaving(true);
         try {
-            const values = form.getFieldValue('') as Record<string, unknown>;
+            const values = form.state.values as Record<string, unknown>;
             await onSaveAndPublish?.(values);
             // Reset dirty state after successful save
             setDirtyFields({});
@@ -183,22 +234,6 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         []
     );
 
-    const validateForm = React.useCallback(async (): Promise<
-        Record<string, string | undefined>
-    > => {
-        try {
-            // TODO [6354df4b-a7a4-4f9d-9e2c-e52ce223a5cc]: Implement full form validation using entity Zod schema
-            // This would validate all fields and cross-field validations
-
-            const formErrors: Record<string, string | undefined> = {};
-            setErrors(formErrors);
-            return formErrors;
-        } catch (error) {
-            console.error('Form validation error:', error);
-            return {};
-        }
-    }, []);
-
     const isFieldDirty = React.useCallback(
         (fieldId: string): boolean => {
             return Boolean(dirtyFields[fieldId]);
@@ -229,12 +264,17 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         };
     }, []);
 
+    // Debug form state (temporarily disabled)
+    // adminLogger.log(
+    //     `[EntityFormProvider] Form state: hasFormState=${!!form.state}, formStateValues=${form.state?.values ? Object.keys(form.state.values).join(',') : 'undefined'}`
+    // );
+
     // Context value
     const contextValue: EntityFormContextValue = React.useMemo(
         () => ({
             // State
             config,
-            values: form.getFieldValue('') as Record<string, unknown>,
+            values: form.state.values as Record<string, unknown>,
             errors,
             dirtyFields,
             mode: formMode,
@@ -259,7 +299,8 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
             validateForm,
             isFieldDirty,
             isSectionDirty,
-            hasUnsavedChanges
+            hasUnsavedChanges,
+            setErrors
         }),
         [
             config,
