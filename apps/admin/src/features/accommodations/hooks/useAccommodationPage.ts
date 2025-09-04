@@ -3,20 +3,8 @@ import { AccommodationTypeEnum, PermissionEnum } from '@repo/types';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
-import {
-    EntityTypeEnum,
-    FieldTypeEnum,
-    LayoutTypeEnum
-} from '@/components/entity-form/enums/form-config.enums';
-import type { EntitySelectFieldConfig } from '@/components/entity-form/types/field-config.types';
+import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
-import {
-    loadAllDestinations,
-    loadDestinationsByIds,
-    loadUsersByIds,
-    searchDestinations,
-    searchUsers
-} from '../utils/entity-api.utils';
 import { useAccommodationQuery, useUpdateAccommodationMutation } from './useAccommodationQuery';
 
 /**
@@ -107,7 +95,7 @@ export const useAccommodationPage = (entityId: string) => {
                 },
                 {
                     id: 'destinationId',
-                    type: FieldTypeEnum.ENTITY_SELECT,
+                    type: FieldTypeEnum.DESTINATION_SELECT,
                     required: true,
                     label: t('fields.accommodation.destinationId.label'),
                     description: t('fields.accommodation.destinationId.description'),
@@ -117,18 +105,15 @@ export const useAccommodationPage = (entityId: string) => {
                         edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
                     },
                     typeConfig: {
-                        entityType: EntityTypeEnum.DESTINATION,
-                        searchFn: searchDestinations,
-                        loadByIdsFn: loadDestinationsByIds,
-                        loadAllFn: loadAllDestinations,
                         searchMode: 'client',
-                        minSearchLength: 1,
-                        showAllWhenEmpty: true
-                    } satisfies EntitySelectFieldConfig
+                        minCharToSearch: 1,
+                        showAvatar: false,
+                        clearable: true
+                    }
                 },
                 {
                     id: 'ownerId',
-                    type: FieldTypeEnum.ENTITY_SELECT,
+                    type: FieldTypeEnum.USER_SELECT,
                     required: true,
                     label: t('fields.accommodation.ownerId.label'),
                     description: t('fields.accommodation.ownerId.description'),
@@ -138,13 +123,12 @@ export const useAccommodationPage = (entityId: string) => {
                         edit: [PermissionEnum.ACCOMMODATION_UPDATE_ANY] // Solo admin puede cambiar owner
                     },
                     typeConfig: {
-                        entityType: EntityTypeEnum.USER,
-                        searchFn: searchUsers,
-                        loadByIdsFn: loadUsersByIds,
                         searchMode: 'server',
-                        minSearchLength: 2,
-                        searchDebounceMs: 300
-                    } satisfies EntitySelectFieldConfig
+                        minCharToSearch: 2,
+                        searchDebounce: 300,
+                        showAvatar: true,
+                        clearable: true
+                    }
                 }
             ]
         };
