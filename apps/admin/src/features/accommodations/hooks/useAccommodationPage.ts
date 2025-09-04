@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
 import { useAccommodationQuery, useUpdateAccommodationMutation } from './useAccommodationQuery';
 
@@ -189,7 +190,7 @@ export const useAccommodationPage = (entityId: string) => {
     const goToEdit = () => navigate({ to: `/accommodations/${entityId}/edit` });
 
     // Get sections based on current mode
-    const getSections = () => {
+    const getSections = (): SectionConfig[] => {
         return mode === 'view' ? entityConfig.viewSections : entityConfig.editSections;
     };
 
