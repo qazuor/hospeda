@@ -2,7 +2,7 @@ import { EntityViewSection } from '@/components/entity-form';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
-import { useLazySections } from '@/hooks/useLazySections';
+import { useLazySections } from '@/hooks';
 import type { ReactNode } from 'react';
 
 /**
@@ -49,50 +49,52 @@ export const EntityViewContent = ({
         <div className={`space-y-6 ${className || ''}`}>
             {/* Performance metrics (only in development) */}
             {process.env.NODE_ENV === 'development' && (
-                <div className="rounded bg-blue-50 p-2 text-blue-800 text-xs">
+                <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
                     Lazy Loading: {getMetrics().loadedCount}/{getMetrics().totalSections} sections
                     loaded
                 </div>
             )}
 
-            {sectionConfigs.map((section, index) => {
-                // Use custom render function if provided
-                if (renderSection) {
-                    return renderSection(section, index);
-                }
+            <div className="space-y-8">
+                {sectionConfigs.map((section, index) => {
+                    // Use custom render function if provided
+                    if (renderSection) {
+                        return renderSection(section, index);
+                    }
 
-                // Determine if this section should be lazy loaded
-                const isLazy = shouldLazyLoad(section.id);
+                    // Determine if this section should be lazy loaded
+                    const isLazy = shouldLazyLoad(section.id);
 
-                // Default rendering with lazy loading wrapper
-                const sectionContent = (
-                    <EntityViewSection
-                        key={section.id || `section-${index}`}
-                        config={section}
-                        values={entity}
-                        mode="detailed"
-                        entityData={entity}
-                        userPermissions={userPermissions}
-                    />
-                );
-
-                if (isLazy) {
-                    return (
-                        <LazySectionWrapper
+                    // Default rendering with lazy loading wrapper
+                    const sectionContent = (
+                        <EntityViewSection
                             key={section.id || `section-${index}`}
-                            sectionId={section.id}
-                            preloadAdjacent={true}
-                            rootMargin="100px"
-                            threshold={0.1}
-                            className="min-h-[200px]"
-                        >
-                            {sectionContent}
-                        </LazySectionWrapper>
+                            config={section}
+                            values={entity}
+                            mode="detailed"
+                            entityData={entity}
+                            userPermissions={userPermissions}
+                        />
                     );
-                }
 
-                return sectionContent;
-            })}
+                    if (isLazy) {
+                        return (
+                            <LazySectionWrapper
+                                key={section.id || `section-${index}`}
+                                sectionId={section.id}
+                                preloadAdjacent={true}
+                                rootMargin="100px"
+                                threshold={0.1}
+                                className="min-h-[200px]"
+                            >
+                                {sectionContent}
+                            </LazySectionWrapper>
+                        );
+                    }
+
+                    return sectionContent;
+                })}
+            </div>
         </div>
     );
 };
