@@ -1,7 +1,10 @@
 import { EntityFormSection, useEntityForm } from '@/components/entity-form';
+import { SmartBreadcrumbs, SmartNavigation } from '@/components/entity-form/navigation';
+import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/components/ui/ToastProvider';
+import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { adminLogger } from '@/utils/logger';
 import { useTranslations } from '@repo/i18n';
 
@@ -34,6 +37,28 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
     } = useEntityForm();
     const { addToast } = useToast();
     const { t } = useTranslations();
+
+    const sections = getEditableSections();
+
+    // Use intelligent navigation for smart UX in EDIT mode
+    const {
+        activeSection,
+        sectionProgress,
+        overallProgress,
+        navigateToSection,
+        scrollToFirstError
+    } = useIntelligentNavigation(sections, values || {}, errors || {}, userPermissions, {
+        autoScrollToErrors: true, // Very useful in edit mode
+        autoAdvanceOnComplete: false, // Don't auto-advance while editing
+        scrollOffset: 100
+    });
+
+    // Use lazy sections hook for performance optimization
+    const { shouldLazyLoad, getMetrics } = useLazySections(sections, {
+        enabled: true,
+        preloadCount: 1,
+        alwaysLoad: ['basic-info'] // Always load basic info immediately
+    });
 
     // Debug logging (temporarily disabled)
     // adminLogger.log(
@@ -106,6 +131,8 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
             // Set field-specific errors in the form context
             if (Object.keys(fieldErrors).length > 0) {
                 setErrors(fieldErrors);
+                // Auto-scroll to first error after setting errors
+                setTimeout(() => scrollToFirstError(), 100);
             }
 
             addToast({
@@ -116,50 +143,115 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
         }
     };
 
-    const sections = getEditableSections();
-
     return (
-        <form
-            onSubmit={(e) => {
-                e.preventDefault();
-                handleSave();
-            }}
-            className={className}
-        >
-            <div className="space-y-6">
-                {sections.map((section, index) => {
-                    // Use custom render function if provided
-                    if (renderSection) {
-                        return renderSection(section, index);
-                    }
-
-                    // Default rendering
-                    return (
-                        <EntityFormSection
-                            key={section.id || `section-${index}`}
-                            config={section}
-                            values={values}
-                            errors={errors}
-                            onFieldChange={setFieldValue}
-                            onFieldBlur={(fieldId) => {
-                                adminLogger.log('Field blurred:', fieldId);
-                            }}
-                            disabled={isSaving}
-                            entityData={values}
-                            userPermissions={userPermissions}
-                        />
-                    );
-                })}
+        <div className={`space-y-6 ${className || ''}`}>
+            {/* Smart Breadcrumbs */}
+            <div className="sticky top-0 z-20 border-gray-200 border-b bg-white pb-4">
+                <SmartBreadcrumbs
+                    sections={sectionProgress}
+                    activeSectionId={activeSection}
+                    onSectionSelect={navigateToSection}
+                    showIcons
+                    showProgress
+                    maxVisible={5}
+                />
             </div>
 
-            <div className="mt-6 flex justify-end gap-3 border-t pt-6">
-                <Button
-                    type="submit"
-                    disabled={isSaving}
-                >
-                    {isSaving ? t('error.form.saving') : t('error.form.save-changes')}
-                </Button>
+            {/* Main content with navigation sidebar */}
+            <div className="flex gap-6">
+                {/* Navigation Sidebar */}
+                <div className="w-80 flex-shrink-0">
+                    <SmartNavigation
+                        sections={sectionProgress}
+                        overallProgress={overallProgress}
+                        activeSectionId={activeSection}
+                        onSectionSelect={navigateToSection}
+                        onScrollToErrors={scrollToFirstError}
+                        sticky
+                        showProgress
+                        showDetails
+                    />
+                </div>
+
+                {/* Content Area */}
+                <div className="min-w-0 flex-1">
+                    {/* Performance metrics (only in development) */}
+                    {process.env.NODE_ENV === 'development' && (
+                        <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
+                            Lazy Loading: {getMetrics().loadedCount}/{getMetrics().totalSections}{' '}
+                            sections loaded
+                        </div>
+                    )}
+
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSave();
+                        }}
+                    >
+                        <div className="space-y-8">
+                            {sections.map((section, index) => {
+                                // Use custom render function if provided
+                                if (renderSection) {
+                                    return renderSection(section, index);
+                                }
+
+                                // Determine if this section should be lazy loaded
+                                const isLazy = shouldLazyLoad(section.id);
+
+                                // Default rendering with lazy loading wrapper
+                                const sectionContent = (
+                                    <EntityFormSection
+                                        key={section.id || `section-${index}`}
+                                        config={section}
+                                        values={values}
+                                        errors={errors}
+                                        onFieldChange={setFieldValue}
+                                        onFieldBlur={(fieldId) => {
+                                            adminLogger.log('Field blurred:', fieldId);
+                                        }}
+                                        disabled={isSaving}
+                                        entityData={values}
+                                        userPermissions={userPermissions}
+                                    />
+                                );
+
+                                if (isLazy) {
+                                    return (
+                                        <LazySectionWrapper
+                                            key={section.id || `section-${index}`}
+                                            sectionId={section.id}
+                                            preloadAdjacent={true}
+                                            rootMargin="100px"
+                                            threshold={0.1}
+                                            className="min-h-[200px]"
+                                        >
+                                            {sectionContent}
+                                        </LazySectionWrapper>
+                                    );
+                                }
+
+                                return sectionContent;
+                            })}
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-3 border-t pt-6">
+                            <Button
+                                type="submit"
+                                disabled={isSaving || !overallProgress.readyForSubmission}
+                                className={overallProgress.readyForSubmission ? '' : 'opacity-50'}
+                            >
+                                {isSaving ? t('error.form.saving') : t('error.form.save-changes')}
+                                {!overallProgress.readyForSubmission && (
+                                    <span className="ml-2 text-xs">
+                                        ({overallProgress.completionPercentage}%)
+                                    </span>
+                                )}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
+        </div>
     );
 };
