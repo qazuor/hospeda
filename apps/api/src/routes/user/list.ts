@@ -18,18 +18,22 @@ export const listUsersRoute = createListRoute({
     tags: ['Users'],
     requestQuery: {
         page: z.string().transform(Number).pipe(z.number().min(1)).optional(),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional()
+        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).optional(),
+        search: z.string().optional(),
+        sortOrder: z.enum(['ASC', 'DESC']).optional()
     },
     responseSchema: z.object({ id: z.string().uuid() }).partial(),
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const q = query as { page?: number; limit?: number };
-        const page = q.page ?? 1;
-        const pageSize = q.limit ?? 10;
+        const queryData = query as { page?: number; limit?: number; search?: string };
+        const page = queryData.page ?? 1;
+        const pageSize = queryData.limit ?? 10;
+        const search = queryData.search;
 
         const service = new UserService({ logger: apiLogger });
         const result = await service.searchForList(actor, {
-            pagination: { page, pageSize }
+            pagination: { page, pageSize },
+            ...(search && { filters: { q: search } })
         });
 
         return {

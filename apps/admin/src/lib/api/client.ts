@@ -115,8 +115,25 @@ export const fetchApi = async <T>({
         parsed = undefined;
     }
     if (!res.ok) {
-        const message =
-            (parsed as { message?: string } | undefined)?.message ?? `Request failed (${status})`;
+        // Try to extract error message from different possible structures
+        const errorBody = parsed as
+            | {
+                  message?: string;
+                  error?: { message?: string; name?: string };
+                  success?: boolean;
+              }
+            | undefined;
+
+        let message = `Request failed (${status})`;
+
+        if (errorBody?.error?.message) {
+            // API error with nested error object (like Zod errors)
+            message = errorBody.error.message;
+        } else if (errorBody?.message) {
+            // Direct message property
+            message = errorBody.message;
+        }
+
         throw Object.assign(new Error(message), { status, body: parsed });
     }
     return { data: parsed as T, status };
