@@ -66,5 +66,24 @@
         "searchClear": "Limpiar búsqueda",
         "searching": "Buscando...",
         "columns": "Columnas"
+    },
+    "entitySelect": {
+        "clearSelection": "Limpiar selección",
+        "searching": "Buscando...",
+        "noResultsFound": "No se encontraron resultados",
+        "loading": "Cargando...",
+        "searchPlaceholder": "Buscar {entityType}...",
+        "selectItems": "Seleccionar elementos...",
+        "selectItem": "Seleccionar elemento...",
+        "selectedCount": "{count} seleccionados",
+        "errors": {
+            "loadingSelection": "Error al cargar selección",
+            "loadingOptions": "Error al cargar opciones",
+            "searchFailed": "Error en la búsqueda",
+            "failedToLoadSelected": "Error al cargar elementos seleccionados: {error}",
+            "failedToLoadOptions": "Error al cargar {entityType}: {error}",
+            "searchError": "La búsqueda falló: {error}",
+            "unknownError": "Error desconocido"
+        }
     }
 }
