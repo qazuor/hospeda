@@ -1,4 +1,9 @@
-import type { FieldConfig, SelectOption } from '@/components/entity-form/types/field-config.types';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type {
+    EntitySelectFieldConfig,
+    FieldConfig,
+    SelectOption
+} from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -58,7 +63,9 @@ export const EntitySelectViewField = React.forwardRef<HTMLDivElement, EntitySele
 
         // Get entity select specific config
         const entityConfig =
-            config.typeConfig?.type === 'ENTITY_SELECT' ? config.typeConfig : undefined;
+            config.type === FieldTypeEnum.ENTITY_SELECT
+                ? (config.typeConfig as EntitySelectFieldConfig)
+                : undefined;
 
         const fieldId = `view-field-${config.id}`;
         const descriptionId = description ? `${fieldId}-description` : undefined;
@@ -203,15 +210,6 @@ export const EntitySelectViewField = React.forwardRef<HTMLDivElement, EntitySele
                 >
                     {renderValue()}
                 </div>
-
-                {/* Entity Type Info */}
-                {entityConfig?.entityType && selectedOptions.length > 0 && (
-                    <div className="text-muted-foreground text-xs">
-                        {isMultiple
-                            ? `${selectedOptions.length} ${entityConfig.entityType.toLowerCase()}(s) selected`
-                            : `${entityConfig.entityType.toLowerCase()}`}
-                    </div>
-                )}
             </div>
         );
     }

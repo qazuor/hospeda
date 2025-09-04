@@ -1,4 +1,8 @@
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type {
+    FieldConfig,
+    RichTextFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -51,7 +55,9 @@ export const RichTextViewField = React.forwardRef<HTMLDivElement, RichTextViewFi
 
         // Get rich text specific config
         const richTextConfig =
-            config.typeConfig?.type === 'RICH_TEXT' ? config.typeConfig : undefined;
+            config.type === FieldTypeEnum.RICH_TEXT
+                ? (config.typeConfig as RichTextFieldConfig)
+                : undefined;
 
         const fieldId = `view-field-${config.id}`;
         const descriptionId = description ? `${fieldId}-description` : undefined;

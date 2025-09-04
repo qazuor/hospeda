@@ -1,5 +1,9 @@
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import type {
+    FieldConfig,
+    GalleryFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -70,7 +74,10 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
         const description = config.description;
 
         // Get gallery specific config
-        const galleryConfig = config.typeConfig?.type === 'GALLERY' ? config.typeConfig : undefined;
+        const galleryConfig =
+            config.type === FieldTypeEnum.GALLERY
+                ? (config.typeConfig as GalleryFieldConfig)
+                : undefined;
 
         const fieldId = `view-field-${config.id}`;
         const descriptionId = description ? `${fieldId}-description` : undefined;

@@ -1,5 +1,9 @@
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import type {
+    FieldConfig,
+    ImageFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -61,7 +65,10 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
         const description = config.description;
 
         // Get image specific config
-        const imageConfig = config.typeConfig?.type === 'IMAGE' ? config.typeConfig : undefined;
+        const imageConfig =
+            config.type === FieldTypeEnum.IMAGE
+                ? (config.typeConfig as ImageFieldConfig)
+                : undefined;
 
         const fieldId = `view-field-${config.id}`;
         const descriptionId = description ? `${fieldId}-description` : undefined;
