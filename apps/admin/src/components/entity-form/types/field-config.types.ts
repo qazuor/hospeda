@@ -83,7 +83,16 @@ export type FieldTypeConfig =
     | TimeFieldConfig
     | SliderFieldConfig
     | SwitchFieldConfig
-    | JsonFieldConfig;
+    | JsonFieldConfig
+    // Specific entity select configurations
+    | DestinationSelectFieldConfig
+    | UserSelectFieldConfig
+    | AccommodationSelectFieldConfig
+    | EventSelectFieldConfig
+    | PostSelectFieldConfig
+    | FeatureSelectFieldConfig
+    | AmenitySelectFieldConfig
+    | TagSelectFieldConfig;
 
 /**
  * Text field specific configuration
@@ -242,10 +251,80 @@ export type SwitchFieldConfig = {
  * JSON field specific configuration
  */
 export type JsonFieldConfig = {
-    type: 'JSON';
     schema?: ZodSchema; // Zod schema for validation
     pretty?: boolean; // Pretty print JSON
     height?: number; // Editor height in pixels
+};
+
+/**
+ * Base configuration for specific entity select fields
+ */
+export type BaseEntitySelectFieldConfig = {
+    multiple?: boolean;
+    searchMode?: 'client' | 'server';
+    clearable?: boolean;
+    minCharToSearch?: number; // Default: 3
+    searchDebounce?: number; // Default: 300ms
+    showAvatar?: boolean; // Default: false
+    itemClassName?: string; // Default: null
+};
+
+/**
+ * Destination select field specific configuration
+ */
+export type DestinationSelectFieldConfig = BaseEntitySelectFieldConfig;
+
+/**
+ * User select field specific configuration
+ */
+export type UserSelectFieldConfig = BaseEntitySelectFieldConfig & {
+    roleFilter?: string[]; // Filter by specific roles
+    statusFilter?: string[]; // Filter by user status
+};
+
+/**
+ * Accommodation select field specific configuration
+ */
+export type AccommodationSelectFieldConfig = BaseEntitySelectFieldConfig & {
+    typeFilter?: string[]; // Filter by accommodation type
+    statusFilter?: string[]; // Filter by accommodation status
+};
+
+/**
+ * Event select field specific configuration
+ */
+export type EventSelectFieldConfig = BaseEntitySelectFieldConfig & {
+    statusFilter?: string[]; // Filter by event status
+    dateRange?: { from?: Date; to?: Date }; // Filter by date range
+};
+
+/**
+ * Post select field specific configuration
+ */
+export type PostSelectFieldConfig = BaseEntitySelectFieldConfig & {
+    statusFilter?: string[]; // Filter by post status
+    categoryFilter?: string[]; // Filter by category
+};
+
+/**
+ * Feature select field specific configuration
+ */
+export type FeatureSelectFieldConfig = BaseEntitySelectFieldConfig & {
+    categoryFilter?: string[]; // Filter by feature category
+};
+
+/**
+ * Amenity select field specific configuration
+ */
+export type AmenitySelectFieldConfig = BaseEntitySelectFieldConfig & {
+    categoryFilter?: string[]; // Filter by amenity category
+};
+
+/**
+ * Tag select field specific configuration
+ */
+export type TagSelectFieldConfig = BaseEntitySelectFieldConfig & {
+    categoryFilter?: string[]; // Filter by tag category
 };
 
 /**
