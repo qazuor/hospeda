@@ -3,6 +3,11 @@ import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyFiel
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import { GridLayout } from '@/components/entity-form/layouts';
+import type {
+    EntitySelectFieldConfig,
+    SelectFieldConfig,
+    SelectOption
+} from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import {
     BooleanViewField,
@@ -150,16 +155,53 @@ export const EntityViewSection = React.forwardRef<HTMLDivElement, EntityViewSect
                 return true;
             });
 
-            // // biome-ignore lint/suspicious/noConsoleLog: Debug logging
-            // console.log('🔍 [EntityViewSection] Visible fields:', {
-            //     sectionId: config.id,
-            //     totalFields: config.fields.length,
-            //     visibleFields: filtered.length,
-            //     fieldIds: filtered.map((f) => f.id)
-            // });
-
             return filtered;
         }, [config.fields, userPermissions, values, showEmptyFields]);
+
+        // State for entity select options
+        const [entitySelectOptions, setEntitySelectOptions] = React.useState<
+            Record<string, SelectOption[]>
+        >({});
+
+        // Load options for ENTITY_SELECT fields
+        React.useEffect(() => {
+            const loadEntitySelectOptions = async () => {
+                const entitySelectFields = visibleFields.filter(
+                    (field) => field.type === FieldTypeEnum.ENTITY_SELECT
+                );
+
+                for (const field of entitySelectFields) {
+                    const fieldValue = values[field.id];
+                    if (!fieldValue) continue;
+
+                    const entityConfig =
+                        field.type === FieldTypeEnum.ENTITY_SELECT
+                            ? (field.typeConfig as EntitySelectFieldConfig)
+                            : undefined;
+                    if (!entityConfig?.loadByIdsFn) continue;
+
+                    const fieldValues = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+                    const stringValues = fieldValues.filter(
+                        (v): v is string => typeof v === 'string'
+                    );
+
+                    if (stringValues.length === 0) continue;
+
+                    try {
+                        const options = await entityConfig.loadByIdsFn(stringValues);
+
+                        setEntitySelectOptions((prev) => ({
+                            ...prev,
+                            [field.id]: options
+                        }));
+                    } catch (error) {
+                        console.error(`Failed to load options for field ${field.id}:`, error);
+                    }
+                }
+            };
+
+            loadEntitySelectOptions();
+        }, [visibleFields, values]);
 
         // Dynamic view field component loading based on field type
         const renderViewField = (field: SectionConfig['fields'][0]) => {
@@ -217,8 +259,8 @@ export const EntityViewSection = React.forwardRef<HTMLDivElement, EntityViewSect
                             {...baseFieldProps}
                             value={fieldValue as string}
                             options={
-                                field.typeConfig?.type === 'SELECT'
-                                    ? field.typeConfig.options || []
+                                field.type === FieldTypeEnum.SELECT
+                                    ? (field.typeConfig as SelectFieldConfig)?.options || []
                                     : []
                             }
                         />
@@ -240,6 +282,8 @@ export const EntityViewSection = React.forwardRef<HTMLDivElement, EntityViewSect
                             key={field.id}
                             {...baseFieldProps}
                             value={fieldValue as string}
+                            options={entitySelectOptions[field.id] || []}
+                            loading={!entitySelectOptions[field.id] && !!fieldValue}
                         />
                     );
 

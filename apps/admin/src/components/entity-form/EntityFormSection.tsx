@@ -15,6 +15,7 @@ import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyFiel
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import { GridLayout } from '@/components/entity-form/layouts';
+import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
@@ -103,7 +104,6 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
                 return true;
             });
 
-            // console.log('🔍 [EntityFormSection] Filtered visibleFields:', filtered);
             return filtered;
         }, [config.fields, userPermissions]);
 
@@ -151,8 +151,8 @@ export const EntityFormSection = React.forwardRef<HTMLDivElement, EntityFormSect
                                 {...fieldProps}
                                 value={fieldValue as string}
                                 options={
-                                    field.typeConfig?.type === 'SELECT'
-                                        ? field.typeConfig.options || []
+                                    field.type === FieldTypeEnum.SELECT
+                                        ? (field.typeConfig as SelectFieldConfig)?.options || []
                                         : []
                                 }
                             />
