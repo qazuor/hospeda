@@ -1,4 +1,8 @@
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type {
+    FieldConfig,
+    GalleryFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -70,7 +74,10 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
         const helper = config.help;
 
         // Get gallery specific config
-        const galleryConfig = config.typeConfig?.type === 'GALLERY' ? config.typeConfig : undefined;
+        const galleryConfig =
+            config.type === FieldTypeEnum.GALLERY
+                ? (config.typeConfig as GalleryFieldConfig)
+                : undefined;
 
         const fieldId = `field-${config.id}`;
         const errorId = hasError ? `${fieldId}-error` : undefined;

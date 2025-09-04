@@ -1,4 +1,9 @@
-import type { FieldConfig, SelectOption } from '@/components/entity-form/types/field-config.types';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type {
+    FieldConfig,
+    SelectFieldConfig,
+    SelectOption
+} from '@/components/entity-form/types/field-config.types';
 import {
     Label,
     Select,
@@ -88,7 +93,10 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
         const helperId = helper ? `${fieldId}-helper` : undefined;
 
         // Get select-specific config
-        const selectConfig = config.typeConfig?.type === 'SELECT' ? config.typeConfig : undefined;
+        const selectConfig =
+            config.type === FieldTypeEnum.SELECT
+                ? (config.typeConfig as SelectFieldConfig)
+                : undefined;
         const allowClear = selectConfig?.clearable;
 
         // Find selected option for display

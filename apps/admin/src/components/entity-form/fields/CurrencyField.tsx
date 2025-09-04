@@ -1,4 +1,9 @@
-import type { FieldConfig, SelectOption } from '@/components/entity-form/types/field-config.types';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type {
+    CurrencyFieldConfig,
+    FieldConfig,
+    SelectOption
+} from '@/components/entity-form/types/field-config.types';
 import {
     Input,
     Label,
@@ -78,7 +83,9 @@ export const CurrencyField = React.forwardRef<HTMLInputElement, CurrencyFieldPro
 
         // Get currency specific config
         const currencyConfig =
-            config.typeConfig?.type === 'CURRENCY' ? config.typeConfig : undefined;
+            config.type === FieldTypeEnum.CURRENCY
+                ? (config.typeConfig as CurrencyFieldConfig)
+                : undefined;
 
         const fieldId = `field-${config.id}`;
         const errorId = hasError ? `${fieldId}-error` : undefined;
