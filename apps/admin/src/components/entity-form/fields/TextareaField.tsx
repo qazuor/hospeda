@@ -1,4 +1,8 @@
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type {
+    FieldConfig,
+    TextareaFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { Label, Textarea } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -68,7 +72,9 @@ export const TextareaField = React.forwardRef<HTMLTextAreaElement, TextareaField
 
         // Get textarea-specific config
         const textareaConfig =
-            config.typeConfig?.type === 'TEXTAREA' ? config.typeConfig : undefined;
+            config.type === FieldTypeEnum.TEXTAREA
+                ? (config.typeConfig as TextareaFieldConfig)
+                : undefined;
         const minRows = textareaConfig?.minRows || 3;
         const maxRows = textareaConfig?.maxRows;
         const resize = textareaConfig?.resize !== false;

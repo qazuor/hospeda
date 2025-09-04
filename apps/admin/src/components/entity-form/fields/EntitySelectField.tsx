@@ -8,6 +8,8 @@
 import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
 import * as React from 'react';
 
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type { EntitySelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Label } from '@/components/ui-wrapped';
 import { useToast } from '@/components/ui/ToastProvider';
 import { Button } from '@/components/ui/button';
@@ -69,7 +71,10 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
     ) => {
         // Extract configuration
         const { id, label, description, placeholder, typeConfig } = config;
-        const entityConfig = typeConfig?.type === 'ENTITY_SELECT' ? typeConfig : null;
+        const entityConfig =
+            config.type === FieldTypeEnum.ENTITY_SELECT
+                ? (typeConfig as EntitySelectFieldConfig)
+                : null;
 
         // Hooks
         const { addToast } = useToast();

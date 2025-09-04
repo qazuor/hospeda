@@ -1,5 +1,11 @@
-import { RichTextFeatureEnum } from '@/components/entity-form/enums/form-config.enums';
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import {
+    FieldTypeEnum,
+    RichTextFeatureEnum
+} from '@/components/entity-form/enums/form-config.enums';
+import type {
+    FieldConfig,
+    RichTextFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { Label, Textarea } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -80,7 +86,9 @@ export const RichTextField = React.forwardRef<HTMLTextAreaElement, RichTextField
 
         // Get rich text specific config
         const richTextConfig =
-            config.typeConfig?.type === 'RICH_TEXT' ? config.typeConfig : undefined;
+            config.type === FieldTypeEnum.RICH_TEXT
+                ? (config.typeConfig as RichTextFieldConfig)
+                : undefined;
 
         const fieldId = `field-${config.id}`;
         const errorId = hasError ? `${fieldId}-error` : undefined;

@@ -1,4 +1,8 @@
-import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import type {
+    FieldConfig,
+    ImageFieldConfig
+} from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
@@ -68,7 +72,10 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
         const helper = config.help;
 
         // Get image specific config
-        const imageConfig = config.typeConfig?.type === 'IMAGE' ? config.typeConfig : undefined;
+        const imageConfig =
+            config.type === FieldTypeEnum.IMAGE
+                ? (config.typeConfig as ImageFieldConfig)
+                : undefined;
 
         const fieldId = `field-${config.id}`;
         const errorId = hasError ? `${fieldId}-error` : undefined;
