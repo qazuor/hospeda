@@ -89,7 +89,6 @@ export type FieldTypeConfig =
  * Text field specific configuration
  */
 export type TextFieldConfig = {
-    type: 'TEXT';
     minLength?: number;
     maxLength?: number;
     pattern?: string;
@@ -100,7 +99,6 @@ export type TextFieldConfig = {
  * Textarea field specific configuration
  */
 export type TextareaFieldConfig = {
-    type: 'TEXTAREA';
     minLength?: number;
     maxLength?: number;
     minRows?: number;
@@ -112,7 +110,6 @@ export type TextareaFieldConfig = {
  * Select field specific configuration
  */
 export type SelectFieldConfig = {
-    type: 'SELECT';
     options: SelectOption[];
     searchable?: boolean;
     clearable?: boolean;
@@ -123,7 +120,6 @@ export type SelectFieldConfig = {
  * Entity select field specific configuration
  */
 export type EntitySelectFieldConfig = {
-    type: 'ENTITY_SELECT';
     entityType: EntityTypeEnum;
     searchFn: (query: string) => Promise<SelectOption[]>;
     loadByIdsFn: (ids: string[]) => Promise<SelectOption[]>;
@@ -144,7 +140,6 @@ export type EntitySelectFieldConfig = {
  * Currency field specific configuration
  */
 export type CurrencyFieldConfig = {
-    type: 'CURRENCY';
     defaultCurrency?: string; // CurrencyEnum value
     allowedCurrencies?: string[]; // CurrencyEnum values
     showCurrencySymbol?: boolean;
@@ -238,7 +233,6 @@ export type SliderFieldConfig = {
  * Switch field specific configuration
  */
 export type SwitchFieldConfig = {
-    type: 'SWITCH';
     size?: 'sm' | 'md' | 'lg';
     color?: string;
     disabled?: boolean;
@@ -273,6 +267,11 @@ export type FieldConfig = {
     required?: boolean;
     readonly?: boolean;
     hidden?: boolean;
+
+    // Modes where this field should appear
+    modes?: ('view' | 'edit')[];
+    viewOnly?: boolean;
+    editOnly?: boolean;
 
     // Direct translations (explicit control)
     label?: string;
