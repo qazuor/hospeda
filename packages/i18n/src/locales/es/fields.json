@@ -203,5 +203,55 @@
         "label": "Nivel de prioridad",
         "description": "Nivel de prioridad del alojamiento",
         "placeholder": "1-10"
+    },
+    "ownerId": {
+        "title": "Propietario",
+        "label": "Propietario del alojamiento",
+        "description": "Usuario propietario de este alojamiento",
+        "placeholder": "Buscar usuarios..."
+    },
+    "accommodation": {
+        "sections": {
+            "basicInfo": {
+                "title": "Información Básica",
+                "description": "Detalles principales del alojamiento"
+            }
+        },
+        "name": {
+            "title": "Nombre",
+            "label": "Nombre del alojamiento",
+            "description": "Nombre descriptivo del alojamiento",
+            "placeholder": "Ingresa el nombre del alojamiento"
+        },
+        "description": {
+            "title": "Descripción",
+            "label": "Descripción completa",
+            "description": "Descripción detallada del alojamiento",
+            "placeholder": "Describe el alojamiento en detalle"
+        },
+        "type": {
+            "title": "Tipo",
+            "label": "Tipo de alojamiento",
+            "description": "Categoría del alojamiento",
+            "placeholder": "Selecciona el tipo"
+        },
+        "isFeatured": {
+            "title": "Destacado",
+            "label": "Alojamiento destacado",
+            "description": "Marcar como alojamiento destacado",
+            "placeholder": "¿Es destacado?"
+        },
+        "destinationId": {
+            "title": "Destino",
+            "label": "Destino turístico",
+            "description": "Destino al que pertenece el alojamiento",
+            "placeholder": "Selecciona un destino"
+        },
+        "ownerId": {
+            "title": "Propietario",
+            "label": "Propietario del alojamiento",
+            "description": "Usuario propietario de este alojamiento",
+            "placeholder": "Buscar usuarios..."
+        }
     }
 }
