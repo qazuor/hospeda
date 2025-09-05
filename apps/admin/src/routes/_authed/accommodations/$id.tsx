@@ -25,6 +25,9 @@ function AccommodationViewPage() {
             <EntityViewContent
                 entityType="accommodation"
                 entityId={id}
+                sections={entityData.sections}
+                entity={entityData.entity || {}}
+                userPermissions={entityData.userPermissions}
             />
         </EntityPageBase>
     );
