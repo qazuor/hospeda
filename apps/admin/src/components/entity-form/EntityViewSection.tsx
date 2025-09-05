@@ -123,10 +123,6 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                         userPermissions.includes(permission)
                     );
                     if (!hasFieldPermission) {
-                        // // biome-ignore lint/suspicious/noConsoleLog: Debug logging
-                        // console.log(
-                        //     `🔍 [EntityViewSection] Field ${field.id} hidden - no permission`
-                        // );
                         return false;
                     }
                 }
