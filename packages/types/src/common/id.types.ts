@@ -25,3 +25,7 @@ export type AccommodationFaqId = Brand<string, 'AccommodationFaqId'>;
 export type AccommodationIaDataId = Brand<string, 'AccommodationIaDataId'>;
 export type AccommodationReviewId = Brand<string, 'AccommodationReviewId'>;
 export type DestinationReviewId = Brand<string, 'DestinationReviewId'>;
+
+export type PaymentId = Brand<string, 'PaymentId'>;
+export type PaymentPlanId = Brand<string, 'PaymentPlanId'>;
+export type SubscriptionId = Brand<string, 'SubscriptionId'>;
