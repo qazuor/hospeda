@@ -14,13 +14,13 @@ export type {
     SectionFilterOptions
 } from '../types/consolidated-config.types';
 
-// ✅ UTILIDADES DE FILTRADO
+// ✅ UTILIDADES DE FILTRADO (re-exportadas desde entity-form)
 export {
     filterFieldsByMode,
     filterSectionsByMode,
     getAvailableModes,
     validateConsolidatedConfig
-} from '../utils/section-filter.utils';
+} from '@/components/entity-form/utils/section-filter.utils';
 
 // ✅ RE-EXPORTACIONES DE TIPOS COMUNES
 export type { SelectOption } from '@/components/entity-form/types/field-config.types';
