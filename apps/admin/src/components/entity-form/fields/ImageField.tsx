@@ -344,15 +344,11 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                         {allowedTypes.join(', ')} up to {formatFileSize(maxSize)}
                                     </p>
                                 </div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={disabled}
-                                >
+                                {/* biome-ignore lint/nursery/useSortedClasses: Button-like styling */}
+                                <span className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
                                     <Upload className="mr-2 h-4 w-4" />
                                     Select Image
-                                </Button>
+                                </span>
                             </div>
                         )}
                     </button>
