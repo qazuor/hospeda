@@ -4,7 +4,7 @@ import type {
     ConsolidatedFieldConfig,
     ConsolidatedSectionConfig,
     SectionFilterOptions
-} from '../types/consolidated-config.types';
+} from '@/features/accommodations/types/consolidated-config.types';
 
 /**
  * Filtra campos por modo específico
@@ -17,7 +17,10 @@ import type {
 export const filterFieldsByMode = (
     fields: ConsolidatedFieldConfig[],
     mode: ConfigMode,
-    options: Pick<SectionFilterOptions, 'includeFieldsWithoutMode' | 'applyModeSpecificConfig'> = {}
+    options: Pick<SectionFilterOptions, 'includeFieldsWithoutMode' | 'applyModeSpecificConfig'> = {
+        includeFieldsWithoutMode: true,
+        applyModeSpecificConfig: true
+    }
 ): ConsolidatedFieldConfig[] => {
     const { includeFieldsWithoutMode = true, applyModeSpecificConfig = true } = options;
 
@@ -136,7 +139,7 @@ export const validateConsolidatedConfig = (
         }
 
         // Validar campos
-        section.fields?.forEach((field, fieldIndex) => {
+        section.fields?.forEach((field: ConsolidatedFieldConfig, fieldIndex: number) => {
             // Validar que el campo tenga ID
             if (!field.id) {
                 errors.push(`Field at index ${fieldIndex} in section ${section.id} has no ID`);
@@ -145,7 +148,7 @@ export const validateConsolidatedConfig = (
             // Validar que si tiene modos específicos, sean válidos
             if (field.modes) {
                 const invalidModes = field.modes.filter(
-                    (mode) => !['view', 'edit', 'create'].includes(mode)
+                    (mode: string) => !['view', 'edit', 'create'].includes(mode)
                 );
                 if (invalidModes.length > 0) {
                     errors.push(
