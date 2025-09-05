@@ -1,5 +1,6 @@
 export * from './accommodation/index.js';
 export * from './destination/index.js';
+export * from './payment/index.js';
 // Use explicit re-exports for event to avoid name collisions (e.g., GetSummaryInputSchema)
 export {
     // service inputs
