@@ -65,7 +65,12 @@ export const useAccommodationPage = (entityId: string) => {
             PermissionEnum.ACCOMMODATION_LOCATION_EDIT,
             PermissionEnum.ACCOMMODATION_STATES_EDIT,
             PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
-            PermissionEnum.ACCOMMODATION_UPDATE_ANY
+            PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+            // ✅ Permisos adicionales para secciones faltantes
+            PermissionEnum.ACCOMMODATION_AMENITIES_EDIT,
+            PermissionEnum.ACCOMMODATION_GALLERY_MANAGE,
+            PermissionEnum.ACCOMMODATION_PUBLISH,
+            PermissionEnum.ACCOMMODATION_REVIEW_MODERATE
         ],
         []
     );
@@ -93,7 +98,6 @@ export const useAccommodationPage = (entityId: string) => {
         return mode === 'view' ? entityConfig.viewSections : entityConfig.editSections;
     };
 
-    // 🐛 DEBUG: Log del hook return
     const hookReturn = {
         // State
         mode,
