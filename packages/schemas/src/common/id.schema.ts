@@ -11,9 +11,12 @@ import type {
     EventLocationId,
     EventOrganizerId,
     FeatureId,
+    PaymentId,
+    PaymentPlanId,
     PostId,
     PostSponsorId,
     PostSponsorshipId,
+    SubscriptionId,
     TagId,
     UserBookmarkId,
     UserId
@@ -57,3 +60,7 @@ export const EventOrganizerIdSchema = BaseIdSchema.transform((val) => val as Eve
 export const PostIdSchema = BaseIdSchema.transform((val) => val as PostId);
 export const PostSponsorIdSchema = BaseIdSchema.transform((val) => val as PostSponsorId);
 export const PostSponsorshipIdSchema = BaseIdSchema.transform((val) => val as PostSponsorshipId);
+
+export const PaymentIdSchema = BaseIdSchema.transform((val) => val as PaymentId);
+export const PaymentPlanIdSchema = BaseIdSchema.transform((val) => val as PaymentPlanId);
+export const SubscriptionIdSchema = BaseIdSchema.transform((val) => val as SubscriptionId);
