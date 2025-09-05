@@ -718,6 +718,46 @@ importers:
         specifier: ^3.1.3
         version: 3.2.4(@types/node@22.17.2)(jsdom@26.0.0)(tsx@4.20.4)
 
+  packages/payments:
+    dependencies:
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
+      '@repo/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+      '@repo/types':
+        specifier: workspace:*
+        version: link:../types
+      '@repo/utils':
+        specifier: workspace:*
+        version: link:../utils
+      mercadopago:
+        specifier: ^2.0.15
+        version: 2.8.0
+      zod:
+        specifier: ^4.0.8
+        version: 4.0.17
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.17.2
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.0(tsx@4.20.4)(typescript@5.9.2)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.2
+      vitest:
+        specifier: ^3.1.3
+        version: 3.2.4(@types/node@22.17.2)(jsdom@26.0.0)(tsx@4.20.4)
+
   packages/schemas:
     dependencies:
       '@repo/config':
@@ -10539,6 +10579,15 @@ packages:
     engines: {node: '>=16.10'}
     dev: true
 
+  /mercadopago@2.8.0:
+    resolution: {integrity: sha512-TInH/yGB1JqWaJv41Ske75ryqsN1ffTPMThSTEpt+sDsFDAG8ecahTLw41Az1VuL0gwa+qOHp9SfTyU27Smwew==}
+    dependencies:
+      node-fetch: 2.7.0
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
   /merge-options@3.0.4:
     resolution: {integrity: sha512-2Sug1+knBjkaMsMgf1ctR1Ujx+Ayku4EdJN4Z+C2+JzoeF7A3OZ9KM2GY0CpQS51NR61LTurMJrRKPhSs3ZRTQ==}
     engines: {node: '>=10'}
@@ -13747,6 +13796,11 @@ packages:
 
   /uuid@11.1.0:
     resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+    dev: false
+
+  /uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
     dev: false
 
