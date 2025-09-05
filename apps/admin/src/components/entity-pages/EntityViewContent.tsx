@@ -1,8 +1,8 @@
 import { EntityViewSection } from '@/components/entity-form';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
-import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { useLazySections } from '@/hooks';
+import type { PermissionEnum } from '@repo/types';
 import type { ReactNode } from 'react';
 
 /**
@@ -11,8 +11,14 @@ import type { ReactNode } from 'react';
 export interface EntityViewContentProps {
     /** Entity type */
     entityType: string;
-    /** Entity ID */
-    entityId: string;
+    /** Entity ID (optional, for compatibility) */
+    entityId?: string;
+    /** Sections to render */
+    sections: SectionConfig[];
+    /** Entity data */
+    entity: Record<string, unknown>;
+    /** User permissions */
+    userPermissions: PermissionEnum[];
     /** Custom render function for sections */
     renderSection?: (section: SectionConfig, index: number) => ReactNode;
     /** Additional CSS classes */
@@ -24,12 +30,12 @@ export interface EntityViewContentProps {
  * Renders sections using EntityViewSection components
  */
 export const EntityViewContent = ({
-    entityId,
+    sections,
+    entity,
+    userPermissions,
     renderSection,
     className
 }: EntityViewContentProps) => {
-    const { sections, userPermissions, entity } = useAccommodationPage(entityId);
-
     // Convert sections to proper format for lazy loading
     // Sections are already SectionConfig objects, not functions
     const sectionConfigs = sections as SectionConfig[];
