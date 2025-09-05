@@ -3,10 +3,12 @@ import { AccommodationTypeEnum, PermissionEnum } from '@repo/types';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
-import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
 import { useAccommodationQuery, useUpdateAccommodationMutation } from './useAccommodationQuery';
+
+// ✅ NUEVAS IMPORTACIONES PARA CONFIGURACIÓN CONSOLIDADA
+import { createAccommodationConsolidatedConfig, filterSectionsByMode } from '../config';
 
 /**
  * Hook for managing accommodation entity pages
@@ -25,124 +27,20 @@ export const useAccommodationPage = (entityId: string) => {
     const updateMutation = useUpdateAccommodationMutation(entityId);
     const accommodationTypeOptions = useAccommodationTypeOptions(AccommodationTypeEnum);
 
-    // Entity configuration - completely static, no hooks or external dependencies
+    // ✅ CONFIGURACIÓN CONSOLIDADA
     const entityConfig = useMemo(() => {
-        // Basic static section for testing
-        const basicSection = {
-            id: 'basic-info',
-            title: t('fields.accommodation.sections.basicInfo.title'),
-            description: t('fields.accommodation.sections.basicInfo.description'),
-            layout: LayoutTypeEnum.GRID,
-            permissions: {
-                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
-            },
-            fields: [
-                {
-                    id: 'name',
-                    type: FieldTypeEnum.TEXT,
-                    required: true,
-                    label: t('fields.accommodation.name.label'),
-                    description: t('fields.accommodation.name.description'),
-                    placeholder: t('fields.accommodation.name.placeholder'),
-                    permissions: {
-                        view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                        edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
-                    },
-                    typeConfig: {}
-                },
-                {
-                    id: 'description',
-                    type: FieldTypeEnum.TEXTAREA,
-                    required: true,
-                    label: t('fields.accommodation.description.label'),
-                    description: t('fields.accommodation.description.description'),
-                    placeholder: t('fields.accommodation.description.placeholder'),
-                    permissions: {
-                        view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                        edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
-                    },
-                    typeConfig: {
-                        minRows: 4,
-                        maxLength: 1000
-                    }
-                },
-                {
-                    id: 'type',
-                    type: FieldTypeEnum.SELECT,
-                    required: true,
-                    label: t('fields.accommodation.type.label'),
-                    description: t('fields.accommodation.type.description'),
-                    placeholder: t('fields.accommodation.type.placeholder'),
-                    permissions: {
-                        view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                        edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
-                    },
-                    typeConfig: {
-                        options: accommodationTypeOptions
-                    }
-                },
-                {
-                    id: 'isFeatured',
-                    type: FieldTypeEnum.SWITCH,
-                    required: false,
-                    label: t('fields.accommodation.isFeatured.label'),
-                    description: t('fields.accommodation.isFeatured.description'),
-                    permissions: {
-                        view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                        edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
-                    },
-                    typeConfig: {}
-                },
-                {
-                    id: 'destinationId',
-                    type: FieldTypeEnum.DESTINATION_SELECT,
-                    required: true,
-                    label: t('fields.accommodation.destinationId.label'),
-                    description: t('fields.accommodation.destinationId.description'),
-                    placeholder: t('fields.accommodation.destinationId.placeholder'),
-                    permissions: {
-                        view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                        edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
-                    },
-                    typeConfig: {
-                        searchMode: 'client',
-                        minCharToSearch: 1,
-                        showAvatar: false,
-                        clearable: true
-                    }
-                },
-                {
-                    id: 'ownerId',
-                    type: FieldTypeEnum.USER_SELECT,
-                    required: true,
-                    label: t('fields.accommodation.ownerId.label'),
-                    description: t('fields.accommodation.ownerId.description'),
-                    placeholder: t('fields.accommodation.ownerId.placeholder'),
-                    permissions: {
-                        view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                        edit: [PermissionEnum.ACCOMMODATION_UPDATE_ANY] // Solo admin puede cambiar owner
-                    },
-                    typeConfig: {
-                        searchMode: 'server',
-                        minCharToSearch: 2,
-                        searchDebounce: 300,
-                        showAvatar: true,
-                        clearable: true
-                    }
-                }
-            ]
-        };
+        const consolidatedConfig = createAccommodationConsolidatedConfig(
+            t,
+            accommodationTypeOptions
+        );
+
+        const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
+        const editSections = filterSectionsByMode(consolidatedConfig.sections, 'edit');
 
         return {
-            viewSections: [basicSection],
-            editSections: [basicSection],
-            metadata: {
-                title: 'Accommodation',
-                description: 'Manage accommodation details',
-                entityName: 'Accommodation',
-                entityNamePlural: 'Accommodations'
-            }
+            viewSections,
+            editSections,
+            metadata: consolidatedConfig.metadata
         };
     }, [accommodationTypeOptions, t]);
 
@@ -194,7 +92,8 @@ export const useAccommodationPage = (entityId: string) => {
         return mode === 'view' ? entityConfig.viewSections : entityConfig.editSections;
     };
 
-    return {
+    // 🐛 DEBUG: Log del hook return
+    const hookReturn = {
         // State
         mode,
         setMode,
@@ -232,4 +131,6 @@ export const useAccommodationPage = (entityId: string) => {
         goToView,
         goToEdit
     };
+
+    return hookReturn;
 };
