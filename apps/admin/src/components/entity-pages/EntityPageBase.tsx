@@ -155,6 +155,16 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     // });
 
     // Create a complete EntityConfig from our entityConfig
+    // Use sections filtered by current mode
+    const currentSections =
+        mode === 'view'
+            ? entityConfig.viewSections.map((section) =>
+                  typeof section === 'function' ? section() : section
+              )
+            : entityConfig.editSections.map((section) =>
+                  typeof section === 'function' ? section() : section
+              );
+
     const completeEntityConfig = {
         id: `${entityType}-${entityId}`,
         entityType,
@@ -162,9 +172,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         description: (entityConfig.metadata?.description as string) || `View ${entityType} details`,
         entityName: (entityConfig.metadata?.entityName as string) || entityType,
         entityNamePlural: (entityConfig.metadata?.entityNamePlural as string) || `${entityType}s`,
-        sections: entityConfig.viewSections.map((section) =>
-            typeof section === 'function' ? section() : section
-        ),
+        sections: currentSections, // ✅ Usar secciones filtradas por modo actual
         viewSections: entityConfig.viewSections.map((section) =>
             typeof section === 'function' ? section() : section
         ),
