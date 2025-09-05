@@ -8,7 +8,8 @@ import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
 import { useAccommodationQuery, useUpdateAccommodationMutation } from './useAccommodationQuery';
 
 // ✅ NUEVAS IMPORTACIONES PARA CONFIGURACIÓN CONSOLIDADA
-import { createAccommodationConsolidatedConfig, filterSectionsByMode } from '../config';
+import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
+import { createAccommodationConsolidatedConfig } from '../config';
 
 /**
  * Hook for managing accommodation entity pages
