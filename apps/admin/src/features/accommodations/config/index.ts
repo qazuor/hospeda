@@ -2,7 +2,13 @@
 export { createAccommodationConsolidatedConfig } from './accommodation-consolidated.config';
 
 // ✅ SECCIONES INDIVIDUALES
+export { createAmenitiesConsolidatedSection } from './sections/amenities.consolidated';
 export { createBasicInfoConsolidatedSection } from './sections/basic-info.consolidated';
+export { createContactInfoConsolidatedSection } from './sections/contact-info.consolidated';
+export { createGalleryConsolidatedSection } from './sections/gallery.consolidated';
+export { createLocationInfoConsolidatedSection } from './sections/location-info.consolidated';
+export { createStatesModerationConsolidatedSection } from './sections/states-moderation.consolidated';
+export { createStatisticsConsolidatedSection } from './sections/statistics.consolidated';
 
 // ✅ TIPOS CONSOLIDADOS
 export type {

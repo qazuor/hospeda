@@ -1,7 +1,13 @@
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import type { useTranslations } from '@repo/i18n';
 import type { ConsolidatedEntityConfig } from '../types/consolidated-config.types';
+import { createAmenitiesConsolidatedSection } from './sections/amenities.consolidated';
 import { createBasicInfoConsolidatedSection } from './sections/basic-info.consolidated';
+import { createContactInfoConsolidatedSection } from './sections/contact-info.consolidated';
+import { createGalleryConsolidatedSection } from './sections/gallery.consolidated';
+import { createLocationInfoConsolidatedSection } from './sections/location-info.consolidated';
+import { createStatesModerationConsolidatedSection } from './sections/states-moderation.consolidated';
+import { createStatisticsConsolidatedSection } from './sections/statistics.consolidated';
 
 /**
  * Crea la configuración consolidada completa para accommodation
@@ -16,8 +22,13 @@ export const createAccommodationConsolidatedConfig = (
 ): ConsolidatedEntityConfig => {
     return {
         sections: [
-            // Por ahora solo basic-info, iremos agregando más secciones paso a paso
-            createBasicInfoConsolidatedSection(t, accommodationTypeOptions)
+            createBasicInfoConsolidatedSection(t, accommodationTypeOptions),
+            createContactInfoConsolidatedSection(t),
+            createLocationInfoConsolidatedSection(t),
+            createStatesModerationConsolidatedSection(t),
+            createAmenitiesConsolidatedSection(t),
+            createGalleryConsolidatedSection(t),
+            createStatisticsConsolidatedSection(t)
         ],
         metadata: {
             title: 'Accommodation',
