@@ -36,7 +36,7 @@ export interface DestinationType
     summary: string;
     description: string;
     location: BaseLocationType;
-    media: MediaType;
+    media?: MediaType;
     isFeatured: boolean;
     visibility: VisibilityEnum;
 
