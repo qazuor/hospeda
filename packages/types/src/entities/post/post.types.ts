@@ -39,7 +39,7 @@ export interface PostType
     title: string;
     summary: string;
     content: string;
-    media: MediaType;
+    media?: MediaType;
 
     authorId: UserId;
     sponsorshipId?: PostSponsorshipId;
