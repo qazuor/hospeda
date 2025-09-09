@@ -1,130 +1,93 @@
 import { z } from 'zod';
-import { EventIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { BaseAdminFields } from '../../common/admin.schema.js';
+import { BaseAuditFields } from '../../common/audit.schema.js';
+import { BaseContactFields } from '../../common/contact.schema.js';
 import {
-    ContactInfoSchema,
-    WithAdminInfoSchema,
-    WithAuditSchema,
-    WithIdSchema,
-    WithLifecycleStateSchema,
-    WithModerationStatusSchema,
-    WithSeoSchema,
-    WithVisibilitySchema
-} from '../../common/index.js';
-import { BaseSearchSchema } from '../../common/search.schemas.js';
-import { EventCategoryEnumSchema, VisibilityEnumSchema } from '../../enums/index.js';
+    EventIdSchema,
+    EventLocationIdSchema,
+    EventOrganizerIdSchema,
+    UserIdSchema
+} from '../../common/id.schema.js';
+import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { BaseMediaFields } from '../../common/media.schema.js';
+import { BaseModerationFields } from '../../common/moderation.schema.js';
+import { BaseSeoFields } from '../../common/seo.schema.js';
+import { BaseVisibilityFields } from '../../common/visibility.schema.js';
+import { EventCategoryEnumSchema } from '../../enums/index.js';
+import { TagSchema } from '../tag/tag.schema.js';
 import { EventDateSchema } from './event.date.schema.js';
 import { EventPriceSchema } from './event.price.schema.js';
 
 /**
- * Event schema definition using Zod for validation.
- * Includes date, location, organizer, and optional price and extras.
+ * Event Schema - Main Entity Schema
+ *
+ * This schema defines the complete structure of an Event entity
+ * using base field objects for consistency and maintainability.
  */
-export const EventSchema = WithIdSchema.merge(WithAuditSchema)
-    .merge(WithLifecycleStateSchema)
-    .merge(WithAdminInfoSchema)
-    .merge(WithModerationStatusSchema)
-    .merge(WithSeoSchema)
-    .merge(WithVisibilitySchema)
-    .extend({
-        id: EventIdSchema,
-        slug: z
-            .string({
-                message: 'zodError.event.slug.required'
-            })
-            .min(1, { message: 'zodError.event.slug.min' }),
-        /** Event name, 3-100 characters */
-        name: z
-            .string()
-            .min(3, { message: 'zodError.event.name.min' })
-            .max(100, { message: 'zodError.event.name.max' }),
-        /** Event summary, 10-200 characters */
-        summary: z
-            .string()
-            .min(10, { message: 'zodError.event.summary.min' })
-            .max(200, { message: 'zodError.event.summary.max' }),
-        /** Event description, optional, 10-1000 characters */
-        description: z
-            .string({
-                message: 'zodError.event.description.required'
-            })
-            .min(10, { message: 'zodError.event.description.min' })
-            .max(1000, { message: 'zodError.event.description.max' })
-            .optional(),
-        // Inline simplified media schema to avoid z.lazy TagSchema in OpenAPI generation
-        media: z
-            .object({
-                featuredImage: z
-                    .object({
-                        url: z.string().url(),
-                        caption: z.string().optional(),
-                        description: z.string().optional()
-                    })
-                    .optional(),
-                gallery: z
-                    .array(
-                        z.object({
-                            url: z.string().url(),
-                            caption: z.string().optional(),
-                            description: z.string().optional()
-                        })
-                    )
-                    .optional(),
-                videos: z
-                    .array(
-                        z.object({
-                            url: z.string().url(),
-                            caption: z.string().optional(),
-                            description: z.string().optional()
-                        })
-                    )
-                    .optional()
-            })
-            .optional(),
-        category: EventCategoryEnumSchema,
-        /** Event date object */
-        date: EventDateSchema,
-        authorId: UserIdSchema,
-        /** Event location (ID only) */
-        locationId: z
-            .string({
-                message: 'zodError.event.locationId.required'
-            })
-            .uuid({ message: 'zodError.event.locationId.invalidUuid' })
-            .optional(),
-        /** Event organizer (ID only) */
-        organizerId: z
-            .string({
-                message: 'zodError.event.organizerId.required'
-            })
-            .uuid({ message: 'zodError.event.organizerId.invalidUuid' })
-            .optional(),
-        /** Event price, optional */
-        pricing: EventPriceSchema.optional(),
-        contact: ContactInfoSchema.optional(),
-        isFeatured: z.boolean(),
-        // Tags as simple string array to avoid circular dependencies in OpenAPI
-        tags: z.array(z.string()).optional()
-    });
+export const EventSchema = z.object({
+    // Base fields
+    id: EventIdSchema,
+    ...BaseAuditFields,
+    ...BaseLifecycleFields,
+    ...BaseAdminFields,
+    ...BaseModerationFields,
+    ...BaseSeoFields,
+    ...BaseVisibilityFields,
+    // Tags
+    tags: z.array(TagSchema).optional(),
 
-// Input para filtros de búsqueda de eventos
-export const EventFilterInputSchema = BaseSearchSchema.extend({
-    filters: z
-        .object({
-            state: z.string().optional(),
-            city: z.string().optional(),
-            country: z.string().optional(),
-            category: EventCategoryEnumSchema.optional(),
-            visibility: VisibilityEnumSchema.optional(),
-            isFeatured: z.boolean().optional(),
-            minDate: z.string().optional(),
-            maxDate: z.string().optional(),
-            q: z.string().optional() // free text search
+    // Event-specific core fields
+    slug: z
+        .string({
+            message: 'zodError.event.slug.required'
         })
-        .optional()
+        .min(1, { message: 'zodError.event.slug.min' }),
+
+    name: z
+        .string({
+            message: 'zodError.event.name.required'
+        })
+        .min(3, { message: 'zodError.event.name.min' })
+        .max(100, { message: 'zodError.event.name.max' }),
+
+    summary: z
+        .string({
+            message: 'zodError.event.summary.required'
+        })
+        .min(10, { message: 'zodError.event.summary.min' })
+        .max(300, { message: 'zodError.event.summary.max' }),
+
+    description: z
+        .string({
+            message: 'zodError.event.description.required'
+        })
+        .min(50, { message: 'zodError.event.description.min' })
+        .max(5000, { message: 'zodError.event.description.max' })
+        .optional(),
+
+    category: EventCategoryEnumSchema,
+
+    // Event dates and pricing
+    date: EventDateSchema,
+    pricing: EventPriceSchema.optional(),
+
+    isFeatured: z.boolean().default(false),
+
+    // Author
+    authorId: UserIdSchema,
+
+    // Contact info
+    ...BaseContactFields,
+
+    // Media
+    ...BaseMediaFields,
+
+    // Location references
+    locationId: EventLocationIdSchema.optional(),
+    organizerId: EventOrganizerIdSchema.optional()
 });
 
-// Input para ordenamiento de resultados
-export const EventSortInputSchema = z.object({
-    sortBy: z.enum(['name', 'createdAt', 'date', 'category']).optional(),
-    order: z.enum(['asc', 'desc']).optional()
-});
+/**
+ * Type export for the main Event entity
+ */
+export type Event = z.infer<typeof EventSchema>;
