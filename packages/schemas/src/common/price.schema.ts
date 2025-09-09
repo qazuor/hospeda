@@ -6,6 +6,9 @@ export const PriceSchema = z.object({
         .number({
             message: 'zodError.common.price.price.required'
         })
+        .positive({
+            message: 'zodError.common.price.price.positive'
+        })
         .optional(),
     currency: PriceCurrencyEnumSchema.optional()
 });

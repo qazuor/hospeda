@@ -1,28 +1,5 @@
-import { createRequire } from 'node:module';
 import { z } from 'zod';
 import { ModerationStatusEnumSchema } from '../enums/index.js';
-
-/**
- * Lazy reference to resolve circular dependency between TagSchema and MediaSchema.
- *
- * Problem: TagSchema imports MediaSchema (through accommodation schema -> media schema),
- * and MediaSchema needs TagSchema for the tags array. This creates a circular dependency.
- *
- * Solution: Use z.lazy() to defer TagSchema resolution until runtime, breaking the
- * circular import chain at module load time. The function will be called only when
- * the schema is actually used for validation.
- */
-let tagSchemaCache: z.ZodTypeAny | undefined;
-const getTagSchema = (): z.ZodTypeAny => {
-    if (tagSchemaCache === undefined) {
-        // Use dynamic import at runtime to break circular dependency (ESM-safe)
-        // biome-ignore lint/suspicious/noExplicitAny: compatibility layer for require in ESM
-        const req: any = typeof require !== 'undefined' ? require : createRequire(import.meta.url);
-        const tagModule = req('../entities/tag/tag.schema.js');
-        tagSchemaCache = (tagModule.TagSchema ?? tagModule.default?.TagSchema) as z.ZodTypeAny;
-    }
-    return tagSchemaCache as z.ZodTypeAny;
-};
 
 export const ImageSchema = z.object({
     moderationState: ModerationStatusEnumSchema,
@@ -40,8 +17,7 @@ export const ImageSchema = z.object({
         })
         .min(10, { message: 'zodError.common.media.image.description.min' })
         .max(300, { message: 'zodError.common.media.image.description.max' })
-        .optional(),
-    tags: z.array(z.lazy(() => getTagSchema())).optional()
+        .optional()
 });
 
 export const VideoSchema = z.object({
@@ -60,8 +36,7 @@ export const VideoSchema = z.object({
         })
         .min(10, { message: 'zodError.common.media.video.description.min' })
         .max(300, { message: 'zodError.common.media.video.description.max' })
-        .optional(),
-    tags: z.array(z.lazy(() => getTagSchema())).optional()
+        .optional()
 });
 
 export const MediaSchema = z.object({
@@ -69,3 +44,73 @@ export const MediaSchema = z.object({
     gallery: z.array(ImageSchema).optional(),
     videos: z.array(VideoSchema).optional()
 });
+
+/**
+ * Base media fields (standardized with caption, description, and moderationState)
+ */
+export const BaseMediaFields = {
+    media: z
+        .object({
+            featuredImage: z
+                .object({
+                    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+                    caption: z
+                        .string()
+                        .min(3, { message: 'zodError.common.media.image.caption.min' })
+                        .max(100, { message: 'zodError.common.media.image.caption.max' })
+                        .optional(),
+                    description: z
+                        .string()
+                        .min(10, { message: 'zodError.common.media.image.description.min' })
+                        .max(300, { message: 'zodError.common.media.image.description.max' })
+                        .optional(),
+                    moderationState: ModerationStatusEnumSchema
+                })
+                .optional(),
+            gallery: z
+                .array(
+                    z.object({
+                        url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+                        caption: z
+                            .string()
+                            .min(3, { message: 'zodError.common.media.image.caption.min' })
+                            .max(100, { message: 'zodError.common.media.image.caption.max' })
+                            .optional(),
+                        description: z
+                            .string()
+                            .min(10, { message: 'zodError.common.media.image.description.min' })
+                            .max(300, { message: 'zodError.common.media.image.description.max' })
+                            .optional(),
+                        moderationState: ModerationStatusEnumSchema
+                    })
+                )
+                .optional(),
+            videos: z
+                .array(
+                    z.object({
+                        url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
+                        caption: z
+                            .string()
+                            .min(3, { message: 'zodError.common.media.video.caption.min' })
+                            .max(100, { message: 'zodError.common.media.video.caption.max' })
+                            .optional(),
+                        description: z
+                            .string()
+                            .min(10, { message: 'zodError.common.media.video.description.min' })
+                            .max(300, { message: 'zodError.common.media.video.description.max' })
+                            .optional(),
+                        moderationState: ModerationStatusEnumSchema
+                    })
+                )
+                .optional()
+        })
+        .optional()
+} as const;
+
+/**
+ * Type exports for media schemas
+ */
+export type BaseMediaFieldsType = typeof BaseMediaFields;
+export type Image = z.infer<typeof ImageSchema>;
+export type Video = z.infer<typeof VideoSchema>;
+export type Media = z.infer<typeof MediaSchema>;

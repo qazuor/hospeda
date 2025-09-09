@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { isValidLatitude, isValidLongitude } from '../utils/utils.js';
 
-const CoordinatesSchema = z.object({
+/**
+ * Coordinates Schema
+ * Represents geographic coordinates with latitude and longitude
+ * Matches CoordinatesType from @repo/types
+ */
+export const CoordinatesSchema = z.object({
     lat: z
         .string({
             message: 'zodError.common.location.coordinates.lat.required'
@@ -18,7 +23,12 @@ const CoordinatesSchema = z.object({
         })
 });
 
-export const LocationSchema = z.object({
+/**
+ * Base Location Schema
+ * Represents basic location information without full address details
+ * Matches BaseLocationType from @repo/types
+ */
+export const BaseLocationSchema = z.object({
     state: z
         .string({
             message: 'zodError.common.location.state.required'
@@ -37,7 +47,15 @@ export const LocationSchema = z.object({
         })
         .min(2, { message: 'zodError.common.location.country.min' })
         .max(50, { message: 'zodError.common.location.country.max' }),
-    coordinates: CoordinatesSchema.optional(),
+    coordinates: CoordinatesSchema.optional()
+});
+
+/**
+ * Full Location Schema
+ * Represents complete location information with full address details
+ * Matches FullLocationType from @repo/types
+ */
+export const FullLocationSchema = BaseLocationSchema.extend({
     street: z
         .string({
             message: 'zodError.common.location.street.required'
@@ -85,3 +103,33 @@ export const LocationSchema = z.object({
         .max(50, { message: 'zodError.common.location.department.max' })
         .optional()
 });
+
+/**
+ * Legacy Location Schema (for backward compatibility)
+ * @deprecated Use FullLocationSchema instead
+ */
+export const LocationSchema = FullLocationSchema;
+
+/**
+ * Base location fields (using base LocationSchema structure)
+ */
+export const BaseLocationFields = {
+    location: BaseLocationSchema.optional()
+} as const;
+
+/**
+ * Full location fields (using complete LocationSchema structure)
+ */
+export const FullLocationFields = {
+    location: FullLocationSchema.optional()
+} as const;
+
+/**
+ * Type exports for location schemas
+ */
+export type BaseLocationFieldsType = typeof BaseLocationFields;
+export type FullLocationFieldsType = typeof FullLocationFields;
+export type Coordinates = z.infer<typeof CoordinatesSchema>;
+export type BaseLocation = z.infer<typeof BaseLocationSchema>;
+export type FullLocation = z.infer<typeof FullLocationSchema>;
+export type Location = z.infer<typeof LocationSchema>;

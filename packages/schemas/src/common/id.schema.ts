@@ -31,6 +31,15 @@ const BaseIdSchema = z
 
 export const IdSchema = BaseIdSchema;
 
+/**
+ * Base ID fields - Using UUID as agreed
+ */
+export const BaseIdFields = {
+    id: z.string().uuid({
+        message: 'zodError.common.id.invalid'
+    })
+} as const;
+
 export const UserIdSchema = BaseIdSchema.transform((val) => val as UserId);
 export const UserBookmarkIdSchema = BaseIdSchema.transform((val) => val as UserBookmarkId);
 

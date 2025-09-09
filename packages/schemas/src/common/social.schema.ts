@@ -52,3 +52,16 @@ export const SocialNetworkSchema = z.object({
         })
         .optional()
 });
+
+/**
+ * Base social network fields
+ */
+export const BaseSocialFields = {
+    socialNetworks: SocialNetworkSchema.optional()
+} as const;
+
+/**
+ * Type exports for social schemas
+ */
+export type BaseSocialFieldsType = typeof BaseSocialFields;
+export type SocialNetwork = z.infer<typeof SocialNetworkSchema>;
