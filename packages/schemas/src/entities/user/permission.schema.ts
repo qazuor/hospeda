@@ -12,3 +12,5 @@ export const UserPermissionAssignmentSchema = z.object({
         message: 'zodError.userPermission.permission.required'
     })
 });
+
+export type UserPermissionAssignment = z.infer<typeof UserPermissionAssignmentSchema>;
