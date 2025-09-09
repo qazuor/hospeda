@@ -24,8 +24,8 @@ export const isValidLongitude = (val: string) => {
     return !Number.isNaN(n) && n >= -180 && n <= 180;
 };
 
-// Base fields to omit in CRUD actions
-export const omittedBaseEntityFieldsForActions = [
+// Common fields to omit in CRUD actions (auto-managed by system)
+export const omittedSystemFieldsForActions = [
     'id',
     'createdAt',
     'updatedAt',
