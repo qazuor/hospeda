@@ -30,3 +30,16 @@ export const ContactInfoSchema = z.object({
     preferredEmail: PreferredContactEnumSchema.optional(),
     preferredPhone: PreferredContactEnumSchema.optional()
 });
+
+/**
+ * Base contact fields (using complete ContactInfoSchema structure)
+ */
+export const BaseContactFields = {
+    contactInfo: ContactInfoSchema.optional()
+} as const;
+
+/**
+ * Type exports for contact schemas
+ */
+export type BaseContactFieldsType = typeof BaseContactFields;
+export type ContactInfo = z.infer<typeof ContactInfoSchema>;
