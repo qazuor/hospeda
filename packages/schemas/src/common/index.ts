@@ -16,3 +16,8 @@ export * from './seo.schema.js';
 export * from './social.schema.js';
 export * from './tags.schema.js';
 export * from './visibility.schema.js';
+
+// API schemas
+export * from './api.schema.js'; // Query parameters (pagination, sort, search, date/price/location ranges)
+export * from './params.schema.js'; // Path parameters (IDs, slugs, entity-specific parameters)
+export * from './response.schema.js'; // Response structures (success, error, paginated, list, stats)
