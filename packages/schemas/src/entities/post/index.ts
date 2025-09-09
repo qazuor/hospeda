@@ -1,11 +1,15 @@
-export * from './post.operations.schema.js'; // CRUD and operational schemas
+// Core schemas
 export * from './post.schema.js'; // Main entity schema
-// REMOVED: Legacy schemas that used obsolete PostSchema
-// - post.requests.schema.js (used PostSchema)
-// - post.responses.schema.js (used PostSchema)
-// - post.service.schema.js (used PostSchema)
-// export * from './post.schema.js'; // REMOVED: Legacy schema replaced by post.flat.schema.js
-// REMOVED: Type exports from deleted post.service.schema.js
-// These types are no longer available after cleanup
+
+// CRUD operations
+export * from './post.crud.schema.js'; // Create, Update, Delete, Restore schemas
+
+// Query operations
+export * from './post.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
+
+// Relations
+export * from './post.relations.schema.js'; // Schemas with related entities
+
+// Additional schemas
 export * from './post.sponsor.schema.js';
 export * from './post.sponsorship.schema.js';
