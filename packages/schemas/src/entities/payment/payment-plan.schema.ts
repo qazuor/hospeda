@@ -1,101 +1,109 @@
 import { z } from 'zod';
-import { WithAuditSchema } from '../../common/helpers.schema.js';
+import { BaseAuditFields } from '../../common/audit.schema.js';
 import { PaymentPlanIdSchema } from '../../common/id.schema.js';
-import { PriceCurrencyEnumSchema } from '../../enums/currency.enum.schema.js';
 import {
     BillingCycleEnumSchema,
-    PaymentTypeEnumSchema
-} from '../../enums/payment-type.enum.schema.js';
+    PaymentTypeEnumSchema,
+    PriceCurrencyEnumSchema
+} from '../../enums/index.js';
 
 /**
- * Payment plan schema definition using Zod for validation.
- * Defines pricing, features, and billing for different payment options.
+ * Payment Plan Schema - Main Entity Schema
+ *
+ * This schema defines the complete structure of a Payment Plan entity
+ * representing a payment plan configuration in the system.
  */
-export const PaymentPlanSchema = WithAuditSchema.extend({
+export const PaymentPlanSchema = z.object({
+    // Base fields
     id: PaymentPlanIdSchema,
-    /** Unique identifier for the plan */
+    ...BaseAuditFields,
+
+    // Payment Plan-specific core fields
     slug: z
         .string({
             message: 'zodError.paymentPlan.slug.required'
         })
-        .min(1, { message: 'zodError.paymentPlan.slug.min' })
+        .min(3, { message: 'zodError.paymentPlan.slug.min' })
         .max(100, { message: 'zodError.paymentPlan.slug.max' })
-        .regex(/^[a-z0-9-]+$/, { message: 'zodError.paymentPlan.slug.format' }),
-    /** Display name for the plan */
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+            message: 'zodError.paymentPlan.slug.pattern'
+        }),
+
     name: z
         .string({
             message: 'zodError.paymentPlan.name.required'
         })
-        .min(1, { message: 'zodError.paymentPlan.name.min' })
+        .min(2, { message: 'zodError.paymentPlan.name.min' })
         .max(100, { message: 'zodError.paymentPlan.name.max' }),
-    /** Detailed description of the plan */
+
     description: z
-        .string()
-        .max(500, { message: 'zodError.paymentPlan.description.max' })
+        .string({
+            message: 'zodError.paymentPlan.description.required'
+        })
+        .min(10, { message: 'zodError.paymentPlan.description.min' })
+        .max(1000, { message: 'zodError.paymentPlan.description.max' })
         .optional(),
-    /** Type of payment: one-time or subscription */
+
+    // Payment configuration
     type: PaymentTypeEnumSchema,
-    /** Billing cycle for subscriptions */
     billingCycle: BillingCycleEnumSchema.optional(),
-    /** Price in the specified currency */
+
+    // Pricing
     price: z
         .number({
             message: 'zodError.paymentPlan.price.required'
         })
         .min(0, { message: 'zodError.paymentPlan.price.min' }),
-    /** Currency for the price */
+
     currency: PriceCurrencyEnumSchema,
-    /** Discount percentage for yearly plans */
+
     discountPercentage: z
-        .number()
+        .number({
+            message: 'zodError.paymentPlan.discountPercentage.required'
+        })
         .min(0, { message: 'zodError.paymentPlan.discountPercentage.min' })
         .max(100, { message: 'zodError.paymentPlan.discountPercentage.max' })
         .optional(),
-    /** List of feature identifiers included in this plan */
+
+    // Features and configuration
     features: z
-        .array(z.string().min(1, { message: 'zodError.paymentPlan.features.item.min' }))
-        .min(1, { message: 'zodError.paymentPlan.features.minItems' }),
-    /** Whether this plan is currently active and available for purchase */
-    isActive: z.boolean({
-        message: 'zodError.paymentPlan.isActive.required'
-    }),
-    /** Display order for sorting plans */
+        .array(
+            z.string({
+                message: 'zodError.paymentPlan.features.item.required'
+            })
+        )
+        .min(1, { message: 'zodError.paymentPlan.features.min' }),
+
+    isActive: z
+        .boolean({
+            message: 'zodError.paymentPlan.isActive.required'
+        })
+        .default(true),
+
     sortOrder: z
         .number({
             message: 'zodError.paymentPlan.sortOrder.required'
         })
         .int({ message: 'zodError.paymentPlan.sortOrder.int' })
-        .min(0, { message: 'zodError.paymentPlan.sortOrder.min' }),
-    /** Mercado Pago specific configuration */
+        .min(0, { message: 'zodError.paymentPlan.sortOrder.min' })
+        .default(0),
+
+    // Mercado Pago configuration
     mercadoPagoConfig: z
         .object({
-            /** Mercado Pago plan ID for subscriptions */
-            planId: z.string().optional(),
-            /** Additional metadata for Mercado Pago */
+            planId: z
+                .string({
+                    message: 'zodError.paymentPlan.mercadoPagoConfig.planId.required'
+                })
+                .min(1, { message: 'zodError.paymentPlan.mercadoPagoConfig.planId.min' })
+                .optional(),
+
             metadata: z.record(z.string()).optional()
         })
         .optional()
 });
 
 /**
- * Schema for creating a new payment plan.
- * Omits server-generated fields like id, audit fields, etc.
+ * Type export for the main Payment Plan entity
  */
-export const CreatePaymentPlanSchema = PaymentPlanSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true
-}).strict();
-
-/**
- * Schema for updating an existing payment plan.
- * All fields optional except id (required for update).
- */
-export const UpdatePaymentPlanSchema = PaymentPlanSchema.partial().extend({
-    id: PaymentPlanIdSchema
-});
-
-export type PaymentPlanInput = z.infer<typeof CreatePaymentPlanSchema>;
-export type UpdatePaymentPlanInput = z.infer<typeof UpdatePaymentPlanSchema>;
+export type PaymentPlan = z.infer<typeof PaymentPlanSchema>;
