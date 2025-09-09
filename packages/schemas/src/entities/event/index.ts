@@ -1,11 +1,17 @@
+// Core schemas
+export * from './event.schema.js'; // Main entity schema
+
+// CRUD operations
+export * from './event.crud.schema.js'; // Create, Update, Delete, Restore schemas
+
+// Query operations
+export * from './event.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
+
+// Relations
+export * from './event.relations.schema.js'; // Schemas with related entities
+
+// Additional schemas
 export * from './event.date.schema.js';
 export * from './event.location.schema.js';
-export * from './event.operations.schema.js'; // CRUD and operational schemas
 export * from './event.organizer.schema.js';
 export * from './event.price.schema.js';
-export * from './event.schema.js'; // Main entity schema
-// REMOVED: Legacy schemas that used obsolete EventSchema
-// - event.requests.schema.js (used EventSchema)
-// - event.responses.schema.js (used EventSchema)
-// - event.service.schema.js (used EventSchema)
-// export * from './event.schema.js'; // REMOVED: Legacy schema replaced by event.flat.schema.js
