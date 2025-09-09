@@ -98,7 +98,7 @@ export const PaymentPlanSchema = z.object({
                 .min(1, { message: 'zodError.paymentPlan.mercadoPagoConfig.planId.min' })
                 .optional(),
 
-            metadata: z.record(z.string()).optional()
+            metadata: z.record(z.string(), z.string()).optional()
         })
         .optional()
 });

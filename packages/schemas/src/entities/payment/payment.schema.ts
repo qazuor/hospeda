@@ -68,7 +68,7 @@ export const PaymentSchema = z.object({
         .optional(),
 
     // Metadata and additional info
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
 
     // Important dates
     processedAt: z
@@ -93,7 +93,7 @@ export const PaymentSchema = z.object({
         .optional(),
 
     // Raw Mercado Pago response
-    mercadoPagoResponse: z.record(z.unknown()).optional()
+    mercadoPagoResponse: z.record(z.string(), z.unknown()).optional()
 });
 
 /**
