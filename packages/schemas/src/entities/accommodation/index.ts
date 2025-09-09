@@ -1,27 +1,14 @@
 // Core schemas
-export * from './accommodation.base.schema.js';
-export * from './accommodation.service.schema.js';
+export * from './accommodation.operations.schema.js'; // CRUD and operational schemas
+export * from './accommodation.schema.js'; // Main entity schema
 
-// Request and response schemas
-export * from './accommodation.requests.schema.js';
-export * from './accommodation.responses.schema.js';
-
-// Composition schemas (export only non-conflicting schemas)
-export {
-    AccommodationByDestinationSchema,
-    AccommodationCreateCompositionSchema,
-    AccommodationDetailSchema,
-    AccommodationListItemSchema,
-    AccommodationSearchCompositionSchema,
-    AccommodationSearchFiltersSchema,
-    AccommodationSearchPaginationSchema,
-    AccommodationSearchSortSchema,
-    AccommodationStatsSchema,
-    AccommodationSummarySchema,
-    AccommodationUpdateCompositionSchema,
-    TopRatedAccommodationsSchema
-} from './accommodation.composition.schema.js';
+// Price
+export * from './accommodation.price.schema.js';
 
 // Reviews
 export * from './accommodation.rating.schema.js';
 export * from './accommodation.review.schema.js';
+
+// FAQ and IA Data
+export * from './accommodation.faq.schema.js';
+export * from './accommodation.ia.schema.js';

@@ -1,37 +1,24 @@
 export * from './accommodation/index.js';
+export * from './amenity/index.js';
 export * from './destination/index.js';
-export * from './payment/index.js';
-// Use explicit re-exports for event to avoid name collisions (e.g., GetSummaryInputSchema)
+// Use explicit re-exports for event (only available schemas after cleanup)
 export {
-    // service inputs
-    CreateEventServiceSchema,
-    // requests
     EventCreateSchema,
-    // date/location/organizer/price schemas
+    // Sub-schemas
     EventDateSchema,
-    EventDetailSchema,
-    EventFilterInputSchema,
-    EventFilterSchema,
-    // responses
     EventListItemSchema,
     EventLocationSchema,
     EventOrganizerSchema,
     EventPriceSchema,
-    // base
+    // Core schemas (renamed from Flat)
     EventSchema,
-    EventSortInputSchema,
+    EventSearchSchema,
     EventSummarySchema,
     EventUpdateSchema,
-    GetEventByAuthorInputSchema,
-    GetEventByCategoryInputSchema,
-    GetEventByLocationInputSchema,
-    GetEventByOrganizerInputSchema,
-    GetEventFreeInputSchema,
-    // Renamed to avoid collision with Destination's GetSummaryInputSchema
-    GetEventSummaryInputSchema,
-    GetEventUpcomingInputSchema,
-    UpdateEventServiceSchema
+    EventViewSchema
 } from './event/index.js';
+export * from './feature/index.js';
+export * from './payment/index.js';
 export * from './post/index.js';
 export * from './tag/index.js';
 export * from './user/index.js';
