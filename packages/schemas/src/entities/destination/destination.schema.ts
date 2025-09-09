@@ -1,182 +1,75 @@
+import { BaseLocationFields } from '@repo/schemas/common/location.schema.js';
+import { DestinationRatingSchema } from '@repo/schemas/entities/destination/destination.rating.schema.js';
+import { DestinationReviewSchema } from '@repo/schemas/entities/destination/destination.review.schema.js';
 import { z } from 'zod';
+import { BaseAdminFields } from '../../common/admin.schema.js';
+import { BaseAuditFields } from '../../common/audit.schema.js';
 import { DestinationIdSchema } from '../../common/id.schema.js';
-import {
-    LocationSchema,
-    WithAdminInfoSchema,
-    WithAuditSchema,
-    WithIdSchema,
-    WithLifecycleStateSchema,
-    WithModerationStatusSchema,
-    WithReviewStateSchema,
-    WithSeoSchema,
-    WithVisibilitySchema
-} from '../../common/index.js';
-import { BaseSearchSchema } from '../../common/search.schemas.js';
-import { VisibilityEnumSchema } from '../../enums/index.js';
+import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { BaseMediaFields } from '../../common/media.schema.js';
+import { BaseModerationFields } from '../../common/moderation.schema.js';
+import { BaseReviewFields } from '../../common/review.schema.js';
+import { BaseSeoFields } from '../../common/seo.schema.js';
+import { BaseVisibilityFields } from '../../common/visibility.schema.js';
+import { TagSchema } from '../tag/tag.schema.js';
 import { DestinationAttractionSchema } from './destination.attraction.schema.js';
-import { DestinationRatingSchema } from './destination.rating.schema.js';
-import { DestinationReviewSchema } from './destination.review.schema.js';
 
 /**
- * Destination schema definition using Zod for validation.
- * Attractions array requires at least 3 elements.
- * All error messages use the 'zodError.' prefix for consistency.
+ * Destination Schema - Main Entity Schema
+ *
+ * This schema defines the complete structure of a Destination entity
+ * using base field objects for consistency and maintainability.
+ *
+ * NOTE: Reviews are handled by separate DestinationReviewSchema entity.
+ * This schema only contains review aggregation fields (reviewsCount, averageRating).
  */
-export const DestinationSchema = WithIdSchema.merge(WithAuditSchema)
-    .merge(WithAdminInfoSchema)
-    .merge(WithLifecycleStateSchema)
-    .merge(WithModerationStatusSchema)
-    .merge(WithVisibilitySchema)
-    .merge(WithReviewStateSchema)
-    .merge(WithSeoSchema)
-    .extend({
-        id: DestinationIdSchema,
-        /** Unique slug for the destination */
-        slug: z
-            .string()
-            .min(3, { message: 'zodError.destination.slug.min_length' })
-            .max(30, { message: 'zodError.destination.slug.max_length' }),
-        /** Name of the destination */
-        name: z
-            .string()
-            .min(3, { message: 'zodError.destination.name.min_length' })
-            .max(100, { message: 'zodError.destination.name.max_length' }),
-        /** Short summary, 10-200 characters */
-        summary: z
-            .string()
-            .min(10, { message: 'zodError.destination.summary.min_length' })
-            .max(200, { message: 'zodError.destination.summary.max_length' }),
-        /** Detailed description, 10-2000 characters */
-        description: z
-            .string()
-            .min(10, { message: 'zodError.destination.description.min_length' })
-            .max(2000, { message: 'zodError.destination.description.max_length' }),
-        /** Location object */
-        location: LocationSchema,
-        /** Media object (avoid lazy TagSchema refs for OpenAPI) */
-        media: z
-            .object({
-                featuredImage: z
-                    .object({
-                        url: z.string().url(),
-                        caption: z.string().optional(),
-                        description: z.string().optional()
-                    })
-                    .optional(),
-                gallery: z
-                    .array(
-                        z.object({
-                            url: z.string().url(),
-                            caption: z.string().optional(),
-                            description: z.string().optional()
-                        })
-                    )
-                    .optional(),
-                videos: z
-                    .array(
-                        z.object({
-                            url: z.string().url(),
-                            caption: z.string().optional(),
-                            description: z.string().optional()
-                        })
-                    )
-                    .optional()
-            })
-            .optional(),
-        /** Whether the destination is featured, optional */
-        isFeatured: z.boolean(),
-        /** Number of accommodations, optional */
-        accommodationsCount: z.number().int(),
-        /** List of attractions, at least 3 required */
-        attractions: z.array(DestinationAttractionSchema).optional(),
-        /** List of reviews, optional */
-        reviews: z.array(DestinationReviewSchema).optional(),
-        /** Rating object, optional */
-        rating: DestinationRatingSchema.optional(),
-        /** Tags as simple string array to avoid circular dependencies in OpenAPI */
-        tags: z.array(z.string()).optional()
-    })
-    .strict();
+export const DestinationSchema = z.object({
+    // Base fields
+    id: DestinationIdSchema,
+    ...BaseAuditFields,
+    // Entity fields - specific to destination
+    slug: z
+        .string()
+        .min(3, { message: 'zodError.destination.slug.min' })
+        .max(50, { message: 'zodError.destination.slug.max' }),
+    name: z
+        .string()
+        .min(3, { message: 'zodError.destination.name.min' })
+        .max(100, { message: 'zodError.destination.name.max' }),
+    summary: z
+        .string()
+        .min(10, { message: 'zodError.destination.summary.min' })
+        .max(300, { message: 'zodError.destination.summary.max' }),
+    description: z
+        .string()
+        .min(30, { message: 'zodError.destination.description.min' })
+        .max(2000, { message: 'zodError.destination.description.max' }),
+    isFeatured: z.boolean().default(false),
+    ...BaseLifecycleFields,
+    ...BaseAdminFields,
+    ...BaseModerationFields,
+    ...BaseVisibilityFields,
+    ...BaseReviewFields,
+    ...BaseSeoFields,
+    // Tags
+    tags: z.array(TagSchema).optional(),
 
-// Input para filtros de búsqueda de destinos
-export const DestinationFilterInputSchema = BaseSearchSchema.extend({
-    filters: z
-        .object({
-            state: z.string().optional(),
-            city: z.string().optional(),
-            country: z.string().optional(),
-            // Avoid importing TagSchema here to prevent circular deps during OpenAPI generation
-            // Accept either simple strings (e.g., tag slugs/ids) or plain objects (from factories)
-            tags: z
-                .array(
-                    z.union([
-                        z.string(),
-                        // Permissive object to support test factories without pulling TagSchema
-                        z
-                            .object({
-                                id: z.string().uuid().optional(),
-                                slug: z.string().optional(),
-                                name: z.string().optional()
-                            })
-                            .passthrough()
-                    ])
-                )
-                .optional(),
-            visibility: VisibilityEnumSchema.optional(),
-            isFeatured: z.boolean().optional(),
-            minRating: z.number().min(0).max(5).optional(),
-            maxRating: z.number().min(0).max(5).optional(),
-            q: z.string().optional() // free text search
-        })
-        .optional()
-}).strict();
+    // Location (required for destinations)
+    ...BaseLocationFields,
 
-// Input para ordenamiento de resultados
-export const DestinationSortInputSchema = z
-    .object({
-        sortBy: z
-            .enum(['name', 'createdAt', 'averageRating', 'reviewsCount', 'accommodationsCount'])
-            .optional(),
-        order: z.enum(['asc', 'desc']).optional()
-    })
-    .strict();
+    // Media (using base object)
+    ...BaseMediaFields,
+
+    // Destination-specific fields
+    accommodationsCount: z.number().int().min(0).default(0),
+
+    // Attractions (nested objects)
+    attractions: z.array(DestinationAttractionSchema).optional(),
+    reviews: z.array(DestinationReviewSchema).optional(),
+    rating: DestinationRatingSchema.optional()
+});
 
 /**
- * Schema for creating a new destination.
- * Derived from the base `DestinationSchema` by omitting server-generated fields and relations.
- * Additional fields are made optional to handle seed data that includes them.
+ * Type export for the main Destination entity
  */
-export const CreateDestinationSchema = DestinationSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true,
-    reviews: true,
-    rating: true,
-    accommodationsCount: true,
-    averageRating: true
-})
-    .extend({
-        /** Slug (optional - will be generated by service) */
-        slug: z.string().optional(),
-        /** Array of tag IDs (optional - handled by separate service) */
-        tagIds: z.array(z.string()).optional(),
-        /** Array of attraction IDs (optional - handled by separate service) */
-        attractionIds: z.array(z.string()).optional()
-    })
-    .strict();
-
-/**
- * Type for new destination input (creation).
- */
-export type NewDestinationInput = z.infer<typeof CreateDestinationSchema>;
-
-/**
- * Schema for updating an existing destination.
- * All fields son opcionales para permitir updates parciales.
- */
-export const UpdateDestinationSchema = CreateDestinationSchema.partial().strict();
-export type UpdateDestinationInput = z.infer<typeof UpdateDestinationSchema>;
+export type Destination = z.infer<typeof DestinationSchema>;

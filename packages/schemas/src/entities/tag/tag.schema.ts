@@ -1,52 +1,77 @@
-import { TagIdSchema, UserIdSchema } from '@repo/schemas/common/id.schema.js';
-import { LifecycleStatusEnumSchema } from '@repo/schemas/enums/index.js';
-import { TagColorEnumSchema } from '@repo/schemas/enums/tag-color.enum.schema.js';
+import type { TagId, UserId } from '@repo/types';
+import { LifecycleStatusEnum, TagColorEnum } from '@repo/types';
 import { z } from 'zod';
 
 /**
- * Note: The TagSchema is defined by explicitly listing all properties instead of merging
- * helper schemas (e.g., WithIdSchema, WithAuditSchema). This approach is a deliberate
- * architectural choice to prevent circular dependency issues that can arise in testing
- * frameworks like Vitest, especially when schemas are interconnected (e.g., a helper
- * schema importing this one). By flattening the structure, we ensure stable and
- * predictable module resolution during tests.
+ * Tag Schema - Main Entity Schema (Completely Flat)
+ *
+ * This schema defines the complete structure of a Tag entity
+ * with all fields declared inline for zero dependencies.
  */
 export const TagSchema = z.object({
-    // From WithIdSchema
-    id: TagIdSchema,
+    // ID field
+    id: z
+        .string({
+            message: 'zodError.common.id.required'
+        })
+        .uuid({ message: 'zodError.common.id.invalidUuid' })
+        .transform((val) => val as TagId),
 
-    // From WithAuditSchema
+    // Audit fields
     createdAt: z.coerce.date({
         message: 'zodError.common.createdAt.required'
     }),
     updatedAt: z.coerce.date({
         message: 'zodError.common.updatedAt.required'
     }),
-    createdById: UserIdSchema,
-    updatedById: UserIdSchema,
+    createdById: z
+        .string({
+            message: 'zodError.common.id.required'
+        })
+        .uuid({ message: 'zodError.common.id.invalidUuid' })
+        .transform((val) => val as UserId),
+    updatedById: z
+        .string({
+            message: 'zodError.common.id.required'
+        })
+        .uuid({ message: 'zodError.common.id.invalidUuid' })
+        .transform((val) => val as UserId),
     deletedAt: z.coerce
         .date({
             message: 'zodError.common.deletedAt.required'
         })
         .optional(),
-    deletedById: UserIdSchema.optional(),
+    deletedById: z
+        .string({
+            message: 'zodError.common.id.required'
+        })
+        .uuid({ message: 'zodError.common.id.invalidUuid' })
+        .transform((val) => val as UserId)
+        .optional(),
 
-    // From WithLifecycleStateSchema
-    lifecycleState: LifecycleStatusEnumSchema,
+    // Lifecycle fields
+    lifecycleState: z.nativeEnum(LifecycleStatusEnum, {
+        error: () => ({ message: 'zodError.enums.lifecycleStatus.invalid' })
+    }),
 
-    // Own properties
+    // Tag-specific fields
     name: z
         .string({
             message: 'zodError.tag.name.required'
         })
         .min(2, { message: 'zodError.tag.name.min' })
         .max(50, { message: 'zodError.tag.name.max' }),
+
     slug: z
         .string({
             message: 'zodError.tag.slug.required'
         })
         .min(1, { message: 'zodError.tag.slug.min' }),
-    color: TagColorEnumSchema,
+
+    color: z.nativeEnum(TagColorEnum, {
+        error: () => ({ message: 'zodError.enums.tagColor.invalid' })
+    }),
+
     icon: z
         .string({
             message: 'zodError.tag.icon.required'
@@ -54,6 +79,7 @@ export const TagSchema = z.object({
         .min(2, { message: 'zodError.tag.icon.min' })
         .max(100, { message: 'zodError.tag.icon.max' })
         .optional(),
+
     notes: z
         .string({
             message: 'zodError.tag.notes.required'
@@ -63,6 +89,15 @@ export const TagSchema = z.object({
         .optional()
 });
 
+/**
+ * Tag array schema
+ */
 export const TagsArraySchema = z.array(TagSchema, {
     message: 'zodError.tags.required'
 });
+
+/**
+ * Type exports for the main Tag entity
+ */
+export type Tag = z.infer<typeof TagSchema>;
+export type TagsArray = z.infer<typeof TagsArraySchema>;
