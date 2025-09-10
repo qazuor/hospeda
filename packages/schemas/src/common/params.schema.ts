@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
     AccommodationIdSchema,
     AmenityIdSchema,
+    AttractionIdSchema,
     DestinationIdSchema,
     EventIdSchema,
     FeatureIdSchema,
@@ -195,6 +196,15 @@ export const FeatureIdParamsSchema = z.object({
 export const PaymentIdParamsSchema = z.object({
     paymentId: PaymentIdSchema,
     id: PaymentIdSchema.optional() // Alternative parameter name
+});
+
+/**
+ * Schema for Attraction ID path parameters
+ * Used for attraction-specific endpoints
+ */
+export const AttractionIdParamsSchema = z.object({
+    attractionId: AttractionIdSchema,
+    id: AttractionIdSchema.optional() // Alternative parameter name
 });
 
 // ============================================================================
@@ -455,6 +465,7 @@ export type TagIdParams = z.infer<typeof TagIdParamsSchema>;
 export type AmenityIdParams = z.infer<typeof AmenityIdParamsSchema>;
 export type FeatureIdParams = z.infer<typeof FeatureIdParamsSchema>;
 export type PaymentIdParams = z.infer<typeof PaymentIdParamsSchema>;
+export type AttractionIdParams = z.infer<typeof AttractionIdParamsSchema>;
 export type FaqIdParams = z.infer<typeof FaqIdParamsSchema>;
 export type ReviewIdParams = z.infer<typeof ReviewIdParamsSchema>;
 export type NestedParams = z.infer<typeof NestedParamsSchema>;
