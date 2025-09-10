@@ -1,5 +1,5 @@
 import type { AccommodationModel } from '@repo/db';
-import { UpdateAccommodationServiceSchema } from '@repo/schemas';
+import { AccommodationUpdateInputSchema } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
@@ -17,9 +17,9 @@ const mockLogger = createLoggerMock();
 beforeEach(() => {
     vi.spyOn(helpers, 'generateSlug').mockResolvedValue('mock-slug');
     // Mock safeParseAsync for validation
-    vi.spyOn(UpdateAccommodationServiceSchema, 'safeParseAsync').mockImplementation(
+    vi.spyOn(AccommodationUpdateInputSchema, 'safeParseAsync').mockImplementation(
         async (input: unknown) => {
-            const typedInput = input as z.infer<typeof UpdateAccommodationServiceSchema>;
+            const typedInput = input as z.infer<typeof AccommodationUpdateInputSchema>;
             if (
                 typedInput &&
                 Object.prototype.hasOwnProperty.call(typedInput, 'name') &&
