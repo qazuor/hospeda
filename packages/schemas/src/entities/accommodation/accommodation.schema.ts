@@ -15,6 +15,7 @@ import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AccommodationTypeEnumSchema } from '../../enums/index.js';
+import { AccommodationReviewSchema } from '../accommodationReview/accommodationReview.schema.js';
 import { AccommodationAmenityRelationSchema } from '../amenity/amenity.schema.js';
 import { AccommodationFeatureRelationSchema } from '../feature/feature.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
@@ -22,7 +23,6 @@ import { AccommodationFaqSchema } from './accommodation.faq.schema.js';
 import { AccommodationIaDataSchema } from './accommodation.ia.schema.js';
 import { AccommodationPriceSchema } from './accommodation.price.schema.js';
 import { AccommodationRatingSchema } from './accommodation.rating.schema.js';
-import { AccommodationReviewSchema } from './accommodation.review.schema.js';
 
 /**
  * Accommodation Schema - Main Entity Schema
