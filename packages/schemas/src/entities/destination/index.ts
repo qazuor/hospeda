@@ -11,6 +11,5 @@ export * from './destination.query.schema.js'; // List, Search, Summary, Stats, 
 export * from './destination.relations.schema.js'; // Schemas with related entities
 
 // Additional schemas
-export * from './destination.attraction.schema.js';
 export * from './destination.rating.schema.js';
 export * from './destination.review.schema.js';
