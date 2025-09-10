@@ -1,11 +1,9 @@
-import { BaseLocationFields } from '@repo/schemas/common/location.schema.js';
-import { DestinationRatingSchema } from '@repo/schemas/entities/destination/destination.rating.schema.js';
-import { DestinationReviewSchema } from '@repo/schemas/entities/destination/destination.review.schema.js';
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { DestinationIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { BaseLocationFields } from '../../common/location.schema.js';
 import { BaseMediaFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
@@ -13,6 +11,8 @@ import { BaseSeoFields } from '../../common/seo.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
 import { DestinationAttractionSchema } from './destination.attraction.schema.js';
+import { DestinationRatingSchema } from './destination.rating.schema.js';
+import { DestinationReviewSchema } from './destination.review.schema.js';
 
 /**
  * Destination Schema - Main Entity Schema
