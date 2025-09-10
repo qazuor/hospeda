@@ -1,3 +1,4 @@
+export * from './identifier';
 export * from './logging';
 export * from './normalizer';
 export * from './permission';
