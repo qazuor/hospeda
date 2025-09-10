@@ -151,7 +151,7 @@ describe('UserSchema', () => {
                 const validData = createValidUser();
                 const dataWithoutEmail = {
                     ...validData,
-                    contact: {
+                    contactInfo: {
                         mobilePhone: '+1234567890',
                         website: 'https://example.com'
                     }
@@ -184,7 +184,7 @@ describe('UserSchema', () => {
                 ];
 
                 for (const contact of validContacts) {
-                    const data = { ...validData, contact };
+                    const data = { ...validData, contactInfo: contact };
                     expect(() => UserSchema.parse(data)).not.toThrow();
                 }
             });
@@ -415,10 +415,10 @@ describe('UserSchema', () => {
             expect(typeof result.role).toBe('string');
             expect(Array.isArray(result.permissions)).toBe(true);
             // Contact email is optional, so check if it exists
-            if (result.contact?.personalEmail || result.contact?.workEmail) {
-                expect(typeof (result.contact.personalEmail || result.contact.workEmail)).toBe(
-                    'string'
-                );
+            if (result.contactInfo?.personalEmail || result.contactInfo?.workEmail) {
+                expect(
+                    typeof (result.contactInfo.personalEmail || result.contactInfo.workEmail)
+                ).toBe('string');
             }
         });
     });

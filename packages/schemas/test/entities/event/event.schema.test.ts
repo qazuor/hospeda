@@ -384,7 +384,6 @@ describe('EventSchema', () => {
                 seo: undefined,
                 tags: undefined,
                 onlineUrl: undefined,
-                ageRestriction: undefined,
                 registrationUrl: undefined,
                 destinationId: undefined,
                 accommodationId: undefined
@@ -424,9 +423,7 @@ describe('EventSchema', () => {
             if (result.tags !== undefined) {
                 expect(Array.isArray(result.tags)).toBe(true);
             }
-            if (result.ageRestriction !== undefined) {
-                expect(typeof result.ageRestriction).toBe('number');
-            }
+            // ageRestriction field is not part of the EventSchema
         });
     });
 });
