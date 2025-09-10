@@ -1,5 +1,4 @@
-import type { CreateAttractionSchema, UpdateAttractionSchema } from '@repo/schemas';
-import type { z } from 'zod';
+import type { AttractionCreateInput, AttractionUpdateInput } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo } from '../../utils';
 
@@ -10,9 +9,9 @@ import { normalizeAdminInfo } from '../../utils';
  * @returns The normalized data.
  */
 export const normalizeCreateInput = (
-    data: z.infer<typeof CreateAttractionSchema>,
+    data: AttractionCreateInput,
     _actor: Actor
-): z.infer<typeof CreateAttractionSchema> => {
+): AttractionCreateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
     return {
@@ -28,9 +27,9 @@ export const normalizeCreateInput = (
  * @returns The (currently unmodified) data.
  */
 export const normalizeUpdateInput = (
-    data: z.infer<typeof UpdateAttractionSchema>,
+    data: AttractionUpdateInput,
     _actor: Actor
-): z.infer<typeof UpdateAttractionSchema> => {
+): AttractionUpdateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
     return {
