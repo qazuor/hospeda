@@ -1,6 +1,5 @@
-import type { CreateAccommodationServiceSchema } from '@repo/schemas';
+import type { AccommodationCreateInput } from '@repo/schemas';
 import { type AccommodationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
-import type { z } from 'zod';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { checkGenericPermission, hasPermission } from '../../utils';
@@ -24,10 +23,7 @@ const isOwner = (actor: Actor, entity: { ownerId?: string | null }) => {
  * @param _data The data for the accommodation to be created (unused in this check).
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanCreate(
-    actor: Actor,
-    _data: z.infer<typeof CreateAccommodationServiceSchema>
-): void {
+export function checkCanCreate(actor: Actor, _data: AccommodationCreateInput): void {
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
