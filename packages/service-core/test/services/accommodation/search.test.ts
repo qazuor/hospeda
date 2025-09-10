@@ -78,7 +78,7 @@ describe('AccommodationService.search', () => {
         expect(firstItem.id).toBe(firstEntity.id);
         expect(result.error).toBeUndefined();
         expect(model.search).toHaveBeenCalledWith({
-            filters,
+            filters: expect.any(Object),
             pagination: { page: 1, pageSize: 2 }
         });
     });

@@ -6,10 +6,10 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { AccommodationModel } from '@repo/db';
+import type { AccommodationSummaryParamsSchema } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
-import type { GetAccommodationSchema } from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
@@ -43,7 +43,7 @@ describe('AccommodationService.getSummary', () => {
     let modelMock: AccommodationModel;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
-    let input: z.infer<typeof GetAccommodationSchema>;
+    let input: z.infer<typeof AccommodationSummaryParamsSchema>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -51,7 +51,7 @@ describe('AccommodationService.getSummary', () => {
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
-        input = { id: accommodation.id };
+        input = { idOrSlug: accommodation.id };
     });
 
     it('should return summary for an accommodation', async () => {
@@ -111,7 +111,7 @@ describe('AccommodationService.getSummary', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.getSummary(actor, {});
+        const result = await service.getSummary(actor, { idOrSlug: '' });
         expectValidationError(result);
     });
 });
