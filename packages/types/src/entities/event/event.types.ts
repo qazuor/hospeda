@@ -46,7 +46,7 @@ export interface EventType
     organizer?: EventOrganizerType;
 
     pricing?: EventPriceType;
-    contact?: ContactInfoType;
+    contactInfo?: ContactInfoType;
 
     visibility: VisibilityEnum;
     isFeatured: boolean;
