@@ -9,7 +9,16 @@ export * from './common/lifecycle.schema.js';
 export * from './common/location.schema.js';
 export * from './common/media.schema.js';
 export * from './common/moderation.schema.js';
+export {
+    WithDestinationIdParamsSchema,
+    WithLimitParamsSchema,
+    WithOwnerIdParamsSchema,
+    type WithDestinationIdParams,
+    type WithLimitParams,
+    type WithOwnerIdParams
+} from './common/params.schema.js';
 export * from './common/price.schema.js';
+export * from './common/result.schema.js';
 export * from './common/review.schema.js';
 export {
     BaseSearchSchema,
