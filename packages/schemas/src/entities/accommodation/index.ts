@@ -15,7 +15,6 @@ export * from './accommodation.price.schema.js';
 
 // Reviews
 export * from './accommodation.rating.schema.js';
-export * from './accommodation.review.schema.js';
 
 // FAQ and IA Data
 export * from './accommodation.faq.schema.js';
