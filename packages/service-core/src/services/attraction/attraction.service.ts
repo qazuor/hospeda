@@ -1,12 +1,19 @@
 import { AttractionModel, DestinationModel, RDestinationAttractionModel } from '@repo/db';
 import {
-    AddAttractionToDestinationInputSchema,
-    CreateAttractionSchema,
-    GetAttractionsForDestinationSchema,
-    GetDestinationsByAttractionSchema,
-    RemoveAttractionFromDestinationInputSchema,
-    SearchAttractionSchema,
-    UpdateAttractionSchema
+    type AttractionAddToDestinationInput,
+    AttractionAddToDestinationInputSchema,
+    type AttractionCreateInput,
+    AttractionCreateInputSchema,
+    type AttractionRemoveFromDestinationInput,
+    AttractionRemoveFromDestinationInputSchema,
+    type AttractionSearchInput,
+    AttractionSearchInputSchema,
+    type AttractionUpdateInput,
+    AttractionUpdateInputSchema,
+    type AttractionsByDestinationInput,
+    AttractionsByDestinationInputSchema,
+    type DestinationsByAttractionInput,
+    DestinationsByAttractionInputSchema
 } from '@repo/schemas';
 import type {
     AttractionId,
@@ -16,7 +23,6 @@ import type {
     DestinationType
 } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
-import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import { type Actor, type ServiceContext, ServiceError, type ServiceOutput } from '../../types';
 import { generateAttractionSlug } from './attraction.helpers';
@@ -42,17 +48,17 @@ export class AttractionService extends BaseCrudRelatedService<
     AttractionType,
     AttractionModel,
     RDestinationAttractionModel,
-    typeof CreateAttractionSchema,
-    typeof UpdateAttractionSchema,
-    typeof SearchAttractionSchema
+    typeof AttractionCreateInputSchema,
+    typeof AttractionUpdateInputSchema,
+    typeof AttractionSearchInputSchema
 > {
     static readonly ENTITY_NAME = 'attraction';
     protected readonly entityName = AttractionService.ENTITY_NAME;
     public readonly model: AttractionModel;
 
-    public readonly createSchema = CreateAttractionSchema;
-    public readonly updateSchema = UpdateAttractionSchema;
-    public readonly searchSchema = SearchAttractionSchema;
+    public readonly createSchema = AttractionCreateInputSchema;
+    public readonly updateSchema = AttractionUpdateInputSchema;
+    public readonly searchSchema = AttractionSearchInputSchema;
     protected readonly destinationModel: DestinationModel;
     protected normalizers = {
         create: normalizeCreateInput,
@@ -77,7 +83,7 @@ export class AttractionService extends BaseCrudRelatedService<
      * If slug is not provided, generates a unique slug from the name.
      */
     protected async _beforeCreate(
-        data: z.infer<typeof CreateAttractionSchema>,
+        data: AttractionCreateInput,
         _actor: Actor
     ): Promise<Partial<AttractionType>> {
         let slug = (data as { slug?: string }).slug;
@@ -92,7 +98,7 @@ export class AttractionService extends BaseCrudRelatedService<
      * If name is updated and slug is not provided, generates a new unique slug.
      */
     protected async _beforeUpdate(
-        data: z.infer<typeof UpdateAttractionSchema>,
+        data: AttractionUpdateInput,
         _actor: Actor
     ): Promise<Partial<AttractionType>> {
         let slug = (data as { slug?: string }).slug;
@@ -106,18 +112,7 @@ export class AttractionService extends BaseCrudRelatedService<
                 slug = await generateAttractionSlug(data.name, this.model);
             }
         }
-        // Solo propaga id si es del tipo AttractionId
-        const { id, ...rest } = data;
-        let result: Partial<AttractionType>;
-        if (
-            typeof id === 'string' &&
-            (id as unknown as { __brand?: string }).__brand === 'AttractionId'
-        ) {
-            result = { ...rest, id: id as AttractionId, slug };
-        } else {
-            result = { ...rest, slug };
-        }
-        return result;
+        return { ...data, slug };
     }
 
     protected _canCreate(actor: Actor): void {
@@ -173,12 +168,12 @@ export class AttractionService extends BaseCrudRelatedService<
      */
     public async addAttractionToDestination(
         actor: Actor,
-        params: z.infer<typeof AddAttractionToDestinationInputSchema>
+        params: AttractionAddToDestinationInput
     ): Promise<ServiceOutput<{ relation: DestinationAttractionType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addAttractionToDestination',
             input: { ...params, actor },
-            schema: AddAttractionToDestinationInputSchema,
+            schema: AttractionAddToDestinationInputSchema,
             execute: async (validatedParams, actor) => {
                 this._canAddAttractionToDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
@@ -234,12 +229,12 @@ export class AttractionService extends BaseCrudRelatedService<
      */
     public async removeAttractionFromDestination(
         actor: Actor,
-        params: z.infer<typeof RemoveAttractionFromDestinationInputSchema>
+        params: AttractionRemoveFromDestinationInput
     ): Promise<ServiceOutput<{ relation: DestinationAttractionType }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeAttractionFromDestination',
             input: { ...params, actor },
-            schema: RemoveAttractionFromDestinationInputSchema,
+            schema: AttractionRemoveFromDestinationInputSchema,
             execute: async (validatedParams, actor) => {
                 this._canRemoveAttractionFromDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
@@ -299,12 +294,12 @@ export class AttractionService extends BaseCrudRelatedService<
      */
     public async getAttractionsForDestination(
         actor: Actor,
-        params: z.infer<typeof GetAttractionsForDestinationSchema>
+        params: AttractionsByDestinationInput
     ): Promise<ServiceOutput<{ attractions: AttractionType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAttractionsForDestination',
             input: { ...params, actor },
-            schema: GetAttractionsForDestinationSchema,
+            schema: AttractionsByDestinationInputSchema,
             execute: async (validatedParams, actor) => {
                 this._canList(actor);
                 const { destinationId } = validatedParams;
@@ -332,12 +327,12 @@ export class AttractionService extends BaseCrudRelatedService<
      */
     public async getDestinationsByAttraction(
         actor: Actor,
-        params: z.infer<typeof GetDestinationsByAttractionSchema>
+        params: DestinationsByAttractionInput
     ): Promise<ServiceOutput<{ destinations: DestinationType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getDestinationsByAttraction',
             input: { ...params, actor },
-            schema: GetDestinationsByAttractionSchema,
+            schema: DestinationsByAttractionInputSchema,
             execute: async (validatedParams, actor) => {
                 this._canList(actor);
                 const { attractionId } = validatedParams;
@@ -361,7 +356,7 @@ export class AttractionService extends BaseCrudRelatedService<
     }
 
     protected async _executeSearch(
-        params: z.infer<typeof SearchAttractionSchema>,
+        params: AttractionSearchInput,
         _actor: Actor
     ): Promise<{ items: AttractionType[]; total: number }> {
         const filters = params.filters ?? {};
@@ -377,7 +372,7 @@ export class AttractionService extends BaseCrudRelatedService<
     }
 
     protected async _executeCount(
-        params: z.infer<typeof SearchAttractionSchema>,
+        params: AttractionSearchInput,
         _actor: Actor
     ): Promise<{ count: number }> {
         const filters = params.filters ?? {};
@@ -400,7 +395,7 @@ export class AttractionService extends BaseCrudRelatedService<
      */
     public async searchForList(
         actor: Actor,
-        params: z.infer<typeof SearchAttractionSchema>
+        params: AttractionSearchInput
     ): Promise<{
         items: Array<AttractionType & { destinationCount?: number }>;
         total: number;
