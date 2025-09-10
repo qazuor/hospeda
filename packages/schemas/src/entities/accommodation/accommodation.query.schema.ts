@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+    IdOrSlugParamsSchema,
+    WithDestinationIdParamsSchema,
+    WithLimitParamsSchema
+} from '../../common/params.schema.js';
 import { BaseSearchSchema, PaginationSchema } from '../../common/search.schemas.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { AccommodationSchema } from './accommodation.schema.js';
@@ -331,6 +336,94 @@ export const AccommodationStatsSchema = z.object({
         .default(0)
 });
 
+// ==========================================================================
+// PARAM SCHEMAS FOR SERVICE METHODS (INPUTS)
+// ==========================================================================
+
+/**
+ * Params for accommodation summary endpoints (id or slug)
+ */
+export const AccommodationSummaryParamsSchema = IdOrSlugParamsSchema;
+
+/**
+ * Params for accommodation stats endpoints (id or slug)
+ */
+export const AccommodationStatsParamsSchema = IdOrSlugParamsSchema;
+
+/**
+ * Params for top-rated accommodations
+ * Combines generic params with accommodation-specific filters
+ */
+export const AccommodationTopRatedParamsSchema = WithLimitParamsSchema.merge(
+    z.object({
+        destinationId: WithDestinationIdParamsSchema.shape.destinationId.optional(),
+        type: AccommodationTypeEnumSchema.optional(),
+        onlyFeatured: z
+            .boolean({
+                message: 'zodError.accommodation.topRated.onlyFeatured.invalidType'
+            })
+            .optional()
+    })
+);
+
+/**
+ * Params for accommodations by destination
+ */
+export const AccommodationByDestinationParamsSchema = WithDestinationIdParamsSchema;
+
+// ==========================================================================
+// NORMALIZED/LIST OUTPUT SCHEMAS
+// ==========================================================================
+
+/**
+ * Minimal destination relation for list/search outputs
+ */
+export const DestinationMiniSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    slug: z.string()
+});
+
+/**
+ * Minimal owner relation for list/search outputs
+ */
+export const UserMiniSchema = z.object({
+    id: z.string().uuid(),
+    displayName: z.string().optional()
+});
+
+/**
+ * Normalized accommodation output schema used by list/top endpoints
+ */
+export const AccommodationNormalizedSchema = AccommodationSchema.extend({
+    amenities: z.array(z.string()).optional(),
+    features: z.array(z.string()).optional(),
+    destination: DestinationMiniSchema.optional()
+});
+
+/**
+ * Output schema for top-rated accommodations
+ */
+export const AccommodationTopRatedOutputSchema = z.array(AccommodationNormalizedSchema);
+
+/**
+ * Output schema for accommodations by destination
+ */
+export const AccommodationByDestinationOutputSchema = z.array(AccommodationNormalizedSchema);
+
+/**
+ * Output schema for list with total (searchForList)
+ */
+export const AccommodationListItemWithMiniRelationsSchema = AccommodationListItemSchema.extend({
+    destination: DestinationMiniSchema.optional(),
+    owner: UserMiniSchema.optional()
+});
+
+export const AccommodationListWithTotalOutputSchema = z.object({
+    items: z.array(AccommodationListItemWithMiniRelationsSchema),
+    total: z.number().min(0)
+});
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -344,3 +437,44 @@ export type AccommodationSearchResult = z.infer<typeof AccommodationSearchResult
 export type AccommodationSearchOutput = z.infer<typeof AccommodationSearchOutputSchema>;
 export type AccommodationSummary = z.infer<typeof AccommodationSummarySchema>;
 export type AccommodationStats = z.infer<typeof AccommodationStatsSchema>;
+export type AccommodationSummaryParams = z.infer<typeof AccommodationSummaryParamsSchema>;
+export type AccommodationStatsParams = z.infer<typeof AccommodationStatsParamsSchema>;
+export type AccommodationTopRatedParams = z.infer<typeof AccommodationTopRatedParamsSchema>;
+export type AccommodationByDestinationParams = z.infer<
+    typeof AccommodationByDestinationParamsSchema
+>;
+export type AccommodationNormalized = z.infer<typeof AccommodationNormalizedSchema>;
+export type AccommodationTopRatedOutput = z.infer<typeof AccommodationTopRatedOutputSchema>;
+export type AccommodationByDestinationOutput = z.infer<
+    typeof AccommodationByDestinationOutputSchema
+>;
+export type AccommodationListItemWithMiniRelations = z.infer<
+    typeof AccommodationListItemWithMiniRelationsSchema
+>;
+export type AccommodationListWithTotalOutput = z.infer<
+    typeof AccommodationListWithTotalOutputSchema
+>;
+
+/**
+ * Accommodation Stats Output Schema
+ *
+ * Schema for accommodation statistics including reviews count, average rating, and detailed rating breakdown.
+ * Used by the getStats method to return statistical information about an accommodation.
+ */
+export const AccommodationStatsOutputSchema = z
+    .object({
+        reviewsCount: z.number().int().min(0),
+        averageRating: z.number().min(0).max(5),
+        rating: z
+            .object({
+                cleanliness: z.number().min(0).max(5),
+                hospitality: z.number().min(0).max(5),
+                services: z.number().min(0).max(5),
+                accuracy: z.number().min(0).max(5),
+                communication: z.number().min(0).max(5)
+            })
+            .optional()
+    })
+    .nullable();
+
+export type AccommodationStatsOutput = z.infer<typeof AccommodationStatsOutputSchema>;
