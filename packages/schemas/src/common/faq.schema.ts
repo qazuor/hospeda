@@ -43,3 +43,24 @@ export const BaseFaqSchema = z.object({
  * Type exports for FAQ schemas
  */
 export type BaseFaq = z.infer<typeof BaseFaqSchema>;
+
+// ----------------------------------------------------------------------------
+// Reusable FAQ payload schemas (for command inputs)
+// ----------------------------------------------------------------------------
+
+/**
+ * FAQ creation payload schema: only the core FAQ fields without audit/lifecycle/admin fields
+ */
+export const FaqCreatePayloadSchema = BaseFaqSchema.pick({
+    question: true,
+    answer: true,
+    category: true
+});
+
+/**
+ * FAQ update payload schema: partial of the create payload
+ */
+export const FaqUpdatePayloadSchema = FaqCreatePayloadSchema.partial();
+
+export type FaqCreatePayload = z.infer<typeof FaqCreatePayloadSchema>;
+export type FaqUpdatePayload = z.infer<typeof FaqUpdatePayloadSchema>;

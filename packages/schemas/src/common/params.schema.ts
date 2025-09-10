@@ -77,6 +77,41 @@ export const IdOrSlugParamsSchema = z.object({
         )
 });
 
+// ----------------------------------------------------------------------------
+// GENERIC COMPOSABLE PARAM SCHEMAS
+// ----------------------------------------------------------------------------
+
+/**
+ * Schema for optional limit parameter
+ * Can be composed with other param schemas for queries like "top-rated".
+ */
+export const WithLimitParamsSchema = z.object({
+    limit: z
+        .number({
+            message: 'zodError.params.limit.invalidType'
+        })
+        .int({ message: 'zodError.params.limit.int' })
+        .min(1, { message: 'zodError.params.limit.min' })
+        .max(100, { message: 'zodError.params.limit.max' })
+        .optional()
+});
+
+/**
+ * Schema for ownerId parameter (User relationship)
+ * Reusable across entities that are owned by a user.
+ */
+export const WithOwnerIdParamsSchema = z.object({
+    ownerId: UserIdSchema
+});
+
+/**
+ * Schema for destinationId parameter (Destination relationship)
+ * Reusable across entities related to a destination.
+ */
+export const WithDestinationIdParamsSchema = z.object({
+    destinationId: DestinationIdSchema
+});
+
 // ============================================================================
 // ENTITY-SPECIFIC ID PARAMETER SCHEMAS
 // ============================================================================
@@ -408,6 +443,9 @@ export const LocaleParamsSchema = z.object({
 export type IdParams = z.infer<typeof IdParamsSchema>;
 export type SlugParams = z.infer<typeof SlugParamsSchema>;
 export type IdOrSlugParams = z.infer<typeof IdOrSlugParamsSchema>;
+export type WithLimitParams = z.infer<typeof WithLimitParamsSchema>;
+export type WithOwnerIdParams = z.infer<typeof WithOwnerIdParamsSchema>;
+export type WithDestinationIdParams = z.infer<typeof WithDestinationIdParamsSchema>;
 export type UserIdParams = z.infer<typeof UserIdParamsSchema>;
 export type AccommodationIdParams = z.infer<typeof AccommodationIdParamsSchema>;
 export type DestinationIdParams = z.infer<typeof DestinationIdParamsSchema>;
