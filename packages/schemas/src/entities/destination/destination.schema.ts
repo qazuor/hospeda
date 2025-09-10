@@ -9,8 +9,8 @@ import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
+import { AttractionSchema } from '../attraction/attraction.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
-import { DestinationAttractionSchema } from './destination.attraction.schema.js';
 import { DestinationRatingSchema } from './destination.rating.schema.js';
 import { DestinationReviewSchema } from './destination.review.schema.js';
 
@@ -64,7 +64,7 @@ export const DestinationSchema = z.object({
     accommodationsCount: z.number().int().min(0).default(0),
 
     // Attractions (nested objects)
-    attractions: z.array(DestinationAttractionSchema).optional(),
+    attractions: z.array(AttractionSchema).optional(),
     reviews: z.array(DestinationReviewSchema).optional(),
     rating: DestinationRatingSchema.optional()
 });
