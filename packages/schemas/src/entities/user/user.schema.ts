@@ -1,4 +1,3 @@
-import { FullLocationFields } from '@repo/schemas/common/location.schema.js';
 import { AuthProviderEnum } from '@repo/types';
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
@@ -6,6 +5,7 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { FullLocationFields } from '../../common/location.schema.js';
 import { BaseSocialFields } from '../../common/social.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
