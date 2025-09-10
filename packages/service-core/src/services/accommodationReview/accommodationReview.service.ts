@@ -1,9 +1,20 @@
 import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
+import {
+    type AccommodationReviewCreateInput,
+    AccommodationReviewCreateInputSchema,
+    type AccommodationReviewListByAccommodationOutput,
+    type AccommodationReviewListByAccommodationParams,
+    AccommodationReviewListByAccommodationParamsSchema,
+    type AccommodationReviewListWithUserOutput,
+    type AccommodationReviewListWithUserParams,
+    AccommodationReviewListWithUserParamsSchema,
+    type AccommodationReviewSearchParams,
+    AccommodationReviewSearchParamsSchema,
+    AccommodationReviewUpdateInputSchema
+} from '@repo/schemas';
 import type { AccommodationReviewType } from '@repo/types';
-import { z } from 'zod';
-// zod imported as a value below
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
+import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { calculateStatsFromReviews } from './accommodationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
@@ -13,10 +24,6 @@ import {
     checkCanUpdateAccommodationReview,
     checkCanViewAccommodationReview
 } from './accommodationReview.permissions';
-import {
-    CreateAccommodationReviewSchema,
-    UpdateAccommodationReviewSchema
-} from './accommodationReview.schemas';
 
 /**
  * Service for managing accommodation reviews.
@@ -25,17 +32,17 @@ import {
 export class AccommodationReviewService extends BaseCrudService<
     AccommodationReviewType,
     AccommodationReviewModel,
-    typeof CreateAccommodationReviewSchema,
-    typeof UpdateAccommodationReviewSchema,
-    typeof UpdateAccommodationReviewSchema // TODO: Replace with actual search schema if different
+    typeof AccommodationReviewCreateInputSchema,
+    typeof AccommodationReviewUpdateInputSchema,
+    typeof AccommodationReviewSearchParamsSchema
 > {
     static readonly ENTITY_NAME = 'accommodationReview';
     protected readonly entityName = AccommodationReviewService.ENTITY_NAME;
     protected readonly model: AccommodationReviewModel;
 
-    protected readonly createSchema = CreateAccommodationReviewSchema;
-    protected readonly updateSchema = UpdateAccommodationReviewSchema;
-    protected readonly searchSchema = UpdateAccommodationReviewSchema; // TODO: Replace if needed
+    protected readonly createSchema = AccommodationReviewCreateInputSchema;
+    protected readonly updateSchema = AccommodationReviewUpdateInputSchema;
+    protected readonly searchSchema = AccommodationReviewSearchParamsSchema;
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
@@ -49,10 +56,7 @@ export class AccommodationReviewService extends BaseCrudService<
         this.accommodationService = new AccommodationService(ctx);
     }
 
-    protected _canCreate(
-        actor: Actor,
-        _data: z.infer<typeof CreateAccommodationReviewSchema>
-    ): void {
+    protected _canCreate(actor: Actor, _data: AccommodationReviewCreateInput): void {
         checkCanCreateAccommodationReview(actor);
     }
     protected _canUpdate(actor: Actor, _entity: AccommodationReviewType): void {
@@ -88,7 +92,7 @@ export class AccommodationReviewService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        _params: z.infer<typeof UpdateAccommodationReviewSchema>,
+        _params: AccommodationReviewSearchParams,
         _actor: Actor
     ): Promise<import('../../types').PaginatedListOutput<AccommodationReviewType>> {
         // TODO [e79b0be8-6523-4a9c-8a21-fd2072dc0111]: Implement search logic using Drizzle ORM
@@ -96,7 +100,7 @@ export class AccommodationReviewService extends BaseCrudService<
     }
 
     protected async _executeCount(
-        _params: z.infer<typeof UpdateAccommodationReviewSchema>,
+        _params: AccommodationReviewSearchParams,
         _actor: Actor
     ): Promise<{ count: number }> {
         // TODO [e7aeadab-6753-4620-ada0-a77cc0d10bf7]: Implement count logic using Drizzle ORM
@@ -150,22 +154,15 @@ export class AccommodationReviewService extends BaseCrudService<
      */
     public async listByAccommodation(
         actor: Actor,
-        input: { accommodationId: string; page?: number; pageSize?: number }
-    ): Promise<ServiceOutput<PaginatedListOutput<AccommodationReviewType>>> {
-        const { accommodationId, page, pageSize } = input;
+        input: AccommodationReviewListByAccommodationParams
+    ): Promise<ServiceOutput<AccommodationReviewListByAccommodationOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listByAccommodation',
-            input: { actor, accommodationId, page, pageSize },
-            schema: z
-                .object({
-                    actor: z.any(),
-                    accommodationId: z.string().uuid(),
-                    page: z.number().optional(),
-                    pageSize: z.number().optional()
-                })
-                .strict(),
-            execute: async (_validData, validatedActor) => {
+            input: { ...input, actor },
+            schema: AccommodationReviewListByAccommodationParamsSchema,
+            execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
+                const { accommodationId, page, pageSize } = validated;
                 const result = await this.model.findAll(
                     { accommodationId, deletedAt: null },
                     { page, pageSize }
@@ -184,33 +181,15 @@ export class AccommodationReviewService extends BaseCrudService<
      */
     public async listWithUser(
         actor: Actor,
-        input: {
-            page?: number;
-            pageSize?: number;
-            filters?: Record<string, unknown>;
-        } = {}
-    ): Promise<
-        ServiceOutput<
-            PaginatedListOutput<
-                AccommodationReviewType & {
-                    user?: { id: string; firstName?: string; lastName?: string; email: string };
-                }
-            >
-        >
-    > {
+        input: AccommodationReviewListWithUserParams = {}
+    ): Promise<ServiceOutput<AccommodationReviewListWithUserOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listWithUser',
-            input: { actor, ...input },
-            schema: z
-                .object({
-                    page: z.number().int().min(1).optional(),
-                    pageSize: z.number().int().min(1).max(100).optional(),
-                    filters: z.record(z.string(), z.unknown()).optional()
-                })
-                .strict(),
-            execute: async (validData, validatedActor) => {
+            input: { ...input, actor },
+            schema: AccommodationReviewListWithUserParamsSchema,
+            execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
-                const { page, pageSize, filters = {} } = validData;
+                const { page, pageSize, filters = {} } = validated;
 
                 // Default filters for public access
                 const defaultFilters = {
@@ -219,7 +198,7 @@ export class AccommodationReviewService extends BaseCrudService<
                 };
 
                 const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
-                return result;
+                return result as AccommodationReviewListWithUserOutput;
             }
         });
     }
