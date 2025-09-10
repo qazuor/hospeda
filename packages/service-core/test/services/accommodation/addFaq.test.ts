@@ -64,8 +64,7 @@ describe('AccommodationService.addFaq', () => {
             accommodationId: accommodation.id,
             faq: {
                 question: 'What is the check-in time?',
-                answer: 'Check-in is from 2:00 PM.',
-                accommodationId: accommodation.id
+                answer: 'Check-in is from 2:00 PM.'
             }
         };
         // Mock AccommodationFaqModel for this test

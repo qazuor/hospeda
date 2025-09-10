@@ -57,7 +57,7 @@ describe('AccommodationService.getStats', () => {
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
-        input = { id: accommodation.id };
+        input = { idOrSlug: accommodation.id };
     });
 
     it('should return stats for an accommodation', async () => {

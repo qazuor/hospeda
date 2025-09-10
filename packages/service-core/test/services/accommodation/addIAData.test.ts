@@ -71,8 +71,7 @@ describe('AccommodationService.addIAData', () => {
             iaData: {
                 title: 'Local Attractions',
                 content: 'Detailed information about nearby attractions and points of interest.',
-                category: 'attractions',
-                accommodationId: accommodation.id
+                category: 'attractions'
             }
         };
         // Mock AccommodationIaDataModel for this test
