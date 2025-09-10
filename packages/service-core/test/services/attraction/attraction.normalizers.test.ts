@@ -1,7 +1,9 @@
-import type { CreateAttractionSchema, UpdateAttractionSchema } from '@repo/schemas';
 import { RoleEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
-import type { z } from 'zod';
+import type {
+    AttractionCreateInput,
+    AttractionUpdateInput
+} from '../../../../schemas/src/entities/attraction/attraction.crud.schema';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -13,7 +15,7 @@ const testActor = { id: 'test', role: RoleEnum.ADMIN, permissions: [] };
 
 describe('Attraction Normalizers', () => {
     it('normalizeCreateInput normalizes adminInfo y deja campos extra intactos', () => {
-        const input: z.infer<typeof CreateAttractionSchema> & { extraField?: string } = {
+        const input: AttractionCreateInput & { extraField?: string } = {
             name: 'Test Attraction',
             description: 'A valid description for the attraction',
             icon: '🎡',
@@ -37,7 +39,7 @@ describe('Attraction Normalizers', () => {
     });
 
     it('normalizeUpdateInput normalizes adminInfo y deja campos extra intactos', () => {
-        const input: z.infer<typeof UpdateAttractionSchema> & { extraField?: string } = {
+        const input: AttractionUpdateInput & { extraField?: string } = {
             id: 'attr-1',
             name: 'Test Attraction',
             adminInfo: { favorite: false },
