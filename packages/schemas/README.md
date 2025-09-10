@@ -227,18 +227,53 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/common/tags.schema.ts | common | TagsSchema | Tags | Tags Schema - Complete tags information Can be used as a standalone schema when needed |
 | src/common/visibility.schema.ts | common | VisibilitySchema | Visibility | Base visibility fields / export const BaseVisibilityFields = { visibility: VisibilityEnumSchema } as const; /** Visibility Schema - Complete visibility information Can be used as a standalone schem… |
 
+### attraction
+
+| filePath | entidad | schema | type inferido/asociado | commentario |
+|---|---|---|---|---|
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionCreateInputSchema | AttractionCreateInput | Schema for creating a new attraction Omits server-generated fields and makes some fields optional |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionUpdateInputSchema | AttractionUpdateInput | Schema for updating an attraction All fields are optional for partial updates, except id is not allowed |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionDeleteInputSchema | AttractionDeleteInput | Schema for deleting an attraction (soft delete) Only requires the attraction ID |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionRestoreInputSchema | AttractionRestoreInput | Schema for restoring a soft-deleted attraction Only requires the attraction ID |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionCreateOutputSchema | AttractionCreateOutput | Schema for attraction creation response Returns the created attraction |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionUpdateOutputSchema | AttractionUpdateOutput | Schema for attraction update response Returns the updated attraction |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionDeleteOutputSchema | AttractionDeleteOutput | Schema for attraction deletion response Returns the deleted attraction |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionRestoreOutputSchema | AttractionRestoreOutput | Schema for attraction restoration response Returns the restored attraction |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionViewOutputSchema | AttractionViewOutput | Schema for attraction view response Returns a single attraction by ID or slug |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionAddToDestinationInputSchema | AttractionAddToDestinationInput | Schema for adding an attraction to a destination |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionRemoveFromDestinationInputSchema | AttractionRemoveFromDestinationInput | Schema for removing an attraction from a destination |
+| src/entities/attraction/attraction.crud.schema.ts | attraction | AttractionDestinationRelationOutputSchema | AttractionDestinationRelationOutput | Schema for attraction-destination relation response Returns success status and the relation data |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionFiltersSchema | AttractionFilters | Schema for attraction search filters Contains all possible filter criteria for searching attractions |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionSearchInputSchema | AttractionSearchInput | Schema for attraction search input Combines filters with pagination and sorting |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionListInputSchema | AttractionListInput | Schema for attraction list input (simpler than search) Used for basic listing with pagination only |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionsByDestinationInputSchema | AttractionsByDestinationInput | Schema for getting attractions by destination |
+| src/entities/attraction/attraction.query.schema.ts | attraction | DestinationsByAttractionInputSchema | DestinationsByAttractionInput | Schema for getting destinations by attraction |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionSearchOutputSchema | AttractionSearchOutput | Schema for attraction search results Returns attractions with pagination info |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionListOutputSchema | AttractionListOutput | Schema for attraction list results (basic listing) Returns attractions with total count |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionWithDestinationCountSchema | AttractionWithDestinationCount | Schema for attraction list with destination counts Used by searchForList method that includes destination counts |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionListWithCountsOutputSchema | AttractionListWithCountsOutput | Schema for attraction list with destination counts output |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionsByDestinationOutputSchema | AttractionsByDestinationOutput | Schema for attractions by destination results |
+| src/entities/attraction/attraction.query.schema.ts | attraction | DestinationsByAttractionOutputSchema | DestinationsByAttractionOutput | Schema for destinations by attraction results |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionCountOutputSchema | AttractionCountOutput | Schema for attraction count results |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionStatsSchema | AttractionStats | Schema for attraction statistics Provides aggregate information about attractions |
+| src/entities/attraction/attraction.query.schema.ts | attraction | AttractionStatsOutputSchema | AttractionStatsOutput | Schema for attraction statistics output |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | DestinationAttractionRelationSchema | DestinationAttractionRelation | Destination-Attraction Relation Schema Represents the many-to-many relationship between destinations and attractions |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | AttractionWithDestinationSchema | AttractionWithDestination | Attraction with Destination Info Schema Used when displaying attractions with their associated destination information |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | DestinationWithAttractionsSchema | DestinationWithAttractions | Destination with Attractions Schema Used when displaying destinations with their associated attractions |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | AttractionListItemWithRelationsSchema | AttractionListItemWithRelations | Attraction List Item with Relations Schema Extended version of attraction for list displays that includes relation counts |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | BulkAddAttractionsToDestinationInputSchema | BulkAddAttractionsToDestinationInput | Schema for bulk adding attractions to a destination |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | BulkRemoveAttractionsFromDestinationInputSchema | BulkRemoveAttractionsFromDestinationInput | Schema for bulk removing attractions from a destination |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | UpdateAttractionOrderInputSchema | UpdateAttractionOrderInput | Schema for updating attraction order in a destination |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | BulkRelationOperationOutputSchema | BulkRelationOperationOutput | Schema for bulk relation operation results |
+| src/entities/attraction/attraction.relations.schema.ts | attraction | AttractionDestinationRelationDetailSchema | AttractionDestinationRelationDetail | Schema for attraction-destination relation with full details |
+| src/entities/attraction/attraction.schema.ts | attraction | AttractionSchema | Attraction | Attraction Schema - Main entity schema for attractions Represents an attraction that can be associated with destinations |
+| src/entities/attraction/attraction.schema.ts | attraction | AttractionSummarySchema | AttractionSummary | Attraction Summary Schema - Lightweight version for lists and relations Contains only essential fields for display purposes |
+| src/entities/attraction/attraction.schema.ts | attraction | AttractionMiniSchema | AttractionMini | Attraction Mini Schema - Minimal version for dropdowns and references Contains only the most basic identifying information |
+
 ### destination
 
 | filePath | entidad | schema | type inferido/asociado | commentario |
 |---|---|---|---|---|
-| src/entities/destination/destination.attraction.schema.ts | destination | AddAttractionToDestinationInputSchema | AddAttractionToDestinationInput | Schema for adding an attraction to a destination |
-| src/entities/destination/destination.attraction.schema.ts | destination | CreateAttractionSchema | CreateAttraction | Schema for creating a new attraction Omits server-generated fields |
-| src/entities/destination/destination.attraction.schema.ts | destination | DestinationAttractionSchema | DestinationAttraction | Destination Attraction Schema - using Base Field Objects This schema represents an attraction associated with a destination. |
-| src/entities/destination/destination.attraction.schema.ts | destination | GetAttractionsForDestinationSchema | GetAttractionsForDestinationInput | Schema for getting all attractions for a destination |
-| src/entities/destination/destination.attraction.schema.ts | destination | GetDestinationsByAttractionSchema | GetDestinationsByAttractionInput | Schema for getting all destinations by attraction |
-| src/entities/destination/destination.attraction.schema.ts | destination | RemoveAttractionFromDestinationInputSchema | RemoveAttractionFromDestinationInput | Schema for removing an attraction from a destination |
-| src/entities/destination/destination.attraction.schema.ts | destination | SearchAttractionSchema | SearchAttraction | Schema for searching attractions Contains search criteria and filter options |
-| src/entities/destination/destination.attraction.schema.ts | destination | UpdateAttractionSchema | UpdateAttraction | Schema for updating an attraction All fields are optional for partial updates |
 | src/entities/destination/destination.crud.schema.ts | destination | DestinationBulkOperationInputSchema | DestinationBulkOperationInput | Schema for bulk destination operations input Requires array of destination IDs and operation type |
 | src/entities/destination/destination.crud.schema.ts | destination | DestinationBulkOperationOutputSchema | DestinationBulkOperationOutput | Schema for bulk destination operations response Returns operation results for each destination |
 | src/entities/destination/destination.crud.schema.ts | destination | DestinationCreateInputSchema | DestinationCreateInput | Destination CRUD Schemas This file contains all schemas related to CRUD operations for destinations: - Create (input/output) - Update (input/output) - Patch (input) - Delete (input/output) - Restor… |
