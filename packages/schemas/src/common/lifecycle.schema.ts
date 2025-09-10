@@ -1,3 +1,4 @@
+import { LifecycleStatusEnum } from '@repo/types';
 import { z } from 'zod';
 import { LifecycleStatusEnumSchema } from '../enums/index.js';
 
@@ -5,7 +6,7 @@ import { LifecycleStatusEnumSchema } from '../enums/index.js';
  * Base lifecycle state fields
  */
 export const BaseLifecycleFields = {
-    lifecycleState: LifecycleStatusEnumSchema
+    lifecycleState: LifecycleStatusEnumSchema.default(LifecycleStatusEnum.ACTIVE)
 } as const;
 
 /**

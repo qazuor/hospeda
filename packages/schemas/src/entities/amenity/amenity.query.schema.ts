@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { AccommodationIdSchema, AmenityIdSchema } from '../../common/id.schema.js';
 import { BaseSearchSchema, PaginationSchema } from '../../common/search.schemas.js';
+import { AccommodationSummarySchema } from '../accommodation/accommodation.query.schema.js';
 import { AmenitySchema } from './amenity.schema.js';
 
 /**
@@ -535,6 +537,73 @@ export const AmenityStatsSchema = z.object({
 });
 
 // ============================================================================
+// ACCOMMODATION-AMENITY QUERY SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for getting accommodations by amenity input
+ * Parameters for finding all accommodations that have a specific amenity
+ * Uses branded AmenityIdSchema for type safety
+ */
+export const AmenityGetAccommodationsInputSchema = z.object({
+    amenityId: AmenityIdSchema
+});
+
+/**
+ * Schema for getting amenities for accommodation input
+ * Parameters for finding all amenities of a specific accommodation
+ * Uses branded AccommodationIdSchema for type safety
+ */
+export const AmenityGetForAccommodationInputSchema = z.object({
+    accommodationId: AccommodationIdSchema
+});
+
+/**
+ * Schema for amenity list with usage count
+ * Used for searchForList method that includes accommodation counts
+ */
+export const AmenityListWithUsageCountSchema = AmenitySchema.extend({
+    accommodationCount: z
+        .number({
+            message: 'zodError.amenity.listWithUsage.accommodationCount.invalidType'
+        })
+        .int({ message: 'zodError.amenity.listWithUsage.accommodationCount.int' })
+        .min(0, { message: 'zodError.amenity.listWithUsage.accommodationCount.min' })
+        .optional()
+});
+
+/**
+ * Schema for amenity search for list output
+ * Returns amenities with accommodation counts and pagination
+ */
+export const AmenitySearchForListOutputSchema = z.object({
+    items: z.array(AmenityListWithUsageCountSchema),
+    total: z
+        .number({
+            message: 'zodError.amenity.searchForList.total.invalidType'
+        })
+        .int({ message: 'zodError.amenity.searchForList.total.int' })
+        .min(0, { message: 'zodError.amenity.searchForList.total.min' })
+});
+
+/**
+ * Schema for accommodations output
+ * Used when returning lists of accommodations
+ * Uses AccommodationSummarySchema for proper typing
+ */
+export const AmenityAccommodationsOutputSchema = z.object({
+    accommodations: z.array(AccommodationSummarySchema)
+});
+
+/**
+ * Schema for amenities output
+ * Used when returning lists of amenities
+ */
+export const AmenityArrayOutputSchema = z.object({
+    amenities: z.array(AmenitySchema)
+});
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -551,3 +620,9 @@ export type AmenityCategoriesOutput = z.infer<typeof AmenityCategoriesOutputSche
 export type PopularAmenitiesInput = z.infer<typeof PopularAmenitiesInputSchema>;
 export type PopularAmenitiesOutput = z.infer<typeof PopularAmenitiesOutputSchema>;
 export type AmenityStats = z.infer<typeof AmenityStatsSchema>;
+export type AmenityGetAccommodationsInput = z.infer<typeof AmenityGetAccommodationsInputSchema>;
+export type AmenityGetForAccommodationInput = z.infer<typeof AmenityGetForAccommodationInputSchema>;
+export type AmenityListWithUsageCount = z.infer<typeof AmenityListWithUsageCountSchema>;
+export type AmenitySearchForListOutput = z.infer<typeof AmenitySearchForListOutputSchema>;
+export type AmenityAccommodationsOutput = z.infer<typeof AmenityAccommodationsOutputSchema>;
+export type AmenityArrayOutput = z.infer<typeof AmenityArrayOutputSchema>;

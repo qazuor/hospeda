@@ -3,6 +3,7 @@ import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { AccommodationIdSchema, AmenityIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { PriceSchema } from '../../common/price.schema.js';
 import { AmenitiesTypeEnumSchema } from '../../enums/amenity-type.enum.schema.js';
 
 /**
@@ -27,7 +28,8 @@ export const AmenitySchema = z.object({
         .max(100, { message: 'zodError.amenity.slug.max' })
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
             message: 'zodError.amenity.slug.pattern'
-        }),
+        })
+        .optional(),
 
     name: z
         .string({
@@ -67,19 +69,7 @@ export const AccommodationAmenityRelationSchema = z.object({
     isOptional: z
         .boolean({ message: 'zodError.accommodationAmenity.isOptional.required' })
         .default(false),
-    additionalCost: z
-        .object({
-            amount: z.number().positive({
-                message: 'zodError.accommodationAmenity.additionalCost.amount.positive'
-            }),
-            currency: z
-                .string({
-                    message: 'zodError.accommodationAmenity.additionalCost.currency.required'
-                })
-                .min(3)
-                .max(3) // ISO currency code
-        })
-        .optional(),
+    additionalCost: PriceSchema.optional(),
     additionalCostPercent: z
         .number({
             message: 'zodError.accommodationAmenity.additionalCostPercent.required'

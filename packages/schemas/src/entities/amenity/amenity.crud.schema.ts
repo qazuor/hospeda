@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AmenityIdSchema } from '../../common/id.schema.js';
-import { AmenitySchema } from './amenity.schema.js';
+import { AccommodationAmenityRelationSchema, AmenitySchema } from './amenity.schema.js';
 
 /**
  * Amenity CRUD Schemas
@@ -285,6 +285,40 @@ export const AmenityIconUpdateOutputSchema = z.object({
 });
 
 // ============================================================================
+// ACCOMMODATION-AMENITY RELATION SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for adding an amenity to an accommodation
+ * Input for creating accommodation-amenity relationships
+ * Reuses AccommodationAmenityRelationSchema for consistency
+ */
+export const AmenityAddToAccommodationInputSchema = AccommodationAmenityRelationSchema;
+
+/**
+ * Schema for removing an amenity from an accommodation
+ * Input for deleting accommodation-amenity relationships
+ * Picks only the required IDs from AccommodationAmenityRelationSchema
+ */
+export const AmenityRemoveFromAccommodationInputSchema = AccommodationAmenityRelationSchema.pick({
+    accommodationId: true,
+    amenityId: true
+});
+
+/**
+ * Schema for accommodation-amenity relation output
+ * Returns the relationship data after add/remove operations
+ * Extends AccommodationAmenityRelationSchema with audit fields
+ */
+export const AmenityAccommodationRelationOutputSchema = z.object({
+    relation: AccommodationAmenityRelationSchema.extend({
+        createdAt: z.date().optional(),
+        updatedAt: z.date().optional(),
+        deletedAt: z.date().optional()
+    })
+});
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -305,3 +339,10 @@ export type AmenityCategoryUpdateInput = z.infer<typeof AmenityCategoryUpdateInp
 export type AmenityCategoryUpdateOutput = z.infer<typeof AmenityCategoryUpdateOutputSchema>;
 export type AmenityIconUpdateInput = z.infer<typeof AmenityIconUpdateInputSchema>;
 export type AmenityIconUpdateOutput = z.infer<typeof AmenityIconUpdateOutputSchema>;
+export type AmenityAddToAccommodationInput = z.infer<typeof AmenityAddToAccommodationInputSchema>;
+export type AmenityRemoveFromAccommodationInput = z.infer<
+    typeof AmenityRemoveFromAccommodationInputSchema
+>;
+export type AmenityAccommodationRelationOutput = z.infer<
+    typeof AmenityAccommodationRelationOutputSchema
+>;
