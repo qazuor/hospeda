@@ -68,10 +68,15 @@ describe('AmenityService.update', () => {
 
     it('should allow partial update (only description)', async () => {
         asMock(amenityModelMock.findById).mockResolvedValue(amenity);
-        asMock(amenityModelMock.update).mockResolvedValue({ ...amenity, description: 'New desc' });
-        const result = await service.update(actor, amenity.id, { description: 'New desc' });
+        asMock(amenityModelMock.update).mockResolvedValue({
+            ...amenity,
+            description: 'New description with enough characters'
+        });
+        const result = await service.update(actor, amenity.id, {
+            description: 'New description with enough characters'
+        });
         expectSuccess(result);
-        expect(result.data?.description).toBe('New desc');
+        expect(result.data?.description).toBe('New description with enough characters');
         expect(result.data?.name).toBe(amenity.name);
     });
 
