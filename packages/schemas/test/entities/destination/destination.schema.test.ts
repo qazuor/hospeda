@@ -24,8 +24,10 @@ describe('DestinationSchema', () => {
             expect(result.id).toBeDefined();
             expect(result.name).toBeDefined();
             expect(result.location).toBeDefined();
-            expect(result.location.country).toBeDefined();
-            expect(result.location.state).toBeDefined();
+            if (result.location) {
+                expect(result.location.country).toBeDefined();
+                expect(result.location.state).toBeDefined();
+            }
         });
 
         it('should validate minimal required destination data', () => {
@@ -164,8 +166,8 @@ describe('DestinationSchema', () => {
 
                 const result = DestinationSchema.parse(validData);
                 if (result.attractions && result.attractions.length > 0) {
-                    expect(result.attractions[0].name).toBeDefined();
-                    expect(result.attractions[0].destinationId).toBeDefined();
+                    expect(result.attractions[0]?.name).toBeDefined();
+                    expect(result.attractions[0]?.destinationId).toBeDefined();
                 }
             });
 
@@ -290,8 +292,10 @@ describe('DestinationSchema', () => {
             expect(typeof result.summary).toBe('string');
             expect(typeof result.description).toBe('string');
             expect(typeof result.location).toBe('object');
-            expect(typeof result.location.country).toBe('string');
-            expect(typeof result.location.state).toBe('string');
+            if (result.location) {
+                expect(typeof result.location.country).toBe('string');
+                expect(typeof result.location.state).toBe('string');
+            }
 
             // Optional fields
             if (result.tags !== undefined) {
