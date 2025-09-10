@@ -1,17 +1,13 @@
-import type { z } from 'zod';
+import type { AccommodationReviewCreateInput, AccommodationReviewUpdateInput } from '@repo/schemas';
 import type { Actor } from '../../types';
-import type {
-    CreateAccommodationReviewSchema,
-    UpdateAccommodationReviewSchema
-} from './accommodationReview.schemas';
 
 /**
  * Normalizes input for creating a new accommodation review (passthrough).
  */
 export const normalizeCreateInput = (
-    data: z.infer<typeof CreateAccommodationReviewSchema>,
+    data: AccommodationReviewCreateInput,
     _actor: Actor
-): z.infer<typeof CreateAccommodationReviewSchema> => {
+): AccommodationReviewCreateInput => {
     return data;
 };
 
@@ -19,8 +15,8 @@ export const normalizeCreateInput = (
  * Normalizes input for updating an accommodation review (passthrough).
  */
 export const normalizeUpdateInput = (
-    data: z.infer<typeof UpdateAccommodationReviewSchema>,
+    data: AccommodationReviewUpdateInput,
     _actor: Actor
-): z.infer<typeof UpdateAccommodationReviewSchema> => {
+): AccommodationReviewUpdateInput => {
     return data;
 };
