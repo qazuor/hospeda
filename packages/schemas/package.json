@@ -15,8 +15,9 @@
     "scripts": {
         "build": "tsup src/index.ts --format esm,cjs --dts",
         "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
-        "test": "vitest",
-        "test:run": "vitest run",
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest",
+        "test:file": "vitest run --passWithNoTests",
         "test:coverage": "vitest run --coverage",
         "typecheck": "tsc --noEmit",
         "lint": "biome check .",
