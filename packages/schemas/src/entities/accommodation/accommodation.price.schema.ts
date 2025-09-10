@@ -1,5 +1,5 @@
-import { PriceSchema } from '@repo/schemas/common';
 import { z } from 'zod';
+import { PriceSchema } from '../../common/price.schema.js';
 
 /**
  * Additional Fees Info Schema
