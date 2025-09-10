@@ -1,10 +1,6 @@
-import type {
-    CreateAccommodationServiceSchema,
-    UpdateAccommodationServiceSchema
-} from '@repo/schemas';
+import type { AccommodationCreateInput, AccommodationUpdateInput } from '@repo/schemas';
 import type { AccommodationType } from '@repo/types';
 import { VisibilityEnum } from '@repo/types';
-import type { z } from 'zod';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
 
@@ -38,9 +34,9 @@ type NormalizedAccommodationType = Omit<
  * @returns The normalized data with default visibility set if needed.
  */
 export const normalizeCreateInput = (
-    data: z.infer<typeof CreateAccommodationServiceSchema>,
+    data: AccommodationCreateInput,
     _actor: Actor
-): z.infer<typeof CreateAccommodationServiceSchema> => {
+): AccommodationCreateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
 
@@ -66,9 +62,9 @@ export const normalizeCreateInput = (
  * @returns The (currently unmodified) data.
  */
 export const normalizeUpdateInput = (
-    data: z.infer<typeof UpdateAccommodationServiceSchema>,
+    data: AccommodationUpdateInput,
     _actor: Actor
-): z.infer<typeof UpdateAccommodationServiceSchema> => {
+): AccommodationUpdateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
 
