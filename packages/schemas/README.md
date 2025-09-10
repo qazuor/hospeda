@@ -54,6 +54,27 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/accommodation/accommodation.review.schema.ts | accommodation | AccommodationReviewSchema |  | Accommodation Review schema definition using Zod for validation. |
 | src/entities/accommodation/accommodation.schema.ts | accommodation | AccommodationSchema | Accommodation | Accommodation Schema - Main Entity Schema This schema defines the complete structure of an Accommodation entity using base field objects for consistency and maintainability. |
 
+### accommodationReview
+
+| filePath | entidad | schema | type inferido/asociado | commentario |
+|---|---|---|---|---|
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewCreateInputSchema | AccommodationReviewCreateInput | Schema for creating a new accommodation review Omits auto-generated fields like id and audit fields |
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewCreateOutputSchema | AccommodationReviewCreateOutput | Schema for accommodation review creation response Returns the complete accommodation review object |
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewDeleteInputSchema | AccommodationReviewDeleteInput | Schema for accommodation review deletion input Requires ID and optional force flag for hard delete |
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewDeleteOutputSchema | AccommodationReviewDeleteOutput | Schema for accommodation review deletion response Returns success status and deletion timestamp |
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewPatchInputSchema | AccommodationReviewPatchInput | Schema for partial accommodation review updates (PATCH) Same as update but explicitly named for clarity |
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewRestoreInputSchema | AccommodationReviewRestoreInput | Schema for accommodation review restoration input Requires only the accommodation review ID |
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewRestoreOutputSchema | AccommodationReviewRestoreOutput | Schema for accommodation review restoration response Returns the complete restored accommodation review object |
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewUpdateInputSchema | AccommodationReviewUpdateInput | Schema for updating an accommodation review (PUT - complete replacement) Omits auto-generated fields and makes all fields partial |
+| src/entities/accommodationReview/accommodationReview.crud.schema.ts | accommodationReview | AccommodationReviewUpdateOutputSchema | AccommodationReviewUpdateOutput | Schema for accommodation review update response Returns the complete updated accommodation review object |
+| src/entities/accommodationReview/accommodationReview.query.schema.ts | accommodationReview | AccommodationReviewListByAccommodationOutputSchema | AccommodationReviewListByAccommodationOutput | Output schema for accommodation review list by accommodation |
+| src/entities/accommodationReview/accommodationReview.query.schema.ts | accommodationReview | AccommodationReviewListByAccommodationParamsSchema | AccommodationReviewListByAccommodationParams | Schema for listing accommodation reviews by accommodation ID Combines accommodation ID parameter with pagination |
+| src/entities/accommodationReview/accommodationReview.query.schema.ts | accommodationReview | AccommodationReviewListWithUserOutputSchema | AccommodationReviewListWithUserOutput | Output schema for accommodation review list with user information |
+| src/entities/accommodationReview/accommodationReview.query.schema.ts | accommodationReview | AccommodationReviewListWithUserParamsSchema | AccommodationReviewListWithUserParams | Schema for listing accommodation reviews with user information Reuses the generic ListWithUserSchema |
+| src/entities/accommodationReview/accommodationReview.query.schema.ts | accommodationReview | AccommodationReviewSearchParamsSchema | AccommodationReviewSearchParams | Schema for searching accommodation reviews Extends base search with accommodation-specific filters |
+| src/entities/accommodationReview/accommodationReview.query.schema.ts | accommodationReview | AccommodationReviewWithUserSchema | AccommodationReviewWithUser | Schema for accommodation review with user information Extends the base review schema with user fields |
+| src/entities/accommodationReview/accommodationReview.schema.ts | accommodationReview | AccommodationReviewSchema | AccommodationReview | Accommodation Review schema definition using Zod for validation. Represents a review for an accommodation. |
+
 ### amenity
 
 | filePath | entidad | schema | type inferido/asociado | commentario |
