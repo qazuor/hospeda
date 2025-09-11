@@ -7,12 +7,11 @@
  */
 import type { AccommodationModel } from '@repo/db';
 import * as db from '@repo/db';
+import type { AccommodationIaDataAddInput } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { z } from 'zod';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
-import type { AddIADataInputSchema } from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
@@ -44,7 +43,7 @@ describe('AccommodationService.addIAData', () => {
     let iaDataModelMock: ReturnType<typeof createModelMock>;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
-    let input: z.infer<typeof AddIADataInputSchema>;
+    let input: AccommodationIaDataAddInput;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -67,7 +66,7 @@ describe('AccommodationService.addIAData', () => {
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
         input = {
-            accommodationId: accommodation.id,
+            accommodationId: accommodation.id as any,
             iaData: {
                 title: 'Local Attractions',
                 content: 'Detailed information about nearby attractions and points of interest.',
@@ -85,7 +84,7 @@ describe('AccommodationService.addIAData', () => {
         iaDataModelMock.create.mockResolvedValue({
             ...input.iaData,
             id: 'ia-data-1',
-            accommodationId: accommodation.id
+            accommodationId: accommodation.id as any
         });
         vi.spyOn(permissionHelpers, 'checkCanUpdate').mockReturnValue();
 
@@ -95,9 +94,9 @@ describe('AccommodationService.addIAData', () => {
             title: input.iaData.title,
             content: input.iaData.content,
             category: input.iaData.category,
-            accommodationId: accommodation.id
+            accommodationId: accommodation.id as any
         });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
         expect(iaDataModelMock.create).toHaveBeenCalled();
         expect(permissionHelpers.checkCanUpdate).toHaveBeenCalledWith(actor, accommodation);
     });
@@ -106,7 +105,7 @@ describe('AccommodationService.addIAData', () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.addIAData(input, actor);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {

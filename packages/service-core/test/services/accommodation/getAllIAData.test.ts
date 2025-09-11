@@ -7,12 +7,11 @@
  */
 import type { AccommodationModel } from '@repo/db';
 import * as db from '@repo/db';
+import type { AccommodationIaDataListInput } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { z } from 'zod';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
-import type { GetIADataInputSchema } from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
@@ -44,7 +43,7 @@ describe('AccommodationService.getAllIAData', () => {
     let iaDataModelMock: ReturnType<typeof createModelMock>;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
-    let input: z.infer<typeof GetIADataInputSchema>;
+    let input: AccommodationIaDataListInput;
     let iaData: Array<{
         id: string;
         title: string;
@@ -73,21 +72,21 @@ describe('AccommodationService.getAllIAData', () => {
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
-        input = { accommodationId: accommodation.id };
+        input = { accommodationId: accommodation.id as any };
         iaData = [
             {
                 id: 'ia-data-1',
                 title: 'Local Attractions',
                 content: 'Detailed information about nearby attractions and points of interest.',
                 category: 'attractions',
-                accommodationId: accommodation.id
+                accommodationId: accommodation.id as any
             },
             {
                 id: 'ia-data-2',
                 title: 'Restaurant Recommendations',
                 content: 'Best local restaurants and dining options in the area.',
                 category: 'dining',
-                accommodationId: accommodation.id
+                accommodationId: accommodation.id as any
             }
         ];
         vi.spyOn(db, 'AccommodationIaDataModel').mockImplementation(
@@ -102,8 +101,10 @@ describe('AccommodationService.getAllIAData', () => {
         const result = await service.getAllIAData(input, actor);
         expectSuccess(result);
         expect(result.data?.iaData).toEqual(iaData);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
-        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({ accommodationId: accommodation.id });
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({
+            accommodationId: accommodation.id as any
+        });
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
     });
 
@@ -114,15 +115,17 @@ describe('AccommodationService.getAllIAData', () => {
         const result = await service.getAllIAData(input, actor);
         expectSuccess(result);
         expect(result.data?.iaData).toEqual([]);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
-        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({ accommodationId: accommodation.id });
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({
+            accommodationId: accommodation.id as any
+        });
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.getAllIAData(input, actor);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
@@ -141,7 +144,9 @@ describe('AccommodationService.getAllIAData', () => {
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getAllIAData(input, actor);
         expectInternalError(result);
-        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({ accommodationId: accommodation.id });
+        expect(iaDataModelMock.findAll).toHaveBeenCalledWith({
+            accommodationId: accommodation.id as any
+        });
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
