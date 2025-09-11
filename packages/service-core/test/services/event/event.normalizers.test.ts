@@ -30,12 +30,12 @@ const createMockEventSchemaInput = (
     description: 'A test event description',
     media: undefined,
     category: EventCategoryEnum.FESTIVAL,
-    date: { start: '2024-01-01T10:00:00Z', end: '2024-01-01T12:00:00Z' },
+    date: { start: new Date('2024-01-01T10:00:00Z'), end: new Date('2024-01-01T12:00:00Z') },
     authorId: getMockId('user') as UserId,
     locationId: getMockId('event') as EventLocationId,
     organizerId: getMockId('event') as EventOrganizerId,
     pricing: undefined,
-    contact: undefined,
+    contactInfo: undefined,
     visibility: VisibilityEnum.PUBLIC,
     isFeatured: false,
     createdAt: new Date('2024-01-01T09:00:00Z'),
@@ -77,7 +77,10 @@ describe('EventService normalizers', () => {
         const input = {
             id: getMockId('event') as EventId,
             name: 'Updated Event',
-            date: { start: '2024-01-01T10:00:00Z', end: '2024-01-01T12:00:00Z' },
+            date: {
+                start: new Date('2024-01-01T10:00:00Z'),
+                end: new Date('2024-01-01T12:00:00Z')
+            },
             locationId: getMockId('event') as EventLocationId,
             organizerId: getMockId('event') as EventOrganizerId
         };

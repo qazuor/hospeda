@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { PermissionEnum, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createMockEvent } from '../../factories/eventFactory';
@@ -16,7 +16,7 @@ describe('EventService.search', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
     const actorNoPerm = createUser();
-    const filters = { visibility: VisibilityEnum.PUBLIC };
+    const filters = { status: LifecycleStatusEnum.ACTIVE };
     const page = 1;
     const pageSize = 10;
     const paginatedResult = {

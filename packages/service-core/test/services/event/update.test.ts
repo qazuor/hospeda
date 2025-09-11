@@ -1,9 +1,7 @@
 import { EventModel } from '@repo/db';
 import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/types';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { z } from 'zod';
 import * as helpers from '../../../src/services/event/event.helpers';
-import type { EventUpdateSchema } from '../../../src/services/event/event.schemas';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createEventUpdateInput, createMockEvent } from '../../factories/eventFactory';
@@ -25,10 +23,7 @@ describe('EventService.update', () => {
     const actorNoPerm = createUser();
     const existingEvent = createMockEvent({ visibility: VisibilityEnum.PUBLIC });
     const eventId = existingEvent.id;
-    const updateInput: z.infer<typeof EventUpdateSchema> = {
-        id: eventId,
-        ...createEventUpdateInput({ visibility: VisibilityEnum.PUBLIC })
-    };
+    const updateInput = createEventUpdateInput({ visibility: VisibilityEnum.PUBLIC });
 
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'update']);
@@ -64,9 +59,11 @@ describe('EventService.update', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // id inválido para forzar VALIDATION_ERROR
-        const invalidId = 'invalid-id' as typeof eventId;
-        const result = await service.update(actorWithPerm, invalidId, { id: invalidId });
+        // Mock existing event
+        (modelMock.findById as Mock).mockResolvedValue(existingEvent);
+        // Input inválido para forzar VALIDATION_ERROR
+        const invalidInput = { category: 'INVALID_CATEGORY' as any };
+        const result = await service.update(actorWithPerm, eventId, invalidInput);
         expectValidationError(result);
     });
 
@@ -92,12 +89,9 @@ describe('EventService.update', () => {
             id: eventId,
             slug: 'new-cat-name-date'
         });
-        const input = {
-            id: eventId,
-            ...createEventUpdateInput({
-                category: EventCategoryEnum.FESTIVAL
-            })
-        };
+        const input = createEventUpdateInput({
+            category: EventCategoryEnum.FESTIVAL
+        });
         const result = await service.update(actorWithPerm, eventId, input);
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('new-cat-name-date');
@@ -112,12 +106,9 @@ describe('EventService.update', () => {
             id: eventId,
             slug: 'cat-newname-date'
         });
-        const input = {
-            id: eventId,
-            ...createEventUpdateInput({
-                name: 'newname'
-            })
-        };
+        const input = createEventUpdateInput({
+            name: 'newname'
+        });
         const result = await service.update(actorWithPerm, eventId, input);
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('cat-newname-date');
@@ -132,17 +123,14 @@ describe('EventService.update', () => {
             id: eventId,
             slug: 'cat-name-newdate'
         });
-        const input = {
-            id: eventId,
-            ...createEventUpdateInput({
-                date: {
-                    start: new Date('2024-09-01'),
-                    end: new Date('2024-09-01'),
-                    isAllDay: false,
-                    recurrence: undefined
-                }
-            })
-        };
+        const input = createEventUpdateInput({
+            date: {
+                start: new Date('2024-09-01'),
+                end: new Date('2024-09-01'),
+                isAllDay: false,
+                recurrence: undefined
+            }
+        });
         const result = await service.update(actorWithPerm, eventId, input);
         expect(helpers.generateEventSlug).toHaveBeenCalled();
         expect(result.data?.slug).toBe('cat-name-newdate');
@@ -154,7 +142,6 @@ describe('EventService.update', () => {
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockResolvedValue({ ...existingEvent, id: eventId });
         const input = {
-            id: eventId,
             isFeatured: true
         };
         const _result = await service.update(actorWithPerm, eventId, input);
@@ -171,18 +158,15 @@ describe('EventService.update', () => {
         });
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.update as Mock).mockResolvedValue(existingEvent);
-        const input = {
-            id: eventId,
-            ...createEventUpdateInput({
-                name: '',
-                date: {
-                    start: new Date('2024-01-01'),
-                    end: new Date('2024-01-01'),
-                    isAllDay: false,
-                    recurrence: undefined
-                }
-            })
-        };
+        const input = createEventUpdateInput({
+            name: '',
+            date: {
+                start: new Date('2024-01-01'),
+                end: new Date('2024-01-01'),
+                isAllDay: false,
+                recurrence: undefined
+            }
+        });
         const result = await service.update(actorWithPerm, eventId, input);
         expectValidationError(result);
     });

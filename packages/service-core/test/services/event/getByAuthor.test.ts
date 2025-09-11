@@ -39,13 +39,17 @@ describe('EventService.getByAuthor', () => {
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 2 });
         // Act
-        const result = await service.getByAuthor(actorWithPerm, { authorId });
+        const result = await service.getByAuthor(actorWithPerm, {
+            authorId,
+            page: 1,
+            pageSize: 10
+        });
         // Assert
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ authorId }, { page: 1, pageSize: 20 });
+        expect(modelMock.findAll).toHaveBeenCalledWith({ authorId }, { page: 1, pageSize: 10 });
     });
 
     it('should return only public events if actor lacks EVENT_SOFT_DELETE_VIEW', async () => {
@@ -53,7 +57,7 @@ describe('EventService.getByAuthor', () => {
         const events = [createMockEvent({ authorId, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
         // Act
-        const result = await service.getByAuthor(actorNoPerm, { authorId });
+        const result = await service.getByAuthor(actorNoPerm, { authorId, page: 1, pageSize: 10 });
         // Assert
         expectSuccess(result);
         const { data } = result;
@@ -61,13 +65,13 @@ describe('EventService.getByAuthor', () => {
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
             { authorId, visibility: VisibilityEnum.PUBLIC },
-            { page: 1, pageSize: 20 }
+            { page: 1, pageSize: 10 }
         );
     });
 
     it('should throw forbidden if actor is undefined', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.getByAuthor(undefined, { authorId });
+        const result = await service.getByAuthor(undefined, { authorId, page: 1, pageSize: 10 });
         expectUnauthorizedError(result);
     });
 
@@ -79,7 +83,11 @@ describe('EventService.getByAuthor', () => {
 
     it('should return empty list if no events found', async () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-        const result = await service.getByAuthor(actorWithPerm, { authorId });
+        const result = await service.getByAuthor(actorWithPerm, {
+            authorId,
+            page: 1,
+            pageSize: 10
+        });
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
@@ -88,13 +96,17 @@ describe('EventService.getByAuthor', () => {
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.getByAuthor(actorWithPerm, { authorId });
+        const result = await service.getByAuthor(actorWithPerm, {
+            authorId,
+            page: 1,
+            pageSize: 10
+        });
         expectInternalError(result);
     });
 
     it('should return UNAUTHORIZED if actor is missing', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.getByAuthor(undefined, { authorId });
+        const result = await service.getByAuthor(undefined, { authorId, page: 1, pageSize: 10 });
         expectUnauthorizedError(result);
     });
 });

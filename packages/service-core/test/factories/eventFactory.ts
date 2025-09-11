@@ -3,7 +3,6 @@ import {
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
-    type RecurrenceTypeEnum,
     VisibilityEnum
 } from '@repo/types';
 import { getMockId } from './utilsFactory';
@@ -20,7 +19,8 @@ export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => (
     slug: 'fiesta-nacional',
     name: 'Fiesta Nacional',
     summary: 'Fiesta Nacional',
-    description: 'Una fiesta popular',
+    description:
+        'Una fiesta popular que celebra la cultura y tradiciones de nuestro país con música, bailes y comida típica.',
     media: undefined,
     category: EventCategoryEnum.FESTIVAL,
     date: {
@@ -31,7 +31,7 @@ export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => (
     locationId: getMockId('event') as EventLocationId,
     organizerId: getMockId('event') as EventOrganizerId,
     pricing: undefined,
-    contact: undefined,
+    contactInfo: undefined,
     visibility: VisibilityEnum.PUBLIC,
     isFeatured: false,
     createdAt: new Date(),
@@ -54,25 +54,26 @@ export const createMockEvent = (overrides: Partial<EventType> = {}): EventType =
 export const createMockEventInput = (
     overrides: Partial<Omit<EventType, 'id' | 'createdAt' | 'updatedAt'>> = {}
 ): Omit<EventType, 'id' | 'createdAt' | 'updatedAt'> => {
-    const { id, createdAt, updatedAt, ...input } = getMockEvent();
+    const { id, createdAt, updatedAt, moderationState, tags, ...input } = getMockEvent();
     return { ...input, ...overrides };
 };
 
 /**
  * Returns a valid input for EventService.create (matches EventCreateSchema).
- * Only includes fields allowed by the Zod schema (no id, slug, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById).
+ * Only includes fields allowed by the Zod schema (no id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById, moderationState, tags).
  * @param overrides - Partial fields to override in the input.
  */
 export const createEventInput = (overrides: Partial<ReturnType<typeof getMockEvent>> = {}) => {
     const {
         id,
-        slug,
         createdAt,
         updatedAt,
         deletedAt,
         createdById,
         updatedById,
         deletedById,
+        moderationState,
+        tags,
         ...rest
     } = getMockEvent();
     return { ...rest, ...overrides };
@@ -96,41 +97,14 @@ export const createEventUpdateInput = (
         createdById,
         updatedById,
         deletedById,
+        moderationState,
+        tags,
         ...rest
     } = getMockEvent();
 
-    // Convert date objects to ISO strings for schema validation
-    const normalizedDate = {
-        start: rest.date.start.toISOString(),
-        end: rest.date.end?.toISOString(),
-        isAllDay: rest.date.isAllDay,
-        recurrence: rest.date.recurrence
-    };
-
-    // Handle date overrides if provided
-    let finalDate = normalizedDate;
-    if (overrides.date) {
-        const overrideDate = overrides.date as {
-            start: Date;
-            end?: Date;
-            isAllDay?: boolean;
-            recurrence?: RecurrenceTypeEnum;
-        };
-        finalDate = {
-            start: overrideDate.start.toISOString(),
-            end: overrideDate.end?.toISOString(),
-            isAllDay: overrideDate.isAllDay,
-            recurrence: overrideDate.recurrence
-        };
-    }
-
-    // Remove date from overrides to avoid conflicts
-    const { date: _date, ...restOverrides } = overrides;
-
     return {
         ...rest,
-        date: finalDate,
-        ...restOverrides
+        ...overrides
     };
 };
 
