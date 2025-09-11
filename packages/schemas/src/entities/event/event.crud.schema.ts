@@ -29,8 +29,10 @@ export const EventCreateInputSchema = EventSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
-});
+    deletedById: true,
+    moderationState: true,
+    tags: true
+}).strict();
 
 /**
  * Schema for event creation response
@@ -53,8 +55,12 @@ export const EventUpdateInputSchema = EventSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
-}).partial();
+    deletedById: true,
+    moderationState: true,
+    tags: true
+})
+    .partial()
+    .strict();
 
 /**
  * Schema for partial event updates (PATCH)

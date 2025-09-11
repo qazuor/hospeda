@@ -338,16 +338,10 @@ export const EventSummarySchema = EventSchema.pick({
     name: true,
     summary: true,
     category: true,
-    status: true,
     isFeatured: true,
-    isRecurring: true,
-    startDate: true,
-    endDate: true,
-    location: true,
+    date: true,
     media: true,
-    capacity: true,
-    attendeesCount: true,
-    price: true
+    pricing: true
 });
 
 // ============================================================================
@@ -543,6 +537,97 @@ export const EventStatsSchema = z.object({
 });
 
 // ============================================================================
+// SERVICE-SPECIFIC QUERY SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for getting events by author
+ * Used by EventService.getByAuthor method
+ */
+export const EventByAuthorInputSchema = PaginationSchema.extend({
+    authorId: z
+        .string({
+            message: 'zodError.event.byAuthor.authorId.required'
+        })
+        .uuid({ message: 'zodError.event.byAuthor.authorId.uuid' })
+});
+
+/**
+ * Schema for getting events by location
+ * Used by EventService.getByLocation method
+ */
+export const EventByLocationInputSchema = PaginationSchema.extend({
+    locationId: z
+        .string({
+            message: 'zodError.event.byLocation.locationId.required'
+        })
+        .uuid({ message: 'zodError.event.byLocation.locationId.uuid' })
+});
+
+/**
+ * Schema for getting events by organizer
+ * Used by EventService.getByOrganizer method
+ */
+export const EventByOrganizerInputSchema = PaginationSchema.extend({
+    organizerId: z
+        .string({
+            message: 'zodError.event.byOrganizer.organizerId.required'
+        })
+        .uuid({ message: 'zodError.event.byOrganizer.organizerId.uuid' })
+});
+
+/**
+ * Schema for getting events by category
+ * Used by EventService.getByCategory method
+ */
+export const EventByCategoryInputSchema = PaginationSchema.extend({
+    category: EventCategoryEnumSchema
+});
+
+/**
+ * Schema for getting upcoming events
+ * Used by EventService.getUpcoming method
+ */
+export const EventUpcomingInputSchema = PaginationSchema.extend({
+    fromDate: z.date({
+        message: 'zodError.event.upcoming.fromDate.required'
+    }),
+    toDate: z
+        .date({
+            message: 'zodError.event.upcoming.toDate.invalidType'
+        })
+        .optional()
+});
+
+/**
+ * Schema for getting free events
+ * Used by EventService.getFreeEvents method
+ */
+export const EventFreeInputSchema = PaginationSchema;
+
+/**
+ * Schema for getting event summary
+ * Used by EventService.getSummary method
+ */
+export const EventSummaryInputSchema = z
+    .object({
+        id: z
+            .string({
+                message: 'zodError.event.summary.id.required'
+            })
+            .uuid({ message: 'zodError.event.summary.id.uuid' })
+    })
+    .strict();
+
+/**
+ * Schema for event summary output
+ * Used by EventService.getSummary method response
+ */
+export const EventSummaryOutputSchema = z.object({
+    summary: EventSummarySchema
+});
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -555,3 +640,13 @@ export type EventSearchResult = z.infer<typeof EventSearchResultSchema>;
 export type EventSearchOutput = z.infer<typeof EventSearchOutputSchema>;
 export type EventSummary = z.infer<typeof EventSummarySchema>;
 export type EventStats = z.infer<typeof EventStatsSchema>;
+
+// Service-specific types
+export type EventByAuthorInput = z.infer<typeof EventByAuthorInputSchema>;
+export type EventByLocationInput = z.infer<typeof EventByLocationInputSchema>;
+export type EventByOrganizerInput = z.infer<typeof EventByOrganizerInputSchema>;
+export type EventByCategoryInput = z.infer<typeof EventByCategoryInputSchema>;
+export type EventUpcomingInput = z.infer<typeof EventUpcomingInputSchema>;
+export type EventFreeInput = z.infer<typeof EventFreeInputSchema>;
+export type EventSummaryInput = z.infer<typeof EventSummaryInputSchema>;
+export type EventSummaryOutput = z.infer<typeof EventSummaryOutputSchema>;
