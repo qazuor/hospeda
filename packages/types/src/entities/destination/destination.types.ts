@@ -90,7 +90,16 @@ export type UpdateDestinationInputType = Partial<Writable<DestinationType>>;
 
 export type DestinationSummaryType = Pick<
     DestinationType,
-    'id' | 'slug' | 'name' | 'summary' | 'media' | 'averageRating' | 'reviewsCount'
+    | 'id'
+    | 'slug'
+    | 'name'
+    | 'summary'
+    | 'media'
+    | 'location'
+    | 'isFeatured'
+    | 'averageRating'
+    | 'reviewsCount'
+    | 'accommodationsCount'
 >;
 
 /**
