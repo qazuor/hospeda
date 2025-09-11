@@ -5,6 +5,7 @@ import {
     AttractionIdSchema,
     DestinationIdSchema,
     EventIdSchema,
+    EventLocationIdSchema,
     FeatureIdSchema,
     PaymentIdSchema,
     PostIdSchema,
@@ -207,6 +208,14 @@ export const AttractionIdParamsSchema = z.object({
     id: AttractionIdSchema.optional() // Alternative parameter name
 });
 
+/**
+ * Schema for EventLocation ID path parameters
+ * Used for event location-specific endpoints
+ */
+export const EventLocationIdParamsSchema = z.object({
+    id: EventLocationIdSchema
+});
+
 // ============================================================================
 // SPECIAL ENTITY PARAMETER SCHEMAS
 // ============================================================================
@@ -245,6 +254,23 @@ export const ReviewIdParamsSchema = z.object({
         })
         .uuid({ message: 'zodError.params.id.uuid' })
         .optional() // Alternative parameter name
+});
+
+/**
+ * Schema for field-value query parameters
+ * Used for endpoints that search by specific field and value
+ */
+export const FieldValueParamsSchema = z.object({
+    field: z
+        .string({
+            message: 'zodError.params.field.required'
+        })
+        .min(1, { message: 'zodError.params.field.min' }),
+    value: z
+        .string({
+            message: 'zodError.params.value.required'
+        })
+        .min(1, { message: 'zodError.params.value.min' })
 });
 
 // ============================================================================
@@ -466,6 +492,8 @@ export type AmenityIdParams = z.infer<typeof AmenityIdParamsSchema>;
 export type FeatureIdParams = z.infer<typeof FeatureIdParamsSchema>;
 export type PaymentIdParams = z.infer<typeof PaymentIdParamsSchema>;
 export type AttractionIdParams = z.infer<typeof AttractionIdParamsSchema>;
+export type EventLocationIdParams = z.infer<typeof EventLocationIdParamsSchema>;
+export type FieldValueParams = z.infer<typeof FieldValueParamsSchema>;
 export type FaqIdParams = z.infer<typeof FaqIdParamsSchema>;
 export type ReviewIdParams = z.infer<typeof ReviewIdParamsSchema>;
 export type NestedParams = z.infer<typeof NestedParamsSchema>;
