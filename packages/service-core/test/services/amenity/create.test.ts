@@ -21,10 +21,12 @@ describe('AmenityService.create', () => {
     let actor: Actor;
     const input = {
         name: 'Test Amenity',
-        type: AmenitiesTypeEnum.GENERAL_APPLIANCES as unknown as string,
+        type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
         icon: '🛏️',
         description: 'A test amenity',
-        isFeatured: false
+        isFeatured: false,
+        lifecycleState: 'ACTIVE' as any,
+        isBuiltin: false
     };
     const createdAmenity = AmenityFactoryBuilder.create({
         ...input,
@@ -97,8 +99,10 @@ describe('AmenityService.create', () => {
         });
         const minimalInput = {
             name: 'Minimal Amenity',
-            type: AmenitiesTypeEnum.GENERAL_APPLIANCES as unknown as string,
-            isFeatured: false
+            type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
+            isFeatured: false,
+            lifecycleState: 'ACTIVE' as any,
+            isBuiltin: false
         };
         const result = await service.create(actor, minimalInput);
         expectSuccess(result);

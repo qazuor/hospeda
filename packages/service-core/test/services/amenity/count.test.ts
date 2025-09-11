@@ -13,7 +13,11 @@ describe('AmenityService.count', () => {
     let amenityModelMock: AmenityModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const countParams = { filters: { name: 'Test Amenity' } };
+    const countParams = {
+        filters: { nameContains: 'Test Amenity' },
+        searchInDescription: false,
+        fuzzySearch: false
+    };
 
     beforeEach(() => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['count']);

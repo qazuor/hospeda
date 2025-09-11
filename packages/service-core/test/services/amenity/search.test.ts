@@ -19,7 +19,11 @@ describe('AmenityService.search', () => {
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES
     });
     const paginated = { items: [amenity], total: 1 };
-    const searchParams = { filters: { name: 'Test Amenity' } };
+    const searchParams = {
+        filters: { nameContains: 'Test Amenity' },
+        searchInDescription: false,
+        fuzzySearch: false
+    };
 
     beforeEach(() => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findAll']);

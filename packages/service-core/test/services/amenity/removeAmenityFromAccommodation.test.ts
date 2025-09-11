@@ -122,8 +122,8 @@ describe('AmenityService.removeAmenityFromAccommodation', () => {
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // Do not set up any mocks for amenityModel or relatedModel here
         const result = await service.removeAmenityFromAccommodation(actorWithPerms, {
-            accommodationId: '',
-            amenityId: ''
+            accommodationId: '' as any,
+            amenityId: '' as any
         });
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
