@@ -25,11 +25,7 @@ describe('AccommodationService.getTopRated', () => {
         };
 
     beforeEach(() => {
-        model = createModelMock(['findTopRated']) as unknown as ReturnType<
-            typeof createModelMock
-        > & {
-            findTopRated: ReturnType<typeof vi.fn>;
-        };
+        model = createModelMock(['findTopRated']) as any;
         service = new AccommodationService(
             { logger: mockLogger },
             model as unknown as AccommodationModel
@@ -59,7 +55,12 @@ describe('AccommodationService.getTopRated', () => {
                             name: 'WiFi',
                             isFeatured: false,
                             isBuiltin: true,
-                            type: 'CONNECTIVITY' as any
+                            type: 'CONNECTIVITY' as any,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                            createdById: 'user-1' as any,
+                            updatedById: 'user-1' as any,
+                            lifecycleState: 'ACTIVE' as any
                         }
                     }
                 ],
@@ -72,7 +73,12 @@ describe('AccommodationService.getTopRated', () => {
                             slug: 'pool',
                             name: 'Pool',
                             isFeatured: true,
-                            isBuiltin: false
+                            isBuiltin: false,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                            createdById: 'user-1' as any,
+                            updatedById: 'user-1' as any,
+                            lifecycleState: 'ACTIVE' as any
                         }
                     }
                 ]
