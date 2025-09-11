@@ -226,6 +226,7 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/common/social.schema.ts | common | SocialNetworkSchema | SocialNetwork |  |
 | src/common/tags.schema.ts | common | TagsSchema | Tags | Tags Schema - Complete tags information Can be used as a standalone schema when needed |
 | src/common/visibility.schema.ts | common | VisibilitySchema | Visibility | Base visibility fields / export const BaseVisibilityFields = { visibility: VisibilityEnumSchema } as const; /** Visibility Schema - Complete visibility information Can be used as a standalone schem… |
+| src/common/result.schema.ts | common | SuccessSchema | Success | Generic success response schema Use for endpoints that return only a success boolean. |
 
 ### attraction
 
@@ -287,6 +288,8 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/destination/destination.crud.schema.ts | destination | DestinationRestoreOutputSchema | DestinationRestoreOutput | Schema for destination restoration response Returns the complete restored destination object |
 | src/entities/destination/destination.crud.schema.ts | destination | DestinationUpdateInputSchema | DestinationUpdateInput | Schema for updating a destination (PUT - complete replacement) Omits auto-generated fields and makes all fields partial |
 | src/entities/destination/destination.crud.schema.ts | destination | DestinationUpdateOutputSchema | DestinationUpdateOutput | Schema for destination update response Returns the complete updated destination object |
+| src/entities/destination/destination.crud.schema.ts | destination | CreateDestinationServiceSchema | CreateDestinationService | Service layer alias for destination creation Used by DestinationService for consistency with existing code |
+| src/entities/destination/destination.crud.schema.ts | destination | UpdateDestinationServiceSchema | UpdateDestinationService | Service layer alias for destination updates Used by DestinationService for consistency with existing code |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationFiltersSchema | DestinationFilters | Destination Query Schemas This file contains all schemas related to querying destinations: - List (input/output/item) - Search (input/output/result) - Summary - Stats - Filters / // ===============… |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationListInputSchema | DestinationListInput | Schema for destination list input parameters Includes pagination and filters |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationListItemSchema | DestinationListItem | Schema for individual destination items in lists Contains essential fields for list display |
@@ -295,7 +298,14 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/destination/destination.query.schema.ts | destination | DestinationSearchOutputSchema | DestinationSearchOutput | Schema for destination search output Uses generic paginated response with search results |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationSearchResultSchema | DestinationSearchResult | Schema for individual destination search results Extends list item with search score |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationStatsSchema | DestinationStats | Schema for destination statistics Contains metrics and analytics data |
-| src/entities/destination/destination.query.schema.ts | destination | DestinationSummarySchema | DestinationSummary | Schema for destination summary Contains essential information for quick display |
+| src/entities/destination/destination.query.schema.ts | destination | DestinationSummarySchema | DestinationSummary | Schema for destination summary Contains essential information for quick display Matches DestinationSummaryType from @repo/types |
+| src/entities/destination/destination.query.schema.ts | destination | DestinationSummaryExtendedSchema | DestinationSummaryExtended | Schema for destination summary with additional fields Extended version with more fields for different use cases |
+| src/entities/destination/destination.query.schema.ts | destination | DestinationFilterInputSchema | DestinationFilterInput | Schema for destination filter input (used by service) Combines filters with pagination for service layer |
+| src/entities/destination/destination.query.schema.ts | destination | GetDestinationAccommodationsInputSchema | GetDestinationAccommodationsInput | Schema for getting destination accommodations Supports both legacy destinationId and new id parameter |
+| src/entities/destination/destination.query.schema.ts | destination | GetDestinationStatsInputSchema | GetDestinationStatsInput | Schema for getting destination stats |
+| src/entities/destination/destination.query.schema.ts | destination | GetDestinationSummaryInputSchema | GetDestinationSummaryInput | Schema for getting destination summary |
+| src/entities/destination/destination.query.schema.ts | destination | DestinationListItemWithStringAttractionsSchema | DestinationListItemWithStringAttractions | Schema for destination list item with attractions as strings Used by searchForList method |
+| src/entities/destination/destination.query.schema.ts | destination | DestinationSearchForListOutputSchema | DestinationSearchForListOutput | Schema for searchForList output |
 | src/entities/destination/destination.rating.schema.ts | destination | DestinationRatingSchema | DestinationRatingInput | Destination Rating schema definition using Zod for validation. |
 | src/entities/destination/destination.relations.schema.ts | destination | DestinationWithAccommodationsSchema | DestinationWithAccommodations | Destination Relations Schemas This file contains schemas for destinations with related entities: - DestinationWithAccommodations - DestinationWithAttractions - DestinationWithReviews - DestinationW… |
 | src/entities/destination/destination.relations.schema.ts | destination | DestinationWithActivityRelationsSchema | DestinationWithActivityRelations | Destination with activity relations Includes events and posts |
