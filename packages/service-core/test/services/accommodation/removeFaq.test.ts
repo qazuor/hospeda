@@ -7,10 +7,10 @@
  */
 import type { AccommodationModel } from '@repo/db';
 import * as db from '@repo/db';
+import type { AccommodationFaqRemoveInput } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RemoveFaqInput } from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
@@ -44,7 +44,7 @@ describe('AccommodationService.removeFaq', () => {
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
     let faq: { id: string; accommodationId: string; question: string; answer: string };
-    let input: RemoveFaqInput;
+    let input: AccommodationFaqRemoveInput;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -62,11 +62,14 @@ describe('AccommodationService.removeFaq', () => {
         accommodation = new AccommodationFactoryBuilder().public().build();
         faq = {
             id: getMockFaqId('faq-1'),
-            accommodationId: accommodation.id,
+            accommodationId: accommodation.id as any,
             question: 'What is the check-in time?',
             answer: 'From 2:00 PM.'
         };
-        input = { accommodationId: accommodation.id, faqId: faq.id };
+        input = {
+            accommodationId: accommodation.id as any,
+            faqId: getMockFaqId(faq.id) as any
+        };
         vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
             () => faqModelMock as unknown as db.AccommodationFaqModel
         );
@@ -80,16 +83,16 @@ describe('AccommodationService.removeFaq', () => {
         const result = await service.removeFaq(actor, input);
         expectSuccess(result);
         expect(result.data).toEqual({ success: true });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
-        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id);
-        expect(faqModelMock.hardDelete).toHaveBeenCalledWith({ id: faq.id });
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any);
+        expect(faqModelMock.hardDelete).toHaveBeenCalledWith({ id: faq.id as any });
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.removeFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
     });
 
     it('should return NOT_FOUND if FAQ does not exist', async () => {
@@ -98,21 +101,21 @@ describe('AccommodationService.removeFaq', () => {
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
-        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any);
     });
 
     it('should return NOT_FOUND if FAQ does not belong to accommodation', async () => {
         modelMock.findById.mockResolvedValue(accommodation);
         faqModelMock.findById.mockResolvedValue({
             ...faq,
-            accommodationId: getMockFaqId('other-id')
+            accommodationId: 'different-accommodation-id' as any
         });
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
-        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {
@@ -123,7 +126,7 @@ describe('AccommodationService.removeFaq', () => {
         });
         const result = await service.removeFaq(actor, input);
         expectForbiddenError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
     });
 
     it('should return INTERNAL_ERROR if FAQ model throws', async () => {
@@ -132,12 +135,12 @@ describe('AccommodationService.removeFaq', () => {
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeFaq(actor, input);
         expectInternalError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
-        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.removeFaq(actor, {} as RemoveFaqInput);
+        const result = await service.removeFaq(actor, {} as any);
         expectValidationError(result);
     });
 });

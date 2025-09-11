@@ -7,12 +7,11 @@
  */
 import type { AccommodationModel } from '@repo/db';
 import * as db from '@repo/db';
+import type { AccommodationFaqAddInput } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { z } from 'zod';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
-import type { AddFaqInputSchema } from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
@@ -44,7 +43,7 @@ describe('AccommodationService.addFaq', () => {
     let faqModelMock: ReturnType<typeof createModelMock>;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
-    let input: z.infer<typeof AddFaqInputSchema>;
+    let input: AccommodationFaqAddInput;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -61,7 +60,7 @@ describe('AccommodationService.addFaq', () => {
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
         input = {
-            accommodationId: accommodation.id,
+            accommodationId: accommodation.id as any,
             faq: {
                 question: 'What is the check-in time?',
                 answer: 'Check-in is from 2:00 PM.'
@@ -78,7 +77,7 @@ describe('AccommodationService.addFaq', () => {
         faqModelMock.create.mockResolvedValue({
             ...input.faq,
             id: 'faq-1',
-            accommodationId: accommodation.id
+            accommodationId: accommodation.id as any
         });
         vi.spyOn(permissionHelpers, 'checkCanUpdate').mockReturnValue();
 
@@ -87,9 +86,9 @@ describe('AccommodationService.addFaq', () => {
         expect(result.data?.faq).toMatchObject({
             question: input.faq.question,
             answer: input.faq.answer,
-            accommodationId: accommodation.id
+            accommodationId: accommodation.id as any
         });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
         expect(faqModelMock.create).toHaveBeenCalled();
         expect(permissionHelpers.checkCanUpdate).toHaveBeenCalledWith(actor, accommodation);
     });
@@ -98,7 +97,7 @@ describe('AccommodationService.addFaq', () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.addFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {
