@@ -67,7 +67,7 @@ describe('EventLocationService.update', () => {
 
     it('ignores coordinates if invalid', async () => {
         vi.spyOn(model, 'findById').mockResolvedValue(fullEntity);
-        const input = { ...updateInput, coordinates: { lat: '', long: undefined } };
+        const input = { ...updateInput, coordinates: { lat: '', long: '' } };
         vi.spyOn(model, 'update').mockResolvedValue({ ...fullEntity, coordinates: undefined });
         const result = await service.update(actorWithPerm, fullEntity.id, input);
         expect(result.data?.coordinates).toBeUndefined();
