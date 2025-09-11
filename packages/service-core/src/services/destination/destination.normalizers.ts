@@ -1,6 +1,5 @@
-import type { CreateDestinationServiceSchema, UpdateDestinationServiceSchema } from '@repo/schemas';
+import type { DestinationCreateInput, DestinationUpdateInput } from '@repo/schemas';
 import { VisibilityEnum } from '@repo/types';
-import type { z } from 'zod';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo } from '../../utils';
 
@@ -13,9 +12,9 @@ import { normalizeAdminInfo } from '../../utils';
  * @returns The normalized data with default visibility set if needed.
  */
 export const normalizeCreateInput = (
-    data: z.infer<typeof CreateDestinationServiceSchema>,
+    data: DestinationCreateInput,
     _actor: Actor
-): z.infer<typeof CreateDestinationServiceSchema> => {
+): DestinationCreateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
     return {
@@ -34,9 +33,9 @@ export const normalizeCreateInput = (
  * @returns The (currently unmodified) data.
  */
 export const normalizeUpdateInput = (
-    data: z.infer<typeof UpdateDestinationServiceSchema>,
+    data: DestinationUpdateInput,
     _actor: Actor
-): z.infer<typeof UpdateDestinationServiceSchema> => {
+): DestinationUpdateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
     return {
