@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DestinationIdSchema } from '../../common/id.schema.js';
 import { BaseSearchSchema, PaginationSchema } from '../../common/search.schemas.js';
 import { DestinationSchema } from './destination.schema.js';
 
@@ -161,7 +162,6 @@ export const DestinationListItemSchema = DestinationSchema.pick({
     media: true,
     rating: true,
     accommodationsCount: true,
-    attractionsCount: true,
     createdAt: true,
     updatedAt: true
 });
@@ -241,8 +241,26 @@ export const DestinationSearchOutputSchema = z.object({
 /**
  * Schema for destination summary
  * Contains essential information for quick display
+ * Matches DestinationSummaryType from @repo/types
  */
 export const DestinationSummarySchema = DestinationSchema.pick({
+    id: true,
+    slug: true,
+    name: true,
+    summary: true,
+    media: true,
+    location: true,
+    isFeatured: true,
+    averageRating: true,
+    reviewsCount: true,
+    accommodationsCount: true
+});
+
+/**
+ * Schema for destination summary with additional fields
+ * Extended version with more fields for different use cases
+ */
+export const DestinationSummaryExtendedSchema = DestinationSchema.pick({
     id: true,
     slug: true,
     name: true,
@@ -252,7 +270,8 @@ export const DestinationSummarySchema = DestinationSchema.pick({
     media: true,
     rating: true,
     accommodationsCount: true,
-    attractionsCount: true
+    averageRating: true,
+    reviewsCount: true
 });
 
 // ============================================================================
@@ -261,10 +280,9 @@ export const DestinationSummarySchema = DestinationSchema.pick({
 
 /**
  * Schema for destination statistics
- * Contains metrics and analytics data
+ * Contains basic metrics that match what the service actually returns
  */
 export const DestinationStatsSchema = z.object({
-    // Accommodation statistics
     accommodationsCount: z
         .number({
             message: 'zodError.destination.stats.accommodationsCount.invalidType'
@@ -273,24 +291,6 @@ export const DestinationStatsSchema = z.object({
         .min(0, { message: 'zodError.destination.stats.accommodationsCount.min' })
         .default(0),
 
-    averageAccommodationRating: z
-        .number({
-            message: 'zodError.destination.stats.averageAccommodationRating.invalidType'
-        })
-        .min(0, { message: 'zodError.destination.stats.averageAccommodationRating.min' })
-        .max(5, { message: 'zodError.destination.stats.averageAccommodationRating.max' })
-        .default(0),
-
-    // Attraction statistics
-    attractionsCount: z
-        .number({
-            message: 'zodError.destination.stats.attractionsCount.invalidType'
-        })
-        .int({ message: 'zodError.destination.stats.attractionsCount.int' })
-        .min(0, { message: 'zodError.destination.stats.attractionsCount.min' })
-        .default(0),
-
-    // Review statistics
     reviewsCount: z
         .number({
             message: 'zodError.destination.stats.reviewsCount.invalidType'
@@ -305,78 +305,74 @@ export const DestinationStatsSchema = z.object({
         })
         .min(0, { message: 'zodError.destination.stats.averageRating.min' })
         .max(5, { message: 'zodError.destination.stats.averageRating.max' })
-        .default(0),
+        .default(0)
+});
 
-    // Rating distribution
-    ratingDistribution: z
+// ============================================================================
+// SERVICE-SPECIFIC INPUT SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for destination filter input (used by service)
+ * Combines filters with pagination for service layer
+ */
+export const DestinationFilterInputSchema = z.object({
+    filters: DestinationFiltersSchema.optional(),
+    pagination: z
         .object({
-            oneStar: z.number().int().min(0).default(0),
-            twoStars: z.number().int().min(0).default(0),
-            threeStars: z.number().int().min(0).default(0),
-            fourStars: z.number().int().min(0).default(0),
-            fiveStars: z.number().int().min(0).default(0)
+            page: z.number().int().min(1).optional().default(1),
+            pageSize: z.number().int().min(1).max(100).optional().default(10)
         })
-        .optional(),
-
-    // View statistics
-    viewsCount: z
-        .number({
-            message: 'zodError.destination.stats.viewsCount.invalidType'
-        })
-        .int({ message: 'zodError.destination.stats.viewsCount.int' })
-        .min(0, { message: 'zodError.destination.stats.viewsCount.min' })
-        .default(0),
-
-    // Favorites/bookmarks
-    favoritesCount: z
-        .number({
-            message: 'zodError.destination.stats.favoritesCount.invalidType'
-        })
-        .int({ message: 'zodError.destination.stats.favoritesCount.int' })
-        .min(0, { message: 'zodError.destination.stats.favoritesCount.min' })
-        .default(0),
-
-    // Content statistics
-    photosCount: z
-        .number({
-            message: 'zodError.destination.stats.photosCount.invalidType'
-        })
-        .int({ message: 'zodError.destination.stats.photosCount.int' })
-        .min(0, { message: 'zodError.destination.stats.photosCount.min' })
-        .default(0),
-
-    // Accommodation type distribution
-    accommodationTypeDistribution: z
-        .object({
-            hotel: z.number().int().min(0).default(0),
-            cabin: z.number().int().min(0).default(0),
-            hostel: z.number().int().min(0).default(0),
-            apartment: z.number().int().min(0).default(0),
-            house: z.number().int().min(0).default(0),
-            other: z.number().int().min(0).default(0)
-        })
-        .optional(),
-
-    // Price range statistics
-    priceRange: z
-        .object({
-            min: z.number().min(0),
-            max: z.number().min(0),
-            average: z.number().min(0),
-            currency: z.string()
-        })
-        .optional(),
-
-    // Seasonal statistics
-    popularityByMonth: z
-        .array(
-            z.object({
-                month: z.number().int().min(1).max(12),
-                bookings: z.number().int().min(0),
-                views: z.number().int().min(0)
-            })
-        )
         .optional()
+});
+
+/**
+ * Schema for getting destination accommodations
+ * Supports both legacy destinationId and new id parameter
+ */
+export const GetDestinationAccommodationsInputSchema = z
+    .object({
+        destinationId: DestinationIdSchema.optional(),
+        id: DestinationIdSchema.optional()
+    })
+    .refine((data) => data.destinationId || data.id, {
+        message: 'Either destinationId or id must be provided'
+    });
+
+/**
+ * Schema for getting destination stats
+ */
+export const GetDestinationStatsInputSchema = z.object({
+    destinationId: DestinationIdSchema
+});
+
+/**
+ * Schema for getting destination summary
+ */
+export const GetDestinationSummaryInputSchema = z.object({
+    destinationId: DestinationIdSchema
+});
+
+// ============================================================================
+// SPECIALIZED OUTPUT SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for destination list item with attractions as strings
+ * Used by searchForList method
+ */
+export const DestinationListItemWithStringAttractionsSchema = DestinationListItemSchema.omit({
+    // Remove any attraction-related fields if they exist
+}).extend({
+    attractions: z.array(z.string()).optional()
+});
+
+/**
+ * Schema for searchForList output
+ */
+export const DestinationSearchForListOutputSchema = z.object({
+    items: z.array(DestinationListItemWithStringAttractionsSchema),
+    total: z.number().int().min(0)
 });
 
 // ============================================================================
@@ -384,6 +380,7 @@ export const DestinationStatsSchema = z.object({
 // ============================================================================
 
 export type DestinationFilters = z.infer<typeof DestinationFiltersSchema>;
+export type DestinationFilterInput = z.infer<typeof DestinationFilterInputSchema>;
 export type DestinationListInput = z.infer<typeof DestinationListInputSchema>;
 export type DestinationListItem = z.infer<typeof DestinationListItemSchema>;
 export type DestinationListOutput = z.infer<typeof DestinationListOutputSchema>;
@@ -391,4 +388,19 @@ export type DestinationSearchInput = z.infer<typeof DestinationSearchInputSchema
 export type DestinationSearchResult = z.infer<typeof DestinationSearchResultSchema>;
 export type DestinationSearchOutput = z.infer<typeof DestinationSearchOutputSchema>;
 export type DestinationSummary = z.infer<typeof DestinationSummarySchema>;
+export type DestinationSummaryExtended = z.infer<typeof DestinationSummaryExtendedSchema>;
 export type DestinationStats = z.infer<typeof DestinationStatsSchema>;
+
+// Service-specific types
+export type GetDestinationAccommodationsInput = z.infer<
+    typeof GetDestinationAccommodationsInputSchema
+>;
+export type GetDestinationStatsInput = z.infer<typeof GetDestinationStatsInputSchema>;
+export type GetDestinationSummaryInput = z.infer<typeof GetDestinationSummaryInputSchema>;
+export type DestinationListItemWithStringAttractions = z.infer<
+    typeof DestinationListItemWithStringAttractionsSchema
+>;
+export type DestinationSearchForListOutput = z.infer<typeof DestinationSearchForListOutputSchema>;
+
+// Compatibility alias for existing code
+export type DestinationSummaryType = DestinationSummary;
