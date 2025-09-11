@@ -105,20 +105,14 @@ export const FullLocationSchema = BaseLocationSchema.extend({
 });
 
 /**
- * Legacy Location Schema (for backward compatibility)
- * @deprecated Use FullLocationSchema instead
- */
-export const LocationSchema = FullLocationSchema;
-
-/**
- * Base location fields (using base LocationSchema structure)
+ * Base location fields (using BaseLocationSchema structure)
  */
 export const BaseLocationFields = {
     location: BaseLocationSchema.optional()
 } as const;
 
 /**
- * Full location fields (using complete LocationSchema structure)
+ * Full location fields (using FullLocationSchema structure)
  */
 export const FullLocationFields = {
     location: FullLocationSchema.optional()
@@ -132,4 +126,3 @@ export type FullLocationFieldsType = typeof FullLocationFields;
 export type Coordinates = z.infer<typeof CoordinatesSchema>;
 export type BaseLocation = z.infer<typeof BaseLocationSchema>;
 export type FullLocation = z.infer<typeof FullLocationSchema>;
-export type Location = z.infer<typeof LocationSchema>;
