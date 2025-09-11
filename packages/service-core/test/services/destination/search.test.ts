@@ -175,7 +175,7 @@ describe('DestinationService.search and count', () => {
             new DestinationFactoryBuilder().with({ name: 'Taggy', tags: [tag] }).build()
         ];
         (model.search as import('vitest').Mock).mockResolvedValue(paginated(destinations, 1, 1));
-        const filters = { tags: [tag] };
+        const filters = { tags: [tag.id] }; // Use tag ID instead of full object
 
         // Act
         const result = await service.search(admin, { filters: filters });

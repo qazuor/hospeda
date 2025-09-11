@@ -1,14 +1,15 @@
 import { DestinationModel } from '@repo/db';
+import type { GetDestinationStatsInput } from '@repo/schemas';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 /**
  * @file getStats.test.ts
  * @description Unit tests for DestinationService.getStats. Covers success, not found, and internal error cases.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { GetStatsInput } from '../../../src/services/destination/destination.schemas';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
+import { getMockId } from '../../factories/utilsFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -38,7 +39,7 @@ describe('DestinationService.getStats', () => {
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetStatsInput = { destinationId: destination.id };
+        const params: GetDestinationStatsInput = { destinationId: destination.id };
 
         // Act
         const result = await service.getStats(actor, params);
@@ -56,7 +57,7 @@ describe('DestinationService.getStats', () => {
         // Arrange
         asMock(modelMock.findById).mockResolvedValue(null);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetStatsInput = { destinationId: 'nonexistent' };
+        const params: GetDestinationStatsInput = { destinationId: getMockId('destination') as any };
 
         // Act
         const result = await service.getStats(actor, params);
@@ -69,7 +70,7 @@ describe('DestinationService.getStats', () => {
         // Arrange
         asMock(modelMock.findById).mockRejectedValue(new Error('DB error'));
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetStatsInput = { destinationId: 'dest-1' };
+        const params: GetDestinationStatsInput = { destinationId: getMockId('destination') as any };
 
         // Act
         const result = await service.getStats(actor, params);
@@ -89,7 +90,7 @@ describe('DestinationService.getStats', () => {
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetStatsInput = { destinationId: destination.id };
+        const params: GetDestinationStatsInput = { destinationId: destination.id };
 
         // Act
         const result = await service.getStats(actor, params);
@@ -110,7 +111,7 @@ describe('DestinationService.getStats', () => {
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
-        const params: GetStatsInput = { destinationId: destination.id };
+        const params: GetDestinationStatsInput = { destinationId: destination.id };
 
         // Act
         const result = await service.getStats(actor, params);
