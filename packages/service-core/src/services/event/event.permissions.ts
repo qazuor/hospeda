@@ -5,7 +5,7 @@
  */
 // TODO [44ae3671-d643-4ec7-b8a3-1f5fec8c90f3]: Implement permission checks for create, update, delete, restore, view, etc.
 
-import type { EventType } from '@repo/types';
+import type { Event } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/types';
 import { type Actor, ServiceError } from '../../types';
 
@@ -57,7 +57,7 @@ export function checkCanRestoreEvent(actor: Actor): void {
  * Checks if the actor can view the given event.
  * Throws ServiceError(FORBIDDEN) if not allowed.
  */
-export function checkCanViewEvent(actor: Actor, event: EventType): void {
+export function checkCanViewEvent(actor: Actor, event: Event): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
     // Public events: anyone can view
     if (event.visibility === 'PUBLIC') return;
