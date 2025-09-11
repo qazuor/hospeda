@@ -1,13 +1,25 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
+import type {
+    DestinationCreateInput,
+    DestinationFilterInput,
+    DestinationSearchForListOutput,
+    DestinationStats,
+    DestinationSummaryType,
+    GetDestinationAccommodationsInput,
+    GetDestinationStatsInput,
+    GetDestinationSummaryInput
+} from '@repo/schemas';
 import {
-    CreateDestinationServiceSchema,
+    DestinationCreateInputSchema,
     DestinationFilterInputSchema,
-    UpdateDestinationServiceSchema
+    DestinationUpdateInputSchema,
+    GetDestinationAccommodationsInputSchema,
+    GetDestinationStatsInputSchema,
+    GetDestinationSummaryInputSchema
 } from '@repo/schemas';
 import type { AccommodationType, DestinationRatingType, DestinationType } from '@repo/types';
 
 import { ServiceErrorCode } from '@repo/types';
-import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -31,18 +43,6 @@ import {
     checkCanUpdateDestinationVisibility,
     checkCanViewDestination
 } from './destination.permission';
-import type {
-    DestinationStats,
-    DestinationSummaryType,
-    GetDestinationAccommodationsInput,
-    GetDestinationStatsInput,
-    GetDestinationSummaryInput
-} from './destination.schemas';
-import {
-    GetDestinationAccommodationsInputSchema,
-    GetDestinationStatsInputSchema,
-    GetDestinationSummaryInputSchema
-} from './destination.schemas';
 
 /**
  * Service for domain-specific logic related to Destinations.
@@ -51,16 +51,16 @@ import {
 export class DestinationService extends BaseCrudService<
     DestinationType,
     DestinationModel,
-    typeof CreateDestinationServiceSchema,
-    typeof UpdateDestinationServiceSchema,
+    typeof DestinationCreateInputSchema,
+    typeof DestinationUpdateInputSchema,
     typeof DestinationFilterInputSchema
 > {
     static readonly ENTITY_NAME = 'destination';
     protected readonly entityName = DestinationService.ENTITY_NAME;
     protected readonly model: DestinationModel;
     protected readonly logger: ServiceLogger;
-    protected readonly createSchema = CreateDestinationServiceSchema;
-    protected readonly updateSchema = UpdateDestinationServiceSchema;
+    protected readonly createSchema = DestinationCreateInputSchema;
+    protected readonly updateSchema = DestinationUpdateInputSchema;
     protected readonly searchSchema = DestinationFilterInputSchema;
     protected normalizers = {
         create: normalizeCreateInput,
@@ -119,10 +119,7 @@ export class DestinationService extends BaseCrudService<
      * @param _actor - The actor performing the search (not used here)
      * @returns A paginated list of destinations matching the filters
      */
-    protected async _executeSearch(
-        params: z.infer<typeof DestinationFilterInputSchema>,
-        _actor: Actor
-    ) {
+    protected async _executeSearch(params: DestinationFilterInput, _actor: Actor) {
         const { filters = {}, pagination } = params;
         const page = pagination?.page ?? 1;
         const pageSize = pagination?.pageSize ?? 10;
@@ -135,10 +132,7 @@ export class DestinationService extends BaseCrudService<
      * @param _actor - The actor performing the count (not used here)
      * @returns An object with the total count
      */
-    protected async _executeCount(
-        params: z.infer<typeof DestinationFilterInputSchema>,
-        _actor: Actor
-    ) {
+    protected async _executeCount(params: DestinationFilterInput, _actor: Actor) {
         const { filters = {} } = params;
         return this.model.countByFilters({ filters });
     }
@@ -153,11 +147,8 @@ export class DestinationService extends BaseCrudService<
      */
     async searchForList(
         actor: Actor,
-        params: z.infer<typeof DestinationFilterInputSchema>
-    ): Promise<{
-        items: Array<Omit<DestinationType, 'attractions'> & { attractions: string[] }>;
-        total: number;
-    }> {
+        params: DestinationFilterInput
+    ): Promise<DestinationSearchForListOutput> {
         // Check permissions
         this._canSearch(actor);
 
@@ -289,7 +280,7 @@ export class DestinationService extends BaseCrudService<
                     id: destination.id,
                     slug: destination.slug,
                     name: destination.name,
-                    country: destination.location.country,
+                    summary: destination.summary,
                     media: destination.media,
                     location: destination.location,
                     isFeatured: destination.isFeatured,
@@ -310,7 +301,7 @@ export class DestinationService extends BaseCrudService<
      * @returns The normalized data with a unique slug.
      */
     protected async _beforeCreate(
-        data: z.infer<typeof CreateDestinationServiceSchema>,
+        data: DestinationCreateInput,
         _actor: Actor
     ): Promise<Partial<DestinationType>> {
         const slug = await generateDestinationSlug(data.name);
