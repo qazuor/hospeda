@@ -1,6 +1,15 @@
 import { DestinationModel, DestinationReviewModel } from '@repo/db';
-import type { DestinationReviewType, NewDestinationReviewInputType } from '@repo/types';
-import { z } from 'zod';
+import {
+    type DestinationReviewCreateInput,
+    DestinationReviewCreateInputSchema,
+    type DestinationReviewListWithUserOutput,
+    type DestinationReviewSearchInput,
+    DestinationReviewSearchInputSchema,
+    DestinationReviewUpdateInputSchema,
+    ListWithUserSchema
+} from '@repo/schemas';
+import type { DestinationReviewType } from '@repo/types';
+import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { DestinationService } from '../destination/destination.service';
@@ -12,10 +21,6 @@ import {
     checkCanUpdateDestinationReview,
     checkCanViewDestinationReview
 } from './destinationReview.permissions';
-import {
-    CreateDestinationReviewSchema,
-    UpdateDestinationReviewSchema
-} from './destinationReview.schemas';
 
 /**
  * Service for managing destination reviews.
@@ -24,17 +29,17 @@ import {
 export class DestinationReviewService extends BaseCrudService<
     DestinationReviewType,
     DestinationReviewModel,
-    typeof CreateDestinationReviewSchema,
-    typeof UpdateDestinationReviewSchema,
-    typeof UpdateDestinationReviewSchema // TODO: Replace with actual search schema if different
+    typeof DestinationReviewCreateInputSchema,
+    typeof DestinationReviewUpdateInputSchema,
+    typeof DestinationReviewSearchInputSchema
 > {
     static readonly ENTITY_NAME = 'destinationReview';
     protected readonly entityName = DestinationReviewService.ENTITY_NAME;
     protected readonly model: DestinationReviewModel;
 
-    protected readonly createSchema = CreateDestinationReviewSchema;
-    protected readonly updateSchema = UpdateDestinationReviewSchema;
-    protected readonly searchSchema = UpdateDestinationReviewSchema; // TODO: Replace if needed
+    protected readonly createSchema = DestinationReviewCreateInputSchema;
+    protected readonly updateSchema = DestinationReviewUpdateInputSchema;
+    protected readonly searchSchema = DestinationReviewSearchInputSchema;
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
@@ -48,7 +53,7 @@ export class DestinationReviewService extends BaseCrudService<
         this.destinationService = new DestinationService(ctx);
     }
 
-    protected _canCreate(actor: Actor, _data: NewDestinationReviewInputType): void {
+    protected _canCreate(actor: Actor, _data: DestinationReviewCreateInput): void {
         checkCanCreateDestinationReview(actor);
     }
     protected _canUpdate(actor: Actor, _entity: DestinationReviewType): void {
@@ -84,15 +89,15 @@ export class DestinationReviewService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        _params: z.infer<typeof UpdateDestinationReviewSchema>,
+        _params: DestinationReviewSearchInput,
         _actor: Actor
-    ): Promise<import('../../types').PaginatedListOutput<DestinationReviewType>> {
+    ): Promise<PaginatedListOutput<DestinationReviewType>> {
         // TODO [e331cd3f-e1de-4a36-9bf0-18a6fa2ced1e]: Implement search logic using Drizzle ORM
         throw new Error('Not implemented');
     }
 
     protected async _executeCount(
-        _params: z.infer<typeof UpdateDestinationReviewSchema>,
+        _params: DestinationReviewSearchInput,
         _actor: Actor
     ): Promise<{ count: number }> {
         // TODO [58f446c4-c4b5-4d1d-b918-4ff17b783f32]: Implement count logic using Drizzle ORM
@@ -135,30 +140,12 @@ export class DestinationReviewService extends BaseCrudService<
      */
     public async listWithUser(
         actor: Actor,
-        input: {
-            page?: number;
-            pageSize?: number;
-            filters?: Record<string, unknown>;
-        } = {}
-    ): Promise<
-        ServiceOutput<
-            PaginatedListOutput<
-                DestinationReviewType & {
-                    user?: { id: string; firstName?: string; lastName?: string; email: string };
-                }
-            >
-        >
-    > {
+        input: z.infer<typeof ListWithUserSchema> = {}
+    ): Promise<ServiceOutput<DestinationReviewListWithUserOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listWithUser',
             input: { actor, ...input },
-            schema: z
-                .object({
-                    page: z.number().int().min(1).optional(),
-                    pageSize: z.number().int().min(1).max(100).optional(),
-                    filters: z.record(z.string(), z.unknown()).optional()
-                })
-                .strict(),
+            schema: ListWithUserSchema,
             execute: async (validData, validatedActor) => {
                 await this._canList(validatedActor);
                 const { page, pageSize, filters = {} } = validData;
@@ -170,7 +157,7 @@ export class DestinationReviewService extends BaseCrudService<
                 };
 
                 const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
-                return result;
+                return result as DestinationReviewListWithUserOutput;
             }
         });
     }

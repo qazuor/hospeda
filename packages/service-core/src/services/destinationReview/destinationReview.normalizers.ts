@@ -1,20 +1,16 @@
-import type { z } from 'zod';
+import type { DestinationReviewCreateInput, DestinationReviewUpdateInput } from '@repo/schemas';
 import type { Actor } from '../../types';
-import type {
-    CreateDestinationReviewSchema,
-    UpdateDestinationReviewSchema
-} from './destinationReview.schemas';
 
 export const normalizeCreateInput = (
-    data: z.infer<typeof CreateDestinationReviewSchema>,
+    data: DestinationReviewCreateInput,
     _actor: Actor
-): z.infer<typeof CreateDestinationReviewSchema> => {
+): DestinationReviewCreateInput => {
     return data;
 };
 
 export const normalizeUpdateInput = (
-    data: z.infer<typeof UpdateDestinationReviewSchema>,
+    data: DestinationReviewUpdateInput,
     _actor: Actor
-): z.infer<typeof UpdateDestinationReviewSchema> => {
+): DestinationReviewUpdateInput => {
     return data;
 };
