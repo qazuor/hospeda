@@ -606,6 +606,7 @@ export abstract class BaseCrudService<
                 const finalPayload = hasValidField
                     ? filteredPayload
                     : ({ updatedById: validActor.id as UserId } as unknown as Partial<TEntity>);
+
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
                 const updatedEntity = await this.model.update(where as any, finalPayload);
 
