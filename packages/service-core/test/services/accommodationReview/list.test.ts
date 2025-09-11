@@ -79,19 +79,18 @@ describe('list', () => {
             permissions: []
         });
         const mockReview: AccommodationReviewType = {
-            id: getMockId('accommodationReview', 'review-1') as AccommodationReviewId,
+            id: getMockId('accommodation', 'review-1') as any,
             accommodationId: getMockId('accommodation', 'accommodation-1') as AccommodationId,
             userId: getMockId('user', 'user-1') as UserId,
             title: 'Great stay',
             content: 'Had a wonderful time at this accommodation.',
             rating: {
-                overall: 4.5,
-                cleanliness: 4,
-                hospitality: 5,
-                services: 3,
-                accuracy: 4,
-                communication: 5,
-                location: 4
+                cleanliness: 4.5,
+                hospitality: 4.0,
+                services: 4.2,
+                accuracy: 4.8,
+                communication: 4.3,
+                location: 4.6
             },
             createdAt: new Date(),
             updatedAt: new Date(),

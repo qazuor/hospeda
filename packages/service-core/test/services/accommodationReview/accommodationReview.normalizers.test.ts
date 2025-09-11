@@ -1,3 +1,7 @@
+import type {
+    AccommodationReviewCreateInputSchema,
+    AccommodationReviewUpdateInputSchema
+} from '@repo/schemas';
 import { RoleEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
@@ -5,14 +9,10 @@ import {
     normalizeCreateInput,
     normalizeUpdateInput
 } from '../../../src/services/accommodationReview/accommodationReview.normalizers';
-import type {
-    CreateAccommodationReviewSchema,
-    UpdateAccommodationReviewSchema
-} from '../../../src/services/accommodationReview/accommodationReview.schemas';
 
-const validCreateInput: z.infer<typeof CreateAccommodationReviewSchema> = {
-    accommodationId: 'acc-1',
-    userId: 'user-1',
+const validCreateInput: z.infer<typeof AccommodationReviewCreateInputSchema> = {
+    accommodationId: 'acc-1' as any,
+    userId: 'user-1' as any,
     rating: {
         cleanliness: 5,
         hospitality: 4,
@@ -25,7 +25,7 @@ const validCreateInput: z.infer<typeof CreateAccommodationReviewSchema> = {
     content: 'Everything was perfect.'
 };
 
-const validUpdateInput: z.infer<typeof UpdateAccommodationReviewSchema> = {
+const validUpdateInput: z.infer<typeof AccommodationReviewUpdateInputSchema> = {
     title: 'Updated title',
     content: 'Updated content.'
 };
