@@ -50,8 +50,8 @@ export const createValidEvent = (): any => ({
 
     // Event date
     date: {
-        start: faker.date.future().toISOString(),
-        end: faker.date.future().toISOString(),
+        start: faker.date.future(),
+        end: faker.date.future(),
         isAllDay: faker.datatype.boolean(),
         recurrence: faker.helpers.maybe(
             () => faker.helpers.arrayElement(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
@@ -125,8 +125,8 @@ export const createMinimalEvent = (): any => ({
 
     // Required date
     date: {
-        start: faker.date.future().toISOString(),
-        end: faker.date.future().toISOString(),
+        start: faker.date.future(),
+        end: faker.date.future(),
         isAllDay: false
     },
 
@@ -208,8 +208,8 @@ export const createEventEdgeCases = (): any => ({
         priceTo: 0.02 // Very small range
     },
     date: {
-        start: new Date().toISOString(),
-        end: new Date(Date.now() + 60000).toISOString(), // 1 minute duration
+        start: new Date(),
+        end: new Date(Date.now() + 60000), // 1 minute duration
         isAllDay: false
     },
     seo: {
@@ -253,8 +253,8 @@ export const createLargeEvent = (): any => ({
     summary: 'B'.repeat(300), // Large summary (max 300)
     description: 'C'.repeat(2000), // Large description
     date: {
-        start: faker.date.future().toISOString(),
-        end: faker.date.future().toISOString(),
+        start: faker.date.future(),
+        end: faker.date.future(),
         isAllDay: faker.datatype.boolean(),
         recurrence: faker.helpers.arrayElement(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'])
     },
