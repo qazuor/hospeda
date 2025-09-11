@@ -1,15 +1,14 @@
-import type { EventSchema } from '@repo/schemas';
-import type { EventType } from '@repo/types';
-import type { z } from 'zod';
+import type { Event, EventCreateInput, EventUpdateInput } from '@repo/schemas';
+import type { EventDateType, EventLocationId, EventOrganizerId } from '@repo/types';
 import { normalizeAdminInfo } from '../../utils';
 
 /**
  * Normalizes input data for creating an event.
  * Converts date fields from string to Date and IDs to branded types for compatibility with the model/domain type.
  * @param input - The raw input for event creation (schema type)
- * @returns The normalized input as Partial<EventType>
+ * @returns The normalized input as Partial<Event>
  */
-export const normalizeCreateInput = (input: z.infer<typeof EventSchema>): Partial<EventType> => {
+export const normalizeCreateInput = (input: EventCreateInput): Partial<Event> => {
     const adminInfo = normalizeAdminInfo(input.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = input;
     return {
@@ -20,25 +19,23 @@ export const normalizeCreateInput = (input: z.infer<typeof EventSchema>): Partia
             start: new Date(input.date.start),
             end: input.date.end ? new Date(input.date.end) : undefined
         },
-        locationId: input.locationId as EventType['locationId'],
-        organizerId: input.organizerId as EventType['organizerId']
-    } as Partial<EventType>;
+        locationId: input.locationId as EventLocationId,
+        organizerId: input.organizerId as EventOrganizerId
+    } as Partial<Event>;
 };
 
 /**
  * Normalizes input data for updating an event.
  * Converts date fields from string to Date and IDs to branded types for compatibility with the model/domain type.
  * @param input - The raw input for event update (schema type)
- * @returns The normalized input as Partial<EventType>
+ * @returns The normalized input as Partial<Event>
  */
-export const normalizeUpdateInput = (
-    input: { id: string } & Partial<z.infer<typeof EventSchema>>
-): Partial<EventType> => {
+export const normalizeUpdateInput = (input: EventUpdateInput & { id?: string }): Partial<Event> => {
     const adminInfo = normalizeAdminInfo(input.adminInfo);
     // Exclude the original date property from rest
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { adminInfo: _adminInfo, date: _date, id, ...rest } = input;
-    let date: EventType['date'] | undefined = undefined;
+    let date: EventDateType | undefined = undefined;
     if (input.date?.start) {
         date = {
             ...input.date,
@@ -56,7 +53,7 @@ export const normalizeUpdateInput = (
         ...restWithoutIds,
         ...(adminInfo ? { adminInfo } : {}),
         ...(date ? { date } : {}),
-        ...(locationId ? { locationId: locationId as EventType['locationId'] } : {}),
-        ...(organizerId ? { organizerId: organizerId as EventType['organizerId'] } : {})
-    } as Partial<EventType>;
+        ...(locationId ? { locationId: locationId as EventLocationId } : {}),
+        ...(organizerId ? { organizerId: organizerId as EventOrganizerId } : {})
+    } as Partial<Event>;
 };

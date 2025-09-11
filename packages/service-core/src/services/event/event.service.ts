@@ -1,14 +1,31 @@
 import { EventModel } from '@repo/db';
 import type {
-    EventCategoryEnum,
-    EventId,
-    EventLocationId,
-    EventOrganizerId,
-    EventSummaryType,
-    UserId
-} from '@repo/types';
-import { type EventType, PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
-import type { z } from 'zod';
+    Event,
+    EventByAuthorInput,
+    EventByCategoryInput,
+    EventByLocationInput,
+    EventByOrganizerInput,
+    EventCreateInput,
+    EventFreeInput,
+    EventSearchInput,
+    EventSummaryInput,
+    EventSummaryOutput,
+    EventUpcomingInput,
+    EventUpdateInput
+} from '@repo/schemas';
+import {
+    EventByAuthorInputSchema,
+    EventByCategoryInputSchema,
+    EventByLocationInputSchema,
+    EventByOrganizerInputSchema,
+    EventCreateInputSchema,
+    EventFreeInputSchema,
+    EventSearchInputSchema,
+    EventSummaryInputSchema,
+    EventUpcomingInputSchema,
+    EventUpdateInputSchema
+} from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { type Actor, ServiceError } from '../../types';
@@ -23,19 +40,6 @@ import {
     checkCanUpdateEvent,
     checkCanViewEvent
 } from './event.permissions';
-import {
-    EventCreateSchema,
-    EventFilterInputSchema,
-    type EventSchema,
-    EventUpdateSchema,
-    GetEventByAuthorInputSchema,
-    GetEventByCategoryInputSchema,
-    GetEventByLocationInputSchema,
-    GetEventByOrganizerInputSchema,
-    GetEventFreeInputSchema,
-    GetEventUpcomingInputSchema,
-    GetSummaryInputSchema
-} from './event.schemas';
 
 /**
  * Service for managing events.
@@ -43,19 +47,19 @@ import {
  * Extends BaseCrudService for homogeneous validation, error handling, and logging.
  */
 export class EventService extends BaseCrudService<
-    EventType,
+    Event,
     EventModel,
-    typeof EventCreateSchema,
-    typeof EventUpdateSchema,
-    typeof EventFilterInputSchema
+    typeof EventCreateInputSchema,
+    typeof EventUpdateInputSchema,
+    typeof EventSearchInputSchema
 > {
     static readonly ENTITY_NAME = 'event';
     protected readonly entityName = EventService.ENTITY_NAME;
     protected readonly model: EventModel;
 
-    protected readonly createSchema = EventCreateSchema;
-    protected readonly updateSchema = EventUpdateSchema;
-    protected readonly searchSchema = EventFilterInputSchema;
+    protected readonly createSchema = EventCreateInputSchema;
+    protected readonly updateSchema = EventUpdateInputSchema;
+    protected readonly searchSchema = EventSearchInputSchema;
 
     constructor(ctx: ServiceContext & { model?: EventModel }) {
         super(ctx, EventService.ENTITY_NAME);
@@ -65,42 +69,42 @@ export class EventService extends BaseCrudService<
     /**
      * Permission hook: checks if the actor can create an event.
      */
-    protected _canCreate(actor: Actor, _data: z.infer<typeof EventSchema>): void {
+    protected _canCreate(actor: Actor, _data: EventCreateInput): void {
         checkCanCreateEvent(actor);
     }
 
     /**
      * Permission hook: checks if the actor can update an event.
      */
-    protected _canUpdate(actor: Actor, _entity: EventType): void {
+    protected _canUpdate(actor: Actor, _entity: Event): void {
         checkCanUpdateEvent(actor);
     }
 
     /**
      * Permission hook: checks if the actor can soft-delete an event.
      */
-    protected _canSoftDelete(actor: Actor, _entity: EventType): void {
+    protected _canSoftDelete(actor: Actor, _entity: Event): void {
         checkCanDeleteEvent(actor);
     }
 
     /**
      * Permission hook: checks if the actor can hard-delete an event.
      */
-    protected _canHardDelete(actor: Actor, _entity: EventType): void {
+    protected _canHardDelete(actor: Actor, _entity: Event): void {
         checkCanHardDeleteEvent(actor);
     }
 
     /**
      * Permission hook: checks if the actor can restore an event.
      */
-    protected _canRestore(actor: Actor, _entity: EventType): void {
+    protected _canRestore(actor: Actor, _entity: Event): void {
         checkCanRestoreEvent(actor);
     }
 
     /**
      * Permission hook: checks if the actor can view an event.
      */
-    protected _canView(actor: Actor, entity: EventType): void {
+    protected _canView(actor: Actor, entity: Event): void {
         checkCanViewEvent(actor, entity);
     }
 
@@ -133,8 +137,8 @@ export class EventService extends BaseCrudService<
      */
     protected _canUpdateVisibility(
         actor: Actor,
-        _entity: EventType,
-        _newVisibility: EventType['visibility']
+        _entity: Event,
+        _newVisibility: VisibilityEnum
     ): void {
         // TODO [3812ac2a-2722-421c-af58-ac63fc33f9c9]: Implement visibility update permission logic if needed
         checkCanUpdateEvent(actor);
@@ -143,10 +147,7 @@ export class EventService extends BaseCrudService<
     /**
      * Lifecycle hook: normalizes input before creating an event and generates slug.
      */
-    protected async _beforeCreate(
-        input: z.infer<typeof EventSchema>,
-        _actor: Actor
-    ): Promise<Partial<EventType>> {
+    protected async _beforeCreate(input: EventCreateInput, _actor: Actor): Promise<Partial<Event>> {
         const normalized = await normalizeCreateInput(input);
         // Ensure all required fields are present
         if (!normalized.category || !normalized.name || !normalized.date?.start) {
@@ -165,10 +166,7 @@ export class EventService extends BaseCrudService<
     /**
      * Lifecycle hook: normalizes input before updating an event and updates slug if relevant fields change.
      */
-    protected async _beforeUpdate(
-        input: z.infer<typeof EventSchema>,
-        _actor: Actor
-    ): Promise<Partial<EventType>> {
+    protected async _beforeUpdate(input: EventUpdateInput, _actor: Actor): Promise<Partial<Event>> {
         const normalized = await normalizeUpdateInput(input);
         // If category, name, or date.start is present in update, regenerate slug
         if (
@@ -196,7 +194,7 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the search
      * @returns Paginated list of events matching the criteria
      */
-    protected async _executeSearch(params: z.infer<typeof EventFilterInputSchema>, _actor: Actor) {
+    protected async _executeSearch(params: EventSearchInput, _actor: Actor) {
         const { filters = {}, pagination } = params;
         const page = pagination?.page ?? 1;
         const pageSize = pagination?.pageSize ?? 10;
@@ -209,7 +207,7 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the count
      * @returns Count of events matching the criteria
      */
-    protected async _executeCount(params: z.infer<typeof EventFilterInputSchema>, _actor: Actor) {
+    protected async _executeCount(params: EventSearchInput, _actor: Actor) {
         const { filters = {} } = params;
         const count = await this.model.count(filters);
         return { count };
@@ -227,12 +225,12 @@ export class EventService extends BaseCrudService<
      */
     public async getByAuthor(
         actor: Actor,
-        input: { authorId: UserId; page?: number; pageSize?: number }
-    ): Promise<ServiceOutput<PaginatedListOutput<EventType>>> {
+        input: EventByAuthorInput
+    ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByAuthor',
             input: { ...input, actor },
-            schema: GetEventByAuthorInputSchema,
+            schema: EventByAuthorInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
@@ -264,12 +262,12 @@ export class EventService extends BaseCrudService<
      */
     public async getByLocation(
         actor: Actor,
-        input: { locationId: EventLocationId; page?: number; pageSize?: number }
-    ): Promise<ServiceOutput<PaginatedListOutput<EventType>>> {
+        input: EventByLocationInput
+    ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByLocation',
             input: { ...input, actor },
-            schema: GetEventByLocationInputSchema,
+            schema: EventByLocationInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
@@ -301,12 +299,12 @@ export class EventService extends BaseCrudService<
      */
     public async getByOrganizer(
         actor: Actor,
-        input: { organizerId: EventOrganizerId; page?: number; pageSize?: number }
-    ): Promise<ServiceOutput<PaginatedListOutput<EventType>>> {
+        input: EventByOrganizerInput
+    ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByOrganizer',
             input: { ...input, actor },
-            schema: GetEventByOrganizerInputSchema,
+            schema: EventByOrganizerInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
@@ -340,12 +338,12 @@ export class EventService extends BaseCrudService<
      */
     public async getUpcoming(
         actor: Actor,
-        input: { fromDate: Date; toDate?: Date; page?: number; pageSize?: number }
-    ): Promise<ServiceOutput<PaginatedListOutput<EventType>>> {
+        input: EventUpcomingInput
+    ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getUpcoming',
             input: { ...input, actor },
-            schema: GetEventUpcomingInputSchema,
+            schema: EventUpcomingInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
@@ -386,17 +384,17 @@ export class EventService extends BaseCrudService<
      */
     public async getSummary(
         actor: Actor,
-        input: { id: EventId }
-    ): Promise<ServiceOutput<{ summary: EventSummaryType }>> {
+        input: EventSummaryInput
+    ): Promise<ServiceOutput<EventSummaryOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
             input: { ...input, actor },
-            schema: GetSummaryInputSchema,
+            schema: EventSummaryInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
-                let event: EventType | null;
+                let event: Event | null;
                 try {
                     event = await this.model.findById(validatedInput.id);
                 } catch (err) {
@@ -406,14 +404,16 @@ export class EventService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Event not found');
                 }
                 this._canView(validatedActor, event);
-                const summary: EventSummaryType = {
+                const summary = {
                     id: event.id,
                     slug: event.slug,
                     name: event.name,
+                    summary: event.summary,
                     category: event.category,
+                    isFeatured: event.isFeatured,
                     date: event.date,
                     media: event.media,
-                    isFeatured: event.isFeatured
+                    pricing: event.pricing
                 };
                 return { summary };
             }
@@ -432,12 +432,12 @@ export class EventService extends BaseCrudService<
      */
     public async getByCategory(
         actor: Actor,
-        input: { category: EventCategoryEnum; page?: number; pageSize?: number }
-    ): Promise<ServiceOutput<PaginatedListOutput<EventType>>> {
+        input: EventByCategoryInput
+    ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByCategory',
             input: { ...input, actor },
-            schema: GetEventByCategoryInputSchema,
+            schema: EventByCategoryInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
@@ -469,12 +469,12 @@ export class EventService extends BaseCrudService<
      */
     public async getFreeEvents(
         actor: Actor,
-        input: { page?: number; pageSize?: number }
-    ): Promise<ServiceOutput<PaginatedListOutput<EventType>>> {
+        input: EventFreeInput = { page: 1, pageSize: 20 }
+    ): Promise<ServiceOutput<PaginatedListOutput<Event>>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFreeEvents',
             input: { ...input, actor },
-            schema: GetEventFreeInputSchema,
+            schema: EventFreeInputSchema,
             execute: async (validatedInput, validatedActor) => {
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
