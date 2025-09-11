@@ -41,7 +41,9 @@ describe('EventService.getSummary', () => {
             category: event.category,
             date: event.date,
             media: event.media,
-            isFeatured: event.isFeatured
+            isFeatured: event.isFeatured,
+            pricing: event.pricing,
+            summary: event.summary
         });
     });
 

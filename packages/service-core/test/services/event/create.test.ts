@@ -25,21 +25,7 @@ describe('EventService.create', () => {
     const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_CREATE] });
     const actorNoPerm = createUser();
     const rawInput = createEventInput({ visibility: VisibilityEnum.PUBLIC });
-    const validInput = {
-        ...rawInput,
-        date: {
-            start:
-                rawInput.date.start instanceof Date
-                    ? rawInput.date.start.toISOString()
-                    : rawInput.date.start,
-            end:
-                rawInput.date.end instanceof Date
-                    ? rawInput.date.end.toISOString()
-                    : rawInput.date.end
-        },
-        locationId: String(rawInput.locationId),
-        organizerId: String(rawInput.organizerId)
-    };
+    const validInput = rawInput;
     const createdEvent = createMockEvent();
 
     beforeEach(() => {
@@ -92,9 +78,9 @@ describe('EventService.create', () => {
             ...createEventInput(),
             category: EventCategoryEnum.MUSIC,
             name: 'Jazz Night',
-            date: { start: '2024-07-01', end: '2024-07-01' },
-            locationId: String(createEventInput().locationId),
-            organizerId: String(createEventInput().organizerId)
+            date: { start: new Date('2024-07-01'), end: new Date('2024-07-01') },
+            locationId: createEventInput().locationId,
+            organizerId: createEventInput().organizerId
         };
         const result = await service.create(actorWithPerm, input);
         expect(helpers.generateEventSlug).toHaveBeenCalledWith(
@@ -114,9 +100,9 @@ describe('EventService.create', () => {
         const input = {
             ...createEventInput(),
             name: '',
-            date: { start: '', end: '' },
-            locationId: String(createEventInput().locationId),
-            organizerId: String(createEventInput().organizerId)
+            date: { start: new Date('invalid'), end: new Date('invalid') },
+            locationId: createEventInput().locationId,
+            organizerId: createEventInput().organizerId
         };
         const result = await service.create(actorWithPerm, input);
         expectValidationError(result);

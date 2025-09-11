@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { PermissionEnum, VisibilityEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createUser } from '../../factories/userFactory';
@@ -16,7 +16,7 @@ describe('EventService.count', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
     const actorNoPerm = createUser();
-    const filters = { visibility: VisibilityEnum.PUBLIC };
+    const filters = { status: LifecycleStatusEnum.ACTIVE };
     const countResult = { count: 5 };
 
     beforeEach(() => {
