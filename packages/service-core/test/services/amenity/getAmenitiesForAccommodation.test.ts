@@ -103,7 +103,7 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
         const invalidAccommodationId = '';
 
         const result = (await service.getAmenitiesForAccommodation(actorWithPerms, {
-            accommodationId: invalidAccommodationId
+            accommodationId: invalidAccommodationId as any
         })) as ServiceOutputAmenities;
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
