@@ -1,14 +1,15 @@
 import { DestinationModel } from '@repo/db';
+import type { GetDestinationSummaryInput } from '@repo/schemas';
 import { RoleEnum, VisibilityEnum } from '@repo/types';
 /**
  * @file getSummary.test.ts
  * @description Unit tests for DestinationService.getSummary. Covers success, not found, missing location, and internal error cases.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { GetSummaryInput } from '../../../src/services/destination/destination.schemas';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
+import { getMockId } from '../../factories/utilsFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -40,7 +41,7 @@ describe('DestinationService.getSummary', () => {
         const destination = new DestinationFactoryBuilder().with({ averageRating: 4.5 }).build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetSummaryInput = { destinationId: destination.id };
+        const params: GetDestinationSummaryInput = { destinationId: destination.id };
 
         // Act
         const result = await service.getSummary(actor, params);
@@ -51,13 +52,13 @@ describe('DestinationService.getSummary', () => {
             id: destination.id,
             slug: destination.slug,
             name: destination.name,
+            summary: destination.summary,
             media: destination.media,
             location: destination.location,
             isFeatured: destination.isFeatured,
             averageRating: destination.averageRating,
             reviewsCount: destination.reviewsCount,
-            accommodationsCount: destination.accommodationsCount,
-            country: destination.location?.country
+            accommodationsCount: destination.accommodationsCount
         });
     });
 
@@ -65,7 +66,9 @@ describe('DestinationService.getSummary', () => {
         // Arrange
         asMock(modelMock.findById).mockResolvedValue(null);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetSummaryInput = { destinationId: 'nonexistent' };
+        const params: GetDestinationSummaryInput = {
+            destinationId: getMockId('destination') as any
+        };
 
         // Act
         const result = await service.getSummary(actor, params);
@@ -79,7 +82,7 @@ describe('DestinationService.getSummary', () => {
         const destination = new DestinationFactoryBuilder().with({ location: undefined }).build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetSummaryInput = { destinationId: destination.id };
+        const params: GetDestinationSummaryInput = { destinationId: destination.id };
 
         // Act
         const result = await service.getSummary(actor, params);
@@ -92,7 +95,9 @@ describe('DestinationService.getSummary', () => {
         // Arrange
         asMock(modelMock.findById).mockRejectedValue(new Error('DB error'));
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetSummaryInput = { destinationId: 'dest-1' };
+        const params: GetDestinationSummaryInput = {
+            destinationId: getMockId('destination') as any
+        };
 
         // Act
         const result = await service.getSummary(actor, params);
@@ -104,7 +109,7 @@ describe('DestinationService.getSummary', () => {
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // Arrange
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params = { destinationId: '' };
+        const params = { destinationId: '' as any };
 
         // Act
         const result = await service.getSummary(actor, params);
@@ -120,7 +125,7 @@ describe('DestinationService.getSummary', () => {
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
-        const params: GetSummaryInput = { destinationId: destination.id };
+        const params: GetDestinationSummaryInput = { destinationId: destination.id };
 
         // Act
         const result = await service.getSummary(actor, params);

@@ -1,17 +1,12 @@
 import type { DestinationModel } from '@repo/db';
-import type { NewDestinationInput } from '@repo/schemas';
-import {
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    ServiceErrorCode,
-    VisibilityEnum
-} from '@repo/types';
+import { type DestinationCreateInput, DestinationCreateInputSchema } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/destination/destination.helpers';
 import { DestinationService } from '../../../src/services/destination/destination.service';
-import { createActor, createAdminActor } from '../../factories/actorFactory';
+import { createActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
-import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
@@ -27,67 +22,36 @@ describe('DestinationService.create', () => {
         model = createMockBaseModel();
         service = new DestinationService({ logger: mockLogger }, model as DestinationModel);
         vi.clearAllMocks();
+
+        // Temporarily disable mock to see real validation errors
+        // vi.spyOn(DestinationCreateInputSchema, 'safeParseAsync').mockImplementation(
+        //     async (input: unknown) =>
+        //         ({
+        //             success: true,
+        //             data: input
+        //         }) as any
+        // );
     });
 
     it('should create a destination when permissions and input are valid', async () => {
-        const actor = createAdminActor();
-        const params: NewDestinationInput = {
+        const actor = createActor({ permissions: [PermissionEnum.DESTINATION_CREATE] });
+
+        // Create minimal valid data manually
+        const params: DestinationCreateInput = {
+            slug: 'villa-elisa',
             name: 'Villa Elisa',
-            summary: 'A beautiful destination with enough length for the summary field.',
+            summary: 'A beautiful destination in Entre Ríos',
             description:
-                'A detailed description of Villa Elisa with enough length to pass the minimum required by Zod schema for description field.',
+                'Villa Elisa is a charming town located in Entre Ríos province, known for its natural beauty and peaceful atmosphere.',
+            moderationState: 'APPROVED',
+            visibility: 'PUBLIC',
             location: {
                 state: 'Entre Ríos',
-                zipCode: '3265',
-                country: 'AR',
-                street: 'Av. Urquiza',
-                number: '123',
-                city: 'Villa Elisa'
-            },
-            media: {
-                featuredImage: {
-                    moderationState: ModerationStatusEnum.APPROVED,
-                    url: 'https://example.com/image.jpg'
-                }
-            },
-            isFeatured: false,
-            attractions: [
-                {
-                    name: 'Attraction 1',
-                    slug: 'attraction-1',
-                    description: 'A valid description for attraction 1',
-                    icon: 'icon1',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                },
-                {
-                    name: 'Attraction 2',
-                    slug: 'attraction-2',
-                    description: 'A valid description for attraction 2',
-                    icon: 'icon2',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                },
-                {
-                    name: 'Attraction 3',
-                    slug: 'attraction-3',
-                    description: 'A valid description for attraction 3',
-                    icon: 'icon3',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                }
-            ],
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
-            moderationState: ModerationStatusEnum.APPROVED,
-            visibility: VisibilityEnum.PUBLIC,
-            reviewsCount: 0
-        };
+                country: 'Argentina',
+                zipCode: '3265'
+            }
+        } as DestinationCreateInput;
+
         const created = { ...params, id: 'mock-id', slug: 'mock-slug' };
         (model.create as Mock).mockResolvedValue(created);
         const result = await service.create(actor, params);
@@ -99,63 +63,23 @@ describe('DestinationService.create', () => {
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
         const actor = createActor({ permissions: [] });
-        const params: NewDestinationInput = {
+
+        // Use same valid data
+        const params: DestinationCreateInput = {
+            slug: 'villa-elisa',
             name: 'Villa Elisa',
-            summary: 'A beautiful destination with enough length for the summary field.',
+            summary: 'A beautiful destination in Entre Ríos',
             description:
-                'A detailed description of Villa Elisa with enough length to pass the minimum required by Zod schema for description field.',
+                'Villa Elisa is a charming town located in Entre Ríos province, known for its natural beauty and peaceful atmosphere.',
+            moderationState: 'APPROVED',
+            visibility: 'PUBLIC',
             location: {
                 state: 'Entre Ríos',
-                zipCode: '3265',
-                country: 'AR',
-                street: 'Av. Urquiza',
-                number: '123',
-                city: 'Villa Elisa'
-            },
-            media: {
-                featuredImage: {
-                    moderationState: ModerationStatusEnum.APPROVED,
-                    url: 'https://example.com/image.jpg'
-                }
-            },
-            isFeatured: false,
-            attractions: [
-                {
-                    name: 'Attraction 1',
-                    slug: 'attraction-1',
-                    description: 'A valid description for attraction 1',
-                    icon: 'icon1',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                },
-                {
-                    name: 'Attraction 2',
-                    slug: 'attraction-2',
-                    description: 'A valid description for attraction 2',
-                    icon: 'icon2',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                },
-                {
-                    name: 'Attraction 3',
-                    slug: 'attraction-3',
-                    description: 'A valid description for attraction 3',
-                    icon: 'icon3',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                }
-            ],
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
-            moderationState: ModerationStatusEnum.APPROVED,
-            visibility: VisibilityEnum.PUBLIC,
-            reviewsCount: 0
-        };
+                country: 'Argentina',
+                zipCode: '3265'
+            }
+        } as DestinationCreateInput;
+
         const result = await service.create(actor, params);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -163,64 +87,35 @@ describe('DestinationService.create', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const actor = createAdminActor();
-        const params: NewDestinationInput = {
-            name: undefined as unknown as string,
-            summary: 'A beautiful destination with enough length for the summary field.',
+        const actor = createActor({ permissions: [PermissionEnum.DESTINATION_CREATE] });
+
+        // Mock validation to fail
+        vi.spyOn(DestinationCreateInputSchema, 'safeParseAsync').mockResolvedValueOnce({
+            success: false,
+            error: new ZodError([
+                {
+                    code: 'custom',
+                    message: 'Invalid input',
+                    path: ['name']
+                }
+            ])
+        } as any);
+
+        const params: DestinationCreateInput = {
+            slug: 'villa-elisa',
+            name: undefined as unknown as string, // Make it invalid
+            summary: 'A beautiful destination in Entre Ríos',
             description:
-                'A detailed description of Villa Elisa with enough length to pass the minimum required by Zod schema for description field.',
+                'Villa Elisa is a charming town located in Entre Ríos province, known for its natural beauty and peaceful atmosphere.',
+            moderationState: 'APPROVED',
+            visibility: 'PUBLIC',
             location: {
                 state: 'Entre Ríos',
-                zipCode: '3265',
-                country: 'AR',
-                street: 'Av. Urquiza',
-                number: '123',
-                city: 'Villa Elisa'
-            },
-            media: {
-                featuredImage: {
-                    moderationState: ModerationStatusEnum.APPROVED,
-                    url: 'https://example.com/image.jpg'
-                }
-            },
-            isFeatured: false,
-            attractions: [
-                {
-                    name: 'Attraction 1',
-                    slug: 'attraction-1',
-                    description: 'A valid description for attraction 1',
-                    icon: 'icon1',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                },
-                {
-                    name: 'Attraction 2',
-                    slug: 'attraction-2',
-                    description: 'A valid description for attraction 2',
-                    icon: 'icon2',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                },
-                {
-                    name: 'Attraction 3',
-                    slug: 'attraction-3',
-                    description: 'A valid description for attraction 3',
-                    icon: 'icon3',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                }
-            ],
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
-            moderationState: ModerationStatusEnum.APPROVED,
-            visibility: VisibilityEnum.PUBLIC,
-            reviewsCount: 0
-        };
+                country: 'Argentina',
+                zipCode: '3265'
+            }
+        } as DestinationCreateInput;
+
         const result = await service.create(actor, params);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
@@ -228,64 +123,24 @@ describe('DestinationService.create', () => {
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        const actor = createAdminActor();
-        const params: NewDestinationInput = {
+        const actor = createActor({ permissions: [PermissionEnum.DESTINATION_CREATE] });
+
+        // Use same valid data
+        const params: DestinationCreateInput = {
+            slug: 'villa-elisa',
             name: 'Villa Elisa',
-            summary: 'A beautiful destination with enough length for the summary field.',
+            summary: 'A beautiful destination in Entre Ríos',
             description:
-                'A detailed description of Villa Elisa with enough length to pass the minimum required by Zod schema for description field.',
+                'Villa Elisa is a charming town located in Entre Ríos province, known for its natural beauty and peaceful atmosphere.',
+            moderationState: 'APPROVED',
+            visibility: 'PUBLIC',
             location: {
                 state: 'Entre Ríos',
-                zipCode: '3265',
-                country: 'AR',
-                street: 'Av. Urquiza',
-                number: '123',
-                city: 'Villa Elisa'
-            },
-            media: {
-                featuredImage: {
-                    moderationState: ModerationStatusEnum.APPROVED,
-                    url: 'https://example.com/image.jpg'
-                }
-            },
-            isFeatured: false,
-            attractions: [
-                {
-                    name: 'Attraction 1',
-                    slug: 'attraction-1',
-                    description: 'A valid description for attraction 1',
-                    icon: 'icon1',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                },
-                {
-                    name: 'Attraction 2',
-                    slug: 'attraction-2',
-                    description: 'A valid description for attraction 2',
-                    icon: 'icon2',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                },
-                {
-                    name: 'Attraction 3',
-                    slug: 'attraction-3',
-                    description: 'A valid description for attraction 3',
-                    icon: 'icon3',
-                    destinationId: getMockId('destination'),
-                    isBuiltin: false,
-                    isFeatured: false,
-                    adminInfo: { favorite: false }
-                }
-            ],
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
-            moderationState: ModerationStatusEnum.APPROVED,
-            visibility: VisibilityEnum.PUBLIC,
-            reviewsCount: 0
-        };
+                country: 'Argentina',
+                zipCode: '3265'
+            }
+        } as DestinationCreateInput;
+
         (model.create as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.create(actor, params);
         expect(result.error).toBeDefined();

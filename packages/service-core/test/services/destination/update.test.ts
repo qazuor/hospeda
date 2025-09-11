@@ -1,5 +1,5 @@
 import type { DestinationModel } from '@repo/db';
-import { type UpdateDestinationInput, UpdateDestinationServiceSchema } from '@repo/schemas';
+import { type DestinationUpdateInput, DestinationUpdateInputSchema } from '@repo/schemas';
 import { type DestinationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
@@ -16,10 +16,10 @@ const mockLogger = createLoggerMock();
 beforeEach(() => {
     vi.spyOn(helpers, 'generateDestinationSlug').mockResolvedValue('mock-slug');
     // Mock safeParseAsync for validation
-    vi.spyOn(UpdateDestinationServiceSchema, 'safeParseAsync').mockImplementation(
+    vi.spyOn(DestinationUpdateInputSchema, 'safeParseAsync').mockImplementation(
         async (input: unknown) => {
             const typedInput = input as unknown as import('zod').infer<
-                typeof UpdateDestinationServiceSchema
+                typeof DestinationUpdateInputSchema
             >;
             if (
                 typedInput &&
@@ -36,14 +36,14 @@ beforeEach(() => {
                         }
                     ])
                 } as unknown as Awaited<
-                    ReturnType<(typeof UpdateDestinationServiceSchema)['safeParseAsync']>
+                    ReturnType<(typeof DestinationUpdateInputSchema)['safeParseAsync']>
                 >;
             }
             return {
                 success: true,
                 data: typedInput
             } as unknown as Awaited<
-                ReturnType<(typeof UpdateDestinationServiceSchema)['safeParseAsync']>
+                ReturnType<(typeof DestinationUpdateInputSchema)['safeParseAsync']>
             >;
         }
     );
@@ -70,7 +70,7 @@ describe('DestinationService.update', () => {
             updatedById: getMockId('user') as DestinationType['updatedById']
         };
         const updateInput = { name: 'Updated Name' } as unknown as import('zod').infer<
-            typeof UpdateDestinationServiceSchema
+            typeof DestinationUpdateInputSchema
         >;
         (model.findById as Mock).mockResolvedValue(existing);
         (model.update as Mock).mockResolvedValue({ ...existing, ...updateInput });
@@ -100,7 +100,7 @@ describe('DestinationService.update', () => {
         (model.findById as Mock).mockResolvedValue(existing);
         const result = await service.update(actor, id, {
             name: 'Updated Name'
-        } as unknown as import('zod').infer<typeof UpdateDestinationServiceSchema>);
+        } as unknown as import('zod').infer<typeof DestinationUpdateInputSchema>);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
@@ -120,7 +120,7 @@ describe('DestinationService.update', () => {
         (model.findById as Mock).mockResolvedValue(existing);
         const result = await service.update(actor, id, {
             name: undefined
-        } as unknown as import('zod').infer<typeof UpdateDestinationServiceSchema>);
+        } as unknown as import('zod').infer<typeof DestinationUpdateInputSchema>);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(result.data).toBeUndefined();
@@ -132,7 +132,7 @@ describe('DestinationService.update', () => {
         (model.findById as Mock).mockResolvedValue(null);
         const result = await service.update(actor, id, {
             name: 'Updated Name'
-        } as unknown as import('zod').infer<typeof UpdateDestinationServiceSchema>);
+        } as unknown as import('zod').infer<typeof DestinationUpdateInputSchema>);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(result.data).toBeUndefined();
@@ -153,7 +153,7 @@ describe('DestinationService.update', () => {
         (model.update as Mock).mockRejectedValue(new Error('DB error'));
         const result = await service.update(actor, id, {
             name: 'Updated Name'
-        } as UpdateDestinationInput);
+        } as DestinationUpdateInput);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();
