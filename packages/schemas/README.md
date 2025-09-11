@@ -174,7 +174,6 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/common/location.schema.ts | common | BaseLocationSchema | BaseLocation | Base Location Schema Represents basic location information without full address details Matches BaseLocationType from @repo/types |
 | src/common/location.schema.ts | common | CoordinatesSchema | Coordinates | Coordinates Schema Represents geographic coordinates with latitude and longitude Matches CoordinatesType from @repo/types |
 | src/common/location.schema.ts | common | FullLocationSchema | FullLocation | Full Location Schema Represents complete location information with full address details Matches FullLocationType from @repo/types |
-| src/common/location.schema.ts | common | LocationSchema | Location | Legacy Location Schema (for backward compatibility) @deprecated Use FullLocationSchema instead |
 | src/common/media.schema.ts | common | ImageSchema | Image |  |
 | src/common/media.schema.ts | common | MediaSchema | Media |  |
 | src/common/media.schema.ts | common | VideoSchema | Video |  |
@@ -396,7 +395,7 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/event/event.crud.schema.ts | event | EventUpdateInputSchema | EventUpdateInput | Schema for updating an event (PUT - complete replacement) Omits auto-generated fields and makes all fields partial |
 | src/entities/event/event.crud.schema.ts | event | EventUpdateOutputSchema | EventUpdateOutput | Schema for event update response Returns the complete updated event object |
 | src/entities/event/event.date.schema.ts | event | EventDateSchema |  |  |
-| src/entities/event/event.location.schema.ts | event | EventLocationSchema | EventLocationInput | Event Location schema definition using Zod for validation. |
+| src/entities/eventLocation/eventLocation.schema.ts | eventLocation | EventLocationSchema | EventLocation | Event Location schema definition using Zod for validation. |
 | src/entities/event/event.organizer.schema.ts | event | EventOrganizerSchema | EventOrganizer | Event Organizer Schema - using Base Field Objects This schema represents the organizer details for an event. |
 | src/entities/event/event.price.schema.ts | event | EventPriceSchema | EventPrice | Event Price Schema - using Base Field Objects This schema represents the price details for an event. |
 | src/entities/event/event.query.schema.ts | event | EventFiltersSchema | EventFilters | Event Query Schemas This file contains all schemas related to querying events: - List (input/output/item) - Search (input/output/result) - Summary - Stats - Filters / // ===========================… |

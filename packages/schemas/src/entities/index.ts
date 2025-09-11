@@ -5,6 +5,7 @@ export * from './attraction/index.js';
 export * from './destination/index.js';
 export * from './destinationReview/index.js';
 export * from './event/index.js';
+export * from './eventLocation/index.js';
 export * from './feature/index.js';
 export * from './payment/index.js';
 export * from './post/index.js';
