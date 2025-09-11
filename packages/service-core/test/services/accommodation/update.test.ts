@@ -34,9 +34,11 @@ beforeEach(() => {
                             path: ['name']
                         }
                     ])
-                };
+                } as z.ZodSafeParseError<z.infer<typeof AccommodationUpdateInputSchema>>;
             }
-            return { success: true, data: typedInput };
+            return { success: true, data: typedInput } as z.ZodSafeParseSuccess<
+                z.infer<typeof AccommodationUpdateInputSchema>
+            >;
         }
     );
 });
@@ -86,14 +88,16 @@ describe('AccommodationService.update', () => {
         // Arrange
         const actor = createAdminActor();
         const id = 'mock-id';
+        const updateInput = { name: 'a' }; // Too short name should fail validation (min 3 chars)
         const existing = { ...createNewAccommodationInput(), id };
         (model.findById as Mock).mockResolvedValue(existing);
 
+        // Restore original safeParseAsync for this test to use real validation
+        vi.restoreAllMocks();
+        vi.spyOn(helpers, 'generateSlug').mockResolvedValue('mock-slug');
+
         // Act - Send invalid data that should fail validation
-        const result = await service.update(actor, id, {
-            name: '', // Empty name should fail validation
-            type: 'INVALID_TYPE' // Invalid type should fail validation
-        } as unknown as Parameters<AccommodationService['update']>[2]);
+        const result = await service.update(actor, id, updateInput);
 
         // Assert
         expect(result.error).toBeDefined();

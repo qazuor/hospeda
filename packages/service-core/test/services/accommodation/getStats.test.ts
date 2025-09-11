@@ -9,9 +9,7 @@ import type { AccommodationModel } from '@repo/db';
 import { ServiceErrorCode } from '@repo/types';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { z } from 'zod';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
-import type { GetAccommodationSchema } from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
@@ -42,7 +40,7 @@ describe('AccommodationService.getStats', () => {
     let modelMock: Mocked<AccommodationModel>;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
-    let input: z.infer<typeof GetAccommodationSchema>;
+    let input: { idOrSlug: string };
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -100,7 +98,7 @@ describe('AccommodationService.getStats', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.getStats(actor, {});
+        const result = await service.getStats(actor, { idOrSlug: 'invalid_slug!' });
         expectValidationError(result);
     });
 });
