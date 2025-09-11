@@ -1,7 +1,6 @@
-import type { z } from 'zod';
+import type { EventLocationCreateInput, EventLocationUpdateInput } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo } from '../../utils';
-import type { CreateEventLocationSchema, UpdateEventLocationSchema } from './eventLocation.schemas';
 
 /**
  * Normalizes the input data for creating an event location.
@@ -11,14 +10,14 @@ import type { CreateEventLocationSchema, UpdateEventLocationSchema } from './eve
  * @returns The normalized data.
  */
 export const normalizeCreateInput = (
-    data: z.infer<typeof CreateEventLocationSchema>,
+    data: EventLocationCreateInput,
     _actor: Actor
-): z.infer<typeof CreateEventLocationSchema> => {
+): EventLocationCreateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
 
     return {
         ...(adminInfo ? { adminInfo } : {}),
-        // LocationSchema fields
+        // BaseLocationSchema fields
         state: data.state?.trim(),
         zipCode: data.zipCode?.trim(),
         country: data.country?.trim(),
@@ -54,12 +53,12 @@ export const normalizeCreateInput = (
  * @returns The normalized data.
  */
 export const normalizeUpdateInput = (
-    data: z.infer<typeof UpdateEventLocationSchema>,
+    data: EventLocationUpdateInput,
     _actor: Actor
-): z.infer<typeof UpdateEventLocationSchema> => {
+): EventLocationUpdateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
 
-    const result: z.infer<typeof UpdateEventLocationSchema> = {
+    const result: EventLocationUpdateInput = {
         ...(adminInfo ? { adminInfo } : {})
     };
 
