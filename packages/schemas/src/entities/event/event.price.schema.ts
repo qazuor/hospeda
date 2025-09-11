@@ -8,11 +8,14 @@ import { PriceCurrencyEnumSchema } from '../../enums/index.js';
  * Migrated from legacy PriceSchema.extend pattern to use direct z.object.
  */
 export const EventPriceSchema = z.object({
-    // Basic price fields
-    price: z.number().positive({
-        message: 'zodError.event.price.price.positive'
-    }),
-    currency: PriceCurrencyEnumSchema,
+    // Basic price fields (optional to match BasePriceType)
+    price: z
+        .number()
+        .positive({
+            message: 'zodError.event.price.price.positive'
+        })
+        .optional(),
+    currency: PriceCurrencyEnumSchema.optional(),
 
     // Event-specific price fields
     isFree: z.boolean({ message: 'zodError.event.price.isFree.required' }),

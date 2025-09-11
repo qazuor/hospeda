@@ -420,6 +420,14 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/event/event.relations.schema.ts | event | EventWithSeriesSchema | EventWithSeries | Event with series information Includes related events in the same series |
 | src/entities/event/event.relations.schema.ts | event | EventWithTicketsSchema | EventWithTickets | Event with tickets Includes an array of ticket types for the event |
 | src/entities/event/event.schema.ts | event | EventSchema | Event | Event Schema - Main Entity Schema This schema defines the complete structure of an Event entity using base field objects for consistency and maintainability. |
+| src/entities/event/event.query.schema.ts | event | EventByAuthorInputSchema | EventByAuthorInput | Schema for getting events by author - Used by EventService.getByAuthor method |
+| src/entities/event/event.query.schema.ts | event | EventByLocationInputSchema | EventByLocationInput | Schema for getting events by location - Used by EventService.getByLocation method |
+| src/entities/event/event.query.schema.ts | event | EventByOrganizerInputSchema | EventByOrganizerInput | Schema for getting events by organizer - Used by EventService.getByOrganizer method |
+| src/entities/event/event.query.schema.ts | event | EventByCategoryInputSchema | EventByCategoryInput | Schema for getting events by category - Used by EventService.getByCategory method |
+| src/entities/event/event.query.schema.ts | event | EventUpcomingInputSchema | EventUpcomingInput | Schema for getting upcoming events - Used by EventService.getUpcoming method |
+| src/entities/event/event.query.schema.ts | event | EventFreeInputSchema | EventFreeInput | Schema for getting free events - Used by EventService.getFreeEvents method |
+| src/entities/event/event.query.schema.ts | event | EventSummaryInputSchema | EventSummaryInput | Schema for getting event summary - Used by EventService.getSummary method |
+| src/entities/event/event.query.schema.ts | event | EventSummaryOutputSchema | EventSummaryOutput | Schema for event summary output - Used by EventService.getSummary method response |
 
 ### feature
 
