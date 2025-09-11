@@ -8,13 +8,6 @@
         "allowImportingTsExtensions": true,
         "noEmit": true
     },
-    "include": [
-        "src/**/*",
-        "test/services/accommodation/**/*",
-        "test/services/accommodationReview/**/*",
-        "test/services/amenity/**/*",
-        "test/services/attraction/**/*",
-        "test/services/destination/**/*"
-    ],
+    "include": ["src/**/*", "test/**/*"],
     "exclude": ["dist", "node_modules", "**/*.spec.ts"]
 }
