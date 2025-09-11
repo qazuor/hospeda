@@ -316,9 +316,34 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/destination/destination.relations.schema.ts | destination | DestinationWithNearbySchema | DestinationWithNearby | Destination with nearby destinations Includes related/nearby destinations for discovery |
 | src/entities/destination/destination.relations.schema.ts | destination | DestinationWithPostsSchema | DestinationWithPosts | Destination with posts Includes blog posts/articles about this destination |
 | src/entities/destination/destination.relations.schema.ts | destination | DestinationWithReviewsSchema | DestinationWithReviews | Destination with reviews Includes reviews for this destination |
-| src/entities/destination/destination.review.schema.ts | destination | DestinationReviewCreateInputSchema |  | Input schema for creating a Destination Review (sin campos de auditoría ni id) |
-| src/entities/destination/destination.review.schema.ts | destination | DestinationReviewSchema |  | Destination Review schema definition using Zod for validation. |
 | src/entities/destination/destination.schema.ts | destination | DestinationSchema | Destination | Destination Schema - Main Entity Schema This schema defines the complete structure of a Destination entity using base field objects for consistency and maintainability. |
+
+### destinationReview
+
+| filePath | entidad | schema | type inferido/asociado | commentario |
+|---|---|---|---|---|
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewCreateInputSchema | DestinationReviewCreateInput | Schema for creating a new destination review Omits auto-generated fields like id and audit fields |
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewCreateOutputSchema | DestinationReviewCreateOutput | Schema for destination review creation response Returns the complete destination review object |
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewUpdateInputSchema | DestinationReviewUpdateInput | Schema for updating a destination review (PUT - complete replacement) Omits auto-generated fields and makes all fields partial except required ones |
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewPatchInputSchema | DestinationReviewPatchInput | Schema for partial destination review updates (PATCH) Same as update but explicitly named for clarity |
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewUpdateOutputSchema | DestinationReviewUpdateOutput | Schema for destination review update response Returns the complete updated destination review object |
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewDeleteInputSchema | DestinationReviewDeleteInput | Schema for destination review deletion input Requires ID and optional force flag for hard delete |
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewDeleteOutputSchema | DestinationReviewDeleteOutput | Schema for destination review deletion response Returns success status and deletion timestamp |
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewRestoreInputSchema | DestinationReviewRestoreInput | Schema for destination review restoration input Requires only the destination review ID |
+| src/entities/destinationReview/destinationReview.crud.schema.ts | destinationReview | DestinationReviewRestoreOutputSchema | DestinationReviewRestoreOutput | Schema for destination review restoration response Returns the complete restored destination review object |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewSearchFiltersSchema | DestinationReviewSearchFilters | Schema for destination review search filters Extends base search with destination review specific filters |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewSearchInputSchema | DestinationReviewSearchInput | Schema for destination review search input Combines base search with destination review specific filters |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewSearchOutputSchema | DestinationReviewSearchOutput | Schema for destination review search output Returns paginated list of destination reviews |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewListInputSchema | DestinationReviewListInput | Schema for destination review list input Simple pagination without complex filtering |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewListOutputSchema | DestinationReviewListOutput | Schema for destination review list output Returns paginated list of destination reviews |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewWithUserSchema | DestinationReviewWithUser | Schema for destination review list with user information Extends the review with user details |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewListWithUserOutputSchema | DestinationReviewListWithUserOutput | Schema for destination review list with user output Returns paginated list of destination reviews with user information |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewCountInputSchema | DestinationReviewCountInput | Schema for destination review count input Uses same filters as search but only returns count |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewCountOutputSchema | DestinationReviewCountOutput | Schema for destination review count output Returns the total count of matching reviews |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewStatsSchema | DestinationReviewStats | Schema for destination review stats by destination Aggregated statistics for a specific destination |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewStatsInputSchema | DestinationReviewStatsInput | Schema for destination review stats input Requires destination ID and optional date range |
+| src/entities/destinationReview/destinationReview.query.schema.ts | destinationReview | DestinationReviewStatsOutputSchema | DestinationReviewStatsOutput | Schema for destination review stats output Returns aggregated statistics |
+| src/entities/destinationReview/destinationReview.schema.ts | destinationReview | DestinationReviewSchema | DestinationReview | Destination Review schema definition using Zod for validation. Represents a review for a destination. |
 
 ### enums
 
