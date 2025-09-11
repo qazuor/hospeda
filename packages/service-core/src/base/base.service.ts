@@ -64,6 +64,7 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
                 logError(`${this.entityName}.${methodName}`, error, params, actor);
                 return { error };
             }
+
             if (!validationResult.success) {
                 const zodError = validationResult.error;
                 const fieldErrors = zodError.flatten().fieldErrors;
