@@ -1,9 +1,6 @@
+import type { AttractionCreateInput, AttractionUpdateInput } from '@repo/schemas';
 import { RoleEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
-import type {
-    AttractionCreateInput,
-    AttractionUpdateInput
-} from '../../../../schemas/src/entities/attraction/attraction.crud.schema';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -19,9 +16,10 @@ describe('Attraction Normalizers', () => {
             name: 'Test Attraction',
             description: 'A valid description for the attraction',
             icon: '🎡',
-            destinationId: 'dest-1',
+            destinationId: 'dest-1' as any,
             isFeatured: true,
             isBuiltin: false,
+            lifecycleState: 'ACTIVE' as any,
             adminInfo: { favorite: true, notes: 'test' },
             extraField: 'should be ignored'
         };
@@ -40,14 +38,12 @@ describe('Attraction Normalizers', () => {
 
     it('normalizeUpdateInput normalizes adminInfo y deja campos extra intactos', () => {
         const input: AttractionUpdateInput & { extraField?: string } = {
-            id: 'attr-1',
             name: 'Test Attraction',
             adminInfo: { favorite: false },
             extraField: 'should be ignored'
         };
         const result = normalizeUpdateInput(input, testActor);
         expect(result).toMatchObject({
-            id: input.id,
             name: input.name,
             adminInfo: { favorite: false }
         });
