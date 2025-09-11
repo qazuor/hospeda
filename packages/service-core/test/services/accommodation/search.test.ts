@@ -63,7 +63,7 @@ describe('AccommodationService.search', () => {
         if (!entities[0]) {
             throw new Error('Expected at least one entity in entities');
         }
-        const filters = { types: [entities[0].type] };
+        const filters = { type: entities[0].type };
         const result = await service.search(actor, {
             filters,
             pagination: { page: 1, pageSize: 2 }

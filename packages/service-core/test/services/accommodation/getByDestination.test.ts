@@ -103,7 +103,7 @@ describe('AccommodationService.getByDestination', () => {
         vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
         modelMock.findAll.mockResolvedValue({ items: [], total: 0 });
         const result = await service.getByDestination(actor, {
-            destinationId: '00000000-0000-0000-0000-000000000000'
+            destinationId: '00000000-0000-0000-0000-000000000000' as any
         });
         expectSuccess(result);
         expect(result.data).toEqual([]);

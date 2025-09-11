@@ -52,7 +52,9 @@ describe('AccommodationService.create', () => {
             ...createNewAccommodationInput(),
             reviewsCount: 0,
             averageRating: 0,
-            tags: []
+            tags: [],
+            features: undefined,
+            schedule: undefined
         };
         const created = { ...input, id: 'mock-id', slug: 'mock-slug' };
         (model.create as Mock).mockResolvedValue(created);
@@ -72,7 +74,9 @@ describe('AccommodationService.create', () => {
             ...createNewAccommodationInput(),
             reviewsCount: 0,
             averageRating: 0,
-            tags: []
+            tags: [],
+            features: undefined,
+            schedule: undefined
         };
         // Act
         const result = await service.create(actor, input);
@@ -90,7 +94,9 @@ describe('AccommodationService.create', () => {
             name: undefined,
             reviewsCount: 0,
             averageRating: 0,
-            tags: []
+            tags: [],
+            features: undefined,
+            schedule: undefined
         };
         // Act
         const result = await service.create(
@@ -110,7 +116,9 @@ describe('AccommodationService.create', () => {
             ...createNewAccommodationInput(),
             reviewsCount: 0,
             averageRating: 0,
-            tags: []
+            tags: [],
+            features: undefined,
+            schedule: undefined
         };
         (model.create as Mock).mockRejectedValue(new Error('DB error'));
         // Act
