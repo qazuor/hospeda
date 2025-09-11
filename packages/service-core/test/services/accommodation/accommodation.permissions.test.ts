@@ -99,7 +99,10 @@ describe('Accommodation Permissions', () => {
             checkCanCreate(createActor([PermissionEnum.ACCOMMODATION_CREATE]), {
                 ...createAccommodation({ ownerId: mockUserId }),
                 reviewsCount: 1,
-                tags: [mockTag]
+                averageRating: 4.5,
+                tags: [mockTag],
+                features: undefined,
+                schedule: undefined
             })
         ).not.toThrow();
     });
@@ -109,7 +112,10 @@ describe('Accommodation Permissions', () => {
                 checkCanCreate(createActor([]), {
                     ...createAccommodation({ ownerId: mockUserId }),
                     reviewsCount: 1,
-                    tags: [mockTag]
+                    averageRating: 4.5,
+                    tags: [mockTag],
+                    features: undefined,
+                    schedule: undefined
                 }),
             'Permission denied to create accommodation'
         );
