@@ -1,5 +1,5 @@
 {
     "extends": "../typescript-config/package-base.json",
     "include": ["src/**/*", "test/**/*"],
-    "exclude": ["dist", "node_modules", "**/*.test.ts", "**/*.spec.ts"]
+    "exclude": ["dist", "node_modules", "**/*.spec.ts"]
 }
