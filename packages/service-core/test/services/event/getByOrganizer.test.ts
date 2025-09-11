@@ -44,13 +44,17 @@ describe('EventService.getByOrganizer', () => {
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 2 });
         // Act
-        const result = await service.getByOrganizer(actorWithPerm, { organizerId });
+        const result = await service.getByOrganizer(actorWithPerm, {
+            organizerId,
+            page: 1,
+            pageSize: 10
+        });
         // Assert
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ organizerId }, { page: 1, pageSize: 20 });
+        expect(modelMock.findAll).toHaveBeenCalledWith({ organizerId }, { page: 1, pageSize: 10 });
     });
 
     it('should return only public events if actor lacks EVENT_SOFT_DELETE_VIEW', async () => {
@@ -58,7 +62,11 @@ describe('EventService.getByOrganizer', () => {
         const events = [createMockEvent({ organizerId, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
         // Act
-        const result = await service.getByOrganizer(actorNoPerm, { organizerId });
+        const result = await service.getByOrganizer(actorNoPerm, {
+            organizerId,
+            page: 1,
+            pageSize: 10
+        });
         // Assert
         expectSuccess(result);
         const { data } = result;
@@ -66,13 +74,17 @@ describe('EventService.getByOrganizer', () => {
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
             { organizerId, visibility: VisibilityEnum.PUBLIC },
-            { page: 1, pageSize: 20 }
+            { page: 1, pageSize: 10 }
         );
     });
 
     it('should throw forbidden if actor is undefined', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.getByOrganizer(undefined, { organizerId });
+        const result = await service.getByOrganizer(undefined, {
+            organizerId,
+            page: 1,
+            pageSize: 10
+        });
         expectUnauthorizedError(result);
     });
 
@@ -84,7 +96,11 @@ describe('EventService.getByOrganizer', () => {
 
     it('should return empty list if no events found', async () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-        const result = await service.getByOrganizer(actorWithPerm, { organizerId });
+        const result = await service.getByOrganizer(actorWithPerm, {
+            organizerId,
+            page: 1,
+            pageSize: 10
+        });
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
@@ -93,13 +109,21 @@ describe('EventService.getByOrganizer', () => {
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.getByOrganizer(actorWithPerm, { organizerId });
+        const result = await service.getByOrganizer(actorWithPerm, {
+            organizerId,
+            page: 1,
+            pageSize: 10
+        });
         expectInternalError(result);
     });
 
     it('should return UNAUTHORIZED if actor is missing', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.getByOrganizer(undefined, { organizerId });
+        const result = await service.getByOrganizer(undefined, {
+            organizerId,
+            page: 1,
+            pageSize: 10
+        });
         expectUnauthorizedError(result);
     });
 });

@@ -35,13 +35,17 @@ describe('EventService.getByCategory', () => {
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 2 });
         // Act
-        const result = await service.getByCategory(actorWithPerm, { category });
+        const result = await service.getByCategory(actorWithPerm, {
+            category,
+            page: 1,
+            pageSize: 10
+        });
         // Assert
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ category }, { page: 1, pageSize: 20 });
+        expect(modelMock.findAll).toHaveBeenCalledWith({ category }, { page: 1, pageSize: 10 });
     });
 
     it('should return only public events if actor lacks EVENT_SOFT_DELETE_VIEW', async () => {
@@ -49,7 +53,11 @@ describe('EventService.getByCategory', () => {
         const events = [createMockEvent({ category, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
         // Act
-        const result = await service.getByCategory(actorNoPerm, { category });
+        const result = await service.getByCategory(actorNoPerm, {
+            category,
+            page: 1,
+            pageSize: 10
+        });
         // Assert
         expectSuccess(result);
         const { data } = result;
@@ -57,13 +65,13 @@ describe('EventService.getByCategory', () => {
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
             { category, visibility: VisibilityEnum.PUBLIC },
-            { page: 1, pageSize: 20 }
+            { page: 1, pageSize: 10 }
         );
     });
 
     it('should throw unauthorized if actor is undefined', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.getByCategory(undefined, { category });
+        const result = await service.getByCategory(undefined, { category, page: 1, pageSize: 10 });
         expectUnauthorizedError(result);
     });
 
@@ -75,7 +83,11 @@ describe('EventService.getByCategory', () => {
 
     it('should return empty list if no events found', async () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-        const result = await service.getByCategory(actorWithPerm, { category });
+        const result = await service.getByCategory(actorWithPerm, {
+            category,
+            page: 1,
+            pageSize: 10
+        });
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
@@ -84,19 +96,27 @@ describe('EventService.getByCategory', () => {
 
     it('should throw internal error if model fails', async () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.getByCategory(actorWithPerm, { category });
+        const result = await service.getByCategory(actorWithPerm, {
+            category,
+            page: 1,
+            pageSize: 10
+        });
         expectInternalError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.getByCategory(actorWithPerm, { category });
+        const result = await service.getByCategory(actorWithPerm, {
+            category,
+            page: 1,
+            pageSize: 10
+        });
         expectInternalError(result);
     });
 
     it('should return UNAUTHORIZED if actor is missing', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.getByCategory(undefined, { category });
+        const result = await service.getByCategory(undefined, { category, page: 1, pageSize: 10 });
         expectUnauthorizedError(result);
     });
 });
