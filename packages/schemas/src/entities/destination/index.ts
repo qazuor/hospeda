@@ -12,4 +12,3 @@ export * from './destination.relations.schema.js'; // Schemas with related entit
 
 // Additional schemas
 export * from './destination.rating.schema.js';
-export * from './destination.review.schema.js';
