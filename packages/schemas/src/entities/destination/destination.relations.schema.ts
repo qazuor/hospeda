@@ -1,4 +1,12 @@
 import { z } from 'zod';
+import {
+    AccommodationIdSchema,
+    AttractionIdSchema,
+    DestinationReviewIdSchema,
+    EventIdSchema,
+    PostIdSchema,
+    UserIdSchema
+} from '../../common/id.schema.js';
 import { DestinationSchema } from './destination.schema.js';
 
 /**
@@ -25,7 +33,7 @@ import { DestinationSchema } from './destination.schema.js';
  * Contains essential accommodation information
  */
 const AccommodationSummarySchema = z.object({
-    id: z.string().uuid(),
+    id: AccommodationIdSchema,
     slug: z.string(),
     name: z.string(),
     summary: z.string(),
@@ -52,7 +60,7 @@ const AccommodationSummarySchema = z.object({
  * Contains essential attraction information
  */
 const AttractionSummarySchema = z.object({
-    id: z.string().uuid(),
+    id: AttractionIdSchema,
     name: z.string(),
     description: z.string().optional(),
     category: z.string().optional(),
@@ -81,11 +89,11 @@ const AttractionSummarySchema = z.object({
  * Contains essential review information
  */
 const ReviewSummarySchema = z.object({
-    id: z.string().uuid(),
+    id: DestinationReviewIdSchema,
     rating: z.number().min(1).max(5),
     title: z.string().optional(),
     comment: z.string().optional(),
-    userId: z.string().uuid(),
+    userId: UserIdSchema,
     userName: z.string().optional(),
     createdAt: z.date(),
     isVerified: z.boolean().optional()
@@ -96,7 +104,7 @@ const ReviewSummarySchema = z.object({
  * Contains essential event information
  */
 const EventSummarySchema = z.object({
-    id: z.string().uuid(),
+    id: EventIdSchema,
     slug: z.string(),
     name: z.string(),
     summary: z.string().optional(),
@@ -123,7 +131,7 @@ const EventSummarySchema = z.object({
  * Contains essential post information
  */
 const PostSummarySchema = z.object({
-    id: z.string().uuid(),
+    id: PostIdSchema,
     slug: z.string(),
     title: z.string(),
     summary: z.string().optional(),
@@ -132,7 +140,7 @@ const PostSummarySchema = z.object({
     isFeatured: z.boolean(),
     author: z
         .object({
-            id: z.string().uuid(),
+            id: UserIdSchema,
             displayName: z.string().optional(),
             firstName: z.string().optional(),
             lastName: z.string().optional()

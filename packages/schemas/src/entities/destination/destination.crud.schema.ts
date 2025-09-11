@@ -53,7 +53,9 @@ export const DestinationUpdateInputSchema = DestinationSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
-}).partial();
+})
+    .partial()
+    .strict();
 
 /**
  * Schema for partial destination updates (PATCH)
