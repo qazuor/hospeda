@@ -55,7 +55,13 @@ export const createMockEventInput = (
     overrides: Partial<Omit<EventType, 'id' | 'createdAt' | 'updatedAt'>> = {}
 ): Omit<EventType, 'id' | 'createdAt' | 'updatedAt'> => {
     const { id, createdAt, updatedAt, moderationState, tags, ...input } = getMockEvent();
-    return { ...input, ...overrides };
+    // Ensure moderationState is defined for the return type
+    const result = {
+        ...input,
+        moderationState: moderationState || ModerationStatusEnum.PENDING,
+        ...overrides
+    };
+    return result;
 };
 
 /**
