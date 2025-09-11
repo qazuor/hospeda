@@ -7,12 +7,11 @@
  */
 import type { AccommodationModel } from '@repo/db';
 import * as db from '@repo/db';
+import type { AccommodationFaqListInput } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { z } from 'zod';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
-import type { GetFaqsInputSchema } from '../../../src/services/accommodation/accommodation.schemas';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { AccommodationFactoryBuilder } from '../../factories/accommodationFactory';
@@ -44,7 +43,7 @@ describe('AccommodationService.getFaqs', () => {
     let faqModelMock: ReturnType<typeof createModelMock>;
     let actor: ReturnType<typeof ActorFactoryBuilder.prototype.build>;
     let accommodation: ReturnType<typeof AccommodationFactoryBuilder.prototype.build>;
-    let input: z.infer<typeof GetFaqsInputSchema>;
+    let input: AccommodationFaqListInput;
     let faqs: Array<{ id: string; question: string; answer: string; accommodationId: string }>;
 
     beforeEach(() => {
@@ -61,19 +60,19 @@ describe('AccommodationService.getFaqs', () => {
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
-        input = { accommodationId: accommodation.id };
+        input = { accommodationId: accommodation.id as any };
         faqs = [
             {
                 id: 'faq-1',
                 question: 'What is the check-in time?',
                 answer: 'Check-in is from 2:00 PM.',
-                accommodationId: accommodation.id
+                accommodationId: accommodation.id as any
             },
             {
                 id: 'faq-2',
                 question: 'Are pets allowed?',
                 answer: 'Yes, pets are allowed upon request.',
-                accommodationId: accommodation.id
+                accommodationId: accommodation.id as any
             }
         ];
         vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
@@ -88,8 +87,10 @@ describe('AccommodationService.getFaqs', () => {
         const result = await service.getFaqs(actor, input);
         expectSuccess(result);
         expect(result.data?.faqs).toEqual(faqs);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
-        expect(faqModelMock.findAll).toHaveBeenCalledWith({ accommodationId: accommodation.id });
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
+        expect(faqModelMock.findAll).toHaveBeenCalledWith({
+            accommodationId: accommodation.id as any
+        });
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);
     });
 
@@ -97,7 +98,7 @@ describe('AccommodationService.getFaqs', () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.getFaqs(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any);
     });
 
     it('should return FORBIDDEN if actor cannot view', async () => {
@@ -116,7 +117,9 @@ describe('AccommodationService.getFaqs', () => {
         vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
         const result = await service.getFaqs(actor, input);
         expectInternalError(result);
-        expect(faqModelMock.findAll).toHaveBeenCalledWith({ accommodationId: accommodation.id });
+        expect(faqModelMock.findAll).toHaveBeenCalledWith({
+            accommodationId: accommodation.id as any
+        });
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
