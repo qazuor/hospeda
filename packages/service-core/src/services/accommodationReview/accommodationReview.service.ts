@@ -14,7 +14,7 @@ import {
 } from '@repo/schemas';
 import type { AccommodationReviewType } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { calculateStatsFromReviews } from './accommodationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
@@ -94,7 +94,7 @@ export class AccommodationReviewService extends BaseCrudService<
     protected async _executeSearch(
         _params: AccommodationReviewSearchParams,
         _actor: Actor
-    ): Promise<import('../../types').PaginatedListOutput<AccommodationReviewType>> {
+    ): Promise<PaginatedListOutput<AccommodationReviewType>> {
         // TODO [e79b0be8-6523-4a9c-8a21-fd2072dc0111]: Implement search logic using Drizzle ORM
         throw new Error('Not implemented');
     }
