@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { ModerationStatusEnum, VisibilityEnum } from '@repo/types';
 // Types are inferred from the faker values, no explicit imports needed
 
 /**
@@ -23,11 +24,11 @@ export const createBaseLifecycleFields = () => ({
 });
 
 export const createBaseModerationFields = () => ({
-    moderationState: faker.helpers.arrayElement(['PENDING', 'APPROVED', 'REJECTED'])
+    moderationState: faker.helpers.arrayElement(Object.values(ModerationStatusEnum))
 });
 
 export const createBaseVisibilityFields = () => ({
-    visibility: faker.helpers.arrayElement(['PUBLIC', 'PRIVATE', 'RESTRICTED'])
+    visibility: faker.helpers.arrayElement(Object.values(VisibilityEnum))
 });
 
 export const createBaseReviewFields = () => ({

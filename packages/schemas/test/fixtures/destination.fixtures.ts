@@ -45,6 +45,7 @@ export const createValidDestination = () => ({
     slug: faker.helpers.slugify(faker.location.city()).toLowerCase(),
     summary: faker.lorem.paragraph().slice(0, 300),
     description: faker.lorem.paragraphs(3),
+    isFeatured: faker.datatype.boolean(),
 
     // Counts
     accommodationsCount: faker.number.int({ min: 0, max: 500 }),
@@ -77,14 +78,26 @@ export const createValidDestination = () => ({
         { probability: 0.8 }
     ),
 
-    // Rating breakdown
-    ratingBreakdown: {
+    // Rating breakdown - matching DestinationRatingSchema
+    rating: {
+        landscape: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
         attractions: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
-        accommodation: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
-        dining: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
-        transportation: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        accessibility: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
         safety: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
-        value: faker.number.float({ min: 1, max: 5, fractionDigits: 1 })
+        cleanliness: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        hospitality: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        culturalOffer: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        gastronomy: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        affordability: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        nightlife: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        infrastructure: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        environmentalCare: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        wifiAvailability: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        shopping: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        beaches: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        greenSpaces: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        localEvents: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+        weatherSatisfaction: faker.number.float({ min: 1, max: 5, fractionDigits: 1 })
     }
 });
 
@@ -144,6 +157,7 @@ export const createDestinationEdgeCases = (): any => ({
     name: 'ABC', // Minimum length (3 chars)
     summary: 'D'.repeat(10), // Minimum length
     description: 'E'.repeat(50), // Minimum length
+    isFeatured: false,
     seo: {
         title: 'F'.repeat(30), // Minimum SEO title length
         description: 'G'.repeat(70), // Minimum SEO description length
