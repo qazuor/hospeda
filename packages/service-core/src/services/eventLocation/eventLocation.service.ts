@@ -1,7 +1,11 @@
 import { EventLocationModel } from '@repo/db';
-import type { EventLocationType } from '@repo/types';
+import type { EventLocation, EventLocationSearchInput } from '@repo/schemas';
+import {
+    EventLocationCreateInputSchema,
+    EventLocationSearchInputSchema,
+    EventLocationUpdateInputSchema
+} from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/types';
-import type { z } from 'zod';
 import { BaseCrudService } from '../../base';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
@@ -11,11 +15,6 @@ import {
     checkCanDeleteEventLocation,
     checkCanUpdateEventLocation
 } from './eventLocation.permissions';
-import {
-    CreateEventLocationSchema,
-    SearchEventLocationSchema,
-    UpdateEventLocationSchema
-} from './eventLocation.schemas';
 
 type WhereWithOr = Record<string, unknown> & { or?: Array<Record<string, unknown>> };
 
@@ -24,19 +23,19 @@ type WhereWithOr = Record<string, unknown> & { or?: Array<Record<string, unknown
  * @extends BaseCrudService
  */
 export class EventLocationService extends BaseCrudService<
-    EventLocationType,
+    EventLocation,
     EventLocationModel,
-    typeof CreateEventLocationSchema,
-    typeof UpdateEventLocationSchema,
-    typeof SearchEventLocationSchema
+    typeof EventLocationCreateInputSchema,
+    typeof EventLocationUpdateInputSchema,
+    typeof EventLocationSearchInputSchema
 > {
     static readonly ENTITY_NAME = 'eventLocation';
     protected readonly entityName = EventLocationService.ENTITY_NAME;
     protected readonly model: EventLocationModel;
 
-    protected readonly createSchema = CreateEventLocationSchema;
-    protected readonly updateSchema = UpdateEventLocationSchema;
-    protected readonly searchSchema = SearchEventLocationSchema;
+    protected readonly createSchema = EventLocationCreateInputSchema;
+    protected readonly updateSchema = EventLocationUpdateInputSchema;
+    protected readonly searchSchema = EventLocationSearchInputSchema;
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
@@ -97,11 +96,13 @@ export class EventLocationService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        params: z.infer<typeof SearchEventLocationSchema>,
+        params: EventLocationSearchInput,
         _actor: Actor
-    ): Promise<PaginatedListOutput<EventLocationType>> {
+    ): Promise<PaginatedListOutput<EventLocation>> {
         try {
-            const { filters = {}, page = 1, pageSize = 20 } = params;
+            const { filters = {}, pagination } = params;
+            const page = pagination?.page || 1;
+            const pageSize = pagination?.pageSize || 20;
             const where: WhereWithOr = {};
             if (filters.city) where.city = filters.city;
             if (filters.state) where.state = filters.state;
@@ -124,7 +125,7 @@ export class EventLocationService extends BaseCrudService<
     }
 
     protected async _executeCount(
-        params: z.infer<typeof SearchEventLocationSchema>,
+        params: EventLocationSearchInput,
         _actor: Actor
     ): Promise<{ count: number }> {
         try {
@@ -158,10 +159,12 @@ export class EventLocationService extends BaseCrudService<
      */
     public async searchForList(
         actor: Actor,
-        params: z.infer<typeof SearchEventLocationSchema>
-    ): Promise<{ items: EventLocationType[]; total: number }> {
+        params: EventLocationSearchInput
+    ): Promise<{ items: EventLocation[]; total: number }> {
         this._canSearch(actor);
-        const { filters = {}, page = 1, pageSize = 10 } = params;
+        const { filters = {}, pagination } = params;
+        const page = pagination?.page || 1;
+        const pageSize = pagination?.pageSize || 10;
 
         const where: Record<string, unknown> = {};
 
