@@ -10,9 +10,9 @@ import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AttractionSchema } from '../attraction/attraction.schema.js';
+import { DestinationReviewSchema } from '../destinationReview/destinationReview.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
 import { DestinationRatingSchema } from './destination.rating.schema.js';
-import { DestinationReviewSchema } from './destination.review.schema.js';
 
 /**
  * Destination Schema - Main Entity Schema

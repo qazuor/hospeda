@@ -3,6 +3,7 @@ export * from './accommodationReview/index.js';
 export * from './amenity/index.js';
 export * from './attraction/index.js';
 export * from './destination/index.js';
+export * from './destinationReview/index.js';
 export * from './event/index.js';
 export * from './feature/index.js';
 export * from './payment/index.js';
