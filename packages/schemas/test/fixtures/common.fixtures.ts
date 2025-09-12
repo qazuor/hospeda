@@ -310,10 +310,7 @@ export const createInvalidUrl = () =>
 export const createInvalidUuid = () =>
     faker.helpers.arrayElement(['not-a-uuid', '123', '', 'invalid-uuid-format']);
 
-export const createTooLongString = (maxLength: number) =>
-    faker.lorem.words(Math.ceil(maxLength / 5)).repeat(10);
-
-export const createTooShortString = () => '';
+// Utility functions for string length testing
 
 /**
  * Creates a valid location object for testing
@@ -337,4 +334,17 @@ export const createValidLocation = () => ({
     neighborhood: faker.helpers.maybe(() => faker.location.county(), { probability: 0.6 }),
     city: faker.location.city(),
     department: faker.helpers.maybe(() => faker.location.state(), { probability: 0.5 })
+});
+
+export const createTooLongString = (length: number): string => {
+    return 'A'.repeat(length);
+};
+
+export const createTooShortString = (length?: number): string => {
+    return length ? 'A'.repeat(length) : '';
+};
+
+export const createBasePaginationParams = () => ({
+    page: faker.number.int({ min: 1, max: 10 }),
+    pageSize: faker.number.int({ min: 10, max: 50 })
 });
