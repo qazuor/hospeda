@@ -6,7 +6,7 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { PostModel } from '@repo/db';
-import { ServiceErrorCode } from '@repo/types';
+import { type PostId, ServiceErrorCode } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { ServiceError } from '../../../src/types';
@@ -28,7 +28,7 @@ describe('PostService.getSummary', () => {
     let modelMock: PostModel;
     let actor: ReturnType<typeof createActor>;
     let post: ReturnType<typeof createMockPost>;
-    let input: { id: string };
+    let input: { id: PostId };
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -36,7 +36,7 @@ describe('PostService.getSummary', () => {
         service = createServiceTestInstance(PostService, modelMock);
         actor = createActor();
         post = createMockPost();
-        input = { id: post.id };
+        input = { id: post.id as PostId };
     });
 
     it('should return summary for a post', async () => {
@@ -48,10 +48,11 @@ describe('PostService.getSummary', () => {
             slug: post.slug,
             title: post.title,
             category: post.category,
-            media: post.media,
+            lifecycleState: post.lifecycleState,
             isFeatured: post.isFeatured,
-            isNews: post.isNews,
-            createdAt: post.createdAt,
+            publishedAt: post.publishedAt,
+            readingTimeMinutes: post.readingTimeMinutes,
+            media: post.media,
             authorId: post.authorId,
             summary: post.summary
         });

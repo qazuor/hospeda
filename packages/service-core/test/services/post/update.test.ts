@@ -81,9 +81,31 @@ describe('PostService.update', () => {
         const id = 'mock-id';
         const existing = { ...createMockPost(), id };
         (modelMock.findById as Mock).mockResolvedValue(existing);
-        // purposely invalid input: missing required fields
-        const result = await service.update(actor, id, {} as any);
+        // purposely invalid input: invalid field type
+        const result = await service.update(actor, id, { title: 123 } as any);
         assertions.expectValidationError(result);
+    });
+
+    it('should update publishedAt and readingTimeMinutes fields', async () => {
+        const testPublishedAt = new Date('2024-03-15T14:30:00Z');
+        const testReadingTime = 8;
+        const updateData = {
+            title: 'Updated Title',
+            publishedAt: testPublishedAt,
+            readingTimeMinutes: testReadingTime
+        };
+
+        (modelMock.findById as Mock).mockResolvedValue(post);
+        (modelMock.update as Mock).mockResolvedValue({
+            ...post,
+            ...updateData
+        });
+
+        const result = await service.update(admin, post.id, updateData);
+        assertions.expectSuccess(result);
+        expect(result.data?.publishedAt).toEqual(testPublishedAt);
+        expect(result.data?.readingTimeMinutes).toBe(testReadingTime);
+        expect(result.data?.title).toBe('Updated Title');
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
