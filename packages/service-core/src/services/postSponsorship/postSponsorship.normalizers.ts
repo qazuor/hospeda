@@ -1,8 +1,5 @@
+import type { PostSponsorshipCreateInput, PostSponsorshipUpdateInput } from '@repo/schemas';
 import type { Actor } from '../../types';
-import type {
-    CreatePostSponsorshipInput,
-    UpdatePostSponsorshipInput
-} from './postSponsorship.schemas';
 
 /**
  * Normalizes the input data for creating a post sponsorship.
@@ -12,9 +9,9 @@ import type {
  * @returns The normalized data.
  */
 export const normalizeCreateInput = (
-    data: CreatePostSponsorshipInput,
+    data: PostSponsorshipCreateInput,
     _actor: Actor
-): CreatePostSponsorshipInput => {
+): PostSponsorshipCreateInput => {
     return {
         ...data,
         message: typeof data.message === 'string' ? data.message.trim() : data.message,
@@ -31,10 +28,10 @@ export const normalizeCreateInput = (
  * @returns The normalized data.
  */
 export const normalizeUpdateInput = (
-    data: UpdatePostSponsorshipInput,
+    data: PostSponsorshipUpdateInput,
     _actor: Actor
-): UpdatePostSponsorshipInput => {
-    const normalized: UpdatePostSponsorshipInput = { ...data };
+): PostSponsorshipUpdateInput => {
+    const normalized: PostSponsorshipUpdateInput = { ...data };
     if (typeof data.message === 'string') normalized.message = data.message.trim();
     if (typeof data.description === 'string') normalized.description = data.description.trim();
     // TODO [1cdd78c4-fc95-440d-bc92-8703a1868156]: normalize paid, dates if needed
