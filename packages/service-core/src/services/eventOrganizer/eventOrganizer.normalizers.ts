@@ -3,7 +3,7 @@
  * Contains functions to clean, validate, and standardize input data for event organizers.
  */
 
-import type { EventOrganizerType, UpdateEventOrganizerInputType } from '@repo/types';
+import type { EventOrganizerCreateInput, EventOrganizerUpdateInput } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
 
@@ -25,9 +25,9 @@ import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
  * ```
  */
 export const normalizeCreateInput = (
-    data: EventOrganizerType,
+    data: EventOrganizerCreateInput,
     _actor: Actor
-): EventOrganizerType => {
+): EventOrganizerCreateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
 
     // Normalize contact info if present
@@ -36,19 +36,13 @@ export const normalizeCreateInput = (
         : undefined;
 
     return {
-        id: data.id,
         name: data.name.trim(),
+        description: data.description?.trim(),
         logo: data.logo?.trim(),
         contactInfo: normalizedContactInfo,
-        social: data.social, // TODO: normalizeSocial if exists
+        socialNetworks: data.socialNetworks, // TODO: normalizeSocial if exists
         lifecycleState: data.lifecycleState,
-        adminInfo,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
-        createdById: data.createdById,
-        updatedById: data.updatedById,
-        deletedAt: data.deletedAt,
-        deletedById: data.deletedById
+        adminInfo
     };
 };
 
@@ -71,24 +65,18 @@ export const normalizeCreateInput = (
  * ```
  */
 export const normalizeUpdateInput = (
-    data: UpdateEventOrganizerInputType,
+    data: EventOrganizerUpdateInput,
     _actor: Actor
-): UpdateEventOrganizerInputType => {
-    const result: UpdateEventOrganizerInputType = {};
-    if (data.id) result.id = data.id;
+): EventOrganizerUpdateInput => {
+    const result: EventOrganizerUpdateInput = {};
     if (data.name) result.name = data.name.trim();
+    if (data.description) result.description = data.description.trim();
     if (data.logo) result.logo = data.logo.trim();
     if (data.contactInfo) {
         result.contactInfo = normalizeContactInfo(data.contactInfo) as typeof data.contactInfo;
     }
-    if (data.social) result.social = data.social; // TODO: normalizeSocial
+    if (data.socialNetworks) result.socialNetworks = data.socialNetworks; // TODO: normalizeSocial
     if (data.lifecycleState) result.lifecycleState = data.lifecycleState;
     if (data.adminInfo) result.adminInfo = normalizeAdminInfo(data.adminInfo);
-    if (data.createdAt) result.createdAt = data.createdAt;
-    if (data.updatedAt) result.updatedAt = data.updatedAt;
-    if (data.createdById) result.createdById = data.createdById;
-    if (data.updatedById) result.updatedById = data.updatedById;
-    if (data.deletedAt) result.deletedAt = data.deletedAt;
-    if (data.deletedById) result.deletedById = data.deletedById;
     return result;
 };

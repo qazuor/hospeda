@@ -1,6 +1,19 @@
 import { EventOrganizerModel } from '@repo/db';
-import type { EventOrganizerType, VisibilityEnum } from '@repo/types';
-import type { z } from 'zod';
+import type {
+    EventOrganizer,
+    EventOrganizerCountInput,
+    EventOrganizerCreateInput,
+    EventOrganizerListInput,
+    EventOrganizerListOutput,
+    EventOrganizerSearchInput,
+    EventOrganizerUpdateInput
+} from '@repo/schemas';
+import {
+    EventOrganizerCreateInputSchema,
+    EventOrganizerSearchInputSchema,
+    EventOrganizerUpdateInputSchema
+} from '@repo/schemas';
+import type { VisibilityEnum } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import * as helpers from './eventOrganizer.helpers';
@@ -10,39 +23,34 @@ import {
     checkCanDeleteEventOrganizer,
     checkCanUpdateEventOrganizer
 } from './eventOrganizer.permissions';
-import {
-    CreateEventOrganizerSchema,
-    SearchEventOrganizerSchema,
-    UpdateEventOrganizerSchema
-} from './eventOrganizer.schemas';
 
 /**
  * Service for managing event organizers. Implements business logic, permissions, and hooks for EventOrganizer entities.
  * @extends BaseCrudService
  */
 export class EventOrganizerService extends BaseCrudService<
-    EventOrganizerType,
+    EventOrganizer,
     EventOrganizerModel,
-    typeof CreateEventOrganizerSchema,
-    typeof UpdateEventOrganizerSchema,
-    typeof SearchEventOrganizerSchema
+    typeof EventOrganizerCreateInputSchema,
+    typeof EventOrganizerUpdateInputSchema,
+    typeof EventOrganizerSearchInputSchema
 > {
     static readonly ENTITY_NAME = 'eventOrganizer';
     protected readonly entityName = EventOrganizerService.ENTITY_NAME;
     protected readonly model: EventOrganizerModel;
 
-    protected readonly createSchema = CreateEventOrganizerSchema;
-    protected readonly updateSchema = UpdateEventOrganizerSchema;
-    protected readonly searchSchema = SearchEventOrganizerSchema;
+    protected readonly createSchema = EventOrganizerCreateInputSchema;
+    protected readonly updateSchema = EventOrganizerUpdateInputSchema;
+    protected readonly searchSchema = EventOrganizerSearchInputSchema;
     protected readonly normalizers = {
         create: normalizeCreateInput as unknown as (
-            data: z.infer<typeof CreateEventOrganizerSchema>,
+            data: EventOrganizerCreateInput,
             actor: Actor
-        ) => z.infer<typeof CreateEventOrganizerSchema>,
+        ) => EventOrganizerCreateInput,
         update: normalizeUpdateInput as unknown as (
-            data: z.infer<typeof UpdateEventOrganizerSchema>,
+            data: EventOrganizerUpdateInput,
             actor: Actor
-        ) => z.infer<typeof UpdateEventOrganizerSchema>
+        ) => EventOrganizerUpdateInput
     };
     protected readonly helpers = helpers;
 
@@ -52,22 +60,22 @@ export class EventOrganizerService extends BaseCrudService<
     }
 
     // --- Permission Hooks ---
-    protected async _canCreate(actor: Actor, _data: z.infer<typeof CreateEventOrganizerSchema>) {
+    protected async _canCreate(actor: Actor, _data: EventOrganizerCreateInput) {
         checkCanCreateEventOrganizer(actor);
     }
-    protected async _canUpdate(actor: Actor, _entity: EventOrganizerType) {
+    protected async _canUpdate(actor: Actor, _entity: EventOrganizer) {
         checkCanUpdateEventOrganizer(actor);
     }
-    protected async _canSoftDelete(actor: Actor, _entity: EventOrganizerType) {
+    protected async _canSoftDelete(actor: Actor, _entity: EventOrganizer) {
         checkCanDeleteEventOrganizer(actor);
     }
-    protected async _canHardDelete(actor: Actor, _entity: EventOrganizerType) {
+    protected async _canHardDelete(actor: Actor, _entity: EventOrganizer) {
         checkCanDeleteEventOrganizer(actor);
     }
-    protected async _canRestore(actor: Actor, _entity: EventOrganizerType) {
+    protected async _canRestore(actor: Actor, _entity: EventOrganizer) {
         checkCanUpdateEventOrganizer(actor);
     }
-    protected async _canView(_actor: Actor, _entity: EventOrganizerType) {
+    protected async _canView(_actor: Actor, _entity: EventOrganizer) {
         // TODO [c85ff417-62f4-4828-8409-e4e0f163c0b1]: Implement fine-grained view permissions if needed
         return;
     }
@@ -85,7 +93,7 @@ export class EventOrganizerService extends BaseCrudService<
     }
     protected async _canUpdateVisibility(
         _actor: Actor,
-        _entity: EventOrganizerType,
+        _entity: EventOrganizer,
         _newVisibility: VisibilityEnum
     ) {
         // TODO [47650c04-6d5d-4632-b7b8-902d434f4e27]: Implement visibility update permissions if needed
@@ -94,10 +102,11 @@ export class EventOrganizerService extends BaseCrudService<
 
     // --- Core Logic ---
     protected async _executeSearch(
-        params: z.infer<typeof SearchEventOrganizerSchema>,
+        params: EventOrganizerSearchInput,
         _actor: Actor
-    ): Promise<PaginatedListOutput<EventOrganizerType>> {
-        const { filters = {}, page = 1, pageSize = 20 } = params;
+    ): Promise<PaginatedListOutput<EventOrganizer>> {
+        const { filters = {}, pagination = { page: 1, pageSize: 10 } } = params;
+        const { page = 1, pageSize = 10 } = pagination;
         const where: Record<string, unknown> = {};
         if (filters.name) where.name = filters.name;
         if (filters.q) {
@@ -108,7 +117,7 @@ export class EventOrganizerService extends BaseCrudService<
     }
 
     protected async _executeCount(
-        params: z.infer<typeof SearchEventOrganizerSchema>,
+        params: EventOrganizerCountInput,
         _actor: Actor
     ): Promise<{ count: number }> {
         const { filters = {} } = params;
@@ -124,15 +133,15 @@ export class EventOrganizerService extends BaseCrudService<
     /**
      * Searches for event organizers for list display.
      * @param actor - The actor performing the action
-     * @param params - The search parameters
+     * @param params - The list parameters
      * @returns Event organizers list
      */
     public async searchForList(
         actor: Actor,
-        params: z.infer<typeof SearchEventOrganizerSchema>
-    ): Promise<{ items: EventOrganizerType[]; total: number }> {
-        this._canSearch(actor);
-        const { filters = {}, page = 1, pageSize = 20 } = params;
+        params: EventOrganizerListInput
+    ): Promise<EventOrganizerListOutput> {
+        this._canList(actor);
+        const { filters = {}, page = 1, pageSize = 10 } = params;
 
         const where: Record<string, unknown> = {};
 
@@ -146,7 +155,10 @@ export class EventOrganizerService extends BaseCrudService<
         const result = await this.model.findAll(where, { page, pageSize });
         return {
             items: result.items,
-            total: result.total
+            total: result.total,
+            page,
+            pageSize,
+            totalPages: Math.ceil(result.total / pageSize)
         };
     }
 }

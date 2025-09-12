@@ -59,9 +59,9 @@ describe('eventOrganizer normalizers', () => {
     });
 
     it('normalizeUpdateInput does not mutate non-string fields', () => {
-        const partial = { social: { facebook: 'fb' } };
+        const partial = { socialNetworks: { facebook: 'fb' } };
         const result = normalizeUpdateInput(partial, actor);
-        expect(result.social).toEqual({ facebook: 'fb' });
+        expect(result.socialNetworks).toEqual({ facebook: 'fb' });
     });
 
     it('normalizeUpdateInput handles all optional fields as undefined', () => {
