@@ -31,26 +31,6 @@ export const validateSponsorContact = (contact: unknown): boolean => {
 };
 
 /**
- * Normalizes sponsor contact information.
- * Ensures contact data follows standard format and validation rules.
- *
- * @param contact - Raw contact information object
- * @returns Normalized contact information
- *
- * @example
- * ```typescript
- * const normalized = normalizeContactInfo({ email: ' TEST@EXAMPLE.COM ', phone: '123-456-7890' });
- * // Returns: { email: 'test@example.com', phone: '+1234567890' }
- * ```
- *
- * @deprecated Use the centralized normalizeContactInfo from utils instead
- */
-export const normalizeContactInfo = (contact: unknown): unknown => {
-    // TODO [f1dbaaf1-5741-47bc-93ec-542c5ce1cb80]: Implement contact normalization logic
-    return contact;
-};
-
-/**
  * Normalizes sponsor social media links.
  * Validates and standardizes social media URLs and handles.
  *

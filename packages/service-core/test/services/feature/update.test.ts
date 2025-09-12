@@ -67,10 +67,15 @@ describe('FeatureService.update', () => {
 
     it('should allow partial update (only description)', async () => {
         featureModelMock.findById.mockResolvedValue(feature);
-        featureModelMock.update.mockResolvedValue({ ...feature, description: 'New desc' });
-        const result = await service.update(actor, feature.id, { description: 'New desc' });
+        featureModelMock.update.mockResolvedValue({
+            ...feature,
+            description: 'New description with enough characters'
+        });
+        const result = await service.update(actor, feature.id, {
+            description: 'New description with enough characters'
+        });
         expectSuccess(result);
-        expect(result.data?.description).toBe('New desc');
+        expect(result.data?.description).toBe('New description with enough characters');
         expect(result.data?.name).toBe(feature.name);
     });
 
