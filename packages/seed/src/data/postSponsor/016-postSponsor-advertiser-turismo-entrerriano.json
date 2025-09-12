@@ -10,7 +10,7 @@
         "description": "Logotipo de la agencia de turismo provincial",
         "moderationState": "APPROVED"
     },
-    "contact": {
+    "contactInfo": {
         "workEmail": "info@turismoentrerriano.com.ar",
         "personalEmail": "prensa@turismoentrerriano.com.ar",
         "mobilePhone": "+5493442987654",
@@ -19,7 +19,7 @@
         "preferredEmail": "WORK",
         "preferredPhone": "WORK"
     },
-    "social": {
+    "socialNetworks": {
         "facebook": "https://facebook.com/turismoentrerriano",
         "instagram": "https://instagram.com/turismo_entrerriano",
         "twitter": "https://twitter.com/turismo_er",

@@ -10,7 +10,7 @@
         "description": "Logotipo de la operadora de turismo aventura",
         "moderationState": "APPROVED"
     },
-    "contact": {
+    "contactInfo": {
         "workEmail": "info@aventuraparana.com.ar",
         "personalEmail": "reservas@aventuraparana.com.ar",
         "mobilePhone": "+5493442789012",
@@ -19,7 +19,7 @@
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
     },
-    "social": {
+    "socialNetworks": {
         "facebook": "https://facebook.com/aventuraparana",
         "instagram": "https://instagram.com/aventura_parana",
         "youtube": "https://youtube.com/aventuraparana"
