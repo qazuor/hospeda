@@ -1,257 +1,155 @@
 import { faker } from '@faker-js/faker';
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { VisibilityEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
-    PermissionParamsSchema,
-    RoleParamsSchema,
-    UserIdParamsSchema
+    WithAccommodationIdParamsSchema,
+    WithDateRangeParamsSchema,
+    WithEventIdParamsSchema,
+    WithVisibilityParamsSchema
 } from '../../src/common/params.schema.js';
 
-describe('Permission-related Parameter Schemas', () => {
-    describe('PermissionParamsSchema', () => {
-        it('should validate valid permission parameter', () => {
-            const params = {
-                permission: PermissionEnum.USER_CREATE
+describe('Common Params Schemas', () => {
+    describe('WithAccommodationIdParamsSchema', () => {
+        it('should validate valid accommodation ID', () => {
+            const validParams = {
+                accommodationId: faker.string.uuid()
             };
 
-            expect(() => PermissionParamsSchema.parse(params)).not.toThrow();
+            expect(() => WithAccommodationIdParamsSchema.parse(validParams)).not.toThrow();
 
-            const result = PermissionParamsSchema.parse(params);
-            expect(result.permission).toBe(PermissionEnum.USER_CREATE);
+            const parsed = WithAccommodationIdParamsSchema.parse(validParams);
+            expect(parsed.accommodationId).toBe(validParams.accommodationId);
         });
 
-        it('should validate all permission enum values', () => {
-            // biome-ignore lint/complexity/noForEach: <explanation>
-            Object.values(PermissionEnum).forEach((permission) => {
-                const params = { permission };
-
-                expect(() => PermissionParamsSchema.parse(params)).not.toThrow();
-
-                const result = PermissionParamsSchema.parse(params);
-                expect(result.permission).toBe(permission);
-            });
-        });
-
-        it('should reject invalid permission value', () => {
-            const params = {
-                permission: 'INVALID_PERMISSION'
+        it('should reject invalid accommodation ID', () => {
+            const invalidParams = {
+                accommodationId: 'not-a-uuid'
             };
 
-            expect(() => PermissionParamsSchema.parse(params)).toThrow(ZodError);
+            expect(() => WithAccommodationIdParamsSchema.parse(invalidParams)).toThrow(ZodError);
         });
 
-        it('should reject missing permission parameter', () => {
-            const params = {};
+        it('should reject missing accommodation ID', () => {
+            const invalidParams = {};
 
-            expect(() => PermissionParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should reject null permission', () => {
-            const params = {
-                permission: null
-            };
-
-            expect(() => PermissionParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should reject undefined permission', () => {
-            const params = {
-                permission: undefined
-            };
-
-            expect(() => PermissionParamsSchema.parse(params)).toThrow(ZodError);
+            expect(() => WithAccommodationIdParamsSchema.parse(invalidParams)).toThrow(ZodError);
         });
     });
 
-    describe('RoleParamsSchema', () => {
-        it('should validate valid role parameter', () => {
-            const params = {
-                role: RoleEnum.ADMIN
+    describe('WithEventIdParamsSchema', () => {
+        it('should validate valid event ID', () => {
+            const validParams = {
+                eventId: faker.string.uuid()
             };
 
-            expect(() => RoleParamsSchema.parse(params)).not.toThrow();
+            expect(() => WithEventIdParamsSchema.parse(validParams)).not.toThrow();
 
-            const result = RoleParamsSchema.parse(params);
-            expect(result.role).toBe(RoleEnum.ADMIN);
+            const parsed = WithEventIdParamsSchema.parse(validParams);
+            expect(parsed.eventId).toBe(validParams.eventId);
         });
 
-        it('should validate all role enum values', () => {
-            // biome-ignore lint/complexity/noForEach: <explanation>
-            Object.values(RoleEnum).forEach((role) => {
-                const params = { role };
-
-                expect(() => RoleParamsSchema.parse(params)).not.toThrow();
-
-                const result = RoleParamsSchema.parse(params);
-                expect(result.role).toBe(role);
-            });
-        });
-
-        it('should reject invalid role value', () => {
-            const params = {
-                role: 'INVALID_ROLE'
+        it('should reject invalid event ID', () => {
+            const invalidParams = {
+                eventId: 'not-a-uuid'
             };
 
-            expect(() => RoleParamsSchema.parse(params)).toThrow(ZodError);
+            expect(() => WithEventIdParamsSchema.parse(invalidParams)).toThrow(ZodError);
         });
 
-        it('should reject missing role parameter', () => {
-            const params = {};
+        it('should reject missing event ID', () => {
+            const invalidParams = {};
 
-            expect(() => RoleParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should reject null role', () => {
-            const params = {
-                role: null
-            };
-
-            expect(() => RoleParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should reject undefined role', () => {
-            const params = {
-                role: undefined
-            };
-
-            expect(() => RoleParamsSchema.parse(params)).toThrow(ZodError);
+            expect(() => WithEventIdParamsSchema.parse(invalidParams)).toThrow(ZodError);
         });
     });
 
-    describe('UserIdParamsSchema', () => {
-        it('should validate valid userId parameter', () => {
-            const userId = faker.string.uuid();
-            const params = {
-                userId,
-                id: faker.string.uuid() // Optional alternative parameter
-            };
+    describe('WithVisibilityParamsSchema', () => {
+        it('should validate valid visibility values', () => {
+            const visibilityValues = Object.values(VisibilityEnum);
 
-            expect(() => UserIdParamsSchema.parse(params)).not.toThrow();
+            for (const visibility of visibilityValues) {
+                const validParams = { visibility };
+                expect(() => WithVisibilityParamsSchema.parse(validParams)).not.toThrow();
 
-            const result = UserIdParamsSchema.parse(params);
-            expect(result.userId).toBe(userId);
-            expect(result.id).toBeDefined();
-        });
-
-        it('should validate userId without optional id', () => {
-            const userId = faker.string.uuid();
-            const params = {
-                userId
-            };
-
-            expect(() => UserIdParamsSchema.parse(params)).not.toThrow();
-
-            const result = UserIdParamsSchema.parse(params);
-            expect(result.userId).toBe(userId);
-            expect(result.id).toBeUndefined();
-        });
-
-        it('should validate multiple valid UUIDs', () => {
-            for (let i = 0; i < 5; i++) {
-                const userId = faker.string.uuid();
-                const params = { userId };
-
-                expect(() => UserIdParamsSchema.parse(params)).not.toThrow();
-
-                const result = UserIdParamsSchema.parse(params);
-                expect(result.userId).toBe(userId);
+                const parsed = WithVisibilityParamsSchema.parse(validParams);
+                expect(parsed.visibility).toBe(visibility);
             }
         });
 
-        it('should reject invalid userId format', () => {
-            const params = {
-                userId: 'not-a-uuid'
-            };
+        it('should validate empty object (visibility is optional)', () => {
+            const validParams = {};
 
-            expect(() => UserIdParamsSchema.parse(params)).toThrow(ZodError);
+            expect(() => WithVisibilityParamsSchema.parse(validParams)).not.toThrow();
+
+            const parsed = WithVisibilityParamsSchema.parse(validParams);
+            expect(parsed.visibility).toBeUndefined();
         });
 
-        it('should reject empty userId', () => {
-            const params = {
-                userId: ''
+        it('should reject invalid visibility value', () => {
+            const invalidParams = {
+                visibility: 'INVALID_VISIBILITY'
             };
 
-            expect(() => UserIdParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should reject missing userId parameter', () => {
-            const params = {};
-
-            expect(() => UserIdParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should reject null userId', () => {
-            const params = {
-                userId: null
-            };
-
-            expect(() => UserIdParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should reject undefined userId', () => {
-            const params = {
-                userId: undefined
-            };
-
-            expect(() => UserIdParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should reject invalid id format when provided', () => {
-            const params = {
-                userId: faker.string.uuid(),
-                id: 'not-a-uuid'
-            };
-
-            expect(() => UserIdParamsSchema.parse(params)).toThrow(ZodError);
+            expect(() => WithVisibilityParamsSchema.parse(invalidParams)).toThrow(ZodError);
         });
     });
 
-    describe('Edge Cases', () => {
-        it('should handle permission enum case sensitivity', () => {
-            const params = {
-                permission: 'manage_users' // lowercase
+    describe('WithDateRangeParamsSchema', () => {
+        it('should validate valid date range', () => {
+            const fromDate = faker.date.past();
+            const toDate = faker.date.future();
+            const validParams = {
+                fromDate,
+                toDate
             };
 
-            expect(() => PermissionParamsSchema.parse(params)).toThrow(ZodError);
+            expect(() => WithDateRangeParamsSchema.parse(validParams)).not.toThrow();
+
+            const parsed = WithDateRangeParamsSchema.parse(validParams);
+            expect(parsed.fromDate).toEqual(fromDate);
+            expect(parsed.toDate).toEqual(toDate);
         });
 
-        it('should handle role enum case sensitivity', () => {
-            const params = {
-                role: 'admin' // lowercase
+        it('should validate with only fromDate', () => {
+            const fromDate = faker.date.past();
+            const validParams = { fromDate };
+
+            expect(() => WithDateRangeParamsSchema.parse(validParams)).not.toThrow();
+
+            const parsed = WithDateRangeParamsSchema.parse(validParams);
+            expect(parsed.fromDate).toEqual(fromDate);
+            expect(parsed.toDate).toBeUndefined();
+        });
+
+        it('should validate with only toDate', () => {
+            const toDate = faker.date.future();
+            const validParams = { toDate };
+
+            expect(() => WithDateRangeParamsSchema.parse(validParams)).not.toThrow();
+
+            const parsed = WithDateRangeParamsSchema.parse(validParams);
+            expect(parsed.fromDate).toBeUndefined();
+            expect(parsed.toDate).toEqual(toDate);
+        });
+
+        it('should validate empty object (both dates are optional)', () => {
+            const validParams = {};
+
+            expect(() => WithDateRangeParamsSchema.parse(validParams)).not.toThrow();
+
+            const parsed = WithDateRangeParamsSchema.parse(validParams);
+            expect(parsed.fromDate).toBeUndefined();
+            expect(parsed.toDate).toBeUndefined();
+        });
+
+        it('should reject invalid date types', () => {
+            const invalidParams = {
+                fromDate: 'not-a-date',
+                toDate: 'also-not-a-date'
             };
 
-            expect(() => RoleParamsSchema.parse(params)).toThrow(ZodError);
-        });
-
-        it('should handle UUID with different formats', () => {
-            // Valid UUID formats
-            const validUUIDs = [
-                '550e8400-e29b-41d4-a716-446655440000',
-                'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-                '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
-            ];
-
-            // biome-ignore lint/complexity/noForEach: <explanation>
-            validUUIDs.forEach((uuid) => {
-                const params = { userId: uuid };
-                expect(() => UserIdParamsSchema.parse(params)).not.toThrow();
-            });
-
-            // Invalid UUID formats
-            const invalidUUIDs = [
-                '550e8400-e29b-41d4-a716-44665544000', // too short
-                '550e8400-e29b-41d4-a716-4466554400000', // too long
-                '550e8400-e29b-41d4-a716-44665544000g', // invalid character
-                '550e8400e29b41d4a716446655440000', // missing hyphens
-                'not-a-uuid-at-all'
-            ];
-
-            // biome-ignore lint/complexity/noForEach: <explanation>
-            invalidUUIDs.forEach((uuid) => {
-                const params = { userId: uuid };
-                expect(() => UserIdParamsSchema.parse(params)).toThrow(ZodError);
-            });
+            expect(() => WithDateRangeParamsSchema.parse(invalidParams)).toThrow(ZodError);
         });
     });
 });
