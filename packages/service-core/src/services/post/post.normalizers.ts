@@ -4,14 +4,14 @@
  * including media content, images, and metadata normalization.
  */
 
+import type {
+    PostCreateInputSchema,
+    PostUpdateInputSchema as UpdatePostInputSchema
+} from '@repo/schemas';
 import type { ImageType, MediaType, VideoType } from '@repo/types';
 import { ModerationStatusEnum as ModerationStatusEnumType } from '@repo/types';
 import type { z } from 'zod';
 import { normalizeAdminInfo } from '../../utils';
-import type {
-    PostCreateInputSchema,
-    PostUpdateSchema as UpdatePostInputSchema
-} from './post.schemas';
 
 const DEFAULT_MODERATION_STATE: ModerationStatusEnumType = ModerationStatusEnumType.PENDING;
 

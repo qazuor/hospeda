@@ -1,9 +1,33 @@
 import { PostModel } from '@repo/db';
-import type { PostStatsSchema, PostSummarySchema } from '@repo/schemas';
 import type {
+    GetPostByCategoryInput,
+    GetPostByRelatedAccommodationInput,
+    GetPostByRelatedDestinationInput,
+    GetPostByRelatedEventInput,
+    GetPostFeaturedInput,
+    GetPostNewsInput,
     GetPostStatsInput,
-    GetPostSummaryInput
-} from '@repo/schemas/entities/post/post.service.schema';
+    GetPostSummaryInput,
+    PostCreateInput,
+    PostEngagementStats,
+    PostListInput,
+    PostSummary,
+    PostUpdateInput
+} from '@repo/schemas';
+import {
+    GetPostByCategoryInputSchema,
+    GetPostByRelatedAccommodationInputSchema,
+    GetPostByRelatedDestinationInputSchema,
+    GetPostByRelatedEventInputSchema,
+    GetPostFeaturedInputSchema,
+    GetPostNewsInputSchema,
+    GetPostStatsInputSchema,
+    GetPostSummaryInputSchema,
+    LikePostInputSchema,
+    PostCreateInputSchema,
+    PostListInputSchema as PostFilterInputSchema,
+    PostUpdateInputSchema as PostUpdateSchema
+} from '@repo/schemas';
 import type { PostType, VisibilityEnum } from '@repo/types';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
@@ -22,22 +46,6 @@ import {
     checkCanUpdatePost,
     checkCanViewPost
 } from './post.permissions';
-import {
-    GetPostByCategoryInputSchema,
-    GetPostByRelatedAccommodationInputSchema,
-    GetPostByRelatedDestinationInputSchema,
-    GetPostByRelatedEventInputSchema,
-    GetPostFeaturedInputSchema,
-    GetPostNewsInputSchema,
-    GetPostStatsInputSchema,
-    GetPostSummaryInputSchema,
-    LikePostInputSchema,
-    PostCreateInputSchema,
-    PostFilterInputSchema,
-    PostUpdateSchema
-} from './post.schemas';
-type PostSummaryType = z.infer<typeof PostSummarySchema>;
-type PostStatsType = z.infer<typeof PostStatsSchema>;
 
 /**
  * Service for managing posts. Implements business logic, permissions, and hooks for Post entities.
@@ -82,9 +90,7 @@ export class PostService extends BaseCrudService<
      * @param data - The input data
      * @returns Normalized and enriched data
      */
-    protected async _beforeCreate(
-        data: z.infer<typeof PostCreateInputSchema>
-    ): Promise<Partial<PostType>> {
+    protected async _beforeCreate(data: PostCreateInput): Promise<Partial<PostType>> {
         const normalized = normalizeCreateInput(data);
         if (!normalized.category || !normalized.title) {
             throw new ServiceError(
@@ -143,7 +149,7 @@ export class PostService extends BaseCrudService<
      * @returns Normalized and enriched data
      */
     protected async _beforeUpdate(
-        data: z.infer<typeof PostUpdateSchema>,
+        data: PostUpdateInput,
         _actor: Actor
     ): Promise<Partial<PostType>> {
         // The id to use for business logic is stored in this._updateId (set in update method)
@@ -213,7 +219,7 @@ export class PostService extends BaseCrudService<
      * @param data - The validated input data for the new post.
      * @throws {ServiceError} If the permission check fails.
      */
-    protected _canCreate(actor: Actor, _data: z.infer<typeof PostCreateInputSchema>): void {
+    protected _canCreate(actor: Actor, _data: PostCreateInput): void {
         checkCanCreatePost(actor);
     }
 
@@ -351,10 +357,8 @@ export class PostService extends BaseCrudService<
      * @param actor - The actor performing the search.
      * @returns A paginated list of posts matching the criteria.
      */
-    protected async _executeSearch(params: z.infer<typeof PostFilterInputSchema>, _actor: Actor) {
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+    protected async _executeSearch(params: PostListInput, _actor: Actor) {
+        const { filters = {}, page = 1, pageSize = 10 } = params;
         return this.model.findAll(filters, { page, pageSize });
     }
 
@@ -364,7 +368,7 @@ export class PostService extends BaseCrudService<
      * @param actor - The actor performing the count.
      * @returns An object containing the total count of posts matching the criteria.
      */
-    protected async _executeCount(params: z.infer<typeof PostFilterInputSchema>, _actor: Actor) {
+    protected async _executeCount(params: PostListInput, _actor: Actor) {
         const { filters = {} } = params;
         const count = await this.model.count(filters);
         return { count };
@@ -378,13 +382,13 @@ export class PostService extends BaseCrudService<
      */
     public async getNews(
         actor: Actor,
-        params: z.infer<typeof GetPostNewsInputSchema>
+        params: GetPostNewsInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getNews',
             input: { ...params, actor },
             schema: GetPostNewsInputSchema.strict(),
-            execute: async (validated: z.infer<typeof GetPostNewsInputSchema>, actor) => {
+            execute: async (validated: GetPostNewsInput, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
 
@@ -414,13 +418,13 @@ export class PostService extends BaseCrudService<
      */
     public async getFeatured(
         actor: Actor,
-        params: z.infer<typeof GetPostFeaturedInputSchema>
+        params: GetPostFeaturedInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFeatured',
             input: { ...params, actor },
             schema: GetPostFeaturedInputSchema.strict(),
-            execute: async (validated: z.infer<typeof GetPostFeaturedInputSchema>, actor) => {
+            execute: async (validated: GetPostFeaturedInput, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
 
@@ -450,13 +454,13 @@ export class PostService extends BaseCrudService<
      */
     public async getByCategory(
         actor: Actor,
-        params: z.infer<typeof GetPostByCategoryInputSchema>
+        params: GetPostByCategoryInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByCategory',
             input: { ...params, actor },
             schema: GetPostByCategoryInputSchema.strict(),
-            execute: async (validated: z.infer<typeof GetPostByCategoryInputSchema>, actor) => {
+            execute: async (validated: GetPostByCategoryInput, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
 
@@ -491,16 +495,13 @@ export class PostService extends BaseCrudService<
      */
     public async getByRelatedAccommodation(
         actor: Actor,
-        params: z.infer<typeof GetPostByRelatedAccommodationInputSchema>
+        params: GetPostByRelatedAccommodationInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedAccommodation',
             input: { ...params, actor },
             schema: GetPostByRelatedAccommodationInputSchema.strict(),
-            execute: async (
-                validated: z.infer<typeof GetPostByRelatedAccommodationInputSchema>,
-                actor
-            ) => {
+            execute: async (validated: GetPostByRelatedAccommodationInput, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = {
                     relatedAccommodationId: validated.accommodationId
@@ -532,16 +533,13 @@ export class PostService extends BaseCrudService<
      */
     public async getByRelatedDestination(
         actor: Actor,
-        params: z.infer<typeof GetPostByRelatedDestinationInputSchema>
+        params: GetPostByRelatedDestinationInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedDestination',
             input: { ...params, actor },
             schema: GetPostByRelatedDestinationInputSchema.strict(),
-            execute: async (
-                validated: z.infer<typeof GetPostByRelatedDestinationInputSchema>,
-                actor
-            ) => {
+            execute: async (validated: GetPostByRelatedDestinationInput, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = {
                     relatedDestinationId: validated.destinationId
@@ -573,13 +571,13 @@ export class PostService extends BaseCrudService<
      */
     public async getByRelatedEvent(
         actor: Actor,
-        params: z.infer<typeof GetPostByRelatedEventInputSchema>
+        params: GetPostByRelatedEventInput
     ): Promise<ServiceOutput<PostType[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedEvent',
             input: { ...params, actor },
             schema: GetPostByRelatedEventInputSchema.strict(),
-            execute: async (validated: z.infer<typeof GetPostByRelatedEventInputSchema>, actor) => {
+            execute: async (validated: GetPostByRelatedEventInput, actor) => {
                 this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
 
@@ -719,12 +717,12 @@ export class PostService extends BaseCrudService<
      * Returns a summarized, public-facing version of a post (for cards/lists).
      * @param actor - The user or system performing the action.
      * @param data - Object with id or slug.
-     * @returns ServiceOutput<PostSummaryType | null>
+     * @returns ServiceOutput<PostSummary | null>
      */
     public async getSummary(
         actor: Actor,
         data: GetPostSummaryInput
-    ): Promise<ServiceOutput<PostSummaryType | null>> {
+    ): Promise<ServiceOutput<PostSummary | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
             input: { actor, ...data },
@@ -745,15 +743,16 @@ export class PostService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
                 }
                 const post = entityResult.data;
-                const summary: PostSummaryType = {
+                const summary: PostSummary = {
                     id: post.id,
                     slug: post.slug,
                     title: post.title,
                     category: post.category,
-                    media: post.media,
+                    lifecycleState: post.lifecycleState,
                     isFeatured: post.isFeatured,
-                    isNews: post.isNews,
-                    createdAt: post.createdAt,
+                    publishedAt: post.publishedAt,
+                    readingTimeMinutes: post.readingTimeMinutes,
+                    media: post.media,
                     authorId: post.authorId,
                     summary: post.summary
                 };
@@ -766,12 +765,12 @@ export class PostService extends BaseCrudService<
      * Returns stats for a post (likes, comments, shares).
      * @param actor - The user or system performing the action.
      * @param data - Object with id or slug.
-     * @returns ServiceOutput<PostStatsType | null>
+     * @returns ServiceOutput<PostEngagementStats | null>
      */
     public async getStats(
         actor: Actor,
         data: GetPostStatsInput
-    ): Promise<ServiceOutput<PostStatsType | null>> {
+    ): Promise<ServiceOutput<PostEngagementStats | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
             input: { actor, ...data },
@@ -792,7 +791,7 @@ export class PostService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
                 }
                 const post = entityResult.data;
-                const stats: PostStatsType = {
+                const stats: PostEngagementStats = {
                     likes: post.likes ?? 0,
                     comments: post.comments ?? 0,
                     shares: post.shares ?? 0
