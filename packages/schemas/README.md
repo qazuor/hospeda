@@ -363,6 +363,7 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 |---|---|---|---|---|
 | src/enums/accommodation-type.enum.schema.ts | enums | AccommodationTypeEnumSchema |  |  |
 | src/enums/amenity-type.enum.schema.ts | enums | AmenitiesTypeEnumSchema |  |  |
+| src/enums/auth-provider.enum.schema.ts | enums | AuthProviderEnumSchema | AuthProviderEnumType | Zod schema for AuthProviderEnum Used for validating authentication provider values |
 | src/enums/client-type.enum.schema.ts | enums | ClientTypeEnumSchema |  |  |
 | src/enums/contact-preference.enum.schema.ts | enums | PreferredContactEnumSchema |  |  |
 | src/enums/currency.enum.schema.ts | enums | PriceCurrencyEnumSchema |  |  |
@@ -742,6 +743,17 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/user/user.crud.schema.ts | user | UserRestoreOutputSchema | UserRestoreOutput | Schema for user restoration response Returns the complete restored user object |
 | src/entities/user/user.crud.schema.ts | user | UserUpdateInputSchema | UserUpdateInput | Schema for updating a user (PUT - complete replacement) Omits auto-generated fields and makes all fields partial |
 | src/entities/user/user.crud.schema.ts | user | UserUpdateOutputSchema | UserUpdateOutput | Schema for user update response Returns the complete updated user object |
+| src/entities/user/user.crud.schema.ts | user | UserGetByAuthProviderInputSchema | UserGetByAuthProviderInput | Schema for getting user by auth provider input Used to find users by their external authentication provider mapping |
+| src/entities/user/user.crud.schema.ts | user | UserGetByAuthProviderOutputSchema | UserGetByAuthProviderOutput | Schema for getting user by auth provider output Returns user or null if not found |
+| src/entities/user/user.crud.schema.ts | user | UserEnsureFromAuthProviderInputSchema | UserEnsureFromAuthProviderInput | Schema for ensuring user from auth provider input Creates or updates user based on auth provider data |
+| src/entities/user/user.crud.schema.ts | user | UserEnsureFromAuthProviderOutputSchema | UserEnsureFromAuthProviderOutput | Schema for ensuring user from auth provider output Returns the created or updated user |
+| src/entities/user/user.crud.schema.ts | user | UserAssignRoleInputSchema | UserAssignRoleInput | Schema for assigning role to user input Requires user ID and new role |
+| src/entities/user/user.crud.schema.ts | user | UserAddPermissionInputSchema | UserAddPermissionInput | Schema for adding permission to user input Requires user ID and permission to add |
+| src/entities/user/user.crud.schema.ts | user | UserRemovePermissionInputSchema | UserRemovePermissionInput | Schema for removing permission from user input Requires user ID and permission to remove |
+| src/entities/user/user.crud.schema.ts | user | UserSetPermissionsInputSchema | UserSetPermissionsInput | Schema for setting user permissions input Requires user ID and array of permissions |
+| src/entities/user/user.crud.schema.ts | user | UserRolePermissionOutputSchema | UserRolePermissionOutput | Schema for role and permission management output Returns the updated user |
+| src/entities/user/user.identity.schema.ts | user | UserIdentityInputSchema | UserIdentityInput | Schema for external user identity input Used when creating or updating identity information from auth providers |
+| src/entities/user/user.identity.schema.ts | user | UserProfileFromProviderSchema | UserProfileFromProvider | Schema for user profile updates from auth providers Partial user profile data that can be updated from external providers |
 | src/entities/user/user.profile.schema.ts | user | UserProfileSchema |  | User Profile schema definition using Zod for validation. |
 | src/entities/user/user.query.schema.ts | user | UserFiltersSchema | UserFilters | User Query Schemas This file contains all schemas related to querying users: - List (input/output/item) - Search (input/output/result) - Summary - Stats - Filters / // =============================… |
 | src/entities/user/user.query.schema.ts | user | UserListInputSchema | UserListInput | Schema for user list input parameters Includes pagination and filters |
@@ -752,6 +764,8 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/user/user.query.schema.ts | user | UserSearchResultSchema | UserSearchResult | Schema for individual user search results Extends list item with search score |
 | src/entities/user/user.query.schema.ts | user | UserStatsSchema | UserStats | Schema for user statistics Contains metrics and analytics data |
 | src/entities/user/user.query.schema.ts | user | UserSummarySchema | UserSummary | Schema for user summary Contains essential information for quick display (public safe) |
+| src/entities/user/user.query.schema.ts | user | UserListItemWithCountsSchema | UserListItemWithCounts | Schema for user list item with content counts Extends basic user schema with accommodation, event, and post counts |
+| src/entities/user/user.query.schema.ts | user | UserListWithCountsOutputSchema | UserListWithCountsOutput | Schema for user list output with content counts Used by searchForList method that includes content statistics |
 | src/entities/user/user.relations.schema.ts | user | UserWithAccommodationsSchema | UserWithAccommodations | User Relations Schemas This file contains schemas for users with related entities: - UserWithAccommodations - UserWithSubscriptions - UserWithPermissions - UserWithReviews - UserWithPayments - User… |
 | src/entities/user/user.relations.schema.ts | user | UserWithActivityRelationsSchema | UserWithActivityRelations | User with activity relations Includes reviews and permissions |
 | src/entities/user/user.relations.schema.ts | user | UserWithAdminDetailsSchema | UserWithAdminDetails | User with admin details Includes sensitive information for admin views |
