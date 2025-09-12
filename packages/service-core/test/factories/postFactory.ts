@@ -1,3 +1,4 @@
+import type { PostCreateInput } from '@repo/schemas';
 import type { PostId, PostType, UserId } from '@repo/types';
 import {
     LifecycleStatusEnum,
@@ -5,7 +6,6 @@ import {
     PostCategoryEnum,
     VisibilityEnum
 } from '@repo/types';
-import type { PostCreateInput } from '../../src/services/post/post.schemas';
 import { getMockId } from './utilsFactory';
 
 export class PostFactoryBuilder {
@@ -23,7 +23,8 @@ export class PostFactoryBuilder {
             category: PostCategoryEnum.GENERAL,
             title: 'Test Post',
             summary: 'Summary',
-            content: 'Content',
+            content:
+                'This is a comprehensive content for the post that meets the minimum length requirement of 100 characters. It provides detailed information about the topic and ensures proper validation.',
             media: {
                 featuredImage: {
                     url: 'https://example.com/image.jpg',
@@ -42,6 +43,8 @@ export class PostFactoryBuilder {
             likes: 0,
             comments: 0,
             shares: 0,
+            publishedAt: new Date(),
+            readingTimeMinutes: 5,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: getMockId('user') as UserId,
@@ -66,9 +69,11 @@ export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): Po
     // Generate a unique suffix for the title if none is provided
     const uniqueSuffix = Math.random().toString(36).substring(2, 8);
     const baseInput = {
+        slug: `test-post-${uniqueSuffix}`,
         title: `Test Post ${uniqueSuffix}`,
         summary: 'A valid summary for the post.',
-        content: 'A valid content for the post, at least 10 chars.',
+        content:
+            'This is a comprehensive and detailed content for the post that meets the minimum length requirement of 100 characters. It provides valuable information about the topic, includes relevant details, and ensures proper validation passes successfully.',
         media: {
             featuredImage: {
                 url: 'https://example.com/image.jpg',
@@ -82,6 +87,11 @@ export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): Po
         visibility: VisibilityEnum.PUBLIC,
         isNews: false,
         isFeaturedInWebsite: false,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        publishedAt: new Date(),
+        readingTimeMinutes: 5,
         authorId: getMockId('user') as UserId,
         ...overrides
     };
