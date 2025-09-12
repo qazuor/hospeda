@@ -11,21 +11,47 @@ import { getRandomFutureDate } from '../utils/utils.js';
  */
 const postNormalizer = (data: Record<string, unknown>) => {
     // First exclude metadata fields and auto-generated fields
-    const { $schema, id, slug, tagIds, likes, comments, expiresAt, shares, ...cleanData } =
-        data as {
-            $schema?: string;
-            id?: string;
-            slug?: string;
-            tagIds?: string[];
-            likes?: number;
-            comments?: number;
-            shares?: number;
-            expiresAt?: string;
-            [key: string]: unknown;
-        };
+    const {
+        $schema,
+        id,
+        slug,
+        tagIds,
+        likes,
+        comments,
+        expiresAt,
+        shares,
+        publishedAt,
+        readingTimeMinutes,
+        ...cleanData
+    } = data as {
+        $schema?: string;
+        id?: string;
+        slug?: string;
+        tagIds?: string[];
+        likes?: number;
+        comments?: number;
+        shares?: number;
+        expiresAt?: string;
+        publishedAt?: string;
+        readingTimeMinutes?: number;
+        [key: string]: unknown;
+    };
+
+    // Handle expiresAt
     if (data.expiresAt && typeof data.expiresAt === 'string') {
         cleanData.expiresAt = getRandomFutureDate();
     }
+
+    // Handle publishedAt - if provided in seed data, use it; otherwise let it be null
+    if (data.publishedAt && typeof data.publishedAt === 'string') {
+        cleanData.publishedAt = new Date(data.publishedAt);
+    }
+
+    // Handle readingTimeMinutes - if provided in seed data, use it; otherwise use default
+    if (data.readingTimeMinutes && typeof data.readingTimeMinutes === 'number') {
+        cleanData.readingTimeMinutes = data.readingTimeMinutes;
+    }
+
     return cleanData;
 };
 

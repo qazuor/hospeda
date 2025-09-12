@@ -24,6 +24,8 @@
     "likes": 50,
     "comments": 32,
     "shares": 10,
+    "publishedAt": "2024-03-18T20:00:00Z",
+    "readingTimeMinutes": 3,
     "isFeatured": false,
     "seo": {
         "title": "Vida Nocturna en las Ciudades Entrerrianas",
