@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FeatureIdSchema } from '../../common/id.schema.js';
+import { LifecycleStatusEnumSchema } from '../../enums/index.js';
 import { FeatureSchema } from './feature.schema.js';
 
 /**
@@ -19,17 +20,69 @@ import { FeatureSchema } from './feature.schema.js';
 
 /**
  * Schema for creating a new feature
- * Omits auto-generated fields like id and audit fields
+ * Contains only the fields needed for creation, with optional fields for auto-generation
  */
-export const FeatureCreateInputSchema = FeatureSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).strict();
+export const FeatureCreateInputSchema = z
+    .object({
+        // Required fields
+        name: z
+            .string({
+                message: 'zodError.feature.name.required'
+            })
+            .min(2, { message: 'zodError.feature.name.min' })
+            .max(100, { message: 'zodError.feature.name.max' }),
+
+        // Optional fields
+        slug: z
+            .string({
+                message: 'zodError.feature.slug.required'
+            })
+            .min(3, { message: 'zodError.feature.slug.min' })
+            .max(100, { message: 'zodError.feature.slug.max' })
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+                message: 'zodError.feature.slug.pattern'
+            })
+            .optional(),
+
+        description: z
+            .string({
+                message: 'zodError.feature.description.required'
+            })
+            .min(10, { message: 'zodError.feature.description.min' })
+            .max(500, { message: 'zodError.feature.description.max' })
+            .optional(),
+
+        icon: z
+            .string({
+                message: 'zodError.feature.icon.required'
+            })
+            .min(1, { message: 'zodError.feature.icon.min' })
+            .max(100, { message: 'zodError.feature.icon.max' })
+            .optional(),
+
+        isBuiltin: z.boolean().optional(),
+        isFeatured: z.boolean().optional(),
+        lifecycleState: LifecycleStatusEnumSchema.optional(),
+
+        // Admin info (optional)
+        adminInfo: z
+            .object({
+                notes: z
+                    .string({
+                        message: 'zodError.common.adminInfo.notes.required'
+                    })
+                    .min(5, { message: 'zodError.common.adminInfo.notes.min' })
+                    .max(300, { message: 'zodError.common.adminInfo.notes.max' })
+                    .optional(),
+                favorite: z
+                    .boolean({
+                        message: 'zodError.common.adminInfo.favorite.required'
+                    })
+                    .default(false)
+            })
+            .optional()
+    })
+    .strict();
 
 /**
  * Schema for feature creation response
