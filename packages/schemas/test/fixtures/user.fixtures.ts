@@ -1,320 +1,213 @@
-import { faker } from '@faker-js/faker';
-import type { RoleEnum } from '@repo/types';
-import {
-    createBaseAdminFields,
-    createBaseAuditFields,
-    createBaseContactFields,
-    createBaseIdFields,
-    createBaseLifecycleFields,
-    createBaseModerationFields,
-    createBaseVisibilityFields,
-    createInvalidEmail,
-    createTooLongString,
-    createTooShortString
-} from './common.fixtures.js';
+import type { UserId, UserType } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
 
 /**
- * User fixtures for testing
+ * Creates a complete user fixture for testing
  */
+export const createUserFixture = (overrides: Partial<UserType> = {}): UserType => {
+    const baseUser: UserType = {
+        id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as UserId,
+        slug: 'john-doe',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        visibility: VisibilityEnum.PUBLIC,
 
-export const createValidUser = () => ({
-    ...createBaseIdFields(),
-    ...createBaseAuditFields(),
-    ...createBaseLifecycleFields(),
-    ...createBaseModerationFields(),
-    ...createBaseVisibilityFields(),
-    ...createBaseContactFields(),
-    ...createBaseAdminFields(),
+        // Basic info
+        displayName: 'John Doe',
+        firstName: 'John',
+        lastName: 'Doe',
 
-    // User-specific required fields
-    slug: faker.lorem.slug(3),
-    authProvider: faker.helpers.arrayElement(['CLERK', 'AUTH0', 'CUSTOM']),
-    displayName: faker.person.fullName(),
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
-    birthDate: faker.date.birthdate({ min: 18, max: 80, mode: 'age' }),
-    role: faker.helpers.arrayElement(['USER', 'ADMIN', 'SUPER_ADMIN']) as RoleEnum,
+        // Role and permissions
+        role: RoleEnum.USER,
+        permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
 
-    // Permissions - using valid permission strings from the enum
-    permissions: faker.helpers.multiple(
-        () =>
-            faker.helpers.arrayElement([
-                'accommodation.create',
-                'accommodation.update.own',
-                'user.read.all',
-                'post.create',
-                'destination.create'
-            ]),
-        { count: { min: 2, max: 4 } }
-    ),
-
-    // Profile
-    profile: {
-        avatar: faker.helpers.maybe(() => faker.image.avatar(), { probability: 0.7 }),
-        bio: faker.helpers.maybe(() => faker.lorem.paragraph(), { probability: 0.6 }),
-        location: faker.helpers.maybe(() => faker.location.city(), { probability: 0.5 }),
-        website: faker.helpers.maybe(() => faker.internet.url(), { probability: 0.4 }),
-        interests: faker.helpers.maybe(
-            () => faker.helpers.multiple(() => faker.lorem.word(), { count: { min: 2, max: 8 } }),
-            { probability: 0.6 }
-        ),
-        languages: faker.helpers.maybe(
-            () =>
-                faker.helpers.multiple(
-                    () => faker.helpers.arrayElement(['en', 'es', 'fr', 'de', 'it']),
-                    { count: { min: 1, max: 3 } }
-                ),
-            { probability: 0.7 }
-        )
-    },
-
-    // Settings
-    settings: {
-        notifications: {
-            enabled: faker.datatype.boolean(),
-            allowEmails: faker.datatype.boolean(),
-            allowSms: faker.datatype.boolean(),
-            allowPush: faker.datatype.boolean()
+        // Contact info
+        contactInfo: {
+            personalEmail: 'john@example.com',
+            mobilePhone: '+12345678901'
         },
-        privacy: faker.helpers.maybe(
-            () => ({
-                profileVisibility: faker.helpers.arrayElement(['PUBLIC', 'PRIVATE', 'FRIENDS']),
-                showEmail: faker.datatype.boolean(),
-                showPhone: faker.datatype.boolean(),
-                allowMessages: faker.datatype.boolean()
-            }),
-            { probability: 0.8 }
-        ),
-        preferences: faker.helpers.maybe(
-            () => ({
-                language: faker.helpers.arrayElement(['en', 'es', 'fr']),
-                timezone: faker.location.timeZone(),
-                currency: faker.helpers.arrayElement(['USD', 'EUR', 'GBP', 'ARS']),
-                theme: faker.helpers.arrayElement(['LIGHT', 'DARK', 'AUTO'])
-            }),
-            { probability: 0.8 }
-        )
-    },
 
-    // Bookmarks
-    bookmarks: faker.helpers.maybe(
-        () =>
-            faker.helpers.multiple(
-                () => ({
-                    ...createBaseIdFields(),
-                    ...createBaseAuditFields(),
-                    ...createBaseLifecycleFields(),
-                    ...createBaseAdminFields(),
-                    userId: faker.string.uuid(),
-                    entityType: faker.helpers.arrayElement([
-                        'ACCOMMODATION',
-                        'DESTINATION',
-                        'POST',
-                        'EVENT'
-                    ]),
-                    entityId: faker.string.uuid(),
-                    name: faker.helpers.maybe(() => faker.lorem.words(3), { probability: 0.6 }),
-                    description: faker.helpers.maybe(() => faker.lorem.sentence(), {
-                        probability: 0.4
-                    })
-                }),
-                { count: { min: 1, max: 3 } }
-            ),
-        { probability: 0.6 }
-    )
-});
-
-export const createMinimalUser = () => ({
-    ...createBaseIdFields(),
-    ...createBaseAuditFields(),
-    ...createBaseLifecycleFields(),
-    ...createBaseModerationFields(),
-    ...createBaseVisibilityFields(),
-
-    // Required user fields
-    slug: faker.lorem.slug(3),
-    authProvider: 'CLERK',
-    displayName: faker.person.fullName(),
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
-    birthDate: faker.date.birthdate({ min: 18, max: 80, mode: 'age' }),
-    role: 'USER' as RoleEnum,
-    permissions: []
-});
-
-export const createInvalidUser = () => ({
-    slug: '', // Too short
-    authProvider: 'INVALID_PROVIDER', // Invalid enum
-    displayName: createTooShortString(), // Too short
-    firstName: createTooLongString(100), // Too long
-    lastName: createTooLongString(100), // Too long
-    birthDate: faker.date.future(), // Future date
-    role: 'INVALID_ROLE', // Invalid enum
-    contact: {
-        personalEmail: createInvalidEmail(),
-        mobilePhone: 'invalid-phone',
-        website: 'not-a-url'
-    },
-    profile: {
-        avatar: 'not-a-url',
-        website: 'invalid-url'
-    },
-    permissions: ['invalid.permission'] // Invalid permission
-});
-
-export const createUserWithComplexProfile = () => ({
-    ...createValidUser(),
-
-    profile: {
-        avatar: faker.image.avatar(),
-        bio: faker.lorem.paragraph().slice(0, 300),
-        website: faker.internet.url(),
-        occupation: faker.person.jobTitle()
-    },
-
-    settings: {
-        notifications: {
-            enabled: true,
-            allowEmails: true,
-            allowPush: true,
-            allowSms: false
+        // Profile
+        profile: {
+            bio: 'Software developer passionate about travel and technology.',
+            avatar: 'https://example.com/avatar.jpg',
+            website: 'https://johndoe.com',
+            occupation: 'Software Developer'
         },
-        privacy: {
-            profileVisibility: 'PUBLIC',
-            showEmail: false,
-            showPhone: false,
-            allowMessages: true,
-            showBookings: false,
-            showReviews: true
+
+        // Location
+        location: {
+            country: 'United States',
+            state: 'California',
+            city: 'San Francisco',
+            zipCode: '94102',
+            street: 'Market Street',
+            number: '123',
+            coordinates: {
+                lat: '37.7749',
+                long: '-122.4194'
+            }
         },
-        preferences: {
+
+        // Settings
+        settings: {
             language: 'en',
-            timezone: 'America/New_York',
-            currency: 'USD',
-            theme: 'AUTO',
-            dateFormat: 'MM/DD/YYYY',
-            measurementUnit: 'IMPERIAL'
+            darkMode: false,
+            notifications: {
+                enabled: true,
+                allowEmails: true,
+                allowPush: false,
+                allowSms: false
+            }
         },
-        accessibility: {
-            highContrast: false,
-            largeText: false,
-            screenReader: false,
-            keyboardNavigation: false
+
+        // Admin info
+        adminInfo: {
+            favorite: false,
+            notes: 'Test user for development'
+        },
+
+        // Bookmarks
+        bookmarks: [],
+
+        // Timestamps
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-15T10:30:00Z'),
+
+        // Optional fields
+        createdById: '550e8400-e29b-41d4-a716-446655440001' as UserId,
+        updatedById: '550e8400-e29b-41d4-a716-446655440002' as UserId
+    };
+
+    return { ...baseUser, ...overrides };
+};
+
+/**
+ * Creates a minimal user fixture for testing
+ */
+export const createMinimalUserFixture = (overrides: Partial<UserType> = {}): Partial<UserType> => {
+    const minimalUser: Partial<UserType> = {
+        id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as UserId,
+        slug: 'jane-doe',
+        displayName: 'Jane Doe',
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        visibility: VisibilityEnum.PUBLIC,
+        role: RoleEnum.USER,
+        permissions: [],
+        contactInfo: {
+            personalEmail: 'jane@example.com',
+            mobilePhone: '+10987654321'
+        },
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-01T00:00:00Z'),
+        createdById: '550e8400-e29b-41d4-a716-446655440003' as UserId,
+        updatedById: '550e8400-e29b-41d4-a716-446655440004' as UserId
+    };
+
+    return { ...minimalUser, ...overrides };
+};
+
+/**
+ * Creates a user fixture with admin role
+ */
+export const createAdminUserFixture = (overrides: Partial<UserType> = {}): UserType => {
+    return createUserFixture({
+        displayName: 'Admin User',
+        role: RoleEnum.ADMIN,
+        permissions: [
+            PermissionEnum.ACCOMMODATION_VIEW_ALL,
+            PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+            PermissionEnum.USER_READ_ALL,
+            PermissionEnum.USER_UPDATE_ROLES
+        ],
+        ...overrides
+    });
+};
+
+/**
+ * Creates a user fixture with super admin role
+ */
+export const createSuperAdminUserFixture = (overrides: Partial<UserType> = {}): UserType => {
+    return createUserFixture({
+        displayName: 'Super Admin',
+        role: RoleEnum.SUPER_ADMIN,
+        permissions: Object.values(PermissionEnum),
+        ...overrides
+    });
+};
+
+// Aliases for backward compatibility with existing tests
+export const createValidUser = createUserFixture;
+export const createMinimalUser = createMinimalUserFixture;
+export const createAdminUser = createAdminUserFixture;
+export const createSuperAdminUser = createSuperAdminUserFixture;
+
+/**
+ * Creates a user fixture with invalid data for testing validation
+ */
+export const createInvalidUser = (): Partial<UserType> => {
+    return {
+        id: 'invalid-uuid' as any, // Invalid UUID
+        displayName: '', // Empty required field
+        contactInfo: {
+            personalEmail: 'invalid-email', // Invalid email format
+            mobilePhone: 'invalid-phone'
         }
-    },
+    };
+};
 
-    bookmarks: faker.helpers.multiple(
-        () => ({
-            ...createBaseIdFields(),
-            ...createBaseAuditFields(),
-            ...createBaseLifecycleFields(),
-            ...createBaseAdminFields(),
-            userId: faker.string.uuid(),
-            entityType: faker.helpers.arrayElement([
-                'ACCOMMODATION',
-                'DESTINATION',
-                'POST',
-                'EVENT'
-            ]),
-            entityId: faker.string.uuid(),
-            name: faker.helpers.maybe(() => faker.lorem.words(3), { probability: 0.6 }),
-            description: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.5 })
-        }),
-        { count: { min: 5, max: 20 } }
-    )
-});
-
-export const createAdminUser = () => ({
-    ...createValidUser(),
-    role: 'ADMIN' as RoleEnum,
-    permissions: [
-        'user.read.all',
-        'user.create',
-        'user.update.roles',
-        'user.delete',
-        'accommodation.view.private',
-        'accommodation.create',
-        'accommodation.update.any',
-        'accommodation.delete.any',
-        'post.view.private',
-        'post.create',
-        'post.update',
-        'post.delete',
-        'destination.view.private',
-        'destination.create',
-        'destination.update'
-    ]
-});
-
-export const createSuperAdminUser = () => ({
-    ...createValidUser(),
-    role: 'SUPER_ADMIN' as RoleEnum,
-    permissions: [
-        'user.read.all',
-        'user.create',
-        'user.update.roles',
-        'user.delete',
-        'user.hardDelete',
-        'accommodation.view.private',
-        'accommodation.create',
-        'accommodation.update.any',
-        'accommodation.delete.any',
-        'accommodation.hardDelete',
-        'post.view.private',
-        'post.create',
-        'post.update',
-        'post.delete',
-        'post.hardDelete',
-        'destination.view.private',
-        'destination.create',
-        'destination.update',
-        'destination.delete',
-        'access.panelAdmin',
-        'system.maintenanceMode'
-    ]
-});
-
-export const createUserEdgeCases = () => ({
-    ...createBaseIdFields(),
-    ...createBaseAuditFields(),
-    ...createBaseLifecycleFields(),
-    ...createBaseModerationFields(),
-    ...createBaseVisibilityFields(),
-    slug: 'edge-case-user',
-    displayName: 'AB', // Minimum length (2 chars)
-    firstName: 'A'.repeat(50), // Maximum length (50 chars)
-    lastName: 'A'.repeat(50), // Maximum length (50 chars)
-    birthDate: new Date('1900-01-01'), // Very old
-    role: 'USER' as RoleEnum,
-    permissions: [],
-    contact: {
-        personalEmail: 'a@b.co', // Minimum valid email
-        mobilePhone: '+15550123'
-    },
-    profile: {
-        bio: 'This is a minimum length bio for testing edge cases.', // Minimum valid bio
-        interests: [], // Empty array
-        languages: ['en'] // Single language
-    },
-    settings: {
-        notifications: {
-            enabled: false,
-            allowEmails: false,
-            allowPush: false,
-            allowSms: false
+/**
+ * Creates user fixtures with edge cases for testing
+ */
+export const createUserEdgeCases = (overrides: Partial<UserType> = {}): UserType => {
+    return createUserFixture({
+        // Edge case values that are still valid
+        displayName: 'AB', // Minimum length (2 chars)
+        slug: 'edge-user-123',
+        profile: {
+            bio: 'Short bio.', // Minimum length (10 chars)
+            avatar: 'https://example.com/edge-avatar.jpg',
+            website: 'https://edge.example.com',
+            occupation: 'Edge Case Tester'
         },
-        privacy: {
-            profileVisibility: 'PRIVATE',
-            showEmail: false,
-            showPhone: false,
-            allowMessages: false
+        permissions: [], // Empty array
+        bookmarks: [], // Empty array
+        ...overrides
+    });
+};
+
+/**
+ * Creates a user fixture with complex profile data
+ */
+export const createUserWithComplexProfile = (overrides: Partial<UserType> = {}): UserType => {
+    return createUserFixture({
+        profile: {
+            bio: 'Experienced travel blogger and digital nomad with over 10 years of experience exploring South America. Passionate about sustainable tourism and local culture.',
+            avatar: 'https://example.com/complex-avatar.jpg',
+            website: 'https://travelblogger.example.com',
+            occupation: 'Travel Blogger & Digital Marketing Consultant'
         },
-        preferences: {
-            language: 'en',
-            timezone: 'UTC',
-            currency: 'USD',
-            theme: 'LIGHT'
-        }
-    },
-    bookmarks: [] // Empty bookmarks
-});
+        contactInfo: {
+            personalEmail: 'complex.user@example.com',
+            workEmail: 'work@travelblogger.example.com',
+            mobilePhone: '+5491123456789',
+            homePhone: '+541143216789',
+            website: 'https://travelblogger.example.com'
+        },
+        location: {
+            country: 'Argentina',
+            state: 'Buenos Aires',
+            city: 'Buenos Aires',
+            zipCode: 'C1001',
+            street: 'Av. Corrientes',
+            number: '1234',
+            floor: '5',
+            apartment: 'B',
+            neighborhood: 'San Nicolás',
+            coordinates: {
+                lat: '-34.6037',
+                long: '-58.3816'
+            }
+        },
+        ...overrides
+    });
+};
