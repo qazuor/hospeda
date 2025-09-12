@@ -205,6 +205,8 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/common/params.schema.ts | common | TagIdParamsSchema | TagIdParams | Schema for Tag ID path parameters Used for tag-specific endpoints |
 | src/common/params.schema.ts | common | UserAccommodationParamsSchema | UserAccommodationParams | Schema for user accommodation parameters Used for user's accommodation endpoints |
 | src/common/params.schema.ts | common | UserIdParamsSchema | UserIdParams | Schema for User ID path parameters Used for user-specific endpoints |
+| src/common/params.schema.ts | common | PermissionParamsSchema | PermissionParams | Schema for Permission path parameters Used for permission-specific endpoints |
+| src/common/params.schema.ts | common | RoleParamsSchema | RoleParams | Schema for Role path parameters Used for role-specific endpoints |
 | src/common/params.schema.ts | common | UserPaymentParamsSchema | UserPaymentParams | Schema for user payment parameters Used for user's payment endpoints |
 | src/common/params.schema.ts | common | VersionParamsSchema | VersionParams | Schema for version parameters Used for API versioning in path parameters |
 | src/common/price.schema.ts | common | PriceSchema |  |  |
@@ -226,6 +228,13 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/common/tags.schema.ts | common | TagsSchema | Tags | Tags Schema - Complete tags information Can be used as a standalone schema when needed |
 | src/common/visibility.schema.ts | common | VisibilitySchema | Visibility | Base visibility fields / export const BaseVisibilityFields = { visibility: VisibilityEnumSchema } as const; /** Visibility Schema - Complete visibility information Can be used as a standalone schem… |
 | src/common/result.schema.ts | common | SuccessSchema | Success | Generic success response schema Use for endpoints that return only a success boolean. |
+| src/common/result.schema.ts | common | AssignmentResultSchema | AssignmentResult | Generic assignment result schema Returns assignment status with default true |
+| src/common/result.schema.ts | common | RemovalResultSchema | RemovalResult | Generic removal result schema Returns removal status with default true |
+| src/common/result.schema.ts | common | DeleteResultSchema | DeleteResult | Generic delete result schema Returns success status and optional deletedAt timestamp |
+| src/common/result.schema.ts | common | RestoreResultSchema | RestoreResult | Generic restore result schema Returns success status and optional restoredAt timestamp |
+| src/common/result.schema.ts | common | PermissionsListResultSchema | PermissionsListResult | Generic permissions list result schema Returns array of permission enums |
+| src/common/result.schema.ts | common | RolesListResultSchema | RolesListResult | Generic roles list result schema Returns array of role enums |
+| src/common/result.schema.ts | common | UsersListResultSchema | UsersListResult | Generic users list result schema Returns array of user IDs |
 
 ### attraction
 
@@ -694,3 +703,19 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/user/user.schema.ts | user | UserSchema | User | User Schema - Main Entity Schema This schema defines the complete structure of a User entity using base field objects for consistency and maintainability. |
 | src/entities/user/user.settings.schema.ts | user | UserNotificationsSchema |  | User Settings schema definition using Zod for validation. |
 | src/entities/user/user.settings.schema.ts | user | UserSettingsSchema |  |  |
+
+### permission
+
+| filePath | entidad | schema | type inferido/asociado | commentario |
+|---|---|---|---|---|
+| src/entities/permission/permission.management.schema.ts | permission | RolePermissionManagementInputSchema | RolePermissionManagementInput | Schema for managing permissions assigned to a role Allows adding/removing permissions from roles |
+| src/entities/permission/permission.management.schema.ts | permission | UserPermissionManagementInputSchema | UserPermissionManagementInput | Schema for managing permissions assigned to a user Allows adding/removing permissions from users |
+| src/entities/permission/permission.management.schema.ts | permission | PermissionsByRoleInputSchema | PermissionsByRoleInput | Schema for querying permissions by role Used to get all permissions assigned to a specific role |
+| src/entities/permission/permission.management.schema.ts | permission | PermissionsByUserInputSchema | PermissionsByUserInput | Schema for querying permissions by user Used to get all permissions assigned to a specific user |
+| src/entities/permission/permission.management.schema.ts | permission | RolesByPermissionInputSchema | RolesByPermissionInput | Schema for querying roles by permission Used to get all roles that have a specific permission |
+| src/entities/permission/permission.management.schema.ts | permission | UsersByPermissionInputSchema | UsersByPermissionInput | Schema for querying users by permission Used to get all users that have a specific permission |
+| src/entities/permission/permission.management.schema.ts | permission | PermissionAssignmentOutputSchema | PermissionAssignmentOutput | Schema for permission assignment operation results Returns assignment status |
+| src/entities/permission/permission.management.schema.ts | permission | PermissionRemovalOutputSchema | PermissionRemovalOutput | Schema for permission removal operation results Returns removal status |
+| src/entities/permission/permission.management.schema.ts | permission | PermissionsQueryOutputSchema | PermissionsQueryOutput | Schema for permissions query results Returns list of permissions |
+| src/entities/permission/permission.management.schema.ts | permission | RolesQueryOutputSchema | RolesQueryOutput | Schema for roles query results Returns list of roles |
+| src/entities/permission/permission.management.schema.ts | permission | UsersQueryOutputSchema | UsersQueryOutput | Schema for users query results Returns list of user IDs |
