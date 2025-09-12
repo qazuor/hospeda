@@ -12,6 +12,4 @@ export * from './event.relations.schema.js'; // Schemas with related entities
 
 // Additional schemas
 export * from './event.date.schema.js';
-// EventLocation schema moved to eventLocation entity folder
-export * from './event.organizer.schema.js';
 export * from './event.price.schema.js';
