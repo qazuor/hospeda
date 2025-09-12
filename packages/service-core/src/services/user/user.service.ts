@@ -1,13 +1,30 @@
 import { AccommodationModel, EventModel, PostModel, UserIdentityModel, UserModel } from '@repo/db';
 import {
-    CreateUserSchema,
-    UpdateUserSchema,
-    UserFilterInputSchema,
-    UserSchema
+    type UserAddPermissionInput,
+    UserAddPermissionInputSchema,
+    type UserAssignRoleInput,
+    UserAssignRoleInputSchema,
+    type UserCreateInput,
+    UserCreateInputSchema,
+    type UserEnsureFromAuthProviderInput,
+    UserEnsureFromAuthProviderInputSchema,
+    type UserEnsureFromAuthProviderOutput,
+    type UserGetByAuthProviderInput,
+    UserGetByAuthProviderInputSchema,
+    type UserGetByAuthProviderOutput,
+    type UserListWithCountsOutput,
+    type UserRemovePermissionInput,
+    UserRemovePermissionInputSchema,
+    type UserRolePermissionOutput,
+    UserSchema,
+    type UserSearchInput,
+    UserSearchInputSchema,
+    type UserSetPermissionsInput,
+    UserSetPermissionsInputSchema,
+    UserUpdateInputSchema
 } from '@repo/schemas';
-import type { PermissionEnum, UserType } from '@repo/types';
+import type { UserType } from '@repo/types';
 import { RoleEnum, ServiceErrorCode } from '@repo/types';
-import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -20,12 +37,6 @@ import {
     normalizeViewInput
 } from './user.normalizers';
 import { canAssignRole } from './user.permissions';
-import {
-    AddPermissionSchema,
-    AssignRoleSchema,
-    RemovePermissionSchema,
-    SetPermissionsSchema
-} from './user.schemas';
 
 /**
  * Service for managing users, roles, and permissions.
@@ -38,15 +49,15 @@ import {
 export class UserService extends BaseCrudService<
     UserType,
     UserModel,
-    typeof CreateUserSchema,
-    typeof UpdateUserSchema,
-    typeof UserFilterInputSchema
+    typeof UserCreateInputSchema,
+    typeof UserUpdateInputSchema,
+    typeof UserSearchInputSchema
 > {
     static readonly ENTITY_NAME = 'user';
     protected readonly entityName = UserService.ENTITY_NAME;
     protected readonly model: UserModel;
     protected readonly schema = UserSchema;
-    protected readonly filterSchema = UserFilterInputSchema;
+    protected readonly filterSchema = UserSearchInputSchema;
     protected readonly normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
@@ -54,9 +65,9 @@ export class UserService extends BaseCrudService<
         view: normalizeViewInput
     } as const;
     protected readonly logger: ServiceLogger;
-    protected readonly createSchema = CreateUserSchema;
-    protected readonly updateSchema = UpdateUserSchema;
-    protected readonly searchSchema = UserFilterInputSchema;
+    protected readonly createSchema = UserCreateInputSchema;
+    protected readonly updateSchema = UserUpdateInputSchema;
+    protected readonly searchSchema = UserSearchInputSchema;
 
     constructor(ctx: ServiceContext, model?: UserModel) {
         super(ctx, UserService.ENTITY_NAME);
@@ -72,12 +83,12 @@ export class UserService extends BaseCrudService<
      */
     public async getByAuthProviderId(
         actor: Actor,
-        params: { provider: string; providerUserId: string }
-    ): Promise<ServiceOutput<{ user: UserType | null }>> {
+        params: UserGetByAuthProviderInput
+    ): Promise<ServiceOutput<UserGetByAuthProviderOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByAuthProviderId',
             input: { actor, ...params },
-            schema: z.object({ provider: z.string(), providerUserId: z.string() }),
+            schema: UserGetByAuthProviderInputSchema,
             execute: async ({ provider, providerUserId }) => {
                 const user = await this.model.findOne({
                     authProvider: provider,
@@ -96,52 +107,12 @@ export class UserService extends BaseCrudService<
      */
     public async ensureFromAuthProvider(
         actor: Actor,
-        params: {
-            provider: string;
-            providerUserId: string;
-            profile?: Partial<
-                Pick<UserType, 'firstName' | 'lastName' | 'displayName' | 'contactInfo' | 'profile'>
-            >;
-            identities?: Array<{
-                provider: string;
-                providerUserId: string;
-                email?: string;
-                username?: string;
-                avatarUrl?: string;
-                raw?: unknown;
-                lastLoginAt?: Date;
-            }>;
-        }
-    ): Promise<ServiceOutput<{ user: UserType }>> {
+        params: UserEnsureFromAuthProviderInput
+    ): Promise<ServiceOutput<UserEnsureFromAuthProviderOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'ensureFromAuthProvider',
             input: { actor, ...params },
-            schema: z.object({
-                provider: z.string(),
-                providerUserId: z.string(),
-                profile: z
-                    .object({
-                        firstName: z.string().optional(),
-                        lastName: z.string().optional(),
-                        displayName: z.string().optional(),
-                        contactInfo: z.any().optional(),
-                        profile: z.any().optional()
-                    })
-                    .optional(),
-                identities: z
-                    .array(
-                        z.object({
-                            provider: z.string(),
-                            providerUserId: z.string(),
-                            email: z.string().optional(),
-                            username: z.string().optional(),
-                            avatarUrl: z.string().optional(),
-                            raw: z.unknown().optional(),
-                            lastLoginAt: z.date().optional()
-                        })
-                    )
-                    .optional()
-            }),
+            schema: UserEnsureFromAuthProviderInputSchema,
             execute: async ({ provider, providerUserId, profile, identities }) => {
                 // Try to find existing user
                 const existing = await this.model.findOne({
@@ -167,7 +138,7 @@ export class UserService extends BaseCrudService<
                     if (newAvatar && !hasAvatar) {
                         selectiveUpdates.profile = {
                             ...(existing.profile ?? {}),
-                            avatar: newAvatar
+                            avatar: typeof newAvatar === 'string' ? newAvatar : newAvatar.url
                         };
                     }
                     // Complete email only if contactInfo exists already and email available via identities
@@ -239,8 +210,25 @@ export class UserService extends BaseCrudService<
                     ...(profile?.firstName ? { firstName: profile.firstName } : {}),
                     ...(profile?.lastName ? { lastName: profile.lastName } : {}),
                     ...(profile?.displayName ? { displayName: profile.displayName } : {}),
-                    ...(profile?.contactInfo ? { contactInfo: profile.contactInfo } : {}),
-                    ...(profile?.profile ? { profile: profile.profile } : {})
+                    ...(profile?.contactInfo
+                        ? {
+                              contactInfo: {
+                                  ...profile.contactInfo,
+                                  mobilePhone: profile.contactInfo.phone || ''
+                              }
+                          }
+                        : {}),
+                    ...(profile?.profile
+                        ? {
+                              profile: {
+                                  ...profile.profile,
+                                  avatar:
+                                      typeof profile.profile.avatar === 'string'
+                                          ? profile.profile.avatar
+                                          : profile.profile.avatar?.url || ''
+                              }
+                          }
+                        : {})
                 };
                 const created = await this.model.create({
                     ...baseNewUser,
@@ -405,10 +393,13 @@ export class UserService extends BaseCrudService<
      * Normalizes and generates slug before creating a user.
      */
     protected async _beforeCreate(
-        data: z.infer<typeof CreateUserSchema>,
+        data: UserCreateInput,
         _actor: Actor
     ): Promise<Partial<UserType>> {
-        return normalizeUserInput(data) as Partial<UserType>;
+        // Ensure data is properly typed for normalization
+        const cleanData = data as Partial<UserType>;
+        const normalized = await normalizeUserInput(cleanData);
+        return normalized;
     }
 
     /**
@@ -416,7 +407,7 @@ export class UserService extends BaseCrudService<
      * Bookmarks are always omitted from the result (even if type allows).
      */
     protected async _beforeUpdate(
-        data: Partial<z.infer<typeof UserSchema>>,
+        data: Partial<UserType>,
         _actor: Actor
     ): Promise<Partial<UserType>> {
         // Remove bookmarks before normalization to avoid type errors
@@ -435,12 +426,12 @@ export class UserService extends BaseCrudService<
      */
     public async assignRole(
         actor: Actor,
-        params: { userId: string; role: RoleEnum }
-    ): Promise<ServiceOutput<{ user: UserType }>> {
+        params: UserAssignRoleInput
+    ): Promise<ServiceOutput<UserRolePermissionOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'assignRole',
             input: { ...params, actor },
-            schema: AssignRoleSchema,
+            schema: UserAssignRoleInputSchema,
             execute: async ({ userId, role }, actor) => {
                 canAssignRole(actor);
                 const user = await this.model.findById(userId);
@@ -471,12 +462,12 @@ export class UserService extends BaseCrudService<
      */
     public async addPermission(
         actor: Actor,
-        params: { userId: string; permission: PermissionEnum }
-    ): Promise<ServiceOutput<{ user: UserType }>> {
+        params: UserAddPermissionInput
+    ): Promise<ServiceOutput<UserRolePermissionOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addPermission',
             input: { ...params, actor },
-            schema: AddPermissionSchema,
+            schema: UserAddPermissionInputSchema,
             execute: async ({ userId, permission }, actor) => {
                 this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
@@ -510,12 +501,12 @@ export class UserService extends BaseCrudService<
      */
     public async removePermission(
         actor: Actor,
-        params: { userId: string; permission: PermissionEnum }
-    ): Promise<ServiceOutput<{ user: UserType }>> {
+        params: UserRemovePermissionInput
+    ): Promise<ServiceOutput<UserRolePermissionOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removePermission',
             input: { ...params, actor },
-            schema: RemovePermissionSchema,
+            schema: UserRemovePermissionInputSchema,
             execute: async ({ userId, permission }, actor) => {
                 this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
@@ -549,12 +540,12 @@ export class UserService extends BaseCrudService<
      */
     public async setPermissions(
         actor: Actor,
-        params: { userId: string; permissions: PermissionEnum[] }
-    ): Promise<ServiceOutput<{ user: UserType }>> {
+        params: UserSetPermissionsInput
+    ): Promise<ServiceOutput<UserRolePermissionOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'setPermissions',
             input: { ...params, actor },
-            schema: SetPermissionsSchema,
+            schema: UserSetPermissionsInputSchema,
             execute: async ({ userId, permissions }, actor) => {
                 this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
@@ -578,7 +569,7 @@ export class UserService extends BaseCrudService<
      * @param params - The validated and processed search parameters (filters, pagination, etc.)
      * @returns Paginated list of users matching the criteria
      */
-    protected async _executeSearch(params: z.infer<typeof UserFilterInputSchema>, _actor: Actor) {
+    protected async _executeSearch(params: UserSearchInput, _actor: Actor) {
         const { filters = {}, pagination } = params;
         const page = pagination?.page ?? 1;
         const pageSize = pagination?.pageSize ?? 10;
@@ -590,7 +581,7 @@ export class UserService extends BaseCrudService<
      * @param params - The validated and processed search parameters (filters, pagination, etc.)
      * @returns Count of users matching the criteria
      */
-    protected async _executeCount(params: z.infer<typeof UserFilterInputSchema>, _actor: Actor) {
+    protected async _executeCount(params: UserSearchInput, _actor: Actor) {
         const { filters = {} } = params;
         const count = await this.model.count(filters);
         return { count };
@@ -604,17 +595,8 @@ export class UserService extends BaseCrudService<
      */
     public async searchForList(
         actor: Actor,
-        params: z.infer<typeof UserFilterInputSchema>
-    ): Promise<{
-        items: Array<
-            UserType & {
-                accommodationCount?: number;
-                eventsCount?: number;
-                postsCount?: number;
-            }
-        >;
-        total: number;
-    }> {
+        params: UserSearchInput
+    ): Promise<UserListWithCountsOutput> {
         this._canSearch(actor);
         const { filters = {}, pagination } = params;
         const page = pagination?.page ?? 1;
