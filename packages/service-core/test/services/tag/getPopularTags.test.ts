@@ -40,7 +40,11 @@ describe('TagService.getPopularTags', () => {
             { tag: tagC, usageCount: 1 }
         ]);
         // Act
-        const result = await service.getPopularTags(actor, { limit: 10 });
+        const result = await service.getPopularTags(actor, {
+            limit: 10,
+            entityType: 'all',
+            timeframe: 'all'
+        });
         // Assert
         expectSuccess(result);
         expect(result.data?.tags).toEqual([tagA, tagB, tagC]);
@@ -55,7 +59,11 @@ describe('TagService.getPopularTags', () => {
             { tag: tagB, usageCount: 2 }
         ]);
         // Act
-        const result = await service.getPopularTags(actor, { limit: 2 });
+        const result = await service.getPopularTags(actor, {
+            limit: 2,
+            entityType: 'all',
+            timeframe: 'all'
+        });
         // Assert
         expectSuccess(result);
         expect(result.data?.tags).toEqual([tagA, tagB]);
@@ -65,7 +73,11 @@ describe('TagService.getPopularTags', () => {
         // Arrange
         asMock(modelMock.findPopularTags).mockResolvedValue([]);
         // Act
-        const result = await service.getPopularTags(actor, { limit: 10 });
+        const result = await service.getPopularTags(actor, {
+            limit: 10,
+            entityType: 'all',
+            timeframe: 'all'
+        });
         // Assert
         expectSuccess(result);
         expect(result.data?.tags).toEqual([]);
@@ -77,7 +89,11 @@ describe('TagService.getPopularTags', () => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         };
         // Act
-        const result = await service.getPopularTags(actor, { limit: 10 });
+        const result = await service.getPopularTags(actor, {
+            limit: 10,
+            entityType: 'all',
+            timeframe: 'all'
+        });
         // Assert
         expectForbiddenError(result);
     });
@@ -91,7 +107,11 @@ describe('TagService.getPopularTags', () => {
         // Arrange
         asMock(modelMock.findPopularTags).mockRejectedValue(new Error('DB error'));
         // Act
-        const result = await service.getPopularTags(actor, { limit: 10 });
+        const result = await service.getPopularTags(actor, {
+            limit: 10,
+            entityType: 'all',
+            timeframe: 'all'
+        });
         // Assert
         expectInternalError(result);
     });

@@ -16,7 +16,7 @@ describe('TagService.search', () => {
     let actor: Actor;
     const tag = TagFactoryBuilder.create({ name: 'Tag', slug: 'tag', color: TagColorEnum.BLUE });
     const paginated = { items: [tag], total: 1 };
-    const searchParams = { filters: { name: 'Tag' } };
+    const searchParams = { filters: { nameContains: 'Tag' }, fuzzySearch: true };
 
     beforeEach(() => {
         tagModelMock = createTypedModelMock(TagModel, ['findAll']);

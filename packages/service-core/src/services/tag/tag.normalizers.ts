@@ -1,8 +1,8 @@
+import type { TagCreateInput, TagUpdateInput } from '@repo/schemas';
 import { ServiceErrorCode, TagColorEnum } from '@repo/types';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { generateTagSlug } from './tag.helpers';
-import type { CreateTagInput, UpdateTagInput } from './tag.schemas';
 
 /**
  * Normalizes input for creating a tag.
@@ -15,9 +15,9 @@ import type { CreateTagInput, UpdateTagInput } from './tag.schemas';
  * @returns Normalized input.
  */
 export const normalizeCreateInput = async (
-    input: CreateTagInput,
+    input: TagCreateInput,
     _actor: Actor
-): Promise<CreateTagInput> => {
+): Promise<TagCreateInput> => {
     const name = input.name.trim();
     const slug = input.slug?.trim() || (await generateTagSlug(name));
     const color = input.color;
@@ -28,6 +28,7 @@ export const normalizeCreateInput = async (
         name,
         slug,
         color,
+        lifecycleState: input.lifecycleState,
         icon: input.icon?.trim() || undefined,
         notes: input.notes?.trim() || undefined
     };
@@ -41,8 +42,8 @@ export const normalizeCreateInput = async (
  * @param _actor - The actor performing the action.
  * @returns Normalized input.
  */
-export const normalizeUpdateInput = (input: UpdateTagInput, _actor: Actor): UpdateTagInput => {
-    const normalized: UpdateTagInput = { ...input };
+export const normalizeUpdateInput = (input: TagUpdateInput, _actor: Actor): TagUpdateInput => {
+    const normalized: TagUpdateInput = { ...input };
     if (input.name) normalized.name = input.name.trim();
     if (input.slug) normalized.slug = input.slug.trim();
     if (input.icon) normalized.icon = input.icon.trim();

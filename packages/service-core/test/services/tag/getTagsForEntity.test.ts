@@ -21,7 +21,7 @@ describe('TagService.getTagsForEntity', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const tag = TagFactoryBuilder.create({ name: 'Tag' });
-    const input = { entityId: 'entity-1', entityType: 'POST' };
+    const input = { entityId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', entityType: 'POST' };
     const relation = { id: 'rel-1', tag };
 
     beforeEach(() => {

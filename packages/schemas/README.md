@@ -683,8 +683,17 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/tag/tag.crud.schema.ts | tag | TagRestoreOutputSchema | TagRestoreOutput | Schema for tag restoration response Returns the complete restored tag object |
 | src/entities/tag/tag.crud.schema.ts | tag | TagUpdateInputSchema | TagUpdateInput | Schema for updating a tag (PUT - complete replacement) Omits auto-generated fields and makes all fields partial |
 | src/entities/tag/tag.crud.schema.ts | tag | TagUpdateOutputSchema | TagUpdateOutput | Schema for tag update response Returns the complete updated tag object |
+| src/entities/tag/tag.crud.schema.ts | tag | TagAddToEntityInputSchema | TagAddToEntityInput | Schema for adding a tag to an entity (polymorphic) Requires tagId, entityId, and entityType |
+| src/entities/tag/tag.crud.schema.ts | tag | TagAddToEntityOutputSchema | TagAddToEntityOutput | Schema for adding tag to entity response Returns success status |
+| src/entities/tag/tag.crud.schema.ts | tag | TagRemoveFromEntityInputSchema | TagRemoveFromEntityInput | Schema for removing a tag from an entity (polymorphic) Requires tagId, entityId, and entityType |
+| src/entities/tag/tag.crud.schema.ts | tag | TagRemoveFromEntityOutputSchema | TagRemoveFromEntityOutput | Schema for removing tag from entity response Returns success status |
+| src/entities/tag/tag.crud.schema.ts | tag | TagGetForEntityInputSchema | TagGetForEntityInput | Schema for getting all tags for a given entity (polymorphic) Requires entityId and entityType |
+| src/entities/tag/tag.crud.schema.ts | tag | TagGetForEntityOutputSchema | TagGetForEntityOutput | Schema for getting tags for entity response Returns array of tags |
+| src/entities/tag/tag.crud.schema.ts | tag | TagGetEntitiesByTagInputSchema | TagGetEntitiesByTagInput | Schema for getting all entities associated with a tag Requires tagId, optional entityType filter |
+| src/entities/tag/tag.crud.schema.ts | tag | TagGetEntitiesByTagOutputSchema | TagGetEntitiesByTagOutput | Schema for getting entities by tag response Returns array of entity references |
 | src/entities/tag/tag.query.schema.ts | tag | PopularTagsInputSchema | PopularTagsInput | Schema for popular tags input Parameters for fetching popular tags |
 | src/entities/tag/tag.query.schema.ts | tag | PopularTagsOutputSchema | PopularTagsOutput | Schema for popular tags output Returns list of popular tags with usage statistics |
+| src/entities/tag/tag.query.schema.ts | tag | PopularTagsSimpleOutputSchema | PopularTagsSimpleOutput | Simple schema for popular tags output (basic version) Returns just an array of tags without metadata |
 | src/entities/tag/tag.query.schema.ts | tag | TagFiltersSchema | TagFilters | Tag Query Schemas This file contains all schemas related to querying tags: - List (input/output/item) - Search (input/output/result) - Summary - Stats - Filters / // ===============================… |
 | src/entities/tag/tag.query.schema.ts | tag | TagListInputSchema | TagListInput | Schema for tag list input parameters Includes pagination and filters |
 | src/entities/tag/tag.query.schema.ts | tag | TagListItemSchema | TagListItem | Schema for individual tag items in lists Contains essential fields for list display |

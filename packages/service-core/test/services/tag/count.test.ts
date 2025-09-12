@@ -13,7 +13,7 @@ describe('TagService.count', () => {
     let tagModelMock: TagModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const countParams = { filters: { name: 'Tag' } };
+    const countParams = { filters: { nameContains: 'Tag' }, fuzzySearch: true };
 
     beforeEach(() => {
         tagModelMock = createTypedModelMock(TagModel, ['count']);

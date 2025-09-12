@@ -184,9 +184,16 @@ export const TagListItemSchema = TagSchema.pick({
     id: true,
     name: true,
     color: true,
-    usageCount: true,
     createdAt: true,
     updatedAt: true
+}).extend({
+    usageCount: z
+        .number({
+            message: 'zodError.tag.usageCount.required'
+        })
+        .int({ message: 'zodError.tag.usageCount.int' })
+        .min(0, { message: 'zodError.tag.usageCount.min' })
+        .default(0)
 });
 
 /**
@@ -275,8 +282,15 @@ export const TagSearchOutputSchema = z.object({
 export const TagSummarySchema = TagSchema.pick({
     id: true,
     name: true,
-    color: true,
-    usageCount: true
+    color: true
+}).extend({
+    usageCount: z
+        .number({
+            message: 'zodError.tag.usageCount.required'
+        })
+        .int({ message: 'zodError.tag.usageCount.int' })
+        .min(0, { message: 'zodError.tag.usageCount.min' })
+        .default(0)
 });
 
 // ============================================================================
@@ -337,6 +351,14 @@ export const PopularTagsOutputSchema = z.object({
         totalTags: z.number().int().min(0),
         generatedAt: z.date()
     })
+});
+
+/**
+ * Simple schema for popular tags output (basic version)
+ * Returns just an array of tags without metadata
+ */
+export const PopularTagsSimpleOutputSchema = z.object({
+    tags: z.array(TagSchema)
 });
 
 // ============================================================================
@@ -468,4 +490,5 @@ export type TagSearchOutput = z.infer<typeof TagSearchOutputSchema>;
 export type TagSummary = z.infer<typeof TagSummarySchema>;
 export type PopularTagsInput = z.infer<typeof PopularTagsInputSchema>;
 export type PopularTagsOutput = z.infer<typeof PopularTagsOutputSchema>;
+export type PopularTagsSimpleOutput = z.infer<typeof PopularTagsSimpleOutputSchema>;
 export type TagStats = z.infer<typeof TagStatsSchema>;

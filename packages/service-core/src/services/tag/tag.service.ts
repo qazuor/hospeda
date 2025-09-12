@@ -1,4 +1,24 @@
 import { REntityTagModel, TagModel } from '@repo/db';
+import {
+    type TagAddToEntityInput,
+    TagAddToEntityInputSchema,
+    type TagAddToEntityOutput,
+    type TagCreateInput,
+    TagCreateInputSchema,
+    type TagGetEntitiesByTagInput,
+    TagGetEntitiesByTagInputSchema,
+    type TagGetEntitiesByTagOutput,
+    type TagGetForEntityInput,
+    TagGetForEntityInputSchema,
+    type TagGetForEntityOutput,
+    type TagGetPopularInput,
+    TagGetPopularInputSchema,
+    type TagGetPopularOutput,
+    type TagRemoveFromEntityInput,
+    TagRemoveFromEntityInputSchema,
+    TagSearchInputSchema,
+    TagUpdateInputSchema
+} from '@repo/schemas';
 import type {
     AccommodationId,
     DestinationId,
@@ -11,7 +31,7 @@ import type {
     UserId
 } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -29,16 +49,6 @@ import {
     checkCanUpdateVisibilityTag,
     checkCanViewTag
 } from './tag.permissions';
-import {
-    type CreateTagInput,
-    CreateTagSchema,
-    type GetEntitiesByTagInput,
-    GetEntitiesByTagSchema,
-    GetTagsForEntitySchema,
-    RemoveTagFromEntitySchema,
-    SearchTagSchema,
-    UpdateTagSchema
-} from './tag.schemas';
 
 /**
  * Service for managing tags. Implements business logic, permissions, and hooks for Tag entities.
@@ -48,9 +58,9 @@ export class TagService extends BaseCrudRelatedService<
     TagType,
     TagModel,
     REntityTagModel,
-    typeof CreateTagSchema,
-    typeof UpdateTagSchema,
-    typeof SearchTagSchema
+    typeof TagCreateInputSchema,
+    typeof TagUpdateInputSchema,
+    typeof TagSearchInputSchema
 > {
     static readonly ENTITY_NAME = 'tag';
     protected readonly entityName = TagService.ENTITY_NAME;
@@ -65,15 +75,15 @@ export class TagService extends BaseCrudRelatedService<
     /**
      * Zod schema for tag creation.
      */
-    protected readonly createSchema = CreateTagSchema;
+    protected readonly createSchema = TagCreateInputSchema;
     /**
      * Zod schema for tag updates.
      */
-    protected readonly updateSchema = UpdateTagSchema;
+    protected readonly updateSchema = TagUpdateInputSchema;
     /**
      * Zod schema for tag search/filtering.
      */
-    protected readonly searchSchema = SearchTagSchema;
+    protected readonly searchSchema = TagSearchInputSchema;
 
     protected normalizers = {
         create: normalizeCreateInput,
@@ -98,7 +108,7 @@ export class TagService extends BaseCrudRelatedService<
         return new REntityTagModel();
     }
 
-    protected _canCreate(actor: Actor, _data: CreateTagInput): void {
+    protected _canCreate(actor: Actor, _data: TagCreateInput): void {
         checkCanCreateTag(actor);
     }
     protected _canUpdate(actor: Actor, _entity: TagType): void {
@@ -153,7 +163,7 @@ export class TagService extends BaseCrudRelatedService<
      * @param _actor The actor performing the search.
      * @returns A paginated list of tags matching the criteria.
      */
-    protected async _executeSearch(params: z.infer<typeof SearchTagSchema>, _actor: Actor) {
+    protected async _executeSearch(params: z.infer<typeof TagSearchInputSchema>, _actor: Actor) {
         const { filters = {}, pagination } = params;
         const page = pagination?.page ?? 1;
         const pageSize = pagination?.pageSize ?? 10;
@@ -166,7 +176,7 @@ export class TagService extends BaseCrudRelatedService<
      * @param _actor The actor performing the count.
      * @returns An object containing the total count of tags matching the criteria.
      */
-    protected async _executeCount(params: z.infer<typeof SearchTagSchema>, _actor: Actor) {
+    protected async _executeCount(params: z.infer<typeof TagSearchInputSchema>, _actor: Actor) {
         const { filters = {} } = params;
         const count = await this.model.count(filters);
         return { count };
@@ -180,12 +190,12 @@ export class TagService extends BaseCrudRelatedService<
      */
     public async getPopularTags(
         actor: Actor,
-        params: { limit?: number }
-    ): Promise<ServiceOutput<{ tags: TagType[] }>> {
+        params: TagGetPopularInput
+    ): Promise<ServiceOutput<TagGetPopularOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getPopularTags',
             input: { actor, ...params },
-            schema: z.object({ limit: z.number().int().positive().max(100).optional() }).strict(),
+            schema: TagGetPopularInputSchema,
             execute: async (validated) => {
                 this._canList(actor);
                 const results = await this.relatedModel.findPopularTags(validated.limit ?? 10);
@@ -199,22 +209,16 @@ export class TagService extends BaseCrudRelatedService<
      * Adds a tag to an entity (polymorphic).
      * @param actor - The actor performing the action.
      * @param params - tagId, entityId, entityType.
-     * @returns ServiceOutput<void>
+     * @returns ServiceOutput<TagAddToEntityOutput>
      */
     public async addTagToEntity(
         actor: Actor,
-        params: { tagId: string; entityId: string; entityType: string }
-    ): Promise<ServiceOutput<void>> {
+        params: TagAddToEntityInput
+    ): Promise<ServiceOutput<TagAddToEntityOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addTagToEntity',
             input: { actor, ...params },
-            schema: z
-                .object({
-                    tagId: z.string().min(1),
-                    entityId: z.string().min(1),
-                    entityType: z.string().min(1)
-                })
-                .strict(),
+            schema: TagAddToEntityInputSchema.strict(),
             execute: async (validated) => {
                 this._canUpdate(actor, { id: validated.tagId } as TagType);
                 const tag = await this.model.findById(validated.tagId as TagId);
@@ -247,7 +251,7 @@ export class TagService extends BaseCrudRelatedService<
                         | EventId,
                     entityType: validated.entityType as EntityTypeEnum
                 });
-                return;
+                return { success: true };
             }
         });
     }
@@ -257,16 +261,16 @@ export class TagService extends BaseCrudRelatedService<
      * Requires TAG_UPDATE permission.
      * @param actor - The actor performing the action.
      * @param params - tagId, entityId, entityType.
-     * @returns ServiceOutput<void>
+     * @returns ServiceOutput<TagRemoveFromEntityOutput>
      */
     public async removeTagFromEntity(
         actor: Actor,
-        params: { tagId: string; entityId: string; entityType: string }
-    ): Promise<ServiceOutput<void>> {
+        params: TagRemoveFromEntityInput
+    ): Promise<ServiceOutput<TagAddToEntityOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeTagFromEntity',
             input: { actor, ...params },
-            schema: RemoveTagFromEntitySchema.strict(),
+            schema: TagRemoveFromEntityInputSchema.strict(),
             execute: async (validated) => {
                 this._canUpdate(actor, { id: validated.tagId } as TagType);
                 const existing = await this.relatedModel.findOne({
@@ -295,7 +299,7 @@ export class TagService extends BaseCrudRelatedService<
                         | EventId,
                     entityType: validated.entityType as EntityTypeEnum
                 });
-                return;
+                return { success: true };
             }
         });
     }
@@ -305,16 +309,16 @@ export class TagService extends BaseCrudRelatedService<
      * Requires TAG_UPDATE permission.
      * @param actor - The actor performing the action.
      * @param params - entityId, entityType.
-     * @returns ServiceOutput<{ tags: TagType[] }>
+     * @returns ServiceOutput<TagGetForEntityOutput>
      */
     public async getTagsForEntity(
         actor: Actor,
-        params: { entityId: string; entityType: string }
-    ): Promise<ServiceOutput<{ tags: TagType[] }>> {
+        params: TagGetForEntityInput
+    ): Promise<ServiceOutput<TagGetForEntityOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTagsForEntity',
             input: { actor, ...params },
-            schema: GetTagsForEntitySchema.strict(),
+            schema: TagGetForEntityInputSchema.strict(),
             execute: async (validated) => {
                 this._canUpdate(actor, {} as TagType);
                 const relations = await this.relatedModel.findAllWithTags(
@@ -338,12 +342,12 @@ export class TagService extends BaseCrudRelatedService<
      */
     public async getEntitiesByTag(
         actor: Actor,
-        params: GetEntitiesByTagInput
-    ): Promise<ServiceOutput<{ entities: Array<{ entityId: string; entityType: string }> }>> {
+        params: TagGetEntitiesByTagInput
+    ): Promise<ServiceOutput<TagGetEntitiesByTagOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getEntitiesByTag',
             input: { actor, ...params },
-            schema: GetEntitiesByTagSchema.strict(),
+            schema: TagGetEntitiesByTagInputSchema.strict(),
             execute: async (validated) => {
                 this._canUpdate(actor, { id: validated.tagId } as TagType);
                 const tag = await this.model.findById(validated.tagId as TagId);

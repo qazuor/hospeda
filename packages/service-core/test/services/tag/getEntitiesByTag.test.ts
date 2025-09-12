@@ -27,15 +27,21 @@ describe('TagService.getEntitiesByTag', () => {
     it('returns entities for a tag (success)', async () => {
         asMock(mockModel.findById).mockResolvedValue(mockTag);
         asMock(mockRelatedModel.findAllWithEntities).mockResolvedValue([
-            { entityId: 'e1', entityType: EntityTypeEnum.ACCOMMODATION },
-            { entityId: 'e2', entityType: EntityTypeEnum.DESTINATION }
+            {
+                entityId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+                entityType: EntityTypeEnum.ACCOMMODATION
+            },
+            {
+                entityId: 'a47ac10b-58cc-4372-a567-0e02b2c3d480',
+                entityType: EntityTypeEnum.DESTINATION
+            }
         ]);
         const params = { tagId: mockTag.id };
         const result = await service.getEntitiesByTag(mockActor, params);
         expect(result.error).toBeUndefined();
         expect(result.data).toBeDefined();
         expect(result.data?.entities).toHaveLength(2);
-        expect(result.data?.entities?.[0]?.entityId).toBe('e1');
+        expect(result.data?.entities?.[0]?.entityId).toBe('f47ac10b-58cc-4372-a567-0e02b2c3d479');
     });
 
     it('returns empty array if no entities are associated', async () => {
@@ -51,7 +57,10 @@ describe('TagService.getEntitiesByTag', () => {
     it('filters by entityType if provided', async () => {
         asMock(mockModel.findById).mockResolvedValue(mockTag);
         asMock(mockRelatedModel.findAllWithEntities).mockResolvedValue([
-            { entityId: 'e1', entityType: EntityTypeEnum.ACCOMMODATION }
+            {
+                entityId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+                entityType: EntityTypeEnum.ACCOMMODATION
+            }
         ]);
         const params = { tagId: mockTag.id, entityType: EntityTypeEnum.ACCOMMODATION };
         const result = await service.getEntitiesByTag(mockActor, params);
@@ -67,7 +76,7 @@ describe('TagService.getEntitiesByTag', () => {
 
     it('returns NOT_FOUND if tag does not exist', async () => {
         asMock(mockModel.findById).mockResolvedValue(null);
-        const params = { tagId: 'nonexistent' };
+        const params = { tagId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as any };
         const result = await service.getEntitiesByTag(mockActor, params);
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
