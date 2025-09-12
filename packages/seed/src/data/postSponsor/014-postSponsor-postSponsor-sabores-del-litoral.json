@@ -10,14 +10,14 @@
         "description": "Logotipo de la red gastronómica regional",
         "moderationState": "APPROVED"
     },
-    "contact": {
+    "contactInfo": {
         "personalEmail": "info@saboresdellitoral.com.ar",
         "mobilePhone": "+5493442567890",
         "website": "https://www.saboresdellitoral.com.ar",
         "preferredEmail": "PERSONAL",
         "preferredPhone": "MOBILE"
     },
-    "social": {
+    "socialNetworks": {
         "facebook": "https://facebook.com/saboresdellitoral",
         "instagram": "https://instagram.com/sabores_litoral",
         "twitter": "https://twitter.com/sabores_litoral"

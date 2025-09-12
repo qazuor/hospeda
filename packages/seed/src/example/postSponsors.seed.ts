@@ -11,9 +11,9 @@ const postSponsorNormalizer = (data: Record<string, unknown>) => {
         name: data.name as string,
         description: data.description as string,
         type: data.type,
-        logo: data.logo as string,
-        website: data.website as string,
+        logo: data.logo,
         contactInfo: data.contactInfo,
+        socialNetworks: data.socialNetworks,
         visibility: data.visibility,
         lifecycleState: data.lifecycleState
     };
