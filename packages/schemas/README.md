@@ -727,7 +727,6 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 |---|---|---|---|---|
 | src/entities/user/permission.schema.ts | user | UserPermissionAssignmentSchema | UserPermissionAssignment | Zod schema for the assignment of a permission to a user. |
 | src/entities/user/role.schema.ts | user | RolePermissionAssignmentSchema |  | Zod schema for the assignment of a permission to a role. |
-| src/entities/user/user.bookmark.schema.ts | user | UserBookmarkSchema | UserBookmark | User Bookmark schema definition using Zod for validation. |
 | src/entities/user/user.crud.schema.ts | user | UserActivateInputSchema | UserActivateInput | Schema for user activation input Requires only the user ID |
 | src/entities/user/user.crud.schema.ts | user | UserActivationOutputSchema | UserActivationOutput | Schema for user activation/deactivation response Returns the updated user object |
 | src/entities/user/user.crud.schema.ts | user | UserCreateInputSchema | UserCreateInput | User CRUD Schemas This file contains all schemas related to CRUD operations for users: - Create (input/output) - Update (input/output) - Patch (input) - Delete (input/output) - Restore (input/outpu… |
@@ -794,3 +793,22 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/permission/permission.management.schema.ts | permission | PermissionsQueryOutputSchema | PermissionsQueryOutput | Schema for permissions query results Returns list of permissions |
 | src/entities/permission/permission.management.schema.ts | permission | RolesQueryOutputSchema | RolesQueryOutput | Schema for roles query results Returns list of roles |
 | src/entities/permission/permission.management.schema.ts | permission | UsersQueryOutputSchema | UsersQueryOutput | Schema for users query results Returns list of user IDs |
+
+### userBookmark
+
+| filePath | entidad | schema | type inferido/asociado | commentario |
+|---|---|---|---|---|
+| src/entities/userBookmark/userBookmark.schema.ts | userBookmark | UserBookmarkSchema | UserBookmark | User Bookmark schema definition using Zod for validation. Represents a bookmark saved by a user. |
+| src/entities/userBookmark/userBookmark.crud.schema.ts | userBookmark | UserBookmarkCreateInputSchema | UserBookmarkCreateInput | Schema for creating a new user bookmark Omits server-generated fields (id, timestamps, audit fields) |
+| src/entities/userBookmark/userBookmark.crud.schema.ts | userBookmark | UserBookmarkUpdateInputSchema | UserBookmarkUpdateInput | Schema for updating an existing user bookmark All fields are optional except identification fields |
+| src/entities/userBookmark/userBookmark.crud.schema.ts | userBookmark | UserBookmarkCreateOutputSchema | UserBookmarkCreateOutput | Schema for user bookmark creation response Returns the created bookmark entity |
+| src/entities/userBookmark/userBookmark.crud.schema.ts | userBookmark | UserBookmarkUpdateOutputSchema | UserBookmarkUpdateOutput | Schema for user bookmark update response Returns the updated bookmark entity |
+| src/entities/userBookmark/userBookmark.crud.schema.ts | userBookmark | UserBookmarkGetOutputSchema | UserBookmarkGetOutput | Schema for user bookmark get response Returns a single bookmark entity |
+| src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkListByUserInputSchema | UserBookmarkListByUserInput | Schema for listing bookmarks by user Includes pagination support |
+| src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkListByEntityInputSchema | UserBookmarkListByEntityInput | Schema for listing bookmarks by entity Includes pagination support and entity identification |
+| src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkCountByEntityInputSchema | UserBookmarkCountByEntityInput | Schema for counting bookmarks for a specific entity Used to get bookmark count for any entity type |
+| src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkCountByUserInputSchema | UserBookmarkCountByUserInput | Schema for counting bookmarks for a specific user Used to get total bookmark count for a user |
+| src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkListByUserOutputSchema | UserBookmarkListByUserOutput | Schema for user bookmark list response (by user) Returns array of bookmarks for a specific user |
+| src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkListByEntityOutputSchema | UserBookmarkListByEntityOutput | Schema for user bookmark list response (by entity) Returns array of bookmarks for a specific entity |
+| src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkCountOutputSchema | UserBookmarkCountOutput | Schema for bookmark count response Returns count of bookmarks (used for both entity and user counts) |
+| src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkPaginatedListOutputSchema | UserBookmarkPaginatedListOutput | Schema for paginated bookmark list response Used when pagination information is needed in response |
