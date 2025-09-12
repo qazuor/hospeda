@@ -6,8 +6,7 @@ import {
     createBaseIdFields,
     createBaseLifecycleFields,
     createBaseSocialFields,
-    createTooLongString,
-    createTooShortString
+    createTooLongString
 } from './common.fixtures.js';
 
 /**
@@ -94,27 +93,22 @@ export const createEventOrganizerInvalidCases = () => [
     // Name too short
     {
         ...createMinimalEventOrganizer(),
-        name: createTooShortString()
-    },
-    // Name too short (2 chars)
-    {
-        ...createMinimalEventOrganizer(),
-        name: 'AB'
+        name: 'AB' // Too short (min 3)
     },
     // Name too long
     {
         ...createMinimalEventOrganizer(),
-        name: createTooLongString(100)
+        name: createTooLongString(101) // Too long (max 100)
     },
     // Description too short (if provided)
     {
         ...createMinimalEventOrganizer(),
-        description: 'Short'
+        description: 'Short' // Too short (min 10)
     },
     // Description too long
     {
         ...createMinimalEventOrganizer(),
-        description: createTooLongString(500)
+        description: createTooLongString(501) // Too long (max 500)
     },
     // Invalid logo URL
     {

@@ -613,8 +613,6 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/post/post.relations.schema.ts | post | PostWithSeriesSchema | PostWithSeries | Post with series information Includes related posts in the same series |
 | src/entities/post/post.relations.schema.ts | post | PostWithSponsorshipSchema | PostWithSponsorship | Post with sponsorship information Includes sponsorship details if the post is sponsored |
 | src/entities/post/post.schema.ts | post | PostSchema | Post | Post Schema - Main Entity Schema This schema defines the complete structure of a Post entity using base field objects for consistency and maintainability. |
-| src/entities/post/post.sponsor.schema.ts | post | PostSponsorSchema | PostSponsor | Post Sponsor Schema - using Base Field Objects This schema represents a sponsor entity for a post. |
-| src/entities/post/post.sponsorship.schema.ts | post | PostSponsorshipSchema | PostSponsorship | Post Sponsorship Schema - using Base Field Objects This schema represents sponsorship details for a post. |
 | src/entities/post/post.stats.schema.ts | post | PostEngagementStatsSchema | PostEngagementStats | Schema for post engagement statistics Used for tracking likes, comments, shares on posts |
 | src/entities/post/post.interactions.schema.ts | post | AddPostCommentInputSchema | AddPostCommentInput | Schema for adding a comment to a post Currently a stub - not fully implemented |
 | src/entities/post/post.interactions.schema.ts | post | LikePostInputSchema | LikePostInput | Schema for liking/unliking a post Requires only the post ID |
@@ -628,6 +626,43 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/post/post.filters.schema.ts | post | GetPostNewsInputSchema | GetPostNewsInput | Schema for getting news posts Filters posts where isNews = true |
 | src/entities/post/post.filters.schema.ts | post | GetPostStatsInputSchema | GetPostStatsInput | Schema for getting post stats Accepts either id or slug (one required) |
 | src/entities/post/post.filters.schema.ts | post | GetPostSummaryInputSchema | GetPostSummaryInput | Schema for getting post summary Accepts either id or slug (one required) |
+
+### postSponsor
+
+| filePath | entidad | schema | type inferido/asociado | commentario |
+|---|---|---|---|---|
+| src/entities/postSponsor/postSponsor.schema.ts | postSponsor | PostSponsorSchema | PostSponsor | Post Sponsor Schema - using Base Field Objects This schema represents a sponsor entity for a post. |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorCreateInputSchema | PostSponsorCreateInput | Schema for creating a new post sponsor Omits auto-generated fields like id and audit fields |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorCreateOutputSchema | PostSponsorCreateOutput | Schema for post sponsor creation response Returns the complete post sponsor object |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorUpdateInputSchema | PostSponsorUpdateInput | Schema for updating a post sponsor All fields optional except those that shouldn't be updated |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorUpdateOutputSchema | PostSponsorUpdateOutput | Schema for post sponsor update response Returns the complete updated post sponsor object |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorSearchInputSchema | PostSponsorSearchInput | Schema for searching post sponsors Allows filtering by name, type, and free text search |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorSearchOutputSchema | PostSponsorSearchOutput | Schema for post sponsor search response Returns paginated list of post sponsors |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorListOutputSchema | PostSponsorListOutput | Schema for post sponsor list response (used by searchForList method) Returns items and total count |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorDeleteInputSchema | PostSponsorDeleteInput | Schema for post sponsor deletion input Requires ID and optional force flag for hard delete |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorDeleteOutputSchema | PostSponsorDeleteOutput | Schema for post sponsor deletion response Returns success status |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorRestoreInputSchema | PostSponsorRestoreInput | Schema for post sponsor restoration input Requires only the post sponsor ID |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorRestoreOutputSchema | PostSponsorRestoreOutput | Schema for post sponsor restoration response Returns the complete restored post sponsor object |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorViewOutputSchema | PostSponsorViewOutput | Schema for viewing a single post sponsor Returns the complete post sponsor object |
+| src/entities/postSponsor/postSponsor.crud.schema.ts | postSponsor | PostSponsorCountOutputSchema | PostSponsorCountOutput | Schema for post sponsor count response Returns the count of matching sponsors |
+
+### postSponsorship
+
+| filePath | entidad | schema | type inferido/asociado | commentario |
+|---|---|---|---|---|
+| src/entities/postSponsorship/postSponsorship.schema.ts | postSponsorship | PostSponsorshipSchema | PostSponsorship | Post Sponsorship Schema - using Base Field Objects This schema represents sponsorship details for a post. |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipCreateInputSchema | PostSponsorshipCreateInput | Schema for creating a new post sponsorship Omits auto-generated fields like id and audit fields |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipCreateOutputSchema | PostSponsorshipCreateOutput | Schema for post sponsorship creation response Returns the complete post sponsorship object |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipUpdateInputSchema | PostSponsorshipUpdateInput | Schema for updating a post sponsorship All fields optional except those that shouldn't be updated |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipUpdateOutputSchema | PostSponsorshipUpdateOutput | Schema for post sponsorship update response Returns the complete updated post sponsorship object |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipSearchInputSchema | PostSponsorshipSearchInput | Schema for searching post sponsorships Allows filtering by sponsor, post, dates, and highlight status |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipSearchOutputSchema | PostSponsorshipSearchOutput | Schema for post sponsorship search response Returns paginated list of post sponsorships |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipDeleteInputSchema | PostSponsorshipDeleteInput | Schema for post sponsorship deletion input Requires ID and optional force flag for hard delete |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipDeleteOutputSchema | PostSponsorshipDeleteOutput | Schema for post sponsorship deletion response Returns success status |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipRestoreInputSchema | PostSponsorshipRestoreInput | Schema for post sponsorship restoration input Requires only the post sponsorship ID |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipRestoreOutputSchema | PostSponsorshipRestoreOutput | Schema for post sponsorship restoration response Returns the complete restored post sponsorship object |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipViewOutputSchema | PostSponsorshipViewOutput | Schema for viewing a single post sponsorship Returns the complete post sponsorship object |
+| src/entities/postSponsorship/postSponsorship.crud.schema.ts | postSponsorship | PostSponsorshipCountOutputSchema | PostSponsorshipCountOutput | Schema for post sponsorship count response Returns the count of matching sponsorships |
 
 ### tag
 
