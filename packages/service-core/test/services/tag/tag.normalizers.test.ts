@@ -1,4 +1,4 @@
-import { RoleEnum, TagColorEnum } from '@repo/types';
+import { LifecycleStatusEnum, RoleEnum, TagColorEnum } from '@repo/types';
 import { describe, expect, it, vi } from 'vitest';
 import {
     normalizeCreateInput,
@@ -9,7 +9,12 @@ const actor = { id: 'actor-id', role: RoleEnum.ADMIN, permissions: [] };
 
 describe('tag normalizers', () => {
     it('normalizeCreateInput trims name and slug', async () => {
-        const input = { name: '  Tag  ', slug: '  tag-slug  ', color: TagColorEnum.BLUE };
+        const input = {
+            name: '  Tag  ',
+            slug: '  tag-slug  ',
+            color: TagColorEnum.BLUE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        };
         const result = await normalizeCreateInput(input, actor);
         expect(result.name).toBe('Tag');
         expect(result.slug).toBe('tag-slug');
@@ -19,7 +24,12 @@ describe('tag normalizers', () => {
         vi.mock('../../../src/services/tag/tag.helpers', () => ({
             generateTagSlug: vi.fn().mockResolvedValue('tag-name')
         }));
-        const input = { name: 'Tag Name', slug: '', color: TagColorEnum.BLUE };
+        const input = {
+            name: 'Tag Name',
+            slug: '',
+            color: TagColorEnum.BLUE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        };
         const result = await normalizeCreateInput(input, actor);
         expect(result.slug).toBe('tag-name');
     });
@@ -27,7 +37,12 @@ describe('tag normalizers', () => {
     it('normalizeCreateInput throws on invalid color', async () => {
         await expect(
             normalizeCreateInput(
-                { name: 'Tag', slug: 'slug', color: 'INVALID' as unknown as TagColorEnum },
+                {
+                    name: 'Tag',
+                    slug: 'slug',
+                    color: 'INVALID' as unknown as TagColorEnum,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE
+                },
                 actor
             )
         ).rejects.toThrow('Invalid tag color');
@@ -38,6 +53,7 @@ describe('tag normalizers', () => {
             name: 'Tag',
             slug: 'slug',
             color: TagColorEnum.BLUE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             icon: '  icon  ',
             notes: '  notes  '
         };

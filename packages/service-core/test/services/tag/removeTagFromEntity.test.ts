@@ -21,7 +21,11 @@ describe('TagService.removeTagFromEntity', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const tag = TagFactoryBuilder.create({ name: 'Tag' });
-    const input = { tagId: tag.id, entityId: 'entity-1', entityType: 'POST' };
+    const input = {
+        tagId: tag.id,
+        entityId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+        entityType: 'POST'
+    };
     const relation = { id: 'rel-1', ...input };
 
     beforeEach(() => {

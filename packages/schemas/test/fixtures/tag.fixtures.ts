@@ -193,3 +193,90 @@ export const createTagRelation = (entityType = 'accommodation') => ({
     addedAt: faker.date.recent(),
     addedById: faker.string.uuid()
 });
+
+/**
+ * Create tag create input for CRUD testing
+ */
+export const createTagCreateInput = () => ({
+    slug: faker.lorem.slug(2),
+    name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
+    color: faker.helpers.arrayElement([
+        'RED',
+        'BLUE',
+        'GREEN',
+        'YELLOW',
+        'ORANGE',
+        'PURPLE'
+    ] as TagColorEnum[]),
+    lifecycleState: 'ACTIVE',
+    icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
+    notes: faker.helpers.maybe(() => faker.lorem.paragraph().slice(0, 300), {
+        probability: 0.6
+    })
+});
+
+/**
+ * Create tag update input for CRUD testing
+ */
+export const createTagUpdateInput = () => ({
+    name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
+    color: faker.helpers.arrayElement(['BLUE', 'GREEN', 'PURPLE'] as TagColorEnum[]),
+    icon: faker.lorem.word(),
+    notes: faker.lorem.sentence().slice(0, 300)
+});
+
+/**
+ * Create tag entity relation for testing
+ */
+export const createTagEntityRelation = () => ({
+    tagId: faker.string.uuid(),
+    entityId: faker.string.uuid(),
+    entityType: faker.helpers.arrayElement([
+        'accommodation',
+        'destination',
+        'post',
+        'event',
+        'user'
+    ])
+});
+
+/**
+ * Create tag summary for query testing
+ */
+export const createTagSummary = () => ({
+    id: faker.string.uuid(),
+    name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
+    color: faker.helpers.arrayElement(['RED', 'BLUE', 'GREEN', 'YELLOW'] as TagColorEnum[]),
+    usageCount: faker.number.int({ min: 0, max: 1000 })
+});
+
+/**
+ * Create tag filters for query testing
+ */
+export const createTagFilters = () => ({
+    color: faker.helpers.maybe(
+        () => `#${faker.color.rgb({ format: 'hex', casing: 'upper' }).slice(1)}`
+    ),
+    minUsageCount: faker.helpers.maybe(() => faker.number.int({ min: 1, max: 10 })),
+    maxUsageCount: faker.helpers.maybe(() => faker.number.int({ min: 50, max: 100 })),
+    isUnused: faker.helpers.maybe(() => faker.datatype.boolean()),
+    usedInAccommodations: faker.helpers.maybe(() => faker.datatype.boolean()),
+    usedInDestinations: faker.helpers.maybe(() => faker.datatype.boolean()),
+    usedInPosts: faker.helpers.maybe(() => faker.datatype.boolean()),
+    nameStartsWith: faker.helpers.maybe(() => faker.lorem.word()),
+    nameContains: faker.helpers.maybe(() => faker.lorem.word())
+});
+
+/**
+ * Create tag stats for testing
+ */
+export const createTagStats = () => ({
+    totalTags: faker.number.int({ min: 0, max: 1000 }),
+    unusedTags: faker.number.int({ min: 0, max: 100 }),
+    totalUsages: faker.number.int({ min: 0, max: 5000 }),
+    averageUsagePerTag: faker.number.float({ min: 0, max: 50, fractionDigits: 2 }),
+    tagsCreatedToday: faker.number.int({ min: 0, max: 10 }),
+    tagsCreatedThisWeek: faker.number.int({ min: 0, max: 50 }),
+    tagsCreatedThisMonth: faker.number.int({ min: 0, max: 200 }),
+    averageNameLength: faker.number.float({ min: 5, max: 25, fractionDigits: 1 })
+});

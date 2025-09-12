@@ -1,5 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { PermissionEnum, TagColorEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, TagColorEnum } from '@repo/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
@@ -19,7 +19,12 @@ describe('TagService.create', () => {
     let tagModelMock: TagModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const input = { name: 'Tag', slug: 'tag', color: TagColorEnum.BLUE };
+    const input = {
+        name: 'Tag',
+        slug: 'tag',
+        color: TagColorEnum.BLUE,
+        lifecycleState: LifecycleStatusEnum.ACTIVE
+    };
     const createdTag = TagFactoryBuilder.create(input);
 
     beforeEach(() => {
@@ -48,7 +53,8 @@ describe('TagService.create', () => {
         const result = await service.create(actor, {
             name: '',
             slug: 'tag',
-            color: TagColorEnum.BLUE
+            color: TagColorEnum.BLUE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         expectValidationError(result);
     });
