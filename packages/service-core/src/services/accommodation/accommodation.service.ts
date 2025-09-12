@@ -38,6 +38,7 @@ import {
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema
 } from '@repo/schemas';
+import { generateSlug } from '@repo/service-core/services/accommodation/accommodation.helpers';
 import type {
     AccommodationId,
     AccommodationRatingType,
@@ -51,13 +52,12 @@ import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { DestinationService } from '../destination/destination.service';
 import {
-    generateSlug,
     normalizeAccommodationOutput,
     normalizeCreateInput,
     normalizeListInput,
     normalizeUpdateInput,
     normalizeViewInput
-} from './';
+} from './accommodation.normalizers';
 import {
     checkCanCreate,
     checkCanHardDelete,
