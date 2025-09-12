@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PermissionEnumSchema } from '../enums/permission.enum.schema.js';
 import { RoleEnumSchema } from '../enums/role.enum.schema.js';
+import { VisibilityEnumSchema } from '../enums/visibility.enum.schema.js';
 import {
     AccommodationIdSchema,
     AmenityIdSchema,
@@ -115,6 +116,47 @@ export const WithOwnerIdParamsSchema = z.object({
  */
 export const WithDestinationIdParamsSchema = z.object({
     destinationId: DestinationIdSchema
+});
+
+/**
+ * Schema for accommodationId parameter (Accommodation relationship)
+ * Reusable across entities related to an accommodation.
+ */
+export const WithAccommodationIdParamsSchema = z.object({
+    accommodationId: AccommodationIdSchema
+});
+
+/**
+ * Schema for eventId parameter (Event relationship)
+ * Reusable across entities related to an event.
+ */
+export const WithEventIdParamsSchema = z.object({
+    eventId: EventIdSchema
+});
+
+/**
+ * Schema for visibility parameter
+ * Reusable across entities that support visibility filtering.
+ */
+export const WithVisibilityParamsSchema = z.object({
+    visibility: VisibilityEnumSchema.optional()
+});
+
+/**
+ * Schema for date range parameters
+ * Reusable across entities that support date filtering.
+ */
+export const WithDateRangeParamsSchema = z.object({
+    fromDate: z
+        .date({
+            message: 'zodError.params.fromDate.invalidType'
+        })
+        .optional(),
+    toDate: z
+        .date({
+            message: 'zodError.params.toDate.invalidType'
+        })
+        .optional()
 });
 
 // ============================================================================
@@ -513,6 +555,10 @@ export type IdOrSlugParams = z.infer<typeof IdOrSlugParamsSchema>;
 export type WithLimitParams = z.infer<typeof WithLimitParamsSchema>;
 export type WithOwnerIdParams = z.infer<typeof WithOwnerIdParamsSchema>;
 export type WithDestinationIdParams = z.infer<typeof WithDestinationIdParamsSchema>;
+export type WithAccommodationIdParams = z.infer<typeof WithAccommodationIdParamsSchema>;
+export type WithEventIdParams = z.infer<typeof WithEventIdParamsSchema>;
+export type WithVisibilityParams = z.infer<typeof WithVisibilityParamsSchema>;
+export type WithDateRangeParams = z.infer<typeof WithDateRangeParamsSchema>;
 export type UserIdParams = z.infer<typeof UserIdParamsSchema>;
 export type AccommodationIdParams = z.infer<typeof AccommodationIdParamsSchema>;
 export type DestinationIdParams = z.infer<typeof DestinationIdParamsSchema>;
