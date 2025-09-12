@@ -209,6 +209,10 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/common/params.schema.ts | common | RoleParamsSchema | RoleParams | Schema for Role path parameters Used for role-specific endpoints |
 | src/common/params.schema.ts | common | UserPaymentParamsSchema | UserPaymentParams | Schema for user payment parameters Used for user's payment endpoints |
 | src/common/params.schema.ts | common | VersionParamsSchema | VersionParams | Schema for version parameters Used for API versioning in path parameters |
+| src/common/params.schema.ts | common | WithAccommodationIdParamsSchema | WithAccommodationIdParams | Schema for accommodationId parameter (Accommodation relationship) Reusable across entities related to an accommodation. |
+| src/common/params.schema.ts | common | WithDateRangeParamsSchema | WithDateRangeParams | Schema for date range parameters Reusable across entities that support date filtering. |
+| src/common/params.schema.ts | common | WithEventIdParamsSchema | WithEventIdParams | Schema for eventId parameter (Event relationship) Reusable across entities related to an event. |
+| src/common/params.schema.ts | common | WithVisibilityParamsSchema | WithVisibilityParams | Schema for visibility parameter Reusable across entities that support visibility filtering. |
 | src/common/price.schema.ts | common | PriceSchema |  |  |
 | src/common/response.schema.ts | common | BulkOperationResponseSchema | BulkOperationResponse | Schema for bulk operation API responses Used for operations that process multiple items |
 | src/common/response.schema.ts | common | createListResponseSchema |  | Generic schema for simple list API responses (without pagination) Can be used with any data type for consistent list structure |
@@ -611,6 +615,19 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/post/post.schema.ts | post | PostSchema | Post | Post Schema - Main Entity Schema This schema defines the complete structure of a Post entity using base field objects for consistency and maintainability. |
 | src/entities/post/post.sponsor.schema.ts | post | PostSponsorSchema | PostSponsor | Post Sponsor Schema - using Base Field Objects This schema represents a sponsor entity for a post. |
 | src/entities/post/post.sponsorship.schema.ts | post | PostSponsorshipSchema | PostSponsorship | Post Sponsorship Schema - using Base Field Objects This schema represents sponsorship details for a post. |
+| src/entities/post/post.stats.schema.ts | post | PostEngagementStatsSchema | PostEngagementStats | Schema for post engagement statistics Used for tracking likes, comments, shares on posts |
+| src/entities/post/post.interactions.schema.ts | post | AddPostCommentInputSchema | AddPostCommentInput | Schema for adding a comment to a post Currently a stub - not fully implemented |
+| src/entities/post/post.interactions.schema.ts | post | LikePostInputSchema | LikePostInput | Schema for liking/unliking a post Requires only the post ID |
+| src/entities/post/post.interactions.schema.ts | post | RemovePostCommentInputSchema | RemovePostCommentInput | Schema for removing a comment from a post Currently a stub - not fully implemented |
+| src/entities/post/post.filters.schema.ts | post | BasePostQueryParamsSchema | BasePostQueryParams | Base schema for post queries with common filters Used as foundation for specific query types |
+| src/entities/post/post.filters.schema.ts | post | GetPostByCategoryInputSchema | GetPostByCategoryInput | Schema for getting posts by category Requires category and supports common filters |
+| src/entities/post/post.filters.schema.ts | post | GetPostByRelatedAccommodationInputSchema | GetPostByRelatedAccommodationInput | Schema for getting posts by related accommodation Requires accommodationId and supports common filters |
+| src/entities/post/post.filters.schema.ts | post | GetPostByRelatedDestinationInputSchema | GetPostByRelatedDestinationInput | Schema for getting posts by related destination Requires destinationId and supports common filters |
+| src/entities/post/post.filters.schema.ts | post | GetPostByRelatedEventInputSchema | GetPostByRelatedEventInput | Schema for getting posts by related event Requires eventId and supports common filters |
+| src/entities/post/post.filters.schema.ts | post | GetPostFeaturedInputSchema | GetPostFeaturedInput | Schema for getting featured posts Filters posts where isFeatured = true |
+| src/entities/post/post.filters.schema.ts | post | GetPostNewsInputSchema | GetPostNewsInput | Schema for getting news posts Filters posts where isNews = true |
+| src/entities/post/post.filters.schema.ts | post | GetPostStatsInputSchema | GetPostStatsInput | Schema for getting post stats Accepts either id or slug (one required) |
+| src/entities/post/post.filters.schema.ts | post | GetPostSummaryInputSchema | GetPostSummaryInput | Schema for getting post summary Accepts either id or slug (one required) |
 
 ### tag
 
