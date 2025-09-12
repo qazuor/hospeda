@@ -79,7 +79,7 @@ describe('UserService.search', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.search(admin, { role: 123 });
+        const result = await service.search(admin, { filters: { role: 123 } });
         expectValidationError(result);
     });
 
