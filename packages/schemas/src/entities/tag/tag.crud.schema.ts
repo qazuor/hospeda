@@ -277,6 +277,164 @@ export const TagCleanupOutputSchema = z.object({
 });
 
 // ============================================================================
+// TAG-ENTITY RELATIONSHIP SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for adding a tag to an entity (polymorphic)
+ * Requires tagId, entityId, and entityType
+ */
+export const TagAddToEntityInputSchema = z.object({
+    tagId: TagIdSchema,
+    entityId: z
+        .string({
+            message: 'zodError.tag.addToEntity.entityId.required'
+        })
+        .uuid({ message: 'zodError.tag.addToEntity.entityId.uuid' }),
+    entityType: z
+        .string({
+            message: 'zodError.tag.addToEntity.entityType.required'
+        })
+        .min(1, { message: 'zodError.tag.addToEntity.entityType.min' })
+});
+
+/**
+ * Schema for adding tag to entity response
+ * Returns success status
+ */
+export const TagAddToEntityOutputSchema = z.object({
+    success: z
+        .boolean({
+            message: 'zodError.tag.addToEntity.success.required'
+        })
+        .default(true)
+});
+
+/**
+ * Schema for removing a tag from an entity (polymorphic)
+ * Requires tagId, entityId, and entityType
+ */
+export const TagRemoveFromEntityInputSchema = z.object({
+    tagId: TagIdSchema,
+    entityId: z
+        .string({
+            message: 'zodError.tag.removeFromEntity.entityId.required'
+        })
+        .uuid({ message: 'zodError.tag.removeFromEntity.entityId.uuid' }),
+    entityType: z
+        .string({
+            message: 'zodError.tag.removeFromEntity.entityType.required'
+        })
+        .min(1, { message: 'zodError.tag.removeFromEntity.entityType.min' })
+});
+
+/**
+ * Schema for removing tag from entity response
+ * Returns success status
+ */
+export const TagRemoveFromEntityOutputSchema = z.object({
+    success: z
+        .boolean({
+            message: 'zodError.tag.removeFromEntity.success.required'
+        })
+        .default(true)
+});
+
+/**
+ * Schema for getting all tags for a given entity (polymorphic)
+ * Requires entityId and entityType
+ */
+export const TagGetForEntityInputSchema = z.object({
+    entityId: z
+        .string({
+            message: 'zodError.tag.getForEntity.entityId.required'
+        })
+        .uuid({ message: 'zodError.tag.getForEntity.entityId.uuid' }),
+    entityType: z
+        .string({
+            message: 'zodError.tag.getForEntity.entityType.required'
+        })
+        .min(1, { message: 'zodError.tag.getForEntity.entityType.min' })
+});
+
+/**
+ * Schema for getting tags for entity response
+ * Returns array of tags
+ */
+export const TagGetForEntityOutputSchema = z.object({
+    tags: z.array(TagSchema)
+});
+
+/**
+ * Schema for getting all entities associated with a tag
+ * Requires tagId, optional entityType filter
+ */
+export const TagGetEntitiesByTagInputSchema = z.object({
+    tagId: TagIdSchema,
+    entityType: z
+        .string({
+            message: 'zodError.tag.getEntitiesByTag.entityType.required'
+        })
+        .min(1, { message: 'zodError.tag.getEntitiesByTag.entityType.min' })
+        .optional()
+});
+
+/**
+ * Schema for getting entities by tag response
+ * Returns array of entity references
+ */
+export const TagGetEntitiesByTagOutputSchema = z.object({
+    entities: z.array(
+        z.object({
+            entityId: z
+                .string({
+                    message: 'zodError.tag.getEntitiesByTag.entityId.required'
+                })
+                .uuid({ message: 'zodError.tag.getEntitiesByTag.entityId.uuid' }),
+            entityType: z
+                .string({
+                    message: 'zodError.tag.getEntitiesByTag.entityType.required'
+                })
+                .min(1, { message: 'zodError.tag.getEntitiesByTag.entityType.min' })
+        })
+    )
+});
+
+/**
+ * Schema for getting popular tags input
+ * Requires limit, optional entityType and timeframe filters
+ */
+export const TagGetPopularInputSchema = z.object({
+    limit: z
+        .number({
+            message: 'zodError.tag.getPopular.limit.required'
+        })
+        .int({ message: 'zodError.tag.getPopular.limit.int' })
+        .min(1, { message: 'zodError.tag.getPopular.limit.min' })
+        .max(100, { message: 'zodError.tag.getPopular.limit.max' }),
+    entityType: z
+        .string({
+            message: 'zodError.tag.getPopular.entityType.required'
+        })
+        .min(1, { message: 'zodError.tag.getPopular.entityType.min' })
+        .optional(),
+    timeframe: z
+        .string({
+            message: 'zodError.tag.getPopular.timeframe.required'
+        })
+        .min(1, { message: 'zodError.tag.getPopular.timeframe.min' })
+        .optional()
+});
+
+/**
+ * Schema for getting popular tags response
+ * Returns array of tags with usage counts
+ */
+export const TagGetPopularOutputSchema = z.object({
+    tags: z.array(TagSchema)
+});
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -295,3 +453,13 @@ export type TagBulkOperationInput = z.infer<typeof TagBulkOperationInputSchema>;
 export type TagBulkOperationOutput = z.infer<typeof TagBulkOperationOutputSchema>;
 export type TagCleanupInput = z.infer<typeof TagCleanupInputSchema>;
 export type TagCleanupOutput = z.infer<typeof TagCleanupOutputSchema>;
+export type TagAddToEntityInput = z.infer<typeof TagAddToEntityInputSchema>;
+export type TagAddToEntityOutput = z.infer<typeof TagAddToEntityOutputSchema>;
+export type TagRemoveFromEntityInput = z.infer<typeof TagRemoveFromEntityInputSchema>;
+export type TagRemoveFromEntityOutput = z.infer<typeof TagRemoveFromEntityOutputSchema>;
+export type TagGetForEntityInput = z.infer<typeof TagGetForEntityInputSchema>;
+export type TagGetForEntityOutput = z.infer<typeof TagGetForEntityOutputSchema>;
+export type TagGetEntitiesByTagInput = z.infer<typeof TagGetEntitiesByTagInputSchema>;
+export type TagGetEntitiesByTagOutput = z.infer<typeof TagGetEntitiesByTagOutputSchema>;
+export type TagGetPopularInput = z.infer<typeof TagGetPopularInputSchema>;
+export type TagGetPopularOutput = z.infer<typeof TagGetPopularOutputSchema>;
