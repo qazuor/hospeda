@@ -17,8 +17,8 @@ export interface PostSponsorType extends WithAudit, WithLifecycleState, WithAdmi
     type: ClientTypeEnum;
     description: string;
     logo?: ImageType;
-    contact?: ContactInfoType;
-    social?: SocialNetworkType;
+    contactInfo?: ContactInfoType;
+    socialNetworks?: SocialNetworkType;
 }
 
 /**
