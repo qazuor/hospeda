@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { PermissionEnumSchema } from '../enums/permission.enum.schema.js';
+import { RoleEnumSchema } from '../enums/role.enum.schema.js';
 import {
     AccommodationIdSchema,
     AmenityIdSchema,
@@ -482,6 +484,26 @@ export const EventOrganizerIdParamsSchema = z.object({
 });
 
 // ============================================================================
+// PERMISSION-SPECIFIC PARAMETER SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for permission path parameters
+ * Used for endpoints that accept a permission enum
+ */
+export const PermissionParamsSchema = z.object({
+    permission: PermissionEnumSchema
+});
+
+/**
+ * Schema for role path parameters
+ * Used for endpoints that accept a role enum
+ */
+export const RoleParamsSchema = z.object({
+    role: RoleEnumSchema
+});
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -521,3 +543,10 @@ export type OptionalSlugParams = z.infer<typeof OptionalSlugParamsSchema>;
 export type VersionParams = z.infer<typeof VersionParamsSchema>;
 export type LanguageParams = z.infer<typeof LanguageParamsSchema>;
 export type LocaleParams = z.infer<typeof LocaleParamsSchema>;
+
+// ============================================================================
+// PERMISSION PARAMETER TYPES
+// ============================================================================
+
+export type PermissionParams = z.infer<typeof PermissionParamsSchema>;
+export type RoleParams = z.infer<typeof RoleParamsSchema>;
