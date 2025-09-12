@@ -10,14 +10,14 @@
         "description": "Logotipo de la asociación de complejos termales",
         "moderationState": "APPROVED"
     },
-    "contact": {
+    "contactInfo": {
         "personalEmail": "contacto@termasunidas.com.ar",
         "mobilePhone": "+5493456123789",
         "website": "https://www.termasunidas.com.ar",
         "preferredEmail": "PERSONAL",
         "preferredPhone": "MOBILE"
     },
-    "social": {
+    "socialNetworks": {
         "facebook": "https://facebook.com/termasunidas",
         "instagram": "https://instagram.com/termas_unidas",
         "youtube": "https://youtube.com/termasunidas"

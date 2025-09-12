@@ -10,14 +10,14 @@
         "description": "Logotipo de la fundación cultural",
         "moderationState": "APPROVED"
     },
-    "contact": {
+    "contactInfo": {
         "workEmail": "contacto@culturaentrerriana.org.ar",
         "mobilePhone": "+5493442901234",
         "website": "https://www.culturaentrerriana.org.ar",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"
     },
-    "social": {
+    "socialNetworks": {
         "facebook": "https://facebook.com/culturaentrerriana",
         "instagram": "https://instagram.com/cultura_entrerriana",
         "twitter": "https://twitter.com/cultura_er"
