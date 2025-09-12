@@ -1,5 +1,5 @@
+import type { PostSponsorshipCreateInput } from '@repo/schemas';
 import type {
-    BasePriceType,
     PostId,
     PostSponsorId,
     PostSponsorshipId,
@@ -7,7 +7,6 @@ import type {
     UserId
 } from '@repo/types';
 import { LifecycleStatusEnum, PriceCurrencyEnum } from '@repo/types';
-import type { CreatePostSponsorshipInput } from '../../src/services/postSponsorship/postSponsorship.schemas';
 import { getMockId } from './utilsFactory';
 
 export class PostSponsorshipFactoryBuilder {
@@ -25,7 +24,7 @@ export class PostSponsorshipFactoryBuilder {
             postId: getMockId('post') as PostId,
             message: 'Sponsored message',
             description: 'A valid sponsorship description',
-            paid: { price: 100, currency: PriceCurrencyEnum.USD } as BasePriceType,
+            paid: { price: 100, currency: PriceCurrencyEnum.USD },
             paidAt: new Date(),
             fromDate: new Date(),
             toDate: new Date(),
@@ -51,14 +50,14 @@ export const createMockPostSponsorship = (
  * Factory for a valid CreatePostSponsorshipInput (only user-provided fields)
  */
 export const createNewPostSponsorshipInput = (
-    overrides: Partial<CreatePostSponsorshipInput> = {}
-): CreatePostSponsorshipInput => {
+    overrides: Partial<PostSponsorshipCreateInput> = {}
+): PostSponsorshipCreateInput => {
     return {
         sponsorId: getMockId('post') as PostSponsorId,
         postId: getMockId('post') as PostId,
         message: 'Sponsored message',
         description: 'A valid sponsorship description',
-        paid: { price: 100, currency: PriceCurrencyEnum.USD } as BasePriceType,
+        paid: { price: 100, currency: PriceCurrencyEnum.USD },
         paidAt: new Date(),
         fromDate: new Date(),
         toDate: new Date(),
