@@ -559,6 +559,134 @@ export const FeatureComparisonOutputSchema = z.object({
 });
 
 // ============================================================================
+// ACCOMMODATION-FEATURE OPERATIONS SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for adding a feature to an accommodation
+ *
+ * This schema validates input for creating a relationship between an accommodation
+ * and a feature, allowing hosts to customize how the feature is presented.
+ *
+ * @example
+ * ```typescript
+ * const input = {
+ *   accommodationId: "123e4567-e89b-12d3-a456-426614174000",
+ *   featureId: "987fcdeb-51a2-43d7-8f9e-123456789abc",
+ *   hostReWriteName: "Premium WiFi Access",
+ *   comments: "High-speed internet available in all rooms"
+ * };
+ *
+ * const result = AddFeatureToAccommodationInputSchema.parse(input);
+ * ```
+ *
+ * @param accommodationId - UUID of the accommodation (required)
+ * @param featureId - UUID of the feature to add (required)
+ * @param hostReWriteName - Custom name for the feature as displayed by host (3-100 chars, optional)
+ * @param comments - Additional notes about the feature implementation (5-300 chars, optional)
+ */
+export const AddFeatureToAccommodationInputSchema = z
+    .object({
+        /** UUID of the accommodation to add the feature to */
+        accommodationId: z.string().min(1, 'Accommodation ID is required'),
+
+        /** UUID of the feature to add to the accommodation */
+        featureId: z.string().min(1, 'Feature ID is required'),
+
+        /**
+         * Optional custom name for the feature as displayed by the host
+         * Allows hosts to personalize how features are presented to guests
+         */
+        hostReWriteName: z.string().min(3).max(100).optional().nullable(),
+
+        /**
+         * Optional comments about how the feature is implemented or available
+         * Provides additional context for guests about the feature
+         */
+        comments: z.string().min(5).max(300).optional().nullable()
+    })
+    .strict();
+
+/**
+ * Schema for removing a feature from an accommodation
+ *
+ * This schema validates input for removing an existing relationship between
+ * an accommodation and a feature (soft delete operation).
+ *
+ * @example
+ * ```typescript
+ * const input = {
+ *   accommodationId: "123e4567-e89b-12d3-a456-426614174000",
+ *   featureId: "987fcdeb-51a2-43d7-8f9e-123456789abc"
+ * };
+ *
+ * const result = RemoveFeatureFromAccommodationInputSchema.parse(input);
+ * ```
+ *
+ * @param accommodationId - UUID of the accommodation (required)
+ * @param featureId - UUID of the feature to remove (required)
+ */
+export const RemoveFeatureFromAccommodationInputSchema = z
+    .object({
+        /** UUID of the accommodation to remove the feature from */
+        accommodationId: z.string().min(1, 'Accommodation ID is required'),
+
+        /** UUID of the feature to remove from the accommodation */
+        featureId: z.string().min(1, 'Feature ID is required')
+    })
+    .strict();
+
+/**
+ * Schema for retrieving all features associated with a specific accommodation
+ *
+ * This schema validates input for querying all features that belong to
+ * a particular accommodation, including any host customizations.
+ *
+ * @example
+ * ```typescript
+ * const input = {
+ *   accommodationId: "123e4567-e89b-12d3-a456-426614174000"
+ * };
+ *
+ * const result = GetFeaturesForAccommodationSchema.parse(input);
+ * // Returns all features associated with the accommodation
+ * ```
+ *
+ * @param accommodationId - UUID of the accommodation to get features for (required)
+ */
+export const GetFeaturesForAccommodationSchema = z
+    .object({
+        /** UUID of the accommodation to retrieve features for */
+        accommodationId: z.string().min(1, 'Accommodation ID is required')
+    })
+    .strict();
+
+/**
+ * Schema for retrieving all accommodations that have a specific feature
+ *
+ * This schema validates input for querying all accommodations that offer
+ * a particular feature, useful for feature-based searches and filtering.
+ *
+ * @example
+ * ```typescript
+ * const input = {
+ *   featureId: "987fcdeb-51a2-43d7-8f9e-123456789abc"
+ * };
+ *
+ * const result = GetAccommodationsByFeatureSchema.parse(input);
+ * // Returns all accommodations that offer this feature
+ * ```
+ *
+ * @param featureId - UUID of the feature to find accommodations for (required)
+ */
+export const GetAccommodationsByFeatureSchema = z
+    .object({
+        /** UUID of the feature to find accommodations for */
+        featureId: z.string().min(1, 'Feature ID is required')
+    })
+    .strict();
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -572,3 +700,37 @@ export type FeatureWithAvailability = z.infer<typeof FeatureWithAvailabilitySche
 export type FeatureWithFullRelations = z.infer<typeof FeatureWithFullRelationsSchema>;
 export type FeatureComparisonInput = z.infer<typeof FeatureComparisonInputSchema>;
 export type FeatureComparisonOutput = z.infer<typeof FeatureComparisonOutputSchema>;
+
+// ============================================================================
+// ACCOMMODATION-FEATURE OPERATIONS TYPES
+// ============================================================================
+
+/**
+ * Input type for adding a feature to an accommodation
+ *
+ * @see AddFeatureToAccommodationInputSchema
+ */
+export type AddFeatureToAccommodationInput = z.infer<typeof AddFeatureToAccommodationInputSchema>;
+
+/**
+ * Input type for removing a feature from an accommodation
+ *
+ * @see RemoveFeatureFromAccommodationInputSchema
+ */
+export type RemoveFeatureFromAccommodationInput = z.infer<
+    typeof RemoveFeatureFromAccommodationInputSchema
+>;
+
+/**
+ * Input type for retrieving features associated with an accommodation
+ *
+ * @see GetFeaturesForAccommodationSchema
+ */
+export type GetFeaturesForAccommodationInput = z.infer<typeof GetFeaturesForAccommodationSchema>;
+
+/**
+ * Input type for retrieving accommodations that have a specific feature
+ *
+ * @see GetAccommodationsByFeatureSchema
+ */
+export type GetAccommodationsByFeatureInput = z.infer<typeof GetAccommodationsByFeatureSchema>;

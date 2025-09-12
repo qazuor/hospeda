@@ -736,3 +736,22 @@ export type FeaturePriorityDistributionOutput = z.infer<
     typeof FeaturePriorityDistributionOutputSchema
 >;
 export type FeatureStats = z.infer<typeof FeatureStatsSchema>;
+
+// ============================================================================
+// SIMPLE SEARCH SCHEMA (Legacy compatibility)
+// ============================================================================
+
+/**
+ * Simple feature search schema for legacy compatibility
+ * Contains basic search fields used by the service layer
+ */
+export const SimpleFeatureSearchSchema = z
+    .object({
+        name: z.string().optional(),
+        slug: z.string().optional(),
+        isFeatured: z.boolean().optional(),
+        isBuiltin: z.boolean().optional()
+    })
+    .strict();
+
+export type SimpleFeatureSearch = z.infer<typeof SimpleFeatureSearchSchema>;
