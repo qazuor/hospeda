@@ -6,7 +6,7 @@ import {
     DestinationIdSchema,
     EventIdSchema,
     PostIdSchema,
-    PostSponsorIdSchema,
+    PostSponsorshipIdSchema,
     UserIdSchema
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
@@ -83,13 +83,17 @@ export const PostSchema = z.object({
     comments: z.number().int().min(0).default(0),
     shares: z.number().int().min(0).default(0),
 
+    // Display fields
+    publishedAt: z.date().optional(), // Publication date (can be different from createdAt)
+    readingTimeMinutes: z.number().int().min(0).default(5), // Estimated reading time
+
     // Related entities
     relatedDestinationId: DestinationIdSchema.optional(),
     relatedAccommodationId: AccommodationIdSchema.optional(),
     relatedEventId: EventIdSchema.optional(),
 
     // Sponsorship
-    sponsorshipId: PostSponsorIdSchema.optional()
+    sponsorshipId: PostSponsorshipIdSchema.optional()
 });
 
 /**
