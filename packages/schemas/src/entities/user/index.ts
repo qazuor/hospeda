@@ -13,7 +13,6 @@ export * from './user.relations.schema.js'; // Schemas with related entities
 // Additional schemas
 export * from './permission.schema.js';
 export * from './role.schema.js';
-export * from './user.bookmark.schema.js';
 export * from './user.identity.schema.js';
 export * from './user.profile.schema.js';
 export * from './user.settings.schema.js';
