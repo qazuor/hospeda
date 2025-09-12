@@ -1,4 +1,17 @@
 import { UserBookmarkModel } from '@repo/db';
+import {
+    type UserBookmarkCountByEntityInput,
+    UserBookmarkCountByEntityInputSchema,
+    type UserBookmarkCountByUserInput,
+    UserBookmarkCountByUserInputSchema,
+    type UserBookmarkCreateInput,
+    UserBookmarkCreateInputSchema,
+    type UserBookmarkListByEntityInput,
+    UserBookmarkListByEntityInputSchema,
+    type UserBookmarkListByUserInput,
+    UserBookmarkListByUserInputSchema,
+    UserBookmarkUpdateInputSchema
+} from '@repo/schemas';
 import type { UserBookmarkType } from '@repo/types';
 import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
@@ -7,19 +20,6 @@ import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
 import { canAccessBookmark, canCreateBookmark } from './userBookmark.permissions';
-import {
-    type CountBookmarksForEntityInput,
-    CountBookmarksForEntityInputSchema,
-    type CountBookmarksForUserInput,
-    CountBookmarksForUserInputSchema,
-    type CreateUserBookmarkInput,
-    CreateUserBookmarkSchema,
-    type ListBookmarksByEntityInput,
-    ListBookmarksByEntityInputSchema,
-    type ListBookmarksByUserInput,
-    ListBookmarksByUserInputSchema,
-    UpdateUserBookmarkSchema
-} from './userBookmark.schemas';
 
 /**
  * Service for managing user bookmarks (favorites).
@@ -29,17 +29,17 @@ import {
 export class UserBookmarkService extends BaseCrudService<
     UserBookmarkType,
     UserBookmarkModel,
-    typeof CreateUserBookmarkSchema,
-    typeof UpdateUserBookmarkSchema,
-    typeof ListBookmarksByUserInputSchema
+    typeof UserBookmarkCreateInputSchema,
+    typeof UserBookmarkUpdateInputSchema,
+    typeof UserBookmarkListByUserInputSchema
 > {
     static readonly ENTITY_NAME = 'userBookmark';
     protected readonly entityName = UserBookmarkService.ENTITY_NAME;
     protected readonly model: UserBookmarkModel;
 
-    protected readonly createSchema = CreateUserBookmarkSchema;
-    protected readonly updateSchema = UpdateUserBookmarkSchema;
-    protected readonly searchSchema = ListBookmarksByUserInputSchema;
+    protected readonly createSchema = UserBookmarkCreateInputSchema;
+    protected readonly updateSchema = UserBookmarkUpdateInputSchema;
+    protected readonly searchSchema = UserBookmarkListByUserInputSchema;
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
@@ -53,7 +53,7 @@ export class UserBookmarkService extends BaseCrudService<
     /**
      * Permite solo al dueño crear bookmarks para sí mismo.
      */
-    protected _canCreate(actor: Actor, data: CreateUserBookmarkInput): void {
+    protected _canCreate(actor: Actor, data: UserBookmarkCreateInput): void {
         if (actor && typeof actor.id === 'string') {
             canCreateBookmark(actor, data.userId);
         } else {
@@ -107,12 +107,12 @@ export class UserBookmarkService extends BaseCrudService<
      */
     public async listBookmarksByUser(
         actor: Actor,
-        params: ListBookmarksByUserInput
+        params: UserBookmarkListByUserInput
     ): Promise<ServiceOutput<{ bookmarks: UserBookmarkType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listBookmarksByUser',
             input: { ...params, actor },
-            schema: ListBookmarksByUserInputSchema,
+            schema: UserBookmarkListByUserInputSchema,
             execute: async (validated) => {
                 if (actor.id !== validated.userId) {
                     throw new ServiceError(
@@ -137,12 +137,12 @@ export class UserBookmarkService extends BaseCrudService<
      */
     public async listBookmarksByEntity(
         actor: Actor,
-        params: ListBookmarksByEntityInput
+        params: UserBookmarkListByEntityInput
     ): Promise<ServiceOutput<{ bookmarks: UserBookmarkType[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listBookmarksByEntity',
             input: { ...params, actor },
-            schema: ListBookmarksByEntityInputSchema,
+            schema: UserBookmarkListByEntityInputSchema,
             execute: async (validated) => {
                 this._canList(actor);
                 const { pagination } = validated;
@@ -162,12 +162,12 @@ export class UserBookmarkService extends BaseCrudService<
      */
     public async countBookmarksForEntity(
         actor: Actor,
-        params: CountBookmarksForEntityInput
+        params: UserBookmarkCountByEntityInput
     ): Promise<ServiceOutput<{ count: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'countBookmarksForEntity',
             input: { ...params, actor },
-            schema: CountBookmarksForEntityInputSchema,
+            schema: UserBookmarkCountByEntityInputSchema,
             execute: async (validated) => {
                 this._canCount(actor);
                 const count = await this.model.count({
@@ -184,12 +184,12 @@ export class UserBookmarkService extends BaseCrudService<
      */
     public async countBookmarksForUser(
         actor: Actor,
-        params: CountBookmarksForUserInput
+        params: UserBookmarkCountByUserInput
     ): Promise<ServiceOutput<{ count: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'countBookmarksForUser',
             input: { ...params, actor },
-            schema: CountBookmarksForUserInputSchema,
+            schema: UserBookmarkCountByUserInputSchema,
             execute: async (validated) => {
                 if (actor.id !== validated.userId) {
                     throw new ServiceError(
@@ -204,7 +204,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        params: z.infer<typeof ListBookmarksByUserInputSchema>,
+        params: z.infer<typeof UserBookmarkListByUserInputSchema>,
         _actor: Actor
     ) {
         const { userId, pagination } = params;
@@ -218,7 +218,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     protected async _executeCount(
-        params: z.infer<typeof ListBookmarksByUserInputSchema>,
+        params: z.infer<typeof UserBookmarkListByUserInputSchema>,
         _actor: Actor
     ) {
         const { userId } = params;
