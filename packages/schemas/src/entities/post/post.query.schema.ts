@@ -255,7 +255,7 @@ export const PostSummarySchema = PostSchema.pick({
     title: true,
     summary: true,
     category: true,
-    status: true,
+    lifecycleState: true,
     isFeatured: true,
     publishedAt: true,
     readingTimeMinutes: true,
