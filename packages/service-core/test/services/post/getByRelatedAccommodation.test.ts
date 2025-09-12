@@ -96,10 +96,9 @@ describe('PostService.getByRelatedAccommodation', () => {
 
     it('should return forbidden if actor is missing', async () => {
         // purposely invalid
-        const result = await service.getByRelatedAccommodation(
-            null as any,
-            { accommodationId } as { accommodationId: string }
-        );
+        const result = await service.getByRelatedAccommodation(null as any, {
+            accommodationId: accommodationId as AccommodationId
+        });
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
 
