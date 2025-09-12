@@ -9,6 +9,7 @@ export * from './eventLocation/index.js';
 export * from './eventOrganizer/index.js';
 export * from './feature/index.js';
 export * from './payment/index.js';
+export * from './permission/index.js';
 export * from './post/index.js';
 export * from './tag/index.js';
 export * from './user/index.js';
