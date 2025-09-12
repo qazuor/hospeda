@@ -1,36 +1,22 @@
-import type { UserBookmarkSchema } from '@repo/schemas';
-import type { EntityTypeEnum } from '@repo/types';
-import type { z } from 'zod';
-import type { Actor } from '../../types';
 import type {
-    CreateUserBookmarkInput,
-    ListBookmarksByEntityInput,
-    ListBookmarksByUserInput,
-    UpdateUserBookmarkInput
-} from './userBookmark.schemas';
+    UserBookmarkCreateInput,
+    UserBookmarkListByEntityInput,
+    UserBookmarkListByUserInput,
+    UserBookmarkUpdateInput
+} from '@repo/schemas';
+import type { EntityTypeEnum } from '@repo/types';
+import type { Actor } from '../../types';
 
-// Type for create/update input (without server-generated fields)
-export type UserBookmarkCreateInput = Omit<
-    z.infer<typeof UserBookmarkSchema>,
-    | 'id'
-    | 'createdAt'
-    | 'updatedAt'
-    | 'deletedAt'
-    | 'createdById'
-    | 'updatedById'
-    | 'deletedById'
-    | 'lifecycle'
-    | 'adminInfo'
->;
+// Note: Types are now imported from @repo/schemas
 
 /**
  * Normaliza el input para crear un bookmark.
  * Trimea name/description y valida entityType.
  */
 export const normalizeCreateInput = (
-    data: CreateUserBookmarkInput,
+    data: UserBookmarkCreateInput,
     _actor: Actor
-): CreateUserBookmarkInput => {
+): UserBookmarkCreateInput => {
     return {
         ...data,
         name: typeof data.name === 'string' ? data.name.trim() : data.name,
@@ -44,9 +30,9 @@ export const normalizeCreateInput = (
  * Normaliza el input para actualizar un bookmark.
  */
 export const normalizeUpdateInput = (
-    data: UpdateUserBookmarkInput,
+    data: UserBookmarkUpdateInput,
     _actor: Actor
-): UpdateUserBookmarkInput => {
+): UserBookmarkUpdateInput => {
     return {
         ...data,
         name: typeof data.name === 'string' ? data.name.trim() : data.name,
@@ -55,15 +41,13 @@ export const normalizeUpdateInput = (
     };
 };
 
-export type { CreateUserBookmarkInput, UpdateUserBookmarkInput };
-
 /**
  * Normaliza el input para listar bookmarks de usuario.
  */
 export const normalizeListByUserInput = (
-    params: ListBookmarksByUserInput,
+    params: UserBookmarkListByUserInput,
     _actor: Actor
-): ListBookmarksByUserInput => {
+): UserBookmarkListByUserInput => {
     return params;
 };
 
@@ -71,8 +55,8 @@ export const normalizeListByUserInput = (
  * Normaliza el input para listar bookmarks de entidad.
  */
 export const normalizeListByEntityInput = (
-    params: ListBookmarksByEntityInput,
+    params: UserBookmarkListByEntityInput,
     _actor: Actor
-): ListBookmarksByEntityInput => {
+): UserBookmarkListByEntityInput => {
     return params;
 };
