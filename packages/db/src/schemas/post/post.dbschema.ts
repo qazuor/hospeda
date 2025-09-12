@@ -56,6 +56,8 @@ export const posts: ReturnType<typeof pgTable> = pgTable(
         isFeaturedInWebsite: boolean('is_featured_in_website').notNull().default(false),
 
         expiresAt: timestamp('expires_at', { withTimezone: true }),
+        publishedAt: timestamp('published_at', { withTimezone: true }),
+        readingTimeMinutes: integer('reading_time_minutes').notNull().default(5),
         likes: integer('likes').notNull().default(0),
         comments: integer('comments').notNull().default(0),
         shares: integer('shares').notNull().default(0),
