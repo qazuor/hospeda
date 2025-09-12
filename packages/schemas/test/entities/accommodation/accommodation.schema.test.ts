@@ -283,9 +283,8 @@ describe('AccommodationSchema', () => {
         it('should handle edge case values', () => {
             const edgeCaseData = createAccommodationEdgeCases();
 
-            // Some edge cases should be valid, others should fail
-            // This tests boundary conditions
-            expect(() => AccommodationSchema.parse(edgeCaseData)).toThrow();
+            // Edge cases should be valid (boundary conditions)
+            expect(() => AccommodationSchema.parse(edgeCaseData)).not.toThrow();
         });
 
         it('should handle empty arrays', () => {
