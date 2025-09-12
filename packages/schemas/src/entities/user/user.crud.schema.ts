@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { UserSchema } from './user.schema.js';
 
 /**
@@ -214,6 +215,152 @@ export const UserPasswordOutputSchema = z.object({
 });
 
 // ============================================================================
+// AUTH PROVIDER SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for getting user by auth provider input
+ * Used to find users by their external authentication provider mapping
+ */
+export const UserGetByAuthProviderInputSchema = z.object({
+    provider: z
+        .string({
+            message: 'zodError.user.getByAuthProvider.provider.required'
+        })
+        .min(1, { message: 'zodError.user.getByAuthProvider.provider.min' }),
+    providerUserId: z
+        .string({
+            message: 'zodError.user.getByAuthProvider.providerUserId.required'
+        })
+        .min(1, { message: 'zodError.user.getByAuthProvider.providerUserId.min' })
+});
+
+/**
+ * Schema for getting user by auth provider output
+ * Returns user or null if not found
+ */
+export const UserGetByAuthProviderOutputSchema = z.object({
+    user: UserSchema.nullable()
+});
+
+/**
+ * Schema for ensuring user from auth provider input
+ * Creates or updates user based on auth provider data
+ */
+export const UserEnsureFromAuthProviderInputSchema = z.object({
+    provider: z
+        .string({
+            message: 'zodError.user.ensureFromAuthProvider.provider.required'
+        })
+        .min(1, { message: 'zodError.user.ensureFromAuthProvider.provider.min' }),
+    providerUserId: z
+        .string({
+            message: 'zodError.user.ensureFromAuthProvider.providerUserId.required'
+        })
+        .min(1, { message: 'zodError.user.ensureFromAuthProvider.providerUserId.min' }),
+    profile: z
+        .object({
+            firstName: z.string().min(1).optional(),
+            lastName: z.string().min(1).optional(),
+            displayName: z.string().min(1).optional(),
+            contactInfo: z
+                .object({
+                    personalEmail: z.string().email().optional(),
+                    workEmail: z.string().email().optional(),
+                    phone: z.string().optional(),
+                    website: z.string().url().optional()
+                })
+                .optional(),
+            profile: z
+                .object({
+                    avatar: z
+                        .object({
+                            url: z.string().url(),
+                            alt: z.string().optional(),
+                            width: z.number().int().positive().optional(),
+                            height: z.number().int().positive().optional()
+                        })
+                        .optional(),
+                    bio: z.string().max(500).optional(),
+                    location: z.string().max(100).optional()
+                })
+                .optional()
+        })
+        .optional(),
+    identities: z
+        .array(
+            z.object({
+                provider: z.string().min(1),
+                providerUserId: z.string().min(1),
+                email: z.string().email().optional(),
+                username: z.string().min(1).optional(),
+                avatarUrl: z.string().url().optional(),
+                raw: z.unknown().optional(),
+                lastLoginAt: z.date().optional()
+            })
+        )
+        .optional()
+});
+
+/**
+ * Schema for ensuring user from auth provider output
+ * Returns the created or updated user
+ */
+export const UserEnsureFromAuthProviderOutputSchema = z.object({
+    user: UserSchema
+});
+
+// ============================================================================
+// ROLE & PERMISSION MANAGEMENT SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for assigning role to user input
+ * Requires user ID and new role
+ */
+export const UserAssignRoleInputSchema = z.object({
+    userId: UserIdSchema,
+    role: RoleEnumSchema
+});
+
+/**
+ * Schema for adding permission to user input
+ * Requires user ID and permission to add
+ */
+export const UserAddPermissionInputSchema = z.object({
+    userId: UserIdSchema,
+    permission: PermissionEnumSchema
+});
+
+/**
+ * Schema for removing permission from user input
+ * Requires user ID and permission to remove
+ */
+export const UserRemovePermissionInputSchema = z.object({
+    userId: UserIdSchema,
+    permission: PermissionEnumSchema
+});
+
+/**
+ * Schema for setting user permissions input
+ * Requires user ID and array of permissions
+ */
+export const UserSetPermissionsInputSchema = z.object({
+    userId: UserIdSchema,
+    permissions: z
+        .array(PermissionEnumSchema)
+        .min(1, { message: 'zodError.user.setPermissions.permissions.min' })
+});
+
+/**
+ * Schema for role and permission management output
+ * Returns the updated user
+ */
+export const UserRolePermissionOutputSchema = z.object({
+    user: UserSchema
+});
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -232,3 +379,14 @@ export type UserActivationOutput = z.infer<typeof UserActivationOutputSchema>;
 export type UserPasswordChangeInput = z.infer<typeof UserPasswordChangeInputSchema>;
 export type UserPasswordResetInput = z.infer<typeof UserPasswordResetInputSchema>;
 export type UserPasswordOutput = z.infer<typeof UserPasswordOutputSchema>;
+export type UserGetByAuthProviderInput = z.infer<typeof UserGetByAuthProviderInputSchema>;
+export type UserGetByAuthProviderOutput = z.infer<typeof UserGetByAuthProviderOutputSchema>;
+export type UserEnsureFromAuthProviderInput = z.infer<typeof UserEnsureFromAuthProviderInputSchema>;
+export type UserEnsureFromAuthProviderOutput = z.infer<
+    typeof UserEnsureFromAuthProviderOutputSchema
+>;
+export type UserAssignRoleInput = z.infer<typeof UserAssignRoleInputSchema>;
+export type UserAddPermissionInput = z.infer<typeof UserAddPermissionInputSchema>;
+export type UserRemovePermissionInput = z.infer<typeof UserRemovePermissionInputSchema>;
+export type UserSetPermissionsInput = z.infer<typeof UserSetPermissionsInputSchema>;
+export type UserRolePermissionOutput = z.infer<typeof UserRolePermissionOutputSchema>;
