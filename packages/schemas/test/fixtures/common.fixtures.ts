@@ -50,7 +50,7 @@ export const createBaseSeoFields = () => ({
 });
 
 export const createBaseContactFields = () => ({
-    contact: faker.helpers.maybe(
+    contactInfo: faker.helpers.maybe(
         () => ({
             personalEmail: faker.helpers.maybe(() => faker.internet.email(), { probability: 0.6 }),
             workEmail: faker.helpers.maybe(() => faker.internet.email(), { probability: 0.4 }),
