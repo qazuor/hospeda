@@ -3,6 +3,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostSponsorshipService } from '../../../src/services/postSponsorship/postSponsorship.service';
 import { createActor } from '../../factories/actorFactory';
+import { getMockPostSponsorId } from '../../factories/postSponsorFactory';
 import {
     createMockPostSponsorship,
     getMockPostSponsorshipId
@@ -23,8 +24,8 @@ describe('PostSponsorshipService.search', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: ReturnType<typeof createActor>;
     const validInput = {
-        sponsorId: getMockId('post', 'sponsor-1'),
-        postId: getMockId('post', 'post-1'),
+        sponsorId: getMockPostSponsorId('sponsor-1'),
+        postId: getMockId('post', 'post-1') as any, // PostId branded type
         pagination: { page: 1, pageSize: 10 }
     };
 
@@ -67,7 +68,11 @@ describe('PostSponsorshipService.search', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const invalid = { sponsorId: '', postId: '', pagination: { page: 1, pageSize: 10 } };
+        const invalid = {
+            sponsorId: '' as any,
+            postId: '' as any,
+            pagination: { page: 1, pageSize: 10 }
+        };
         const result = await service.search(actor, invalid);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);

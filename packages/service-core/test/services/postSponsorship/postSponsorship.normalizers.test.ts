@@ -1,14 +1,13 @@
+import type { PostSponsorshipCreateInput, PostSponsorshipUpdateInput } from '@repo/schemas';
 import { PriceCurrencyEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeCreateInput,
     normalizeUpdateInput
 } from '../../../src/services/postSponsorship/postSponsorship.normalizers';
-import type {
-    CreatePostSponsorshipInput,
-    UpdatePostSponsorshipInput
-} from '../../../src/services/postSponsorship/postSponsorship.schemas';
 import { createActor } from '../../factories/actorFactory';
+import { getMockPostSponsorId } from '../../factories/postSponsorFactory';
+import { getMockId } from '../../factories/utilsFactory';
 
 describe('postSponsorship.normalizers', () => {
     const actor = createActor();
@@ -16,9 +15,9 @@ describe('postSponsorship.normalizers', () => {
     describe('normalizeCreateInput', () => {
         it('should trim message and description', () => {
             // Arrange
-            const input: CreatePostSponsorshipInput = {
-                sponsorId: 'uuid-sponsor',
-                postId: 'uuid-post',
+            const input: PostSponsorshipCreateInput = {
+                sponsorId: getMockPostSponsorId('sponsor-1'),
+                postId: getMockId('post', 'post-1') as any,
                 message: '  Sponsored message  ',
                 description: '  Some description  ',
                 paid: { price: 100, currency: PriceCurrencyEnum.USD },
@@ -34,12 +33,13 @@ describe('postSponsorship.normalizers', () => {
             expect(result.description).toBe('Some description');
         });
         it('should not modify already clean input', () => {
-            const input: CreatePostSponsorshipInput = {
-                sponsorId: 'uuid-sponsor',
-                postId: 'uuid-post',
+            const input: PostSponsorshipCreateInput = {
+                sponsorId: getMockPostSponsorId('sponsor-2'),
+                postId: getMockId('post', 'post-2') as any,
                 message: 'Message',
                 description: 'Desc',
-                paid: { price: 100, currency: PriceCurrencyEnum.USD }
+                paid: { price: 100, currency: PriceCurrencyEnum.USD },
+                isHighlighted: false
             };
             const result = normalizeCreateInput(input, actor);
             expect(result.message).toBe('Message');
@@ -49,7 +49,7 @@ describe('postSponsorship.normalizers', () => {
 
     describe('normalizeUpdateInput', () => {
         it('should trim message and description if present', () => {
-            const input: UpdatePostSponsorshipInput = {
+            const input: PostSponsorshipUpdateInput = {
                 message: '  Sponsored message  ',
                 description: '  Some description  '
             };
@@ -58,7 +58,7 @@ describe('postSponsorship.normalizers', () => {
             expect(result.description).toBe('Some description');
         });
         it('should not fail if fields are missing', () => {
-            const input: UpdatePostSponsorshipInput = {};
+            const input: PostSponsorshipUpdateInput = {};
             const result = normalizeUpdateInput(input, actor);
             expect(result).toEqual({});
         });
