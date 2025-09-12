@@ -6,6 +6,7 @@ import {
     DestinationIdSchema,
     EventIdSchema,
     EventLocationIdSchema,
+    EventOrganizerIdSchema,
     FeatureIdSchema,
     PaymentIdSchema,
     PostIdSchema,
@@ -472,6 +473,14 @@ export const LocaleParamsSchema = z.object({
         })
 });
 
+/**
+ * Schema for EventOrganizer ID parameters
+ * Used for EventOrganizer-specific endpoints
+ */
+export const EventOrganizerIdParamsSchema = z.object({
+    id: EventOrganizerIdSchema
+});
+
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
@@ -493,6 +502,7 @@ export type FeatureIdParams = z.infer<typeof FeatureIdParamsSchema>;
 export type PaymentIdParams = z.infer<typeof PaymentIdParamsSchema>;
 export type AttractionIdParams = z.infer<typeof AttractionIdParamsSchema>;
 export type EventLocationIdParams = z.infer<typeof EventLocationIdParamsSchema>;
+export type EventOrganizerIdParams = z.infer<typeof EventOrganizerIdParamsSchema>;
 export type FieldValueParams = z.infer<typeof FieldValueParamsSchema>;
 export type FaqIdParams = z.infer<typeof FaqIdParamsSchema>;
 export type ReviewIdParams = z.infer<typeof ReviewIdParamsSchema>;
