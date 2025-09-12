@@ -11,5 +11,7 @@ export * from './feature/index.js';
 export * from './payment/index.js';
 export * from './permission/index.js';
 export * from './post/index.js';
+export * from './postSponsor/index.js';
+export * from './postSponsorship/index.js';
 export * from './tag/index.js';
 export * from './user/index.js';
