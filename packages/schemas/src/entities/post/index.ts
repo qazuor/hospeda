@@ -14,7 +14,3 @@ export * from './post.relations.schema.js'; // Schemas with related entities
 export * from './post.filters.schema.js'; // Service filtering and query schemas
 export * from './post.interactions.schema.js'; // Like, comment, and interaction schemas
 export * from './post.stats.schema.js'; // Statistics and engagement schemas
-
-// Additional schemas
-export * from './post.sponsor.schema.js';
-export * from './post.sponsorship.schema.js';
