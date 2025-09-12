@@ -230,11 +230,7 @@ export const FeatureListItemSchema = FeatureSchema.pick({
     slug: true,
     name: true,
     description: true,
-    category: true,
     icon: true,
-    priority: true,
-    isAvailable: true,
-    usageCount: true,
     createdAt: true,
     updatedAt: true
 });
@@ -349,11 +345,7 @@ export const FeatureSummarySchema = FeatureSchema.pick({
     slug: true,
     name: true,
     description: true,
-    category: true,
-    icon: true,
-    priority: true,
-    isAvailable: true,
-    usageCount: true
+    icon: true
 });
 
 // ============================================================================

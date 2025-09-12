@@ -29,7 +29,7 @@ export const FeatureCreateInputSchema = FeatureSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
-});
+}).strict();
 
 /**
  * Schema for feature creation response
@@ -53,7 +53,9 @@ export const FeatureUpdateInputSchema = FeatureSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
-}).partial();
+})
+    .partial()
+    .strict();
 
 /**
  * Schema for partial feature updates (PATCH)
