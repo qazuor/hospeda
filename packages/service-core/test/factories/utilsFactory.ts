@@ -14,6 +14,7 @@ export type IdTypes =
     | 'user'
     | 'accommodation'
     | 'destination'
+    | 'destinationReview'
     | 'post'
     | 'event'
     | 'tag'
