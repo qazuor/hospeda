@@ -9,7 +9,7 @@ import { FullLocationFields } from '../../common/location.schema.js';
 import { BaseSocialFields } from '../../common/social.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
-import { UserBookmarkSchema } from './user.bookmark.schema.js';
+import { UserBookmarkSchema } from '../userBookmark/userBookmark.schema.js';
 import { UserProfileSchema } from './user.profile.schema.js';
 import { UserSettingsSchema } from './user.settings.schema.js';
 
