@@ -49,7 +49,7 @@ describe('UserBookmarkService.countBookmarksForUser', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.countBookmarksForUser(actor, { userId: 'not-a-uuid' });
+        const result = await service.countBookmarksForUser(actor, { userId: 'not-a-uuid' as any });
         expectValidationError(result);
     });
 
