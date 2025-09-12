@@ -181,8 +181,7 @@ export const createValidFeatureCreateInput = () => {
 };
 
 export const createMinimalFeatureCreateInput = () => {
-    const { id, createdAt, updatedAt, createdById, updatedById, deletedAt, deletedById, ...input } =
-        createMinimalFeature();
+    const { id, createdAt, updatedAt, createdById, updatedById, ...input } = createMinimalFeature();
     return input;
 };
 
@@ -192,6 +191,7 @@ export const createValidFeatureUpdateInput = () => ({
     icon: faker.lorem.word(),
     isBuiltin: faker.datatype.boolean(),
     isFeatured: faker.datatype.boolean(),
+    // TODO usar el enum
     lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
 });
 
