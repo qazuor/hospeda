@@ -54,6 +54,8 @@ export interface PostType
     isFeaturedInWebsite: boolean;
 
     expiresAt?: Date;
+    publishedAt?: Date;
+    readingTimeMinutes: number;
     likes: number;
     comments: number;
     shares: number;
