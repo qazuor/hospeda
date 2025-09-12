@@ -40,6 +40,8 @@
     "likes": 342,
     "comments": 56,
     "shares": 89,
+    "publishedAt": "2024-01-05T11:00:00Z",
+    "readingTimeMinutes": 10,
     "isFeatured": true,
     "seo": {
         "title": "Eventos Culturales en Concordia: Agenda Imperdible 2024",
