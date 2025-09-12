@@ -1,16 +1,20 @@
 import type { PostSponsorModel } from '@repo/db';
 import { PostSponsorModel as RealPostSponsorModel } from '@repo/db';
+import type {
+    PostSponsorCreateInput,
+    PostSponsorListOutput,
+    PostSponsorSearchInput
+} from '@repo/schemas';
+import {
+    PostSponsorCreateInputSchema,
+    PostSponsorSearchInputSchema,
+    PostSponsorUpdateInputSchema
+} from '@repo/schemas';
 import type { PostSponsorType } from '@repo/types';
 import { BaseCrudService } from '../../base';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsor.normalizers';
 import { checkCanManagePostSponsor } from './postSponsor.permissions';
-import type { CreatePostSponsorInput, SearchPostSponsorInput } from './postSponsor.schemas';
-import {
-    CreatePostSponsorSchema,
-    SearchPostSponsorSchema,
-    UpdatePostSponsorSchema
-} from './postSponsor.schemas';
 
 /**
  * Service for managing PostSponsor entities.
@@ -19,17 +23,17 @@ import {
 export class PostSponsorService extends BaseCrudService<
     PostSponsorType,
     PostSponsorModel,
-    typeof CreatePostSponsorSchema,
-    typeof UpdatePostSponsorSchema,
-    typeof SearchPostSponsorSchema
+    typeof PostSponsorCreateInputSchema,
+    typeof PostSponsorUpdateInputSchema,
+    typeof PostSponsorSearchInputSchema
 > {
     static readonly ENTITY_NAME = 'postSponsor';
     protected readonly entityName = PostSponsorService.ENTITY_NAME;
     public readonly model: PostSponsorModel;
 
-    public readonly createSchema = CreatePostSponsorSchema;
-    public readonly updateSchema = UpdatePostSponsorSchema;
-    public readonly searchSchema = SearchPostSponsorSchema;
+    public readonly createSchema = PostSponsorCreateInputSchema;
+    public readonly updateSchema = PostSponsorUpdateInputSchema;
+    public readonly searchSchema = PostSponsorSearchInputSchema;
     public readonly normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
@@ -40,7 +44,7 @@ export class PostSponsorService extends BaseCrudService<
         this.model = model ?? new RealPostSponsorModel();
     }
 
-    protected _canCreate(actor: Actor, _data: CreatePostSponsorInput): void {
+    protected _canCreate(actor: Actor, _data: PostSponsorCreateInput): void {
         checkCanManagePostSponsor(actor);
     }
     protected _canUpdate(actor: Actor, _entity: PostSponsorType): void {
@@ -76,7 +80,7 @@ export class PostSponsorService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        params: SearchPostSponsorInput,
+        params: PostSponsorSearchInput,
         _actor: Actor
     ): Promise<PaginatedListOutput<PostSponsorType>> {
         const { filters, pagination } = params;
@@ -104,7 +108,7 @@ export class PostSponsorService extends BaseCrudService<
         return result;
     }
     protected async _executeCount(
-        params: SearchPostSponsorInput,
+        params: PostSponsorSearchInput,
         _actor: Actor
     ): Promise<{ count: number }> {
         const { filters } = params;
@@ -135,8 +139,8 @@ export class PostSponsorService extends BaseCrudService<
      */
     public async searchForList(
         actor: Actor,
-        params: SearchPostSponsorInput
-    ): Promise<{ items: PostSponsorType[]; total: number }> {
+        params: PostSponsorSearchInput
+    ): Promise<PostSponsorListOutput> {
         this._canSearch(actor);
         const { filters = {}, pagination } = params;
         const page = pagination?.page ?? 1;
