@@ -51,3 +51,31 @@ export const RestoreResultSchema = z.object({
 });
 
 export type RestoreResult = z.infer<typeof RestoreResultSchema>;
+
+/**
+ * Generic assignment response schema
+ * Use for endpoints that return assignment operation results.
+ */
+export const AssignmentResultSchema = z.object({
+    assigned: z
+        .boolean({
+            message: 'zodError.result.assigned.invalidType'
+        })
+        .default(true)
+});
+
+export type AssignmentResult = z.infer<typeof AssignmentResultSchema>;
+
+/**
+ * Generic removal response schema
+ * Use for endpoints that return removal operation results.
+ */
+export const RemovalResultSchema = z.object({
+    removed: z
+        .boolean({
+            message: 'zodError.result.removed.invalidType'
+        })
+        .default(true)
+});
+
+export type RemovalResult = z.infer<typeof RemovalResultSchema>;
