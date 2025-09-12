@@ -1,7 +1,24 @@
 import type { RRolePermissionModel, RUserPermissionModel } from '@repo/db';
+import {
+    type PermissionAssignmentOutput,
+    type PermissionRemovalOutput,
+    type PermissionsByRoleInput,
+    PermissionsByRoleInputSchema,
+    type PermissionsByUserInput,
+    PermissionsByUserInputSchema,
+    type PermissionsQueryOutput,
+    type RolePermissionManagementInput,
+    RolePermissionManagementInputSchema,
+    type RolesByPermissionInput,
+    RolesByPermissionInputSchema,
+    type RolesQueryOutput,
+    type UserPermissionManagementInput,
+    UserPermissionManagementInputSchema,
+    type UsersByPermissionInput,
+    UsersByPermissionInputSchema,
+    type UsersQueryOutput
+} from '@repo/schemas';
 import type {
-    PermissionEnum,
-    RoleEnum,
     RolePermissionAssignmentType,
     UserId,
     UserPermissionAssignmentType
@@ -12,20 +29,6 @@ import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
 import { canManagePermissions } from './permission.service.permission';
-import {
-    type AssignPermissionToRoleInput,
-    AssignPermissionToRoleSchema,
-    type AssignPermissionToUserInput,
-    AssignPermissionToUserSchema,
-    type GetPermissionsForRoleInput,
-    GetPermissionsForRoleSchema,
-    type GetPermissionsForUserInput,
-    GetPermissionsForUserSchema,
-    type GetRolesForPermissionInput,
-    GetRolesForPermissionSchema,
-    type GetUsersForPermissionInput,
-    GetUsersForPermissionSchema
-} from './permission.service.schema';
 // import * as normalizers from './permission.service.normalizer'; // Uncomment if/when normalizers are needed
 
 /**
@@ -60,16 +63,16 @@ export class PermissionService extends BaseService {
      * Assigns a permission to a role.
      * @param actor The actor performing the action
      * @param input { role, permission }
-     * @returns ServiceOutput<{ assigned: boolean }>
+     * @returns ServiceOutput<PermissionAssignmentOutput>
      */
     public async assignPermissionToRole(
         actor: Actor,
-        input: AssignPermissionToRoleInput
-    ): Promise<ServiceOutput<{ assigned: boolean }>> {
+        input: RolePermissionManagementInput
+    ): Promise<ServiceOutput<PermissionAssignmentOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'assignPermissionToRole',
             input: { actor, ...input },
-            schema: AssignPermissionToRoleSchema,
+            schema: RolePermissionManagementInputSchema,
             execute: async ({ role, permission }, actor) => {
                 if (!canManagePermissions(actor)) {
                     throw new ServiceError(
@@ -89,16 +92,16 @@ export class PermissionService extends BaseService {
      * Removes a permission from a role.
      * @param actor The actor performing the action
      * @param input { role, permission }
-     * @returns ServiceOutput<{ removed: boolean }>
+     * @returns ServiceOutput<PermissionRemovalOutput>
      */
     public async removePermissionFromRole(
         actor: Actor,
-        input: AssignPermissionToRoleInput
-    ): Promise<ServiceOutput<{ removed: boolean }>> {
+        input: RolePermissionManagementInput
+    ): Promise<ServiceOutput<PermissionRemovalOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removePermissionFromRole',
             input: { actor, ...input },
-            schema: AssignPermissionToRoleSchema,
+            schema: RolePermissionManagementInputSchema,
             execute: async ({ role, permission }, actor) => {
                 if (!canManagePermissions(actor)) {
                     throw new ServiceError(
@@ -118,16 +121,16 @@ export class PermissionService extends BaseService {
      * Assigns a permission to a user.
      * @param actor The actor performing the action
      * @param input { userId, permission }
-     * @returns ServiceOutput<{ assigned: boolean }>
+     * @returns ServiceOutput<PermissionAssignmentOutput>
      */
     public async assignPermissionToUser(
         actor: Actor,
-        input: AssignPermissionToUserInput
-    ): Promise<ServiceOutput<{ assigned: boolean }>> {
+        input: UserPermissionManagementInput
+    ): Promise<ServiceOutput<PermissionAssignmentOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'assignPermissionToUser',
             input: { actor, ...input },
-            schema: AssignPermissionToUserSchema,
+            schema: UserPermissionManagementInputSchema,
             execute: async ({ userId, permission }, actor) => {
                 if (!canManagePermissions(actor)) {
                     throw new ServiceError(
@@ -148,16 +151,16 @@ export class PermissionService extends BaseService {
      * Removes a permission from a user.
      * @param actor The actor performing the action
      * @param input { userId, permission }
-     * @returns ServiceOutput<{ removed: boolean }>
+     * @returns ServiceOutput<PermissionRemovalOutput>
      */
     public async removePermissionFromUser(
         actor: Actor,
-        input: AssignPermissionToUserInput
-    ): Promise<ServiceOutput<{ removed: boolean }>> {
+        input: UserPermissionManagementInput
+    ): Promise<ServiceOutput<PermissionRemovalOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removePermissionFromUser',
             input: { actor, ...input },
-            schema: AssignPermissionToUserSchema,
+            schema: UserPermissionManagementInputSchema,
             execute: async ({ userId, permission }, actor) => {
                 if (!canManagePermissions(actor)) {
                     throw new ServiceError(
@@ -178,16 +181,16 @@ export class PermissionService extends BaseService {
      * Gets all permissions assigned to a role.
      * @param actor The actor performing the action
      * @param input { role }
-     * @returns ServiceOutput<{ permissions: PermissionEnum[] }>
+     * @returns ServiceOutput<PermissionsQueryOutput>
      */
     public async getPermissionsForRole(
         actor: Actor,
-        input: GetPermissionsForRoleInput
-    ): Promise<ServiceOutput<{ permissions: PermissionEnum[] }>> {
+        input: PermissionsByRoleInput
+    ): Promise<ServiceOutput<PermissionsQueryOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getPermissionsForRole',
             input: { actor, ...input },
-            schema: GetPermissionsForRoleSchema,
+            schema: PermissionsByRoleInputSchema,
             execute: async ({ role }, actor) => {
                 if (!canManagePermissions(actor)) {
                     throw new ServiceError(
@@ -206,16 +209,16 @@ export class PermissionService extends BaseService {
      * Gets all permissions assigned to a user.
      * @param actor The actor performing the action
      * @param input { userId }
-     * @returns ServiceOutput<{ permissions: PermissionEnum[] }>
+     * @returns ServiceOutput<PermissionsQueryOutput>
      */
     public async getPermissionsForUser(
         actor: Actor,
-        input: GetPermissionsForUserInput
-    ): Promise<ServiceOutput<{ permissions: PermissionEnum[] }>> {
+        input: PermissionsByUserInput
+    ): Promise<ServiceOutput<PermissionsQueryOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getPermissionsForUser',
             input: { actor, ...input },
-            schema: GetPermissionsForUserSchema,
+            schema: PermissionsByUserInputSchema,
             execute: async ({ userId }, actor) => {
                 if (!canManagePermissions(actor)) {
                     throw new ServiceError(
@@ -235,16 +238,16 @@ export class PermissionService extends BaseService {
      * Gets all roles that have a given permission.
      * @param actor The actor performing the action
      * @param input { permission }
-     * @returns ServiceOutput<{ roles: RoleEnum[] }>
+     * @returns ServiceOutput<RolesQueryOutput>
      */
     public async getRolesForPermission(
         actor: Actor,
-        input: GetRolesForPermissionInput
-    ): Promise<ServiceOutput<{ roles: RoleEnum[] }>> {
+        input: RolesByPermissionInput
+    ): Promise<ServiceOutput<RolesQueryOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getRolesForPermission',
             input: { actor, ...input },
-            schema: GetRolesForPermissionSchema,
+            schema: RolesByPermissionInputSchema,
             execute: async ({ permission }, actor) => {
                 if (!canManagePermissions(actor)) {
                     throw new ServiceError(
@@ -263,16 +266,16 @@ export class PermissionService extends BaseService {
      * Gets all users that have a given permission.
      * @param actor The actor performing the action
      * @param input { permission }
-     * @returns ServiceOutput<{ users: UserId[] }>
+     * @returns ServiceOutput<UsersQueryOutput>
      */
     public async getUsersForPermission(
         actor: Actor,
-        input: GetUsersForPermissionInput
-    ): Promise<ServiceOutput<{ users: UserId[] }>> {
+        input: UsersByPermissionInput
+    ): Promise<ServiceOutput<UsersQueryOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getUsersForPermission',
             input: { actor, ...input },
-            schema: GetUsersForPermissionSchema,
+            schema: UsersByPermissionInputSchema,
             execute: async ({ permission }, actor) => {
                 if (!canManagePermissions(actor)) {
                     throw new ServiceError(
