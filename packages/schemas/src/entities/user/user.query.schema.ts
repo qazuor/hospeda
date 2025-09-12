@@ -126,14 +126,13 @@ export const UserListInputSchema = PaginationSchema.extend({
  */
 export const UserListItemSchema = UserSchema.pick({
     id: true,
-    email: true,
     displayName: true,
     firstName: true,
     lastName: true,
     role: true,
-    isActive: true,
-    isEmailVerified: true,
-    profilePicture: true,
+    lifecycleState: true,
+    contactInfo: true,
+    profile: true,
     createdAt: true,
     updatedAt: true
 });
@@ -219,9 +218,9 @@ export const UserSummarySchema = UserSchema.pick({
     displayName: true,
     firstName: true,
     lastName: true,
-    profilePicture: true,
+    profile: true,
     role: true,
-    isActive: true,
+    lifecycleState: true,
     createdAt: true
 });
 
@@ -341,6 +340,54 @@ export const UserStatsSchema = z.object({
 });
 
 // ============================================================================
+// ENHANCED LIST SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for user list item with content counts
+ * Extends basic user schema with accommodation, event, and post counts
+ */
+export const UserListItemWithCountsSchema = UserSchema.extend({
+    accommodationCount: z
+        .number({
+            message: 'zodError.user.listWithCounts.accommodationCount.invalidType'
+        })
+        .int({ message: 'zodError.user.listWithCounts.accommodationCount.int' })
+        .min(0, { message: 'zodError.user.listWithCounts.accommodationCount.min' })
+        .optional(),
+
+    eventsCount: z
+        .number({
+            message: 'zodError.user.listWithCounts.eventsCount.invalidType'
+        })
+        .int({ message: 'zodError.user.listWithCounts.eventsCount.int' })
+        .min(0, { message: 'zodError.user.listWithCounts.eventsCount.min' })
+        .optional(),
+
+    postsCount: z
+        .number({
+            message: 'zodError.user.listWithCounts.postsCount.invalidType'
+        })
+        .int({ message: 'zodError.user.listWithCounts.postsCount.int' })
+        .min(0, { message: 'zodError.user.listWithCounts.postsCount.min' })
+        .optional()
+});
+
+/**
+ * Schema for user list output with content counts
+ * Used by searchForList method that includes content statistics
+ */
+export const UserListWithCountsOutputSchema = z.object({
+    items: z.array(UserListItemWithCountsSchema),
+    total: z
+        .number({
+            message: 'zodError.user.listWithCounts.total.invalidType'
+        })
+        .int({ message: 'zodError.user.listWithCounts.total.int' })
+        .min(0, { message: 'zodError.user.listWithCounts.total.min' })
+});
+
+// ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
@@ -353,3 +400,5 @@ export type UserSearchResult = z.infer<typeof UserSearchResultSchema>;
 export type UserSearchOutput = z.infer<typeof UserSearchOutputSchema>;
 export type UserSummary = z.infer<typeof UserSummarySchema>;
 export type UserStats = z.infer<typeof UserStatsSchema>;
+export type UserListItemWithCounts = z.infer<typeof UserListItemWithCountsSchema>;
+export type UserListWithCountsOutput = z.infer<typeof UserListWithCountsOutputSchema>;
