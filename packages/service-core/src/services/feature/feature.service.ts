@@ -1,4 +1,13 @@
 import { AccommodationModel, FeatureModel, RAccommodationFeatureModel } from '@repo/db';
+import {
+    AddFeatureToAccommodationInputSchema,
+    FeatureCreateInputSchema as CreateFeatureSchema,
+    GetAccommodationsByFeatureSchema,
+    GetFeaturesForAccommodationSchema,
+    RemoveFeatureFromAccommodationInputSchema,
+    SimpleFeatureSearchSchema as SearchFeatureSchema,
+    FeatureUpdateInputSchema as UpdateFeatureSchema
+} from '@repo/schemas';
 import type {
     AccommodationFeatureType,
     AccommodationId,
@@ -22,15 +31,6 @@ import {
     checkCanUpdateFeature,
     checkCanViewFeature
 } from './feature.permissions';
-import {
-    AddFeatureToAccommodationInputSchema,
-    CreateFeatureSchema,
-    GetAccommodationsByFeatureSchema,
-    GetFeaturesForAccommodationSchema,
-    RemoveFeatureFromAccommodationInputSchema,
-    SearchFeatureSchema,
-    UpdateFeatureSchema
-} from './feature.schemas';
 
 /**
  * Service for managing features. Implements business logic, permissions, and hooks for Feature entities.
@@ -76,7 +76,17 @@ export class FeatureService extends BaseCrudRelatedService<
         if (!slug && data.name) {
             slug = await generateFeatureSlug(data.name, this.model);
         }
-        return { ...data, slug };
+
+        // Set default values for optional fields
+        const isBuiltin = data.isBuiltin ?? false;
+        const isFeatured = data.isFeatured ?? false;
+
+        return {
+            ...data,
+            slug,
+            isBuiltin,
+            isFeatured
+        };
     }
 
     /**
