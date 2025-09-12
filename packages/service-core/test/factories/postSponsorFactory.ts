@@ -1,6 +1,6 @@
+import type { PostSponsorCreateInput } from '@repo/schemas';
 import type { PostSponsorId, PostSponsorType, UserId } from '@repo/types';
 import { ClientTypeEnum, LifecycleStatusEnum, ModerationStatusEnum } from '@repo/types';
-import type { CreatePostSponsorInput } from '../../src/services/postSponsor/postSponsor.schemas';
 import { getMockId } from './utilsFactory';
 
 export class PostSponsorFactoryBuilder {
@@ -21,10 +21,9 @@ export class PostSponsorFactoryBuilder {
                 url: 'https://example.com/logo.png',
                 moderationState: ModerationStatusEnum.APPROVED,
                 caption: undefined,
-                description: undefined,
-                tags: []
+                description: undefined
             },
-            contact: {
+            contactInfo: {
                 mobilePhone: '+1234567890'
             },
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -47,8 +46,8 @@ export const createMockPostSponsor = (fields: Partial<PostSponsorType> = {}): Po
  * Factory for a valid CreatePostSponsorInput (only user-provided fields)
  */
 export const createNewPostSponsorInput = (
-    overrides: Partial<CreatePostSponsorInput> = {}
-): CreatePostSponsorInput => {
+    overrides: Partial<PostSponsorCreateInput> = {}
+): PostSponsorCreateInput => {
     return {
         name: 'Sponsor Name',
         type: ClientTypeEnum.POST_SPONSOR,
@@ -57,10 +56,9 @@ export const createNewPostSponsorInput = (
             url: 'https://example.com/logo.png',
             moderationState: ModerationStatusEnum.APPROVED,
             caption: undefined,
-            description: undefined,
-            tags: []
+            description: undefined
         },
-        contact: {
+        contactInfo: {
             mobilePhone: '+1234567890'
         },
         ...overrides
