@@ -1,6 +1,5 @@
-import type { CreateUserSchema, UpdateUserSchema } from '@repo/schemas';
+import type { UserCreateInput, UserUpdateInput } from '@repo/schemas';
 import type { UserType } from '@repo/types';
-import type { z } from 'zod';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
 import { generateUserSlug } from './user.helpers';
@@ -12,10 +11,7 @@ import { generateUserSlug } from './user.helpers';
  * @param _actor The actor performing the action (unused).
  * @returns The normalized data.
  */
-export const normalizeCreateInput = (
-    data: z.infer<typeof CreateUserSchema>,
-    _actor: Actor
-): z.infer<typeof CreateUserSchema> => {
+export const normalizeCreateInput = (data: UserCreateInput, _actor: Actor): UserCreateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
 
@@ -39,10 +35,7 @@ export const normalizeCreateInput = (
  * @param _actor The actor performing the action (unused).
  * @returns The normalized data.
  */
-export const normalizeUpdateInput = (
-    data: z.infer<typeof UpdateUserSchema>,
-    _actor: Actor
-): z.infer<typeof UpdateUserSchema> => {
+export const normalizeUpdateInput = (data: UserUpdateInput, _actor: Actor): UserUpdateInput => {
     const adminInfo = normalizeAdminInfo(data.adminInfo);
     const { adminInfo: _adminInfo, ...rest } = data;
 
