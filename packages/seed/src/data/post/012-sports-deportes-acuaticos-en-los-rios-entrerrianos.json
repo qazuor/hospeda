@@ -24,6 +24,7 @@
     "likes": 145,
     "comments": 18,
     "shares": 42,
+    "readingTimeMinutes": 3,
     "isFeatured": true,
     "seo": {
         "title": "Deportes Acuáticos en los Ríos Entrerrianos",
