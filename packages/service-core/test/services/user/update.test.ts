@@ -50,7 +50,7 @@ describe('UserService.update', () => {
         asMock(userModelMock.findById).mockResolvedValue(user);
         asMock(userModelMock.update).mockResolvedValue({ ...user, ...updateInput });
         // Act
-        const result = await service.update(actor, user.id, { id: user.id, ...updateInput });
+        const result = await service.update(actor, user.id, updateInput);
         // Assert
         expectSuccess(result);
         expect(result.data?.displayName).toBe('Updated Name');
@@ -62,7 +62,7 @@ describe('UserService.update', () => {
         asMock(userModelMock.findById).mockResolvedValue(user);
         asMock(userModelMock.update).mockResolvedValue({ ...user, ...updateInput });
         // Act
-        const result = await service.update(actor, user.id, { id: user.id, ...updateInput });
+        const result = await service.update(actor, user.id, updateInput);
         // Assert
         expectSuccess(result);
         expect(result.data?.displayName).toBe('Updated Name');
@@ -73,7 +73,7 @@ describe('UserService.update', () => {
         const actor = getActor(RoleEnum.USER, getMockId('user', 'other-user') as UserId);
         asMock(userModelMock.findById).mockResolvedValue(user);
         // Act
-        const result = await service.update(actor, user.id, { id: user.id, ...updateInput });
+        const result = await service.update(actor, user.id, updateInput);
         // Assert
         expectForbiddenError(result);
         expect(userModelMock.update).not.toHaveBeenCalled();
@@ -86,7 +86,6 @@ describe('UserService.update', () => {
         asMock(userModelMock.findById).mockResolvedValue(null);
         // Act
         const result = await service.update(actor, nonExistentId, {
-            id: nonExistentId,
             ...updateInput
         });
         // Assert
@@ -99,7 +98,6 @@ describe('UserService.update', () => {
         asMock(userModelMock.findById).mockResolvedValue(user);
         // Act
         const result = await service.update(actor, user.id, {
-            id: user.id,
             slug: user.slug,
             displayName: ''
         });
@@ -113,7 +111,7 @@ describe('UserService.update', () => {
         asMock(userModelMock.findById).mockResolvedValue(user);
         asMock(userModelMock.update).mockResolvedValue(null);
         // Act
-        const result = await service.update(actor, user.id, { id: user.id, ...updateInput });
+        const result = await service.update(actor, user.id, updateInput);
         // Assert
         expectInternalError(result);
     });
