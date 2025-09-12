@@ -28,7 +28,7 @@ describe('PostService.search', () => {
             pageSize: 20,
             total: 2
         });
-        const result = await service.search(actor, {});
+        const result = await service.search(actor, { page: 1, pageSize: 10 });
         expectSuccess(result);
         expect(result.data).toBeDefined();
         if (!result.data) throw new Error('Missing data');
@@ -46,7 +46,7 @@ describe('PostService.search', () => {
             id: undefined,
             role: RoleEnum.GUEST
         });
-        const result = await service.search(forbiddenActor, {});
+        const result = await service.search(forbiddenActor, { page: 1, pageSize: 10 });
         expectForbiddenError(result);
         expect(modelMock.findAll as Mock).not.toHaveBeenCalled();
     });
@@ -58,7 +58,7 @@ describe('PostService.search', () => {
             pageSize: 20,
             total: 0
         });
-        const result = await service.search(actor, {});
+        const result = await service.search(actor, { page: 1, pageSize: 10 });
         expectSuccess(result);
         expect(result.data).toBeDefined();
         if (!result.data) throw new Error('Missing data');
@@ -68,7 +68,7 @@ describe('PostService.search', () => {
 
     it('should return INTERNAL_ERROR if model.search throws', async () => {
         (modelMock.findAll as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.search(actor, {});
+        const result = await service.search(actor, { page: 1, pageSize: 10 });
         expectInternalError(result);
     });
 });

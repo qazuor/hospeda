@@ -1,3 +1,4 @@
+import type { PostCreateInput, PostUpdateInput } from '@repo/schemas';
 import {
     type ImageType,
     LifecycleStatusEnum,
@@ -8,14 +9,12 @@ import {
     VisibilityEnum
 } from '@repo/types';
 import { describe, expect, it } from 'vitest';
-import type { z } from 'zod';
 import {
     normalizeCreateInput,
     normalizeImage,
     normalizeMedia,
     normalizeUpdateInput
 } from '../../../src/services/post/post.normalizers';
-import type { PostCreateInput, PostUpdateSchema } from '../../../src/services/post/post.schemas';
 import { TagFactoryBuilder } from '../../factories/tagFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
@@ -92,6 +91,7 @@ describe('normalizeMedia', () => {
 describe('normalizeCreateInput', () => {
     it('trims and normalizes fields', () => {
         const input: PostCreateInput = {
+            slug: 'hello-post',
             title: '  Hello  ',
             summary: '  Summary  ',
             content: '  Content  ',
@@ -103,7 +103,12 @@ describe('normalizeCreateInput', () => {
             visibility: VisibilityEnum.PUBLIC,
             isNews: true,
             isFeaturedInWebsite: false,
-            authorId: getMockId('user') as UserId
+            authorId: getMockId('user') as UserId,
+            likes: 0,
+            comments: 0,
+            shares: 0,
+            publishedAt: new Date(),
+            readingTimeMinutes: 5
         };
         const result = normalizeCreateInput(input);
         expect(result.title).toBe('Hello');
@@ -114,6 +119,7 @@ describe('normalizeCreateInput', () => {
 
     it('generates summary from content if summary is empty', () => {
         const input: PostCreateInput = {
+            slug: 'test-post',
             title: 'Test',
             summary: '',
             content: 'This is a long content that should be used to generate the summary. '.repeat(
@@ -127,7 +133,12 @@ describe('normalizeCreateInput', () => {
             visibility: VisibilityEnum.PUBLIC,
             isNews: true,
             isFeaturedInWebsite: false,
-            authorId: getMockId('user') as UserId
+            authorId: getMockId('user') as UserId,
+            likes: 0,
+            comments: 0,
+            shares: 0,
+            publishedAt: new Date(),
+            readingTimeMinutes: 5
         };
         const result = normalizeCreateInput(input);
         expect(result.summary?.length).toBeLessThanOrEqual(200);
@@ -148,7 +159,7 @@ describe('normalizeCreateInput', () => {
 
 describe('normalizeUpdateInput', () => {
     it('trims and normalizes fields if present', () => {
-        const input: { id: string } & Partial<Omit<z.infer<typeof PostUpdateSchema>, 'id'>> = {
+        const input: { id: string } & Partial<Omit<PostUpdateInput, 'id'>> = {
             id: 'mock-post-id',
             title: '  Update  ',
             summary: '  Update summary  ',
@@ -163,7 +174,7 @@ describe('normalizeUpdateInput', () => {
     });
 
     it('generates summary from content if summary is empty', () => {
-        const input: { id: string } & Partial<Omit<z.infer<typeof PostUpdateSchema>, 'id'>> = {
+        const input: { id: string } & Partial<Omit<PostUpdateInput, 'id'>> = {
             id: 'mock-post-id',
             summary: '',
             content: 'This is a long content for update. '.repeat(10)
@@ -173,7 +184,7 @@ describe('normalizeUpdateInput', () => {
     });
 
     it('handles missing media gracefully', () => {
-        const input: { id: string } & Partial<Omit<z.infer<typeof PostUpdateSchema>, 'id'>> = {
+        const input: { id: string } & Partial<Omit<PostUpdateInput, 'id'>> = {
             id: 'mock-post-id',
             title: 'Test update',
             summary: 'Summary',

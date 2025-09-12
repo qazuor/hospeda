@@ -1,4 +1,5 @@
 import { PostModel } from '@repo/db';
+import type { PostCreateInput } from '@repo/schemas';
 import type { PostId, UserId } from '@repo/types';
 import {
     LifecycleStatusEnum,
@@ -9,7 +10,6 @@ import {
 } from '@repo/types';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/post/post.helpers';
-import type { PostCreateInput } from '../../../src/services/post/post.schemas';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
@@ -52,7 +52,12 @@ describe('PostService.create (custom business logic)', () => {
             title: 'Duplicated Title',
             category: baseData.category
         });
-        (modelMock.findOne as Mock).mockResolvedValue(createMockPost({ ...duplicateInput }));
+        (modelMock.findOne as Mock).mockResolvedValue(
+            createMockPost({
+                title: duplicateInput.title,
+                category: duplicateInput.category
+            })
+        );
         const result = await service.create(actor, duplicateInput);
         expectValidationError(result);
     });
@@ -78,7 +83,13 @@ describe('PostService.create (custom business logic)', () => {
             visibility: VisibilityEnum.PUBLIC,
             isNews: true,
             isFeaturedInWebsite: false,
-            authorId: getMockId('user') as UserId
+            authorId: getMockId('user') as UserId,
+            slug: 'test-post-without-expires-at',
+            likes: 0,
+            comments: 0,
+            shares: 0,
+            publishedAt: new Date(),
+            readingTimeMinutes: 5
             // expiresAt is intentionally omitted
         };
         const result = await service.create(actor, data);
@@ -104,6 +115,29 @@ describe('PostService.create (custom business logic)', () => {
         const result = await service.create(actor, uniqueNewsInput);
         expectSuccess(result);
         expect(result.data?.slug).toBe('mock-slug');
+    });
+
+    it('should create a post with publishedAt and readingTimeMinutes', async () => {
+        (modelMock.findOne as Mock).mockImplementation(() => null);
+        const testPublishedAt = new Date('2024-01-15T10:00:00Z');
+        const testReadingTime = 12;
+        (modelMock.create as Mock).mockImplementation(async (data) =>
+            createMockPost({
+                ...data,
+                id: postId,
+                slug: 'mock-slug',
+                publishedAt: testPublishedAt,
+                readingTimeMinutes: testReadingTime
+            })
+        );
+        const inputWithNewFields = createNewPostInput({
+            publishedAt: testPublishedAt,
+            readingTimeMinutes: testReadingTime
+        });
+        const result = await service.create(actor, inputWithNewFields);
+        expectSuccess(result);
+        expect(result.data?.publishedAt).toEqual(testPublishedAt);
+        expect(result.data?.readingTimeMinutes).toBe(testReadingTime);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {

@@ -21,7 +21,7 @@ describe('PostService.count', () => {
 
     it('should return the count of posts if actor is authenticated', async () => {
         (modelMock.count as Mock).mockResolvedValue(42);
-        const result = await service.count(actor, {});
+        const result = await service.count(actor, { page: 1, pageSize: 10 });
         expectSuccess(result);
         expect(result.data?.count).toBe(42);
     });
@@ -32,14 +32,14 @@ describe('PostService.count', () => {
             id: undefined,
             role: RoleEnum.GUEST
         });
-        const result = await service.count(forbiddenActor, {});
+        const result = await service.count(forbiddenActor, { page: 1, pageSize: 10 });
         expectForbiddenError(result);
         expect(modelMock.count as Mock).not.toHaveBeenCalled();
     });
 
     it('should return INTERNAL_ERROR if model.count throws', async () => {
         (modelMock.count as Mock).mockRejectedValue(new Error('DB error'));
-        const result = await service.count(actor, {});
+        const result = await service.count(actor, { page: 1, pageSize: 10 });
         expectInternalError(result);
     });
 });

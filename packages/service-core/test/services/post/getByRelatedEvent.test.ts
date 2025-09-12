@@ -88,10 +88,9 @@ describe('PostService.getByRelatedEvent', () => {
 
     it('should return forbidden if actor is missing', async () => {
         // purposely invalid
-        const result = await service.getByRelatedEvent(
-            null as any,
-            { eventId } as { eventId: string }
-        );
+        const result = await service.getByRelatedEvent(null as any, {
+            eventId: eventId as EventId
+        });
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
 
