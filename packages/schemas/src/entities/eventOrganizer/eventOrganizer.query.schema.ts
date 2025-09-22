@@ -1,16 +1,14 @@
 import { z } from 'zod';
-import { EventOrganizerIdParamsSchema } from '../../common/params.schema.js';
-import { BaseSearchSchema, PaginationSchema } from '../../common/search.schemas.js';
+import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { EventOrganizerSchema } from './eventOrganizer.schema.js';
 
 /**
  * EventOrganizer Query Schemas
  *
- * This file contains all schemas related to querying event organizers:
- * - List (input/output/item)
- * - Search (input/output/result)
- * - Count
- * - Filters
+ * Standardized query schemas for event organizer operations following the unified pattern:
+ * - BaseSearchSchema: Provides page/pageSize pagination, sortBy/sortOrder sorting, and 'q' search
+ * - Entity-specific filters: Additional filtering options for event organizers
+ * - PaginationResultSchema: Unified response format with data array and pagination metadata
  */
 
 // ============================================================================
@@ -18,139 +16,192 @@ import { EventOrganizerSchema } from './eventOrganizer.schema.js';
 // ============================================================================
 
 /**
- * Schema for event organizer-specific filters
- * Used in list and search operations
+ * EventOrganizer-specific filters that extend the base search functionality
  */
 export const EventOrganizerFiltersSchema = z.object({
     // Basic filters
-    name: z
-        .string({
-            message: 'zodError.eventOrganizer.filters.name.invalidType'
-        })
-        .min(1, { message: 'zodError.eventOrganizer.filters.name.min' })
-        .optional(),
+    name: z.string().optional(),
 
-    // General search query
-    q: z
-        .string({
-            message: 'zodError.eventOrganizer.filters.q.invalidType'
-        })
-        .min(1, { message: 'zodError.eventOrganizer.filters.q.min' })
-        .optional()
+    // Contact information filters (for filtering by nested contact info)
+    personalEmail: z.string().email().optional(),
+    workEmail: z.string().email().optional(),
+    mobilePhone: z.string().optional(),
+    website: z.string().url().optional(),
+
+    // Lifecycle filter (this exists in main schema)
+    lifecycleState: z.string().optional()
 });
 
 // ============================================================================
-// LIST SCHEMAS
+// MAIN SEARCH SCHEMA
 // ============================================================================
 
 /**
- * Schema for listing event organizers with pagination and filters
+ * Complete event organizer search schema combining base search with event organizer-specific filters
+ *
+ * Provides:
+ * - page/pageSize: Standardized pagination
+ * - sortBy/sortOrder: Sorting with 'asc'/'desc' values
+ * - q: Text search query
+ * - filters: EventOrganizer-specific filtering options
  */
-export const EventOrganizerListInputSchema = PaginationSchema.extend({
+export const EventOrganizerSearchSchema = BaseSearchSchema.extend({
     filters: EventOrganizerFiltersSchema.optional()
 });
 
+// ============================================================================
+// RESULT ITEM SCHEMAS
+// ============================================================================
+
 /**
- * Schema for event organizer list items
- * Simplified version for list display
+ * EventOrganizer list item schema - contains essential fields for list display
  */
 export const EventOrganizerListItemSchema = EventOrganizerSchema.pick({
     id: true,
     name: true,
     description: true,
     logo: true,
+    contactInfo: true,
+    socialNetworks: true,
     createdAt: true,
     updatedAt: true,
-    lifecycleState: true
+    lifecycleState: true,
+    adminInfo: true
 });
 
 /**
- * Schema for event organizer list response
+ * EventOrganizer search result item - extends list item with search relevance score
  */
-export const EventOrganizerListOutputSchema = z.object({
-    items: z.array(EventOrganizerListItemSchema),
-    total: z.number().int().min(0),
-    page: z.number().int().min(1),
-    pageSize: z.number().int().min(1),
-    totalPages: z.number().int().min(0)
+export const EventOrganizerSearchResultItemSchema = EventOrganizerListItemSchema.extend({
+    score: z.number().min(0).max(1).optional()
 });
 
 // ============================================================================
-// SEARCH SCHEMAS
+// RESPONSE SCHEMAS
 // ============================================================================
 
 /**
- * Schema for searching event organizers
- * Extends base search with event organizer-specific filters
+ * EventOrganizer list response using standardized pagination format
  */
-export const EventOrganizerSearchInputSchema = BaseSearchSchema.extend({
-    filters: EventOrganizerFiltersSchema.optional()
+export const EventOrganizerListResponseSchema = PaginationResultSchema(
+    EventOrganizerListItemSchema
+);
+
+/**
+ * EventOrganizer search response using standardized pagination format with search results
+ */
+export const EventOrganizerSearchResponseSchema = PaginationResultSchema(
+    EventOrganizerSearchResultItemSchema
+);
+
+// ============================================================================
+// SUMMARY AND STATS SCHEMAS
+// ============================================================================
+
+/**
+ * EventOrganizer summary schema for quick display
+ */
+export const EventOrganizerSummarySchema = EventOrganizerSchema.pick({
+    id: true,
+    name: true,
+    description: true,
+    logo: true,
+    email: true,
+    website: true,
+    city: true,
+    state: true,
+    country: true,
+    organizerType: true,
+    isActive: true,
+    isVerified: true
 });
 
 /**
- * Schema for event organizer search results
- * Same as list item but could be extended with search-specific fields
+ * EventOrganizer statistics schema
  */
-export const EventOrganizerSearchResultSchema = EventOrganizerListItemSchema;
+export const EventOrganizerStatsSchema = z.object({
+    totalOrganizers: z.number().int().min(0).default(0),
+    activeOrganizers: z.number().int().min(0).default(0),
+    verifiedOrganizers: z.number().int().min(0).default(0),
+    partnerOrganizers: z.number().int().min(0).default(0),
 
-/**
- * Schema for event organizer search response
- */
-export const EventOrganizerSearchOutputSchema = z.object({
-    items: z.array(EventOrganizerSearchResultSchema),
-    total: z.number().int().min(0),
-    page: z.number().int().min(1),
-    pageSize: z.number().int().min(1),
-    totalPages: z.number().int().min(0),
-    query: z.string().optional()
+    // Type distribution
+    organizersByType: z.record(z.string(), z.number().int().min(0)).optional(),
+
+    // Geographic distribution
+    organizersByCountry: z.record(z.string(), z.number().int().min(0)).optional(),
+    organizersByState: z.record(z.string(), z.number().int().min(0)).optional(),
+    organizersByCity: z.record(z.string(), z.number().int().min(0)).optional(),
+
+    // Content statistics
+    organizersWithLogo: z.number().int().min(0).default(0),
+    organizersWithDescription: z.number().int().min(0).default(0),
+    organizersWithWebsite: z.number().int().min(0).default(0),
+    organizersWithSocialMedia: z.number().int().min(0).default(0),
+
+    // Event statistics
+    totalEventsOrganized: z.number().int().min(0).default(0),
+    averageEventsPerOrganizer: z.number().min(0).default(0),
+
+    // Recent activity
+    organizersCreatedToday: z.number().int().min(0).default(0),
+    organizersCreatedThisWeek: z.number().int().min(0).default(0),
+    organizersCreatedThisMonth: z.number().int().min(0).default(0),
+
+    // Top organizers
+    topOrganizersByEvents: z
+        .array(
+            z.object({
+                id: z.string().uuid(),
+                name: z.string(),
+                eventCount: z.number().int().min(0)
+            })
+        )
+        .optional()
 });
-
-// ============================================================================
-// COUNT SCHEMAS
-// ============================================================================
-
-/**
- * Schema for counting event organizers
- */
-export const EventOrganizerCountInputSchema = z.object({
-    filters: EventOrganizerFiltersSchema.optional()
-});
-
-/**
- * Schema for event organizer count response
- */
-export const EventOrganizerCountOutputSchema = z.object({
-    count: z.number().int().min(0)
-});
-
-// ============================================================================
-// PARAMETER SCHEMAS
-// ============================================================================
-
-/**
- * Schema for event organizer summary parameters
- * Reuses generic ID params
- */
-export const EventOrganizerSummaryParamsSchema = EventOrganizerIdParamsSchema;
-
-/**
- * Schema for event organizer stats parameters
- * Reuses generic ID params
- */
-export const EventOrganizerStatsParamsSchema = EventOrganizerIdParamsSchema;
 
 // ============================================================================
 // TYPE EXPORTS
 // ============================================================================
 
 export type EventOrganizerFilters = z.infer<typeof EventOrganizerFiltersSchema>;
-export type EventOrganizerListInput = z.infer<typeof EventOrganizerListInputSchema>;
+export type EventOrganizerSearchInput = z.infer<typeof EventOrganizerSearchSchema>;
 export type EventOrganizerListItem = z.infer<typeof EventOrganizerListItemSchema>;
-export type EventOrganizerListOutput = z.infer<typeof EventOrganizerListOutputSchema>;
-export type EventOrganizerSearchInput = z.infer<typeof EventOrganizerSearchInputSchema>;
-export type EventOrganizerSearchResult = z.infer<typeof EventOrganizerSearchResultSchema>;
-export type EventOrganizerSearchOutput = z.infer<typeof EventOrganizerSearchOutputSchema>;
-export type EventOrganizerCountInput = z.infer<typeof EventOrganizerCountInputSchema>;
-export type EventOrganizerCountOutput = z.infer<typeof EventOrganizerCountOutputSchema>;
-export type EventOrganizerSummaryParams = z.infer<typeof EventOrganizerSummaryParamsSchema>;
-export type EventOrganizerStatsParams = z.infer<typeof EventOrganizerStatsParamsSchema>;
+export type EventOrganizerSearchResultItem = z.infer<typeof EventOrganizerSearchResultItemSchema>;
+export type EventOrganizerListResponse = z.infer<typeof EventOrganizerListResponseSchema>;
+export type EventOrganizerSearchResponse = z.infer<typeof EventOrganizerSearchResponseSchema>;
+export type EventOrganizerSummary = z.infer<typeof EventOrganizerSummarySchema>;
+export type EventOrganizerStats = z.infer<typeof EventOrganizerStatsSchema>;
+
+// Compatibility aliases for existing code
+export type EventOrganizerListInput = EventOrganizerSearchInput;
+export type EventOrganizerListOutput = EventOrganizerListResponse;
+export type EventOrganizerSearchOutput = EventOrganizerSearchResponse;
+export type EventOrganizerSearchResult = EventOrganizerSearchResultItem;
+
+// Additional compatibility schemas
+const EventOrganizerCountInputInternalSchema = z.object({
+    filters: EventOrganizerFiltersSchema.optional()
+});
+const EventOrganizerCountWrapperSchema = z.object({ count: z.number().int().min(0) });
+export type EventOrganizerCountInput = z.infer<typeof EventOrganizerCountInputInternalSchema>;
+export type EventOrganizerCountOutput = z.infer<typeof EventOrganizerCountWrapperSchema>;
+
+// Legacy compatibility exports
+export const EventOrganizerListInputSchema = EventOrganizerSearchSchema;
+export const EventOrganizerListOutputSchema = EventOrganizerListResponseSchema;
+export const EventOrganizerSearchInputSchema = EventOrganizerSearchSchema;
+export const EventOrganizerSearchOutputSchema = EventOrganizerSearchResponseSchema;
+export const EventOrganizerCountInputSchema = z.object({
+    filters: EventOrganizerFiltersSchema.optional()
+});
+export const EventOrganizerCountOutputSchema = z.object({ count: z.number().int().min(0) });
+
+// Additional missing legacy exports
+export const EventOrganizerSearchResultSchema = EventOrganizerSearchResponseSchema;
+export const EventOrganizerStatsParamsSchema = z.object({
+    organizerId: z.string().uuid()
+});
+export const EventOrganizerSummaryParamsSchema = z.object({
+    organizerId: z.string().uuid()
+});
