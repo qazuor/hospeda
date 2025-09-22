@@ -1,5 +1,5 @@
 import type { BaseModel as BaseModelDB } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../../src/base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger } from '../../../src/types';

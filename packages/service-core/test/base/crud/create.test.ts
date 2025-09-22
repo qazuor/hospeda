@@ -1,5 +1,5 @@
 import type { BaseModel } from '@repo/db';
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import {
