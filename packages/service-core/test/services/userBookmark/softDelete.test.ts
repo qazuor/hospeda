@@ -1,5 +1,5 @@
 import { UserBookmarkModel } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../../src';
 import * as permissions from '../../../src/services/userBookmark/userBookmark.permissions';

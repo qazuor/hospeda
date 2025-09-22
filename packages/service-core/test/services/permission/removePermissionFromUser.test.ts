@@ -1,5 +1,5 @@
 import type { RRolePermissionModel, RUserPermissionModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode, type UserId } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode, type UserIdType } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissionService } from '../../../src/services/permission/permission.service';
 import { createActor } from '../../factories/actorFactory';
@@ -7,7 +7,7 @@ import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const validInput = {
-    userId: getMockId('user', 'user-1') as UserId,
+    userId: getMockId('user', 'user-1') as UserIdType,
     permission: PermissionEnum.USER_CREATE
 };
 

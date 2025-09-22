@@ -1,4 +1,4 @@
-import { RoleEnum, ServiceErrorCode, type UserId } from '@repo/types';
+import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     canAddPermission,
@@ -13,14 +13,14 @@ import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
 describe('user permission helpers', () => {
-    const self = createUser({ id: getMockId('user') as UserId, role: RoleEnum.USER });
-    const superAdmin = createUser({ id: getMockId('user') as UserId, role: RoleEnum.SUPER_ADMIN });
+    const self = createUser({ id: getMockId('user'), role: RoleEnum.USER });
+    const superAdmin = createUser({ id: getMockId('user'), role: RoleEnum.SUPER_ADMIN });
     const adminOther = createUser({
-        id: getMockId('user', 'admin-other') as UserId,
+        id: getMockId('user', 'admin-other') as string,
         role: RoleEnum.ADMIN
     });
     const guestOther = createUser({
-        id: getMockId('user', 'guest-other') as UserId,
+        id: getMockId('user', 'guest-other') as string,
         role: RoleEnum.GUEST
     });
 

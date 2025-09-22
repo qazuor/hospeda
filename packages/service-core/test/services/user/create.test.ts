@@ -5,7 +5,7 @@
  * Covers: success, forbidden, validation, internal error, edge cases.
  */
 import { UserModel } from '@repo/db';
-import { RoleEnum } from '@repo/types';
+import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createUser, createUserForCreation } from '../../factories/userFactory';

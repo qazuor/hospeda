@@ -1,5 +1,5 @@
-import type { UserType } from '@repo/types';
-import { RoleEnum } from '@repo/types';
+import type { User } from '@repo/schemas';
+import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     normalizeCreateInput,
@@ -15,7 +15,7 @@ const baseUser = {
     lastName: ' Doe ',
     contactInfo: { personalEmail: ' JOHN@EXAMPLE.COM ', mobilePhone: '+123456789' },
     slug: undefined
-} as unknown as UserType;
+} as unknown as User;
 
 const actor = { id: 'actor-id', role: RoleEnum.ADMIN, permissions: [] };
 

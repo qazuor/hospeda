@@ -5,7 +5,7 @@
  * Covers: success, forbidden, not found, validation, internal error, edge cases.
  */
 import { UserModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, type UserId } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import type { Actor } from '../../../src';
 import { UserService } from '../../../src/services/user/user.service';
@@ -33,7 +33,7 @@ describe('UserService.setPermissions', () => {
     let service: UserService;
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const userId = getMockId('user', 'user-1') as UserId;
+    const userId = getMockId('user', 'user-1') as string;
     const actor = getActor(RoleEnum.SUPER_ADMIN);
     const input = { userId, permissions: [PermissionEnum.USER_CREATE, PermissionEnum.USER_DELETE] };
 
@@ -102,7 +102,7 @@ describe('UserService.setPermissions', () => {
     it('should return VALIDATION_ERROR for invalid userId', async () => {
         // Act
         const result = await service.setPermissions(actor, {
-            userId: '' as UserId,
+            userId: '' as string,
             permissions: [PermissionEnum.USER_CREATE]
         });
         // Assert
@@ -112,7 +112,7 @@ describe('UserService.setPermissions', () => {
     it('should return VALIDATION_ERROR for empty permissions array', async () => {
         // Act
         const result = await service.setPermissions(actor, {
-            userId: userId as UserId,
+            userId: userId as string,
             permissions: []
         });
         // Assert
@@ -123,7 +123,7 @@ describe('UserService.setPermissions', () => {
         // Act
         const invalidPermissions = [undefined as unknown as PermissionEnum];
         const result = await service.setPermissions(actor, {
-            userId: userId as UserId,
+            userId: userId as string,
             permissions: invalidPermissions
         });
         // Assert
@@ -132,7 +132,7 @@ describe('UserService.setPermissions', () => {
 
     it('should return VALIDATION_ERROR if userId is empty', async () => {
         const result = await service.setPermissions(actor, {
-            userId: '' as UserId,
+            userId: '' as string,
             permissions: [PermissionEnum.USER_READ_ALL]
         });
         expectValidationError(result);
@@ -140,7 +140,7 @@ describe('UserService.setPermissions', () => {
 
     it('should return VALIDATION_ERROR if permissions is empty array', async () => {
         const result = await service.setPermissions(actor, {
-            userId: 'some-id' as UserId,
+            userId: 'some-id' as string,
             permissions: []
         });
         expectValidationError(result);
@@ -148,7 +148,7 @@ describe('UserService.setPermissions', () => {
 
     it('should return VALIDATION_ERROR if permissions contains invalid value', async () => {
         const result = await service.setPermissions(actor, {
-            userId: 'some-id' as UserId,
+            userId: 'some-id' as string,
             permissions: ['INVALID' as PermissionEnum]
         });
         expectValidationError(result);
@@ -156,7 +156,7 @@ describe('UserService.setPermissions', () => {
 
     it('should return UNAUTHORIZED if actor is undefined', async () => {
         const result = await service.setPermissions(undefined as unknown as Actor, {
-            userId: 'some-id' as UserId,
+            userId: 'some-id' as string,
             permissions: [PermissionEnum.USER_READ_ALL]
         });
         expectUnauthorizedError(result);
@@ -169,7 +169,7 @@ describe('UserService.setPermissions', () => {
             role: undefined as unknown as RoleEnum
         } as Actor;
         const result = await service.setPermissions(fakeActor, {
-            userId: userId as UserId,
+            userId: userId as string,
             permissions: [PermissionEnum.USER_READ_ALL]
         });
         expectForbiddenError(result);

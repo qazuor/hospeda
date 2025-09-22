@@ -1,5 +1,5 @@
 import { UserBookmarkModel } from '@repo/db';
-import { type EntityTypeEnum, PermissionEnum } from '@repo/types';
+import { PermissionEnum, type EntityTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { UserBookmarkService } from '../../../src/services/userBookmark/userBookmark.service';
 import { createActor } from '../../factories/actorFactory';
@@ -33,10 +33,13 @@ describe('UserBookmarkService.listBookmarksByEntity', () => {
 
     it('should list bookmarks for an entity (success)', async () => {
         asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
-        const result = await service.listBookmarksByEntity(actor, {
-            entityId: bookmark.entityId,
+        const result = await service.listBookmarksByEntity(actor, { entityId: bookmark.entityId,
             entityType: bookmark.entityType
-        });
+        ,
+            page: 1,
+            pageSize: 10,
+            sortBy: "createdAt",
+            sortOrder: "desc" });
         expectSuccess(result);
         if (!result.data) throw new Error('Expected data in result');
         expect(result.data?.bookmarks).toBeDefined();
@@ -46,27 +49,36 @@ describe('UserBookmarkService.listBookmarksByEntity', () => {
 
     it('should return UNAUTHORIZED if actor is missing', async () => {
         asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
-        const result = await service.listBookmarksByEntity(undefined as never, {
-            entityId: bookmark.entityId,
+        const result = await service.listBookmarksByEntity(undefined as never, { entityId: bookmark.entityId,
             entityType: bookmark.entityType
-        });
+        ,
+            page: 1,
+            pageSize: 10,
+            sortBy: "createdAt",
+            sortOrder: "desc" });
         expectUnauthorizedError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.listBookmarksByEntity(actor, {
-            entityId: 'not-a-uuid',
+        const result = await service.listBookmarksByEntity(actor, { entityId: 'not-a-uuid',
             entityType: 'INVALID' as EntityTypeEnum
-        });
+        ,
+            page: 1,
+            pageSize: 10,
+            sortBy: "createdAt",
+            sortOrder: "desc" });
         expectValidationError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
-        const result = await service.listBookmarksByEntity(actor, {
-            entityId: bookmark.entityId,
+        const result = await service.listBookmarksByEntity(actor, { entityId: bookmark.entityId,
             entityType: bookmark.entityType
-        });
+        ,
+            page: 1,
+            pageSize: 10,
+            sortBy: "createdAt",
+            sortOrder: "desc" });
         expectInternalError(result);
     });
 });
