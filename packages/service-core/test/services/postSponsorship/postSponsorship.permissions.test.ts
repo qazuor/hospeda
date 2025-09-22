@@ -1,4 +1,4 @@
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { checkCanManagePostSponsorship } from '../../../src/services/postSponsorship/postSponsorship.permissions';
 import { ServiceError } from '../../../src/types';

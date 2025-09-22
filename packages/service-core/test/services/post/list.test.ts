@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import type { PostIdType } from '@repo/schemas';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
@@ -50,7 +50,7 @@ describe('PostService.list', () => {
         });
         const mockPosts = [
             createMockPost({
-                id: getMockId('post', 'post-1') as PostId,
+                id: getMockId('post', 'post-1') as PostIdType,
                 visibility: VisibilityEnum.PUBLIC
             })
         ];

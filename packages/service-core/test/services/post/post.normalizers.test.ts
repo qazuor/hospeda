@@ -1,13 +1,13 @@
 import type { PostCreateInput, PostUpdateInput } from '@repo/schemas';
 import {
-    type ImageType,
+    type Image,
     LifecycleStatusEnum,
-    type MediaType,
+    type Media,
     ModerationStatusEnum,
     PostCategoryEnum,
-    type UserId,
+    type UserIdType,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeCreateInput,
@@ -15,20 +15,16 @@ import {
     normalizeMedia,
     normalizeUpdateInput
 } from '../../../src/services/post/post.normalizers';
-import { TagFactoryBuilder } from '../../factories/tagFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
-const validTag = TagFactoryBuilder.create();
-
-const validImage: ImageType = {
+const validImage: Image = {
     url: 'https://example.com/image.jpg',
     caption: 'A nice image',
     description: 'A beautiful description for the image',
-    moderationState: ModerationStatusEnum.PENDING,
-    tags: [validTag]
+    moderationState: ModerationStatusEnum.PENDING
 };
 
-const validMedia: MediaType = {
+const validMedia: Media = {
     featuredImage: validImage,
     gallery: [validImage],
     videos: [
@@ -36,8 +32,7 @@ const validMedia: MediaType = {
             url: 'https://example.com/video.mp4',
             moderationState: ModerationStatusEnum.PENDING,
             caption: 'A video',
-            description: 'A video description',
-            tags: [validTag]
+            description: 'A video description'
         }
     ]
 };
@@ -56,8 +51,7 @@ describe('normalizeImage', () => {
             url: validImage.url,
             caption: validImage.caption,
             description: validImage.description,
-            moderationState: ModerationStatusEnum.PENDING,
-            tags: validImage.tags
+            moderationState: ModerationStatusEnum.PENDING
         });
     });
 });
@@ -78,8 +72,8 @@ describe('normalizeMedia', () => {
     });
 
     it('filters out invalid images in gallery', () => {
-        const invalidImage: ImageType = { ...validImage, url: 123 as unknown as string };
-        const media: MediaType = {
+        const invalidImage: Image = { ...validImage, url: 123 as unknown as string };
+        const media: Media = {
             ...validMedia,
             gallery: [validImage, invalidImage]
         };
@@ -103,7 +97,7 @@ describe('normalizeCreateInput', () => {
             visibility: VisibilityEnum.PUBLIC,
             isNews: true,
             isFeaturedInWebsite: false,
-            authorId: getMockId('user') as UserId,
+            authorId: getMockId('user') as UserIdType,
             likes: 0,
             comments: 0,
             shares: 0,
@@ -133,7 +127,7 @@ describe('normalizeCreateInput', () => {
             visibility: VisibilityEnum.PUBLIC,
             isNews: true,
             isFeaturedInWebsite: false,
-            authorId: getMockId('user') as UserId,
+            authorId: getMockId('user') as UserIdType,
             likes: 0,
             comments: 0,
             shares: 0,

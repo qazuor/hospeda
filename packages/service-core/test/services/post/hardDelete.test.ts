@@ -1,5 +1,5 @@
 import { PostModel } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';

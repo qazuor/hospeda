@@ -1,5 +1,5 @@
-import type { PostId, UserId } from '@repo/types';
-import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
+import type { PostIdType, UserIdType } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCommentPost,
@@ -17,9 +17,9 @@ import { createMockPost } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
 const baseActor = { id: '1', permissions: [], role: RoleEnum.USER };
-const authorId = getMockId('user', 'author-1') as UserId;
+const authorId = getMockId('user', 'author-1') as UserIdType;
 const post = createMockPost({
-    id: getMockId('post', 'p1') as PostId,
+    id: getMockId('post', 'p1') as PostIdType,
     authorId,
     visibility: VisibilityEnum.PUBLIC
 });
@@ -46,7 +46,10 @@ describe('checkCanUpdatePost', () => {
         expect(() => checkCanUpdatePost(actorEditor, post)).not.toThrow();
     });
     it('should throw ServiceError if not author and lacks permission', () => {
-        const actor = createActor({ ...baseActor, id: getMockId('user', 'not-author') as UserId });
+        const actor = createActor({
+            ...baseActor,
+            id: getMockId('user', 'not-author') as UserIdType
+        });
         expect(() => checkCanUpdatePost(actor, post)).toThrow(ServiceError);
     });
 });
@@ -63,7 +66,10 @@ describe('checkCanDeletePost', () => {
         expect(() => checkCanDeletePost(actorEditor, post)).not.toThrow();
     });
     it('should throw ServiceError if not author and lacks permission', () => {
-        const actor = createActor({ ...baseActor, id: getMockId('user', 'not-author') as UserId });
+        const actor = createActor({
+            ...baseActor,
+            id: getMockId('user', 'not-author') as UserIdType
+        });
         expect(() => checkCanDeletePost(actor, post)).toThrow(ServiceError);
     });
 });
@@ -99,7 +105,10 @@ describe('checkCanViewPost', () => {
     });
     it('should throw ServiceError if not author and lacks permission for private', () => {
         const privatePost = createMockPost({ ...post, visibility: VisibilityEnum.PRIVATE });
-        const actor = createActor({ ...baseActor, id: getMockId('user', 'not-author') as UserId });
+        const actor = createActor({
+            ...baseActor,
+            id: getMockId('user', 'not-author') as UserIdType
+        });
         expect(() => checkCanViewPost(actor, privatePost)).toThrow(ServiceError);
     });
 });

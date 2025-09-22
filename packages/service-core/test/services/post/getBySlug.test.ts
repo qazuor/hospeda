@@ -1,5 +1,5 @@
 import { PostModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, type UserId, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum, type UserIdType, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
@@ -51,7 +51,7 @@ describe('PostService.getBySlug', () => {
         // post privado, actor no es autor ni tiene permiso
         const privatePost = createMockPost({
             visibility: VisibilityEnum.PRIVATE,
-            authorId: getMockId('user') as UserId,
+            authorId: getMockId('user') as UserIdType,
             slug: 'private-slug'
         });
         (modelMock.findOne as Mock).mockImplementation((where) =>

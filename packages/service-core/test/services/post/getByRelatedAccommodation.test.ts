@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
-import type { AccommodationId, PostId } from '@repo/types';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import type { AccommodationIdType, PostIdType } from '@repo/schemas';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -22,7 +22,7 @@ describe('PostService.getByRelatedAccommodation', () => {
         role: RoleEnum.USER,
         permissions: []
     };
-    const accommodationId = getMockId('accommodation') as AccommodationId;
+    const accommodationId = getMockId('accommodation') as AccommodationIdType;
 
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findAll']);
@@ -34,7 +34,7 @@ describe('PostService.getByRelatedAccommodation', () => {
         const posts = [
             createMockPost({ relatedAccommodationId: accommodationId }),
             createMockPost({
-                id: getMockId('post', '2') as PostId,
+                id: getMockId('post', '2') as PostIdType,
                 relatedAccommodationId: accommodationId
             })
         ];
@@ -97,7 +97,7 @@ describe('PostService.getByRelatedAccommodation', () => {
     it('should return forbidden if actor is missing', async () => {
         // purposely invalid
         const result = await service.getByRelatedAccommodation(null as any, {
-            accommodationId: accommodationId as AccommodationId
+            accommodationId: accommodationId as AccommodationIdType
         });
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });
