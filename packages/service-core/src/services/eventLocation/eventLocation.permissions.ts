@@ -3,7 +3,7 @@
  * Contains authorization logic to determine if actors can perform specific actions on event locations.
  */
 
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 

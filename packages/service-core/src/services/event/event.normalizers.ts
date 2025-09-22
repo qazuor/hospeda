@@ -1,5 +1,11 @@
-import type { Event, EventCreateInput, EventUpdateInput } from '@repo/schemas';
-import type { EventDateType, EventLocationId, EventOrganizerId } from '@repo/types';
+import type {
+    Event,
+    EventCreateInput,
+    EventDate,
+    EventLocationIdType,
+    EventOrganizerIdType,
+    EventUpdateInput
+} from '@repo/schemas';
 import { normalizeAdminInfo } from '../../utils';
 
 /**
@@ -19,8 +25,8 @@ export const normalizeCreateInput = (input: EventCreateInput): Partial<Event> =>
             start: new Date(input.date.start),
             end: input.date.end ? new Date(input.date.end) : undefined
         },
-        locationId: input.locationId as EventLocationId,
-        organizerId: input.organizerId as EventOrganizerId
+        locationId: input.locationId as EventLocationIdType,
+        organizerId: input.organizerId as EventOrganizerIdType
     } as Partial<Event>;
 };
 
@@ -35,7 +41,7 @@ export const normalizeUpdateInput = (input: EventUpdateInput & { id?: string }):
     // Exclude the original date property from rest
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { adminInfo: _adminInfo, date: _date, id, ...rest } = input;
-    let date: EventDateType | undefined = undefined;
+    let date: EventDate | undefined = undefined;
     if (input.date?.start) {
         date = {
             ...input.date,
@@ -53,7 +59,7 @@ export const normalizeUpdateInput = (input: EventUpdateInput & { id?: string }):
         ...restWithoutIds,
         ...(adminInfo ? { adminInfo } : {}),
         ...(date ? { date } : {}),
-        ...(locationId ? { locationId: locationId as EventLocationId } : {}),
-        ...(organizerId ? { organizerId: organizerId as EventOrganizerId } : {})
+        ...(locationId ? { locationId: locationId as EventLocationIdType } : {}),
+        ...(organizerId ? { organizerId: organizerId as EventOrganizerIdType } : {})
     } as Partial<Event>;
 };
