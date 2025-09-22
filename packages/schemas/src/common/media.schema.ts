@@ -19,6 +19,7 @@ export const ImageSchema = z.object({
         .max(300, { message: 'zodError.common.media.image.description.max' })
         .optional()
 });
+export type Image = z.infer<typeof ImageSchema>;
 
 export const VideoSchema = z.object({
     moderationState: ModerationStatusEnumSchema,
@@ -38,12 +39,14 @@ export const VideoSchema = z.object({
         .max(300, { message: 'zodError.common.media.video.description.max' })
         .optional()
 });
+export type Video = z.infer<typeof VideoSchema>;
 
 export const MediaSchema = z.object({
     featuredImage: ImageSchema,
     gallery: z.array(ImageSchema).optional(),
     videos: z.array(VideoSchema).optional()
 });
+export type Media = z.infer<typeof MediaSchema>;
 
 /**
  * Base media fields (standardized with caption, description, and moderationState)
@@ -106,11 +109,4 @@ export const BaseMediaFields = {
         })
         .optional()
 } as const;
-
-/**
- * Type exports for media schemas
- */
 export type BaseMediaFieldsType = typeof BaseMediaFields;
-export type Image = z.infer<typeof ImageSchema>;
-export type Video = z.infer<typeof VideoSchema>;
-export type Media = z.infer<typeof MediaSchema>;

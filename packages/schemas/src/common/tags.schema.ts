@@ -8,8 +8,12 @@ import { TagSchema } from '../entities/tag/tag.schema.js';
 export const TagsSchema = z.object({
     tags: z.array(TagSchema).optional()
 });
+export type TagsType = z.infer<typeof TagsSchema>;
 
 /**
- * Type exports for tags schemas
+ * Tags fields (using TagsSchema structure)
  */
-export type Tags = z.infer<typeof TagsSchema>;
+export const TagsFields = {
+    tags: z.array(TagSchema).optional()
+} as const;
+export type TagsFieldsType = typeof TagsFields;

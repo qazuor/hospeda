@@ -20,6 +20,7 @@ export const BaseAuditFields = {
         .optional(),
     deletedById: UserIdSchema.optional()
 } as const;
+export type BaseAuditFieldsType = typeof BaseAuditFields;
 
 /**
  * Audit Schema - Complete audit information
@@ -28,9 +29,4 @@ export const BaseAuditFields = {
 export const AuditSchema = z.object({
     ...BaseAuditFields
 });
-
-/**
- * Type exports for audit schemas
- */
-export type BaseAuditFieldsType = typeof BaseAuditFields;
-export type Audit = z.infer<typeof AuditSchema>;
+export type AuditType = z.infer<typeof AuditSchema>;

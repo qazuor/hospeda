@@ -8,6 +8,10 @@ import {
     YouTubeUrlRegex
 } from '../utils/utils.js';
 
+/**
+ * Social Network Schema
+ * Represents social media profiles and links
+ */
 export const SocialNetworkSchema = z.object({
     facebook: z
         .string()
@@ -52,16 +56,11 @@ export const SocialNetworkSchema = z.object({
         })
         .optional()
 });
+export type SocialNetwork = z.infer<typeof SocialNetworkSchema>;
 
 /**
- * Base social network fields
+ * Social network fields (using SocialNetworkSchema structure)
  */
-export const BaseSocialFields = {
+export const SocialNetworkFields = {
     socialNetworks: SocialNetworkSchema.optional()
 } as const;
-
-/**
- * Type exports for social schemas
- */
-export type BaseSocialFieldsType = typeof BaseSocialFields;
-export type SocialNetwork = z.infer<typeof SocialNetworkSchema>;

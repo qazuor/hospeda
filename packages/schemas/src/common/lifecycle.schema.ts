@@ -1,6 +1,5 @@
-import { LifecycleStatusEnum } from '@repo/types';
 import { z } from 'zod';
-import { LifecycleStatusEnumSchema } from '../enums/index.js';
+import { LifecycleStatusEnum, LifecycleStatusEnumSchema } from '../enums/index.js';
 
 /**
  * Base lifecycle state fields
@@ -8,6 +7,7 @@ import { LifecycleStatusEnumSchema } from '../enums/index.js';
 export const BaseLifecycleFields = {
     lifecycleState: LifecycleStatusEnumSchema.default(LifecycleStatusEnum.ACTIVE)
 } as const;
+export type BaseLifecycleFieldsType = typeof BaseLifecycleFields;
 
 /**
  * Lifecycle Schema - Complete lifecycle information
@@ -16,9 +16,4 @@ export const BaseLifecycleFields = {
 export const LifecycleSchema = z.object({
     ...BaseLifecycleFields
 });
-
-/**
- * Type exports for lifecycle schemas
- */
-export type BaseLifecycleFieldsType = typeof BaseLifecycleFields;
-export type Lifecycle = z.infer<typeof LifecycleSchema>;
+export type LifecycleType = z.infer<typeof LifecycleSchema>;
