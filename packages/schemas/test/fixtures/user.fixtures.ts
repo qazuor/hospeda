@@ -1,5 +1,11 @@
-import type { UserId, UserType } from '@repo/types';
-import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
+import type { UserIdType as UserId } from '../../src/common/id.schema.js';
+import type { User as UserType } from '../../src/entities/user/user.schema.js';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    VisibilityEnum
+} from '../../src/enums/index.js';
 
 /**
  * Creates a complete user fixture for testing
