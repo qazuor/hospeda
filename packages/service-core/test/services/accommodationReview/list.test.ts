@@ -1,11 +1,11 @@
 import { AccommodationReviewModel } from '@repo/db';
 import type {
-    AccommodationId,
-    AccommodationReviewId,
-    AccommodationReviewType,
-    UserId
-} from '@repo/types';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/types';
+    AccommodationIdType,
+    AccommodationReview,
+    AccommodationReviewIdType,
+    UserIdType
+} from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
@@ -37,13 +37,13 @@ describe('list', () => {
     it('returns a paginated list of reviews when actor has permission', async () => {
         // Arrange
         const actor = createActor({
-            id: getMockId('user', 'actor-1') as UserId,
+            id: getMockId('user', 'actor-1') as UserIdType,
             permissions: [PermissionEnum.ACCOMMODATION_REVIEW_CREATE]
         });
-        const review: AccommodationReviewType = {
-            id: getMockId('feature', 'review-1') as AccommodationReviewId,
-            accommodationId: getMockId('accommodation', 'acc-1') as AccommodationId,
-            userId: getMockId('user', 'user-1') as UserId,
+        const review: AccommodationReview = {
+            id: getMockId('feature', 'review-1') as AccommodationReviewIdType,
+            accommodationId: getMockId('accommodation', 'acc-1') as AccommodationIdType,
+            userId: getMockId('user', 'user-1') as UserIdType,
             title: 'Great stay',
             content: 'Everything was perfect.',
             rating: {
@@ -57,9 +57,8 @@ describe('list', () => {
             createdAt: new Date(),
             updatedAt: new Date(),
             deletedAt: undefined,
-            createdById: getMockId('user', 'user-1') as UserId,
-            updatedById: getMockId('user', 'user-1') as UserId,
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            createdById: getMockId('user', 'user-1') as UserIdType,
+            updatedById: getMockId('user', 'user-1') as UserIdType,
             adminInfo: undefined
         };
         (reviewModel.findAll as Mock).mockResolvedValue({ items: [review], total: 1 });
@@ -75,13 +74,13 @@ describe('list', () => {
     it('returns success even if actor has no specific permissions (public access)', async () => {
         // Arrange
         const actor = createActor({
-            id: getMockId('user', 'actor-2') as UserId,
+            id: getMockId('user', 'actor-2') as UserIdType,
             permissions: []
         });
-        const mockReview: AccommodationReviewType = {
+        const mockReview: AccommodationReview = {
             id: getMockId('accommodation', 'review-1') as any,
-            accommodationId: getMockId('accommodation', 'accommodation-1') as AccommodationId,
-            userId: getMockId('user', 'user-1') as UserId,
+            accommodationId: getMockId('accommodation', 'accommodation-1') as AccommodationIdType,
+            userId: getMockId('user', 'user-1') as UserIdType,
             title: 'Great stay',
             content: 'Had a wonderful time at this accommodation.',
             rating: {
@@ -95,9 +94,8 @@ describe('list', () => {
             createdAt: new Date(),
             updatedAt: new Date(),
             deletedAt: undefined,
-            createdById: getMockId('user', 'user-1') as UserId,
-            updatedById: getMockId('user', 'user-1') as UserId,
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            createdById: getMockId('user', 'user-1') as UserIdType,
+            updatedById: getMockId('user', 'user-1') as UserIdType,
             adminInfo: undefined
         };
         const mockReviews = [mockReview];

@@ -1,12 +1,12 @@
-import type { DestinationRatingType, DestinationReviewType } from '@repo/types';
-import { RoleEnum } from '@repo/types';
+import type { DestinationRatingInput, DestinationReview } from '@repo/schemas';
+import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeCreateInput,
     normalizeUpdateInput
 } from '../../../src/services/destinationReview/destinationReview.normalizers';
 
-const fullRating: DestinationRatingType = {
+const fullRating: DestinationRatingInput = {
     landscape: 5,
     attractions: 4,
     accessibility: 3,
@@ -27,14 +27,14 @@ const fullRating: DestinationRatingType = {
     weatherSatisfaction: 5
 };
 
-const baseInput: DestinationReviewType = {
-    id: 'review-1' as unknown as import('@repo/types').DestinationReviewId,
-    destinationId: 'dest-1' as unknown as import('@repo/types').DestinationId,
-    userId: 'user-1' as unknown as import('@repo/types').UserId,
+const baseInput: DestinationReview = {
+    id: 'review-1' as unknown as import('@repo/schemas').DestinationReviewIdType,
+    destinationId: 'dest-1' as unknown as import('@repo/schemas').DestinationIdType,
+    userId: 'user-1' as unknown as import('@repo/schemas').UserIdType,
     createdAt: new Date('2023-01-01T00:00:00Z'),
     updatedAt: new Date('2023-01-02T00:00:00Z'),
-    createdById: 'user-1' as unknown as import('@repo/types').UserId,
-    updatedById: 'user-1' as unknown as import('@repo/types').UserId,
+    createdById: 'user-1' as unknown as import('@repo/schemas').UserIdType,
+    updatedById: 'user-1' as unknown as import('@repo/schemas').UserIdType,
     deletedAt: undefined,
     deletedById: undefined,
     rating: fullRating,

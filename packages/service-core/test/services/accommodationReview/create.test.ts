@@ -1,12 +1,12 @@
 import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
 import type {
-    AccommodationId,
-    AccommodationRatingType,
-    AccommodationReviewId,
-    AccommodationReviewType,
-    UserId
-} from '@repo/types';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/types';
+    AccommodationIdType,
+    AccommodationRatingInput,
+    AccommodationReview,
+    AccommodationReviewIdType,
+    UserIdType
+} from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
@@ -41,11 +41,11 @@ describe('create', () => {
     it('creates a review and updates accommodation stats', async () => {
         // Arrange
         const actor = createActor({
-            id: getMockId('user', 'actor-1') as UserId,
+            id: getMockId('user', 'actor-1') as UserIdType,
             permissions: [PermissionEnum.ACCOMMODATION_REVIEW_CREATE]
         });
-        const accommodationId = getMockId('accommodation', 'acc-1') as AccommodationId;
-        const userId = getMockId('user', 'user-1') as UserId;
+        const accommodationId = getMockId('accommodation', 'acc-1') as AccommodationIdType;
+        const userId = getMockId('user', 'user-1') as UserIdType;
         const reviewInput = {
             accommodationId,
             userId,
@@ -56,13 +56,13 @@ describe('create', () => {
                 accuracy: 4,
                 communication: 5,
                 location: 4
-            } as AccommodationRatingType,
+            } as AccommodationRatingInput,
             title: 'Great stay',
             content: 'Everything was perfect.'
         };
         const now = new Date();
-        const createdReview: AccommodationReviewType = {
-            id: getMockId('feature', 'review-1') as AccommodationReviewId,
+        const createdReview: AccommodationReview = {
+            id: getMockId('feature', 'review-1') as AccommodationReviewIdType,
             accommodationId,
             userId,
             title: reviewInput.title,
@@ -73,7 +73,6 @@ describe('create', () => {
             deletedAt: undefined,
             createdById: userId,
             updatedById: userId,
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
             adminInfo: undefined
         };
         vi.spyOn(reviewModel, 'create').mockResolvedValue(createdReview);
