@@ -8,7 +8,7 @@
 import type { AccommodationModel } from '@repo/db';
 import * as db from '@repo/db';
 import type { AccommodationFaqUpdateInput } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';

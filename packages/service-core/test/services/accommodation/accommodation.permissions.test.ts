@@ -1,14 +1,5 @@
-import type { AccommodationType, TagId } from '@repo/types';
-import {
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    PermissionEnum,
-    RoleEnum,
-    ServiceErrorCode,
-    TagColorEnum,
-    type UserId,
-    VisibilityEnum
-} from '@repo/types';
+import type { Accommodation, UserIdType } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     checkCanCreate,
@@ -21,7 +12,7 @@ import {
 } from '../../../src/services/accommodation/accommodation.permissions';
 import { ServiceError } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
-import { createAccommodation } from '../../factories/accommodationFactory';
+import { createMockAccommodation } from '../../factories/accommodationFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
 const createActor = (
@@ -30,31 +21,16 @@ const createActor = (
     role: RoleEnum = RoleEnum.ADMIN
 ) => ({ id, role, permissions });
 
-const mockTag = {
-    id: getMockId('tag') as TagId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdById: getMockId('user') as UserId,
-    updatedById: getMockId('user') as UserId,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    moderationState: ModerationStatusEnum.APPROVED,
-    name: 'tag',
-    slug: 'tag',
-    description: 'desc',
-    color: TagColorEnum.BLUE,
-    icon: 'icon'
-};
-
 const withOwner = (
-    ownerId: UserId,
+    ownerId: UserIdType,
     visibility: VisibilityEnum = VisibilityEnum.PRIVATE
-): AccommodationType => {
+): Accommodation => {
     // Aseguramos que reviewsCount, averageRating y tags estén presentes
     return {
-        ...createAccommodation({ ownerId, visibility }),
+        ...createMockAccommodation({ ownerId, visibility }),
         reviewsCount: 1,
-        averageRating: 5,
-        tags: [mockTag]
+        averageRating: 5
+        // tags: [mockTag] // TODO: Update if tags are needed for accommodation schema
     };
 };
 
@@ -71,8 +47,8 @@ const expectForbidden = (fn: () => void, message: string) => {
     }
 };
 
-const mockUserId = getMockId('user', 'owner') as UserId;
-const otherUserId = getMockId('user', 'other') as UserId;
+const mockUserId = getMockId('user', 'owner') as UserIdType;
+const otherUserId = getMockId('user', 'other') as UserIdType;
 
 beforeEach(() => {
     vi.restoreAllMocks();
@@ -97,12 +73,12 @@ describe('Accommodation Permissions', () => {
     it('checkCanCreate allows with permission', () => {
         expect(() =>
             checkCanCreate(createActor([PermissionEnum.ACCOMMODATION_CREATE]), {
-                ...createAccommodation({ ownerId: mockUserId }),
+                ...createMockAccommodation({ ownerId: mockUserId }),
                 reviewsCount: 1,
-                averageRating: 4.5,
-                tags: [mockTag],
-                features: undefined,
-                schedule: undefined
+                averageRating: 4.5
+                // tags: [mockTag], // TODO: Update if tags are needed
+                // features: undefined,
+                // schedule: undefined
             })
         ).not.toThrow();
     });
@@ -110,12 +86,12 @@ describe('Accommodation Permissions', () => {
         expectForbidden(
             () =>
                 checkCanCreate(createActor([]), {
-                    ...createAccommodation({ ownerId: mockUserId }),
+                    ...createMockAccommodation({ ownerId: mockUserId }),
                     reviewsCount: 1,
-                    averageRating: 4.5,
-                    tags: [mockTag],
-                    features: undefined,
-                    schedule: undefined
+                    averageRating: 4.5
+                    // tags: [mockTag], // TODO: Update if tags are needed
+                    // features: undefined,
+                    // schedule: undefined
                 }),
             'Permission denied to create accommodation'
         );

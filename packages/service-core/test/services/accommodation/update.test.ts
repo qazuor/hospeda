@@ -1,6 +1,5 @@
 import type { AccommodationModel } from '@repo/db';
-import { AccommodationUpdateInputSchema } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/types';
+import { AccommodationUpdateInputSchema, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import { ZodError } from 'zod';

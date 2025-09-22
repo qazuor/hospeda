@@ -1,5 +1,6 @@
 import { AccommodationModel } from '@repo/db';
-import { type AccommodationType, PermissionEnum, RoleEnum } from '@repo/types';
+import type { Accommodation } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createAccommodation, getMockAccommodationId } from '../../factories/accommodationFactory';
@@ -17,7 +18,7 @@ const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
 describe('AccommodationService - getAdminInfo', () => {
     let service: AccommodationService;
     let admin: Actor;
-    let accommodation: AccommodationType;
+    let accommodation: Accommodation;
 
     beforeEach(() => {
         modelMock = createTypedModelMock(AccommodationModel, ['findById', 'update']);

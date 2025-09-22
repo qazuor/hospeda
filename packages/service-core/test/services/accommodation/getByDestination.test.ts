@@ -6,7 +6,7 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import type { AccommodationModel } from '@repo/db';
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
@@ -69,9 +69,15 @@ describe('AccommodationService.getByDestination', () => {
             items: accommodations,
             total: accommodations.length
         });
-        const result = await service.getByDestination(actor, { destinationId });
+        const result = await service.getByDestination(actor, {
+            page: 1,
+            pageSize: 10,
+            destinationId
+        });
         expectSuccess(result);
-        expect(result.data).toEqual(accommodations);
+        expect(result.data).toEqual({
+            accommodations: accommodations
+        });
         expect(modelMock.findAll).toHaveBeenCalledWith({ destinationId });
         expect(permissionHelpers.checkCanList).toHaveBeenCalledWith(actor);
     });
@@ -80,7 +86,11 @@ describe('AccommodationService.getByDestination', () => {
         vi.spyOn(permissionHelpers, 'checkCanList').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
         });
-        const result = await service.getByDestination(actor, { destinationId });
+        const result = await service.getByDestination(actor, {
+            page: 1,
+            pageSize: 10,
+            destinationId
+        });
         expectForbiddenError(result);
         expect(permissionHelpers.checkCanList).toHaveBeenCalledWith(actor);
     });
@@ -88,14 +98,21 @@ describe('AccommodationService.getByDestination', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
         modelMock.findAll.mockRejectedValue(new Error('DB error'));
-        const result = await service.getByDestination(actor, { destinationId });
+        const result = await service.getByDestination(actor, {
+            page: 1,
+            pageSize: 10,
+            destinationId
+        });
         expectInternalError(result);
         expect(modelMock.findAll).toHaveBeenCalledWith({ destinationId });
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getByDestination(actor, {});
+        const result = await service.getByDestination(actor, {
+            page: 1,
+            pageSize: 10,
+            destinationId: 'invalid-id'
+        } as any);
         expectValidationError(result);
     });
 
@@ -103,9 +120,13 @@ describe('AccommodationService.getByDestination', () => {
         vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
         modelMock.findAll.mockResolvedValue({ items: [], total: 0 });
         const result = await service.getByDestination(actor, {
+            page: 1,
+            pageSize: 10,
             destinationId: '00000000-0000-0000-0000-000000000000' as any
         });
         expectSuccess(result);
-        expect(result.data).toEqual([]);
+        expect(result.data).toEqual({
+            accommodations: []
+        });
     });
 });
