@@ -1,4 +1,4 @@
-import { LifecycleStatusEnum, RoleEnum, TagColorEnum } from '@repo/types';
+import { LifecycleStatusEnum, RoleEnum, TagColorEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     normalizeCreateInput,

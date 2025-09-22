@@ -1,5 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { PermissionEnum, TagColorEnum } from '@repo/types';
+import { PermissionEnum, TagColorEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
@@ -16,7 +16,12 @@ describe('TagService.search', () => {
     let actor: Actor;
     const tag = TagFactoryBuilder.create({ name: 'Tag', slug: 'tag', color: TagColorEnum.BLUE });
     const paginated = { items: [tag], total: 1 };
-    const searchParams = { filters: { nameContains: 'Tag' }, fuzzySearch: true };
+    const searchParams = {
+        page: 1,
+        pageSize: 10,
+        filters: { nameContains: 'Tag' },
+        fuzzySearch: true
+    };
 
     beforeEach(() => {
         tagModelMock = createTypedModelMock(TagModel, ['findAll']);
