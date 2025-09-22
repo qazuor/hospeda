@@ -1,5 +1,5 @@
-import type { TagType } from '@repo/types';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import type { Tag } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
@@ -26,7 +26,7 @@ export const checkCanCreateTag = (actor: Actor): void => {
  * @param tag - The tag entity.
  * @throws ServiceError if not permitted.
  */
-export const checkCanUpdateTag = (actor: Actor, _tag: TagType): void => {
+export const checkCanUpdateTag = (actor: Actor, _tag: Tag): void => {
     if (!hasPermission(actor, PermissionEnum.TAG_UPDATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -42,7 +42,7 @@ export const checkCanUpdateTag = (actor: Actor, _tag: TagType): void => {
  * @param tag - The tag entity.
  * @throws ServiceError if not permitted.
  */
-export const checkCanDeleteTag = (actor: Actor, _tag: TagType): void => {
+export const checkCanDeleteTag = (actor: Actor, _tag: Tag): void => {
     if (!hasPermission(actor, PermissionEnum.TAG_DELETE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -58,7 +58,7 @@ export const checkCanDeleteTag = (actor: Actor, _tag: TagType): void => {
  * @param tag - The tag entity.
  * @throws ServiceError if not permitted.
  */
-export const checkCanRestoreTag = (actor: Actor, _tag: TagType): void => {
+export const checkCanRestoreTag = (actor: Actor, _tag: Tag): void => {
     if (!hasPermission(actor, PermissionEnum.TAG_UPDATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -74,7 +74,7 @@ export const checkCanRestoreTag = (actor: Actor, _tag: TagType): void => {
  * @param tag - The tag entity.
  * @throws ServiceError if not permitted.
  */
-export const checkCanViewTag = (_actor: Actor, _tag: TagType): void => {
+export const checkCanViewTag = (_actor: Actor, _tag: Tag): void => {
     // Tags are public; no restriction by default.
     return;
 };
@@ -116,7 +116,7 @@ export const checkCanCountTags = (_actor: Actor): void => {
  * Checks if the actor can soft-delete a tag.
  * Uses TAG_DELETE permission.
  */
-export const checkCanSoftDeleteTag = (actor: Actor, _tag: TagType): void => {
+export const checkCanSoftDeleteTag = (actor: Actor, _tag: Tag): void => {
     if (!hasPermission(actor, PermissionEnum.TAG_DELETE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -129,7 +129,7 @@ export const checkCanSoftDeleteTag = (actor: Actor, _tag: TagType): void => {
  * Checks if the actor can hard-delete a tag.
  * Uses TAG_DELETE permission (no dedicated hard delete permission).
  */
-export const checkCanHardDeleteTag = (actor: Actor, _tag: TagType): void => {
+export const checkCanHardDeleteTag = (actor: Actor, _tag: Tag): void => {
     if (!hasPermission(actor, PermissionEnum.TAG_DELETE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -142,7 +142,7 @@ export const checkCanHardDeleteTag = (actor: Actor, _tag: TagType): void => {
  * Checks if the actor can update the visibility of a tag.
  * Uses TAG_UPDATE permission.
  */
-export const checkCanUpdateVisibilityTag = (actor: Actor, _tag: TagType): void => {
+export const checkCanUpdateVisibilityTag = (actor: Actor, _tag: Tag): void => {
     if (!hasPermission(actor, PermissionEnum.TAG_UPDATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
