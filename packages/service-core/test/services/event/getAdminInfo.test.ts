@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, it } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createActor } from '../../factories/actorFactory';

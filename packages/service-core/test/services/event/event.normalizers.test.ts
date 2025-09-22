@@ -1,14 +1,10 @@
 import type { EventSchema } from '@repo/schemas';
 import {
     EventCategoryEnum,
-    type EventId,
-    type EventLocationId,
-    type EventOrganizerId,
     LifecycleStatusEnum,
     ModerationStatusEnum,
-    type UserId,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 import {
@@ -23,7 +19,7 @@ import { getMockId } from '../../factories/utilsFactory';
 const createMockEventSchemaInput = (
     overrides: Partial<z.infer<typeof EventSchema>> = {}
 ): z.infer<typeof EventSchema> => ({
-    id: getMockId('event') as EventId,
+    id: getMockId('event'),
     slug: 'test-event',
     name: 'Test Event',
     summary: 'A test event for normalization',
@@ -31,9 +27,9 @@ const createMockEventSchemaInput = (
     media: undefined,
     category: EventCategoryEnum.FESTIVAL,
     date: { start: new Date('2024-01-01T10:00:00Z'), end: new Date('2024-01-01T12:00:00Z') },
-    authorId: getMockId('user') as UserId,
-    locationId: getMockId('event') as EventLocationId,
-    organizerId: getMockId('event') as EventOrganizerId,
+    authorId: getMockId('user'),
+    locationId: getMockId('event'),
+    organizerId: getMockId('event'),
     pricing: undefined,
     contactInfo: undefined,
     visibility: VisibilityEnum.PUBLIC,
@@ -42,8 +38,8 @@ const createMockEventSchemaInput = (
     updatedAt: new Date('2024-01-01T09:00:00Z'),
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     moderationState: ModerationStatusEnum.PENDING,
-    createdById: getMockId('user') as UserId,
-    updatedById: getMockId('user') as UserId,
+    createdById: getMockId('user'),
+    updatedById: getMockId('user'),
     deletedAt: undefined,
     deletedById: undefined,
     adminInfo: undefined,
@@ -75,14 +71,14 @@ describe('EventService normalizers', () => {
     it('should normalize update input (dates and IDs as string)', () => {
         // Arrange
         const input = {
-            id: getMockId('event') as EventId,
+            id: getMockId('event'),
             name: 'Updated Event',
             date: {
                 start: new Date('2024-01-01T10:00:00Z'),
                 end: new Date('2024-01-01T12:00:00Z')
             },
-            locationId: getMockId('event') as EventLocationId,
-            organizerId: getMockId('event') as EventOrganizerId
+            locationId: getMockId('event'),
+            organizerId: getMockId('event')
         };
         // Act
         const result = normalizeUpdateInput(input);
