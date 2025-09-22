@@ -1,5 +1,5 @@
 import type { PostSponsorshipModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostSponsorshipService } from '../../../src/services/postSponsorship/postSponsorship.service';
 import { createActor } from '../../factories/actorFactory';

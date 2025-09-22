@@ -1,5 +1,5 @@
 import { PostModel } from '@repo/db';
-import { type AdminInfoType, PermissionEnum, type PostType, RoleEnum } from '@repo/types';
+import { type AdminInfoType, PermissionEnum, type Post, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
@@ -23,7 +23,7 @@ function asMock(fn: unknown) {
 describe('PostService - setAdminInfo', () => {
     let service: PostService;
     let superAdmin: Actor;
-    let entity: PostType;
+    let entity: Post;
 
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findById', 'update']);

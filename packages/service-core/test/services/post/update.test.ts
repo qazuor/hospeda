@@ -6,7 +6,7 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { PostModel } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor, createAdminActor } from '../../factories/actorFactory';

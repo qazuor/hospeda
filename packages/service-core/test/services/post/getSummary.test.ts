@@ -6,7 +6,7 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import { PostModel } from '@repo/db';
-import { type PostId, ServiceErrorCode } from '@repo/types';
+import { type PostIdType, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { ServiceError } from '../../../src/types';
@@ -28,7 +28,7 @@ describe('PostService.getSummary', () => {
     let modelMock: PostModel;
     let actor: ReturnType<typeof createActor>;
     let post: ReturnType<typeof createMockPost>;
-    let input: { id: PostId };
+    let input: { id: PostIdType };
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -36,7 +36,7 @@ describe('PostService.getSummary', () => {
         service = createServiceTestInstance(PostService, modelMock);
         actor = createActor();
         post = createMockPost();
-        input = { id: post.id as PostId };
+        input = { id: post.id as PostIdType };
     });
 
     it('should return summary for a post', async () => {

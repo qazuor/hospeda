@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
-import type { EventId, PostId } from '@repo/types';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import type { EventIdType, PostIdType } from '@repo/schemas';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -23,7 +23,7 @@ describe('PostService.getByRelatedEvent', () => {
         role: RoleEnum.USER,
         permissions: []
     };
-    const eventId = getMockId('event') as EventId;
+    const eventId = getMockId('event') as EventIdType;
 
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findAll']);
@@ -34,7 +34,7 @@ describe('PostService.getByRelatedEvent', () => {
     it('should return posts by related event (success)', async () => {
         const posts = [
             createMockPost({ relatedEventId: eventId }),
-            createMockPost({ id: getMockId('post', '2') as PostId, relatedEventId: eventId })
+            createMockPost({ id: getMockId('post', '2') as PostIdType, relatedEventId: eventId })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 2 });
         const params = { eventId };
@@ -89,7 +89,7 @@ describe('PostService.getByRelatedEvent', () => {
     it('should return forbidden if actor is missing', async () => {
         // purposely invalid
         const result = await service.getByRelatedEvent(null as any, {
-            eventId: eventId as EventId
+            eventId: eventId as EventIdType
         });
         expect(result.error?.code).toBe('UNAUTHORIZED');
     });

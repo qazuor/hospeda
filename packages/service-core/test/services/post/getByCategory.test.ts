@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
-import type { PostId } from '@repo/types';
-import { PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/types';
+import type { PostIdType } from '@repo/schemas';
+import { PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import type { Actor } from '../../../src';
 import { PostService } from '../../../src/services/post/post.service';
@@ -35,7 +35,7 @@ describe('PostService.getByCategory', () => {
     it('should return posts by category (success)', async () => {
         const posts = [
             createMockPost({ category }),
-            createMockPost({ id: getMockId('post', '2') as PostId, category })
+            createMockPost({ id: getMockId('post', '2') as PostIdType, category })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 2 });
         const params = { category };

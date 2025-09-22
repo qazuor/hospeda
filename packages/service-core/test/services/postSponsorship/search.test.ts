@@ -1,5 +1,5 @@
 import type { PostSponsorshipModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostSponsorshipService } from '../../../src/services/postSponsorship/postSponsorship.service';
 import { createActor } from '../../factories/actorFactory';
@@ -26,7 +26,8 @@ describe('PostSponsorshipService.search', () => {
     const validInput = {
         sponsorId: getMockPostSponsorId('sponsor-1'),
         postId: getMockId('post', 'post-1') as any, // PostId branded type
-        pagination: { page: 1, pageSize: 10 }
+        page: 1,
+        pageSize: 10
     };
 
     beforeEach(() => {
@@ -71,7 +72,8 @@ describe('PostSponsorshipService.search', () => {
         const invalid = {
             sponsorId: '' as any,
             postId: '' as any,
-            pagination: { page: 1, pageSize: 10 }
+            page: 1,
+            pageSize: 10
         };
         const result = await service.search(actor, invalid);
         expect(result.error).toBeDefined();
@@ -147,7 +149,8 @@ describe('PostSponsorshipService.search', () => {
         } as PaginatedMock<ReturnType<typeof createMockPostSponsorship>>);
         const result = await service.search(actor, {
             ...validInput,
-            pagination: { page: 2, pageSize: 1 }
+            page: 2,
+            pageSize: 1
         });
         expect(result.data).toBeDefined();
         expect(result.data?.items).toHaveLength(1);
@@ -169,7 +172,7 @@ describe('PostSponsorshipService.search', () => {
             page: 1,
             pageSize: 10
         } as PaginatedMock<ReturnType<typeof createMockPostSponsorship>>);
-        const result = await service.search(actor, { pagination: { page: 1, pageSize: 10 } });
+        const result = await service.search(actor, { page: 1, pageSize: 10 });
         expect(result.data).toBeDefined();
         expect(result.data?.items).toHaveLength(1);
         expect(result.error).toBeUndefined();

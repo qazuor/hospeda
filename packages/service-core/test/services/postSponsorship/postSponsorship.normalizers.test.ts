@@ -1,5 +1,5 @@
 import type { PostSponsorshipCreateInput, PostSponsorshipUpdateInput } from '@repo/schemas';
-import { PriceCurrencyEnum } from '@repo/types';
+import { PriceCurrencyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeCreateInput,

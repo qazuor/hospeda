@@ -1,13 +1,13 @@
 import { PostModel } from '@repo/db';
 import type { PostCreateInput } from '@repo/schemas';
-import type { PostId, UserId } from '@repo/types';
+import type { PostIdType, UserIdType } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
     PostCategoryEnum,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/post/post.helpers';
 import { PostService } from '../../../src/services/post/post.service';
@@ -26,7 +26,7 @@ describe('PostService.create (custom business logic)', () => {
         id: getMockId('user'),
         permissions: [PermissionEnum.POST_CREATE]
     });
-    const postId = getMockId('post') as PostId;
+    const postId = getMockId('post') as PostIdType;
     const baseData = createNewPostInput();
 
     beforeEach(() => {
@@ -83,7 +83,7 @@ describe('PostService.create (custom business logic)', () => {
             visibility: VisibilityEnum.PUBLIC,
             isNews: true,
             isFeaturedInWebsite: false,
-            authorId: getMockId('user') as UserId,
+            authorId: getMockId('user') as UserIdType,
             slug: 'test-post-without-expires-at',
             likes: 0,
             comments: 0,
