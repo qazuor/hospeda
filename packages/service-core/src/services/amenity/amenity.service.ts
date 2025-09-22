@@ -1,31 +1,29 @@
 import { AccommodationModel, AmenityModel, RAccommodationAmenityModel } from '@repo/db';
 import {
-    type AmenityAccommodationsOutput,
+    type AccommodationAmenityRelation,
+    type AccommodationIdType as AccommodationId,
+    type AmenitiesTypeEnum,
+    type Amenity,
+    type AmenityAccommodationListWrapper,
     type AmenityAddToAccommodationInput,
     AmenityAddToAccommodationInputSchema,
-    type AmenityArrayOutput,
     type AmenityCreateInput,
     AmenityCreateInputSchema,
     type AmenityGetAccommodationsInput,
     AmenityGetAccommodationsInputSchema,
     type AmenityGetForAccommodationInput,
     AmenityGetForAccommodationInputSchema,
+    type AmenityIdType as AmenityId,
+    type AmenityListWrapper,
     type AmenityRemoveFromAccommodationInput,
     AmenityRemoveFromAccommodationInputSchema,
     type AmenitySearchForListOutput,
     type AmenitySearchInput,
     AmenitySearchInputSchema,
-    AmenityUpdateInputSchema
+    AmenityUpdateInputSchema,
+    ServiceErrorCode,
+    type VisibilityEnum
 } from '@repo/schemas';
-import type {
-    AccommodationAmenityType,
-    AccommodationId,
-    AccommodationType,
-    AmenitiesTypeEnum,
-    AmenityId,
-    AmenityType
-} from '@repo/types';
-import { ServiceErrorCode, type VisibilityEnum } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
@@ -42,16 +40,13 @@ import {
     checkCanViewAmenity
 } from './amenity.permissions';
 
-export type ServiceOutputAmenities = ServiceOutput<{ amenities: AmenityType[] }>;
-export type ServiceOutputAccommodations = ServiceOutput<{ accommodations: AccommodationType[] }>;
-
 /**
  * Service for managing amenities and their relation to accommodations.
  * Implements CRUD and amenity-accommodation relation logic.
  * @extends BaseCrudRelatedService
  */
 export class AmenityService extends BaseCrudRelatedService<
-    AmenityType,
+    Amenity,
     AmenityModel,
     RAccommodationAmenityModel,
     typeof AmenityCreateInputSchema,
@@ -86,19 +81,19 @@ export class AmenityService extends BaseCrudRelatedService<
     protected _canCreate(actor: Actor, _data: AmenityCreateInput): void {
         checkCanCreateAmenity(actor);
     }
-    protected _canUpdate(actor: Actor, _entity: AmenityType): void {
+    protected _canUpdate(actor: Actor, _entity: Amenity): void {
         checkCanUpdateAmenity(actor, _entity);
     }
-    protected _canSoftDelete(actor: Actor, entity: AmenityType): void {
+    protected _canSoftDelete(actor: Actor, entity: Amenity): void {
         checkCanDeleteAmenity(actor, entity);
     }
-    protected _canHardDelete(actor: Actor, entity: AmenityType): void {
+    protected _canHardDelete(actor: Actor, entity: Amenity): void {
         checkCanDeleteAmenity(actor, entity);
     }
-    protected _canRestore(actor: Actor, entity: AmenityType): void {
+    protected _canRestore(actor: Actor, entity: Amenity): void {
         checkCanUpdateAmenity(actor, entity);
     }
-    protected _canView(actor: Actor, entity: AmenityType): void {
+    protected _canView(actor: Actor, entity: Amenity): void {
         checkCanViewAmenity(actor, entity);
     }
     protected _canList(actor: Actor): void {
@@ -112,7 +107,7 @@ export class AmenityService extends BaseCrudRelatedService<
     }
     protected _canUpdateVisibility(
         actor: Actor,
-        entity: AmenityType,
+        entity: Amenity,
         _newVisibility: VisibilityEnum
     ): void {
         checkCanUpdateAmenity(actor, entity);
@@ -136,7 +131,7 @@ export class AmenityService extends BaseCrudRelatedService<
     public async getAccommodationsByAmenity(
         actor: Actor,
         params: AmenityGetAccommodationsInput
-    ): Promise<ServiceOutput<AmenityAccommodationsOutput>> {
+    ): Promise<ServiceOutput<AmenityAccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAccommodationsByAmenity',
             input: { ...params, actor },
@@ -157,7 +152,18 @@ export class AmenityService extends BaseCrudRelatedService<
                 const { items: accommodations } = await accommodationModel.findAll({
                     id: accommodationIds
                 });
-                return { accommodations };
+
+                // Map to AccommodationSummary format with required fields
+                const mappedAccommodations = accommodations.map((acc) => ({
+                    id: acc.id,
+                    slug: acc.slug ?? '',
+                    name: acc.name,
+                    summary: acc.summary ?? '',
+                    isFeatured: acc.isFeatured,
+                    averageRating: acc.averageRating ?? 0
+                }));
+
+                return { accommodations: mappedAccommodations };
             }
         });
     }
@@ -171,7 +177,7 @@ export class AmenityService extends BaseCrudRelatedService<
     public async getAmenitiesForAccommodation(
         actor: Actor,
         params: AmenityGetForAccommodationInput
-    ): Promise<ServiceOutput<AmenityArrayOutput>> {
+    ): Promise<ServiceOutput<AmenityListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAmenitiesForAccommodation',
             input: { ...params, actor },
@@ -201,7 +207,7 @@ export class AmenityService extends BaseCrudRelatedService<
     public async addAmenityToAccommodation(
         actor: Actor,
         params: AmenityAddToAccommodationInput
-    ): Promise<ServiceOutput<{ relation: AccommodationAmenityType }>> {
+    ): Promise<ServiceOutput<{ relation: AccommodationAmenityRelation }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addAmenityToAccommodation',
             input: { ...params, actor },
@@ -259,7 +265,7 @@ export class AmenityService extends BaseCrudRelatedService<
     public async removeAmenityFromAccommodation(
         actor: Actor,
         params: AmenityRemoveFromAccommodationInput
-    ): Promise<ServiceOutput<{ relation: AccommodationAmenityType }>> {
+    ): Promise<ServiceOutput<{ relation: AccommodationAmenityRelation }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeAmenityFromAccommodation',
             input: { ...params, actor },
@@ -312,9 +318,7 @@ export class AmenityService extends BaseCrudRelatedService<
      * @returns An object containing the search results, page, pageSize, and total count.
      */
     protected async _executeSearch(params: AmenitySearchInput, _actor: Actor) {
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+        const { filters = {}, page = 1, pageSize = 10 } = params;
         return this.model.findAll(filters, { page, pageSize });
     }
 
@@ -329,9 +333,7 @@ export class AmenityService extends BaseCrudRelatedService<
         params: AmenitySearchInput
     ): Promise<AmenitySearchForListOutput> {
         this._canSearch(actor);
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+        const { filters = {}, page = 1, pageSize = 10 } = params;
 
         const result = await this.model.findAll(filters, { page, pageSize });
 
@@ -349,8 +351,15 @@ export class AmenityService extends BaseCrudRelatedService<
         );
 
         return {
-            items: itemsWithCounts,
-            total: result.total
+            data: itemsWithCounts,
+            pagination: {
+                page,
+                pageSize,
+                total: result.total,
+                totalPages: Math.ceil(result.total / pageSize),
+                hasNextPage: page * pageSize < result.total,
+                hasPreviousPage: page > 1
+            }
         };
     }
 
@@ -374,7 +383,7 @@ export class AmenityService extends BaseCrudRelatedService<
     protected async _beforeCreate(
         data: z.infer<typeof AmenityCreateInputSchema>,
         _actor: Actor
-    ): Promise<Partial<AmenityType>> {
+    ): Promise<Partial<Amenity>> {
         let slug = data.slug;
         if (!slug && data.name) {
             slug = await generateAmenitySlug(data.name, this.model);
@@ -391,12 +400,12 @@ export class AmenityService extends BaseCrudRelatedService<
     protected async _beforeUpdate(
         data: z.infer<typeof AmenityUpdateInputSchema>,
         _actor: Actor
-    ): Promise<Partial<AmenityType>> {
+    ): Promise<Partial<Amenity>> {
         let slug = data.slug;
         const type = data.type ? (data.type as AmenitiesTypeEnum) : undefined;
         // If name is being updated and slug is not provided, fetch entity to compare
         if (!slug && data.name) {
-            let entity: AmenityType | undefined = undefined;
+            let entity: Amenity | undefined = undefined;
             if ('id' in data && data.id) {
                 const found = await this.model.findById(data.id as AmenityId);
                 entity = found ?? undefined;

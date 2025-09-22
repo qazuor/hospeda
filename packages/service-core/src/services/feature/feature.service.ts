@@ -1,4 +1,11 @@
 import { AccommodationModel, FeatureModel, RAccommodationFeatureModel } from '@repo/db';
+import type {
+    Accommodation,
+    AccommodationFeature,
+    AccommodationIdType,
+    Feature,
+    FeatureIdType
+} from '@repo/schemas';
 import {
     AddFeatureToAccommodationInputSchema,
     FeatureCreateInputSchema as CreateFeatureSchema,
@@ -6,16 +13,9 @@ import {
     GetFeaturesForAccommodationSchema,
     RemoveFeatureFromAccommodationInputSchema,
     SimpleFeatureSearchSchema as SearchFeatureSchema,
+    ServiceErrorCode,
     FeatureUpdateInputSchema as UpdateFeatureSchema
 } from '@repo/schemas';
-import type {
-    AccommodationFeatureType,
-    AccommodationId,
-    AccommodationType,
-    FeatureId,
-    FeatureType
-} from '@repo/types';
-import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
@@ -37,7 +37,7 @@ import {
  * @extends BaseCrudRelatedService
  */
 export class FeatureService extends BaseCrudRelatedService<
-    FeatureType,
+    Feature,
     FeatureModel,
     RAccommodationFeatureModel,
     typeof CreateFeatureSchema,
@@ -71,7 +71,7 @@ export class FeatureService extends BaseCrudRelatedService<
     protected async _beforeCreate(
         data: z.infer<typeof CreateFeatureSchema>,
         _actor: Actor
-    ): Promise<Partial<FeatureType>> {
+    ): Promise<Partial<Feature>> {
         let slug = data.slug;
         if (!slug && data.name) {
             slug = await generateFeatureSlug(data.name, this.model);
@@ -96,13 +96,13 @@ export class FeatureService extends BaseCrudRelatedService<
     protected async _beforeUpdate(
         data: z.infer<typeof UpdateFeatureSchema>,
         _actor: Actor
-    ): Promise<Partial<FeatureType>> {
+    ): Promise<Partial<Feature>> {
         let slug = data.slug;
         if (!slug && data.name) {
             // Try to get the entity by id if present
-            let entity: FeatureType | undefined = undefined;
+            let entity: Feature | undefined = undefined;
             if ('id' in data && data.id) {
-                const found = await this.model.findById(data.id as FeatureType['id']);
+                const found = await this.model.findById(data.id as Feature['id']);
                 entity = found ?? undefined;
             }
             if (!entity || (entity && data.name !== entity.name)) {
@@ -115,13 +115,13 @@ export class FeatureService extends BaseCrudRelatedService<
     protected _canCreate(actor: Actor, _data: z.infer<typeof CreateFeatureSchema>): void {
         checkCanCreateFeature(actor);
     }
-    protected _canUpdate(actor: Actor, entity: FeatureType): void {
+    protected _canUpdate(actor: Actor, entity: Feature): void {
         checkCanUpdateFeature(actor, entity);
     }
-    protected _canDelete(actor: Actor, entity: FeatureType): void {
+    protected _canDelete(actor: Actor, entity: Feature): void {
         checkCanDeleteFeature(actor, entity);
     }
-    protected _canView(actor: Actor, entity: FeatureType): void {
+    protected _canView(actor: Actor, entity: Feature): void {
         checkCanViewFeature(actor, entity);
     }
     protected _canList(actor: Actor): void {
@@ -134,20 +134,16 @@ export class FeatureService extends BaseCrudRelatedService<
         checkCanCountFeatures(actor);
     }
 
-    protected _canSoftDelete(actor: Actor, entity: FeatureType): void {
+    protected _canSoftDelete(actor: Actor, entity: Feature): void {
         checkCanDeleteFeature(actor, entity);
     }
-    protected _canHardDelete(actor: Actor, entity: FeatureType): void {
+    protected _canHardDelete(actor: Actor, entity: Feature): void {
         checkCanDeleteFeature(actor, entity);
     }
-    protected _canRestore(actor: Actor, entity: FeatureType): void {
+    protected _canRestore(actor: Actor, entity: Feature): void {
         checkCanUpdateFeature(actor, entity);
     }
-    protected _canUpdateVisibility(
-        actor: Actor,
-        entity: FeatureType,
-        _newVisibility?: unknown
-    ): void {
+    protected _canUpdateVisibility(actor: Actor, entity: Feature, _newVisibility?: unknown): void {
         checkCanUpdateFeature(actor, entity);
     }
 
@@ -161,7 +157,7 @@ export class FeatureService extends BaseCrudRelatedService<
     protected async _executeSearch(
         params: z.infer<typeof SearchFeatureSchema>,
         _actor: Actor
-    ): Promise<{ items: FeatureType[]; total: number }> {
+    ): Promise<{ items: Feature[]; total: number }> {
         const { name, slug, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};
         if (name) where.name = name;
@@ -199,7 +195,7 @@ export class FeatureService extends BaseCrudRelatedService<
             pagination?: { page?: number; pageSize?: number };
         } = {}
     ): Promise<{
-        items: Array<FeatureType & { accommodationCount?: number }>;
+        items: Array<Feature & { accommodationCount?: number }>;
         total: number;
     }> {
         this._canSearch(actor);
@@ -220,7 +216,7 @@ export class FeatureService extends BaseCrudRelatedService<
         const itemsWithCounts = await Promise.all(
             items.map(async (feature) => {
                 const { items: relations } = await this.relatedModel.findAll({
-                    featureId: feature.id as FeatureId
+                    featureId: feature.id as FeatureIdType
                 });
                 return {
                     ...feature,
@@ -245,29 +241,29 @@ export class FeatureService extends BaseCrudRelatedService<
     public async addFeatureToAccommodation(
         actor: Actor,
         params: z.infer<typeof AddFeatureToAccommodationInputSchema>
-    ): Promise<ServiceOutput<{ relation: AccommodationFeatureType }>> {
+    ): Promise<ServiceOutput<{ relation: AccommodationFeature }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'addFeatureToAccommodation',
-            input: { ...params, actor },
+            input: { actor, ...params },
             schema: AddFeatureToAccommodationInputSchema,
             execute: async (validatedParams, actor) => {
                 this._canAddFeatureToAccommodation(actor);
-                const { accommodationId, featureId, hostReWriteName, comments } = validatedParams;
+                const { accommodationId, featureId, comments } = validatedParams;
                 // Verify feature exists
-                const feature = await this.model.findOne({ id: featureId as FeatureId });
+                const feature = await this.model.findOne({ id: featureId as FeatureIdType });
                 if (!feature) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
                 }
                 const accommodation = await this.accommodationModel.findOne({
-                    id: accommodationId as AccommodationId
+                    id: accommodationId as AccommodationIdType
                 });
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 // Verify that the relation does not already exist
                 const existing = await this.relatedModel.findOne({
-                    accommodationId: accommodationId as AccommodationId,
-                    featureId: featureId as FeatureId
+                    accommodationId: accommodationId as AccommodationIdType,
+                    featureId: featureId as FeatureIdType
                 });
                 if (existing) {
                     throw new ServiceError(
@@ -277,10 +273,10 @@ export class FeatureService extends BaseCrudRelatedService<
                 }
                 // Create the relation
                 const relation = await this.relatedModel.create({
-                    accommodationId: accommodationId as AccommodationId,
-                    featureId: featureId as FeatureId,
-                    hostReWriteName,
-                    comments
+                    accommodationId: accommodationId as AccommodationIdType,
+                    featureId: featureId as FeatureIdType,
+                    notes: comments || undefined, // Map comments to notes, handle null
+                    isHighlighted: false // Default value
                 });
                 return { relation };
             }
@@ -293,23 +289,23 @@ export class FeatureService extends BaseCrudRelatedService<
     public async removeFeatureFromAccommodation(
         actor: Actor,
         params: z.infer<typeof RemoveFeatureFromAccommodationInputSchema>
-    ): Promise<ServiceOutput<{ relation: AccommodationFeatureType }>> {
+    ): Promise<ServiceOutput<{ relation: AccommodationFeature }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'removeFeatureFromAccommodation',
-            input: { ...params, actor },
+            input: { actor, ...params },
             schema: RemoveFeatureFromAccommodationInputSchema,
             execute: async (validatedParams, actor) => {
                 this._canRemoveFeatureFromAccommodation(actor);
                 const { accommodationId, featureId } = validatedParams;
                 // Verify feature exists
-                const feature = await this.model.findOne({ id: featureId as FeatureId });
+                const feature = await this.model.findOne({ id: featureId as FeatureIdType });
                 if (!feature) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
                 }
                 // Verify relation exists
                 const existing = await this.relatedModel.findOne({
-                    accommodationId: accommodationId as AccommodationId,
-                    featureId: featureId as FeatureId
+                    accommodationId: accommodationId as AccommodationIdType,
+                    featureId: featureId as FeatureIdType
                 });
                 if (!existing) {
                     throw new ServiceError(
@@ -319,8 +315,8 @@ export class FeatureService extends BaseCrudRelatedService<
                 }
                 // Remove relation using softDelete and ensure it returns non-null
                 const softDeleted = await this.relatedModel.softDelete({
-                    accommodationId: accommodationId as AccommodationId,
-                    featureId: featureId as FeatureId
+                    accommodationId: accommodationId as AccommodationIdType,
+                    featureId: featureId as FeatureIdType
                 });
                 if (!softDeleted) {
                     throw new ServiceError(
@@ -344,10 +340,10 @@ export class FeatureService extends BaseCrudRelatedService<
     public async getFeaturesForAccommodation(
         actor: Actor,
         params: z.infer<typeof GetFeaturesForAccommodationSchema>
-    ): Promise<ServiceOutput<{ features: FeatureType[] }>> {
+    ): Promise<ServiceOutput<{ features: Feature[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFeaturesForAccommodation',
-            input: { ...params, actor },
+            input: { actor, ...params },
             schema: GetFeaturesForAccommodationSchema,
             execute: async (validatedParams, actor) => {
                 this._canList(actor);
@@ -371,15 +367,15 @@ export class FeatureService extends BaseCrudRelatedService<
     public async getAccommodationsByFeature(
         actor: Actor,
         params: z.infer<typeof GetAccommodationsByFeatureSchema>
-    ): Promise<ServiceOutput<{ accommodations: AccommodationType[] }>> {
+    ): Promise<ServiceOutput<{ accommodations: Accommodation[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAccommodationsByFeature',
-            input: { ...params, actor },
+            input: { actor, ...params },
             schema: GetAccommodationsByFeatureSchema,
             execute: async (validatedParams, actor) => {
                 this._canList(actor);
                 const { featureId } = validatedParams;
-                const feature = await this.model.findOne({ id: featureId as FeatureId });
+                const feature = await this.model.findOne({ id: featureId as FeatureIdType });
                 if (!feature) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
                 }

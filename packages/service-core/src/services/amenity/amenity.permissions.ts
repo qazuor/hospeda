@@ -1,5 +1,5 @@
-import type { AmenityType } from '@repo/types';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import type { Amenity } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
@@ -21,7 +21,7 @@ export const checkCanCreateAmenity = (actor: Actor): void => {
  * Checks if the actor can update an amenity.
  * TODO: Review if a specific amenity.update permission should exist. Using ACCOMMODATION_FEATURES_EDIT as placeholder.
  */
-export const checkCanUpdateAmenity = (actor: Actor, _amenity: AmenityType): void => {
+export const checkCanUpdateAmenity = (actor: Actor, _amenity: Amenity): void => {
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -34,7 +34,7 @@ export const checkCanUpdateAmenity = (actor: Actor, _amenity: AmenityType): void
  * Checks if the actor can delete an amenity.
  * TODO: Review if a specific amenity.delete permission should exist. Using ACCOMMODATION_FEATURES_EDIT as placeholder.
  */
-export const checkCanDeleteAmenity = (actor: Actor, _amenity: AmenityType): void => {
+export const checkCanDeleteAmenity = (actor: Actor, _amenity: Amenity): void => {
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -47,7 +47,7 @@ export const checkCanDeleteAmenity = (actor: Actor, _amenity: AmenityType): void
  * Checks if the actor can view an amenity.
  * All users can view amenities (public).
  */
-export const checkCanViewAmenity = (_actor: Actor, _amenity: AmenityType): void => {
+export const checkCanViewAmenity = (_actor: Actor, _amenity: Amenity): void => {
     return;
 };
 
