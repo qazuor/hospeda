@@ -1,5 +1,5 @@
 import { EventLocationModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventLocationService } from '../../../src/services/eventLocation/eventLocation.service';
 import { createActor } from '../../factories/actorFactory';

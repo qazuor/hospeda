@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { type EventId, PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -32,25 +32,22 @@ describe('EventService.getSummary', () => {
 
     it('should return summary for a valid public event', async () => {
         asMock(modelMock.findById).mockResolvedValue(event);
-        const result = await service.getSummary(actorWithPerm, { id: event.id });
+        const result = await service.getSummary(actorWithPerm, { eventId: event.id });
         expectSuccess(result);
-        expect(result.data?.summary).toEqual({
+        expect(result.data).toEqual({
             id: event.id,
             slug: event.slug,
             name: event.name,
+            description: event.description,
             category: event.category,
-            date: event.date,
-            media: event.media,
-            isFeatured: event.isFeatured,
-            pricing: event.pricing,
-            summary: event.summary
+            createdAt: event.createdAt
         });
     });
 
     it('should return NOT_FOUND if event does not exist', async () => {
         asMock(modelMock.findById).mockResolvedValue(null);
         const result = await service.getSummary(actorWithPerm, {
-            id: '00000000-0000-4000-8000-000000000000' as EventId
+            eventId: '00000000-0000-4000-8000-000000000000'
         });
         expectNotFoundError(result);
     });
@@ -58,13 +55,13 @@ describe('EventService.getSummary', () => {
     it('should return FORBIDDEN if actor cannot view the event', async () => {
         const privateEvent = createMockEvent({ visibility: VisibilityEnum.PRIVATE });
         asMock(modelMock.findById).mockResolvedValue(privateEvent);
-        const result = await service.getSummary(actorNoPerm, { id: privateEvent.id });
+        const result = await service.getSummary(actorNoPerm, { eventId: privateEvent.id });
         expectForbiddenError(result);
     });
 
     it('should return UNAUTHORIZED if actor is undefined', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.getSummary(undefined, { id: event.id });
+        const result = await service.getSummary(undefined, { eventId: event.id });
         expect(result.error?.code).toBe(ServiceErrorCode.UNAUTHORIZED);
     });
 
@@ -76,7 +73,7 @@ describe('EventService.getSummary', () => {
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.findById).mockRejectedValue(new Error('DB error'));
-        const result = await service.getSummary(actorWithPerm, { id: event.id });
+        const result = await service.getSummary(actorWithPerm, { eventId: event.id });
         expectInternalError(result);
     });
 });

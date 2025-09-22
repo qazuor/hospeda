@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCreateEventOrganizer,

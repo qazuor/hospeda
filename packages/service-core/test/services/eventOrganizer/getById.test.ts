@@ -1,5 +1,5 @@
 import { EventOrganizerModel } from '@repo/db';
-import type { EventOrganizerType } from '@repo/types';
+import type { EventOrganizer } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventOrganizerService } from '../../../src/services/eventOrganizer/eventOrganizer.service';
 import { createActor } from '../../factories/actorFactory';
@@ -30,7 +30,7 @@ describe('EventOrganizerService.getById', () => {
 
     it('returns error if not found', async () => {
         asMock(modelMock.findOne).mockResolvedValue(null);
-        const result = await service.getById(actor, 'nonexistent-id' as EventOrganizerType['id']);
+        const result = await service.getById(actor, 'nonexistent-id' as EventOrganizer['id']);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe('NOT_FOUND');
     });

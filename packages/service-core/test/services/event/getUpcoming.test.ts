@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { PermissionEnum, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -8,8 +8,7 @@ import { createUser } from '../../factories/userFactory';
 import {
     expectInternalError,
     expectSuccess,
-    expectUnauthorizedError,
-    expectValidationError
+    expectUnauthorizedError
 } from '../../helpers/assertions';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
@@ -44,8 +43,8 @@ describe('EventService.getUpcoming', () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 2 });
         // Act
         const result = await service.getUpcoming(actorWithPerm, {
-            fromDate,
-            toDate,
+            daysAhead: 7,
+
             page: 1,
             pageSize: 10
         });
@@ -55,7 +54,12 @@ describe('EventService.getUpcoming', () => {
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { 'date.start': { $gte: fromDate, $lte: toDate } },
+            expect.objectContaining({
+                'date.start': expect.objectContaining({
+                    $gte: expect.any(Date),
+                    $lte: expect.any(Date)
+                })
+            }),
             { page: 1, pageSize: 10 }
         );
     });
@@ -71,8 +75,8 @@ describe('EventService.getUpcoming', () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
         // Act
         const result = await service.getUpcoming(actorNoPerm, {
-            fromDate,
-            toDate,
+            daysAhead: 7,
+
             page: 1,
             pageSize: 10
         });
@@ -82,7 +86,13 @@ describe('EventService.getUpcoming', () => {
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { 'date.start': { $gte: fromDate, $lte: toDate }, visibility: VisibilityEnum.PUBLIC },
+            expect.objectContaining({
+                'date.start': expect.objectContaining({
+                    $gte: expect.any(Date),
+                    $lte: expect.any(Date)
+                }),
+                visibility: VisibilityEnum.PUBLIC
+            }),
             { page: 1, pageSize: 10 }
         );
     });
@@ -97,35 +107,55 @@ describe('EventService.getUpcoming', () => {
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
         // Act
-        const result = await service.getUpcoming(actorNoPerm, { fromDate, page: 1, pageSize: 10 });
+        const result = await service.getUpcoming(actorNoPerm, {
+            daysAhead: 7,
+            page: 1,
+            pageSize: 10
+        });
         // Assert
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { 'date.start': { $gte: fromDate }, visibility: VisibilityEnum.PUBLIC },
+            expect.objectContaining({
+                'date.start': expect.objectContaining({
+                    $gte: expect.any(Date),
+                    $lte: expect.any(Date)
+                }),
+                visibility: VisibilityEnum.PUBLIC
+            }),
             { page: 1, pageSize: 10 }
         );
     });
 
     it('should return UNAUTHORIZED if actor is undefined', async () => {
         // @ts-expect-error purposely invalid
-        const result = await service.getUpcoming(undefined, { fromDate, page: 1, pageSize: 10 });
+        const result = await service.getUpcoming(undefined, {
+            daysAhead: 7,
+            page: 1,
+            pageSize: 10
+        });
         expectUnauthorizedError(result);
     });
 
-    it('should throw validation error if fromDate is missing', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getUpcoming(actorWithPerm, {});
-        expectValidationError(result);
+    it('should work with minimal required fields', async () => {
+        // Test that the service works with just the required fields
+        (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
+        const result = await service.getUpcoming(actorWithPerm, {
+            daysAhead: 30,
+            page: 1,
+            pageSize: 10
+        });
+        expectSuccess(result);
+        expect(modelMock.findAll).toHaveBeenCalled();
     });
 
     it('should return empty list if no events found', async () => {
         (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
         const result = await service.getUpcoming(actorWithPerm, {
-            fromDate,
-            toDate,
+            daysAhead: 7,
+
             page: 1,
             pageSize: 10
         });
@@ -138,8 +168,8 @@ describe('EventService.getUpcoming', () => {
     it('should throw internal error if model fails', async () => {
         asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
         const result = await service.getUpcoming(actorWithPerm, {
-            fromDate,
-            toDate,
+            daysAhead: 7,
+
             page: 1,
             pageSize: 10
         });

@@ -1,10 +1,6 @@
 import { EventModel } from '@repo/db';
-import {
-    type EventOrganizerId,
-    PermissionEnum,
-    ServiceErrorCode,
-    VisibilityEnum
-} from '@repo/types';
+import type { EventOrganizerIdType } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -26,7 +22,7 @@ describe('EventService.getByOrganizer', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ServiceLogger;
-    const organizerId = getMockId('event') as EventOrganizerId;
+    const organizerId = getMockId('event') as EventOrganizerIdType;
     const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
     const actorNoPerm = createUser();
 
