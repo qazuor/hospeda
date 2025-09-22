@@ -16,12 +16,14 @@ export const TikTokUrlRegex = /^https?:\/\/(www\.)?tiktok\.com\//;
 export const YouTubeUrlRegex = /^https?:\/\/(www\.)?youtube\.com\//;
 
 export const isValidLatitude = (val: string) => {
+    if (val.trim() === '') return false; // Reject empty strings
     const n = Number(val);
-    return !Number.isNaN(n) && n >= -90 && n <= 90;
+    return !Number.isNaN(n) && Number.isFinite(n) && n >= -90 && n <= 90;
 };
 export const isValidLongitude = (val: string) => {
+    if (val.trim() === '') return false; // Reject empty strings
     const n = Number(val);
-    return !Number.isNaN(n) && n >= -180 && n <= 180;
+    return !Number.isNaN(n) && Number.isFinite(n) && n >= -180 && n <= 180;
 };
 
 // Common fields to omit in CRUD actions (auto-managed by system)
