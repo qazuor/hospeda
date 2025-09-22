@@ -1,10 +1,10 @@
 import type {
+    EntityTypeEnum,
     UserBookmarkCreateInput,
     UserBookmarkListByEntityInput,
     UserBookmarkListByUserInput,
     UserBookmarkUpdateInput
 } from '@repo/schemas';
-import type { EntityTypeEnum } from '@repo/types';
 import type { Actor } from '../../types';
 
 // Note: Types are now imported from @repo/schemas
