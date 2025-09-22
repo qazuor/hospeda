@@ -1,4 +1,4 @@
-import type { DestinationReviewType } from '@repo/types';
+import type { DestinationReview } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import { destinationReviews } from '../../schemas/destination/destination_review.dbschema';
@@ -10,12 +10,12 @@ import { logError, logQuery } from '../../utils/logger';
 /**
  * Type for destination review with user and destination relations
  */
-type DestinationReviewWithRelations = DestinationReviewType & {
+type DestinationReviewWithRelations = DestinationReview & {
     user?: { id: string; firstName?: string; lastName?: string; email: string };
     destination?: { id: string; name: string; slug: string };
 };
 
-export class DestinationReviewModel extends BaseModel<DestinationReviewType> {
+export class DestinationReviewModel extends BaseModel<DestinationReview> {
     protected table = destinationReviews;
     protected entityName = 'destinationReviews';
 

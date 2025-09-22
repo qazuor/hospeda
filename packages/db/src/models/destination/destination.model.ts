@@ -1,4 +1,4 @@
-import type { DestinationType } from '@repo/types';
+import type { Destination, DestinationWithAttractionNames } from '@repo/schemas';
 import { type SQL, and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
@@ -8,7 +8,7 @@ import { rDestinationAttraction } from '../../schemas/destination/r_destination_
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
-export class DestinationModel extends BaseModel<DestinationType> {
+export class DestinationModel extends BaseModel<Destination> {
     protected table = destinations;
     protected entityName = 'destinations';
 
@@ -21,7 +21,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean>
-    ): Promise<DestinationType | null> {
+    ): Promise<Destination | null> {
         const db = getDb();
         try {
             // Dynamically build the 'with' object
@@ -43,7 +43,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as DestinationType | null;
+                return result as Destination | null;
             }
             // Fallback to base findOne if there are no relations
             const result = await this.findOne(where);
@@ -68,7 +68,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
      * @returns Promise resolving to an array of DestinationType
      * @throws DbError if the database query fails
      */
-    async findAllByAttractionId(attractionId: string): Promise<DestinationType[]> {
+    async findAllByAttractionId(attractionId: string): Promise<Destination[]> {
         const db = getDb();
         try {
             const results = await db.query.destinations.findMany({
@@ -76,7 +76,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
                 with: { attractions: true }
             });
             logQuery(this.entityName, 'findAllByAttractionId', { attractionId }, results);
-            return results as DestinationType[];
+            return results as Destination[];
         } catch (error) {
             logError(this.entityName, 'findAllByAttractionId', { attractionId }, error as Error);
             throw new DbError(
@@ -98,7 +98,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
         orderBy?: Record<string, 'asc' | 'desc'>;
         page?: number;
         pageSize?: number;
-    }): Promise<{ items: Array<DestinationType & { attractionNames: string[] }>; total: number }> {
+    }): Promise<{ items: DestinationWithAttractionNames[]; total: number }> {
         const db = getDb();
         const { filters = {}, orderBy = { name: 'asc' }, page = 1, pageSize = 20 } = params;
         try {
@@ -166,9 +166,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
 
             const totalResult = await db.select({ count: count() }).from(destinations).where(where);
             return {
-                items: destinationsWithAttractions as Array<
-                    DestinationType & { attractionNames: string[] }
-                >,
+                items: destinationsWithAttractions as DestinationWithAttractionNames[],
                 total: totalResult[0]?.count ?? 0
             };
         } catch (error) {
@@ -192,7 +190,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
         orderBy?: Record<string, 'asc' | 'desc'>;
         page?: number;
         pageSize?: number;
-    }): Promise<{ items: DestinationType[]; total: number }> {
+    }): Promise<{ items: Destination[]; total: number }> {
         const db = getDb();
         const { filters = {}, orderBy = { name: 'asc' }, page = 1, pageSize = 20 } = params;
         try {
@@ -237,7 +235,7 @@ export class DestinationModel extends BaseModel<DestinationType> {
                 .limit(pageSize)
                 .offset(offset);
             const totalResult = await db.select({ count: count() }).from(destinations).where(where);
-            return { items: items as DestinationType[], total: totalResult[0]?.count ?? 0 };
+            return { items: items as Destination[], total: totalResult[0]?.count ?? 0 };
         } catch (error) {
             logError(this.entityName, 'search', params, error as Error);
             throw new DbError(this.entityName, 'search', params, (error as Error).message);

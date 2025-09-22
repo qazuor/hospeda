@@ -1,10 +1,10 @@
 import type {
     AdminInfoType,
     BaseLocationType,
-    DestinationRatingType,
-    MediaType,
-    SeoType
-} from '@repo/types';
+    DestinationRatingInput,
+    Media,
+    Seo
+} from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
     boolean,
@@ -37,14 +37,14 @@ export const destinations: ReturnType<typeof pgTable> = pgTable(
         summary: text('summary').notNull(),
         description: text('description').notNull(),
         location: jsonb('location').$type<BaseLocationType>().notNull(),
-        media: jsonb('media').$type<MediaType>().notNull(),
+        media: jsonb('media').$type<Media>().notNull(),
         isFeatured: boolean('is_featured').notNull().default(false),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         reviewsCount: integer('reviews_count').notNull().default(0),
         averageRating: numeric('average_rating', { precision: 3, scale: 2 }).notNull().default('0'),
         accommodationsCount: integer('accommodations_count').notNull().default(0),
-        seo: jsonb('seo').$type<SeoType>(),
+        seo: jsonb('seo').$type<Seo>(),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -53,7 +53,7 @@ export const destinations: ReturnType<typeof pgTable> = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
-        rating: jsonb('rating').$type<DestinationRatingType>()
+        rating: jsonb('rating').$type<DestinationRatingInput>()
     },
     (table) => ({
         destinations_isFeatured_idx: index('destinations_isFeatured_idx').on(table.isFeatured),
