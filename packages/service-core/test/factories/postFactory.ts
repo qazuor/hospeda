@@ -1,24 +1,23 @@
-import type { PostCreateInput } from '@repo/schemas';
-import type { PostId, PostType, UserId } from '@repo/types';
+import type { Post, PostCreateInput, PostIdType, UserIdType } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PostCategoryEnum,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 export class PostFactoryBuilder {
-    private post: Partial<PostType> = {};
+    private post: Partial<Post> = {};
 
-    with(fields: Partial<PostType>): this {
+    with(fields: Partial<Post>): this {
         Object.assign(this.post, fields);
         return this;
     }
 
-    build(): PostType {
+    build(): Post {
         return {
-            id: getMockId('post') as PostId,
+            id: getMockId('post') as PostIdType,
             slug: 'slug',
             category: PostCategoryEnum.GENERAL,
             title: 'Test Post',
@@ -28,13 +27,12 @@ export class PostFactoryBuilder {
             media: {
                 featuredImage: {
                     url: 'https://example.com/image.jpg',
-                    moderationState: ModerationStatusEnum.APPROVED,
-                    tags: []
+                    moderationState: ModerationStatusEnum.APPROVED
                 },
                 gallery: [],
                 videos: []
             },
-            authorId: getMockId('user') as UserId,
+            authorId: getMockId('user') as UserIdType,
             visibility: VisibilityEnum.PUBLIC,
             isFeatured: false,
             isNews: true,
@@ -47,8 +45,8 @@ export class PostFactoryBuilder {
             readingTimeMinutes: 5,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as UserId,
-            updatedById: getMockId('user') as UserId,
+            createdById: getMockId('user') as UserIdType,
+            updatedById: getMockId('user') as UserIdType,
             deletedAt: undefined,
             deletedById: undefined,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -58,14 +56,16 @@ export class PostFactoryBuilder {
     }
 }
 
-export const createMockPost = (fields: Partial<PostType> = {}): PostType =>
+export const createMockPost = (fields: Partial<Post> = {}): Post =>
     new PostFactoryBuilder().with(fields).build();
 
 /**
  * Factory for a valid PostCreateInput (only user-provided fields)
  * Generates a unique title by default to avoid collisions in tests.
  */
-export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): PostCreateInput => {
+export const createMockPostCreateInput = (
+    overrides: Partial<PostCreateInput> = {}
+): PostCreateInput => {
     // Generate a unique suffix for the title if none is provided
     const uniqueSuffix = Math.random().toString(36).substring(2, 8);
     const baseInput = {
@@ -92,7 +92,7 @@ export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): Po
         shares: 0,
         publishedAt: new Date(),
         readingTimeMinutes: 5,
-        authorId: getMockId('user') as UserId,
+        authorId: getMockId('user') as UserIdType,
         ...overrides
     };
 
@@ -104,4 +104,13 @@ export const createNewPostInput = (overrides: Partial<PostCreateInput> = {}): Po
     return baseInput;
 };
 
-export const getMockPostId = (id?: string): PostId => getMockId('post', id) as PostId;
+export const getMockPostId = (id?: string): PostIdType => getMockId('post', id) as PostIdType;
+
+// ============================================================================
+// LEGACY COMPATIBILITY
+// ============================================================================
+
+/**
+ * @deprecated Use createMockPostCreateInput instead
+ */
+export const createNewPostInput = createMockPostCreateInput;

@@ -1,10 +1,16 @@
-import type { EventId, EventLocationId, EventOrganizerId, EventType, UserId } from '@repo/types';
+import type {
+    Event,
+    EventIdType,
+    EventLocationIdType,
+    EventOrganizerIdType,
+    UserIdType
+} from '@repo/schemas';
 import {
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 /**
@@ -14,8 +20,8 @@ import { getMockId } from './utilsFactory';
  * @example
  * const event = getMockEvent({ id: 'event-2' as EventId });
  */
-export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => ({
-    id: getMockId('event') as EventId,
+export const getMockEvent = (overrides: Partial<Event> = {}): Event => ({
+    id: getMockId('event') as EventIdType,
     slug: 'fiesta-nacional',
     name: 'Fiesta Nacional',
     summary: 'Fiesta Nacional',
@@ -27,9 +33,9 @@ export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => (
         start: new Date(),
         end: new Date()
     },
-    authorId: getMockId('user') as UserId,
-    locationId: getMockId('event') as EventLocationId,
-    organizerId: getMockId('event') as EventOrganizerId,
+    authorId: getMockId('user') as UserIdType,
+    locationId: getMockId('event') as EventLocationIdType,
+    organizerId: getMockId('event') as EventOrganizerIdType,
     pricing: undefined,
     contactInfo: undefined,
     visibility: VisibilityEnum.PUBLIC,
@@ -38,8 +44,8 @@ export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => (
     updatedAt: new Date(),
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     moderationState: ModerationStatusEnum.PENDING,
-    createdById: getMockId('user') as UserId,
-    updatedById: getMockId('user') as UserId,
+    createdById: getMockId('user') as UserIdType,
+    updatedById: getMockId('user') as UserIdType,
     deletedAt: undefined,
     deletedById: undefined,
     adminInfo: undefined,
@@ -48,41 +54,43 @@ export const getMockEvent = (overrides: Partial<EventType> = {}): EventType => (
     ...overrides
 });
 
-export const createMockEvent = (overrides: Partial<EventType> = {}): EventType =>
-    getMockEvent(overrides);
+export const createMockEvent = (overrides: Partial<Event> = {}): Event => getMockEvent(overrides);
 
-export const createMockEventInput = (
-    overrides: Partial<Omit<EventType, 'id' | 'createdAt' | 'updatedAt'>> = {}
-): Omit<EventType, 'id' | 'createdAt' | 'updatedAt'> => {
-    const { id, createdAt, updatedAt, moderationState, tags, ...input } = getMockEvent();
-    // Ensure moderationState is defined for the return type
-    const result = {
-        ...input,
-        moderationState: moderationState || ModerationStatusEnum.PENDING,
-        ...overrides
-    };
-    return result;
-};
-
-/**
- * Returns a valid input for EventService.create (matches EventCreateSchema).
- * Only includes fields allowed by the Zod schema (no id, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById, moderationState, tags).
- * @param overrides - Partial fields to override in the input.
- */
-export const createEventInput = (overrides: Partial<ReturnType<typeof getMockEvent>> = {}) => {
+export const createMockEventCreateInput = (
+    overrides: Partial<
+        Omit<
+            Event,
+            | 'id'
+            | 'createdAt'
+            | 'updatedAt'
+            | 'createdById'
+            | 'updatedById'
+            | 'deletedAt'
+            | 'deletedById'
+            | 'moderationState'
+            | 'tags'
+        >
+    > = {}
+) => {
+    const baseEvent = getMockEvent();
+    // Remove fields that are not allowed in create schema per EventCreateInputSchema
     const {
         id,
         createdAt,
         updatedAt,
-        deletedAt,
         createdById,
         updatedById,
+        deletedAt,
         deletedById,
         moderationState,
         tags,
-        ...rest
-    } = getMockEvent();
-    return { ...rest, ...overrides };
+        ...createInput
+    } = baseEvent;
+
+    return {
+        ...createInput,
+        ...overrides
+    };
 };
 
 /**
@@ -91,7 +99,7 @@ export const createEventInput = (overrides: Partial<ReturnType<typeof getMockEve
  * The id field is handled separately in the update method.
  * @param overrides - Partial fields to override in the input.
  */
-export const createEventUpdateInput = (
+export const createMockEventUpdateInput = (
     overrides: Partial<ReturnType<typeof getMockEvent>> = {}
 ) => {
     const {
@@ -114,6 +122,25 @@ export const createEventUpdateInput = (
     };
 };
 
-export const getMockEventId = (id?: string): EventId => {
-    return getMockId('event', id) as EventId;
+export const getMockEventId = (id?: string): EventIdType => {
+    return getMockId('event', id) as EventIdType;
 };
+
+// ============================================================================
+// LEGACY COMPATIBILITY
+// ============================================================================
+
+/**
+ * @deprecated Use createMockEventCreateInput instead
+ */
+export const createMockEventInput = createMockEventCreateInput;
+
+/**
+ * @deprecated Use createMockEventCreateInput instead
+ */
+export const createEventInput = createMockEventCreateInput;
+
+/**
+ * @deprecated Use createMockEventUpdateInput instead
+ */
+export const createEventUpdateInput = createMockEventUpdateInput;

@@ -1,5 +1,10 @@
-import type { DestinationId, UserBookmarkId, UserBookmarkType, UserId } from '@repo/types';
-import { EntityTypeEnum, LifecycleStatusEnum } from '@repo/types';
+import type {
+    DestinationIdType,
+    UserBookmark,
+    UserBookmarkIdType,
+    UserIdType
+} from '@repo/schemas';
+import { EntityTypeEnum, LifecycleStatusEnum } from '@repo/schemas';
 import { BaseFactoryBuilder } from './baseEntityFactory';
 import { getMockId } from './utilsFactory';
 
@@ -7,25 +12,25 @@ import { getMockId } from './utilsFactory';
  * Devuelve un UserBookmarkId válido para tests.
  * @param id - String opcional para generar un UUID determinista.
  */
-export const getMockUserBookmarkId = (id?: string): UserBookmarkId => {
-    return getMockId('feature', id) as UserBookmarkId;
+export const getMockUserBookmarkId = (id?: string): UserBookmarkIdType => {
+    return getMockId('userBookmark', id) as UserBookmarkIdType;
 };
 
 /**
  * Base UserBookmarkType para tests.
  */
-const baseUserBookmark: UserBookmarkType = {
+const baseUserBookmark: UserBookmark = {
     id: getMockUserBookmarkId(),
-    userId: getMockId('user') as UserId,
-    entityId: getMockId('destination') as DestinationId,
+    userId: getMockId('user') as UserIdType,
+    entityId: getMockId('destination') as DestinationIdType,
     entityType: EntityTypeEnum.DESTINATION,
     name: 'My destination',
     description: 'A place I want to visit',
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: undefined,
-    createdById: getMockId('user') as UserId,
-    updatedById: getMockId('user') as UserId,
+    createdById: getMockId('user') as UserIdType,
+    updatedById: getMockId('user') as UserIdType,
     deletedById: undefined,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     adminInfo: undefined
@@ -34,7 +39,7 @@ const baseUserBookmark: UserBookmarkType = {
 /**
  * Builder para UserBookmarkType (entidad completa, para mocks de modelo y tests de output).
  */
-export class UserBookmarkFactoryBuilder extends BaseFactoryBuilder<UserBookmarkType> {
+export class UserBookmarkFactoryBuilder extends BaseFactoryBuilder<UserBookmark> {
     constructor() {
         super(baseUserBookmark);
     }
@@ -43,7 +48,7 @@ export class UserBookmarkFactoryBuilder extends BaseFactoryBuilder<UserBookmarkT
 /**
  * Crea un UserBookmarkType completo para tests, con overrides opcionales.
  */
-export const createUserBookmark = (overrides: Partial<UserBookmarkType> = {}): UserBookmarkType => {
+export const createMockUserBookmark = (overrides: Partial<UserBookmark> = {}): UserBookmark => {
     return new UserBookmarkFactoryBuilder().with(overrides).build();
 };
 
@@ -52,7 +57,7 @@ export const createUserBookmark = (overrides: Partial<UserBookmarkType> = {}): U
  * @param overrides - Campos a sobrescribir.
  * @returns Input válido para create (sin campos de auditoría, admin ni userId).
  */
-export const createUserBookmarkInput = (
+export const createMockUserBookmarkCreateInput = (
     overrides: Partial<{
         userId: string;
         entityId: string;
@@ -70,3 +75,17 @@ export const createUserBookmarkInput = (
         ...overrides
     };
 };
+
+// ============================================================================
+// LEGACY COMPATIBILITY
+// ============================================================================
+
+/**
+ * @deprecated Use createMockUserBookmark instead
+ */
+export const createUserBookmark = createMockUserBookmark;
+
+/**
+ * @deprecated Use createMockUserBookmarkCreateInput instead
+ */
+export const createUserBookmarkInput = createMockUserBookmarkCreateInput;

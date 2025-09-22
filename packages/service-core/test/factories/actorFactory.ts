@@ -5,7 +5,7 @@
  * All mock data for service-core tests should be created here.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '../../src/types';
 import { getMockId } from '../factories/utilsFactory';
 import { BaseFactoryBuilder } from './baseEntityFactory';

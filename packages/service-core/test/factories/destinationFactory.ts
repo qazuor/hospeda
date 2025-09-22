@@ -1,200 +1,236 @@
 /**
- * destinationFactory.ts
- *
- * Factory functions for generating Destination mock data for tests.
- * All mock data for DestinationService tests should be created here.
+ * destinationFactory.ts - Factory for destination test data
+ * Provides standardized mock data generation for destination entities and DTOs
  */
-import type {
-    AttractionId,
-    DestinationId,
-    DestinationReviewId,
-    DestinationType,
-    FullLocationType,
-    ImageType,
-    UserId
-} from '@repo/types';
-import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/types';
-import { BaseFactoryBuilder } from './baseEntityFactory';
+
+import type { Destination, DestinationCreateInput, DestinationUpdateInput } from '@repo/schemas';
+import { LifecycleStatusEnum, ModerationStatusEnum, VisibilityEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
-type StrictDestinationType = Omit<
-    DestinationType,
-    'location' | 'reviewsCount' | 'averageRating' | 'attractions' | 'reviews'
-> & {
-    location: FullLocationType;
-    reviewsCount: number;
-    averageRating: number;
-    attractions: {
-        id: AttractionId;
-        attractionId: AttractionId;
-        name: string;
-        slug: string;
-        icon: string;
-        description: string;
-        destinationId: DestinationId;
-        isBuiltin: boolean;
-        isFeatured: boolean;
-        adminInfo?: { favorite: boolean; notes?: string };
-    }[];
-    reviews: {
-        id: DestinationReviewId;
-        userId: UserId;
-        destinationId: DestinationId;
-        createdAt: Date;
-        updatedAt: Date;
-        createdById: UserId;
-        updatedById: UserId;
-        lifecycleState: LifecycleStatusEnum;
-        adminInfo?: { favorite: boolean; notes?: string };
-        rating: {
-            landscape: number;
-            attractions: number;
-            accessibility: number;
-            safety: number;
-            cleanliness: number;
-            hospitality: number;
-            culturalOffer: number;
-            gastronomy: number;
-            affordability: number;
-            nightlife: number;
-            infrastructure: number;
-            environmentalCare: number;
-            wifiAvailability: number;
-            shopping: number;
-            beaches: number;
-            greenSpaces: number;
-            localEvents: number;
-            weatherSatisfaction: number;
-        };
-        title?: string;
-        content?: string;
-    }[];
-};
+// ============================================================================
+// BASE MOCK DATA
+// ============================================================================
 
-const baseDestination: StrictDestinationType = {
-    id: getMockId('destination') as DestinationId,
-    slug: 'villa-elisa',
-    name: 'Villa Elisa',
-    summary: 'A beautiful destination.',
-    description: 'A detailed description of Villa Elisa.',
+const baseDestination: Destination = {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    slug: 'mock-destination',
+    name: 'Mock Destination',
+    summary: 'A beautiful mock destination for testing',
+    description: 'This is a longer description of the mock destination used for testing purposes.',
+
+    // Lifecycle fields
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+
+    // Moderation fields
+    moderationState: ModerationStatusEnum.APPROVED,
+
+    // Visibility fields
+    visibility: VisibilityEnum.PUBLIC,
+
+    // Optional fields
+    isFeatured: false,
     location: {
-        state: 'Entre Ríos',
-        zipCode: '3265',
-        country: 'AR',
-        coordinates: { lat: '-30.9500', long: '-57.9333' },
-        street: 'Calle Principal',
-        number: '123',
-        city: 'Villa Elisa'
+        state: 'Buenos Aires',
+        zipCode: 'C1000',
+        country: 'Argentina',
+        coordinates: { lat: '-34.6037', long: '-58.3816' }
     },
     media: {
-        featuredImage: {
-            url: 'https://example.com/featured.jpg',
-            caption: 'Main view',
-            description: 'A beautiful featured image',
-            moderationState: ModerationStatusEnum.APPROVED,
-            tags: []
-        } as ImageType,
-        gallery: [],
-        videos: []
+        featuredImage: undefined,
+        gallery: undefined,
+        videos: undefined
     },
-    isFeatured: false,
-    visibility: VisibilityEnum.PUBLIC,
-    accommodationsCount: 3,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdById: getMockId('user') as UserId,
-    updatedById: getMockId('user', 'updater') as UserId,
-    deletedAt: undefined,
-    deletedById: undefined,
-    adminInfo: { favorite: false },
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    moderationState: ModerationStatusEnum.APPROVED,
     tags: [],
-    seo: {
-        title: 'A valid SEO title for destination with enough length',
-        description:
-            'A valid SEO description for destination with enough length to pass the minimum required by Zod schema for description field.',
-        keywords: ['travel', 'destination']
-    },
+
+    // Statistics
+    accommodationsCount: 0,
     reviewsCount: 0,
     averageRating: 0,
-    rating: undefined,
-    attractions: [
-        {
-            id: getMockId('feature') as AttractionId,
-            attractionId: getMockId('feature') as AttractionId,
-            name: 'Test Attraction',
-            slug: 'test-attraction',
-            icon: '🎡',
-            description: 'A test attraction',
-            destinationId: getMockId('destination') as DestinationId,
-            isBuiltin: false,
-            isFeatured: false,
-            adminInfo: { favorite: false }
-        }
-    ],
-    reviews: []
+
+    // Audit fields
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdById: getMockId('user') as string,
+    updatedById: getMockId('user') as string,
+    deletedAt: undefined,
+    deletedById: undefined
 };
 
-export class DestinationFactoryBuilder extends BaseFactoryBuilder<StrictDestinationType> {
-    constructor() {
-        super(baseDestination);
+// ============================================================================
+// FACTORY FUNCTIONS
+// ============================================================================
+
+/**
+ * Returns a mock DestinationId for use in tests.
+ */
+export const getMockDestinationId = (id?: string): string =>
+    id || (getMockId('destination') as string);
+
+/**
+ * Creates a mock destination with optional overrides
+ */
+export const createMockDestination = (overrides: Partial<Destination> = {}): Destination => ({
+    ...baseDestination,
+    id: getMockDestinationId(),
+    ...overrides
+});
+
+/**
+ * Creates a mock destination create input with optional overrides
+ */
+export const createMockDestinationCreateInput = (
+    overrides: Partial<DestinationCreateInput> = {}
+): DestinationCreateInput => ({
+    slug: 'new-destination',
+    name: 'New Destination',
+    summary: 'A new destination for testing',
+    description: 'This is a new destination created for testing purposes.',
+    visibility: VisibilityEnum.PUBLIC,
+    moderationState: ModerationStatusEnum.PENDING,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    isFeatured: false,
+    location: {
+        state: 'Buenos Aires',
+        zipCode: 'C1000',
+        country: 'Argentina',
+        coordinates: { lat: '-34.6037', long: '-58.3816' }
+    },
+    media: {
+        featuredImage: undefined,
+        gallery: undefined,
+        videos: undefined
+    },
+    tags: [],
+    accommodationsCount: 0,
+    reviewsCount: 0,
+    averageRating: 0,
+    ...overrides
+});
+
+/**
+ * Creates a mock destination update input with optional overrides
+ */
+export const createMockDestinationUpdateInput = (
+    overrides: Partial<DestinationUpdateInput> = {}
+): DestinationUpdateInput => ({
+    name: 'Updated Destination',
+    summary: 'An updated destination for testing',
+    ...overrides
+});
+
+// ============================================================================
+// SCENARIO-SPECIFIC FACTORIES
+// ============================================================================
+
+/**
+ * Creates a destination with PUBLIC visibility
+ */
+export const createPublicDestination = (overrides?: Partial<Destination>): Destination =>
+    createMockDestination({
+        visibility: VisibilityEnum.PUBLIC,
+        moderationState: ModerationStatusEnum.APPROVED,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        ...overrides
+    });
+
+/**
+ * Creates a destination with PRIVATE visibility
+ */
+export const createPrivateDestination = (overrides?: Partial<Destination>): Destination =>
+    createMockDestination({
+        visibility: VisibilityEnum.PRIVATE,
+        moderationState: ModerationStatusEnum.PENDING,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        ...overrides
+    });
+
+/**
+ * Creates a destination with RESTRICTED visibility
+ */
+export const createRestrictedDestination = (overrides?: Partial<Destination>): Destination =>
+    createMockDestination({
+        visibility: VisibilityEnum.RESTRICTED,
+        moderationState: ModerationStatusEnum.APPROVED,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        ...overrides
+    });
+
+/**
+ * Creates a deleted destination
+ */
+export const createDeletedDestination = (overrides?: Partial<Destination>): Destination =>
+    createMockDestination({
+        deletedAt: new Date(),
+        lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        ...overrides
+    });
+
+// ============================================================================
+// BUILDER CLASS
+// ============================================================================
+
+export class DestinationFactoryBuilder {
+    private data: Partial<Destination> = {};
+
+    with(overrides: Partial<Destination>) {
+        this.data = { ...this.data, ...overrides };
+        return this;
     }
-    public public() {
-        return this.with({ visibility: VisibilityEnum.PUBLIC });
+
+    withLocation(state: string, zipCode: string, country: string, lat?: string, long?: string) {
+        this.data.location = {
+            state,
+            zipCode,
+            country,
+            coordinates: lat && long ? { lat, long } : undefined
+        };
+        return this;
     }
-    public draft() {
-        return this.with({ visibility: VisibilityEnum.PRIVATE });
+
+    withStats(accommodations: number, reviews: number, rating: number) {
+        this.data.accommodationsCount = accommodations;
+        this.data.reviewsCount = reviews;
+        this.data.averageRating = rating;
+        return this;
     }
-    public featured() {
-        return this.with({ isFeatured: true });
+
+    withAttractions(attractions: any[]) {
+        this.data.attractions = attractions;
+        return this;
     }
-    public withLocation(location: FullLocationType) {
-        return this.with({ location });
+
+    public() {
+        this.data.visibility = VisibilityEnum.PUBLIC;
+        this.data.moderationState = ModerationStatusEnum.APPROVED;
+        this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
+        return this;
     }
-    public withMedia(media: DestinationType['media']) {
-        return this.with({ media });
+
+    private() {
+        this.data.visibility = VisibilityEnum.PRIVATE;
+        this.data.moderationState = ModerationStatusEnum.PENDING;
+        this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
+        return this;
     }
-    public withAccommodationsCount(count: number) {
-        return this.with({ accommodationsCount: count });
+
+    restricted() {
+        this.data.visibility = VisibilityEnum.RESTRICTED;
+        this.data.moderationState = ModerationStatusEnum.APPROVED;
+        this.data.lifecycleState = LifecycleStatusEnum.ACTIVE;
+        return this;
     }
-    public withReviewsCount(count: number) {
-        return this.with({ reviewsCount: count });
-    }
-    public withAverageRating(rating: number) {
-        return this.with({ averageRating: rating });
-    }
-    public withAttractions(
-        attractions: Array<{
-            id: AttractionId;
-            attractionId: AttractionId;
-            name: string;
-            slug: string;
-            icon: string;
-            description: string;
-            destinationId: DestinationId;
-            isBuiltin: boolean;
-            isFeatured: boolean;
-            adminInfo?: { favorite: boolean; notes?: string };
-        }>
-    ) {
-        return this.with({ attractions });
+
+    build(): Destination {
+        return createMockDestination(this.data);
     }
 }
 
-export const createDestination = (
-    overrides: Partial<StrictDestinationType> = {}
-): StrictDestinationType => {
-    const { reviewsCount, averageRating, ...rest } = overrides;
-    const safeOverrides: Partial<StrictDestinationType> = {
-        ...rest,
-        ...(reviewsCount !== undefined ? { reviewsCount } : {}),
-        ...(averageRating !== undefined ? { averageRating } : {})
-    };
-    return new DestinationFactoryBuilder()
-        .with({ reviewsCount: 0, accommodationsCount: 0, averageRating: 0 })
-        .with(safeOverrides)
-        .build();
-};
+// ============================================================================
+// LEGACY COMPATIBILITY
+// ============================================================================
 
-export const getMockDestinationId = (id?: string) => getMockId('destination', id) as DestinationId;
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use createMockDestination instead
+ */
+export const createDestination = createMockDestination;
