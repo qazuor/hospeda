@@ -1,26 +1,3 @@
-import type {
-    AccommodationFaqId,
-    AccommodationIaDataId,
-    AccommodationId,
-    AccommodationReviewId,
-    AmenityId,
-    AttractionId,
-    DestinationId,
-    DestinationReviewId,
-    EventId,
-    EventLocationId,
-    EventOrganizerId,
-    FeatureId,
-    PaymentId,
-    PaymentPlanId,
-    PostId,
-    PostSponsorId,
-    PostSponsorshipId,
-    SubscriptionId,
-    TagId,
-    UserBookmarkId,
-    UserId
-} from '@repo/types';
 import { z } from 'zod';
 
 const BaseIdSchema = z
@@ -30,6 +7,7 @@ const BaseIdSchema = z
     .uuid({ message: 'zodError.common.id.invalidUuid' });
 
 export const IdSchema = BaseIdSchema;
+export type IdType = z.infer<typeof IdSchema>;
 
 /**
  * Base ID fields - Using UUID as agreed
@@ -40,36 +18,66 @@ export const BaseIdFields = {
     })
 } as const;
 
-export const UserIdSchema = BaseIdSchema.transform((val) => val as UserId);
-export const UserBookmarkIdSchema = BaseIdSchema.transform((val) => val as UserBookmarkId);
+// Specific ID schemas for each entity
+export const UserIdSchema = BaseIdSchema;
+export type UserIdType = z.infer<typeof UserIdSchema>;
 
-export const TagIdSchema = BaseIdSchema.transform((val) => val as TagId);
+export const UserBookmarkIdSchema = BaseIdSchema;
+export type UserBookmarkIdType = z.infer<typeof UserBookmarkIdSchema>;
 
-export const AccommodationIdSchema = BaseIdSchema.transform((val) => val as AccommodationId);
-export const AmenityIdSchema = BaseIdSchema.transform((val) => val as AmenityId);
-export const FeatureIdSchema = BaseIdSchema.transform((val) => val as FeatureId);
-export const AccommodationFaqIdSchema = BaseIdSchema.transform((val) => val as AccommodationFaqId);
-export const AccommodationIaDataIdSchema = BaseIdSchema.transform(
-    (val) => val as AccommodationIaDataId
-);
-export const AccommodationReviewIdSchema = BaseIdSchema.transform(
-    (val) => val as AccommodationReviewId
-);
+export const TagIdSchema = BaseIdSchema;
+export type TagIdType = z.infer<typeof TagIdSchema>;
 
-export const DestinationIdSchema = BaseIdSchema.transform((val) => val as DestinationId);
-export const AttractionIdSchema = BaseIdSchema.transform((val) => val as AttractionId);
-export const DestinationReviewIdSchema = BaseIdSchema.transform(
-    (val) => val as DestinationReviewId
-);
+export const AccommodationIdSchema = BaseIdSchema;
+export type AccommodationIdType = z.infer<typeof AccommodationIdSchema>;
 
-export const EventIdSchema = BaseIdSchema.transform((val) => val as EventId);
-export const EventLocationIdSchema = BaseIdSchema.transform((val) => val as EventLocationId);
-export const EventOrganizerIdSchema = BaseIdSchema.transform((val) => val as EventOrganizerId);
+export const AccommodationFaqIdSchema = BaseIdSchema;
+export type AccommodationFaqIdType = z.infer<typeof AccommodationFaqIdSchema>;
 
-export const PostIdSchema = BaseIdSchema.transform((val) => val as PostId);
-export const PostSponsorIdSchema = BaseIdSchema.transform((val) => val as PostSponsorId);
-export const PostSponsorshipIdSchema = BaseIdSchema.transform((val) => val as PostSponsorshipId);
+export const AccommodationIaDataIdSchema = BaseIdSchema;
+export type AccommodationIaDataIdType = z.infer<typeof AccommodationIaDataIdSchema>;
 
-export const PaymentIdSchema = BaseIdSchema.transform((val) => val as PaymentId);
-export const PaymentPlanIdSchema = BaseIdSchema.transform((val) => val as PaymentPlanId);
-export const SubscriptionIdSchema = BaseIdSchema.transform((val) => val as SubscriptionId);
+export const AccommodationReviewIdSchema = BaseIdSchema;
+export type AccommodationReviewIdType = z.infer<typeof AccommodationReviewIdSchema>;
+
+export const AmenityIdSchema = BaseIdSchema;
+export type AmenityIdType = z.infer<typeof AmenityIdSchema>;
+
+export const FeatureIdSchema = BaseIdSchema;
+export type FeatureIdType = z.infer<typeof FeatureIdSchema>;
+
+export const AttractionIdSchema = BaseIdSchema;
+export type AttractionIdType = z.infer<typeof AttractionIdSchema>;
+
+export const DestinationIdSchema = BaseIdSchema;
+export type DestinationIdType = z.infer<typeof DestinationIdSchema>;
+
+export const DestinationReviewIdSchema = BaseIdSchema;
+export type DestinationReviewIdType = z.infer<typeof DestinationReviewIdSchema>;
+
+export const EventIdSchema = BaseIdSchema;
+export type EventIdType = z.infer<typeof EventIdSchema>;
+
+export const EventLocationIdSchema = BaseIdSchema;
+export type EventLocationIdType = z.infer<typeof EventLocationIdSchema>;
+
+export const EventOrganizerIdSchema = BaseIdSchema;
+export type EventOrganizerIdType = z.infer<typeof EventOrganizerIdSchema>;
+
+export const PostIdSchema = BaseIdSchema;
+export type PostIdType = z.infer<typeof PostIdSchema>;
+
+export const PostSponsorIdSchema = BaseIdSchema;
+export type PostSponsorIdType = z.infer<typeof PostSponsorIdSchema>;
+
+export const PostSponsorshipIdSchema = BaseIdSchema;
+export type PostSponsorshipIdType = z.infer<typeof PostSponsorshipIdSchema>;
+
+export const PaymentIdSchema = BaseIdSchema;
+export type PaymentIdType = z.infer<typeof PaymentIdSchema>;
+
+export const PaymentPlanIdSchema = BaseIdSchema;
+export type PaymentPlanIdType = z.infer<typeof PaymentPlanIdSchema>;
+
+export const SubscriptionIdSchema = BaseIdSchema;
+export type SubscriptionIdType = z.infer<typeof SubscriptionIdSchema>;

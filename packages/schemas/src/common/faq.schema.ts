@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { BaseAdminFields } from './admin.schema.js';
 import { BaseAuditFields } from './audit.schema.js';
 import { BaseLifecycleFields } from './lifecycle.schema.js';
 
@@ -13,7 +12,6 @@ export const BaseFaqSchema = z.object({
     // Base fields
     ...BaseAuditFields,
     ...BaseLifecycleFields,
-    ...BaseAdminFields,
 
     // FAQ-specific fields
     question: z
@@ -38,29 +36,28 @@ export const BaseFaqSchema = z.object({
         .max(100, { message: 'zodError.common.faq.category.max' })
         .optional()
 });
+export type BaseFaqType = z.infer<typeof BaseFaqSchema>;
 
 /**
- * Type exports for FAQ schemas
- */
-export type BaseFaq = z.infer<typeof BaseFaqSchema>;
-
-// ----------------------------------------------------------------------------
-// Reusable FAQ payload schemas (for command inputs)
-// ----------------------------------------------------------------------------
-
-/**
- * FAQ creation payload schema: only the core FAQ fields without audit/lifecycle/admin fields
+ * FAQ creation payload schema: only the core FAQ fields without audit/lifecycle fields
  */
 export const FaqCreatePayloadSchema = BaseFaqSchema.pick({
     question: true,
     answer: true,
     category: true
 });
+export type FaqCreatePayloadType = z.infer<typeof FaqCreatePayloadSchema>;
 
 /**
  * FAQ update payload schema: partial of the create payload
  */
 export const FaqUpdatePayloadSchema = FaqCreatePayloadSchema.partial();
+export type FaqUpdatePayloadType = z.infer<typeof FaqUpdatePayloadSchema>;
 
-export type FaqCreatePayload = z.infer<typeof FaqCreatePayloadSchema>;
-export type FaqUpdatePayload = z.infer<typeof FaqUpdatePayloadSchema>;
+/**
+ * FAQ fields (using BaseFaqSchema structure)
+ */
+export const FaqFields = {
+    faq: BaseFaqSchema.optional()
+} as const;
+export type FaqFieldsType = typeof FaqFields;

@@ -38,15 +38,7 @@ export const BaseIaDataSchema = z.object({
         .max(100, { message: 'zodError.common.iaData.category.max' })
         .optional()
 });
-
-/**
- * Type exports for the base IA Data schema
- */
 export type BaseIaData = z.infer<typeof BaseIaDataSchema>;
-
-// ----------------------------------------------------------------------------
-// Reusable IA payload schemas (for command inputs)
-// ----------------------------------------------------------------------------
 
 /**
  * IA data creation payload schema: only the core IA data fields without audit/lifecycle/admin fields
@@ -56,11 +48,10 @@ export const IaDataCreatePayloadSchema = BaseIaDataSchema.pick({
     content: true,
     category: true
 });
+export type IaDataCreatePayload = z.infer<typeof IaDataCreatePayloadSchema>;
 
 /**
  * IA data update payload schema: partial of the create payload
  */
 export const IaDataUpdatePayloadSchema = IaDataCreatePayloadSchema.partial();
-
-export type IaDataCreatePayload = z.infer<typeof IaDataCreatePayloadSchema>;
 export type IaDataUpdatePayload = z.infer<typeof IaDataUpdatePayloadSchema>;

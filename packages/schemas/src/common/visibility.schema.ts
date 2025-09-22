@@ -7,6 +7,7 @@ import { VisibilityEnumSchema } from '../enums/index.js';
 export const BaseVisibilityFields = {
     visibility: VisibilityEnumSchema
 } as const;
+export type BaseVisibilityFieldsType = typeof BaseVisibilityFields;
 
 /**
  * Visibility Schema - Complete visibility information
@@ -15,9 +16,4 @@ export const BaseVisibilityFields = {
 export const VisibilitySchema = z.object({
     ...BaseVisibilityFields
 });
-
-/**
- * Type exports for visibility schemas
- */
-export type BaseVisibilityFieldsType = typeof BaseVisibilityFields;
-export type Visibility = z.infer<typeof VisibilitySchema>;
+export type VisibilityType = z.infer<typeof VisibilitySchema>;

@@ -26,6 +26,7 @@ export const SeoSchema = z.object({
         )
         .optional()
 });
+export type Seo = z.infer<typeof SeoSchema>;
 
 /**
  * Base SEO fields
@@ -33,9 +34,3 @@ export const SeoSchema = z.object({
 export const BaseSeoFields = {
     seo: SeoSchema.optional()
 } as const;
-
-/**
- * Type exports for SEO schemas
- */
-export type BaseSeoFieldsType = typeof BaseSeoFields;
-export type Seo = z.infer<typeof SeoSchema>;

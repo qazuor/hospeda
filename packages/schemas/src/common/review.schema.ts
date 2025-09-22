@@ -28,9 +28,4 @@ export const BaseReviewFields = {
 export const ReviewSchema = z.object({
     ...BaseReviewFields
 });
-
-/**
- * Type exports for review schemas
- */
-export type BaseReviewFieldsType = typeof BaseReviewFields;
 export type Review = z.infer<typeof ReviewSchema>;

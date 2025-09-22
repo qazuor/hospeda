@@ -4,7 +4,6 @@ import { isValidLatitude, isValidLongitude } from '../utils/utils.js';
 /**
  * Coordinates Schema
  * Represents geographic coordinates with latitude and longitude
- * Matches CoordinatesType from @repo/types
  */
 export const CoordinatesSchema = z.object({
     lat: z
@@ -22,11 +21,11 @@ export const CoordinatesSchema = z.object({
             message: 'zodError.common.location.coordinates.long.invalidValue'
         })
 });
+export type CoordinatesType = z.infer<typeof CoordinatesSchema>;
 
 /**
  * Base Location Schema
  * Represents basic location information without full address details
- * Matches BaseLocationType from @repo/types
  */
 export const BaseLocationSchema = z.object({
     state: z
@@ -49,11 +48,11 @@ export const BaseLocationSchema = z.object({
         .max(50, { message: 'zodError.common.location.country.max' }),
     coordinates: CoordinatesSchema.optional()
 });
+export type BaseLocationType = z.infer<typeof BaseLocationSchema>;
 
 /**
  * Full Location Schema
  * Represents complete location information with full address details
- * Matches FullLocationType from @repo/types
  */
 export const FullLocationSchema = BaseLocationSchema.extend({
     street: z
@@ -103,6 +102,7 @@ export const FullLocationSchema = BaseLocationSchema.extend({
         .max(50, { message: 'zodError.common.location.department.max' })
         .optional()
 });
+export type FullLocationType = z.infer<typeof FullLocationSchema>;
 
 /**
  * Base location fields (using BaseLocationSchema structure)
@@ -110,6 +110,7 @@ export const FullLocationSchema = BaseLocationSchema.extend({
 export const BaseLocationFields = {
     location: BaseLocationSchema.optional()
 } as const;
+export type BaseLocationFieldsType = typeof BaseLocationFields;
 
 /**
  * Full location fields (using FullLocationSchema structure)
@@ -117,12 +118,4 @@ export const BaseLocationFields = {
 export const FullLocationFields = {
     location: FullLocationSchema.optional()
 } as const;
-
-/**
- * Type exports for location schemas
- */
-export type BaseLocationFieldsType = typeof BaseLocationFields;
 export type FullLocationFieldsType = typeof FullLocationFields;
-export type Coordinates = z.infer<typeof CoordinatesSchema>;
-export type BaseLocation = z.infer<typeof BaseLocationSchema>;
-export type FullLocation = z.infer<typeof FullLocationSchema>;
