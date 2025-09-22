@@ -15,9 +15,4 @@ export const BaseModerationFields = {
 export const ModerationSchema = z.object({
     ...BaseModerationFields
 });
-
-/**
- * Type exports for moderation schemas
- */
-export type BaseModerationFieldsType = typeof BaseModerationFields;
 export type Moderation = z.infer<typeof ModerationSchema>;
