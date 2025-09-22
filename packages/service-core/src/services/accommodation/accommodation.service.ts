@@ -1,5 +1,6 @@
 import { AccommodationFaqModel, AccommodationIaDataModel, AccommodationModel } from '@repo/db';
 import {
+    type Accommodation,
     type AccommodationByDestinationParams,
     AccommodationByDestinationParamsSchema,
     type AccommodationCreateInput,
@@ -24,28 +25,28 @@ import {
     type AccommodationIaDataSingleOutput,
     type AccommodationIaDataUpdateInput,
     AccommodationIaDataUpdateInputSchema,
+    type AccommodationIdType,
+    type AccommodationListWrapper,
     type AccommodationSearchInput,
     AccommodationSearchInputSchema,
+    type AccommodationSearchResult,
     type AccommodationStatsOutput,
-    type AccommodationStatsParams,
-    AccommodationStatsParamsSchema,
+    type AccommodationStatsWrapper,
     type AccommodationSummaryParams,
     AccommodationSummaryParamsSchema,
+    type AccommodationSummaryWrapper,
     type AccommodationTopRatedParams,
     AccommodationTopRatedParamsSchema,
     AccommodationUpdateInputSchema,
+    type CountResponse,
+    type IdOrSlugParams,
+    IdOrSlugParamsSchema,
+    ServiceErrorCode,
     type Success,
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema
 } from '@repo/schemas';
 import { generateSlug } from '@repo/service-core/services/accommodation/accommodation.helpers';
-import type {
-    AccommodationId,
-    AccommodationRatingType,
-    AccommodationSummaryType,
-    AccommodationType
-} from '@repo/types';
-import { ServiceErrorCode } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -74,7 +75,7 @@ import {
  * leverage a standardized service pipeline (validation, permissions, hooks, etc.).
  */
 export class AccommodationService extends BaseCrudService<
-    AccommodationType,
+    Accommodation,
     AccommodationModel,
     typeof AccommodationCreateInputSchema,
     typeof AccommodationUpdateInputSchema,
@@ -138,31 +139,31 @@ export class AccommodationService extends BaseCrudService<
     /**
      * @inheritdoc
      */
-    protected _canUpdate(actor: Actor, entity: AccommodationType): void {
+    protected _canUpdate(actor: Actor, entity: Accommodation): void {
         checkCanUpdate(actor, entity);
     }
     /**
      * @inheritdoc
      */
-    protected _canSoftDelete(actor: Actor, entity: AccommodationType): void {
+    protected _canSoftDelete(actor: Actor, entity: Accommodation): void {
         checkCanSoftDelete(actor, entity);
     }
     /**
      * @inheritdoc
      */
-    protected _canHardDelete(actor: Actor, entity: AccommodationType): void {
+    protected _canHardDelete(actor: Actor, entity: Accommodation): void {
         checkCanHardDelete(actor, entity);
     }
     /**
      * @inheritdoc
      */
-    protected _canRestore(actor: Actor, entity: AccommodationType): void {
+    protected _canRestore(actor: Actor, entity: Accommodation): void {
         checkCanRestore(actor, entity);
     }
     /**
      * @inheritdoc
      */
-    protected _canView(actor: Actor, entity: AccommodationType): void {
+    protected _canView(actor: Actor, entity: Accommodation): void {
         checkCanView(actor, entity);
     }
     /**
@@ -194,8 +195,8 @@ export class AccommodationService extends BaseCrudService<
      */
     protected _canUpdateVisibility(
         actor: Actor,
-        entity: AccommodationType,
-        _newVisibility: AccommodationType['visibility']
+        entity: Accommodation,
+        _newVisibility: Accommodation['visibility']
     ): void {
         checkCanUpdate(actor, entity);
     }
@@ -209,12 +210,12 @@ export class AccommodationService extends BaseCrudService<
     protected async _beforeCreate(
         data: AccommodationCreateInput,
         _actor: Actor
-    ): Promise<Partial<AccommodationType>> {
+    ): Promise<Partial<Accommodation>> {
         const slug = await generateSlug(data.type as string, data.name as string);
-        return { ...data, slug } as unknown as Partial<AccommodationType>;
+        return { ...data, slug } as unknown as Partial<Accommodation>;
     }
 
-    protected async _afterCreate(entity: AccommodationType): Promise<AccommodationType> {
+    protected async _afterCreate(entity: Accommodation): Promise<Accommodation> {
         if (entity.destinationId) {
             await this.destinationService.updateAccommodationsCount(entity.destinationId);
         }
@@ -231,7 +232,7 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor
-    ): Promise<{ count: number }> {
+    ): Promise<CountResponse> {
         if (this._lastDeletedDestinationId) {
             await this.destinationService.updateAccommodationsCount(this._lastDeletedDestinationId);
             this._lastDeletedDestinationId = undefined;
@@ -249,7 +250,7 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor
-    ): Promise<{ count: number }> {
+    ): Promise<CountResponse> {
         if (this._lastDeletedDestinationId) {
             await this.destinationService.updateAccommodationsCount(this._lastDeletedDestinationId);
             this._lastDeletedDestinationId = undefined;
@@ -283,34 +284,80 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Search accommodations for list display with destination and owner relations
+     * Search accommodations with destination and owner relations for list display.
+     * This method follows the complete service pipeline with validation, permissions,
+     * normalization, and lifecycle hooks while providing enriched data for UI lists.
+     *
+     * @param actor - The actor performing the action
+     * @param params - Search parameters including filters and pagination
+     * @returns Accommodations with related destination and owner data
      */
-    public async searchForList(
+    public async searchWithRelations(
         actor: Actor,
         params: AccommodationSearchInput
-    ): Promise<{
-        items: Array<
-            Omit<AccommodationType, 'destination' | 'owner'> & {
-                destination?: { id: string; name: string; slug: string };
-                owner?: { id: string; displayName: string };
+    ): Promise<ServiceOutput<AccommodationSearchResult>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'searchWithRelations',
+            input: { actor, ...params },
+            schema: this.searchSchema,
+            execute: async (validatedParams, validatedActor) => {
+                // 1. Permission Check
+                await this._canSearch(validatedActor);
+
+                // 2. Normalization
+                const normalizedParams = this.normalizers?.search
+                    ? await this.normalizers.search(validatedParams)
+                    : validatedParams;
+
+                // 3. Lifecycle Hook: Before Search
+                const processedParams = await this._beforeSearch(normalizedParams, validatedActor);
+
+                // 4. Execute search with relations
+                const page = processedParams.page ?? 1;
+                const pageSize = processedParams.pageSize ?? 10;
+
+                // Convert AccommodationSearchInput to model parameters format
+                const modelParams = {
+                    page,
+                    pageSize,
+                    sortBy: processedParams.sortBy,
+                    sortOrder: processedParams.sortOrder,
+                    q: processedParams.q,
+                    type: processedParams.type,
+                    minPrice: processedParams.minPrice,
+                    maxPrice: processedParams.maxPrice,
+                    destinationId: processedParams.destinationId,
+                    amenities: processedParams.amenities,
+                    isFeatured: processedParams.isFeatured,
+                    isAvailable: processedParams.isAvailable
+                };
+
+                const result = await this.model.searchWithRelations(modelParams);
+
+                // 5. Lifecycle Hook: After Search (adapt the result format)
+                const adaptedResult = {
+                    items: result.items.map((item) => item as Accommodation),
+                    total: result.total,
+                    page,
+                    pageSize
+                };
+
+                await this._afterSearch(adaptedResult, validatedActor);
+
+                // 6. Return in AccommodationSearchResult format
+                return {
+                    data: result.items,
+                    pagination: {
+                        page,
+                        pageSize,
+                        total: result.total,
+                        totalPages: Math.ceil(result.total / pageSize),
+                        hasNextPage: page * pageSize < result.total,
+                        hasPreviousPage: page > 1
+                    }
+                };
             }
-        >;
-        total: number;
-    }> {
-        this._canSearch(actor);
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
-
-        const result = await this.model.searchWithRelations({
-            filters,
-            pagination: { page, pageSize }
         });
-
-        return {
-            items: result.items,
-            total: result.total
-        };
     }
 
     /**
@@ -323,7 +370,7 @@ export class AccommodationService extends BaseCrudService<
     public async getTopRated(
         actor: Actor,
         params: AccommodationTopRatedParams
-    ): Promise<ServiceOutput<AccommodationType[]>> {
+    ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRated',
             input: { ...params, actor },
@@ -332,15 +379,18 @@ export class AccommodationService extends BaseCrudService<
                 this._canList(actor);
                 const items = await this.model.findTopRated({
                     limit: validated.limit,
-                    destinationId: validated.destinationId,
-                    type: validated.type,
-                    onlyFeatured: validated.onlyFeatured
+                    destinationId: validated.destinationId
+                    // type: validated.type, // Field not available in schema
+                    // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
-                return (
+
+                const accommodations =
                     items.map(
-                        (item) => normalizeAccommodationOutput(item, actor) as AccommodationType
-                    ) ?? []
-                );
+                        (item) => normalizeAccommodationOutput(item, actor) as Accommodation
+                    ) ?? [];
+
+                // Return wrapped in AccommodationListWrapper format
+                return { accommodations };
             }
         });
     }
@@ -349,20 +399,19 @@ export class AccommodationService extends BaseCrudService<
      * Gets a summary for a specific accommodation.
      * @param actor - The actor performing the action
      * @param data - The input object containing id or slug
-     * @returns The accommodation summary or null
+     * @returns The accommodation summary wrapped in an object
      */
     public async getSummary(
         actor: Actor,
         data: AccommodationSummaryParams
-    ): Promise<ServiceOutput<AccommodationSummaryType | null>> {
+    ): Promise<ServiceOutput<AccommodationSummaryWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getSummary',
             input: { ...data, actor },
             schema: AccommodationSummaryParamsSchema,
             execute: async (validated, actor) => {
-                const { idOrSlug } = validated;
-                const { field, value } = parseIdOrSlug(idOrSlug);
-                const entityResult = await this.getByField(actor, field, value as string);
+                const { id } = validated;
+                const entityResult = await this.getByField(actor, 'id', id);
                 if (entityResult.error) {
                     throw new ServiceError(
                         entityResult.error.code,
@@ -377,58 +426,74 @@ export class AccommodationService extends BaseCrudService<
                 this._canView(actor, entity);
                 if (!entity.location) {
                     this.logger.warn(`Accommodation ${entity.id} has no location for summary.`);
-                    return null;
+                    return { accommodation: null };
                 }
-                return {
+                const accommodation = {
                     id: entity.id,
+                    type: entity.type,
+                    ownerId: entity.ownerId,
                     slug: entity.slug,
                     name: entity.name,
-                    type: entity.type,
-                    media: entity.media,
-                    location: entity.location,
                     isFeatured: entity.isFeatured,
+                    reviewsCount: 0,
                     averageRating: 0,
-                    reviewsCount: 0
+                    media: entity.media,
+                    location: entity.location
                 };
+                return { accommodation };
             }
         });
     }
 
     /**
-     * Gets stats for a specific accommodation.
+     * Gets aggregated statistics for a single accommodation
      * @param actor - The actor performing the action
-     * @param data - The input object containing id or slug
-     * @returns The stats object or null
+     * @param data - The input object containing accommodation id or slug
+     * @returns The accommodation statistics wrapped in a stats object
      */
     public async getStats(
         actor: Actor,
-        data: AccommodationStatsParams
-    ): Promise<ServiceOutput<AccommodationStatsOutput>> {
+        data: IdOrSlugParams
+    ): Promise<ServiceOutput<AccommodationStatsWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getStats',
             input: { ...data, actor },
-            schema: AccommodationStatsParamsSchema,
-            execute: async (validated, actor) => {
-                const { idOrSlug } = validated;
-                const { field, value } = parseIdOrSlug(idOrSlug);
-                const entityResult = await this.getByField(actor, field, value as string);
-                if (entityResult.error) {
+            schema: IdOrSlugParamsSchema,
+            execute: async (validatedParams, validatedActor) => {
+                // Use utility to determine if it's ID or slug
+                const { field } = parseIdOrSlug(validatedParams.idOrSlug);
+
+                // Get accommodation using the appropriate base method
+                const result = await this.getByField(
+                    validatedActor,
+                    field,
+                    validatedParams.idOrSlug
+                );
+
+                if (result.error) {
                     throw new ServiceError(
-                        entityResult.error.code,
-                        entityResult.error.message,
-                        entityResult.error.details
+                        result.error.code as ServiceErrorCode,
+                        result.error.message
                     );
                 }
-                if (!entityResult.data) {
+
+                if (!result.data) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                const entity = entityResult.data;
-                this._canView(actor, entity);
-                return {
-                    reviewsCount: entity.reviewsCount ?? 0,
-                    averageRating: entity.averageRating ?? 0,
-                    rating: entity.rating
+
+                // Create the stats object following AccommodationStatsSchema format
+                const stats: AccommodationStatsOutput = {
+                    total: 1, // Single accommodation
+                    totalFeatured: result.data.isFeatured ? 1 : 0,
+                    averagePrice: result.data.price?.price,
+                    averageRating: result.data.averageRating ?? 0,
+                    totalByType: {
+                        [result.data.type]: 1
+                    }
                 };
+
+                // Return wrapped in AccommodationStatsWrapper format
+                return { stats };
             }
         });
     }
@@ -437,12 +502,12 @@ export class AccommodationService extends BaseCrudService<
      * Gets accommodations by destination.
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId
-     * @returns The list of accommodations
+     * @returns The list of accommodations wrapped in accommodations array
      */
     public async getByDestination(
         actor: Actor,
         data: AccommodationByDestinationParams
-    ): Promise<ServiceOutput<AccommodationType[]>> {
+    ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByDestination',
             input: { ...data, actor },
@@ -452,11 +517,15 @@ export class AccommodationService extends BaseCrudService<
                 const result = await this.model.findAll({
                     destinationId: validated.destinationId
                 });
-                return Array.isArray(result.items)
+
+                const accommodations = Array.isArray(result.items)
                     ? result.items.map(
-                          (item) => normalizeAccommodationOutput(item, actor) as AccommodationType
+                          (item) => normalizeAccommodationOutput(item, actor) as Accommodation
                       )
                     : [];
+
+                // Return wrapped in AccommodationListWrapper format
+                return { accommodations };
             }
         });
     }
@@ -464,20 +533,40 @@ export class AccommodationService extends BaseCrudService<
     /**
      * Gets top-rated accommodations by destination.
      * @param actor - The actor performing the action
-     * @param data - The input object containing destinationId (optional)
-     * @returns The list of top-rated accommodations
+     * @param data - The input object containing destinationId (required)
+     * @returns The list of top-rated accommodations for the destination
      */
     public async getTopRatedByDestination(
         actor: Actor,
         data: AccommodationTopRatedParams
-    ): Promise<ServiceOutput<never>> {
+    ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRatedByDestination',
             input: { ...data, actor },
             schema: AccommodationTopRatedParamsSchema,
-            execute: async (_validated, actor) => {
+            execute: async (validated, actor) => {
                 this._canList(actor);
-                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+
+                // For this method, destinationId is required
+                if (!validated.destinationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'destinationId is required for getTopRatedByDestination'
+                    );
+                }
+
+                const items = await this.model.findTopRated({
+                    limit: validated.limit,
+                    destinationId: validated.destinationId
+                });
+
+                const accommodations =
+                    items.map(
+                        (item) => normalizeAccommodationOutput(item, actor) as Accommodation
+                    ) ?? [];
+
+                // Return wrapped in AccommodationListWrapper format
+                return { accommodations };
             }
         });
     }
@@ -505,7 +594,7 @@ export class AccommodationService extends BaseCrudService<
                 const faqModel = new AccommodationFaqModel();
                 const faqToCreate = {
                     ...validated.faq,
-                    accommodationId: validated.accommodationId as AccommodationId
+                    accommodationId: validated.accommodationId as AccommodationIdType
                 };
                 const createdFaq = await faqModel.create(faqToCreate);
                 return { faq: createdFaq };
@@ -579,7 +668,7 @@ export class AccommodationService extends BaseCrudService<
                     { id: validated.faqId },
                     {
                         ...validated.faq,
-                        accommodationId: validated.accommodationId as AccommodationId
+                        accommodationId: validated.accommodationId as AccommodationIdType
                     }
                 );
                 if (!updatedFaq) {
@@ -642,7 +731,7 @@ export class AccommodationService extends BaseCrudService<
                 const iaDataModel = new AccommodationIaDataModel();
                 const iaDataToCreate = {
                     ...validated.iaData,
-                    accommodationId: validated.accommodationId as AccommodationId
+                    accommodationId: validated.accommodationId as AccommodationIdType
                 };
                 const createdIaData = await iaDataModel.create(iaDataToCreate);
                 return { iaData: createdIaData };
@@ -716,7 +805,7 @@ export class AccommodationService extends BaseCrudService<
                     { id: validated.iaDataId },
                     {
                         ...validated.iaData,
-                        accommodationId: validated.accommodationId as AccommodationId
+                        accommodationId: validated.accommodationId as AccommodationIdType
                     }
                 );
                 if (!updatedIaData) {
@@ -763,30 +852,46 @@ export class AccommodationService extends BaseCrudService<
      * Gets accommodations by owner.
      * @param input - Input object for owner query.
      * @param actor - The actor performing the action.
-     * @returns Output object (to be defined)
+     * @returns List of accommodations owned by the specified user
      */
-    public async getByOwner(input: WithOwnerIdParams, actor: Actor): Promise<ServiceOutput<never>> {
+    public async getByOwner(
+        input: WithOwnerIdParams,
+        actor: Actor
+    ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByOwner',
             input: { actor: actor, ...input },
             schema: WithOwnerIdParamsSchema,
-            execute: async () => {
-                throw new ServiceError(ServiceErrorCode.NOT_IMPLEMENTED, 'Not implemented');
+            execute: async (validated, actor) => {
+                this._canList(actor);
+
+                const result = await this.model.findAll({
+                    ownerId: validated.ownerId
+                });
+
+                const accommodations = Array.isArray(result.items)
+                    ? result.items.map(
+                          (item) => normalizeAccommodationOutput(item, actor) as Accommodation
+                      )
+                    : [];
+
+                // Return wrapped in AccommodationListWrapper format
+                return { accommodations };
             }
         });
     }
 
     /**
-     * Updates the stats (reviewsCount, averageRating, rating) for the accommodation from a review service.
+     * Updates the stats (reviewsCount, averageRating) for the accommodation from a review service.
      */
     async updateStatsFromReview(
         accommodationId: string,
-        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingType }
+        stats: { reviewsCount: number; averageRating: number }
     ): Promise<void> {
         await this.model.updateById(accommodationId, {
             reviewsCount: stats.reviewsCount,
-            averageRating: stats.averageRating,
-            rating: stats.rating
+            averageRating: stats.averageRating
+            // rating: stats.rating // Field not available in schema
         });
     }
 }

@@ -1,29 +1,12 @@
-import type { AccommodationCreateInput, AccommodationUpdateInput } from '@repo/schemas';
-import type { AccommodationType } from '@repo/types';
-import { VisibilityEnum } from '@repo/types';
+import type {
+    AccommodationCreateInput,
+    AccommodationUpdateInput,
+    AccommodationWithRelations,
+    NormalizedAccommodationType
+} from '@repo/schemas';
+import { VisibilityEnum } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
-
-/**
- * Simplified destination type for API responses
- */
-type SimplifiedDestination = {
-    name: string;
-    slug: string;
-};
-
-/**
- * Normalized accommodation type for API responses
- * Similar to AccommodationType but with simplified relationships
- */
-type NormalizedAccommodationType = Omit<
-    AccommodationType,
-    'amenities' | 'features' | 'destination'
-> & {
-    amenities?: string[];
-    features?: string[];
-    destination?: SimplifiedDestination;
-};
 
 /**
  * Normalizes the input data for creating an accommodation.
@@ -123,7 +106,7 @@ export const normalizeViewInput = (
  * @returns The normalized accommodation data.
  */
 export const normalizeAccommodationOutput = (
-    accommodation: AccommodationType,
+    accommodation: AccommodationWithRelations,
     _actor: Actor
 ): NormalizedAccommodationType => {
     return {

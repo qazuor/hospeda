@@ -1,5 +1,5 @@
-import type { FeatureType } from '@repo/types';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import type { Feature } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
@@ -19,7 +19,7 @@ export const checkCanCreateFeature = (actor: Actor): void => {
 /**
  * Checks if the actor can update a feature.
  */
-export const checkCanUpdateFeature = (actor: Actor, _feature: FeatureType): void => {
+export const checkCanUpdateFeature = (actor: Actor, _feature: Feature): void => {
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -31,7 +31,7 @@ export const checkCanUpdateFeature = (actor: Actor, _feature: FeatureType): void
 /**
  * Checks if the actor can delete a feature.
  */
-export const checkCanDeleteFeature = (actor: Actor, _feature: FeatureType): void => {
+export const checkCanDeleteFeature = (actor: Actor, _feature: Feature): void => {
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -43,7 +43,7 @@ export const checkCanDeleteFeature = (actor: Actor, _feature: FeatureType): void
 /**
  * Checks if the actor can view a feature. All users can view features (public).
  */
-export const checkCanViewFeature = (_actor: Actor, _feature: FeatureType): void => {
+export const checkCanViewFeature = (_actor: Actor, _feature: Feature): void => {
     return;
 };
 

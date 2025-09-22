@@ -1,5 +1,5 @@
-import type { AccommodationCreateInput } from '@repo/schemas';
-import { type AccommodationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
+import type { Accommodation, AccommodationCreateInput } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { checkGenericPermission, hasPermission } from '../../utils';
@@ -40,7 +40,7 @@ export function checkCanCreate(actor: Actor, _data: AccommodationCreateInput): v
  * @param entity The accommodation entity to be updated.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanUpdate(actor: Actor, entity: AccommodationType): void {
+export function checkCanUpdate(actor: Actor, entity: Accommodation): void {
     checkGenericPermission(
         actor,
         PermissionEnum.ACCOMMODATION_UPDATE_ANY,
@@ -58,7 +58,7 @@ export function checkCanUpdate(actor: Actor, entity: AccommodationType): void {
  * @param entity The accommodation entity to be soft-deleted.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanSoftDelete(actor: Actor, entity: AccommodationType): void {
+export function checkCanSoftDelete(actor: Actor, entity: Accommodation): void {
     checkGenericPermission(
         actor,
         PermissionEnum.ACCOMMODATION_DELETE_ANY,
@@ -76,7 +76,7 @@ export function checkCanSoftDelete(actor: Actor, entity: AccommodationType): voi
  * @param _entity The accommodation entity to be deleted (unused, for signature consistency).
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanHardDelete(actor: Actor, _entity: AccommodationType): void {
+export function checkCanHardDelete(actor: Actor, _entity: Accommodation): void {
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_HARD_DELETE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -93,7 +93,7 @@ export function checkCanHardDelete(actor: Actor, _entity: AccommodationType): vo
  * @param entity The accommodation entity to be restored.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanRestore(actor: Actor, entity: AccommodationType): void {
+export function checkCanRestore(actor: Actor, entity: Accommodation): void {
     checkGenericPermission(
         actor,
         PermissionEnum.ACCOMMODATION_RESTORE_ANY,
@@ -111,7 +111,7 @@ export function checkCanRestore(actor: Actor, entity: AccommodationType): void {
  * @param entity The accommodation entity to be viewed.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanView(actor: Actor, entity: AccommodationType): void {
+export function checkCanView(actor: Actor, entity: Accommodation): void {
     if (
         entity.visibility === 'PUBLIC' ||
         (entity.visibility === 'PRIVATE' &&
