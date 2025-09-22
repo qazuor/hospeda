@@ -1,11 +1,11 @@
-import type { DestinationAttractionType } from '@repo/types';
+import type { DestinationAttractionRelation } from '@repo/schemas';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
-export class RDestinationAttractionModel extends BaseModel<DestinationAttractionType> {
+export class RDestinationAttractionModel extends BaseModel<DestinationAttractionRelation> {
     protected table = rDestinationAttraction;
     protected entityName = 'rDestinationAttraction';
 
@@ -18,7 +18,7 @@ export class RDestinationAttractionModel extends BaseModel<DestinationAttraction
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean>
-    ): Promise<DestinationAttractionType | null> {
+    ): Promise<DestinationAttractionRelation | null> {
         const db = getDb();
         try {
             const withObj: Record<string, true> = {};
@@ -32,7 +32,7 @@ export class RDestinationAttractionModel extends BaseModel<DestinationAttraction
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as DestinationAttractionType | null;
+                return result as DestinationAttractionRelation | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
