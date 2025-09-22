@@ -11,7 +11,7 @@ import type { BaseModel } from '@repo/db';
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
-import { RoleEnum, ServiceErrorCode } from '@repo/types';
+import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Actor } from '../../../src/types';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';

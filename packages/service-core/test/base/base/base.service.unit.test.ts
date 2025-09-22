@@ -1,4 +1,4 @@
-import { RoleEnum, ServiceErrorCode } from '@repo/types';
+import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { BaseService } from '../../../src/base/base.service';
