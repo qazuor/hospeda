@@ -1,22 +1,27 @@
-import type { EventOrganizerCreateInput } from '@repo/schemas';
-import type { EventOrganizerId, EventOrganizerType, UserId } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types';
+import type {
+    EventOrganizer,
+    EventOrganizerCreateInput,
+    EventOrganizerIdType,
+    UserIdType
+} from '@repo/schemas';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 export const createMockEventOrganizer = (
-    overrides: Partial<EventOrganizerType> = {}
-): EventOrganizerType => ({
-    id: getMockId('event') as EventOrganizerId,
+    overrides: Partial<EventOrganizer> = {}
+): EventOrganizer => ({
+    id: getMockId('event') as EventOrganizerIdType,
     name: 'Test Organizer',
+    description: undefined,
     logo: 'https://example.com/logo.png',
     contactInfo: undefined,
-    social: undefined,
+    socialNetworks: undefined,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     adminInfo: undefined,
     createdAt: new Date(),
     updatedAt: new Date(),
-    createdById: getMockId('user') as UserId,
-    updatedById: getMockId('user') as UserId,
+    createdById: getMockId('user') as UserIdType,
+    updatedById: getMockId('user') as UserIdType,
     deletedAt: undefined,
     deletedById: undefined,
     ...overrides

@@ -1,17 +1,17 @@
-import type { FeatureId, FeatureType, UserId } from '@repo/types';
-import { LifecycleStatusEnum } from '@repo/types';
+import type { Feature, FeatureIdType, UserIdType } from '@repo/schemas';
+import { LifecycleStatusEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 /**
- * Factory builder for FeatureType, for use in tests.
+ * Factory builder for Feature, for use in tests.
  * Ensures all required fields are present and provides sensible defaults.
  */
 export class FeatureFactoryBuilder {
-    private feature: FeatureType;
+    private feature: Feature;
 
     constructor() {
         this.feature = {
-            id: getMockId('feature') as FeatureId,
+            id: getMockId('feature') as FeatureIdType,
             slug: 'test-feature',
             name: 'Test Feature',
             description: 'A test feature',
@@ -20,8 +20,8 @@ export class FeatureFactoryBuilder {
             isFeatured: false,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as UserId,
-            updatedById: getMockId('user') as UserId,
+            createdById: getMockId('user') as UserIdType,
+            updatedById: getMockId('user') as UserIdType,
             deletedAt: undefined,
             deletedById: undefined,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -29,16 +29,16 @@ export class FeatureFactoryBuilder {
         };
     }
 
-    with(values: Partial<FeatureType>): FeatureFactoryBuilder {
+    with(values: Partial<Feature>): FeatureFactoryBuilder {
         this.feature = { ...this.feature, ...values };
         return this;
     }
 
-    build(): FeatureType {
+    build(): Feature {
         return { ...this.feature };
     }
 
-    static create(values: Partial<FeatureType> = {}): FeatureType {
+    static create(values: Partial<Feature> = {}): Feature {
         return new FeatureFactoryBuilder().with(values).build();
     }
 }
