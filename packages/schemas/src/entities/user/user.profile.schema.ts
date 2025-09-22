@@ -18,3 +18,8 @@ export const UserProfileSchema = z.object({
         .max(100, { message: 'zodError.user.profile.occupation.max' })
         .optional()
 });
+
+/**
+ * Type export for User Profile
+ */
+export type UserProfile = z.infer<typeof UserProfileSchema>;
