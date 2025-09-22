@@ -1,22 +1,16 @@
 import { z } from 'zod';
-import {
-    IdOrSlugParamsSchema,
-    WithDestinationIdParamsSchema,
-    WithLimitParamsSchema
-} from '../../common/params.schema.js';
-import { BaseSearchSchema, PaginationSchema } from '../../common/search.schemas.js';
+import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
 /**
- * Accommodation Query Schemas
+ * Accommodation Query Schemas - Standardized Implementation
  *
- * This file contains all schemas related to querying accommodations:
- * - List (input/output/item)
- * - Search (input/output/result)
- * - Summary
- * - Stats
- * - Filters
+ * This file contains all schemas related to querying accommodations following the unified standard:
+ * - Pagination: page/pageSize pattern
+ * - Sorting: sortBy/sortOrder with 'asc'/'desc' values
+ * - Search: 'q' field for text search
+ * - Filters: entity-specific filters
  */
 
 // ============================================================================
@@ -25,456 +19,239 @@ import { AccommodationSchema } from './accommodation.schema.js';
 
 /**
  * Schema for accommodation-specific filters
- * Used in list and search operations
  */
 export const AccommodationFiltersSchema = z.object({
     // Basic filters
     type: AccommodationTypeEnumSchema.optional(),
-    isFeatured: z
-        .boolean({
-            message: 'zodError.accommodation.filters.isFeatured.invalidType'
-        })
-        .optional(),
+    isFeatured: z.boolean().optional(),
 
     // Price range filters
-    minPrice: z
-        .number({
-            message: 'zodError.accommodation.filters.minPrice.invalidType'
-        })
-        .min(0, { message: 'zodError.accommodation.filters.minPrice.min' })
-        .optional(),
-
-    maxPrice: z
-        .number({
-            message: 'zodError.accommodation.filters.maxPrice.invalidType'
-        })
-        .min(0, { message: 'zodError.accommodation.filters.maxPrice.min' })
-        .optional(),
-
+    minPrice: z.number().min(0).optional(),
+    maxPrice: z.number().min(0).optional(),
     currency: PriceCurrencyEnumSchema.optional(),
 
+    // Date filters
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+
     // Location filters
-    destinationId: z
-        .string({
-            message: 'zodError.accommodation.filters.destinationId.invalidType'
-        })
-        .uuid({ message: 'zodError.accommodation.filters.destinationId.uuid' })
-        .optional(),
+    destinationId: z.string().uuid().optional(),
+    country: z.string().length(2).optional(),
+    city: z.string().optional(),
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
+    radius: z.number().positive().optional(), // in kilometers
 
-    // Location radius search
-    latitude: z
-        .number({
-            message: 'zodError.accommodation.filters.latitude.invalidType'
-        })
-        .min(-90, { message: 'zodError.accommodation.filters.latitude.min' })
-        .max(90, { message: 'zodError.accommodation.filters.latitude.max' })
-        .optional(),
+    // Capacity filters
+    minGuests: z.number().int().min(1).optional(),
+    maxGuests: z.number().int().min(1).optional(),
+    minBedrooms: z.number().int().min(0).optional(),
+    maxBedrooms: z.number().int().min(0).optional(),
+    minBathrooms: z.number().int().min(0).optional(),
+    maxBathrooms: z.number().int().min(0).optional(),
 
-    longitude: z
-        .number({
-            message: 'zodError.accommodation.filters.longitude.invalidType'
-        })
-        .min(-180, { message: 'zodError.accommodation.filters.longitude.min' })
-        .max(180, { message: 'zodError.accommodation.filters.longitude.max' })
-        .optional(),
+    // Rating filters
+    minRating: z.number().min(0).max(5).optional(),
+    maxRating: z.number().min(0).max(5).optional(),
 
-    radius: z
-        .number({
-            message: 'zodError.accommodation.filters.radius.invalidType'
-        })
-        .min(0, { message: 'zodError.accommodation.filters.radius.min' })
-        .max(1000, { message: 'zodError.accommodation.filters.radius.max' })
-        .optional(),
+    // Amenities filter
+    amenities: z.array(z.string().uuid()).optional(),
 
-    // Owner filter
-    ownerId: z
-        .string({
-            message: 'zodError.accommodation.filters.ownerId.invalidType'
-        })
-        .uuid({ message: 'zodError.accommodation.filters.ownerId.uuid' })
-        .optional(),
+    // Host filter
+    hostId: z.string().uuid().optional(),
 
-    // Rating filter
-    minRating: z
-        .number({
-            message: 'zodError.accommodation.filters.minRating.invalidType'
-        })
-        .min(0, { message: 'zodError.accommodation.filters.minRating.min' })
-        .max(5, { message: 'zodError.accommodation.filters.minRating.max' })
-        .optional(),
-
-    // Amenities and features (array of IDs)
-    amenities: z
-        .array(z.string().uuid({ message: 'zodError.accommodation.filters.amenities.item.uuid' }))
-        .optional(),
-
-    features: z
-        .array(z.string().uuid({ message: 'zodError.accommodation.filters.features.item.uuid' }))
-        .optional(),
-
-    // Tags filter
-    tags: z
-        .array(z.string().uuid({ message: 'zodError.accommodation.filters.tags.item.uuid' }))
-        .optional()
+    // Availability filters
+    checkIn: z.date().optional(),
+    checkOut: z.date().optional(),
+    isAvailable: z.boolean().optional()
 });
 
-// ============================================================================
-// LIST SCHEMAS
-// ============================================================================
-
-/**
- * Schema for accommodation list input parameters
- * Includes pagination and filters
- */
-export const AccommodationListInputSchema = PaginationSchema.extend({
-    filters: AccommodationFiltersSchema.optional()
-});
-
-/**
- * Schema for individual accommodation items in lists
- * Contains essential fields for list display
- */
-export const AccommodationListItemSchema = AccommodationSchema.pick({
-    id: true,
-    slug: true,
-    name: true,
-    summary: true,
-    type: true,
-    isFeatured: true,
-    location: true,
-    media: true,
-    rating: true,
-    price: true,
-    createdAt: true,
-    updatedAt: true
-});
-
-/**
- * Schema for accommodation list output
- * Uses generic paginated response with list items
- */
-export const AccommodationListOutputSchema = z.object({
-    items: z.array(AccommodationListItemSchema),
-    pagination: z.object({
-        page: z.number().min(1),
-        pageSize: z.number().min(1).max(100),
-        total: z.number().min(0),
-        totalPages: z.number().min(0)
-    })
-});
+// Type: Filters
+export type AccommodationFilters = z.infer<typeof AccommodationFiltersSchema>;
 
 // ============================================================================
 // SEARCH SCHEMAS
 // ============================================================================
 
 /**
- * Schema for accommodation search input parameters
- * Extends base search with accommodation-specific filters
+ * Standard accommodation search schema
  */
-export const AccommodationSearchInputSchema = BaseSearchSchema.extend({
-    filters: AccommodationFiltersSchema.optional(),
-    query: z
-        .string({
-            message: 'zodError.accommodation.search.query.invalidType'
-        })
-        .min(1, { message: 'zodError.accommodation.search.query.min' })
-        .max(100, { message: 'zodError.accommodation.search.query.max' })
-        .optional()
+export const AccommodationSearchSchema = BaseSearchSchema.extend({
+    // Entity-specific filters
+    type: AccommodationTypeEnumSchema.optional(),
+    isFeatured: z.boolean().optional(),
+    minPrice: z.number().min(0).optional(),
+    maxPrice: z.number().min(0).optional(),
+    currency: PriceCurrencyEnumSchema.optional(),
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+    destinationId: z.string().uuid().optional(),
+    country: z.string().length(2).optional(),
+    city: z.string().optional(),
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
+    radius: z.number().positive().optional(),
+    minGuests: z.number().int().min(1).optional(),
+    maxGuests: z.number().int().min(1).optional(),
+    minBedrooms: z.number().int().min(0).optional(),
+    maxBedrooms: z.number().int().min(0).optional(),
+    minBathrooms: z.number().int().min(0).optional(),
+    maxBathrooms: z.number().int().min(0).optional(),
+    minRating: z.number().min(0).max(5).optional(),
+    maxRating: z.number().min(0).max(5).optional(),
+    amenities: z.array(z.string().uuid()).optional(),
+    hostId: z.string().uuid().optional(),
+    checkIn: z.date().optional(),
+    checkOut: z.date().optional(),
+    isAvailable: z.boolean().optional()
 });
 
-/**
- * Schema for individual accommodation search results
- * Extends list item with search score
- */
-export const AccommodationSearchResultSchema = AccommodationListItemSchema.extend({
-    score: z
-        .number({
-            message: 'zodError.accommodation.search.score.invalidType'
-        })
-        .min(0, { message: 'zodError.accommodation.search.score.min' })
-        .max(1, { message: 'zodError.accommodation.search.score.max' })
-        .optional()
-});
+// Type: Search Input
+export type AccommodationSearch = z.infer<typeof AccommodationSearchSchema>;
+export type AccommodationSearchInput = z.infer<typeof AccommodationSearchSchema>;
 
 /**
- * Schema for accommodation search output
- * Uses generic paginated response with search results
+ * Standard accommodation search result schema
  */
-export const AccommodationSearchOutputSchema = z.object({
-    items: z.array(AccommodationSearchResultSchema),
-    pagination: z.object({
-        page: z.number().min(1),
-        pageSize: z.number().min(1).max(100),
-        total: z.number().min(0),
-        totalPages: z.number().min(0)
-    }),
-    searchInfo: z
-        .object({
-            query: z.string().optional(),
-            executionTime: z.number().min(0).optional(),
-            totalResults: z.number().min(0)
-        })
-        .optional()
-});
+export const AccommodationSearchResultSchema = PaginationResultSchema(AccommodationSchema);
+
+// Type: Search Result
+export type AccommodationSearchResult = z.infer<typeof AccommodationSearchResultSchema>;
 
 // ============================================================================
-// SUMMARY SCHEMA
+// LIST ITEM SCHEMA
 // ============================================================================
 
 /**
- * Schema for accommodation summary
- * Contains essential information for quick display
+ * Schema for accommodation list items (public-safe fields)
+ */
+export const AccommodationListItemSchema = AccommodationSchema.pick({
+    id: true,
+    name: true,
+    slug: true,
+    type: true,
+    description: true,
+    price: true,
+    location: true,
+    media: true,
+    reviewsCount: true,
+    averageRating: true,
+    isFeatured: true,
+    ownerId: true,
+    createdAt: true,
+    updatedAt: true
+});
+
+// Type: List Item
+export type AccommodationListItem = z.infer<typeof AccommodationListItemSchema>;
+
+/**
+ * Schema for accommodation summary (essential fields only)
  */
 export const AccommodationSummarySchema = AccommodationSchema.pick({
     id: true,
-    slug: true,
     name: true,
-    summary: true,
+    slug: true,
     type: true,
-    isFeatured: true,
-    rating: true,
+    price: true,
     location: true,
     media: true,
-    price: true
+    reviewsCount: true,
+    averageRating: true,
+    isFeatured: true,
+    ownerId: true
 });
-
-// ============================================================================
-// STATS SCHEMA
-// ============================================================================
-
-/**
- * Schema for accommodation statistics
- * Contains metrics and analytics data
- */
-export const AccommodationStatsSchema = z.object({
-    // Review statistics
-    reviewsCount: z
-        .number({
-            message: 'zodError.accommodation.stats.reviewsCount.invalidType'
-        })
-        .int({ message: 'zodError.accommodation.stats.reviewsCount.int' })
-        .min(0, { message: 'zodError.accommodation.stats.reviewsCount.min' })
-        .default(0),
-
-    averageRating: z
-        .number({
-            message: 'zodError.accommodation.stats.averageRating.invalidType'
-        })
-        .min(0, { message: 'zodError.accommodation.stats.averageRating.min' })
-        .max(5, { message: 'zodError.accommodation.stats.averageRating.max' })
-        .default(0),
-
-    // Rating distribution
-    ratingDistribution: z
-        .object({
-            oneStar: z.number().int().min(0).default(0),
-            twoStars: z.number().int().min(0).default(0),
-            threeStars: z.number().int().min(0).default(0),
-            fourStars: z.number().int().min(0).default(0),
-            fiveStars: z.number().int().min(0).default(0)
-        })
-        .optional(),
-
-    // Booking statistics (if applicable)
-    bookingsCount: z
-        .number({
-            message: 'zodError.accommodation.stats.bookingsCount.invalidType'
-        })
-        .int({ message: 'zodError.accommodation.stats.bookingsCount.int' })
-        .min(0, { message: 'zodError.accommodation.stats.bookingsCount.min' })
-        .default(0),
-
-    // View statistics
-    viewsCount: z
-        .number({
-            message: 'zodError.accommodation.stats.viewsCount.invalidType'
-        })
-        .int({ message: 'zodError.accommodation.stats.viewsCount.int' })
-        .min(0, { message: 'zodError.accommodation.stats.viewsCount.min' })
-        .default(0),
-
-    // Favorites/bookmarks
-    favoritesCount: z
-        .number({
-            message: 'zodError.accommodation.stats.favoritesCount.invalidType'
-        })
-        .int({ message: 'zodError.accommodation.stats.favoritesCount.int' })
-        .min(0, { message: 'zodError.accommodation.stats.favoritesCount.min' })
-        .default(0),
-
-    // Content statistics
-    photosCount: z
-        .number({
-            message: 'zodError.accommodation.stats.photosCount.invalidType'
-        })
-        .int({ message: 'zodError.accommodation.stats.photosCount.int' })
-        .min(0, { message: 'zodError.accommodation.stats.photosCount.min' })
-        .default(0),
-
-    amenitiesCount: z
-        .number({
-            message: 'zodError.accommodation.stats.amenitiesCount.invalidType'
-        })
-        .int({ message: 'zodError.accommodation.stats.amenitiesCount.int' })
-        .min(0, { message: 'zodError.accommodation.stats.amenitiesCount.min' })
-        .default(0),
-
-    featuresCount: z
-        .number({
-            message: 'zodError.accommodation.stats.featuresCount.invalidType'
-        })
-        .int({ message: 'zodError.accommodation.stats.featuresCount.int' })
-        .min(0, { message: 'zodError.accommodation.stats.featuresCount.min' })
-        .default(0),
-
-    faqsCount: z
-        .number({
-            message: 'zodError.accommodation.stats.faqsCount.invalidType'
-        })
-        .int({ message: 'zodError.accommodation.stats.faqsCount.int' })
-        .min(0, { message: 'zodError.accommodation.stats.faqsCount.min' })
-        .default(0)
-});
-
-// ==========================================================================
-// PARAM SCHEMAS FOR SERVICE METHODS (INPUTS)
-// ==========================================================================
-
-/**
- * Params for accommodation summary endpoints (id or slug)
- */
-export const AccommodationSummaryParamsSchema = IdOrSlugParamsSchema;
-
-/**
- * Params for accommodation stats endpoints (id or slug)
- */
-export const AccommodationStatsParamsSchema = IdOrSlugParamsSchema;
-
-/**
- * Params for top-rated accommodations
- * Combines generic params with accommodation-specific filters
- */
-export const AccommodationTopRatedParamsSchema = WithLimitParamsSchema.merge(
-    z.object({
-        destinationId: WithDestinationIdParamsSchema.shape.destinationId.optional(),
-        type: AccommodationTypeEnumSchema.optional(),
-        onlyFeatured: z
-            .boolean({
-                message: 'zodError.accommodation.topRated.onlyFeatured.invalidType'
-            })
-            .optional()
-    })
-);
-
-/**
- * Params for accommodations by destination
- */
-export const AccommodationByDestinationParamsSchema = WithDestinationIdParamsSchema;
-
-// ==========================================================================
-// NORMALIZED/LIST OUTPUT SCHEMAS
-// ==========================================================================
-
-/**
- * Minimal destination relation for list/search outputs
- */
-export const DestinationMiniSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    slug: z.string()
-});
-
-/**
- * Minimal owner relation for list/search outputs
- */
-export const UserMiniSchema = z.object({
-    id: z.string().uuid(),
-    displayName: z.string().optional()
-});
-
-/**
- * Normalized accommodation output schema used by list/top endpoints
- */
-export const AccommodationNormalizedSchema = AccommodationSchema.extend({
-    amenities: z.array(z.string()).optional(),
-    features: z.array(z.string()).optional(),
-    destination: DestinationMiniSchema.optional()
-});
-
-/**
- * Output schema for top-rated accommodations
- */
-export const AccommodationTopRatedOutputSchema = z.array(AccommodationNormalizedSchema);
-
-/**
- * Output schema for accommodations by destination
- */
-export const AccommodationByDestinationOutputSchema = z.array(AccommodationNormalizedSchema);
-
-/**
- * Output schema for list with total (searchForList)
- */
-export const AccommodationListItemWithMiniRelationsSchema = AccommodationListItemSchema.extend({
-    destination: DestinationMiniSchema.optional(),
-    owner: UserMiniSchema.optional()
-});
-
-export const AccommodationListWithTotalOutputSchema = z.object({
-    items: z.array(AccommodationListItemWithMiniRelationsSchema),
-    total: z.number().min(0)
-});
-
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
-
-export type AccommodationFilters = z.infer<typeof AccommodationFiltersSchema>;
-export type AccommodationListInput = z.infer<typeof AccommodationListInputSchema>;
-export type AccommodationListItem = z.infer<typeof AccommodationListItemSchema>;
-export type AccommodationListOutput = z.infer<typeof AccommodationListOutputSchema>;
-export type AccommodationSearchInput = z.infer<typeof AccommodationSearchInputSchema>;
-export type AccommodationSearchResult = z.infer<typeof AccommodationSearchResultSchema>;
-export type AccommodationSearchOutput = z.infer<typeof AccommodationSearchOutputSchema>;
+// Type: Summary
 export type AccommodationSummary = z.infer<typeof AccommodationSummarySchema>;
-export type AccommodationStats = z.infer<typeof AccommodationStatsSchema>;
-export type AccommodationSummaryParams = z.infer<typeof AccommodationSummaryParamsSchema>;
-export type AccommodationStatsParams = z.infer<typeof AccommodationStatsParamsSchema>;
-export type AccommodationTopRatedParams = z.infer<typeof AccommodationTopRatedParamsSchema>;
+
+// ============================================================================
+// LEGACY COMPATIBILITY EXPORTS
+// ============================================================================
+
+// Legacy schema aliases for backward compatibility with .type.ts files
+export const AccommodationListInputSchema = AccommodationSearchSchema;
+export const AccommodationListOutputSchema = AccommodationSearchResultSchema;
+export const AccommodationSearchInputSchema = AccommodationSearchSchema;
+export const AccommodationSearchOutputSchema = AccommodationSearchResultSchema;
+export const AccommodationListWithTotalOutputSchema = AccommodationSearchResultSchema;
+
+// Additional legacy schemas that may be referenced
+export const AccommodationByDestinationOutputSchema = AccommodationSearchResultSchema;
+export const AccommodationByDestinationParamsSchema = AccommodationSearchSchema;
 export type AccommodationByDestinationParams = z.infer<
     typeof AccommodationByDestinationParamsSchema
 >;
-export type AccommodationNormalized = z.infer<typeof AccommodationNormalizedSchema>;
-export type AccommodationTopRatedOutput = z.infer<typeof AccommodationTopRatedOutputSchema>;
-export type AccommodationByDestinationOutput = z.infer<
-    typeof AccommodationByDestinationOutputSchema
->;
-export type AccommodationListItemWithMiniRelations = z.infer<
-    typeof AccommodationListItemWithMiniRelationsSchema
->;
-export type AccommodationListWithTotalOutput = z.infer<
-    typeof AccommodationListWithTotalOutputSchema
->;
+export const AccommodationListItemWithMiniRelationsSchema = AccommodationListItemSchema;
+export const AccommodationNormalizedSchema = AccommodationSchema;
+export const AccommodationStatsOutputSchema = z.object({
+    total: z.number(),
+    totalFeatured: z.number(),
+    averagePrice: z.number().optional(),
+    averageRating: z.number().optional(),
+    totalByType: z.record(z.string(), z.number())
+});
+export type AccommodationStatsOutput = z.infer<typeof AccommodationStatsOutputSchema>;
+export const AccommodationStatsResponseSchema = AccommodationStatsOutputSchema;
+export const AccommodationStatsSchema = AccommodationStatsOutputSchema;
+export const AccommodationStatsParamsSchema = z.object({
+    destinationId: z.string().uuid().optional(),
+    dateFrom: z.date().optional(),
+    dateTo: z.date().optional()
+});
+export type AccommodationStatsParams = z.infer<typeof AccommodationStatsParamsSchema>;
+export const AccommodationSummaryParamsSchema = z.object({
+    id: z.string().uuid()
+});
+export type AccommodationSummaryParams = z.infer<typeof AccommodationSummaryParamsSchema>;
+
+// Wrapper schema for getSummary method
+export const AccommodationSummaryWrapperSchema = z.object({
+    accommodation: AccommodationSummarySchema.nullable()
+});
+export type AccommodationSummaryWrapper = z.infer<typeof AccommodationSummaryWrapperSchema>;
+
+export const AccommodationTopRatedOutputSchema = AccommodationSearchResultSchema;
+export const AccommodationTopRatedParamsSchema = z.object({
+    limit: z.number().int().min(1).max(100).default(10),
+    destinationId: z.string().uuid().optional()
+});
+export type AccommodationTopRatedParams = z.infer<typeof AccommodationTopRatedParamsSchema>;
+
+// Mini schemas for related entities (these should ideally be imported from their respective files)
+export const DestinationMiniSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    slug: z.string(),
+    country: z.string().length(2),
+    city: z.string().optional()
+});
+
+export const UserMiniSchema = z.object({
+    id: z.string().uuid(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    email: z.string().email(),
+    avatar: z.string().url().optional()
+});
+
+// ============================================================================
+// WRAPPER SCHEMAS FOR CONSISTENCY
+// ============================================================================
 
 /**
- * Accommodation Stats Output Schema
- *
- * Schema for accommodation statistics including reviews count, average rating, and detailed rating breakdown.
- * Used by the getStats method to return statistical information about an accommodation.
+ * Wrapper schema for accommodation lists (non-paginated)
+ * Provides consistent format for array responses
  */
-export const AccommodationStatsOutputSchema = z
-    .object({
-        reviewsCount: z.number().int().min(0),
-        averageRating: z.number().min(0).max(5),
-        rating: z
-            .object({
-                cleanliness: z.number().min(0).max(5),
-                hospitality: z.number().min(0).max(5),
-                services: z.number().min(0).max(5),
-                accuracy: z.number().min(0).max(5),
-                communication: z.number().min(0).max(5)
-            })
-            .optional()
-    })
-    .nullable();
+export const AccommodationListWrapperSchema = z.object({
+    accommodations: z.array(AccommodationSchema)
+});
+export type AccommodationListWrapper = z.infer<typeof AccommodationListWrapperSchema>;
 
-export type AccommodationStatsOutput = z.infer<typeof AccommodationStatsOutputSchema>;
+/**
+ * Wrapper schema for accommodation stats
+ * Provides consistent format for stats responses
+ */
+export const AccommodationStatsWrapperSchema = z.object({
+    stats: AccommodationStatsSchema
+});
+export type AccommodationStatsWrapper = z.infer<typeof AccommodationStatsWrapperSchema>;
