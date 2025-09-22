@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/types';
+import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/event/event.helpers';
 import { EventService } from '../../../src/services/event/event.service';

@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/types';
+import { EventCategoryEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createUser } from '../../factories/userFactory';
@@ -16,7 +16,8 @@ describe('EventService.count', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
     const actorNoPerm = createUser();
-    const filters = { status: LifecycleStatusEnum.ACTIVE };
+    const filters = { isActive: true, category: EventCategoryEnum.FESTIVAL };
+    const queryParams = { page: 1, pageSize: 10, filters };
     const countResult = { count: 5 };
 
     beforeEach(() => {
@@ -27,28 +28,28 @@ describe('EventService.count', () => {
 
     it('should return count of events (success)', async () => {
         asMock(modelMock.count).mockResolvedValue(countResult.count);
-        const result = await service.count(actorWithPerm, { filters });
+        const result = await service.count(actorWithPerm, queryParams);
         expectSuccess(result);
         expect(result.data?.count).toBe(countResult.count);
     });
 
     it('should return success even if actor has no specific permissions', async () => {
         asMock(modelMock.count).mockResolvedValue(0);
-        const result = await service.count(actorNoPerm, { filters });
+        const result = await service.count(actorNoPerm, queryParams);
         expectSuccess(result);
         expect(result.data?.count).toBe(0);
     });
 
     it('should return count 0 if no events found', async () => {
         asMock(modelMock.count).mockResolvedValue(0);
-        const result = await service.count(actorWithPerm, { filters });
+        const result = await service.count(actorWithPerm, queryParams);
         expectSuccess(result);
         expect(result.data?.count).toBe(0);
     });
 
     it('should return INTERNAL_ERROR if model.count throws', async () => {
         asMock(modelMock.count).mockRejectedValue(new Error('DB error'));
-        const result = await service.count(actorWithPerm, { filters });
+        const result = await service.count(actorWithPerm, queryParams);
         expectInternalError(result);
     });
 
@@ -58,7 +59,7 @@ describe('EventService.count', () => {
             service as unknown as { _afterCount: () => void },
             '_afterCount'
         ).mockRejectedValue(new Error('hook error'));
-        const result = await service.count(actorWithPerm, { filters });
+        const result = await service.count(actorWithPerm, queryParams);
         expectInternalError(result);
     });
 });

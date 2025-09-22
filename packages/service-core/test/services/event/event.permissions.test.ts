@@ -1,4 +1,4 @@
-import { PermissionEnum, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCreateEvent,

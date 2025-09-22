@@ -1,5 +1,5 @@
 import { EventModel } from '@repo/db';
-import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/types';
+import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -38,7 +38,10 @@ describe('EventService.getByCategory', () => {
         const result = await service.getByCategory(actorWithPerm, {
             category,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            sortBy: 'startDate' as const,
+            sortOrder: 'asc' as const,
+            isPublished: true
         });
         // Assert
         expectSuccess(result);
@@ -56,7 +59,10 @@ describe('EventService.getByCategory', () => {
         const result = await service.getByCategory(actorNoPerm, {
             category,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            sortBy: 'startDate' as const,
+            sortOrder: 'asc' as const,
+            isPublished: true
         });
         // Assert
         expectSuccess(result);
@@ -86,7 +92,10 @@ describe('EventService.getByCategory', () => {
         const result = await service.getByCategory(actorWithPerm, {
             category,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            sortBy: 'startDate' as const,
+            sortOrder: 'asc' as const,
+            isPublished: true
         });
         expectSuccess(result);
         const { data } = result;
@@ -99,7 +108,10 @@ describe('EventService.getByCategory', () => {
         const result = await service.getByCategory(actorWithPerm, {
             category,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            sortBy: 'startDate' as const,
+            sortOrder: 'asc' as const,
+            isPublished: true
         });
         expectInternalError(result);
     });
@@ -109,7 +121,10 @@ describe('EventService.getByCategory', () => {
         const result = await service.getByCategory(actorWithPerm, {
             category,
             page: 1,
-            pageSize: 10
+            pageSize: 10,
+            sortBy: 'startDate' as const,
+            sortOrder: 'asc' as const,
+            isPublished: true
         });
         expectInternalError(result);
     });

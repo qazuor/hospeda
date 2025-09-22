@@ -1,6 +1,6 @@
 import { EventOrganizerModel } from '@repo/db';
-import type { EventOrganizerType } from '@repo/types';
-import { PermissionEnum } from '@repo/types';
+import type { EventOrganizer } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventOrganizerService } from '../../../src/services/eventOrganizer/eventOrganizer.service';
 import { createActor } from '../../factories/actorFactory';
@@ -55,11 +55,7 @@ describe('EventOrganizerService.update', () => {
     it('returns error if entity not found', async () => {
         asMock(modelMock.findById).mockResolvedValue(null);
         const patch = { name: 'Updated Name' };
-        const result = await service.update(
-            actor,
-            'nonexistent-id' as EventOrganizerType['id'],
-            patch
-        );
+        const result = await service.update(actor, 'nonexistent-id' as EventOrganizer['id'], patch);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe('NOT_FOUND');
     });

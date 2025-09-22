@@ -1,6 +1,6 @@
 import type { EventOrganizerModel } from '@repo/db';
+import { PermissionEnum } from '@repo/schemas';
 import type { ServiceContext } from '@repo/service-core';
-import { PermissionEnum } from '@repo/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventOrganizerService } from '../../../src/services/eventOrganizer/eventOrganizer.service';
 import { createActor } from '../../factories/actorFactory';

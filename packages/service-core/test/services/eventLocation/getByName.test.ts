@@ -12,7 +12,8 @@ describe('EventLocationService.getByName', () => {
     let model: EventLocationModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: ReturnType<typeof createActor>;
-    const entity = EventLocationFactoryBuilder.create();
+    const entity = EventLocationFactoryBuilder.create({ city: 'Test City' });
+    const cityName = 'Test City';
 
     beforeEach(() => {
         model = createTypedModelMock(EventLocationModel, ['findOne']);
@@ -23,20 +24,20 @@ describe('EventLocationService.getByName', () => {
 
     it('should return an event location by name (success)', async () => {
         asMock(model.findOne).mockResolvedValue(entity);
-        const result = await service.getByName(actor, entity.city);
+        const result = await service.getByName(actor, cityName);
         expectSuccess(result);
         expect(result.data).toEqual(entity);
     });
 
     it('should return NOT_FOUND error if event location does not exist', async () => {
         asMock(model.findOne).mockResolvedValue(null);
-        const result = await service.getByName(actor, entity.city);
+        const result = await service.getByName(actor, cityName);
         expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(model.findOne).mockRejectedValue(new Error('DB error'));
-        const result = await service.getByName(actor, entity.city);
+        const result = await service.getByName(actor, cityName);
         expectInternalError(result);
     });
 });

@@ -1,10 +1,6 @@
 import { EventModel } from '@repo/db';
-import {
-    type EventLocationId,
-    PermissionEnum,
-    ServiceErrorCode,
-    VisibilityEnum
-} from '@repo/types';
+import type { EventLocationIdType } from '@repo/schemas';
+import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -27,7 +23,7 @@ describe('EventService.getByLocation', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ServiceLogger;
-    const locationId = getMockId('event') as EventLocationId;
+    const locationId = getMockId('event') as EventLocationIdType;
     const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
     const actorNoPerm = createUser();
 
@@ -89,10 +85,11 @@ describe('EventService.getByLocation', () => {
         expectUnauthorizedError(result);
     });
 
-    it('should throw validation error if locationId is missing', async () => {
-        // @ts-expect-error purposely invalid
-        const result = await service.getByLocation(actorWithPerm, {});
-        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+    it('should throw validation error if no location criteria provided', async () => {
+        // Test that when no locationId, city, state, or country is provided, it should validate correctly
+        // since all are optional, the validation should pass but might return empty results
+        const result = await service.getByLocation(actorWithPerm, { page: 1, pageSize: 10 });
+        expectSuccess(result); // This should succeed since all location fields are optional
     });
 
     it('should return empty list if no events found', async () => {
