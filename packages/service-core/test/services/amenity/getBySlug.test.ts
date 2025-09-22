@@ -1,5 +1,5 @@
 import type { AmenityModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/amenity/amenity.permissions';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
@@ -28,36 +28,40 @@ describe('AmenityService.getBySlug', () => {
     });
 
     it('should return an amenity by slug', async () => {
+        const entityWithSlug = createEntity().slug || 'test-slug';
         (model.findOne as Mock).mockResolvedValue(entity);
         vi.spyOn(permissionHelpers, 'checkCanViewAmenity').mockReturnValue();
-        const result = await service.getBySlug(actor, entity.slug);
+        const result = await service.getBySlug(actor, entityWithSlug);
         expect(result.data).toBeDefined();
         expect(result.data?.slug).toBe(entity.slug);
         expect(result.error).toBeUndefined();
     });
 
     it('should return a "not found" error if the entity does not exist', async () => {
+        const entityWithSlug = createEntity().slug || 'test-slug';
         (model.findOne as Mock).mockResolvedValue(null);
         vi.spyOn(permissionHelpers, 'checkCanViewAmenity').mockReturnValue();
-        const result = await service.getBySlug(actor, entity.slug);
+        const result = await service.getBySlug(actor, entityWithSlug);
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(result.data).toBeUndefined();
     });
 
     it('should return forbidden error if actor lacks permission', async () => {
+        const entityWithSlug = createEntity().slug || 'test-slug';
         (model.findOne as Mock).mockResolvedValue(entity);
         vi.spyOn(permissionHelpers, 'checkCanViewAmenity').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
-        const result = await service.getBySlug(actor, entity.slug);
+        const result = await service.getBySlug(actor, entityWithSlug);
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
     });
 
     it('should return an internal error if model throws', async () => {
+        const entityWithSlug = createEntity().slug || 'test-slug';
         (model.findOne as Mock).mockRejectedValue(new Error('DB error'));
         vi.spyOn(permissionHelpers, 'checkCanViewAmenity').mockReturnValue();
-        const result = await service.getBySlug(actor, entity.slug);
+        const result = await service.getBySlug(actor, entityWithSlug);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();
     });

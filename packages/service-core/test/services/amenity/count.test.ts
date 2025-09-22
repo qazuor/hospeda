@@ -1,5 +1,5 @@
 import { AmenityModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
 import type { Actor } from '../../../src/types';
@@ -14,6 +14,8 @@ describe('AmenityService.count', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const countParams = {
+        page: 1,
+        pageSize: 10,
         filters: { nameContains: 'Test Amenity' },
         searchInDescription: false,
         fuzzySearch: false

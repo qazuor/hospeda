@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 /**
  * Test suite for AmenityService permission helpers
  *
