@@ -4,7 +4,7 @@ import {
     PostSponsorIdSchema,
     PostSponsorshipIdSchema
 } from '../../common/id.schema.js';
-import { BaseSearchSchema } from '../../common/search.schemas.js';
+import { BaseSearchSchema } from '../../common/pagination.schema.js';
 import { PostSponsorshipSchema } from './postSponsorship.schema.js';
 
 /**
