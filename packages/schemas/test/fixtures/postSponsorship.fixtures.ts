@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { PriceCurrencyEnum } from '@repo/types';
+import type { PriceCurrencyEnum } from '../../src/enums/index.js';
 import {
     createBaseAdminFields,
     createBaseAuditFields,

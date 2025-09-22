@@ -5,7 +5,7 @@ import type {
     PaymentStatusEnum,
     PaymentTypeEnum,
     SubscriptionStatusEnum
-} from '@repo/types';
+} from '../../src/enums/index.js';
 import { createBaseAuditFields, createBaseIdFields } from './common.fixtures.js';
 
 /**

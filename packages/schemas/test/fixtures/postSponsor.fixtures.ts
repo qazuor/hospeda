@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { ClientTypeEnum } from '@repo/types';
+import type { ClientTypeEnum } from '../../src/enums/index.js';
 import {
     createBaseAdminFields,
     createBaseAuditFields,
