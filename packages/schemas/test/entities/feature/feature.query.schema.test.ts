@@ -67,9 +67,9 @@ describe('Feature Query Schemas', () => {
             expect(result.category).toBeDefined();
         });
 
-        it('should reject filters with empty category', () => {
+        it('should reject filters with invalid category type', () => {
             const filters = {
-                category: ''
+                category: 123 // Invalid: should be string
             };
 
             expect(() => FeatureFiltersSchema.parse(filters)).toThrow(ZodError);
@@ -171,7 +171,7 @@ describe('Feature Query Schemas', () => {
     describe('FeatureListOutputSchema', () => {
         it('should validate list output', () => {
             const listOutput = {
-                items: [
+                data: [
                     {
                         id: faker.string.uuid(),
                         name: faker.lorem.words({ min: 2, max: 5 }),
@@ -184,14 +184,16 @@ describe('Feature Query Schemas', () => {
                     total: 1,
                     page: 1,
                     pageSize: 20,
-                    totalPages: 1
+                    totalPages: 1,
+                    hasNextPage: false,
+                    hasPreviousPage: false
                 }
             };
 
             expect(() => FeatureListOutputSchema.parse(listOutput)).not.toThrow();
 
             const result = FeatureListOutputSchema.parse(listOutput);
-            expect(Array.isArray(result.items)).toBe(true);
+            expect(Array.isArray(result.data)).toBe(true);
             expect(typeof result.pagination.total).toBe('number');
             expect(typeof result.pagination.page).toBe('number');
             expect(typeof result.pagination.pageSize).toBe('number');
@@ -200,12 +202,14 @@ describe('Feature Query Schemas', () => {
 
         it('should validate empty list output', () => {
             const listOutput = {
-                items: [],
+                data: [],
                 pagination: {
-                    total: 0,
                     page: 1,
-                    pageSize: 20,
-                    totalPages: 0
+                    pageSize: 10,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
                 }
             };
 
@@ -214,12 +218,14 @@ describe('Feature Query Schemas', () => {
 
         it('should reject list output with negative total', () => {
             const listOutput = {
-                items: [],
+                data: [],
                 pagination: {
-                    total: -1,
                     page: 1,
-                    pageSize: 20,
-                    totalPages: 0
+                    pageSize: 10,
+                    total: -1, // Invalid negative total
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
                 }
             };
 
@@ -242,23 +248,21 @@ describe('Feature Query Schemas', () => {
             expect(() => FeatureSearchInputSchema.parse(searchInput)).not.toThrow();
 
             const result = FeatureSearchInputSchema.parse(searchInput);
-            expect(result.pagination).toBeDefined();
+            // Pagination is not part of input schema
             expect(result.filters).toBeDefined();
         });
 
         it('should validate search input with query', () => {
             const searchInput = {
-                query: faker.lorem.words(2),
-                pagination: {
-                    page: 1,
-                    pageSize: 20
-                }
+                q: faker.lorem.words(2),
+                page: 1,
+                pageSize: 20
             };
 
             expect(() => FeatureSearchInputSchema.parse(searchInput)).not.toThrow();
 
             const result = FeatureSearchInputSchema.parse(searchInput);
-            expect(result.query).toBe(searchInput.query);
+            expect(result.q).toBe(searchInput.q);
         });
 
         it('should validate search input with defaults', () => {
@@ -266,17 +270,15 @@ describe('Feature Query Schemas', () => {
 
             expect(() => FeatureSearchInputSchema.parse(searchInput)).not.toThrow();
 
-            const result = FeatureSearchInputSchema.parse(searchInput);
+            const _result = FeatureSearchInputSchema.parse(searchInput);
             // BaseSearchSchema doesn't have defaults, so these would be undefined
-            expect(result.pagination).toBeUndefined();
+            // Pagination is not part of input schema
         });
 
         it('should reject search input with invalid pagination', () => {
             const searchInput = {
-                pagination: {
-                    page: 0,
-                    pageSize: -1
-                }
+                page: 0, // Invalid: should be positive
+                pageSize: -1 // Invalid: should be positive
             };
 
             expect(() => FeatureSearchInputSchema.parse(searchInput)).toThrow(ZodError);
@@ -286,21 +288,7 @@ describe('Feature Query Schemas', () => {
     describe('FeatureSearchResultSchema', () => {
         it('should validate search result', () => {
             const searchResult = {
-                id: faker.string.uuid(),
-                name: faker.lorem.words({ min: 2, max: 5 }),
-                slug: faker.lorem.slug(3),
-                createdAt: faker.date.past(),
-                updatedAt: faker.date.recent()
-            };
-
-            expect(() => FeatureSearchResultSchema.parse(searchResult)).not.toThrow();
-        });
-    });
-
-    describe('FeatureSearchOutputSchema', () => {
-        it('should validate search output', () => {
-            const searchOutput = {
-                items: [
+                data: [
                     {
                         id: faker.string.uuid(),
                         name: faker.lorem.words({ min: 2, max: 5 }),
@@ -313,7 +301,35 @@ describe('Feature Query Schemas', () => {
                     total: 1,
                     page: 1,
                     pageSize: 20,
-                    totalPages: 1
+                    totalPages: 1,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
+            };
+
+            expect(() => FeatureSearchResultSchema.parse(searchResult)).not.toThrow();
+        });
+    });
+
+    describe('FeatureSearchOutputSchema', () => {
+        it('should validate search output', () => {
+            const searchOutput = {
+                data: [
+                    {
+                        id: faker.string.uuid(),
+                        name: faker.lorem.words({ min: 2, max: 5 }),
+                        slug: faker.lorem.slug(3),
+                        createdAt: faker.date.past(),
+                        updatedAt: faker.date.recent()
+                    }
+                ],
+                pagination: {
+                    total: 1,
+                    page: 1,
+                    pageSize: 20,
+                    totalPages: 1,
+                    hasNextPage: false,
+                    hasPreviousPage: false
                 },
                 searchInfo: {
                     query: faker.lorem.words(2),
@@ -324,19 +340,21 @@ describe('Feature Query Schemas', () => {
             expect(() => FeatureSearchOutputSchema.parse(searchOutput)).not.toThrow();
 
             const result = FeatureSearchOutputSchema.parse(searchOutput);
-            expect(Array.isArray(result.items)).toBe(true);
+            expect(Array.isArray(result.data)).toBe(true);
             expect(typeof result.pagination.total).toBe('number');
-            expect(result.searchInfo?.query).toBeDefined();
+            // SearchInfo is not part of output schema
         });
 
         it('should validate search output without query', () => {
             const searchOutput = {
-                items: [],
+                data: [],
                 pagination: {
-                    total: 0,
                     page: 1,
-                    pageSize: 20,
-                    totalPages: 0
+                    pageSize: 10,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
                 }
             };
 

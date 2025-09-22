@@ -1,7 +1,7 @@
-import { AuthProviderEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { AuthProviderEnumSchema } from '../../src/enums/auth-provider.enum.schema.js';
+import { AuthProviderEnumSchema } from '../../src/enums/auth-provider.schema.js';
+import { AuthProviderEnum } from '../../src/enums/index.js';
 
 describe('AuthProviderEnumSchema', () => {
     it('should validate valid auth provider values', () => {
@@ -40,7 +40,7 @@ describe('AuthProviderEnumSchema', () => {
         } catch (error) {
             expect(error).toBeInstanceOf(ZodError);
             const zodError = error as ZodError;
-            expect(zodError.issues[0]?.message).toBe('zodError.authProvider.invalid');
+            expect(zodError.issues[0]?.message).toBe('zodError.enums.authProvider.invalid');
         }
     });
 
