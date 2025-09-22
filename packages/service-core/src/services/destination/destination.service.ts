@@ -1,8 +1,11 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
 import type {
+    AccommodationListItem,
+    Destination,
     DestinationCreateInput,
-    DestinationFilterInput,
+    DestinationRatingInput,
     DestinationSearchForListOutput,
+    DestinationSearchInput,
     DestinationStats,
     DestinationSummaryType,
     GetDestinationAccommodationsInput,
@@ -11,15 +14,13 @@ import type {
 } from '@repo/schemas';
 import {
     DestinationCreateInputSchema,
-    DestinationFilterInputSchema,
+    DestinationSearchSchema,
     DestinationUpdateInputSchema,
     GetDestinationAccommodationsInputSchema,
     GetDestinationStatsInputSchema,
-    GetDestinationSummaryInputSchema
+    GetDestinationSummaryInputSchema,
+    ServiceErrorCode
 } from '@repo/schemas';
-import type { AccommodationType, DestinationRatingType, DestinationType } from '@repo/types';
-
-import { ServiceErrorCode } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -49,11 +50,11 @@ import {
  * Inherits standard CRUD from BaseService. Only custom methods are defined here.
  */
 export class DestinationService extends BaseCrudService<
-    DestinationType,
+    Destination,
     DestinationModel,
     typeof DestinationCreateInputSchema,
     typeof DestinationUpdateInputSchema,
-    typeof DestinationFilterInputSchema
+    typeof DestinationSearchSchema
 > {
     static readonly ENTITY_NAME = 'destination';
     protected readonly entityName = DestinationService.ENTITY_NAME;
@@ -61,7 +62,7 @@ export class DestinationService extends BaseCrudService<
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = DestinationCreateInputSchema;
     protected readonly updateSchema = DestinationUpdateInputSchema;
-    protected readonly searchSchema = DestinationFilterInputSchema;
+    protected readonly searchSchema = DestinationSearchSchema;
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
@@ -80,19 +81,19 @@ export class DestinationService extends BaseCrudService<
     protected _canCreate(actor: Actor, data: unknown): void {
         checkCanCreateDestination(actor, data);
     }
-    protected _canUpdate(actor: Actor, entity: DestinationType): void {
+    protected _canUpdate(actor: Actor, entity: Destination): void {
         checkCanUpdateDestination(actor, entity);
     }
-    protected _canSoftDelete(actor: Actor, entity: DestinationType): void {
+    protected _canSoftDelete(actor: Actor, entity: Destination): void {
         checkCanSoftDeleteDestination(actor, entity);
     }
-    protected _canHardDelete(actor: Actor, entity: DestinationType): void {
+    protected _canHardDelete(actor: Actor, entity: Destination): void {
         checkCanHardDeleteDestination(actor, entity);
     }
-    protected _canRestore(actor: Actor, entity: DestinationType): void {
+    protected _canRestore(actor: Actor, entity: Destination): void {
         checkCanRestoreDestination(actor, entity);
     }
-    protected _canView(actor: Actor, entity: DestinationType): void {
+    protected _canView(actor: Actor, entity: Destination): void {
         checkCanViewDestination(actor, entity);
     }
     protected _canList(actor: Actor): void {
@@ -106,7 +107,7 @@ export class DestinationService extends BaseCrudService<
     }
     protected _canUpdateVisibility(
         actor: Actor,
-        entity: DestinationType,
+        entity: Destination,
         _newVisibility: unknown
     ): void {
         checkCanUpdateDestinationVisibility(actor, entity);
@@ -119,11 +120,9 @@ export class DestinationService extends BaseCrudService<
      * @param _actor - The actor performing the search (not used here)
      * @returns A paginated list of destinations matching the filters
      */
-    protected async _executeSearch(params: DestinationFilterInput, _actor: Actor) {
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
-        return this.model.search({ filters, page, pageSize });
+    protected async _executeSearch(params: DestinationSearchInput, _actor: Actor) {
+        const { filters = {}, page = 1, pageSize = 10 } = params;
+        return this.model.findAll(filters, { page, pageSize });
     }
 
     /**
@@ -132,9 +131,10 @@ export class DestinationService extends BaseCrudService<
      * @param _actor - The actor performing the count (not used here)
      * @returns An object with the total count
      */
-    protected async _executeCount(params: DestinationFilterInput, _actor: Actor) {
+    protected async _executeCount(params: DestinationSearchInput, _actor: Actor) {
         const { filters = {} } = params;
-        return this.model.countByFilters({ filters });
+        const count = await this.model.count(filters);
+        return { count };
     }
 
     // --- Domain-specific methods ---
@@ -147,19 +147,16 @@ export class DestinationService extends BaseCrudService<
      */
     async searchForList(
         actor: Actor,
-        params: DestinationFilterInput
+        params: DestinationSearchInput
     ): Promise<DestinationSearchForListOutput> {
         // Check permissions
         this._canSearch(actor);
 
         // Extract parameters
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+        const { filters = {}, page = 1, pageSize = 10 } = params;
 
         // Use the model method that includes attractions
-        const result = await this.model.searchWithAttractions({
-            filters,
+        const result = await this.model.findAll(filters, {
             page,
             pageSize
         });
@@ -167,12 +164,19 @@ export class DestinationService extends BaseCrudService<
         // Map the result to the expected format
         const mappedItems = result.items.map((destination) => ({
             ...destination,
-            attractions: destination.attractionNames
+            attractions: destination.attractions?.map((a) => a.name) ?? []
         }));
 
         return {
-            items: mappedItems,
-            total: result.total
+            data: mappedItems,
+            pagination: {
+                page,
+                pageSize,
+                total: result.total,
+                totalPages: Math.ceil(result.total / pageSize),
+                hasNextPage: page * pageSize < result.total,
+                hasPreviousPage: page > 1
+            }
         };
     }
     /**
@@ -184,7 +188,7 @@ export class DestinationService extends BaseCrudService<
     public async getAccommodations(
         actor: Actor,
         params: GetDestinationAccommodationsInput
-    ): Promise<ServiceOutput<{ accommodations: AccommodationType[] }>> {
+    ): Promise<ServiceOutput<{ accommodations: AccommodationListItem[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getAccommodations',
             input: { ...params, actor },
@@ -201,8 +205,8 @@ export class DestinationService extends BaseCrudService<
                     );
                 }
                 checkCanViewDestination(actor, destination);
-                const { items } = await this.accommodationModel.search({
-                    filters: { destinationId }
+                const { items } = await this.accommodationModel.findAll({
+                    destinationId
                 });
                 return { accommodations: items };
             }
@@ -237,7 +241,9 @@ export class DestinationService extends BaseCrudService<
                     stats: {
                         accommodationsCount: destination.accommodationsCount ?? 0,
                         reviewsCount: destination.reviewsCount ?? 0,
-                        averageRating: destination.averageRating ?? 0
+                        averageRating: destination.averageRating ?? 0,
+                        attractionsCount: destination.attractions?.length ?? 0,
+                        eventsCount: 0 // TODO: implement events count when events are available
                     }
                 };
             }
@@ -303,7 +309,7 @@ export class DestinationService extends BaseCrudService<
     protected async _beforeCreate(
         data: DestinationCreateInput,
         _actor: Actor
-    ): Promise<Partial<DestinationType>> {
+    ): Promise<Partial<Destination>> {
         const slug = await generateDestinationSlug(data.name);
         return { slug };
     }
@@ -318,13 +324,13 @@ export class DestinationService extends BaseCrudService<
         stats: {
             reviewsCount: number;
             averageRating: number;
-            rating: DestinationRatingType | undefined;
+            rating: DestinationRatingInput | undefined;
         }
     ): Promise<void> {
         await this.model.updateById(destinationId, {
             reviewsCount: stats.reviewsCount,
             averageRating: stats.averageRating,
-            rating: stats.rating as DestinationRatingType | undefined
+            rating: stats.rating as DestinationRatingInput | undefined
         });
     }
 
