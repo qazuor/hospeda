@@ -27,3 +27,9 @@ export const UserSettingsSchema = z.object({
         .optional(),
     notifications: UserNotificationsSchema
 });
+
+/**
+ * Type exports for User Settings
+ */
+export type UserNotifications = z.infer<typeof UserNotificationsSchema>;
+export type UserSettings = z.infer<typeof UserSettingsSchema>;

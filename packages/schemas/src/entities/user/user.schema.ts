@@ -1,4 +1,3 @@
-import { AuthProviderEnum } from '@repo/types';
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
@@ -6,8 +5,9 @@ import { BaseContactFields } from '../../common/contact.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { FullLocationFields } from '../../common/location.schema.js';
-import { BaseSocialFields } from '../../common/social.schema.js';
+import { SocialNetworkFields } from '../../common/social.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
+import { AuthProviderEnumSchema } from '../../enums/auth-provider.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { UserBookmarkSchema } from '../userBookmark/userBookmark.schema.js';
 import { UserProfileSchema } from './user.profile.schema.js';
@@ -35,11 +35,7 @@ export const UserSchema = z.object({
         .min(1, { message: 'zodError.common.slug.min' }),
 
     // Authentication fields
-    authProvider: z
-        .nativeEnum(AuthProviderEnum, {
-            message: 'zodError.user.authProvider.invalid'
-        })
-        .optional(),
+    authProvider: AuthProviderEnumSchema.optional(),
 
     authProviderUserId: z
         .string()
@@ -84,7 +80,7 @@ export const UserSchema = z.object({
     ...FullLocationFields,
 
     // Social networks
-    ...BaseSocialFields,
+    ...SocialNetworkFields,
 
     // Role and permissions
     role: RoleEnumSchema,
