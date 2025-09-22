@@ -1,15 +1,13 @@
 import { DestinationModel, DestinationReviewModel } from '@repo/db';
 import {
+    type DestinationReview,
     type DestinationReviewCreateInput,
     DestinationReviewCreateInputSchema,
     type DestinationReviewListWithUserOutput,
     type DestinationReviewSearchInput,
     DestinationReviewSearchInputSchema,
-    DestinationReviewUpdateInputSchema,
-    ListWithUserSchema
+    DestinationReviewUpdateInputSchema
 } from '@repo/schemas';
-import type { DestinationReviewType } from '@repo/types';
-import type { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { DestinationService } from '../destination/destination.service';
@@ -27,7 +25,7 @@ import {
  * Provides CRUD and domain-specific logic for DestinationReview entities.
  */
 export class DestinationReviewService extends BaseCrudService<
-    DestinationReviewType,
+    DestinationReview,
     DestinationReviewModel,
     typeof DestinationReviewCreateInputSchema,
     typeof DestinationReviewUpdateInputSchema,
@@ -56,19 +54,19 @@ export class DestinationReviewService extends BaseCrudService<
     protected _canCreate(actor: Actor, _data: DestinationReviewCreateInput): void {
         checkCanCreateDestinationReview(actor);
     }
-    protected _canUpdate(actor: Actor, _entity: DestinationReviewType): void {
+    protected _canUpdate(actor: Actor, _entity: DestinationReview): void {
         checkCanUpdateDestinationReview(actor);
     }
-    protected _canSoftDelete(actor: Actor, _entity: DestinationReviewType): void {
+    protected _canSoftDelete(actor: Actor, _entity: DestinationReview): void {
         checkCanDeleteDestinationReview(actor);
     }
-    protected _canHardDelete(actor: Actor, _entity: DestinationReviewType): void {
+    protected _canHardDelete(actor: Actor, _entity: DestinationReview): void {
         checkCanDeleteDestinationReview(actor);
     }
-    protected _canRestore(actor: Actor, _entity: DestinationReviewType): void {
+    protected _canRestore(actor: Actor, _entity: DestinationReview): void {
         checkCanUpdateDestinationReview(actor);
     }
-    protected _canView(actor: Actor, _entity: DestinationReviewType): void {
+    protected _canView(actor: Actor, _entity: DestinationReview): void {
         checkCanViewDestinationReview(actor);
     }
     protected _canList(actor: Actor): void {
@@ -82,7 +80,7 @@ export class DestinationReviewService extends BaseCrudService<
     }
     protected _canUpdateVisibility(
         actor: Actor,
-        _entity: DestinationReviewType,
+        _entity: DestinationReview,
         _newVisibility: unknown
     ): void {
         checkCanUpdateDestinationReview(actor);
@@ -91,7 +89,7 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _executeSearch(
         _params: DestinationReviewSearchInput,
         _actor: Actor
-    ): Promise<PaginatedListOutput<DestinationReviewType>> {
+    ): Promise<PaginatedListOutput<DestinationReview>> {
         // TODO [e331cd3f-e1de-4a36-9bf0-18a6fa2ced1e]: Implement search logic using Drizzle ORM
         throw new Error('Not implemented');
     }
@@ -113,12 +111,12 @@ export class DestinationReviewService extends BaseCrudService<
             .findAll({ destinationId, deletedAt: null }, undefined)
             .then((res) => res.items);
         // Usar el helper para calcular los stats
-        const stats = calculateStatsFromReviews(reviews);
+        const stats = calculateStatsFromReviews(reviews as DestinationReview[]);
         // Update stats in Destination via DestinationService
         await this.destinationService.updateStatsFromReview(destinationId, stats);
     }
 
-    protected async _afterCreate(entity: DestinationReviewType): Promise<DestinationReviewType> {
+    protected async _afterCreate(entity: DestinationReview): Promise<DestinationReview> {
         await this.recalculateAndUpdateDestinationStats(entity.destinationId);
         return entity;
     }
@@ -140,12 +138,12 @@ export class DestinationReviewService extends BaseCrudService<
      */
     public async listWithUser(
         actor: Actor,
-        input: z.infer<typeof ListWithUserSchema> = {}
+        input: DestinationReviewSearchInput = { page: 1, pageSize: 10 }
     ): Promise<ServiceOutput<DestinationReviewListWithUserOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listWithUser',
             input: { actor, ...input },
-            schema: ListWithUserSchema,
+            schema: DestinationReviewSearchInputSchema,
             execute: async (validData, validatedActor) => {
                 await this._canList(validatedActor);
                 const { page, pageSize, filters = {} } = validData;
@@ -157,7 +155,21 @@ export class DestinationReviewService extends BaseCrudService<
                 };
 
                 const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
-                return result as DestinationReviewListWithUserOutput;
+                const currentPage = page || 1;
+                const currentPageSize = pageSize || 10;
+                const totalPages = Math.ceil(result.total / currentPageSize);
+
+                return {
+                    data: result.items,
+                    pagination: {
+                        page: currentPage,
+                        pageSize: currentPageSize,
+                        total: result.total,
+                        totalPages,
+                        hasNextPage: currentPage < totalPages,
+                        hasPreviousPage: currentPage > 1
+                    }
+                } as DestinationReviewListWithUserOutput;
             }
         });
     }

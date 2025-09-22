@@ -1,5 +1,5 @@
-import type { DestinationType } from '@repo/types';
-import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
+import type { Destination } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
@@ -11,7 +11,7 @@ import { hasPermission } from '../../utils/permission';
  * @param entity The destination entity to be viewed.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanViewDestination(actor: Actor, entity: DestinationType): void {
+export function checkCanViewDestination(actor: Actor, entity: Destination): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (
         entity.visibility === VisibilityEnum.PUBLIC ||
@@ -84,7 +84,7 @@ export function checkCanCreateDestination(actor: Actor, _data: unknown): void {
  * @param entity The destination entity to be updated.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanUpdateDestination(actor: Actor, _entity: DestinationType): void {
+export function checkCanUpdateDestination(actor: Actor, _entity: Destination): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_UPDATE)) {
         throw new ServiceError(
@@ -101,7 +101,7 @@ export function checkCanUpdateDestination(actor: Actor, _entity: DestinationType
  * @param entity The destination entity to be soft-deleted.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanSoftDeleteDestination(actor: Actor, _entity: DestinationType): void {
+export function checkCanSoftDeleteDestination(actor: Actor, _entity: Destination): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_DELETE)) {
         throw new ServiceError(
@@ -118,7 +118,7 @@ export function checkCanSoftDeleteDestination(actor: Actor, _entity: Destination
  * @param entity The destination entity to be deleted.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanHardDeleteDestination(actor: Actor, _entity: DestinationType): void {
+export function checkCanHardDeleteDestination(actor: Actor, _entity: Destination): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_HARD_DELETE)) {
         throw new ServiceError(
@@ -135,7 +135,7 @@ export function checkCanHardDeleteDestination(actor: Actor, _entity: Destination
  * @param entity The destination entity to be restored.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanRestoreDestination(actor: Actor, _entity: DestinationType): void {
+export function checkCanRestoreDestination(actor: Actor, _entity: Destination): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_RESTORE)) {
         throw new ServiceError(
@@ -152,7 +152,7 @@ export function checkCanRestoreDestination(actor: Actor, _entity: DestinationTyp
  * @param entity The destination entity whose visibility is being updated.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanUpdateDestinationVisibility(actor: Actor, _entity: DestinationType): void {
+export function checkCanUpdateDestinationVisibility(actor: Actor, _entity: Destination): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
     if (!hasPermission(actor, PermissionEnum.DESTINATION_VISIBILITY_TOGGLE)) {
         throw new ServiceError(
