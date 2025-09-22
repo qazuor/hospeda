@@ -1,5 +1,5 @@
 import type { DestinationModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/destination/destination.permission';
 import { DestinationService } from '../../../src/services/destination/destination.service';

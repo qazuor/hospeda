@@ -1,6 +1,6 @@
 import { AttractionModel } from '@repo/db';
-import type { AttractionId } from '@repo/types';
-import { ServiceErrorCode } from '@repo/types';
+import type { AttractionIdType } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/attraction/attraction.permissions';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
@@ -8,6 +8,7 @@ import type { Actor } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { AttractionFactoryBuilder } from '../../factories/attractionFactory';
+
 import { getMockId } from '../../factories/utilsFactory';
 import {
     expectForbiddenError,
@@ -24,7 +25,7 @@ describe('AttractionService.getById', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const attraction = AttractionFactoryBuilder.create({
-        id: getMockId('feature', 'attr-1') as AttractionId
+        id: getMockId('feature', 'attr-1') as AttractionIdType
     });
 
     beforeEach(() => {

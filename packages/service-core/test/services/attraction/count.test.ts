@@ -1,5 +1,5 @@
 import { AttractionModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
 import type { Actor } from '../../../src/types';
@@ -13,7 +13,11 @@ describe('AttractionService.count', () => {
     let attractionModelMock: AttractionModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const countParams = { filters: { name: 'Test Attraction' } };
+    const countParams = {
+        page: 1,
+        pageSize: 10,
+        filters: { name: 'Test Attraction' }
+    };
 
     beforeEach(() => {
         attractionModelMock = createTypedModelMock(AttractionModel, ['count']);

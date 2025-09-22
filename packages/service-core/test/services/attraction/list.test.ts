@@ -1,10 +1,11 @@
 import { AttractionModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
 import type { Actor } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { AttractionFactoryBuilder } from '../../factories/attractionFactory';
+
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
@@ -26,7 +27,7 @@ describe('AttractionService.list', () => {
 
     it('should return a paginated list of attractions (success)', async () => {
         asMock(attractionModelMock.findAll).mockResolvedValue(paginated);
-        const result = await service.list(actor, {});
+        const result = await service.list(actor, { page: 1, pageSize: 10 });
         expectSuccess(result);
         expect(result.data?.items).toHaveLength(1);
         expect(result.data?.total).toBe(1);
@@ -35,14 +36,14 @@ describe('AttractionService.list', () => {
     it('should succeed even if actor lacks permissions (public list)', async () => {
         actor = createActor({ permissions: [] });
         asMock(attractionModelMock.findAll).mockResolvedValue(paginated);
-        const result = await service.list(actor, {});
+        const result = await service.list(actor, { page: 1, pageSize: 10 });
         expectSuccess(result);
         expect(result.data?.items).toHaveLength(1);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(attractionModelMock.findAll).mockRejectedValue(new Error('DB error'));
-        const result = await service.list(actor, {});
+        const result = await service.list(actor, { page: 1, pageSize: 10 });
         expectInternalError(result);
     });
 });

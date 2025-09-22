@@ -1,5 +1,5 @@
 import type { DestinationModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { createActor } from '../../factories/actorFactory';

@@ -1,6 +1,10 @@
 import type { DestinationModel } from '@repo/db';
-import { type DestinationUpdateInput, DestinationUpdateInputSchema } from '@repo/schemas';
-import { type DestinationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
+import {
+    type Destination,
+    type DestinationUpdateInput,
+    DestinationUpdateInputSchema
+} from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/destination/destination.helpers';
@@ -60,14 +64,14 @@ describe('DestinationService.update', () => {
 
     it('should update a destination when permissions and input are valid', async () => {
         const actor = createAdminActor({ permissions: [PermissionEnum.DESTINATION_UPDATE] });
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         const existing = {
             ...createDestination(),
             id,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as DestinationType['createdById'],
-            updatedById: getMockId('user') as DestinationType['updatedById']
+            createdById: getMockId('user') as Destination['createdById'],
+            updatedById: getMockId('user') as Destination['updatedById']
         };
         const updateInput = { name: 'Updated Name' } as unknown as import('zod').infer<
             typeof DestinationUpdateInputSchema
@@ -88,14 +92,14 @@ describe('DestinationService.update', () => {
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
         const actor = createActor({ permissions: [] });
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         const existing = {
             ...createDestination(),
             id,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as DestinationType['createdById'],
-            updatedById: getMockId('user') as DestinationType['updatedById']
+            createdById: getMockId('user') as Destination['createdById'],
+            updatedById: getMockId('user') as Destination['updatedById']
         };
         (model.findById as Mock).mockResolvedValue(existing);
         const result = await service.update(actor, id, {
@@ -108,14 +112,14 @@ describe('DestinationService.update', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         const actor = createAdminActor({ permissions: [PermissionEnum.DESTINATION_UPDATE] });
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         const existing = {
             ...createDestination(),
             id,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as DestinationType['createdById'],
-            updatedById: getMockId('user') as DestinationType['updatedById']
+            createdById: getMockId('user') as Destination['createdById'],
+            updatedById: getMockId('user') as Destination['updatedById']
         };
         (model.findById as Mock).mockResolvedValue(existing);
         const result = await service.update(actor, id, {
@@ -128,7 +132,7 @@ describe('DestinationService.update', () => {
 
     it('should return NOT_FOUND if destination does not exist', async () => {
         const actor = createAdminActor();
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         (model.findById as Mock).mockResolvedValue(null);
         const result = await service.update(actor, id, {
             name: 'Updated Name'
@@ -140,14 +144,14 @@ describe('DestinationService.update', () => {
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         const actor = createAdminActor({ permissions: [PermissionEnum.DESTINATION_UPDATE] });
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         const existing = {
             ...createDestination(),
             id,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as DestinationType['createdById'],
-            updatedById: getMockId('user') as DestinationType['updatedById']
+            createdById: getMockId('user') as Destination['createdById'],
+            updatedById: getMockId('user') as Destination['updatedById']
         };
         (model.findById as Mock).mockResolvedValue(existing);
         (model.update as Mock).mockRejectedValue(new Error('DB error'));
