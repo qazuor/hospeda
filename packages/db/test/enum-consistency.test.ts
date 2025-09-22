@@ -1,5 +1,27 @@
 import path from 'node:path';
-import { AllEnums } from '@repo/types';
+import {
+    AccommodationTypeEnum,
+    AmenitiesTypeEnum,
+    AuthProviderEnum,
+    BillingCycleEnum,
+    ClientTypeEnum,
+    EntityPermissionReasonEnum,
+    EntityTypeEnum,
+    EventCategoryEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PaymentMethodEnum,
+    PaymentStatusEnum,
+    PermissionEnum,
+    PostCategoryEnum,
+    PreferredContactEnum,
+    PriceCurrencyEnum,
+    RecurrenceTypeEnum,
+    RoleEnum,
+    SubscriptionStatusEnum,
+    TagColorEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { config as envConfig } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -9,6 +31,31 @@ import { initializeDb } from '../src/client';
 envConfig({
     path: path.resolve(__dirname, '../../../.env.local')
 });
+
+// Recreate AllEnums from schemas
+const AllEnums = {
+    AccommodationTypeEnum,
+    AmenitiesTypeEnum,
+    AuthProviderEnum,
+    BillingCycleEnum,
+    ClientTypeEnum,
+    EntityPermissionReasonEnum,
+    EntityTypeEnum,
+    EventCategoryEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PaymentMethodEnum,
+    PaymentStatusEnum,
+    PermissionEnum,
+    PostCategoryEnum,
+    PreferredContactEnum,
+    PriceCurrencyEnum,
+    RecurrenceTypeEnum,
+    RoleEnum,
+    SubscriptionStatusEnum,
+    TagColorEnum,
+    VisibilityEnum
+};
 
 // Utility to get enum values from the database
 const getDbEnumValues = async (pool: Pool, enumName: string): Promise<string[]> => {
@@ -25,7 +72,13 @@ describe('Enum consistency between TypeScript and database', () => {
     let pool: Pool;
 
     beforeAll(() => {
-        pool = new Pool({ connectionString: process.env.HOSPEDA_DATABASE_URL });
+        const connectionString = process.env.HOSPEDA_DATABASE_URL;
+        if (!connectionString) {
+            throw new Error(
+                'HOSPEDA_DATABASE_URL is not set. Please set this environment variable in .env.local for database tests.'
+            );
+        }
+        pool = new Pool({ connectionString });
         initializeDb(pool);
     });
 

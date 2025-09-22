@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/client';
 import { RRolePermissionModel } from '../../src/models/user/rRolePermission.model';
