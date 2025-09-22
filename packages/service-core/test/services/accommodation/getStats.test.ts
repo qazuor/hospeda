@@ -6,7 +6,7 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import type { AccommodationModel } from '@repo/db';
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Mocked } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
@@ -64,9 +64,15 @@ describe('AccommodationService.getStats', () => {
         const result = await service.getStats(actor, input);
         expectSuccess(result);
         expect(result.data).toEqual({
-            reviewsCount: accommodation.reviewsCount ?? 0,
-            averageRating: accommodation.averageRating ?? 0,
-            rating: accommodation.rating
+            stats: {
+                total: 1,
+                totalFeatured: accommodation.isFeatured ? 1 : 0,
+                averagePrice: accommodation.price?.price,
+                averageRating: accommodation.averageRating ?? 0,
+                totalByType: {
+                    [accommodation.type]: 1
+                }
+            }
         });
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: accommodation.id });
         expect(permissionHelpers.checkCanView).toHaveBeenCalledWith(actor, accommodation);

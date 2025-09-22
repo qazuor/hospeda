@@ -13,7 +13,7 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import type { AccommodationModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -63,10 +63,10 @@ describe('AccommodationService.search', () => {
         if (!entities[0]) {
             throw new Error('Expected at least one entity in entities');
         }
-        const filters = { type: entities[0].type };
         const result = await service.search(actor, {
-            filters,
-            pagination: { page: 1, pageSize: 2 }
+            type: entities[0].type,
+            page: 1,
+            pageSize: 2
         });
         expect(result.data).toBeDefined();
         expect(result.data?.items?.length).toBe(2);
@@ -78,8 +78,10 @@ describe('AccommodationService.search', () => {
         expect(firstItem.id).toBe(firstEntity.id);
         expect(result.error).toBeUndefined();
         expect(model.search).toHaveBeenCalledWith({
-            filters: expect.any(Object),
-            pagination: { page: 1, pageSize: 2 }
+            page: 1,
+            pageSize: 2,
+            sortOrder: 'asc',
+            type: entities[0].type
         });
     });
 
@@ -89,8 +91,8 @@ describe('AccommodationService.search', () => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');
         });
         const result = await service.search(noPermsActor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 2 }
+            page: 1,
+            pageSize: 2
         });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -98,9 +100,10 @@ describe('AccommodationService.search', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         const result = await service.search(actor, {
-            filters: { minPrice: 'not-a-number' },
-            pagination: { page: 1, pageSize: 2 }
-        } as unknown as Record<string, unknown>);
+            page: 1,
+            pageSize: 2,
+            minPrice: 'not-a-number'
+        } as any);
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });
@@ -108,8 +111,8 @@ describe('AccommodationService.search', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(model.search).mockRejectedValue(new Error('DB error'));
         const result = await service.search(actor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 2 }
+            page: 1,
+            pageSize: 2
         });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
@@ -122,8 +125,8 @@ describe('AccommodationService.search', () => {
             '_beforeSearch'
         ).mockRejectedValue(new Error('beforeSearch error'));
         const result = await service.search(actor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 2 }
+            page: 1,
+            pageSize: 2
         });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
@@ -136,15 +139,15 @@ describe('AccommodationService.search', () => {
             '_afterSearch'
         ).mockRejectedValue(new Error('afterSearch error'));
         const result = await service.search(actor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 2 }
+            page: 1,
+            pageSize: 2
         });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
     it('should use the search normalizer if provided', async () => {
-        const normalizer = vi.fn((opts) => ({ ...opts, pagination: { page: 99, pageSize: 10 } }));
+        const normalizer = vi.fn((opts) => ({ ...opts, page: 99, pageSize: 10 }));
         class ServiceWithNormalizer extends AccommodationService {
             protected override normalizers = {
                 ...getNormalizers(service),
@@ -156,14 +159,12 @@ describe('AccommodationService.search', () => {
             model as unknown as AccommodationModel
         );
         asMock(model.search).mockResolvedValue(paginated(entities, 99, 10));
-        await serviceWithNorm.search(actor, { filters: {}, pagination: { page: 1, pageSize: 10 } });
-        expect(normalizer).toHaveBeenCalledWith(
-            { filters: {}, pagination: { page: 1, pageSize: 10 } },
-            actor
-        );
+        await serviceWithNorm.search(actor, { page: 1, pageSize: 10 });
+        expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10, sortOrder: 'asc' }, actor);
         expect(model.search).toHaveBeenCalledWith({
-            filters: {},
-            pagination: { page: 99, pageSize: 10 }
+            page: 99,
+            pageSize: 10,
+            sortOrder: 'asc'
         });
     });
 });

@@ -1,5 +1,5 @@
 import type { AccommodationModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -34,8 +34,8 @@ describe('AccommodationService.count', () => {
     it('should return the count if actor has permission', async () => {
         (model.countByFilters as Mock).mockResolvedValue({ count: 42 });
         const result = await service.count(actor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 10 }
+            page: 1,
+            pageSize: 10
         });
         expect(result.data).toBeDefined();
         expect(result.data?.count).toBe(42);
@@ -48,8 +48,8 @@ describe('AccommodationService.count', () => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');
         });
         const result = await service.count(createActor({ permissions: [] }), {
-            filters: {},
-            pagination: { page: 1, pageSize: 10 }
+            page: 1,
+            pageSize: 10
         });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -57,9 +57,10 @@ describe('AccommodationService.count', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         const result = await service.count(actor, {
-            filters: { minPrice: 'not-a-number' },
-            pagination: { page: 1, pageSize: 10 }
-        } as unknown as Record<string, unknown>);
+            page: 1,
+            pageSize: 10,
+            minPrice: 'not-a-number'
+        } as any);
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });
@@ -67,8 +68,8 @@ describe('AccommodationService.count', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(model.countByFilters).mockRejectedValue(new Error('DB error'));
         const result = await service.count(actor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 10 }
+            page: 1,
+            pageSize: 10
         });
         expectInternalError(result);
     });
@@ -80,8 +81,8 @@ describe('AccommodationService.count', () => {
             '_beforeCount'
         ).mockRejectedValue(new Error('before error'));
         const result = await service.count(actor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 10 }
+            page: 1,
+            pageSize: 10
         });
         expectInternalError(result);
     });
@@ -93,8 +94,8 @@ describe('AccommodationService.count', () => {
             '_afterCount'
         ).mockRejectedValue(new Error('after error'));
         const result = await service.count(actor, {
-            filters: {},
-            pagination: { page: 1, pageSize: 10 }
+            page: 1,
+            pageSize: 10
         });
         expectInternalError(result);
     });
