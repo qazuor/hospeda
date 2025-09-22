@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum, ServiceErrorCode, TagColorEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, TagColorEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCountTags,

@@ -1,5 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';
@@ -13,7 +13,12 @@ describe('TagService.count', () => {
     let tagModelMock: TagModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const countParams = { filters: { nameContains: 'Tag' }, fuzzySearch: true };
+    const countParams = {
+        page: 1,
+        pageSize: 10,
+        filters: { nameContains: 'Tag' },
+        fuzzySearch: true
+    };
 
     beforeEach(() => {
         tagModelMock = createTypedModelMock(TagModel, ['count']);
