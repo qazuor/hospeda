@@ -15,7 +15,7 @@ import {
     RoleEnum,
     TagColorEnum,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { pgEnum } from 'drizzle-orm/pg-core';
 import { enumToTuple } from '../utils/enum-utils';
 
