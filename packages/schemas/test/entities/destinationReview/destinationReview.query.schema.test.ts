@@ -10,21 +10,20 @@ describe('DestinationReview Query Schemas', () => {
     describe('DestinationReviewSearchInputSchema', () => {
         it('should validate valid search input', () => {
             const searchData = {
+                page: 1,
+                pageSize: 10,
+                sortBy: 'createdAt',
+                sortOrder: 'desc' as const,
+                q: 'great destination',
                 filters: {
                     destinationId: '123e4567-e89b-12d3-a456-426614174002',
                     userId: '123e4567-e89b-12d3-a456-426614174001',
-                    rating: {
-                        min: 3,
-                        max: 5
-                    },
+                    minRating: 3,
+                    maxRating: 5,
                     hasTitle: true,
                     hasContent: true,
-                    createdAfter: new Date('2024-01-01'),
-                    createdBefore: new Date('2024-12-31')
-                },
-                pagination: {
-                    page: 1,
-                    pageSize: 10
+                    reviewedAfter: new Date('2024-01-01'),
+                    reviewedBefore: new Date('2024-12-31')
                 }
             };
 
@@ -113,9 +112,7 @@ describe('DestinationReview Query Schemas', () => {
             const countData = {
                 filters: {
                     destinationId: '123e4567-e89b-12d3-a456-426614174002',
-                    rating: {
-                        min: 4
-                    }
+                    minRating: 4
                 }
             };
 

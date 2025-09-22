@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { PostCategoryEnum, VisibilityEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
@@ -12,7 +11,8 @@ import {
     GetPostNewsInputSchema,
     GetPostStatsInputSchema,
     GetPostSummaryInputSchema
-} from '../../../src/entities/post/post.filters.schema.js';
+} from '../../../src/entities/post/subtypes/post.filters.schema.js';
+import { PostCategoryEnum, VisibilityEnum } from '../../../src/enums/index.js';
 
 describe('Post Filters Schemas', () => {
     describe('BasePostQueryParamsSchema', () => {

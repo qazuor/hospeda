@@ -1,10 +1,10 @@
-import { EventCategoryEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import {
     EventCreateInputSchema,
     EventUpdateInputSchema
 } from '../../../src/entities/event/event.crud.schema.js';
 import { EventSearchInputSchema } from '../../../src/entities/event/event.query.schema.js';
+import { EventCategoryEnum } from '../../../src/enums/index.js';
 
 describe('Event CRUD Schemas', () => {
     describe('EventCreateInputSchema', () => {
@@ -465,10 +465,8 @@ describe('Event CRUD Schemas', () => {
 
         it('should reject invalid pagination values', () => {
             const invalidPagination = {
-                pagination: {
-                    page: 0,
-                    pageSize: -1
-                }
+                page: 0,
+                pageSize: -1
             };
 
             const result = EventSearchInputSchema.safeParse(invalidPagination);

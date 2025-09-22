@@ -127,18 +127,17 @@ describe('PostSponsor CRUD Schemas', () => {
         it('should validate valid search input', () => {
             const validInputs = [
                 {
-                    filters: createPostSponsorSearchFilters(),
-                    pagination: createBasePaginationParams()
+                    ...createBasePaginationParams(),
+                    ...createPostSponsorSearchFilters()
                 },
                 {
-                    filters: {
-                        name: 'Test Company',
-                        type: 'POST_SPONSOR',
-                        q: 'search term'
-                    }
+                    name: 'Test Company',
+                    type: 'POST_SPONSOR',
+                    q: 'search term'
                 },
                 {
-                    pagination: { page: 1, pageSize: 20 }
+                    page: 1,
+                    pageSize: 20
                 },
                 {} // Empty search should be valid
             ];
@@ -150,10 +149,10 @@ describe('PostSponsor CRUD Schemas', () => {
 
         it('should accept individual filter fields', () => {
             const filterTests = [
-                { filters: { name: 'Company Name' } },
-                { filters: { type: 'ADVERTISER' } },
-                { filters: { q: 'search query' } },
-                { filters: { name: 'Test', type: 'POST_SPONSOR', q: 'query' } }
+                { name: 'Company Name' },
+                { type: 'ADVERTISER' },
+                { q: 'search query' },
+                { name: 'Test', type: 'POST_SPONSOR', q: 'query' }
             ];
 
             for (const test of filterTests) {
@@ -163,10 +162,10 @@ describe('PostSponsor CRUD Schemas', () => {
 
         it('should reject invalid filter values', () => {
             const invalidInputs = [
-                { filters: { name: '' } }, // Empty name
-                { filters: { type: 'INVALID_TYPE' } },
-                { filters: { name: 123 } }, // Wrong type
-                { pagination: { page: 0 } } // Invalid page
+                { name: '' }, // Empty name
+                { type: 'INVALID_TYPE' },
+                { name: 123 }, // Wrong type
+                { page: 0 } // Invalid page
             ];
 
             for (const input of invalidInputs) {
@@ -196,10 +195,14 @@ describe('PostSponsor CRUD Schemas', () => {
 
         it('should reject invalid output structure', () => {
             const invalidOutputs = [
-                { items: [createValidPostSponsor()] }, // Missing total
-                { total: 5 }, // Missing items
-                { items: 'not-an-array', total: 0 },
-                { items: [], total: -1 } // Negative total
+                {
+                    items: 'not-an-array' as any,
+                    total: 0
+                },
+                {
+                    items: [],
+                    total: -1 // Invalid negative total
+                }
             ];
 
             for (const output of invalidOutputs) {

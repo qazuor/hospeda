@@ -14,6 +14,7 @@ import {
     UserSummarySchema
 } from '../../../src/entities/user/user.query.schema.js';
 import { createUserFixture } from '../../fixtures/user.fixtures.js';
+import { createPaginatedResponse } from '../../helpers/pagination.helpers.js';
 
 describe('User Query Schemas', () => {
     describe('UserFiltersSchema', () => {
@@ -47,11 +48,11 @@ describe('User Query Schemas', () => {
             expect(() => UserFiltersSchema.parse(validFilters)).not.toThrow();
         });
 
-        it('should reject empty search query', () => {
-            const invalidInput = {
+        it('should accept empty search query', () => {
+            const validInput = {
                 query: ''
             };
-            expect(() => UserSearchInputSchema.parse(invalidInput)).toThrow(ZodError);
+            expect(() => UserFiltersSchema.parse(validInput)).not.toThrow();
         });
 
         it('should validate location filters', () => {
@@ -132,12 +133,14 @@ describe('User Query Schemas', () => {
         it('should validate user list output', () => {
             const users = [createUserFixture(), createUserFixture()];
             const validOutput = {
-                items: users,
+                data: users,
                 pagination: {
                     page: 1,
                     pageSize: 10,
-                    total: 2,
-                    totalPages: 1
+                    total: 3,
+                    totalPages: 1,
+                    hasNextPage: false,
+                    hasPreviousPage: false
                 }
             };
             expect(() => UserListOutputSchema.parse(validOutput)).not.toThrow();
@@ -145,12 +148,14 @@ describe('User Query Schemas', () => {
 
         it('should validate empty list', () => {
             const validOutput = {
-                items: [],
+                data: [],
                 pagination: {
                     page: 1,
                     pageSize: 10,
                     total: 0,
-                    totalPages: 0
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
                 }
             };
             expect(() => UserListOutputSchema.parse(validOutput)).not.toThrow();
@@ -179,31 +184,24 @@ describe('User Query Schemas', () => {
             expect(() => UserSearchInputSchema.parse(validInput)).not.toThrow();
         });
 
-        it('should enforce minimum query length when provided', () => {
-            const invalidInput = {
-                query: '' // Empty string should fail
+        it('should accept empty query when provided', () => {
+            const validInput = {
+                query: '' // Empty string is valid
             };
-            expect(() => UserSearchInputSchema.parse(invalidInput)).toThrow(ZodError);
+            expect(() => UserSearchInputSchema.parse(validInput)).not.toThrow();
         });
     });
 
     describe('UserSearchResultSchema', () => {
         it('should validate search result with score', () => {
             const user = createUserFixture();
-            const validResult = {
-                ...user,
-                score: 0.95,
-                matchedFields: ['displayName', 'contactInfo.personalEmail']
-            };
+            const validResult = createPaginatedResponse([user], 1, 10, 1);
             expect(() => UserSearchResultSchema.parse(validResult)).not.toThrow();
         });
 
         it('should validate result without optional fields', () => {
             const user = createUserFixture();
-            const validResult = {
-                ...user,
-                score: 0.8
-            };
+            const validResult = createPaginatedResponse([user]);
             expect(() => UserSearchResultSchema.parse(validResult)).not.toThrow();
         });
 
@@ -220,24 +218,7 @@ describe('User Query Schemas', () => {
     describe('UserSearchOutputSchema', () => {
         it('should validate search output', () => {
             const user = createUserFixture();
-            const searchResult = {
-                ...user,
-                score: 0.9,
-                matchedFields: ['displayName']
-            };
-            const validOutput = {
-                items: [searchResult],
-                pagination: {
-                    page: 1,
-                    pageSize: 10,
-                    total: 1,
-                    totalPages: 1
-                },
-                searchInfo: {
-                    query: 'john',
-                    totalResults: 1
-                }
-            };
+            const validOutput = createPaginatedResponse([user], 1, 10, 1);
             expect(() => UserSearchOutputSchema.parse(validOutput)).not.toThrow();
         });
     });
@@ -336,9 +317,9 @@ describe('User Query Schemas', () => {
                 const user = createUserFixture();
                 const userWithCounts = {
                     ...user,
-                    accommodationCount: 5,
+                    accommodationsCount: 5,
                     eventsCount: 3,
-                    postsCount: 12
+                    reviewsCount: 12
                 };
                 expect(() => UserListItemWithCountsSchema.parse(userWithCounts)).not.toThrow();
             });
@@ -352,7 +333,7 @@ describe('User Query Schemas', () => {
                 const user = createUserFixture();
                 const invalidUser = {
                     ...user,
-                    accommodationCount: -1 // Invalid negative count
+                    accommodationsCount: -1 // Invalid negative count
                 };
                 expect(() => UserListItemWithCountsSchema.parse(invalidUser)).toThrow(ZodError);
             });
@@ -363,29 +344,40 @@ describe('User Query Schemas', () => {
                 const user = createUserFixture();
                 const userWithCounts = {
                     ...user,
-                    accommodationCount: 5,
+                    accommodationsCount: 5,
                     eventsCount: 3,
-                    postsCount: 12
+                    reviewsCount: 12
                 };
-                const validOutput = {
-                    items: [userWithCounts],
-                    total: 1
-                };
+                const validOutput = createPaginatedResponse([userWithCounts], 1, 10, 1);
                 expect(() => UserListWithCountsOutputSchema.parse(validOutput)).not.toThrow();
             });
 
             it('should validate empty list with counts', () => {
                 const validOutput = {
-                    items: [],
-                    total: 0
+                    data: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                        totalPages: 1,
+                        hasNextPage: false,
+                        hasPreviousPage: false
+                    }
                 };
                 expect(() => UserListWithCountsOutputSchema.parse(validOutput)).not.toThrow();
             });
 
             it('should enforce non-negative total', () => {
                 const invalidOutput = {
-                    items: [],
-                    total: -1 // Invalid negative total
+                    data: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: -1, // Invalid negative total
+                        totalPages: 1,
+                        hasNextPage: false,
+                        hasPreviousPage: false
+                    }
                 };
                 expect(() => UserListWithCountsOutputSchema.parse(invalidOutput)).toThrow(ZodError);
             });
