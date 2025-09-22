@@ -5,11 +5,13 @@
  */
 
 import type {
+    Image,
+    Media,
     PostCreateInputSchema,
-    PostUpdateInputSchema as UpdatePostInputSchema
+    PostUpdateInputSchema as UpdatePostInputSchema,
+    Video
 } from '@repo/schemas';
-import type { ImageType, MediaType, VideoType } from '@repo/types';
-import { ModerationStatusEnum as ModerationStatusEnumType } from '@repo/types';
+import { ModerationStatusEnum as ModerationStatusEnumType } from '@repo/schemas';
 import type { z } from 'zod';
 import { normalizeAdminInfo } from '../../utils';
 
@@ -28,17 +30,16 @@ const DEFAULT_MODERATION_STATE: ModerationStatusEnumType = ModerationStatusEnumT
  * // Returns: { url: '...', caption: 'Test', moderationState: 'PENDING', ... }
  * ```
  */
-export function normalizeImage(input: unknown): ImageType | undefined {
+export function normalizeImage(input: unknown): Image | undefined {
     if (!input || typeof input !== 'object') return undefined;
-    const img = input as Partial<ImageType>;
+    const img = input as Partial<Image>;
     if (!img.url || typeof img.url !== 'string') return undefined;
     return {
         url: img.url,
         caption: img.caption,
         description: img.description,
         moderationState:
-            (img.moderationState as ModerationStatusEnumType) ?? DEFAULT_MODERATION_STATE,
-        tags: Array.isArray(img.tags) ? img.tags : undefined
+            (img.moderationState as ModerationStatusEnumType) ?? DEFAULT_MODERATION_STATE
     };
 }
 
@@ -58,18 +59,24 @@ export function normalizeImage(input: unknown): ImageType | undefined {
  * });
  * ```
  */
-export function normalizeMedia(input: unknown): MediaType | undefined {
+export function normalizeMedia(input: unknown): Media | undefined {
     if (!input || typeof input !== 'object') return undefined;
-    const media = input as Partial<MediaType>;
+    const media = input as Partial<Media>;
     const featuredImage = normalizeImage(media.featuredImage);
     if (!featuredImage) return undefined;
     return {
         featuredImage,
         gallery: Array.isArray(media.gallery)
-            ? (media.gallery.map(normalizeImage).filter(Boolean) as ImageType[])
+            ? (media.gallery.map(normalizeImage).filter(Boolean) as Image[])
             : undefined,
         videos: Array.isArray(media.videos)
-            ? (media.videos.filter((v) => v && typeof v.url === 'string') as VideoType[])
+            ? (media.videos.filter(
+                  (v: unknown): v is Video =>
+                      v != null &&
+                      typeof v === 'object' &&
+                      'url' in v &&
+                      typeof (v as { url: unknown }).url === 'string'
+              ) as Video[])
             : undefined
     };
 }

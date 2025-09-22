@@ -8,11 +8,13 @@ import type {
     GetPostNewsInput,
     GetPostStatsInput,
     GetPostSummaryInput,
+    Post,
     PostCreateInput,
     PostEngagementStats,
     PostListInput,
     PostSummary,
-    PostUpdateInput
+    PostUpdateInput,
+    VisibilityEnum
 } from '@repo/schemas';
 import {
     GetPostByCategoryInputSchema,
@@ -24,12 +26,13 @@ import {
     GetPostStatsInputSchema,
     GetPostSummaryInputSchema,
     LikePostInputSchema,
+    PermissionEnum,
     PostCreateInputSchema,
     PostListInputSchema as PostFilterInputSchema,
-    PostUpdateInputSchema as PostUpdateSchema
+    PostUpdateInputSchema as PostUpdateSchema,
+    RoleEnum,
+    ServiceErrorCode
 } from '@repo/schemas';
-import type { PostType, VisibilityEnum } from '@repo/types';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
@@ -52,7 +55,7 @@ import {
  * @extends BaseCrudService
  */
 export class PostService extends BaseCrudService<
-    PostType,
+    Post,
     PostModel,
     typeof PostCreateInputSchema,
     typeof PostUpdateSchema,
@@ -90,7 +93,7 @@ export class PostService extends BaseCrudService<
      * @param data - The input data
      * @returns Normalized and enriched data
      */
-    protected async _beforeCreate(data: PostCreateInput): Promise<Partial<PostType>> {
+    protected async _beforeCreate(data: PostCreateInput): Promise<Partial<Post>> {
         const normalized = normalizeCreateInput(data);
         if (!normalized.category || !normalized.title) {
             throw new ServiceError(
@@ -136,7 +139,7 @@ export class PostService extends BaseCrudService<
         return {
             ...normalized,
             slug
-        } as Partial<PostType>;
+        } as Partial<Post>;
     }
 
     /**
@@ -148,10 +151,7 @@ export class PostService extends BaseCrudService<
      * @param _actor - The actor performing the update (not used)
      * @returns Normalized and enriched data
      */
-    protected async _beforeUpdate(
-        data: PostUpdateInput,
-        _actor: Actor
-    ): Promise<Partial<PostType>> {
+    protected async _beforeUpdate(data: PostUpdateInput, _actor: Actor): Promise<Partial<Post>> {
         // The id to use for business logic is stored in this._updateId (set in update method)
         const id = this._updateId;
         if (!id) {
@@ -167,7 +167,7 @@ export class PostService extends BaseCrudService<
         const normalized = normalizeUpdateInput({ id, ...restUpdateFields });
         // Revert: if the normalized object is empty, just return an empty object
         if (Object.keys(normalized).length === 0) {
-            return {} as Partial<PostType>;
+            return {} as Partial<Post>;
         }
         // If title or category changes, validate uniqueness
         if (normalized.category && normalized.title) {
@@ -210,7 +210,7 @@ export class PostService extends BaseCrudService<
         } = normalized as Record<string, unknown>;
         return {
             ...rest
-        } as Partial<PostType>;
+        } as Partial<Post>;
     }
 
     /**
@@ -229,7 +229,7 @@ export class PostService extends BaseCrudService<
      * @param entity - The post entity to be updated.
      * @throws {ServiceError} If the permission check fails.
      */
-    protected _canUpdate(actor: Actor, entity: PostType): void {
+    protected _canUpdate(actor: Actor, entity: Post): void {
         checkCanUpdatePost(actor, entity);
     }
 
@@ -239,7 +239,7 @@ export class PostService extends BaseCrudService<
      * @param entity - The post entity to be soft-deleted.
      * @throws {ServiceError} If the permission check fails.
      */
-    protected _canSoftDelete(actor: Actor, entity: PostType): void {
+    protected _canSoftDelete(actor: Actor, entity: Post): void {
         checkCanDeletePost(actor, entity);
     }
 
@@ -249,7 +249,7 @@ export class PostService extends BaseCrudService<
      * @param entity - The post entity to be hard-deleted.
      * @throws {ServiceError} If the permission check fails.
      */
-    protected _canHardDelete(actor: Actor, _entity: PostType): void {
+    protected _canHardDelete(actor: Actor, _entity: Post): void {
         checkCanHardDeletePost(actor);
     }
 
@@ -259,7 +259,7 @@ export class PostService extends BaseCrudService<
      * @param entity - The post entity to be restored.
      * @throws {ServiceError} If the permission check fails.
      */
-    protected _canRestore(actor: Actor, _entity: PostType): void {
+    protected _canRestore(actor: Actor, _entity: Post): void {
         checkCanRestorePost(actor);
     }
 
@@ -269,7 +269,7 @@ export class PostService extends BaseCrudService<
      * @param entity - The post entity to be viewed.
      * @throws {ServiceError} If the permission check fails.
      */
-    protected _canView(actor: Actor, entity: PostType): void {
+    protected _canView(actor: Actor, entity: Post): void {
         checkCanViewPost(actor, entity);
     }
 
@@ -335,7 +335,7 @@ export class PostService extends BaseCrudService<
      */
     protected _canUpdateVisibility(
         actor: Actor,
-        _entity: PostType,
+        _entity: Post,
         _newVisibility: VisibilityEnum
     ): void {
         if (
@@ -380,10 +380,7 @@ export class PostService extends BaseCrudService<
      * @param params - Optional filters for news posts.
      * @returns List of news posts
      */
-    public async getNews(
-        actor: Actor,
-        params: GetPostNewsInput
-    ): Promise<ServiceOutput<PostType[]>> {
+    public async getNews(actor: Actor, params: GetPostNewsInput): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getNews',
             input: { ...params, actor },
@@ -419,7 +416,7 @@ export class PostService extends BaseCrudService<
     public async getFeatured(
         actor: Actor,
         params: GetPostFeaturedInput
-    ): Promise<ServiceOutput<PostType[]>> {
+    ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getFeatured',
             input: { ...params, actor },
@@ -455,7 +452,7 @@ export class PostService extends BaseCrudService<
     public async getByCategory(
         actor: Actor,
         params: GetPostByCategoryInput
-    ): Promise<ServiceOutput<PostType[]>> {
+    ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByCategory',
             input: { ...params, actor },
@@ -496,7 +493,7 @@ export class PostService extends BaseCrudService<
     public async getByRelatedAccommodation(
         actor: Actor,
         params: GetPostByRelatedAccommodationInput
-    ): Promise<ServiceOutput<PostType[]>> {
+    ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedAccommodation',
             input: { ...params, actor },
@@ -534,7 +531,7 @@ export class PostService extends BaseCrudService<
     public async getByRelatedDestination(
         actor: Actor,
         params: GetPostByRelatedDestinationInput
-    ): Promise<ServiceOutput<PostType[]>> {
+    ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedDestination',
             input: { ...params, actor },
@@ -572,7 +569,7 @@ export class PostService extends BaseCrudService<
     public async getByRelatedEvent(
         actor: Actor,
         params: GetPostByRelatedEventInput
-    ): Promise<ServiceOutput<PostType[]>> {
+    ): Promise<ServiceOutput<Post[]>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByRelatedEvent',
             input: { ...params, actor },
@@ -812,7 +809,7 @@ export class PostService extends BaseCrudService<
         actor: Actor,
         id: string,
         data: z.infer<typeof PostUpdateSchema>
-    ): Promise<ServiceOutput<PostType>> {
+    ): Promise<ServiceOutput<Post>> {
         this._updateId = id;
         try {
             return await super.update(actor, id, data);

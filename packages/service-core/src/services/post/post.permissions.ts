@@ -1,5 +1,5 @@
-import type { PostType } from '@repo/types';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
+import type { Post } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 
 /**
@@ -26,7 +26,7 @@ export function checkCanCreatePost(actor: Actor): void {
  * Checks if the actor can update a post.
  * @throws ServiceError if forbidden
  */
-export function checkCanUpdatePost(actor: Actor, post: PostType): void {
+export function checkCanUpdatePost(actor: Actor, post: Post): void {
     // Admins or editors can update any post, users only their own
     if (
         actor.permissions.includes(PermissionEnum.POST_UPDATE) ||
@@ -42,7 +42,7 @@ export function checkCanUpdatePost(actor: Actor, post: PostType): void {
  * Checks if the actor can delete a post.
  * @throws ServiceError if forbidden
  */
-export function checkCanDeletePost(actor: Actor, post: PostType): void {
+export function checkCanDeletePost(actor: Actor, post: Post): void {
     if (
         actor.permissions.includes(PermissionEnum.POST_DELETE) ||
         (actor.id === post.authorId &&
@@ -73,7 +73,7 @@ export function checkCanHardDeletePost(actor: Actor): void {
  * Checks if the actor can view a post, considering visibility and permissions.
  * @throws ServiceError if forbidden
  */
-export function checkCanViewPost(actor: Actor, post: PostType): void {
+export function checkCanViewPost(actor: Actor, post: Post): void {
     if (post.visibility === VisibilityEnum.PUBLIC) return;
     if (
         post.visibility === VisibilityEnum.PRIVATE &&
