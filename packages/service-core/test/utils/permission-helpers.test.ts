@@ -8,7 +8,7 @@
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { ServiceError } from '../../src/types';
 import {

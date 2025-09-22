@@ -15,7 +15,7 @@ import {
     ModerationStatusEnum,
     RoleEnum,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '../../src/types';
 import {

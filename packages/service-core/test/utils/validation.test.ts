@@ -9,7 +9,7 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { ServiceError } from '../../src/types';
