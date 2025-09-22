@@ -5,20 +5,20 @@
 /**
  * Example: Calculate average rating from a list of reviews
  */
-import type { AccommodationRatingType, AccommodationReviewType } from '@repo/types';
+import type { AccommodationRatingInput, AccommodationReview } from '@repo/schemas';
 
 /**
  * Calculates stats (reviewsCount, averageRating, rating) from a list of accommodation reviews.
- * @param reviews - Array of AccommodationReviewType
+ * @param reviews - Array of AccommodationReview
  * @returns Object with reviewsCount, averageRating, and rating (per-field averages)
  */
-export function calculateStatsFromReviews(reviews: readonly AccommodationReviewType[]): {
+export function calculateStatsFromReviews(reviews: readonly AccommodationReview[]): {
     reviewsCount: number;
     averageRating: number;
-    rating: AccommodationRatingType;
+    rating: AccommodationRatingInput;
 } {
     const reviewsCount = reviews.length;
-    const ratingFields: (keyof AccommodationRatingType)[] = [
+    const ratingFields: (keyof AccommodationRatingInput)[] = [
         'cleanliness',
         'hospitality',
         'services',
@@ -26,7 +26,7 @@ export function calculateStatsFromReviews(reviews: readonly AccommodationReviewT
         'communication',
         'location'
     ];
-    const ratingSums: Record<keyof AccommodationRatingType, number> = {
+    const ratingSums: Record<keyof AccommodationRatingInput, number> = {
         cleanliness: 0,
         hospitality: 0,
         services: 0,
@@ -44,7 +44,7 @@ export function calculateStatsFromReviews(reviews: readonly AccommodationReviewT
             totalRatings++;
         }
     }
-    const rating: AccommodationRatingType = {
+    const rating: AccommodationRatingInput = {
         cleanliness: reviewsCount ? ratingSums.cleanliness / reviewsCount : 0,
         hospitality: reviewsCount ? ratingSums.hospitality / reviewsCount : 0,
         services: reviewsCount ? ratingSums.services / reviewsCount : 0,

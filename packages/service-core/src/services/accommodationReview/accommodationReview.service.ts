@@ -1,18 +1,19 @@
 import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
 import {
+    type AccommodationReview,
     type AccommodationReviewCreateInput,
     AccommodationReviewCreateInputSchema,
-    type AccommodationReviewListByAccommodationOutput,
     type AccommodationReviewListByAccommodationParams,
     AccommodationReviewListByAccommodationParamsSchema,
-    type AccommodationReviewListWithUserOutput,
     type AccommodationReviewListWithUserParams,
     AccommodationReviewListWithUserParamsSchema,
+    type AccommodationReviewListWrapper,
     type AccommodationReviewSearchParams,
     AccommodationReviewSearchParamsSchema,
-    AccommodationReviewUpdateInputSchema
+    AccommodationReviewUpdateInputSchema,
+    type AccommodationReviewWithUserListWrapper,
+    type CountResponse
 } from '@repo/schemas';
-import type { AccommodationReviewType } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
@@ -30,7 +31,7 @@ import {
  * Provides CRUD and domain-specific logic for AccommodationReview entities.
  */
 export class AccommodationReviewService extends BaseCrudService<
-    AccommodationReviewType,
+    AccommodationReview,
     AccommodationReviewModel,
     typeof AccommodationReviewCreateInputSchema,
     typeof AccommodationReviewUpdateInputSchema,
@@ -59,19 +60,19 @@ export class AccommodationReviewService extends BaseCrudService<
     protected _canCreate(actor: Actor, _data: AccommodationReviewCreateInput): void {
         checkCanCreateAccommodationReview(actor);
     }
-    protected _canUpdate(actor: Actor, _entity: AccommodationReviewType): void {
+    protected _canUpdate(actor: Actor, _entity: AccommodationReview): void {
         checkCanUpdateAccommodationReview(actor);
     }
-    protected _canSoftDelete(actor: Actor, _entity: AccommodationReviewType): void {
+    protected _canSoftDelete(actor: Actor, _entity: AccommodationReview): void {
         checkCanDeleteAccommodationReview(actor);
     }
-    protected _canHardDelete(actor: Actor, _entity: AccommodationReviewType): void {
+    protected _canHardDelete(actor: Actor, _entity: AccommodationReview): void {
         checkCanDeleteAccommodationReview(actor);
     }
-    protected _canRestore(actor: Actor, _entity: AccommodationReviewType): void {
+    protected _canRestore(actor: Actor, _entity: AccommodationReview): void {
         checkCanUpdateAccommodationReview(actor);
     }
-    protected _canView(actor: Actor, _entity: AccommodationReviewType): void {
+    protected _canView(actor: Actor, _entity: AccommodationReview): void {
         checkCanViewAccommodationReview(actor);
     }
     protected _canList(actor: Actor): void {
@@ -85,7 +86,7 @@ export class AccommodationReviewService extends BaseCrudService<
     }
     protected _canUpdateVisibility(
         actor: Actor,
-        _entity: AccommodationReviewType,
+        _entity: AccommodationReview,
         _newVisibility: unknown
     ): void {
         checkCanUpdateAccommodationReview(actor);
@@ -94,7 +95,7 @@ export class AccommodationReviewService extends BaseCrudService<
     protected async _executeSearch(
         _params: AccommodationReviewSearchParams,
         _actor: Actor
-    ): Promise<PaginatedListOutput<AccommodationReviewType>> {
+    ): Promise<PaginatedListOutput<AccommodationReview>> {
         // TODO [e79b0be8-6523-4a9c-8a21-fd2072dc0111]: Implement search logic using Drizzle ORM
         throw new Error('Not implemented');
     }
@@ -102,7 +103,7 @@ export class AccommodationReviewService extends BaseCrudService<
     protected async _executeCount(
         _params: AccommodationReviewSearchParams,
         _actor: Actor
-    ): Promise<{ count: number }> {
+    ): Promise<CountResponse> {
         // TODO [e7aeadab-6753-4620-ada0-a77cc0d10bf7]: Implement count logic using Drizzle ORM
         throw new Error('Not implemented');
     }
@@ -121,9 +122,7 @@ export class AccommodationReviewService extends BaseCrudService<
         await this.accommodationService.updateStatsFromReview(accommodationId, stats);
     }
 
-    protected async _afterCreate(
-        entity: AccommodationReviewType
-    ): Promise<AccommodationReviewType> {
+    protected async _afterCreate(entity: AccommodationReview): Promise<AccommodationReview> {
         await this.recalculateAndUpdateAccommodationStats(entity.accommodationId);
         return entity;
     }
@@ -131,7 +130,7 @@ export class AccommodationReviewService extends BaseCrudService<
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor
-    ): Promise<{ count: number }> {
+    ): Promise<CountResponse> {
         // Find the deleted review (assume last deleted)
         // If you have the review ID, use it; otherwise, you may need to pass it explicitly
         // For now, recalculate stats for all accommodations (safe fallback)
@@ -150,12 +149,12 @@ export class AccommodationReviewService extends BaseCrudService<
      * Validates permissions via _canList and returns only non-deleted reviews.
      * @param actor - The actor performing the action
      * @param input - Object containing accommodationId and optional pagination
-     * @returns Paginated list of reviews for the accommodation
+     * @returns Paginated list of reviews for the accommodation wrapped in consistent format
      */
     public async listByAccommodation(
         actor: Actor,
         input: AccommodationReviewListByAccommodationParams
-    ): Promise<ServiceOutput<AccommodationReviewListByAccommodationOutput>> {
+    ): Promise<ServiceOutput<AccommodationReviewListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listByAccommodation',
             input: { ...input, actor },
@@ -167,7 +166,11 @@ export class AccommodationReviewService extends BaseCrudService<
                     { accommodationId, deletedAt: null },
                     { page, pageSize }
                 );
-                return result;
+
+                // Wrap the result in consistent format
+                const accommodationReviews = Array.isArray(result.items) ? result.items : [];
+
+                return { accommodationReviews };
             }
         });
     }
@@ -177,19 +180,19 @@ export class AccommodationReviewService extends BaseCrudService<
      * Validates permissions via _canList and returns reviews with user data.
      * @param actor - The actor performing the action
      * @param input - Object containing optional pagination and filters
-     * @returns Paginated list of reviews with user information
+     * @returns Paginated list of reviews with user information wrapped in consistent format
      */
     public async listWithUser(
         actor: Actor,
-        input: AccommodationReviewListWithUserParams = {}
-    ): Promise<ServiceOutput<AccommodationReviewListWithUserOutput>> {
+        input: AccommodationReviewListWithUserParams = { page: 1, pageSize: 10 }
+    ): Promise<ServiceOutput<AccommodationReviewWithUserListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listWithUser',
             input: { ...input, actor },
             schema: AccommodationReviewListWithUserParamsSchema,
             execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
-                const { page, pageSize, filters = {} } = validated;
+                const { page = 1, pageSize = 10, filters = {} } = validated;
 
                 // Default filters for public access
                 const defaultFilters = {
@@ -198,7 +201,11 @@ export class AccommodationReviewService extends BaseCrudService<
                 };
 
                 const result = await this.model.findAllWithUser(defaultFilters, { page, pageSize });
-                return result as AccommodationReviewListWithUserOutput;
+
+                // Wrap the result in consistent format
+                const accommodationReviews = Array.isArray(result.items) ? result.items : [];
+
+                return { accommodationReviews };
             }
         });
     }
