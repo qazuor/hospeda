@@ -1,4 +1,5 @@
 // Core schemas
+export * from './entity-tag.schema.js'; // Polymorphic relation schema
 export * from './tag.schema.js'; // Main entity schema
 
 // CRUD operations

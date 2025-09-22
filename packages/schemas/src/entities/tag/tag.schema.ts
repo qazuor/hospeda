@@ -1,6 +1,7 @@
-import type { TagId, UserId } from '@repo/types';
-import { LifecycleStatusEnum, TagColorEnum } from '@repo/types';
 import { z } from 'zod';
+import { TagIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
+import { TagColorEnumSchema } from '../../enums/tag-color.schema.js';
 
 /**
  * Tag Schema - Main Entity Schema (Completely Flat)
@@ -10,12 +11,7 @@ import { z } from 'zod';
  */
 export const TagSchema = z.object({
     // ID field
-    id: z
-        .string({
-            message: 'zodError.common.id.required'
-        })
-        .uuid({ message: 'zodError.common.id.invalidUuid' })
-        .transform((val) => val as TagId),
+    id: TagIdSchema,
 
     // Audit fields
     createdAt: z.coerce.date({
@@ -24,35 +20,17 @@ export const TagSchema = z.object({
     updatedAt: z.coerce.date({
         message: 'zodError.common.updatedAt.required'
     }),
-    createdById: z
-        .string({
-            message: 'zodError.common.id.required'
-        })
-        .uuid({ message: 'zodError.common.id.invalidUuid' })
-        .transform((val) => val as UserId),
-    updatedById: z
-        .string({
-            message: 'zodError.common.id.required'
-        })
-        .uuid({ message: 'zodError.common.id.invalidUuid' })
-        .transform((val) => val as UserId),
+    createdById: UserIdSchema,
+    updatedById: UserIdSchema,
     deletedAt: z.coerce
         .date({
             message: 'zodError.common.deletedAt.required'
         })
         .optional(),
-    deletedById: z
-        .string({
-            message: 'zodError.common.id.required'
-        })
-        .uuid({ message: 'zodError.common.id.invalidUuid' })
-        .transform((val) => val as UserId)
-        .optional(),
+    deletedById: UserIdSchema.optional(),
 
     // Lifecycle fields
-    lifecycleState: z.nativeEnum(LifecycleStatusEnum, {
-        error: () => ({ message: 'zodError.enums.lifecycleStatus.invalid' })
-    }),
+    lifecycleState: LifecycleStatusEnumSchema,
 
     // Tag-specific fields
     name: z
@@ -68,9 +46,7 @@ export const TagSchema = z.object({
         })
         .min(1, { message: 'zodError.tag.slug.min' }),
 
-    color: z.nativeEnum(TagColorEnum, {
-        error: () => ({ message: 'zodError.enums.tagColor.invalid' })
-    }),
+    color: TagColorEnumSchema,
 
     icon: z
         .string({
@@ -88,6 +64,7 @@ export const TagSchema = z.object({
         .max(300, { message: 'zodError.tag.notes.max' })
         .optional()
 });
+export type Tag = z.infer<typeof TagSchema>;
 
 /**
  * Tag array schema
@@ -95,9 +72,4 @@ export const TagSchema = z.object({
 export const TagsArraySchema = z.array(TagSchema, {
     message: 'zodError.tags.required'
 });
-
-/**
- * Type exports for the main Tag entity
- */
-export type Tag = z.infer<typeof TagSchema>;
 export type TagsArray = z.infer<typeof TagsArraySchema>;
