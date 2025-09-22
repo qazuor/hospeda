@@ -1,8 +1,8 @@
-import type { DestinationRatingType, DestinationReviewType } from '@repo/types';
+import type { DestinationRatingInput, DestinationReview } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { calculateStatsFromReviews } from '../../../src/services/destinationReview/destinationReview.helpers';
 
-const fullRating: DestinationRatingType = {
+const fullRating: DestinationRatingInput = {
     landscape: 5,
     attractions: 4,
     accessibility: 3,
@@ -25,7 +25,7 @@ const fullRating: DestinationRatingType = {
 
 describe('calculateStatsFromReviews (DestinationReviewService)', () => {
     it('returns zeros if reviews array is empty', () => {
-        const reviews: DestinationReviewType[] = [];
+        const reviews: DestinationReview[] = [];
         const result = calculateStatsFromReviews(reviews);
         expect(result).toEqual({
             reviewsCount: 0,
@@ -54,9 +54,7 @@ describe('calculateStatsFromReviews (DestinationReviewService)', () => {
     });
 
     it('returns the rating for a single review', () => {
-        const reviews: DestinationReviewType[] = [
-            { rating: fullRating, id: '1' } as DestinationReviewType
-        ];
+        const reviews: DestinationReview[] = [{ rating: fullRating, id: '1' } as DestinationReview];
         const result = calculateStatsFromReviews(reviews);
         expect(result.reviewsCount).toBe(1);
         expect(result.rating).toEqual(fullRating);
@@ -65,16 +63,16 @@ describe('calculateStatsFromReviews (DestinationReviewService)', () => {
     });
 
     it('calcula promedios correctos para múltiples reviews', () => {
-        const reviews: DestinationReviewType[] = [
-            { rating: fullRating, id: '1' } as DestinationReviewType,
+        const reviews: DestinationReview[] = [
+            { rating: fullRating, id: '1' } as DestinationReview,
             {
                 rating: { ...fullRating, landscape: 3, attractions: 2 },
                 id: '2'
-            } as DestinationReviewType,
+            } as DestinationReview,
             {
                 rating: { ...fullRating, safety: 2, gastronomy: 1 },
                 id: '3'
-            } as DestinationReviewType
+            } as DestinationReview
         ];
         const result = calculateStatsFromReviews(reviews);
         expect(result.reviewsCount).toBe(3);
@@ -96,19 +94,19 @@ describe('calculateStatsFromReviews (DestinationReviewService)', () => {
     });
 
     it('trata ratings faltantes como 0', () => {
-        const reviews: DestinationReviewType[] = [
+        const reviews: DestinationReview[] = [
             {
-                rating: { landscape: 5, attractions: 4 } as DestinationRatingType,
+                rating: { landscape: 5, attractions: 4 } as DestinationRatingInput,
                 id: '1'
-            } as DestinationReviewType,
+            } as DestinationReview,
             {
-                rating: { safety: 3, cleanliness: 4 } as DestinationRatingType,
+                rating: { safety: 3, cleanliness: 4 } as DestinationRatingInput,
                 id: '2'
-            } as DestinationReviewType,
+            } as DestinationReview,
             {
-                rating: { hospitality: 2, gastronomy: 1 } as DestinationRatingType,
+                rating: { hospitality: 2, gastronomy: 1 } as DestinationRatingInput,
                 id: '3'
-            } as DestinationReviewType
+            } as DestinationReview
         ];
         const result = calculateStatsFromReviews(reviews);
         expect(result.reviewsCount).toBe(3);

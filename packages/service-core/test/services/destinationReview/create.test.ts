@@ -1,12 +1,12 @@
 import { DestinationModel, DestinationReviewModel } from '@repo/db';
 import type {
-    DestinationId,
-    DestinationReviewId,
-    DestinationReviewType,
-    NewDestinationReviewInputType,
-    UserId
-} from '@repo/types';
-import { PermissionEnum } from '@repo/types';
+    DestinationIdType,
+    DestinationReview,
+    DestinationReviewCreateInput,
+    DestinationReviewIdType,
+    UserIdType
+} from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DestinationService } from '../../../src/services/destination/destination.service';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';
@@ -40,10 +40,10 @@ describe('create', () => {
 
     // Helper para construir el input correcto para crear un review
     const buildReviewInput = (
-        overrides: Partial<NewDestinationReviewInputType> = {}
-    ): NewDestinationReviewInputType => ({
-        destinationId: getMockId('destination', 'dest-1') as DestinationId,
-        userId: getMockId('user', 'user-1') as UserId,
+        overrides: Partial<DestinationReviewCreateInput> = {}
+    ): DestinationReviewCreateInput => ({
+        destinationId: getMockId('destination', 'dest-1') as DestinationIdType,
+        userId: getMockId('user', 'user-1') as UserIdType,
         rating: {
             landscape: 5,
             attractions: 4,
@@ -72,15 +72,15 @@ describe('create', () => {
     it('creates a review and updates destination stats', async () => {
         // Arrange
         const actor = createActor({
-            id: getMockId('user', 'actor-1') as UserId,
+            id: getMockId('user', 'actor-1') as UserIdType,
             permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
         });
-        const destinationId = getMockId('destination', 'dest-1') as DestinationId;
-        const userId = getMockId('user', 'user-1') as UserId;
+        const destinationId = getMockId('destination', 'dest-1') as DestinationIdType;
+        const userId = getMockId('user', 'user-1') as UserIdType;
         const reviewInput = buildReviewInput();
         const now = new Date();
-        const createdReview: DestinationReviewType = {
-            id: getMockId('feature', 'review-1') as DestinationReviewId,
+        const createdReview: DestinationReview = {
+            id: getMockId('feature', 'review-1') as DestinationReviewIdType,
             destinationId,
             userId,
             title: reviewInput.title,

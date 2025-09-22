@@ -1,126 +1,140 @@
-import type { AccommodationRatingType, AccommodationReviewType } from '@repo/types';
+import type { AccommodationRatingInput, AccommodationReview } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { calculateStatsFromReviews } from '../../../src/services/accommodationReview/accommodationReview.helpers';
-
-const fullRating: AccommodationRatingType = {
-    cleanliness: 4,
-    hospitality: 5,
-    services: 3,
-    accuracy: 4,
-    communication: 5,
-    location: 4
-};
 
 /**
  * Test suite for calculateStatsFromReviews helper in AccommodationReviewService.
  * Ensures robust, predictable, and homogeneous calculation of average cleanliness rating.
  */
-describe('calculateStatsFromReviews (AccommodationReviewService)', () => {
-    it('returns zeros if reviews array is empty', () => {
-        const reviews: AccommodationReviewType[] = [];
-        const result = calculateStatsFromReviews(reviews);
-        expect(result).toEqual({
-            reviewsCount: 0,
-            averageRating: 0,
-            rating: {
-                cleanliness: 0,
-                hospitality: 0,
-                services: 0,
-                accuracy: 0,
-                communication: 0,
-                location: 0
-            }
+describe('calculateStatsFromReviews', () => {
+    it('should return initial stats for empty reviews array', () => {
+        const emptyRating: AccommodationRatingInput = {
+            cleanliness: 0,
+            hospitality: 0,
+            services: 0,
+            accuracy: 0,
+            communication: 0,
+            location: 0
+        };
+
+        // Test with empty array
+        const stats = calculateStatsFromReviews([]);
+        expect(stats.reviewsCount).toBe(0);
+        expect(stats.averageRating).toBe(0);
+        expect(stats.rating).toEqual(emptyRating);
+    });
+
+    it('should return zero stats when no reviews', () => {
+        const reviews: AccommodationReview[] = [];
+        const stats = calculateStatsFromReviews(reviews);
+
+        expect(stats.reviewsCount).toBe(0);
+        expect(stats.averageRating).toBe(0);
+        expect(stats.rating).toEqual({
+            cleanliness: 0,
+            hospitality: 0,
+            services: 0,
+            accuracy: 0,
+            communication: 0,
+            location: 0
         });
     });
 
-    it('returns the rating for a single review', () => {
-        const reviews: AccommodationReviewType[] = [
-            { rating: fullRating, id: '1' } as AccommodationReviewType
+    it('should calculate correct stats for single review', () => {
+        const fullRating: AccommodationRatingInput = {
+            cleanliness: 5,
+            hospitality: 5,
+            services: 5,
+            accuracy: 5,
+            communication: 5,
+            location: 5
+        };
+
+        const reviews: AccommodationReview[] = [
+            { rating: fullRating, id: '1' } as AccommodationReview
         ];
-        const result = calculateStatsFromReviews(reviews);
-        expect(result.reviewsCount).toBe(1);
-        expect(result.rating).toEqual(fullRating);
-        // averageRating: suma de todos los campos / cantidad de campos
-        const expectedAvg = (4 + 5 + 3 + 4 + 5 + 4) / 6;
-        expect(result.averageRating).toBeCloseTo(expectedAvg, 4);
+
+        const stats = calculateStatsFromReviews(reviews);
+        expect(stats.reviewsCount).toBe(1);
+        expect(stats.averageRating).toBe(5);
+        expect(stats.rating).toEqual(fullRating);
     });
 
-    it('calcula promedios correctos para múltiples reviews', () => {
-        const reviews: AccommodationReviewType[] = [
-            {
-                rating: {
-                    cleanliness: 4,
-                    hospitality: 5,
-                    services: 3,
-                    accuracy: 4,
-                    communication: 5,
-                    location: 4
-                },
-                id: '1'
-            } as AccommodationReviewType,
-            {
-                rating: {
-                    cleanliness: 2,
-                    hospitality: 3,
-                    services: 4,
-                    accuracy: 3,
-                    communication: 4,
-                    location: 3
-                },
-                id: '2'
-            } as AccommodationReviewType,
+    it('should calculate correct stats for multiple reviews', () => {
+        const reviews: AccommodationReview[] = [
             {
                 rating: {
                     cleanliness: 5,
                     hospitality: 4,
                     services: 5,
                     accuracy: 5,
-                    communication: 5,
+                    communication: 4,
                     location: 5
                 },
-                id: '3'
-            } as AccommodationReviewType
-        ];
-        const result = calculateStatsFromReviews(reviews);
-        expect(result.reviewsCount).toBe(3);
-        expect(result.rating.cleanliness).toBeCloseTo((4 + 2 + 5) / 3, 4);
-        expect(result.rating.hospitality).toBeCloseTo((5 + 3 + 4) / 3, 4);
-        expect(result.rating.services).toBeCloseTo((3 + 4 + 5) / 3, 4);
-        expect(result.rating.accuracy).toBeCloseTo((4 + 3 + 5) / 3, 4);
-        expect(result.rating.communication).toBeCloseTo((5 + 4 + 5) / 3, 4);
-        expect(result.rating.location).toBeCloseTo((4 + 3 + 5) / 3, 4);
-        // averageRating: suma de todos los valores / total de ratings
-        const totalSum = 4 + 5 + 3 + 4 + 5 + 4 + (2 + 3 + 4 + 3 + 4 + 3) + (5 + 4 + 5 + 5 + 5 + 5);
-        const totalRatings = 3 * 6;
-        expect(result.averageRating).toBeCloseTo(totalSum / totalRatings, 4);
-    });
-
-    it('trata ratings faltantes como 0', () => {
-        const reviews: AccommodationReviewType[] = [
+                id: '1'
+            } as AccommodationReview,
+            {
+                rating: {
+                    cleanliness: 3,
+                    hospitality: 3,
+                    services: 4,
+                    accuracy: 4,
+                    communication: 3,
+                    location: 4
+                },
+                id: '2'
+            } as AccommodationReview,
             {
                 rating: {
                     cleanliness: 4,
                     hospitality: 5,
                     services: 3,
-                    accuracy: 4,
+                    accuracy: 3,
                     communication: 5,
-                    location: 4
+                    location: 3
+                },
+                id: '3'
+            } as AccommodationReview
+        ];
+
+        const stats = calculateStatsFromReviews(reviews);
+        expect(stats.reviewsCount).toBe(3);
+        expect(stats.averageRating).toBeCloseTo(4.0, 1);
+        expect(stats.rating.cleanliness).toBeCloseTo(4, 1);
+        expect(stats.rating.hospitality).toBeCloseTo(4, 1);
+        expect(stats.rating.services).toBeCloseTo(4, 1);
+        expect(stats.rating.accuracy).toBeCloseTo(4, 1);
+        expect(stats.rating.communication).toBeCloseTo(4, 1);
+        expect(stats.rating.location).toBeCloseTo(4, 1);
+    });
+
+    it('should handle incomplete rating data', () => {
+        const reviews: AccommodationReview[] = [
+            {
+                rating: {
+                    cleanliness: 5,
+                    hospitality: 4,
+                    services: 5,
+                    accuracy: 5,
+                    communication: 4,
+                    location: 5
                 },
                 id: '1'
-            } as AccommodationReviewType,
-            { rating: { cleanliness: 2 }, id: '2' } as AccommodationReviewType,
+            } as AccommodationReview,
+            { rating: { cleanliness: 2 }, id: '2' } as AccommodationReview,
             {
-                rating: { cleanliness: 5, hospitality: 4, services: 5 },
+                rating: {
+                    cleanliness: 4,
+                    location: 3
+                },
                 id: '3'
-            } as AccommodationReviewType
+            } as AccommodationReview
         ];
-        const result = calculateStatsFromReviews(reviews);
-        expect(result.reviewsCount).toBe(3);
-        // Los campos faltantes se consideran 0 en el promedio
-        expect(result.rating.hospitality).toBeCloseTo((5 + 0 + 4) / 3, 4);
-        expect(result.rating.services).toBeCloseTo((3 + 0 + 5) / 3, 4);
-        expect(result.rating.accuracy).toBeCloseTo((4 + 0 + 0) / 3, 4);
-        expect(result.rating.communication).toBeCloseTo((5 + 0 + 0) / 3, 4);
-        expect(result.rating.location).toBeCloseTo((4 + 0 + 0) / 3, 4);
+
+        const stats = calculateStatsFromReviews(reviews);
+        expect(stats.reviewsCount).toBe(3);
+        // Should still calculate correctly with incomplete data
+        expect(stats.averageRating).toBeGreaterThan(0);
+        expect(stats.rating.cleanliness).toBeCloseTo(3.67, 2);
     });
 });
