@@ -10,5 +10,5 @@ export * from './destination.query.schema.js'; // List, Search, Summary, Stats, 
 // Relations
 export * from './destination.relations.schema.js'; // Schemas with related entities
 
-// Additional schemas
-export * from './destination.rating.schema.js';
+// Subtypes - all subschemas are now organized in subtypes folder
+export * from './subtypes/index.js';
