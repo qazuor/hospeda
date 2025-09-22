@@ -1,10 +1,57 @@
 import { logger } from '@repo/logger';
-import { AllEnums } from '@repo/types';
+import {
+    AccommodationTypeEnum,
+    AmenitiesTypeEnum,
+    AuthProviderEnum,
+    BillingCycleEnum,
+    ClientTypeEnum,
+    EntityPermissionReasonEnum,
+    EntityTypeEnum,
+    EventCategoryEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PaymentMethodEnum,
+    PaymentStatusEnum,
+    PermissionEnum,
+    PostCategoryEnum,
+    PreferredContactEnum,
+    PriceCurrencyEnum,
+    RecurrenceTypeEnum,
+    RoleEnum,
+    SubscriptionStatusEnum,
+    TagColorEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
+
+// Recreate AllEnums from schemas
+const AllEnums = {
+    AccommodationTypeEnum,
+    AmenitiesTypeEnum,
+    AuthProviderEnum,
+    BillingCycleEnum,
+    ClientTypeEnum,
+    EntityPermissionReasonEnum,
+    EntityTypeEnum,
+    EventCategoryEnum,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PaymentMethodEnum,
+    PaymentStatusEnum,
+    PermissionEnum,
+    PostCategoryEnum,
+    PreferredContactEnum,
+    PriceCurrencyEnum,
+    RecurrenceTypeEnum,
+    RoleEnum,
+    SubscriptionStatusEnum,
+    TagColorEnum,
+    VisibilityEnum
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

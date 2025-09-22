@@ -21,7 +21,7 @@ This package provides a fully-typed, modular, and extensible database layer for 
 
 ## Installation
 
-This package is designed for use within the monorepo. It depends on other internal packages (`@repo/types`, `@repo/schemas`, etc.) and expects a PostgreSQL database.
+This package is designed for use within the monorepo. It depends on other internal packages (`@repo/schemas`, etc.) and expects a PostgreSQL database.
 
 ```sh
 pnpm install @repo/db
@@ -274,4 +274,4 @@ src/
 
 - Node.js 18+
 - PostgreSQL 13+
-- Internal packages: `@repo/types`, `@repo/schemas`, `@repo/utils`, etc.
+- Internal packages: `@repo/schemas`, `@repo/utils`, etc.
