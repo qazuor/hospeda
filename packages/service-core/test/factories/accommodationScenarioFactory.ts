@@ -1,5 +1,5 @@
 import { AccommodationModel } from '@repo/db';
-import type { AccommodationType, UserId } from '@repo/types';
+import type { Accommodation, UserIdType } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
 import { AccommodationService } from '../../src/services/accommodation/accommodation.service';
@@ -57,9 +57,9 @@ interface ScenarioOptions {
     entityType?: EntityType;
     isOwner?: boolean;
     actorOverrides?: Partial<Actor>;
-    entityOverrides?: Partial<AccommodationType>;
+    entityOverrides?: Partial<Accommodation>;
     actor?: Actor;
-    entity?: AccommodationType;
+    entity?: Accommodation;
 }
 
 /**
@@ -102,7 +102,7 @@ export const createAccommodationScenario = (options: ScenarioOptions = {}) => {
         entityOverrides = {},
         actor, // New: allows passing a pre-built actor
         entity // New: allows passing a pre-built entity
-    } = options as ScenarioOptions & { actor?: Actor; entity?: AccommodationType };
+    } = options as ScenarioOptions & { actor?: Actor; entity?: Accommodation };
 
     // 1. Create the actor using the builder or legacy factory
     const finalActor = actor
@@ -110,7 +110,7 @@ export const createAccommodationScenario = (options: ScenarioOptions = {}) => {
         : new ActorFactoryBuilder()[actorType]().withOverrides(actorOverrides).build();
 
     // 2. Create the entity using the builder or legacy factory, ensuring ownerId matches if isOwner is true
-    let finalEntity: AccommodationType;
+    let finalEntity: Accommodation;
     if (entity) {
         finalEntity = entity;
     } else {
@@ -118,8 +118,8 @@ export const createAccommodationScenario = (options: ScenarioOptions = {}) => {
         const builder = new AccommodationFactoryBuilder()
             [entityType]()
             .withOverrides(entityOverrides);
-        if (ownerId) builder.withOwner(ownerId as UserId);
-        finalEntity = builder.build();
+        if (ownerId) builder.withOwner(ownerId as UserIdType);
+        finalEntity = builder.build() as any; // Temporary cast for compatibility
     }
 
     // 3. Mock the database model to return the created entity

@@ -1,13 +1,13 @@
-import type { PermissionEnum, RoleEnum, UserId, UserType } from '@repo/types';
-import { LifecycleStatusEnum, RoleEnum as RoleEnumImpl, VisibilityEnum } from '@repo/types';
+import type { PermissionEnum, RoleEnum, User } from '@repo/schemas';
+import { LifecycleStatusEnum, RoleEnum as RoleEnumImpl, VisibilityEnum } from '@repo/schemas';
 import { BaseFactoryBuilder } from './baseEntityFactory';
 import { getMockId } from './utilsFactory';
 
 /**
  * Base user object for test factories.
  */
-const baseUser: UserType = {
-    id: getMockId('user') as UserId,
+const baseUser: User = {
+    id: getMockId('user') as string,
     slug: 'test-user',
     displayName: 'Test User',
     firstName: 'Test',
@@ -24,8 +24,8 @@ const baseUser: UserType = {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: undefined,
-    createdById: getMockId('user') as UserId,
-    updatedById: getMockId('user') as UserId,
+    createdById: getMockId('user') as string,
+    updatedById: getMockId('user') as string,
     deletedById: undefined,
     adminInfo: { favorite: false },
     lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -36,7 +36,7 @@ const baseUser: UserType = {
  * Builder for UserType test data.
  * Supports fluent .with() and role/permission helpers.
  */
-export class UserFactoryBuilder extends BaseFactoryBuilder<UserType> {
+export class UserFactoryBuilder extends BaseFactoryBuilder<User> {
     constructor() {
         super(baseUser);
     }
@@ -63,7 +63,7 @@ export class UserFactoryBuilder extends BaseFactoryBuilder<UserType> {
 /**
  * Quick one-off user creation with overrides.
  */
-export const createUser = (overrides: Partial<UserType> = {}): UserType => {
+export const createMockUser = (overrides: Partial<User> = {}): User => {
     // Forzar permissions a [] si no se provee en overrides
     const safeOverrides = {
         ...overrides,
@@ -76,10 +76,10 @@ export const createUser = (overrides: Partial<UserType> = {}): UserType => {
  * Creates user data for creation (omits server-generated fields).
  * Use this for testing the create method.
  */
-export const createUserForCreation = (
-    overrides: Partial<UserType> = {}
+export const createMockUserCreateInput = (
+    overrides: Partial<User> = {}
 ): Omit<
-    UserType,
+    User,
     | 'id'
     | 'createdAt'
     | 'updatedAt'
@@ -89,7 +89,7 @@ export const createUserForCreation = (
     | 'deletedById'
     | 'bookmarks'
 > => {
-    const user = createUser(overrides);
+    const user = createMockUser(overrides);
     const {
         id,
         createdAt,
@@ -103,3 +103,17 @@ export const createUserForCreation = (
     } = user;
     return userForCreation;
 };
+
+// ============================================================================
+// LEGACY COMPATIBILITY
+// ============================================================================
+
+/**
+ * @deprecated Use createMockUser instead
+ */
+export const createUser = createMockUser;
+
+/**
+ * @deprecated Use createMockUserCreateInput instead
+ */
+export const createUserForCreation = createMockUserCreateInput;

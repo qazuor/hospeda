@@ -13,12 +13,17 @@ import crypto from 'node:crypto';
 export type IdTypes =
     | 'user'
     | 'accommodation'
+    | 'amenity'
     | 'destination'
     | 'destinationReview'
     | 'post'
+    | 'postSponsorship'
+    | 'postSponsor'
+    | 'userBookmark'
     | 'event'
     | 'tag'
     | 'feature'
+    | 'faq'
     | 'iaData';
 
 function generateValidUuidFromLabel(label: string): string {
@@ -73,7 +78,7 @@ export const getMockId = (type: IdTypes, id?: string): string => {
  * const faqId = getMockFaqId();
  * const customFaqId = getMockFaqId('faq-123');
  */
-export const getMockFaqId = (id?: string): string => getMockId('feature', id);
+export const getMockFaqId = (id?: string): string => getMockId('faq', id);
 
 /**
  * Returns a mock AI data ID for use in tests, using the 'iaData' entity type.

@@ -1,27 +1,27 @@
-import type { PostSponsorshipCreateInput } from '@repo/schemas';
 import type {
-    PostId,
-    PostSponsorId,
-    PostSponsorshipId,
-    PostSponsorshipType,
-    UserId
-} from '@repo/types';
-import { LifecycleStatusEnum, PriceCurrencyEnum } from '@repo/types';
+    PostIdType,
+    PostSponsorIdType,
+    PostSponsorship,
+    PostSponsorshipCreateInput,
+    PostSponsorshipIdType,
+    UserIdType
+} from '@repo/schemas';
+import { LifecycleStatusEnum, PriceCurrencyEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 export class PostSponsorshipFactoryBuilder {
-    private sponsorship: Partial<PostSponsorshipType> = {};
+    private sponsorship: Partial<PostSponsorship> = {};
 
-    with(fields: Partial<PostSponsorshipType>): this {
+    with(fields: Partial<PostSponsorship>): this {
         Object.assign(this.sponsorship, fields);
         return this;
     }
 
-    build(): PostSponsorshipType {
+    build(): PostSponsorship {
         return {
-            id: getMockId('post') as PostSponsorshipId,
-            sponsorId: getMockId('post') as PostSponsorId,
-            postId: getMockId('post') as PostId,
+            id: getMockId('postSponsorship') as PostSponsorshipIdType,
+            sponsorId: getMockId('postSponsor') as PostSponsorIdType,
+            postId: getMockId('post') as PostIdType,
             message: 'Sponsored message',
             description: 'A valid sponsorship description',
             paid: { price: 100, currency: PriceCurrencyEnum.USD },
@@ -32,8 +32,8 @@ export class PostSponsorshipFactoryBuilder {
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as UserId,
-            updatedById: getMockId('user') as UserId,
+            createdById: getMockId('user') as UserIdType,
+            updatedById: getMockId('user') as UserIdType,
             deletedAt: undefined,
             deletedById: undefined,
             adminInfo: undefined,
@@ -42,19 +42,18 @@ export class PostSponsorshipFactoryBuilder {
     }
 }
 
-export const createMockPostSponsorship = (
-    fields: Partial<PostSponsorshipType> = {}
-): PostSponsorshipType => new PostSponsorshipFactoryBuilder().with(fields).build();
+export const createMockPostSponsorship = (fields: Partial<PostSponsorship> = {}): PostSponsorship =>
+    new PostSponsorshipFactoryBuilder().with(fields).build();
 
 /**
  * Factory for a valid CreatePostSponsorshipInput (only user-provided fields)
  */
-export const createNewPostSponsorshipInput = (
+export const createMockPostSponsorshipCreateInput = (
     overrides: Partial<PostSponsorshipCreateInput> = {}
 ): PostSponsorshipCreateInput => {
     return {
-        sponsorId: getMockId('post') as PostSponsorId,
-        postId: getMockId('post') as PostId,
+        sponsorId: getMockId('postSponsor') as PostSponsorIdType,
+        postId: getMockId('post') as PostIdType,
         message: 'Sponsored message',
         description: 'A valid sponsorship description',
         paid: { price: 100, currency: PriceCurrencyEnum.USD },
@@ -66,5 +65,14 @@ export const createNewPostSponsorshipInput = (
     };
 };
 
-export const getMockPostSponsorshipId = (id?: string): PostSponsorshipId =>
-    getMockId('post', id) as PostSponsorshipId;
+export const getMockPostSponsorshipId = (id?: string): PostSponsorshipIdType =>
+    getMockId('postSponsorship', id) as PostSponsorshipIdType;
+
+// ============================================================================
+// LEGACY COMPATIBILITY
+// ============================================================================
+
+/**
+ * @deprecated Use createMockPostSponsorshipCreateInput instead
+ */
+export const createNewPostSponsorshipInput = createMockPostSponsorshipCreateInput;

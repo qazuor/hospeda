@@ -1,17 +1,23 @@
-import type { AmenityId, AmenityType, UserId } from '@repo/types';
-import { AmenitiesTypeEnum, LifecycleStatusEnum } from '@repo/types';
+import type { Amenity, AmenityIdType, UserIdType } from '@repo/schemas';
+import { AmenitiesTypeEnum, LifecycleStatusEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 /**
- * Builder for AmenityType test objects.
+ * Returns a mock AmenityId for use in tests.
+ */
+export const getMockAmenityId = (id?: string): AmenityIdType =>
+    getMockId('amenity', id) as AmenityIdType;
+
+/**
+ * Builder for Amenity test objects.
  * Allows fluent creation of amenity test data with sensible defaults.
  */
 export class AmenityFactoryBuilder {
-    private amenity: AmenityType;
+    private amenity: Amenity;
 
     constructor() {
         this.amenity = {
-            id: getMockId('feature') as AmenityId,
+            id: getMockAmenityId(),
             slug: 'test-amenity',
             name: 'Test Amenity',
             type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
@@ -21,8 +27,8 @@ export class AmenityFactoryBuilder {
             isFeatured: false,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as UserId,
-            updatedById: getMockId('user') as UserId,
+            createdById: getMockId('user') as UserIdType,
+            updatedById: getMockId('user') as UserIdType,
             deletedAt: undefined,
             deletedById: undefined,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -30,16 +36,16 @@ export class AmenityFactoryBuilder {
         };
     }
 
-    with(fields: Partial<AmenityType>): this {
+    with(fields: Partial<Amenity>): this {
         this.amenity = { ...this.amenity, ...fields };
         return this;
     }
 
-    build(): AmenityType {
+    build(): Amenity {
         return { ...this.amenity };
     }
 
-    static create(fields: Partial<AmenityType> = {}): AmenityType {
+    static create(fields: Partial<Amenity> = {}): Amenity {
         return new AmenityFactoryBuilder().with(fields).build();
     }
 }

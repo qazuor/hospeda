@@ -1,19 +1,23 @@
-import type { PostSponsorCreateInput } from '@repo/schemas';
-import type { PostSponsorId, PostSponsorType, UserId } from '@repo/types';
-import { ClientTypeEnum, LifecycleStatusEnum, ModerationStatusEnum } from '@repo/types';
+import type {
+    PostSponsor,
+    PostSponsorCreateInput,
+    PostSponsorIdType,
+    UserIdType
+} from '@repo/schemas';
+import { ClientTypeEnum, LifecycleStatusEnum, ModerationStatusEnum } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
 export class PostSponsorFactoryBuilder {
-    private sponsor: Partial<PostSponsorType> = {};
+    private sponsor: Partial<PostSponsor> = {};
 
-    with(fields: Partial<PostSponsorType>): this {
+    with(fields: Partial<PostSponsor>): this {
         Object.assign(this.sponsor, fields);
         return this;
     }
 
-    build(): PostSponsorType {
+    build(): PostSponsor {
         return {
-            id: getMockId('post') as PostSponsorId,
+            id: getMockId('postSponsor') as PostSponsorIdType,
             name: 'Sponsor Name',
             type: ClientTypeEnum.POST_SPONSOR,
             description: 'A valid sponsor description',
@@ -29,8 +33,8 @@ export class PostSponsorFactoryBuilder {
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as UserId,
-            updatedById: getMockId('user') as UserId,
+            createdById: getMockId('user') as UserIdType,
+            updatedById: getMockId('user') as UserIdType,
             deletedAt: undefined,
             deletedById: undefined,
             adminInfo: undefined,
@@ -39,13 +43,13 @@ export class PostSponsorFactoryBuilder {
     }
 }
 
-export const createMockPostSponsor = (fields: Partial<PostSponsorType> = {}): PostSponsorType =>
+export const createMockPostSponsor = (fields: Partial<PostSponsor> = {}): PostSponsor =>
     new PostSponsorFactoryBuilder().with(fields).build();
 
 /**
  * Factory for a valid CreatePostSponsorInput (only user-provided fields)
  */
-export const createNewPostSponsorInput = (
+export const createMockPostSponsorCreateInput = (
     overrides: Partial<PostSponsorCreateInput> = {}
 ): PostSponsorCreateInput => {
     return {
@@ -65,5 +69,14 @@ export const createNewPostSponsorInput = (
     };
 };
 
-export const getMockPostSponsorId = (id?: string): PostSponsorId =>
-    getMockId('post', id) as PostSponsorId;
+export const getMockPostSponsorId = (id?: string): PostSponsorIdType =>
+    getMockId('postSponsor', id) as PostSponsorIdType;
+
+// ============================================================================
+// LEGACY COMPATIBILITY
+// ============================================================================
+
+/**
+ * @deprecated Use createMockPostSponsorCreateInput instead
+ */
+export const createNewPostSponsorInput = createMockPostSponsorCreateInput;
