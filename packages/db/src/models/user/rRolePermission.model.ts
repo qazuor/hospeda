@@ -1,4 +1,4 @@
-import type { RolePermissionAssignmentType } from '@repo/types';
+import type { RolePermissionAssignment } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import type * as schema from '../../schemas/index.js';
@@ -6,7 +6,7 @@ import { rolePermission } from '../../schemas/user/r_role_permission.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
-export class RRolePermissionModel extends BaseModel<RolePermissionAssignmentType> {
+export class RRolePermissionModel extends BaseModel<RolePermissionAssignment> {
     protected table = rolePermission;
     protected entityName = 'rolePermission';
 
@@ -21,7 +21,7 @@ export class RRolePermissionModel extends BaseModel<RolePermissionAssignmentType
         where: Record<string, unknown>,
         relations: Record<string, boolean>,
         tx?: NodePgDatabase<typeof schema>
-    ): Promise<RolePermissionAssignmentType | null> {
+    ): Promise<RolePermissionAssignment | null> {
         const db = this.getClient(tx);
         try {
             const withObj: Record<string, true> = {};
@@ -34,7 +34,7 @@ export class RRolePermissionModel extends BaseModel<RolePermissionAssignmentType
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as RolePermissionAssignmentType | null;
+                return result as RolePermissionAssignment | null;
             }
             const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
