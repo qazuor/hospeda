@@ -1,4 +1,4 @@
-import type { AdminInfoType } from '@repo/types';
+import type { AdminInfoType } from '@repo/schemas';
 
 /**
  * Utility functions for normalizing data across services.

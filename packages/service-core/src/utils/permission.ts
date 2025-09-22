@@ -6,7 +6,7 @@ import {
     RoleEnum,
     ServiceErrorCode,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
 import type { Actor } from '../types';
 import { ServiceError } from '../types';
 
