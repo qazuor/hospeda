@@ -1,4 +1,4 @@
-import type { AdminInfoType, ContactInfoType, SocialNetworkType } from '@repo/types';
+import type { AdminInfoType, ContactInfo, SocialNetwork } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
@@ -9,8 +9,8 @@ export const eventOrganizers: ReturnType<typeof pgTable> = pgTable('event_organi
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
     logo: text('logo'),
-    contactInfo: jsonb('contact_info').$type<ContactInfoType>(),
-    social: jsonb('social').$type<SocialNetworkType>(),
+    contactInfo: jsonb('contact_info').$type<ContactInfo>(),
+    social: jsonb('social').$type<SocialNetwork>(),
     lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
     adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
