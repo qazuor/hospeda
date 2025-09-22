@@ -1,4 +1,5 @@
 import type { RRolePermissionModel, RUserPermissionModel } from '@repo/db';
+import type { RolePermissionAssignment, UserIdType, UserPermissionAssignment } from '@repo/schemas';
 import {
     type PermissionAssignmentOutput,
     type PermissionRemovalOutput,
@@ -12,18 +13,13 @@ import {
     type RolesByPermissionInput,
     RolesByPermissionInputSchema,
     type RolesQueryOutput,
+    ServiceErrorCode,
     type UserPermissionManagementInput,
     UserPermissionManagementInputSchema,
     type UsersByPermissionInput,
     UsersByPermissionInputSchema,
     type UsersQueryOutput
 } from '@repo/schemas';
-import type {
-    RolePermissionAssignmentType,
-    UserId,
-    UserPermissionAssignmentType
-} from '@repo/types';
-import { ServiceErrorCode } from '@repo/types';
 import { BaseService } from '../../base/base.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -138,7 +134,7 @@ export class PermissionService extends BaseService {
                         'You do not have permission to manage permissions.'
                     );
                 }
-                const user = userId as UserId;
+                const user = userId as UserIdType;
                 const exists = await this.userPermissionModel.findOne({ userId: user, permission });
                 if (exists) return { assigned: false };
                 await this.userPermissionModel.create({ userId: user, permission });
@@ -168,7 +164,7 @@ export class PermissionService extends BaseService {
                         'You do not have permission to manage permissions.'
                     );
                 }
-                const user = userId as UserId;
+                const user = userId as UserIdType;
                 const exists = await this.userPermissionModel.findOne({ userId: user, permission });
                 if (!exists) return { removed: false };
                 await this.userPermissionModel.hardDelete({ userId: user, permission });
@@ -199,7 +195,7 @@ export class PermissionService extends BaseService {
                     );
                 }
                 const { items } = await this.rolePermissionModel.findAll({ role });
-                const permissions = items.map((a: RolePermissionAssignmentType) => a.permission);
+                const permissions = items.map((a: RolePermissionAssignment) => a.permission);
                 return { permissions };
             }
         });
@@ -226,9 +222,9 @@ export class PermissionService extends BaseService {
                         'You do not have permission to manage permissions.'
                     );
                 }
-                const user = userId as UserId;
+                const user = userId as UserIdType;
                 const { items } = await this.userPermissionModel.findAll({ userId: user });
-                const permissions = items.map((a: UserPermissionAssignmentType) => a.permission);
+                const permissions = items.map((a: UserPermissionAssignment) => a.permission);
                 return { permissions };
             }
         });
@@ -256,7 +252,7 @@ export class PermissionService extends BaseService {
                     );
                 }
                 const { items } = await this.rolePermissionModel.findAll({ permission });
-                const roles = items.map((a: RolePermissionAssignmentType) => a.role);
+                const roles = items.map((a: RolePermissionAssignment) => a.role);
                 return { roles };
             }
         });
@@ -284,7 +280,7 @@ export class PermissionService extends BaseService {
                     );
                 }
                 const { items } = await this.userPermissionModel.findAll({ permission });
-                const users = items.map((a: UserPermissionAssignmentType) => a.userId);
+                const users = items.map((a: UserPermissionAssignment) => a.userId);
                 return { users };
             }
         });

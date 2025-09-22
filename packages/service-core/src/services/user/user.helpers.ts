@@ -1,5 +1,5 @@
 import { UserModel } from '@repo/db';
-import type { UserType } from '@repo/types';
+import type { User } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 
 /**
@@ -10,7 +10,7 @@ import { createUniqueSlug } from '@repo/utils';
  * @returns {Promise<string>} The unique slug
  */
 export const generateUserSlug = async (
-    input: Pick<UserType, 'displayName' | 'firstName' | 'lastName'>
+    input: Pick<User, 'displayName' | 'firstName' | 'lastName'>
 ): Promise<string> => {
     const base =
         input.displayName?.trim() || `${input.firstName ?? ''} ${input.lastName ?? ''}`.trim();

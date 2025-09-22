@@ -1,5 +1,5 @@
-import type { UserType } from '@repo/types';
-import { ServiceErrorCode } from '@repo/types';
+import type { User } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 
@@ -10,7 +10,7 @@ import { ServiceError } from '../../types';
  * @param target - The user being viewed
  * @throws ServiceError (FORBIDDEN) if not allowed
  */
-export const canViewUser = (actor: Actor | undefined, target: UserType): void => {
+export const canViewUser = (actor: Actor | undefined, target: User): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
     if (actor.id !== target.id && actor.role !== 'SUPER_ADMIN') {
         throw new ServiceError(
@@ -27,7 +27,7 @@ export const canViewUser = (actor: Actor | undefined, target: UserType): void =>
  * @param target - The user being updated
  * @throws ServiceError (FORBIDDEN) if not allowed
  */
-export const canUpdateUser = (actor: Actor | undefined, target: UserType): void => {
+export const canUpdateUser = (actor: Actor | undefined, target: User): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
     if (actor.id !== target.id && actor.role !== 'SUPER_ADMIN') {
         throw new ServiceError(
