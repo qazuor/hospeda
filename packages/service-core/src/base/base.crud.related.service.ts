@@ -1,4 +1,4 @@
-import type { AdminInfoType } from '@repo/types';
+import type { AdminInfoType } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import type { BaseModel, ServiceContext } from '../types';
 import { BaseCrudService } from './base.crud.service';

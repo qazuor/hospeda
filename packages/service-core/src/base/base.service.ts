@@ -1,4 +1,4 @@
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { ZodTypeAny, z } from 'zod';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../types';
 import { ServiceError } from '../types';

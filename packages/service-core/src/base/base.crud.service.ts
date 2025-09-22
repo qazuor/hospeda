@@ -1,5 +1,5 @@
-import type { AdminInfoType, UserId } from '@repo/types';
-import { ServiceErrorCode, VisibilityEnum } from '@repo/types';
+import type { AdminInfoType } from '@repo/schemas';
+import { ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import { z } from 'zod';
 import {
@@ -518,8 +518,8 @@ export abstract class BaseCrudService<
                 const { bookmarks, ...payload } = finalData as Record<string, unknown> & {
                     bookmarks?: unknown;
                 };
-                payload.createdById = validatedActor.id as UserId;
-                payload.updatedById = validatedActor.id as UserId;
+                payload.createdById = validatedActor.id;
+                payload.updatedById = validatedActor.id;
 
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
                 const entity = await this.model.create(payload as any);
@@ -577,7 +577,7 @@ export abstract class BaseCrudService<
 
                 const payload = {
                     ...processedData,
-                    updatedById: validActor.id as UserId
+                    updatedById: validActor.id
                 } as unknown as Partial<TEntity>;
 
                 const where = { id: updateId };
@@ -605,7 +605,7 @@ export abstract class BaseCrudService<
                 // Patch: always call model.update, even if no valid fields (for test homogeneity)
                 const finalPayload = hasValidField
                     ? filteredPayload
-                    : ({ updatedById: validActor.id as UserId } as unknown as Partial<TEntity>);
+                    : ({ updatedById: validActor.id } as unknown as Partial<TEntity>);
 
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
                 const updatedEntity = await this.model.update(where as any, finalPayload);

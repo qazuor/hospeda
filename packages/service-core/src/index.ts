@@ -32,4 +32,4 @@ export {
     ModerationStatusEnum,
     RoleEnum,
     VisibilityEnum
-} from '@repo/types';
+} from '@repo/schemas';
