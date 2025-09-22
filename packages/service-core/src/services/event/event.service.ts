@@ -23,9 +23,11 @@ import {
     EventSearchInputSchema,
     EventSummaryInputSchema,
     EventUpcomingInputSchema,
-    EventUpdateInputSchema
+    EventUpdateInputSchema,
+    PermissionEnum,
+    ServiceErrorCode,
+    VisibilityEnum
 } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { type Actor, ServiceError } from '../../types';
@@ -195,9 +197,7 @@ export class EventService extends BaseCrudService<
      * @returns Paginated list of events matching the criteria
      */
     protected async _executeSearch(params: EventSearchInput, _actor: Actor) {
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+        const { filters = {}, page = 1, pageSize = 10 } = params;
         return this.model.findAll(filters, { page, pageSize });
     }
 
@@ -349,13 +349,31 @@ export class EventService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
                 const filters: Record<string, unknown> = {};
-                if (validatedInput.toDate) {
-                    filters['date.start'] = {
-                        $gte: validatedInput.fromDate,
-                        $lte: validatedInput.toDate
-                    };
-                } else {
-                    filters['date.start'] = { $gte: validatedInput.fromDate };
+                // Calculate the date range based on daysAhead
+                const today = new Date();
+                const futureDate = new Date();
+                futureDate.setDate(today.getDate() + validatedInput.daysAhead);
+                filters['date.start'] = {
+                    $gte: today,
+                    $lte: futureDate
+                };
+
+                // Add location filters if provided
+                if (validatedInput.city) {
+                    filters['location.city'] = validatedInput.city;
+                }
+                if (validatedInput.country) {
+                    filters['location.country'] = validatedInput.country;
+                }
+
+                // Add category filter if provided
+                if (validatedInput.category) {
+                    filters.category = validatedInput.category;
+                }
+
+                // Add price filter if provided
+                if (validatedInput.maxPrice) {
+                    filters['pricing.basePrice'] = { $lte: validatedInput.maxPrice };
                 }
                 if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
                     filters.visibility = VisibilityEnum.PUBLIC;
@@ -396,7 +414,7 @@ export class EventService extends BaseCrudService<
                 }
                 let event: Event | null;
                 try {
-                    event = await this.model.findById(validatedInput.id);
+                    event = await this.model.findById(validatedInput.eventId);
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -408,14 +426,11 @@ export class EventService extends BaseCrudService<
                     id: event.id,
                     slug: event.slug,
                     name: event.name,
-                    summary: event.summary,
+                    description: event.description,
                     category: event.category,
-                    isFeatured: event.isFeatured,
-                    date: event.date,
-                    media: event.media,
-                    pricing: event.pricing
+                    createdAt: event.createdAt
                 };
-                return { summary };
+                return summary;
             }
         });
     }

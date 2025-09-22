@@ -3,9 +3,9 @@ import type { EventLocation, EventLocationSearchInput } from '@repo/schemas';
 import {
     EventLocationCreateInputSchema,
     EventLocationSearchInputSchema,
-    EventLocationUpdateInputSchema
+    EventLocationUpdateInputSchema,
+    ServiceErrorCode
 } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/types';
 import { BaseCrudService } from '../../base';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
@@ -100,19 +100,17 @@ export class EventLocationService extends BaseCrudService<
         _actor: Actor
     ): Promise<PaginatedListOutput<EventLocation>> {
         try {
-            const { filters = {}, pagination } = params;
-            const page = pagination?.page || 1;
-            const pageSize = pagination?.pageSize || 20;
+            const { filters = {}, page = 1, pageSize = 20, q } = params;
             const where: WhereWithOr = {};
             if (filters.city) where.city = filters.city;
             if (filters.state) where.state = filters.state;
             if (filters.country) where.country = filters.country;
             // Free text search (q): busca en city, state y country (case-insensitive)
-            if (filters.q) {
+            if (q) {
                 where.or = [
-                    { city: { $ilike: `%${filters.q}%` } },
-                    { state: { $ilike: `%${filters.q}%` } },
-                    { country: { $ilike: `%${filters.q}%` } }
+                    { city: { $ilike: `%${q}%` } },
+                    { state: { $ilike: `%${q}%` } },
+                    { country: { $ilike: `%${q}%` } }
                 ];
             }
             return await this.model.findAll(where, { page, pageSize });
@@ -129,16 +127,16 @@ export class EventLocationService extends BaseCrudService<
         _actor: Actor
     ): Promise<{ count: number }> {
         try {
-            const { filters = {} } = params;
+            const { filters = {}, q } = params;
             const where: WhereWithOr = {};
             if (filters.city) where.city = filters.city;
             if (filters.state) where.state = filters.state;
             if (filters.country) where.country = filters.country;
-            if (filters.q) {
+            if (q) {
                 where.or = [
-                    { city: { $ilike: `%${filters.q}%` } },
-                    { state: { $ilike: `%${filters.q}%` } },
-                    { country: { $ilike: `%${filters.q}%` } }
+                    { city: { $ilike: `%${q}%` } },
+                    { state: { $ilike: `%${q}%` } },
+                    { country: { $ilike: `%${q}%` } }
                 ];
             }
             const count = await this.model.count(where);
@@ -162,9 +160,7 @@ export class EventLocationService extends BaseCrudService<
         params: EventLocationSearchInput
     ): Promise<{ items: EventLocation[]; total: number }> {
         this._canSearch(actor);
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page || 1;
-        const pageSize = pagination?.pageSize || 10;
+        const { filters = {}, page = 1, pageSize = 10, q } = params;
 
         const where: Record<string, unknown> = {};
 
@@ -177,12 +173,12 @@ export class EventLocationService extends BaseCrudService<
         if (filters.country) {
             where.country = { $ilike: `%${filters.country}%` };
         }
-        if (filters.q) {
+        if (q) {
             where.$or = [
-                { city: { $ilike: `%${filters.q}%` } },
-                { state: { $ilike: `%${filters.q}%` } },
-                { country: { $ilike: `%${filters.q}%` } },
-                { placeName: { $ilike: `%${filters.q}%` } }
+                { city: { $ilike: `%${q}%` } },
+                { state: { $ilike: `%${q}%` } },
+                { country: { $ilike: `%${q}%` } },
+                { placeName: { $ilike: `%${q}%` } }
             ];
         }
 

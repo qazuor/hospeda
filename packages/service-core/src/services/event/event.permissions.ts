@@ -6,7 +6,7 @@
 // TODO [44ae3671-d643-4ec7-b8a3-1f5fec8c90f3]: Implement permission checks for create, update, delete, restore, view, etc.
 
 import type { Event } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 
 /**
