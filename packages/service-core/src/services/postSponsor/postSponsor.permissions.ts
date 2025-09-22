@@ -1,5 +1,5 @@
-import type { PostSponsorType } from '@repo/types';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import type { PostSponsor } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
@@ -8,7 +8,7 @@ import { hasPermission } from '../../utils/permission';
  * Checks if the actor can manage PostSponsors (create, update, delete, restore, view).
  * Throws ServiceError(FORBIDDEN) if not allowed.
  */
-export const checkCanManagePostSponsor = (actor: Actor, _entity?: PostSponsorType): void => {
+export const checkCanManagePostSponsor = (actor: Actor, _entity?: PostSponsor): void => {
     if (!actor) {
         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
     }
