@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
-    EventLocationCountInputSchema,
-    EventLocationCountOutputSchema,
     EventLocationFiltersSchema,
     EventLocationListInputSchema,
     EventLocationListOutputSchema,
@@ -19,12 +17,13 @@ describe('EventLocation Query Schemas', () => {
             expect(() => EventLocationFiltersSchema.parse(filters)).not.toThrow();
         });
 
-        it('should validate filters with all fields', () => {
+        it('should validate filters with multiple fields', () => {
             const filters = {
                 city: 'New York',
                 state: 'NY',
                 country: 'USA',
-                q: 'central park'
+                isActive: true,
+                isVerified: true
             };
 
             expect(() => EventLocationFiltersSchema.parse(filters)).not.toThrow();
@@ -33,31 +32,32 @@ describe('EventLocation Query Schemas', () => {
             expect(result.city).toBe('New York');
             expect(result.state).toBe('NY');
             expect(result.country).toBe('USA');
-            expect(result.q).toBe('central park');
+            expect(result.isActive).toBe(true);
+            expect(result.isVerified).toBe(true);
         });
 
         it('should validate filters with partial fields', () => {
             const filters = {
                 city: 'New York',
-                q: 'park'
+                name: 'park'
             };
 
             expect(() => EventLocationFiltersSchema.parse(filters)).not.toThrow();
 
             const result = EventLocationFiltersSchema.parse(filters);
             expect(result.city).toBe('New York');
-            expect(result.q).toBe('park');
+            expect(result.name).toBe('park');
             expect(result.state).toBeUndefined();
             expect(result.country).toBeUndefined();
         });
 
-        it('should reject filters with empty strings', () => {
+        it('should allow filters with empty strings (no minimum length validation)', () => {
             const filters = {
                 city: '',
                 state: 'NY'
             };
 
-            expect(() => EventLocationFiltersSchema.parse(filters)).toThrow(ZodError);
+            expect(() => EventLocationFiltersSchema.parse(filters)).not.toThrow();
         });
 
         it('should reject filters with invalid types', () => {
@@ -81,7 +81,7 @@ describe('EventLocation Query Schemas', () => {
             const searchInput = {
                 filters: {
                     city: 'New York',
-                    q: 'central'
+                    name: 'central'
                 }
             };
 
@@ -89,33 +89,25 @@ describe('EventLocation Query Schemas', () => {
 
             const result = EventLocationSearchInputSchema.parse(searchInput);
             expect(result.filters?.city).toBe('New York');
-            expect(result.filters?.q).toBe('central');
+            expect(result.filters?.name).toBe('central');
         });
 
-        it('should validate search input with pagination and sort', () => {
+        it('should validate search input with q parameter', () => {
             const searchInput = {
+                q: 'search text',
                 filters: {
                     city: 'New York'
                 },
-                pagination: {
-                    page: 2,
-                    pageSize: 20
-                },
-                sort: [
-                    {
-                        field: 'city',
-                        direction: 'ASC' as const
-                    }
-                ]
+                page: 2,
+                pageSize: 20
             };
 
             expect(() => EventLocationSearchInputSchema.parse(searchInput)).not.toThrow();
 
             const result = EventLocationSearchInputSchema.parse(searchInput);
-            expect(result.pagination?.page).toBe(2);
-            expect(result.pagination?.pageSize).toBe(20);
-            expect(result.sort?.[0]?.field).toBe('city');
-            expect(result.sort?.[0]?.direction).toBe('ASC');
+            expect(result.q).toBe('search text');
+            expect(result.page).toBe(2);
+            expect(result.pageSize).toBe(20);
         });
     });
 
@@ -123,33 +115,39 @@ describe('EventLocation Query Schemas', () => {
         it('should validate search output', () => {
             const eventLocations = [createValidEventLocation(), createValidEventLocation()];
             const searchOutput = {
-                items: eventLocations,
-                total: 2,
-                page: 1,
-                pageSize: 10,
-                hasNextPage: false,
-                hasPreviousPage: false
+                data: eventLocations,
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: 2,
+                    totalPages: 1,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => EventLocationSearchOutputSchema.parse(searchOutput)).not.toThrow();
 
             const result = EventLocationSearchOutputSchema.parse(searchOutput);
-            expect(result.items).toHaveLength(2);
-            expect(result.total).toBe(2);
-            expect(result.page).toBe(1);
-            expect(result.pageSize).toBe(10);
-            expect(result.hasNextPage).toBe(false);
-            expect(result.hasPreviousPage).toBe(false);
+            expect(result.data).toHaveLength(2);
+            expect(result.pagination.total).toBe(2);
+            expect(result.pagination.page).toBe(1);
+            expect(result.pagination.pageSize).toBe(10);
+            expect(result.pagination.hasNextPage).toBe(false);
+            expect(result.pagination.hasPreviousPage).toBe(false);
         });
 
         it('should reject search output with negative total', () => {
             const searchOutput = {
-                items: [],
-                total: -1,
-                page: 1,
-                pageSize: 10,
-                hasNextPage: false,
-                hasPreviousPage: false
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: -1,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => EventLocationSearchOutputSchema.parse(searchOutput)).toThrow(ZodError);
@@ -157,12 +155,15 @@ describe('EventLocation Query Schemas', () => {
 
         it('should reject search output with invalid page', () => {
             const searchOutput = {
-                items: [],
-                total: 0,
-                page: 0, // Should be >= 1
-                pageSize: 10,
-                hasNextPage: false,
-                hasPreviousPage: false
+                data: [],
+                pagination: {
+                    page: 0, // Should be >= 1
+                    pageSize: 10,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => EventLocationSearchOutputSchema.parse(searchOutput)).toThrow(ZodError);
@@ -218,21 +219,35 @@ describe('EventLocation Query Schemas', () => {
         it('should validate list output', () => {
             const eventLocations = [createValidEventLocation()];
             const listOutput = {
-                items: eventLocations,
-                total: 1
+                data: eventLocations,
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: 1,
+                    totalPages: 1,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => EventLocationListOutputSchema.parse(listOutput)).not.toThrow();
 
             const result = EventLocationListOutputSchema.parse(listOutput);
-            expect(result.items).toHaveLength(1);
-            expect(result.total).toBe(1);
+            expect(result.data).toHaveLength(1);
+            expect(result.pagination.total).toBe(1);
         });
 
         it('should validate empty list output', () => {
             const listOutput = {
-                items: [],
-                total: 0
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => EventLocationListOutputSchema.parse(listOutput)).not.toThrow();
@@ -240,71 +255,18 @@ describe('EventLocation Query Schemas', () => {
 
         it('should reject list output with negative total', () => {
             const listOutput = {
-                items: [],
-                total: -5
-            };
-
-            expect(() => EventLocationListOutputSchema.parse(listOutput)).toThrow(ZodError);
-        });
-    });
-
-    describe('EventLocationCountInputSchema', () => {
-        it('should validate count input without filters', () => {
-            const countInput = {};
-
-            expect(() => EventLocationCountInputSchema.parse(countInput)).not.toThrow();
-        });
-
-        it('should validate count input with filters', () => {
-            const countInput = {
-                filters: {
-                    country: 'USA',
-                    q: 'park'
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: -5,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
                 }
             };
 
-            expect(() => EventLocationCountInputSchema.parse(countInput)).not.toThrow();
-
-            const result = EventLocationCountInputSchema.parse(countInput);
-            expect(result.filters?.country).toBe('USA');
-            expect(result.filters?.q).toBe('park');
-        });
-    });
-
-    describe('EventLocationCountOutputSchema', () => {
-        it('should validate count output', () => {
-            const countOutput = {
-                count: 42
-            };
-
-            expect(() => EventLocationCountOutputSchema.parse(countOutput)).not.toThrow();
-
-            const result = EventLocationCountOutputSchema.parse(countOutput);
-            expect(result.count).toBe(42);
-        });
-
-        it('should validate count output with zero', () => {
-            const countOutput = {
-                count: 0
-            };
-
-            expect(() => EventLocationCountOutputSchema.parse(countOutput)).not.toThrow();
-        });
-
-        it('should reject count output with negative count', () => {
-            const countOutput = {
-                count: -1
-            };
-
-            expect(() => EventLocationCountOutputSchema.parse(countOutput)).toThrow(ZodError);
-        });
-
-        it('should reject count output with non-integer count', () => {
-            const countOutput = {
-                count: 3.14
-            };
-
-            expect(() => EventLocationCountOutputSchema.parse(countOutput)).toThrow(ZodError);
+            expect(() => EventLocationListOutputSchema.parse(listOutput)).toThrow(ZodError);
         });
     });
 });

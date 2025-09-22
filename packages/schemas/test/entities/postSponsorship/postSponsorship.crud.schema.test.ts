@@ -190,8 +190,8 @@ describe('PostSponsorship CRUD Schemas', () => {
                 { sponsorId: 'invalid-uuid' },
                 { postId: 'invalid-uuid' },
                 { isHighlighted: 'not-boolean' },
-                { pagination: { page: 0 } }, // Invalid page
-                { pagination: { pageSize: 0 } } // Invalid pageSize
+                { page: 0 }, // Invalid page
+                { pageSize: 0 } // Invalid pageSize
             ];
 
             for (const input of invalidInputs) {
@@ -221,10 +221,49 @@ describe('PostSponsorship CRUD Schemas', () => {
 
         it('should reject invalid output structure', () => {
             const invalidOutputs = [
-                { items: [createValidPostSponsorship()] }, // Missing total
-                { total: 5 }, // Missing items
-                { items: 'not-an-array', total: 0 },
-                { items: [], total: -1 } // Negative total
+                {
+                    data: [createValidPostSponsorship()],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 3,
+                        totalPages: 1,
+                        hasNextPage: false,
+                        hasPreviousPage: false
+                    }
+                }, // Missing total
+                {
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 5,
+                        totalPages: 1,
+                        hasNextPage: false,
+                        hasPreviousPage: false
+                    }
+                }, // Missing data
+                {
+                    data: 'not-an-array',
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: 0,
+                        totalPages: 1,
+                        hasNextPage: false,
+                        hasPreviousPage: false
+                    }
+                },
+                {
+                    data: [],
+                    pagination: {
+                        page: 1,
+                        pageSize: 10,
+                        total: -1,
+                        totalPages: 1,
+                        hasNextPage: false,
+                        hasPreviousPage: false
+                    }
+                } // Negative total
             ];
 
             for (const output of invalidOutputs) {

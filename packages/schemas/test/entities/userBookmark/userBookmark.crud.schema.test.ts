@@ -1,4 +1,3 @@
-import { EntityTypeEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import {
     UserBookmarkCreateInputSchema,
@@ -7,6 +6,7 @@ import {
     UserBookmarkUpdateInputSchema,
     UserBookmarkUpdateOutputSchema
 } from '../../../src/entities/userBookmark/userBookmark.crud.schema.js';
+import { EntityTypeEnum } from '../../../src/enums/index.js';
 import {
     createUserBookmarkEdgeCases,
     createUserBookmarkFixture,

@@ -7,7 +7,7 @@ import {
     RemovalResultSchema,
     RestoreResultSchema,
     SuccessSchema
-} from '../../src/common/result.schema.js';
+} from '../../src/api/result.schema.js';
 
 describe('Result Schemas', () => {
     describe('SuccessSchema', () => {

@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { PermissionEnum, RoleEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
@@ -15,6 +14,7 @@ import {
     UsersByPermissionInputSchema,
     UsersQueryOutputSchema
 } from '../../../src/entities/permission/permission.management.schema.js';
+import { PermissionEnum, RoleEnum } from '../../../src/enums/index.js';
 
 describe('Permission Management Schemas', () => {
     describe('RolePermissionManagementInputSchema', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { PostEngagementStatsSchema } from '../../../src/entities/post/post.stats.schema.js';
+import { PostEngagementStatsSchema } from '../../../src/entities/post/subtypes/post.stats.schema.js';
 
 describe('Post Stats Schemas', () => {
     describe('PostEngagementStatsSchema', () => {

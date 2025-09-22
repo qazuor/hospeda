@@ -100,7 +100,9 @@ describe('AccommodationReview Query Schemas', () => {
 
         it('should validate rating range', () => {
             const invalidData = {
-                rating: 6 // Max is 5
+                filters: {
+                    rating: 6 // Max is 5
+                }
             };
 
             const result = AccommodationReviewSearchParamsSchema.safeParse(invalidData);
@@ -177,11 +179,15 @@ describe('AccommodationReview Query Schemas', () => {
     describe('Output Schemas', () => {
         it('should validate list with user output', () => {
             const validData = {
-                items: [],
-                total: 0,
-                page: 1,
-                pageSize: 10,
-                totalPages: 0
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             const result = AccommodationReviewListWithUserOutputSchema.safeParse(validData);
@@ -190,11 +196,15 @@ describe('AccommodationReview Query Schemas', () => {
 
         it('should validate list by accommodation output', () => {
             const validData = {
-                items: [],
-                total: 0,
-                page: 1,
-                pageSize: 10,
-                totalPages: 0
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             const result = AccommodationReviewListByAccommodationOutputSchema.safeParse(validData);

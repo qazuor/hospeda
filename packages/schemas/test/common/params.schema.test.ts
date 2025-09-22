@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { VisibilityEnum } from '@repo/types';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
@@ -7,7 +6,8 @@ import {
     WithDateRangeParamsSchema,
     WithEventIdParamsSchema,
     WithVisibilityParamsSchema
-} from '../../src/common/params.schema.js';
+} from '../../src/api/params.schema.js';
+import { VisibilityEnum } from '../../src/enums/index.js';
 
 describe('Common Params Schemas', () => {
     describe('WithAccommodationIdParamsSchema', () => {

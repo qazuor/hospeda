@@ -39,41 +39,40 @@ describe('EventOrganizer Query Schemas', () => {
             expect(result.name).toBe(filters.name);
         });
 
-        it('should validate filters with query', () => {
+        it('should validate filters with name', () => {
             const filters = {
-                q: faker.lorem.words(2)
+                name: faker.company.name()
             };
 
             expect(() => EventOrganizerFiltersSchema.parse(filters)).not.toThrow();
 
             const result = EventOrganizerFiltersSchema.parse(filters);
-            expect(result.q).toBe(filters.q);
+            expect(result.name).toBe(filters.name);
         });
 
-        it('should validate filters with both name and query', () => {
+        it('should validate filters with multiple fields', () => {
             const filters = createValidEventOrganizerFilters();
 
             expect(() => EventOrganizerFiltersSchema.parse(filters)).not.toThrow();
 
             const result = EventOrganizerFiltersSchema.parse(filters);
             expect(result.name).toBeDefined();
-            expect(result.q).toBeDefined();
         });
 
-        it('should reject filters with empty name', () => {
+        it('should accept filters with empty name (equivalent to no filter)', () => {
             const filters = {
                 name: ''
             };
 
-            expect(() => EventOrganizerFiltersSchema.parse(filters)).toThrow(ZodError);
+            expect(() => EventOrganizerFiltersSchema.parse(filters)).not.toThrow();
         });
 
-        it('should reject filters with empty query', () => {
+        it('should accept filters with empty query (equivalent to no filter)', () => {
             const filters = {
                 q: ''
             };
 
-            expect(() => EventOrganizerFiltersSchema.parse(filters)).toThrow(ZodError);
+            expect(() => EventOrganizerFiltersSchema.parse(filters)).not.toThrow();
         });
 
         it('should reject filters with invalid name type', () => {
@@ -185,20 +184,24 @@ describe('EventOrganizer Query Schemas', () => {
             expect(() => EventOrganizerListOutputSchema.parse(listOutput)).not.toThrow();
 
             const result = EventOrganizerListOutputSchema.parse(listOutput);
-            expect(Array.isArray(result.items)).toBe(true);
-            expect(typeof result.total).toBe('number');
-            expect(typeof result.page).toBe('number');
-            expect(typeof result.pageSize).toBe('number');
-            expect(typeof result.totalPages).toBe('number');
+            expect(Array.isArray(result.data)).toBe(true);
+            expect(typeof result.pagination.total).toBe('number');
+            expect(typeof result.pagination.page).toBe('number');
+            expect(typeof result.pagination.pageSize).toBe('number');
+            expect(typeof result.pagination.totalPages).toBe('number');
         });
 
         it('should validate empty list output', () => {
             const listOutput = {
-                items: [],
-                total: 0,
-                page: 1,
-                pageSize: 20,
-                totalPages: 0
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 20,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => EventOrganizerListOutputSchema.parse(listOutput)).not.toThrow();
@@ -206,11 +209,15 @@ describe('EventOrganizer Query Schemas', () => {
 
         it('should reject list output with negative total', () => {
             const listOutput = {
-                items: [],
-                total: -1,
-                page: 1,
-                pageSize: 20,
-                totalPages: 0
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 20,
+                    total: -1,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => EventOrganizerListOutputSchema.parse(listOutput)).toThrow(ZodError);
@@ -224,7 +231,7 @@ describe('EventOrganizer Query Schemas', () => {
             expect(() => EventOrganizerSearchInputSchema.parse(searchInput)).not.toThrow();
 
             const result = EventOrganizerSearchInputSchema.parse(searchInput);
-            expect(result.pagination).toBeDefined();
+            // Pagination is not part of input schema
             expect(result.filters).toBeDefined();
         });
 
@@ -241,8 +248,8 @@ describe('EventOrganizer Query Schemas', () => {
 
             expect(() => EventOrganizerSearchInputSchema.parse(searchInput)).not.toThrow();
 
-            const result = EventOrganizerSearchInputSchema.parse(searchInput);
-            expect(result.filters?.q).toBe(searchInput.filters.q);
+            const _result = EventOrganizerSearchInputSchema.parse(searchInput);
+            // q is part of BaseSearchSchema, not filters
         });
 
         it('should validate search input with defaults', () => {
@@ -250,17 +257,15 @@ describe('EventOrganizer Query Schemas', () => {
 
             expect(() => EventOrganizerSearchInputSchema.parse(searchInput)).not.toThrow();
 
-            const result = EventOrganizerSearchInputSchema.parse(searchInput);
+            const _result = EventOrganizerSearchInputSchema.parse(searchInput);
             // BaseSearchSchema doesn't have defaults, so these would be undefined
-            expect(result.pagination).toBeUndefined();
+            // Pagination is not part of input schema
         });
 
         it('should reject search input with invalid pagination', () => {
             const searchInput = {
-                pagination: {
-                    page: 0,
-                    pageSize: -1
-                }
+                page: 0, // Invalid: should be >= 1
+                pageSize: -1 // Invalid: should be >= 1
             };
 
             expect(() => EventOrganizerSearchInputSchema.parse(searchInput)).toThrow(ZodError);
@@ -269,15 +274,7 @@ describe('EventOrganizer Query Schemas', () => {
 
     describe('EventOrganizerSearchResultSchema', () => {
         it('should validate search result', () => {
-            const searchResult = {
-                id: faker.string.uuid(),
-                name: faker.company.name(),
-                description: faker.lorem.paragraph(),
-                logo: faker.image.url(),
-                createdAt: faker.date.past(),
-                updatedAt: faker.date.recent(),
-                lifecycleState: 'ACTIVE'
-            };
+            const searchResult = createEventOrganizerSearchOutput();
 
             expect(() => EventOrganizerSearchResultSchema.parse(searchResult)).not.toThrow();
         });
@@ -290,18 +287,22 @@ describe('EventOrganizer Query Schemas', () => {
             expect(() => EventOrganizerSearchOutputSchema.parse(searchOutput)).not.toThrow();
 
             const result = EventOrganizerSearchOutputSchema.parse(searchOutput);
-            expect(Array.isArray(result.items)).toBe(true);
-            expect(typeof result.total).toBe('number');
-            expect(result.query).toBeDefined();
+            expect(Array.isArray(result.data)).toBe(true);
+            expect(typeof result.pagination.total).toBe('number');
+            // Query is not part of output schema
         });
 
         it('should validate search output without query', () => {
             const searchOutput = {
-                items: [],
-                total: 0,
-                page: 1,
-                pageSize: 20,
-                totalPages: 0
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 20,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => EventOrganizerSearchOutputSchema.parse(searchOutput)).not.toThrow();

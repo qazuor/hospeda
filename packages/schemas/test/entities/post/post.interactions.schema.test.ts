@@ -5,7 +5,7 @@ import {
     AddPostCommentInputSchema,
     LikePostInputSchema,
     RemovePostCommentInputSchema
-} from '../../../src/entities/post/post.interactions.schema.js';
+} from '../../../src/entities/post/subtypes/post.interactions.schema.js';
 
 describe('Post Interactions Schemas', () => {
     describe('LikePostInputSchema', () => {
