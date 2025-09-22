@@ -15,8 +15,8 @@ import { BaseSeoFields } from '../../common/seo.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { EventCategoryEnumSchema } from '../../enums/index.js';
 import { TagSchema } from '../tag/tag.schema.js';
-import { EventDateSchema } from './event.date.schema.js';
-import { EventPriceSchema } from './event.price.schema.js';
+import { EventDateSchema } from './subtypes/event.date.schema.js';
+import { EventPriceSchema } from './subtypes/event.price.schema.js';
 
 /**
  * Event Schema - Main Entity Schema

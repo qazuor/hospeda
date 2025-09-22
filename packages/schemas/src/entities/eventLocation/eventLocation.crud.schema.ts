@@ -30,12 +30,14 @@ export const EventLocationCreateInputSchema = EventLocationSchema.omit({
     deletedAt: true,
     deletedById: true
 }).strict();
+export type EventLocationCreateInput = z.infer<typeof EventLocationCreateInputSchema>;
 
 /**
  * Schema for event location creation response
  * Returns the complete event location object
  */
 export const EventLocationCreateOutputSchema = EventLocationSchema;
+export type EventLocationCreateOutput = z.infer<typeof EventLocationCreateOutputSchema>;
 
 // ============================================================================
 // UPDATE SCHEMAS
@@ -56,18 +58,21 @@ export const EventLocationUpdateInputSchema = EventLocationSchema.omit({
 })
     .partial()
     .strict();
+export type EventLocationUpdateInput = z.infer<typeof EventLocationUpdateInputSchema>;
 
 /**
  * Schema for partial event location updates (PATCH)
  * Same as update but explicitly named for clarity
  */
 export const EventLocationPatchInputSchema = EventLocationUpdateInputSchema;
+export type EventLocationPatchInput = z.infer<typeof EventLocationPatchInputSchema>;
 
 /**
  * Schema for event location update response
  * Returns the complete updated event location object
  */
 export const EventLocationUpdateOutputSchema = EventLocationSchema;
+export type EventLocationUpdateOutput = z.infer<typeof EventLocationUpdateOutputSchema>;
 
 // ============================================================================
 // DELETE SCHEMAS
@@ -86,6 +91,7 @@ export const EventLocationDeleteInputSchema = z.object({
         .optional()
         .default(false)
 });
+export type EventLocationDeleteInput = z.infer<typeof EventLocationDeleteInputSchema>;
 
 /**
  * Schema for event location deletion response
@@ -103,6 +109,7 @@ export const EventLocationDeleteOutputSchema = z.object({
         })
         .optional()
 });
+export type EventLocationDeleteOutput = z.infer<typeof EventLocationDeleteOutputSchema>;
 
 // ============================================================================
 // RESTORE SCHEMAS
@@ -115,23 +122,11 @@ export const EventLocationDeleteOutputSchema = z.object({
 export const EventLocationRestoreInputSchema = z.object({
     id: EventLocationIdSchema
 });
+export type EventLocationRestoreInput = z.infer<typeof EventLocationRestoreInputSchema>;
 
 /**
  * Schema for event location restoration response
  * Returns the complete restored event location object
  */
 export const EventLocationRestoreOutputSchema = EventLocationSchema;
-
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
-
-export type EventLocationCreateInput = z.infer<typeof EventLocationCreateInputSchema>;
-export type EventLocationCreateOutput = z.infer<typeof EventLocationCreateOutputSchema>;
-export type EventLocationUpdateInput = z.infer<typeof EventLocationUpdateInputSchema>;
-export type EventLocationPatchInput = z.infer<typeof EventLocationPatchInputSchema>;
-export type EventLocationUpdateOutput = z.infer<typeof EventLocationUpdateOutputSchema>;
-export type EventLocationDeleteInput = z.infer<typeof EventLocationDeleteInputSchema>;
-export type EventLocationDeleteOutput = z.infer<typeof EventLocationDeleteOutputSchema>;
-export type EventLocationRestoreInput = z.infer<typeof EventLocationRestoreInputSchema>;
 export type EventLocationRestoreOutput = z.infer<typeof EventLocationRestoreOutputSchema>;
