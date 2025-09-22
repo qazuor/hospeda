@@ -1,7 +1,7 @@
 // TODO [85fa4251-5215-4acd-8b2d-d0d36b245b9c]: Implement tests for all permission check functions in feature.permissions.ts, covering all permission and error scenarios.
 
-import type { FeatureType } from '@repo/types';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import type { Feature } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanAddFeatureToAccommodation,
@@ -21,7 +21,7 @@ describe('feature.permissions', () => {
         permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT]
     });
     const actorNoPerm = createActor({ permissions: [] });
-    const dummyFeature: FeatureType = FeatureFactoryBuilder.create();
+    const dummyFeature: Feature = FeatureFactoryBuilder.create();
 
     function expectForbiddenError(err: unknown) {
         if (typeof err === 'object' && err !== null && 'code' in err) {

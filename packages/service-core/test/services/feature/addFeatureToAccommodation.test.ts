@@ -1,5 +1,5 @@
 import type { AccommodationModel, FeatureModel, RAccommodationFeatureModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
 import {
@@ -64,8 +64,8 @@ describe('FeatureService.addFeatureToAccommodation', () => {
         expect(relatedModel.create as Mock).toHaveBeenCalledWith({
             accommodationId: validInput.accommodationId,
             featureId: validInput.featureId,
-            hostReWriteName: validInput.hostReWriteName,
-            comments: validInput.comments
+            isHighlighted: false,
+            notes: validInput.comments
         });
     });
 
@@ -145,8 +145,8 @@ describe('FeatureService.addFeatureToAccommodation', () => {
         (relatedModel.findOne as Mock).mockResolvedValueOnce(null);
         (relatedModel.create as Mock).mockResolvedValueOnce({
             ...validInput,
-            hostReWriteName: undefined,
-            comments: undefined
+            isHighlighted: undefined,
+            notes: undefined
         });
         const minimalInput = {
             accommodationId: validInput.accommodationId,
@@ -154,8 +154,8 @@ describe('FeatureService.addFeatureToAccommodation', () => {
         };
         const result = await service.addFeatureToAccommodation(actorWithPerms, minimalInput);
         expect(result.data).toHaveProperty('relation');
-        expect(result.data?.relation.hostReWriteName).toBeUndefined();
-        expect(result.data?.relation.comments).toBeUndefined();
+        expect(result.data?.relation.notes).toBeUndefined();
+        expect(result.data?.relation.isHighlighted).toBeUndefined();
     });
 
     it('should reject null for required fields', async () => {

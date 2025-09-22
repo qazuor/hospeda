@@ -1,16 +1,12 @@
 import type { AmenityModel, RAccommodationAmenityModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
+import type { AmenityListWrapper } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    AmenityService,
-    type ServiceOutputAmenities
-} from '../../../src/services/amenity/amenity.service';
-import {
-    getMockAccommodationId,
-    getMockAmenityId
-} from '../../../test/factories/accommodationFactory';
+import { AmenityService } from '../../../src/services/amenity/amenity.service';
+import type { ServiceOutput } from '../../../src/types';
+import { getMockAccommodationId } from '../../../test/factories/accommodationFactory';
 import { createActor } from '../../../test/factories/actorFactory';
-import { AmenityFactoryBuilder } from '../../../test/factories/amenityFactory';
+import { AmenityFactoryBuilder, getMockAmenityId } from '../../../test/factories/amenityFactory';
 import { createLoggerMock, createModelMock } from '../../../test/utils/modelMockFactory';
 
 /**
@@ -49,8 +45,10 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
         (model.findAll as Mock).mockResolvedValueOnce({ items: [amenity] });
 
         const result = (await service.getAmenitiesForAccommodation(actorWithPerms, {
-            accommodationId
-        })) as ServiceOutputAmenities;
+            accommodationId,
+            page: 1,
+            pageSize: 10
+        })) as ServiceOutput<AmenityListWrapper>;
 
         expect(result.data).toHaveProperty('amenities');
         expect(Array.isArray(result.data?.amenities)).toBe(true);
@@ -68,8 +66,10 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
         (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
 
         const result = (await service.getAmenitiesForAccommodation(actorWithPerms, {
-            accommodationId
-        })) as ServiceOutputAmenities;
+            accommodationId,
+            page: 1,
+            pageSize: 10
+        })) as ServiceOutput<AmenityListWrapper>;
 
         expect(result.data).toHaveProperty('amenities');
         expect(result.data?.amenities).toHaveLength(0);
@@ -86,8 +86,10 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
         (model.findAll as Mock).mockResolvedValueOnce({ items: [amenity] });
 
         const result = (await service.getAmenitiesForAccommodation(actorNoPerms, {
-            accommodationId
-        })) as ServiceOutputAmenities;
+            accommodationId,
+            page: 1,
+            pageSize: 10
+        })) as ServiceOutput<AmenityListWrapper>;
 
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -103,8 +105,10 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
         const invalidAccommodationId = '';
 
         const result = (await service.getAmenitiesForAccommodation(actorWithPerms, {
-            accommodationId: invalidAccommodationId as any
-        })) as ServiceOutputAmenities;
+            accommodationId: invalidAccommodationId as any,
+            page: 1,
+            pageSize: 10
+        })) as ServiceOutput<AmenityListWrapper>;
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });

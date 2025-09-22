@@ -1,5 +1,5 @@
 import { AmenityModel } from '@repo/db';
-import { AmenitiesTypeEnum, PermissionEnum } from '@repo/types';
+import { AmenitiesTypeEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
 import type { Actor } from '../../../src/types';
@@ -20,6 +20,8 @@ describe('AmenityService.search', () => {
     });
     const paginated = { items: [amenity], total: 1 };
     const searchParams = {
+        page: 1,
+        pageSize: 10,
         filters: { nameContains: 'Test Amenity' },
         searchInDescription: false,
         fuzzySearch: false

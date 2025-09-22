@@ -1,5 +1,5 @@
 import type { FeatureModel } from '@repo/db';
-import { type FeatureType, PermissionEnum } from '@repo/types';
+import { type Feature, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
 import type { Actor } from '../../../src/types';
@@ -59,7 +59,7 @@ describe('FeatureService.setFeaturedStatus', () => {
         featureModelMock.findById.mockResolvedValue(undefined);
         const result = await service.setFeaturedStatus({
             actor,
-            id: 'nonexistent-id' as FeatureType['id'],
+            id: 'nonexistent-id' as Feature['id'],
             isFeatured: true
         });
         expectNotFoundError(result);
