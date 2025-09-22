@@ -1,5 +1,5 @@
-import type { AccommodationId, EntityTagType, TagId } from '@repo/types';
-import { EntityTypeEnum } from '@repo/types';
+import type { AccommodationIdType, EntityTag, TagIdType } from '@repo/schemas';
+import { EntityTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/client';
 import { REntityTagModel } from '../../src/models/tag/rEntityTag.model';
@@ -20,8 +20,8 @@ const model = new REntityTagModel();
 // This file uses '@ts-expect-error' in Drizzle mocks because it is not possible to replicate the full RelationalQueryBuilder interface in tests. Only the used methods (findFirst, etc.) are mocked.
 // This is documented and justified according to project rules.
 
-const asEntityId = (id: string) => id as unknown as AccommodationId;
-const asTagId = (id: string) => id as unknown as TagId;
+const asEntityId = (id: string) => id as unknown as AccommodationIdType;
+const asTagId = (id: string) => id as unknown as TagIdType;
 
 describe('REntityTagModel', () => {
     beforeEach(() => {
@@ -49,12 +49,9 @@ describe('REntityTagModel', () => {
     });
 
     it('findWithRelations - no relations, fallback to findOne', async () => {
-        // Helper for typed IDs
-        const asTagId = (id: string) => id as unknown as import('@repo/types').TagId;
-        const asAccommodationId = (id: string) => id as unknown as AccommodationId;
-        const dummy: EntityTagType = {
+        const dummy: EntityTag = {
             tagId: asTagId('a'),
-            entityId: asAccommodationId('b'),
+            entityId: asEntityId('b'),
             entityType: EntityTypeEnum.ACCOMMODATION
         };
         const spy = vi.spyOn(model, 'findOne').mockResolvedValue(dummy);

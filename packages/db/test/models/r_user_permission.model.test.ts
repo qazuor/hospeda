@@ -1,5 +1,5 @@
-import type { UserId, UserPermissionAssignmentType } from '@repo/types';
-import { PermissionEnum } from '@repo/types';
+import type { UserIdType, UserPermissionAssignment } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/client';
 import { RUserPermissionModel } from '../../src/models/user/rUserPermission.model';
@@ -10,7 +10,7 @@ vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new RUserPermissionModel();
-const asUserId = (id: string) => id as unknown as UserId;
+const asUserId = (id: string) => id as unknown as UserIdType;
 
 /**
  * Test suite for RUserPermissionModel.
@@ -46,7 +46,7 @@ describe('RUserPermissionModel', () => {
     });
 
     it('findWithRelations - sin relaciones, fallback a findOne', async () => {
-        const dummy: UserPermissionAssignmentType = {
+        const dummy: UserPermissionAssignment = {
             userId: asUserId('a'),
             permission: PermissionEnum.USER_READ_ALL
         };

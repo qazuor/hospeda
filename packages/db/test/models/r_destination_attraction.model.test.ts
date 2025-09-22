@@ -1,4 +1,4 @@
-import type { AttractionId, DestinationAttractionType, DestinationId } from '@repo/types';
+import type { AttractionIdType, DestinationIdType } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/client';
 import { RDestinationAttractionModel } from '../../src/models/destination/rDestinationAttraction.model';
@@ -9,8 +9,8 @@ vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new RDestinationAttractionModel();
-const asDestinationId = (id: string) => id as unknown as DestinationId;
-const asAttractionId = (id: string) => id as unknown as AttractionId;
+const asDestinationId = (id: string) => id as unknown as DestinationIdType;
+const asAttractionId = (id: string) => id as unknown as AttractionIdType;
 
 /**
  * Test suite for RDestinationAttractionModel.
@@ -50,9 +50,14 @@ describe('RDestinationAttractionModel', () => {
     });
 
     it('findWithRelations - sin relaciones, fallback a findOne', async () => {
-        const dummy: DestinationAttractionType = {
+        const dummy = {
             destinationId: asDestinationId('a'),
-            attractionId: asAttractionId('b')
+            attractionId: asAttractionId('b'),
+            isHighlighted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            createdById: 'test-user',
+            updatedById: 'test-user'
         };
         const spy = vi.spyOn(model, 'findOne').mockResolvedValue(dummy);
         const result = await model.findWithRelations({ destinationId: asDestinationId('a') }, {});

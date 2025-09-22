@@ -1,4 +1,4 @@
-import type { AccommodationAmenityType, AccommodationId, AmenityId } from '@repo/types';
+import type { AccommodationIdType, AmenityIdType } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/client';
 import { RAccommodationAmenityModel } from '../../src/models/accommodation/rAccommodationAmenity.model';
@@ -9,8 +9,8 @@ vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new RAccommodationAmenityModel();
-const asAccommodationId = (id: string) => id as unknown as AccommodationId;
-const asAmenityId = (id: string) => id as unknown as AmenityId;
+const asAccommodationId = (id: string) => id as unknown as AccommodationIdType;
+const asAmenityId = (id: string) => id as unknown as AmenityIdType;
 
 /**
  * Test suite for RAccommodationAmenityModel.
@@ -47,7 +47,7 @@ describe('RAccommodationAmenityModel', () => {
     });
 
     it('findWithRelations - sin relaciones, fallback a findOne', async () => {
-        const dummy: AccommodationAmenityType = {
+        const dummy = {
             accommodationId: asAccommodationId('a'),
             amenityId: asAmenityId('b'),
             isOptional: false

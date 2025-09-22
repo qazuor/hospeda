@@ -1,4 +1,4 @@
-import type { AccommodationFeatureType, AccommodationId, FeatureId } from '@repo/types';
+import type { AccommodationIdType, FeatureIdType } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/client';
 import { RAccommodationFeatureModel } from '../../src/models/accommodation/rAccommodationFeature.model';
@@ -9,8 +9,8 @@ vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new RAccommodationFeatureModel();
-const asAccommodationId = (id: string) => id as unknown as AccommodationId;
-const asFeatureId = (id: string) => id as unknown as FeatureId;
+const asAccommodationId = (id: string) => id as unknown as AccommodationIdType;
+const asFeatureId = (id: string) => id as unknown as FeatureIdType;
 
 /**
  * Test suite for RAccommodationFeatureModel.
@@ -47,7 +47,7 @@ describe('RAccommodationFeatureModel', () => {
     });
 
     it('findWithRelations - sin relaciones, fallback a findOne', async () => {
-        const dummy: AccommodationFeatureType = {
+        const dummy = {
             accommodationId: asAccommodationId('a'),
             featureId: asFeatureId('b')
         };
