@@ -1,5 +1,5 @@
 import { AmenityModel } from '@repo/db';
-import { AmenitiesTypeEnum, type AmenityType, PermissionEnum } from '@repo/types';
+import { AmenitiesTypeEnum, type AmenityIdType, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
 import type { Actor } from '../../../src/types';
@@ -61,7 +61,7 @@ describe('AmenityService.setFeaturedStatus', () => {
         asMock(amenityModelMock.findById).mockResolvedValue(undefined);
         const result = await service.setFeaturedStatus({
             actor,
-            id: 'nonexistent-id' as AmenityType['id'],
+            id: 'nonexistent-id' as AmenityIdType,
             isFeatured: true
         });
         expectNotFoundError(result);

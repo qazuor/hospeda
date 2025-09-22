@@ -1,5 +1,5 @@
 import type { FeatureModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
 import type { Actor } from '../../../src/types';
