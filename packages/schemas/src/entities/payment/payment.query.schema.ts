@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BaseSearchSchema, PaginationSchema } from '../../common/search.schemas.js';
+import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { PaymentPlanSchema } from './payment-plan.schema.js';
 import { PaymentSchema } from './payment.schema.js';
 import { SubscriptionSchema } from './subscription.schema.js';
@@ -7,11 +7,10 @@ import { SubscriptionSchema } from './subscription.schema.js';
 /**
  * Payment Query Schemas
  *
- * This file contains all schemas related to querying payments:
- * - Payment List/Search/Summary/Stats
- * - PaymentPlan List/Search/Summary/Stats
- * - Subscription List/Search/Summary/Stats
- * - Filters for all entities
+ * Standardized query schemas for payment operations following the unified pattern:
+ * - BaseSearchSchema: Provides page/pageSize pagination, sortBy/sortOrder sorting, and 'q' search
+ * - Entity-specific filters: Additional filtering options for payments, payment plans, and subscriptions
+ * - PaginationResultSchema: Unified response format with data array and pagination metadata
  */
 
 // ============================================================================
@@ -19,126 +18,61 @@ import { SubscriptionSchema } from './subscription.schema.js';
 // ============================================================================
 
 /**
- * Schema for payment-specific filters
- * Used in list and search operations
+ * Payment-specific filters that extend the base search functionality
  */
 export const PaymentFiltersSchema = z.object({
+    // Entity relation filters
+    userId: z.string().uuid().optional(),
+    planId: z.string().uuid().optional(),
+    userIds: z.array(z.string().uuid()).optional(),
+    planIds: z.array(z.string().uuid()).optional(),
+
     // Status filters
     status: z
-        .enum(['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded'], {
-            message: 'zodError.payment.filters.status.enum'
-        })
+        .enum(['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded'])
         .optional(),
-
     statuses: z
         .array(z.enum(['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded']))
         .optional(),
 
-    // User filters
-    userId: z
-        .string({
-            message: 'zodError.payment.filters.userId.invalidType'
-        })
-        .uuid({ message: 'zodError.payment.filters.userId.uuid' })
-        .optional(),
-
-    userIds: z.array(z.string().uuid()).optional(),
-
-    // Plan filters
-    planId: z
-        .string({
-            message: 'zodError.payment.filters.planId.invalidType'
-        })
-        .uuid({ message: 'zodError.payment.filters.planId.uuid' })
-        .optional(),
-
-    planIds: z.array(z.string().uuid()).optional(),
-
     // Amount filters
-    minAmount: z
-        .number({
-            message: 'zodError.payment.filters.minAmount.invalidType'
-        })
-        .min(0, { message: 'zodError.payment.filters.minAmount.min' })
-        .optional(),
-
-    maxAmount: z
-        .number({
-            message: 'zodError.payment.filters.maxAmount.invalidType'
-        })
-        .min(0, { message: 'zodError.payment.filters.maxAmount.min' })
-        .optional(),
+    minAmount: z.number().min(0).optional(),
+    maxAmount: z.number().min(0).optional(),
+    amount: z.number().min(0).optional(),
 
     // Currency filters
-    currency: z
-        .string({
-            message: 'zodError.payment.filters.currency.invalidType'
-        })
-        .length(3, { message: 'zodError.payment.filters.currency.length' })
-        .optional(),
-
+    currency: z.string().length(3).optional(),
     currencies: z.array(z.string().length(3)).optional(),
 
     // Date filters
-    createdAfter: z
-        .date({
-            message: 'zodError.payment.filters.createdAfter.invalidType'
-        })
-        .optional(),
-
-    createdBefore: z
-        .date({
-            message: 'zodError.payment.filters.createdBefore.invalidType'
-        })
-        .optional(),
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+    processedAfter: z.date().optional(),
+    processedBefore: z.date().optional(),
 
     // Payment method filters
-    paymentMethod: z
-        .string({
-            message: 'zodError.payment.filters.paymentMethod.invalidType'
-        })
-        .optional(),
-
+    paymentMethod: z.string().optional(),
     paymentMethods: z.array(z.string()).optional(),
 
-    // Mercado Pago specific filters
-    mpPaymentId: z
-        .string({
-            message: 'zodError.payment.filters.mpPaymentId.invalidType'
-        })
-        .optional(),
+    // External provider filters
+    mpPaymentId: z.string().optional(),
+    mpStatus: z.string().optional(),
+    stripePaymentIntentId: z.string().optional(),
 
-    mpStatus: z
-        .string({
-            message: 'zodError.payment.filters.mpStatus.invalidType'
-        })
-        .optional(),
+    // Status flags
+    hasRefunds: z.boolean().optional(),
+    isRefunded: z.boolean().optional(),
+    hasFailed: z.boolean().optional(),
+    isCompleted: z.boolean().optional(),
 
-    // Refund filters
-    hasRefunds: z
-        .boolean({
-            message: 'zodError.payment.filters.hasRefunds.invalidType'
-        })
-        .optional(),
+    // Failure analysis
+    failureReason: z.string().optional(),
+    hasFailureReason: z.boolean().optional(),
 
-    isRefunded: z
-        .boolean({
-            message: 'zodError.payment.filters.isRefunded.invalidType'
-        })
-        .optional(),
-
-    // Failure filters
-    hasFailed: z
-        .boolean({
-            message: 'zodError.payment.filters.hasFailed.invalidType'
-        })
-        .optional(),
-
-    failureReason: z
-        .string({
-            message: 'zodError.payment.filters.failureReason.invalidType'
-        })
-        .optional()
+    // Metadata filters
+    hasMetadata: z.boolean().optional(),
+    metadataKey: z.string().optional(),
+    metadataValue: z.string().optional()
 });
 
 // ============================================================================
@@ -146,83 +80,49 @@ export const PaymentFiltersSchema = z.object({
 // ============================================================================
 
 /**
- * Schema for payment plan-specific filters
- * Used in list and search operations
+ * PaymentPlan-specific filters that extend the base search functionality
  */
 export const PaymentPlanFiltersSchema = z.object({
     // Status filters
-    isActive: z
-        .boolean({
-            message: 'zodError.paymentPlan.filters.isActive.invalidType'
-        })
-        .optional(),
+    isActive: z.boolean().optional(),
+    isPublic: z.boolean().optional(),
+    isRecommended: z.boolean().optional(),
 
     // Price filters
-    minPrice: z
-        .number({
-            message: 'zodError.paymentPlan.filters.minPrice.invalidType'
-        })
-        .min(0, { message: 'zodError.paymentPlan.filters.minPrice.min' })
-        .optional(),
-
-    maxPrice: z
-        .number({
-            message: 'zodError.paymentPlan.filters.maxPrice.invalidType'
-        })
-        .min(0, { message: 'zodError.paymentPlan.filters.maxPrice.min' })
-        .optional(),
+    minPrice: z.number().min(0).optional(),
+    maxPrice: z.number().min(0).optional(),
+    price: z.number().min(0).optional(),
 
     // Currency filters
-    currency: z
-        .string({
-            message: 'zodError.paymentPlan.filters.currency.invalidType'
-        })
-        .length(3, { message: 'zodError.paymentPlan.filters.currency.length' })
-        .optional(),
+    currency: z.string().length(3).optional(),
+    currencies: z.array(z.string().length(3)).optional(),
 
     // Billing cycle filters
-    billingCycle: z
-        .enum(['monthly', 'quarterly', 'yearly'], {
-            message: 'zodError.paymentPlan.filters.billingCycle.enum'
-        })
-        .optional(),
-
+    billingCycle: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
     billingCycles: z.array(z.enum(['monthly', 'quarterly', 'yearly'])).optional(),
 
     // Feature filters
-    hasFeature: z
-        .string({
-            message: 'zodError.paymentPlan.filters.hasFeature.invalidType'
-        })
-        .optional(),
-
-    // Date filters
-    createdAfter: z
-        .date({
-            message: 'zodError.paymentPlan.filters.createdAfter.invalidType'
-        })
-        .optional(),
-
-    createdBefore: z
-        .date({
-            message: 'zodError.paymentPlan.filters.createdBefore.invalidType'
-        })
-        .optional(),
+    hasFeature: z.string().optional(),
+    featureCount: z.number().int().min(0).optional(),
+    minFeatureCount: z.number().int().min(0).optional(),
 
     // Popularity filters
-    minSubscriberCount: z
-        .number({
-            message: 'zodError.paymentPlan.filters.minSubscriberCount.invalidType'
-        })
-        .int({ message: 'zodError.paymentPlan.filters.minSubscriberCount.int' })
-        .min(0, { message: 'zodError.paymentPlan.filters.minSubscriberCount.min' })
-        .optional(),
+    minSubscriberCount: z.number().int().min(0).optional(),
+    maxSubscriberCount: z.number().int().min(0).optional(),
+    isPopular: z.boolean().optional(),
 
-    isPopular: z
-        .boolean({
-            message: 'zodError.paymentPlan.filters.isPopular.invalidType'
-        })
-        .optional()
+    // Date filters
+    createdAfter: z.date().optional(),
+    createdBefore: z.date().optional(),
+
+    // Category filters
+    category: z.string().optional(),
+    categories: z.array(z.string()).optional(),
+
+    // Trial filters
+    hasTrialPeriod: z.boolean().optional(),
+    minTrialDays: z.number().int().min(0).optional(),
+    maxTrialDays: z.number().int().min(0).optional()
 });
 
 // ============================================================================
@@ -230,150 +130,132 @@ export const PaymentPlanFiltersSchema = z.object({
 // ============================================================================
 
 /**
- * Schema for subscription-specific filters
- * Used in list and search operations
+ * Subscription-specific filters that extend the base search functionality
  */
 export const SubscriptionFiltersSchema = z.object({
-    // Status filters
-    status: z
-        .enum(['active', 'cancelled', 'expired', 'suspended'], {
-            message: 'zodError.subscription.filters.status.enum'
-        })
-        .optional(),
-
-    statuses: z.array(z.enum(['active', 'cancelled', 'expired', 'suspended'])).optional(),
-
-    // User filters
-    userId: z
-        .string({
-            message: 'zodError.subscription.filters.userId.invalidType'
-        })
-        .uuid({ message: 'zodError.subscription.filters.userId.uuid' })
-        .optional(),
-
+    // Entity relation filters
+    userId: z.string().uuid().optional(),
+    planId: z.string().uuid().optional(),
     userIds: z.array(z.string().uuid()).optional(),
-
-    // Plan filters
-    planId: z
-        .string({
-            message: 'zodError.subscription.filters.planId.invalidType'
-        })
-        .uuid({ message: 'zodError.subscription.filters.planId.uuid' })
-        .optional(),
-
     planIds: z.array(z.string().uuid()).optional(),
 
+    // Status filters
+    status: z.enum(['active', 'cancelled', 'expired', 'suspended', 'pending']).optional(),
+    statuses: z
+        .array(z.enum(['active', 'cancelled', 'expired', 'suspended', 'pending']))
+        .optional(),
+
     // Date filters
-    startedAfter: z
-        .date({
-            message: 'zodError.subscription.filters.startedAfter.invalidType'
-        })
-        .optional(),
-
-    startedBefore: z
-        .date({
-            message: 'zodError.subscription.filters.startedBefore.invalidType'
-        })
-        .optional(),
-
-    expiresAfter: z
-        .date({
-            message: 'zodError.subscription.filters.expiresAfter.invalidType'
-        })
-        .optional(),
-
-    expiresBefore: z
-        .date({
-            message: 'zodError.subscription.filters.expiresBefore.invalidType'
-        })
-        .optional(),
-
-    // Billing filters
-    nextBillingAfter: z
-        .date({
-            message: 'zodError.subscription.filters.nextBillingAfter.invalidType'
-        })
-        .optional(),
-
-    nextBillingBefore: z
-        .date({
-            message: 'zodError.subscription.filters.nextBillingBefore.invalidType'
-        })
-        .optional(),
+    startedAfter: z.date().optional(),
+    startedBefore: z.date().optional(),
+    expiresAfter: z.date().optional(),
+    expiresBefore: z.date().optional(),
+    nextBillingAfter: z.date().optional(),
+    nextBillingBefore: z.date().optional(),
 
     // Renewal filters
-    autoRenew: z
-        .boolean({
-            message: 'zodError.subscription.filters.autoRenew.invalidType'
-        })
-        .optional(),
+    autoRenew: z.boolean().optional(),
+    willRenew: z.boolean().optional(),
+    hasAutoRenewal: z.boolean().optional(),
 
     // Trial filters
-    isTrialActive: z
-        .boolean({
-            message: 'zodError.subscription.filters.isTrialActive.invalidType'
-        })
-        .optional(),
-
-    hadTrial: z
-        .boolean({
-            message: 'zodError.subscription.filters.hadTrial.invalidType'
-        })
-        .optional(),
+    isTrialActive: z.boolean().optional(),
+    hadTrial: z.boolean().optional(),
+    inTrialPeriod: z.boolean().optional(),
+    trialEndedAfter: z.date().optional(),
+    trialEndedBefore: z.date().optional(),
 
     // Cancellation filters
-    isCancelled: z
-        .boolean({
-            message: 'zodError.subscription.filters.isCancelled.invalidType'
-        })
-        .optional(),
+    isCancelled: z.boolean().optional(),
+    cancelledAfter: z.date().optional(),
+    cancelledBefore: z.date().optional(),
+    cancellationReason: z.string().optional(),
 
-    cancelledAfter: z
-        .date({
-            message: 'zodError.subscription.filters.cancelledAfter.invalidType'
-        })
-        .optional(),
+    // Billing filters
+    billingCycle: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
+    nextBillingIn: z.number().int().min(0).optional(), // days
+    isOverdue: z.boolean().optional(),
 
-    cancelledBefore: z
-        .date({
-            message: 'zodError.subscription.filters.cancelledBefore.invalidType'
-        })
-        .optional()
+    // Usage filters
+    hasUsageData: z.boolean().optional(),
+    isOverUsageLimit: z.boolean().optional()
 });
 
 // ============================================================================
-// PAYMENT LIST SCHEMAS
+// MAIN SEARCH SCHEMAS
 // ============================================================================
 
 /**
- * Schema for payment list input parameters
- * Includes pagination and filters
+ * Complete payment search schema combining base search with payment-specific filters
  */
-export const PaymentListInputSchema = PaginationSchema.extend({
+export const PaymentSearchSchema = BaseSearchSchema.extend({
     filters: PaymentFiltersSchema.optional(),
-    sortBy: z
-        .enum(['createdAt', 'amount', 'status', 'updatedAt'], {
-            message: 'zodError.payment.list.sortBy.enum'
-        })
-        .optional()
-        .default('createdAt'),
-    sortOrder: z
-        .enum(['asc', 'desc'], {
-            message: 'zodError.payment.list.sortOrder.enum'
-        })
-        .optional()
-        .default('desc'),
-    groupByStatus: z
-        .boolean({
-            message: 'zodError.payment.list.groupByStatus.invalidType'
-        })
-        .optional()
-        .default(false)
+    searchInMetadata: z.boolean().default(false).optional()
 });
 
 /**
- * Schema for individual payment items in lists
- * Contains essential fields for list display
+ * Complete payment plan search schema combining base search with plan-specific filters
+ */
+export const PaymentPlanSearchSchema = BaseSearchSchema.extend({
+    filters: PaymentPlanFiltersSchema.optional(),
+    includeInactive: z.boolean().default(false).optional()
+});
+
+/**
+ * Complete subscription search schema combining base search with subscription-specific filters
+ */
+export const SubscriptionSearchSchema = BaseSearchSchema.extend({
+    filters: SubscriptionFiltersSchema.optional(),
+    includeExpired: z.boolean().default(false).optional(),
+    groupByStatus: z.boolean().default(false).optional()
+});
+
+// ============================================================================
+// SPECIALIZED QUERY SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for listing payments by user
+ */
+export const PaymentsByUserSchema = z.object({
+    userId: z.string().uuid(),
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(1).max(100).default(10),
+    sortBy: z.enum(['createdAt', 'amount', 'status']).default('createdAt'),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+    status: z
+        .enum(['pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded'])
+        .optional()
+});
+
+/**
+ * Schema for payment statistics by period
+ */
+export const PaymentStatsSchema = z.object({
+    dateFrom: z.date().optional(),
+    dateTo: z.date().optional(),
+    groupBy: z.enum(['day', 'week', 'month', 'year']).default('month'),
+    currency: z.string().length(3).optional(),
+    planId: z.string().uuid().optional()
+});
+
+/**
+ * Schema for subscription analytics
+ */
+export const SubscriptionAnalyticsSchema = z.object({
+    dateFrom: z.date().optional(),
+    dateTo: z.date().optional(),
+    groupBy: z.enum(['day', 'week', 'month', 'year']).default('month'),
+    planId: z.string().uuid().optional(),
+    includeChurnMetrics: z.boolean().default(true)
+});
+
+// ============================================================================
+// RESULT ITEM SCHEMAS
+// ============================================================================
+
+/**
+ * Payment list item schema - contains essential fields for list display
  */
 export const PaymentListItemSchema = PaymentSchema.pick({
     id: true,
@@ -383,120 +265,23 @@ export const PaymentListItemSchema = PaymentSchema.pick({
     currency: true,
     status: true,
     paymentMethod: true,
+    mpPaymentId: true,
+    failureReason: true,
+    processedAt: true,
     createdAt: true,
     updatedAt: true
 });
 
 /**
- * Schema for payment list output
- * Uses generic paginated response with list items
+ * Payment search result item - extends list item with search relevance score
  */
-export const PaymentListOutputSchema = z.object({
-    items: z.array(PaymentListItemSchema),
-    pagination: z.object({
-        page: z.number().min(1),
-        pageSize: z.number().min(1).max(100),
-        total: z.number().min(0),
-        totalPages: z.number().min(0)
-    }),
-    groupedByStatus: z.record(z.string(), z.array(PaymentListItemSchema)).optional()
-});
-
-// ============================================================================
-// PAYMENT SEARCH SCHEMAS
-// ============================================================================
-
-/**
- * Schema for payment search input parameters
- * Extends base search with payment-specific filters
- */
-export const PaymentSearchInputSchema = BaseSearchSchema.extend({
-    filters: PaymentFiltersSchema.optional(),
-    query: z
-        .string({
-            message: 'zodError.payment.search.query.invalidType'
-        })
-        .min(1, { message: 'zodError.payment.search.query.min' })
-        .max(100, { message: 'zodError.payment.search.query.max' })
-        .optional(),
-    searchInMetadata: z
-        .boolean({
-            message: 'zodError.payment.search.searchInMetadata.invalidType'
-        })
-        .optional()
-        .default(false)
+export const PaymentSearchResultItemSchema = PaymentListItemSchema.extend({
+    score: z.number().min(0).max(1).optional(),
+    matchedFields: z.array(z.string()).optional()
 });
 
 /**
- * Schema for individual payment search results
- * Extends list item with search score
- */
-export const PaymentSearchResultSchema = PaymentListItemSchema.extend({
-    score: z
-        .number({
-            message: 'zodError.payment.search.score.invalidType'
-        })
-        .min(0, { message: 'zodError.payment.search.score.min' })
-        .max(1, { message: 'zodError.payment.search.score.max' })
-        .optional(),
-    matchedFields: z
-        .array(z.enum(['id', 'userId', 'planId', 'paymentMethod', 'mpPaymentId']))
-        .optional()
-});
-
-/**
- * Schema for payment search output
- * Uses generic paginated response with search results
- */
-export const PaymentSearchOutputSchema = z.object({
-    items: z.array(PaymentSearchResultSchema),
-    pagination: z.object({
-        page: z.number().min(1),
-        pageSize: z.number().min(1).max(100),
-        total: z.number().min(0),
-        totalPages: z.number().min(0)
-    }),
-    searchInfo: z
-        .object({
-            query: z.string().optional(),
-            executionTime: z.number().min(0).optional(),
-            totalResults: z.number().min(0),
-            searchedInMetadata: z.boolean().optional()
-        })
-        .optional()
-});
-
-// ============================================================================
-// PAYMENT PLAN LIST/SEARCH SCHEMAS
-// ============================================================================
-
-/**
- * Schema for payment plan list input parameters
- */
-export const PaymentPlanListInputSchema = PaginationSchema.extend({
-    filters: PaymentPlanFiltersSchema.optional(),
-    sortBy: z
-        .enum(['name', 'price', 'createdAt', 'subscriberCount'], {
-            message: 'zodError.paymentPlan.list.sortBy.enum'
-        })
-        .optional()
-        .default('name'),
-    sortOrder: z
-        .enum(['asc', 'desc'], {
-            message: 'zodError.paymentPlan.list.sortOrder.enum'
-        })
-        .optional()
-        .default('asc'),
-    includeInactive: z
-        .boolean({
-            message: 'zodError.paymentPlan.list.includeInactive.invalidType'
-        })
-        .optional()
-        .default(false)
-});
-
-/**
- * Schema for individual payment plan items in lists
+ * PaymentPlan list item schema - contains essential fields for list display
  */
 export const PaymentPlanListItemSchema = PaymentPlanSchema.pick({
     id: true,
@@ -507,54 +292,22 @@ export const PaymentPlanListItemSchema = PaymentPlanSchema.pick({
     currency: true,
     billingCycle: true,
     isActive: true,
+    isRecommended: true,
+    trialPeriodDays: true,
+    subscriberCount: true,
     createdAt: true,
     updatedAt: true
 });
 
 /**
- * Schema for payment plan list output
+ * PaymentPlan search result item - extends list item with search relevance score
  */
-export const PaymentPlanListOutputSchema = z.object({
-    items: z.array(PaymentPlanListItemSchema),
-    pagination: z.object({
-        page: z.number().min(1),
-        pageSize: z.number().min(1).max(100),
-        total: z.number().min(0),
-        totalPages: z.number().min(0)
-    })
-});
-
-// ============================================================================
-// SUBSCRIPTION LIST/SEARCH SCHEMAS
-// ============================================================================
-
-/**
- * Schema for subscription list input parameters
- */
-export const SubscriptionListInputSchema = PaginationSchema.extend({
-    filters: SubscriptionFiltersSchema.optional(),
-    sortBy: z
-        .enum(['createdAt', 'startDate', 'endDate', 'nextBillingDate', 'status'], {
-            message: 'zodError.subscription.list.sortBy.enum'
-        })
-        .optional()
-        .default('createdAt'),
-    sortOrder: z
-        .enum(['asc', 'desc'], {
-            message: 'zodError.subscription.list.sortOrder.enum'
-        })
-        .optional()
-        .default('desc'),
-    groupByStatus: z
-        .boolean({
-            message: 'zodError.subscription.list.groupByStatus.invalidType'
-        })
-        .optional()
-        .default(false)
+export const PaymentPlanSearchResultItemSchema = PaymentPlanListItemSchema.extend({
+    score: z.number().min(0).max(1).optional()
 });
 
 /**
- * Schema for individual subscription items in lists
+ * Subscription list item schema - contains essential fields for list display
  */
 export const SubscriptionListItemSchema = SubscriptionSchema.pick({
     id: true,
@@ -565,30 +318,63 @@ export const SubscriptionListItemSchema = SubscriptionSchema.pick({
     endDate: true,
     nextBillingDate: true,
     autoRenew: true,
+    isTrialActive: true,
+    cancellationReason: true,
     createdAt: true,
     updatedAt: true
 });
 
 /**
- * Schema for subscription list output
+ * Subscription search result item - extends list item with search relevance score
  */
-export const SubscriptionListOutputSchema = z.object({
-    items: z.array(SubscriptionListItemSchema),
-    pagination: z.object({
-        page: z.number().min(1),
-        pageSize: z.number().min(1).max(100),
-        total: z.number().min(0),
-        totalPages: z.number().min(0)
-    }),
-    groupedByStatus: z.record(z.string(), z.array(SubscriptionListItemSchema)).optional()
+export const SubscriptionSearchResultItemSchema = SubscriptionListItemSchema.extend({
+    score: z.number().min(0).max(1).optional()
 });
 
 // ============================================================================
-// SUMMARY SCHEMAS
+// RESPONSE SCHEMAS
 // ============================================================================
 
 /**
- * Schema for payment summary
+ * Payment list response using standardized pagination format
+ */
+export const PaymentListResponseSchema = PaginationResultSchema(PaymentListItemSchema);
+
+/**
+ * Payment search response using standardized pagination format with search results
+ */
+export const PaymentSearchResponseSchema = PaginationResultSchema(PaymentSearchResultItemSchema);
+
+/**
+ * PaymentPlan list response using standardized pagination format
+ */
+export const PaymentPlanListResponseSchema = PaginationResultSchema(PaymentPlanListItemSchema);
+
+/**
+ * PaymentPlan search response using standardized pagination format with search results
+ */
+export const PaymentPlanSearchResponseSchema = PaginationResultSchema(
+    PaymentPlanSearchResultItemSchema
+);
+
+/**
+ * Subscription list response using standardized pagination format
+ */
+export const SubscriptionListResponseSchema = PaginationResultSchema(SubscriptionListItemSchema);
+
+/**
+ * Subscription search response using standardized pagination format with search results
+ */
+export const SubscriptionSearchResponseSchema = PaginationResultSchema(
+    SubscriptionSearchResultItemSchema
+);
+
+// ============================================================================
+// SUMMARY AND STATS SCHEMAS
+// ============================================================================
+
+/**
+ * Payment summary schema for quick display
  */
 export const PaymentSummarySchema = PaymentSchema.pick({
     id: true,
@@ -602,7 +388,7 @@ export const PaymentSummarySchema = PaymentSchema.pick({
 });
 
 /**
- * Schema for payment plan summary
+ * PaymentPlan summary schema for quick display
  */
 export const PaymentPlanSummarySchema = PaymentPlanSchema.pick({
     id: true,
@@ -616,7 +402,7 @@ export const PaymentPlanSummarySchema = PaymentPlanSchema.pick({
 });
 
 /**
- * Schema for subscription summary
+ * Subscription summary schema for quick display
  */
 export const SubscriptionSummarySchema = SubscriptionSchema.pick({
     id: true,
@@ -628,15 +414,10 @@ export const SubscriptionSummarySchema = SubscriptionSchema.pick({
     autoRenew: true
 });
 
-// ============================================================================
-// STATS SCHEMAS
-// ============================================================================
-
 /**
- * Schema for payment statistics
+ * Payment statistics response schema
  */
-export const PaymentStatsSchema = z.object({
-    // Basic statistics
+export const PaymentStatsResponseSchema = z.object({
     totalPayments: z.number().int().min(0).default(0),
     totalRevenue: z.number().min(0).default(0),
     averagePaymentAmount: z.number().min(0).default(0),
@@ -652,17 +433,17 @@ export const PaymentStatsSchema = z.object({
     }),
 
     // Revenue by period
-    revenueByMonth: z
+    revenueByPeriod: z
         .array(
             z.object({
-                month: z.string(),
+                period: z.string(),
                 revenue: z.number().min(0),
                 paymentCount: z.number().int().min(0)
             })
         )
         .optional(),
 
-    // Payment methods
+    // Payment method distribution
     paymentMethodDistribution: z.record(z.string(), z.number().int().min(0)).optional(),
 
     // Refund statistics
@@ -683,15 +464,14 @@ export const PaymentStatsSchema = z.object({
 });
 
 /**
- * Schema for subscription statistics
+ * Subscription analytics response schema
  */
-export const SubscriptionStatsSchema = z.object({
-    // Basic statistics
+export const SubscriptionAnalyticsResponseSchema = z.object({
     totalSubscriptions: z.number().int().min(0).default(0),
     activeSubscriptions: z.number().int().min(0).default(0),
     cancelledSubscriptions: z.number().int().min(0).default(0),
 
-    // Churn and retention
+    // Churn and retention metrics
     churnRate: z.number().min(0).max(1).default(0),
     retentionRate: z.number().min(0).max(1).default(0),
 
@@ -703,10 +483,27 @@ export const SubscriptionStatsSchema = z.object({
     // Plan distribution
     planDistribution: z.record(z.string(), z.number().int().min(0)).optional(),
 
-    // Growth metrics
-    newSubscriptionsThisMonth: z.number().int().min(0).default(0),
-    cancellationsThisMonth: z.number().int().min(0).default(0),
-    netGrowthRate: z.number().default(0)
+    // Growth metrics by period
+    growthByPeriod: z
+        .array(
+            z.object({
+                period: z.string(),
+                newSubscriptions: z.number().int().min(0),
+                cancellations: z.number().int().min(0),
+                netGrowth: z.number(),
+                churnRate: z.number().min(0).max(1)
+            })
+        )
+        .optional(),
+
+    // Current period summary
+    currentPeriod: z
+        .object({
+            newSubscriptions: z.number().int().min(0).default(0),
+            cancellations: z.number().int().min(0).default(0),
+            netGrowthRate: z.number().default(0)
+        })
+        .optional()
 });
 
 // ============================================================================
@@ -717,24 +514,69 @@ export type PaymentFilters = z.infer<typeof PaymentFiltersSchema>;
 export type PaymentPlanFilters = z.infer<typeof PaymentPlanFiltersSchema>;
 export type SubscriptionFilters = z.infer<typeof SubscriptionFiltersSchema>;
 
-export type PaymentListInput = z.infer<typeof PaymentListInputSchema>;
+export type PaymentSearchInput = z.infer<typeof PaymentSearchSchema>;
+export type PaymentPlanSearchInput = z.infer<typeof PaymentPlanSearchSchema>;
+export type SubscriptionSearchInput = z.infer<typeof SubscriptionSearchSchema>;
+
+export type PaymentsByUserInput = z.infer<typeof PaymentsByUserSchema>;
+export type PaymentStatsInput = z.infer<typeof PaymentStatsSchema>;
+export type SubscriptionAnalyticsInput = z.infer<typeof SubscriptionAnalyticsSchema>;
+
 export type PaymentListItem = z.infer<typeof PaymentListItemSchema>;
-export type PaymentListOutput = z.infer<typeof PaymentListOutputSchema>;
-export type PaymentSearchInput = z.infer<typeof PaymentSearchInputSchema>;
-export type PaymentSearchResult = z.infer<typeof PaymentSearchResultSchema>;
-export type PaymentSearchOutput = z.infer<typeof PaymentSearchOutputSchema>;
-
-export type PaymentPlanListInput = z.infer<typeof PaymentPlanListInputSchema>;
+export type PaymentSearchResultItem = z.infer<typeof PaymentSearchResultItemSchema>;
 export type PaymentPlanListItem = z.infer<typeof PaymentPlanListItemSchema>;
-export type PaymentPlanListOutput = z.infer<typeof PaymentPlanListOutputSchema>;
-
-export type SubscriptionListInput = z.infer<typeof SubscriptionListInputSchema>;
+export type PaymentPlanSearchResultItem = z.infer<typeof PaymentPlanSearchResultItemSchema>;
 export type SubscriptionListItem = z.infer<typeof SubscriptionListItemSchema>;
-export type SubscriptionListOutput = z.infer<typeof SubscriptionListOutputSchema>;
+export type SubscriptionSearchResultItem = z.infer<typeof SubscriptionSearchResultItemSchema>;
+
+export type PaymentListResponse = z.infer<typeof PaymentListResponseSchema>;
+export type PaymentSearchResponse = z.infer<typeof PaymentSearchResponseSchema>;
+export type PaymentPlanListResponse = z.infer<typeof PaymentPlanListResponseSchema>;
+export type PaymentPlanSearchResponse = z.infer<typeof PaymentPlanSearchResponseSchema>;
+export type SubscriptionListResponse = z.infer<typeof SubscriptionListResponseSchema>;
+export type SubscriptionSearchResponse = z.infer<typeof SubscriptionSearchResponseSchema>;
 
 export type PaymentSummary = z.infer<typeof PaymentSummarySchema>;
 export type PaymentPlanSummary = z.infer<typeof PaymentPlanSummarySchema>;
 export type SubscriptionSummary = z.infer<typeof SubscriptionSummarySchema>;
 
-export type PaymentStats = z.infer<typeof PaymentStatsSchema>;
-export type SubscriptionStats = z.infer<typeof SubscriptionStatsSchema>;
+export type PaymentStatsResponse = z.infer<typeof PaymentStatsResponseSchema>;
+export type SubscriptionAnalyticsResponse = z.infer<typeof SubscriptionAnalyticsResponseSchema>;
+
+// Compatibility aliases for existing code
+export type PaymentListInput = PaymentSearchInput;
+export type PaymentListOutput = PaymentListResponse;
+export type PaymentSearchOutput = PaymentSearchResponse;
+
+export type PaymentPlanListInput = PaymentPlanSearchInput;
+export type PaymentPlanListOutput = PaymentPlanListResponse;
+export type PaymentPlanSearchOutput = PaymentPlanSearchResponse;
+
+export type SubscriptionListInput = SubscriptionSearchInput;
+export type SubscriptionListOutput = SubscriptionListResponse;
+export type SubscriptionSearchOutput = SubscriptionSearchResponse;
+
+export type PaymentStats = PaymentStatsResponse;
+export type SubscriptionStats = SubscriptionAnalyticsResponse;
+
+// Legacy compatibility exports
+export const PaymentListInputSchema = PaymentSearchSchema;
+export const PaymentListOutputSchema = PaymentListResponseSchema;
+export const PaymentSearchInputSchema = PaymentSearchSchema;
+export const PaymentSearchOutputSchema = PaymentSearchResponseSchema;
+
+export const PaymentPlanListInputSchema = PaymentPlanSearchSchema;
+export const PaymentPlanListOutputSchema = PaymentPlanListResponseSchema;
+export const PaymentPlanSearchInputSchema = PaymentPlanSearchSchema;
+export const PaymentPlanSearchOutputSchema = PaymentPlanSearchResponseSchema;
+
+export const SubscriptionListInputSchema = SubscriptionSearchSchema;
+export const SubscriptionListOutputSchema = SubscriptionListResponseSchema;
+export const SubscriptionSearchInputSchema = SubscriptionSearchSchema;
+export const SubscriptionSearchOutputSchema = SubscriptionSearchResponseSchema;
+
+export const PaymentStatsResponseSchemaLegacy = PaymentStatsResponseSchema;
+export const SubscriptionStatsSchema = SubscriptionAnalyticsResponseSchema;
+
+// Additional missing legacy exports
+export const PaymentSearchResultSchema = PaymentSearchResponseSchema;
