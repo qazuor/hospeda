@@ -10,7 +10,5 @@ export * from './post.query.schema.js'; // List, Search, Summary, Stats, Filters
 // Relations
 export * from './post.relations.schema.js'; // Schemas with related entities
 
-// Specialized schemas
-export * from './post.filters.schema.js'; // Service filtering and query schemas
-export * from './post.interactions.schema.js'; // Like, comment, and interaction schemas
-export * from './post.stats.schema.js'; // Statistics and engagement schemas
+// Subtypes - all subschemas are now organized in subtypes folder
+export * from './subtypes/index.js';

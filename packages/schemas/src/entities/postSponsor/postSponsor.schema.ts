@@ -4,7 +4,7 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
 import { PostSponsorIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { BaseSocialFields } from '../../common/social.schema.js';
+import { SocialNetworkFields } from '../../common/social.schema.js';
 import { ClientTypeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -45,7 +45,7 @@ export const PostSponsorSchema = z.object({
 
     // Contact and social (using base objects)
     ...BaseContactFields,
-    ...BaseSocialFields
+    ...SocialNetworkFields
 });
 
 /**

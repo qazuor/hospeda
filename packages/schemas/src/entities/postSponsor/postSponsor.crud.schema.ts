@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PostSponsorIdSchema } from '../../common/id.schema.js';
-import { BaseSearchSchema } from '../../common/search.schemas.js';
+import { BaseSearchSchema } from '../../common/pagination.schema.js';
 import { ClientTypeEnumSchema } from '../../enums/index.js';
 import { PostSponsorSchema } from './postSponsor.schema.js';
 
@@ -69,22 +69,13 @@ export const PostSponsorUpdateOutputSchema = z.object({
  * Allows filtering by name, type, and free text search
  */
 export const PostSponsorSearchInputSchema = BaseSearchSchema.extend({
-    filters: z
-        .object({
-            name: z
-                .string({
-                    message: 'zodError.postSponsor.search.filters.name.invalidType'
-                })
-                .min(1, { message: 'zodError.postSponsor.search.filters.name.min' })
-                .optional(),
-            type: ClientTypeEnumSchema.optional(),
-            q: z
-                .string({
-                    message: 'zodError.postSponsor.search.filters.q.invalidType'
-                })
-                .optional()
+    name: z
+        .string({
+            message: 'zodError.postSponsor.search.name.invalidType'
         })
-        .optional()
+        .min(1, { message: 'zodError.postSponsor.search.name.min' })
+        .optional(),
+    type: ClientTypeEnumSchema.optional()
 });
 
 /**
