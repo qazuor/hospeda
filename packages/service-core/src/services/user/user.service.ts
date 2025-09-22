@@ -1,5 +1,8 @@
 import { AccommodationModel, EventModel, PostModel, UserIdentityModel, UserModel } from '@repo/db';
+import type { User } from '@repo/schemas';
 import {
+    RoleEnum,
+    ServiceErrorCode,
     type UserAddPermissionInput,
     UserAddPermissionInputSchema,
     type UserAssignRoleInput,
@@ -12,19 +15,17 @@ import {
     type UserGetByAuthProviderInput,
     UserGetByAuthProviderInputSchema,
     type UserGetByAuthProviderOutput,
-    type UserListWithCountsOutput,
     type UserRemovePermissionInput,
     UserRemovePermissionInputSchema,
     type UserRolePermissionOutput,
     UserSchema,
-    type UserSearchInput,
-    UserSearchInputSchema,
+    type UserSearch,
+    type UserSearchResult,
+    UserSearchSchema,
     type UserSetPermissionsInput,
     UserSetPermissionsInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
-import type { UserType } from '@repo/types';
-import { RoleEnum, ServiceErrorCode } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -47,17 +48,17 @@ import { canAssignRole } from './user.permissions';
  * - Only super admin can manage roles and permissions
  */
 export class UserService extends BaseCrudService<
-    UserType,
+    User,
     UserModel,
     typeof UserCreateInputSchema,
     typeof UserUpdateInputSchema,
-    typeof UserSearchInputSchema
+    typeof UserSearchSchema
 > {
     static readonly ENTITY_NAME = 'user';
     protected readonly entityName = UserService.ENTITY_NAME;
     protected readonly model: UserModel;
     protected readonly schema = UserSchema;
-    protected readonly filterSchema = UserSearchInputSchema;
+    protected readonly filterSchema = UserSearchSchema;
     protected readonly normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
@@ -67,7 +68,7 @@ export class UserService extends BaseCrudService<
     protected readonly logger: ServiceLogger;
     protected readonly createSchema = UserCreateInputSchema;
     protected readonly updateSchema = UserUpdateInputSchema;
-    protected readonly searchSchema = UserSearchInputSchema;
+    protected readonly searchSchema = UserSearchSchema;
 
     constructor(ctx: ServiceContext, model?: UserModel) {
         super(ctx, UserService.ENTITY_NAME);
@@ -87,7 +88,7 @@ export class UserService extends BaseCrudService<
     ): Promise<ServiceOutput<UserGetByAuthProviderOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getByAuthProviderId',
-            input: { actor, ...params },
+            input: { ...params, actor },
             schema: UserGetByAuthProviderInputSchema,
             execute: async ({ provider, providerUserId }) => {
                 const user = await this.model.findOne({
@@ -111,7 +112,7 @@ export class UserService extends BaseCrudService<
     ): Promise<ServiceOutput<UserEnsureFromAuthProviderOutput>> {
         return this.runWithLoggingAndValidation({
             methodName: 'ensureFromAuthProvider',
-            input: { actor, ...params },
+            input: { ...params, actor },
             schema: UserEnsureFromAuthProviderInputSchema,
             execute: async ({ provider, providerUserId, profile, identities }) => {
                 // Try to find existing user
@@ -122,7 +123,7 @@ export class UserService extends BaseCrudService<
 
                 if (existing) {
                     // Update only when current fields are empty and provider data is available
-                    const selectiveUpdates: Partial<UserType> = {};
+                    const selectiveUpdates: Partial<User> = {};
                     if (!existing.firstName && profile?.firstName) {
                         selectiveUpdates.firstName = profile.firstName;
                     }
@@ -151,7 +152,7 @@ export class UserService extends BaseCrudService<
                             selectiveUpdates.contactInfo = {
                                 ...existing.contactInfo,
                                 personalEmail: emailFromIdentities
-                            } as unknown as UserType['contactInfo'];
+                            } as unknown as User['contactInfo'];
                         }
                     }
 
@@ -197,16 +198,16 @@ export class UserService extends BaseCrudService<
                 }
 
                 // Create new user with defaults
-                const baseNewUser: Partial<UserType> = {
+                const baseNewUser: Partial<User> = {
                     slug: `${provider}-${providerUserId}`,
-                    authProvider: provider as unknown as UserType['authProvider'],
+                    authProvider: provider as unknown as User['authProvider'],
                     authProviderUserId: providerUserId,
                     role: RoleEnum.USER,
                     permissions: [],
-                    visibility: 'PUBLIC' as UserType['visibility'],
-                    lifecycleState: 'ACTIVE' as UserType['lifecycleState']
+                    visibility: 'PUBLIC' as User['visibility'],
+                    lifecycleState: 'ACTIVE' as User['lifecycleState']
                 };
-                const profilePayload: Partial<UserType> = {
+                const profilePayload: Partial<User> = {
                     ...(profile?.firstName ? { firstName: profile.firstName } : {}),
                     ...(profile?.lastName ? { lastName: profile.lastName } : {}),
                     ...(profile?.displayName ? { displayName: profile.displayName } : {}),
@@ -258,7 +259,7 @@ export class UserService extends BaseCrudService<
                         }
                     }
                 }
-                return { user: created as UserType };
+                return { user: created as User };
             }
         });
     }
@@ -296,7 +297,7 @@ export class UserService extends BaseCrudService<
     /**
      * Permission: Only self or super admin can update a user.
      */
-    protected _canUpdate(actor: Actor, entity: UserType): void {
+    protected _canUpdate(actor: Actor, entity: User): void {
         if (actor.role !== RoleEnum.SUPER_ADMIN && actor.id !== entity.id) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -338,7 +339,7 @@ export class UserService extends BaseCrudService<
     /**
      * Permission: Only super admin can soft delete users (stub).
      */
-    protected _canSoftDelete(actor: Actor, _entity: UserType): void {
+    protected _canSoftDelete(actor: Actor, _entity: User): void {
         // TODO [19c8665a-b3fb-4aaa-b46c-853ffae0bdfb]: Implement soft delete permission logic if needed
         if (actor.role !== RoleEnum.SUPER_ADMIN) {
             throw new ServiceError(
@@ -351,7 +352,7 @@ export class UserService extends BaseCrudService<
     /**
      * Permission: Only super admin can hard delete users (stub).
      */
-    protected _canHardDelete(actor: Actor, _entity: UserType): void {
+    protected _canHardDelete(actor: Actor, _entity: User): void {
         // TODO [f8f1a214-5ce5-4ebd-93c4-956bfcc3d301]: Implement hard delete permission logic if needed
         if (actor.role !== RoleEnum.SUPER_ADMIN) {
             throw new ServiceError(
@@ -364,7 +365,7 @@ export class UserService extends BaseCrudService<
     /**
      * Permission: Only self or super admin can view a user (stub).
      */
-    protected _canView(actor: Actor, entity: UserType): void {
+    protected _canView(actor: Actor, entity: User): void {
         // TODO [c4c2066f-f00b-40e5-90fd-17e0753c79ac]: Adjust logic if public view is allowed
         if (actor.role !== RoleEnum.SUPER_ADMIN && actor.id !== entity.id) {
             throw new ServiceError(
@@ -377,7 +378,7 @@ export class UserService extends BaseCrudService<
     /**
      * Permission: Only super admin can update visibility (stub).
      */
-    protected _canUpdateVisibility(actor: Actor, _entity: UserType, _newVisibility: unknown): void {
+    protected _canUpdateVisibility(actor: Actor, _entity: User, _newVisibility: unknown): void {
         // TODO [a538cb6e-09ab-4ebe-908a-53bc15b3307f]: Implement visibility update permission logic if needed
         if (actor.role !== RoleEnum.SUPER_ADMIN) {
             throw new ServiceError(
@@ -392,12 +393,9 @@ export class UserService extends BaseCrudService<
     /**
      * Normalizes and generates slug before creating a user.
      */
-    protected async _beforeCreate(
-        data: UserCreateInput,
-        _actor: Actor
-    ): Promise<Partial<UserType>> {
+    protected async _beforeCreate(data: UserCreateInput, _actor: Actor): Promise<Partial<User>> {
         // Ensure data is properly typed for normalization
-        const cleanData = data as Partial<UserType>;
+        const cleanData = data as Partial<User>;
         const normalized = await normalizeUserInput(cleanData);
         return normalized;
     }
@@ -406,13 +404,10 @@ export class UserService extends BaseCrudService<
      * Normalizes and generates slug before updating a user.
      * Bookmarks are always omitted from the result (even if type allows).
      */
-    protected async _beforeUpdate(
-        data: Partial<UserType>,
-        _actor: Actor
-    ): Promise<Partial<UserType>> {
+    protected async _beforeUpdate(data: Partial<User>, _actor: Actor): Promise<Partial<User>> {
         // Remove bookmarks before normalization to avoid type errors
         const { bookmarks, ...rest } = data;
-        return normalizeUserInput(rest) as Partial<UserType>;
+        return normalizeUserInput(rest) as Partial<User>;
     }
 
     // --- Custom Methods (stubs) ---
@@ -569,11 +564,9 @@ export class UserService extends BaseCrudService<
      * @param params - The validated and processed search parameters (filters, pagination, etc.)
      * @returns Paginated list of users matching the criteria
      */
-    protected async _executeSearch(params: UserSearchInput, _actor: Actor) {
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
-        return this.model.findAll(filters, { page, pageSize });
+    protected async _executeSearch(params: UserSearch, _actor: Actor) {
+        const { page, pageSize } = params;
+        return this.model.findAll(params, { page, pageSize });
     }
 
     /**
@@ -581,9 +574,8 @@ export class UserService extends BaseCrudService<
      * @param params - The validated and processed search parameters (filters, pagination, etc.)
      * @returns Count of users matching the criteria
      */
-    protected async _executeCount(params: UserSearchInput, _actor: Actor) {
-        const { filters = {} } = params;
-        const count = await this.model.count(filters);
+    protected async _executeCount(params: UserSearch, _actor: Actor) {
+        const count = await this.model.count(params);
         return { count };
     }
 
@@ -593,16 +585,11 @@ export class UserService extends BaseCrudService<
      * @param params - The search parameters
      * @returns Users with counts
      */
-    public async searchForList(
-        actor: Actor,
-        params: UserSearchInput
-    ): Promise<UserListWithCountsOutput> {
+    public async searchForList(actor: Actor, params: UserSearch): Promise<UserSearchResult> {
         this._canSearch(actor);
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+        const { page, pageSize } = params;
 
-        const result = await this.model.findAll(filters, { page, pageSize });
+        const result = await this.model.findAll(params, { page, pageSize });
 
         // Get counts for each user
         const accommodationModel = new AccommodationModel();
@@ -628,8 +615,15 @@ export class UserService extends BaseCrudService<
         );
 
         return {
-            items: itemsWithCounts,
-            total: result.total
+            data: itemsWithCounts,
+            pagination: {
+                page,
+                pageSize,
+                total: result.total,
+                totalPages: Math.ceil(result.total / pageSize),
+                hasNextPage: page * pageSize < result.total,
+                hasPreviousPage: page > 1
+            }
         };
     }
 }

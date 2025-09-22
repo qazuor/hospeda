@@ -1,4 +1,4 @@
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import type { Actor } from '../../types';
 
 /**

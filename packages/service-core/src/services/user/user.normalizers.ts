@@ -1,5 +1,4 @@
-import type { UserCreateInput, UserUpdateInput } from '@repo/schemas';
-import type { UserType } from '@repo/types';
+import type { User, UserCreateInput, UserUpdateInput } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
 import { generateUserSlug } from './user.helpers';
@@ -86,23 +85,45 @@ export const normalizeViewInput = (
  * Normalizes user input: trims strings, lowercases emails, generates slug if missing.
  *
  * @param input - Partial user input
- * @returns {Promise<Partial<UserType>>} Normalized input
+ * @returns {Promise<Partial<User>>} Normalized input
  */
-export const normalizeUserInput = async (input: Partial<UserType>): Promise<Partial<UserType>> => {
-    // Handle data that might not have bookmarks (like CreateUserSchema)
-    const { bookmarks, ...rest } = input as Partial<UserType> & { bookmarks?: unknown };
-    const normalized: Partial<UserType> = { ...rest };
-    if (normalized.displayName) normalized.displayName = normalized.displayName.trim();
-    if (normalized.firstName) normalized.firstName = normalized.firstName.trim();
-    if (normalized.lastName) normalized.lastName = normalized.lastName.trim();
-    if (normalized.contactInfo?.personalEmail)
-        normalized.contactInfo.personalEmail = normalized.contactInfo.personalEmail
-            .trim()
-            .toLowerCase();
-    if (!normalized.slug) {
+export const normalizeUserInput = async (input: Partial<User>): Promise<Partial<User>> => {
+    // Exclude sensitive fields from normalization
+    const { bookmarks, ...rest } = input as Partial<User> & { bookmarks?: unknown };
+    const normalized: Partial<User> = { ...rest };
+
+    // Trim string fields if present
+    if (normalized.displayName) {
+        normalized.displayName = normalized.displayName.trim();
+    }
+    if (normalized.firstName) {
+        normalized.firstName = normalized.firstName.trim();
+    }
+    if (normalized.lastName) {
+        normalized.lastName = normalized.lastName.trim();
+    }
+
+    // Generate slug if missing and we have necessary fields
+    if (
+        !normalized.slug &&
+        (normalized.displayName || normalized.firstName || normalized.lastName)
+    ) {
         normalized.slug = await generateUserSlug(
-            normalized as Pick<UserType, 'displayName' | 'firstName' | 'lastName'>
+            normalized as Pick<User, 'displayName' | 'firstName' | 'lastName'>
         );
     }
+
+    // Normalize contact info if present
+    if (normalized.contactInfo) {
+        normalized.contactInfo = normalizeContactInfo(
+            normalized.contactInfo
+        ) as typeof normalized.contactInfo;
+    }
+
+    // Normalize admin info if present
+    if (normalized.adminInfo) {
+        normalized.adminInfo = normalizeAdminInfo(normalized.adminInfo);
+    }
+
     return normalized;
 };

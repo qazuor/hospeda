@@ -1,5 +1,5 @@
-import type { UserBookmarkType } from '@repo/types';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import type { UserBookmark } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 
@@ -8,7 +8,7 @@ import { ServiceError } from '../../types';
  * @param actor - El usuario que realiza la acción
  * @param bookmark - El bookmark objetivo
  */
-export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookmarkType): void => {
+export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookmark): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
     if (actor.id !== bookmark.userId /* && actor.role !== 'ADMIN' */) {
         // TODO [8d166e43-9669-4daa-993c-db6228e174ef]: Allow admin access if policy requires
