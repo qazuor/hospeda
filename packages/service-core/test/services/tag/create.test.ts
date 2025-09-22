@@ -1,5 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum, TagColorEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, TagColorEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import type { Actor } from '../../../src/types';

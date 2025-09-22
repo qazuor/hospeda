@@ -1,5 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
-import { EntityTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/types';
+import { EntityTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TagService } from '../../../src/services/tag/tag.service';
 import { TagFactoryBuilder } from '../../factories/tagFactory';
