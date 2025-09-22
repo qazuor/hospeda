@@ -1,4 +1,4 @@
-import type { AccommodationRatingType, AdminInfoType } from '@repo/types';
+import type { AccommodationRatingInput, AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
@@ -17,7 +17,7 @@ export const accommodationReviews: ReturnType<typeof pgTable> = pgTable(
             .references(() => users.id, { onDelete: 'set null' }),
         title: text('title'),
         content: text('content'),
-        rating: jsonb('rating').$type<AccommodationRatingType>().notNull(),
+        rating: jsonb('rating').$type<AccommodationRatingInput>().notNull(),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

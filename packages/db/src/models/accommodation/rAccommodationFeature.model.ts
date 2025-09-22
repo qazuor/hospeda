@@ -1,11 +1,11 @@
-import type { AccommodationFeatureType } from '@repo/types';
+import type { AccommodationFeature } from '@repo/schemas';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
-export class RAccommodationFeatureModel extends BaseModel<AccommodationFeatureType> {
+export class RAccommodationFeatureModel extends BaseModel<AccommodationFeature> {
     protected table = rAccommodationFeature;
     protected entityName = 'rAccommodationFeature';
 
@@ -18,7 +18,7 @@ export class RAccommodationFeatureModel extends BaseModel<AccommodationFeatureTy
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean>
-    ): Promise<AccommodationFeatureType | null> {
+    ): Promise<AccommodationFeature | null> {
         const db = getDb();
         try {
             const withObj: Record<string, true> = {};
@@ -32,7 +32,7 @@ export class RAccommodationFeatureModel extends BaseModel<AccommodationFeatureTy
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as AccommodationFeatureType | null;
+                return result as AccommodationFeature | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);

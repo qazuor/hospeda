@@ -1,4 +1,4 @@
-import type { AdminInfoType } from '@repo/types';
+import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { AmenitiesTypePgEnum, LifecycleStatusPgEnum } from '../enums.dbschema.ts';
