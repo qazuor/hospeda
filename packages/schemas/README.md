@@ -171,9 +171,9 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/common/id.schema.ts | common | UserBookmarkIdSchema |  |  |
 | src/common/id.schema.ts | common | UserIdSchema |  |  |
 | src/common/lifecycle.schema.ts | common | LifecycleSchema | Lifecycle | Base lifecycle state fields / export const BaseLifecycleFields = { lifecycleState: LifecycleStatusEnumSchema } as const; /** Lifecycle Schema - Complete lifecycle information Can be used as a stand… |
-| src/common/location.schema.ts | common | BaseLocationSchema | BaseLocation | Base Location Schema Represents basic location information without full address details Matches BaseLocationType from @repo/types |
-| src/common/location.schema.ts | common | CoordinatesSchema | Coordinates | Coordinates Schema Represents geographic coordinates with latitude and longitude Matches CoordinatesType from @repo/types |
-| src/common/location.schema.ts | common | FullLocationSchema | FullLocation | Full Location Schema Represents complete location information with full address details Matches FullLocationType from @repo/types |
+| src/common/location.schema.ts | common | BaseLocationSchema | BaseLocation | Base Location Schema Represents basic location information without full address details |
+| src/common/location.schema.ts | common | CoordinatesSchema | Coordinates | Coordinates Schema Represents geographic coordinates with latitude and longitude |
+| src/common/location.schema.ts | common | FullLocationSchema | FullLocation | Full Location Schema Represents complete location information with full address details |
 | src/common/media.schema.ts | common | ImageSchema | Image |  |
 | src/common/media.schema.ts | common | MediaSchema | Media |  |
 | src/common/media.schema.ts | common | VideoSchema | Video |  |
@@ -310,7 +310,7 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/destination/destination.query.schema.ts | destination | DestinationSearchOutputSchema | DestinationSearchOutput | Schema for destination search output Uses generic paginated response with search results |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationSearchResultSchema | DestinationSearchResult | Schema for individual destination search results Extends list item with search score |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationStatsSchema | DestinationStats | Schema for destination statistics Contains metrics and analytics data |
-| src/entities/destination/destination.query.schema.ts | destination | DestinationSummarySchema | DestinationSummary | Schema for destination summary Contains essential information for quick display Matches DestinationSummaryType from @repo/types |
+| src/entities/destination/destination.query.schema.ts | destination | DestinationSummarySchema | DestinationSummary | Schema for destination summary Contains essential information for quick display |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationSummaryExtendedSchema | DestinationSummaryExtended | Schema for destination summary with additional fields Extended version with more fields for different use cases |
 | src/entities/destination/destination.query.schema.ts | destination | DestinationFilterInputSchema | DestinationFilterInput | Schema for destination filter input (used by service) Combines filters with pagination for service layer |
 | src/entities/destination/destination.query.schema.ts | destination | GetDestinationAccommodationsInputSchema | GetDestinationAccommodationsInput | Schema for getting destination accommodations Supports both legacy destinationId and new id parameter |
