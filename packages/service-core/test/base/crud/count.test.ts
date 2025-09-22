@@ -14,7 +14,7 @@ const asMock = <T>(fn: T) => fn as unknown as Mock;
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServiceError } from '../../../src/types';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';

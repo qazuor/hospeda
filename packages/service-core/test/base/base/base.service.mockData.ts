@@ -1,5 +1,5 @@
 import type { users } from '@repo/db';
-import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import type { Actor } from '../../../src/types';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
 // import { AccommodationFactoryBuilder } from '../factories/accommodationFactory'; // Descomentar si mockEntity es de tipo Accommodation
