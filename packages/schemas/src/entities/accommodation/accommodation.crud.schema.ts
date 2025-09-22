@@ -31,11 +31,17 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     deletedById: true
 });
 
+// Type: Create Input
+export type AccommodationCreateInput = z.infer<typeof AccommodationCreateInputSchema>;
+
 /**
  * Schema for accommodation creation response
  * Returns the complete accommodation object
  */
 export const AccommodationCreateOutputSchema = AccommodationSchema;
+
+// Type: Create Output
+export type AccommodationCreateOutput = z.infer<typeof AccommodationCreateOutputSchema>;
 
 // ============================================================================
 // UPDATE SCHEMAS
@@ -55,17 +61,26 @@ export const AccommodationUpdateInputSchema = AccommodationSchema.omit({
     deletedById: true
 }).partial();
 
+// Type: Update Input
+export type AccommodationUpdateInput = z.infer<typeof AccommodationUpdateInputSchema>;
+
 /**
  * Schema for partial accommodation updates (PATCH)
  * Same as update but explicitly named for clarity
  */
 export const AccommodationPatchInputSchema = AccommodationUpdateInputSchema;
 
+// Type: Patch Input
+export type AccommodationPatchInput = z.infer<typeof AccommodationPatchInputSchema>;
+
 /**
  * Schema for accommodation update response
  * Returns the complete updated accommodation object
  */
 export const AccommodationUpdateOutputSchema = AccommodationSchema;
+
+// Type: Update Output
+export type AccommodationUpdateOutput = z.infer<typeof AccommodationUpdateOutputSchema>;
 
 // ============================================================================
 // DELETE SCHEMAS
@@ -85,6 +100,9 @@ export const AccommodationDeleteInputSchema = z.object({
         .default(false)
 });
 
+// Type: Delete Input
+export type AccommodationDeleteInput = z.infer<typeof AccommodationDeleteInputSchema>;
+
 /**
  * Schema for accommodation deletion response
  * Returns success status and deletion timestamp
@@ -102,6 +120,9 @@ export const AccommodationDeleteOutputSchema = z.object({
         .optional()
 });
 
+// Type: Delete Output
+export type AccommodationDeleteOutput = z.infer<typeof AccommodationDeleteOutputSchema>;
+
 // ============================================================================
 // RESTORE SCHEMAS
 // ============================================================================
@@ -114,22 +135,14 @@ export const AccommodationRestoreInputSchema = z.object({
     id: AccommodationIdSchema
 });
 
+// Type: Restore Input
+export type AccommodationRestoreInput = z.infer<typeof AccommodationRestoreInputSchema>;
+
 /**
  * Schema for accommodation restoration response
  * Returns the complete restored accommodation object
  */
 export const AccommodationRestoreOutputSchema = AccommodationSchema;
 
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
-
-export type AccommodationCreateInput = z.infer<typeof AccommodationCreateInputSchema>;
-export type AccommodationCreateOutput = z.infer<typeof AccommodationCreateOutputSchema>;
-export type AccommodationUpdateInput = z.infer<typeof AccommodationUpdateInputSchema>;
-export type AccommodationPatchInput = z.infer<typeof AccommodationPatchInputSchema>;
-export type AccommodationUpdateOutput = z.infer<typeof AccommodationUpdateOutputSchema>;
-export type AccommodationDeleteInput = z.infer<typeof AccommodationDeleteInputSchema>;
-export type AccommodationDeleteOutput = z.infer<typeof AccommodationDeleteOutputSchema>;
-export type AccommodationRestoreInput = z.infer<typeof AccommodationRestoreInputSchema>;
+// Type: Restore Output
 export type AccommodationRestoreOutput = z.infer<typeof AccommodationRestoreOutputSchema>;
