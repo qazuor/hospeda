@@ -1,6 +1,6 @@
 import { DestinationModel } from '@repo/db';
 import type { GetDestinationStatsInput } from '@repo/schemas';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 /**
  * @file getStats.test.ts
  * @description Unit tests for DestinationService.getStats. Covers success, not found, and internal error cases.
@@ -35,7 +35,12 @@ describe('DestinationService.getStats', () => {
     it('should return stats for a valid destination', async () => {
         // Arrange
         const destination = new DestinationFactoryBuilder()
-            .with({ accommodationsCount: 5, reviewsCount: 10, averageRating: 4.2 })
+            .with({
+                accommodationsCount: 5,
+                reviewsCount: 10,
+                averageRating: 4.2,
+                visibility: VisibilityEnum.PUBLIC
+            })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
@@ -49,7 +54,9 @@ describe('DestinationService.getStats', () => {
         expect(result.data?.stats).toEqual({
             accommodationsCount: 5,
             reviewsCount: 10,
-            averageRating: 4.2
+            averageRating: 4.2,
+            attractionsCount: 0,
+            eventsCount: 0
         });
     });
 
@@ -85,7 +92,8 @@ describe('DestinationService.getStats', () => {
             .with({
                 accommodationsCount: undefined,
                 reviewsCount: undefined,
-                averageRating: undefined
+                averageRating: undefined,
+                visibility: VisibilityEnum.PUBLIC
             })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
@@ -100,7 +108,9 @@ describe('DestinationService.getStats', () => {
         expect(result.data?.stats).toEqual({
             accommodationsCount: 0,
             reviewsCount: 0,
-            averageRating: 0
+            averageRating: 0,
+            attractionsCount: 0,
+            eventsCount: 0
         });
     });
 

@@ -1,6 +1,6 @@
 import { AttractionModel, DestinationModel, RDestinationAttractionModel } from '@repo/db';
-import type { AttractionId, DestinationId } from '@repo/types';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import type { AttractionIdType, DestinationIdType } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServiceContext } from '../../../src';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
@@ -10,8 +10,8 @@ import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
-const attractionId = getMockId('feature', 'attr-1') as AttractionId;
-const destinationId = getMockId('destination', 'dest-1') as DestinationId;
+const attractionId = getMockId('feature', 'attr-1') as AttractionIdType;
+const destinationId = getMockId('destination', 'dest-1') as DestinationIdType;
 const validInput = { destinationId, attractionId };
 const actorWithPerms = createActor({ permissions: [PermissionEnum.DESTINATION_CREATE] });
 const actorNoPerms = createActor({ permissions: [] });

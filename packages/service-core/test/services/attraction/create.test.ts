@@ -1,6 +1,6 @@
 import { AttractionModel } from '@repo/db';
-import type { AttractionId } from '@repo/types';
-import { PermissionEnum } from '@repo/types';
+import type { AttractionIdType } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
 import type { Actor } from '../../../src/types';
@@ -33,7 +33,7 @@ describe('AttractionService.create', () => {
     };
     const createdAttraction = AttractionFactoryBuilder.create({
         ...input,
-        id: getMockId('feature', 'attr-1') as AttractionId
+        id: getMockId('feature', 'attr-1') as AttractionIdType
     });
 
     beforeEach(() => {

@@ -1,6 +1,6 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
 import type { GetDestinationAccommodationsInput } from '@repo/schemas';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 /**
  * @file getAccommodations.test.ts
  * @description Unit tests for DestinationService.getAccommodations. Covers success, not found, and internal error cases.
@@ -41,15 +41,21 @@ describe('DestinationService.getAccommodations', () => {
 
     it('should return accommodations for a valid destination', async () => {
         // Arrange
-        const destination = new DestinationFactoryBuilder().build();
+        const destination = new DestinationFactoryBuilder()
+            .with({ visibility: VisibilityEnum.PUBLIC })
+            .build();
         const accommodations = [
             new AccommodationFactoryBuilder().with({ destinationId: destination.id }).build(),
             new AccommodationFactoryBuilder().with({ destinationId: destination.id }).build()
         ];
         asMock(destinationModelMock.findById).mockResolvedValue(destination);
-        asMock(accommodationModelMock.search).mockResolvedValue({ items: accommodations });
+        asMock(accommodationModelMock.findAll).mockResolvedValue({ items: accommodations });
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetDestinationAccommodationsInput = { destinationId: destination.id };
+        const params: GetDestinationAccommodationsInput = {
+            destinationId: destination.id,
+            page: 1,
+            pageSize: 20
+        };
 
         // Act
         const result = await service.getAccommodations(actor, params);
@@ -64,7 +70,9 @@ describe('DestinationService.getAccommodations', () => {
         asMock(destinationModelMock.findById).mockResolvedValue(null);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
         const params: GetDestinationAccommodationsInput = {
-            destinationId: getMockId('destination') as any
+            destinationId: getMockId('destination') as any,
+            page: 1,
+            pageSize: 20
         };
 
         // Act
@@ -79,7 +87,9 @@ describe('DestinationService.getAccommodations', () => {
         asMock(destinationModelMock.findById).mockRejectedValue(new Error('DB error'));
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
         const params: GetDestinationAccommodationsInput = {
-            destinationId: getMockId('destination') as any
+            destinationId: getMockId('destination') as any,
+            page: 1,
+            pageSize: 20
         };
 
         // Act
@@ -91,11 +101,17 @@ describe('DestinationService.getAccommodations', () => {
 
     it('should return empty array if no accommodations exist for destination', async () => {
         // Arrange
-        const destination = new DestinationFactoryBuilder().build();
+        const destination = new DestinationFactoryBuilder()
+            .with({ visibility: VisibilityEnum.PUBLIC })
+            .build();
         asMock(destinationModelMock.findById).mockResolvedValue(destination);
-        asMock(accommodationModelMock.search).mockResolvedValue({ items: [] });
+        asMock(accommodationModelMock.findAll).mockResolvedValue({ items: [] });
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params: GetDestinationAccommodationsInput = { destinationId: destination.id };
+        const params: GetDestinationAccommodationsInput = {
+            destinationId: destination.id,
+            page: 1,
+            pageSize: 20
+        };
 
         // Act
         const result = await service.getAccommodations(actor, params);
@@ -108,7 +124,7 @@ describe('DestinationService.getAccommodations', () => {
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // Arrange
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
-        const params = { destinationId: '' as any };
+        const params = { destinationId: '' as any, page: 1, pageSize: 20 };
 
         // Act
         const result = await service.getAccommodations(actor, params);
@@ -124,7 +140,11 @@ describe('DestinationService.getAccommodations', () => {
             .build();
         asMock(destinationModelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
-        const params: GetDestinationAccommodationsInput = { destinationId: destination.id };
+        const params: GetDestinationAccommodationsInput = {
+            destinationId: destination.id,
+            page: 1,
+            pageSize: 20
+        };
 
         // Act
         const result = await service.getAccommodations(actor, params);

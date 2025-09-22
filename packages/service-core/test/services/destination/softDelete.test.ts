@@ -1,5 +1,5 @@
 import type { DestinationModel } from '@repo/db';
-import { type DestinationType, PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { type Destination, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
@@ -22,14 +22,14 @@ describe('DestinationService.softDelete', () => {
     it('should soft delete a destination when permissions are valid', async () => {
         // Arrange
         const actor = createAdminActor({ permissions: [PermissionEnum.DESTINATION_DELETE] });
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         const existing = {
             ...createDestination(),
             id,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as DestinationType['createdById'],
-            updatedById: getMockId('user') as DestinationType['updatedById']
+            createdById: getMockId('user') as Destination['createdById'],
+            updatedById: getMockId('user') as Destination['updatedById']
         };
         (model.findById as Mock).mockResolvedValue(existing);
         (model.softDelete as Mock).mockResolvedValue(1);
@@ -47,14 +47,14 @@ describe('DestinationService.softDelete', () => {
     it('should return FORBIDDEN if actor lacks permission', async () => {
         // Arrange
         const actor = createActor({ permissions: [] });
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         const existing = {
             ...createDestination(),
             id,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as DestinationType['createdById'],
-            updatedById: getMockId('user') as DestinationType['updatedById']
+            createdById: getMockId('user') as Destination['createdById'],
+            updatedById: getMockId('user') as Destination['updatedById']
         };
         (model.findById as Mock).mockResolvedValue(existing);
 
@@ -70,7 +70,7 @@ describe('DestinationService.softDelete', () => {
     it('should return NOT_FOUND if destination does not exist', async () => {
         // Arrange
         const actor = createAdminActor({ permissions: [PermissionEnum.DESTINATION_DELETE] });
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         (model.findById as Mock).mockResolvedValue(null);
 
         // Act
@@ -85,14 +85,14 @@ describe('DestinationService.softDelete', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         // Arrange
         const actor = createAdminActor({ permissions: [PermissionEnum.DESTINATION_DELETE] });
-        const id = getMockId('destination') as DestinationType['id'];
+        const id = getMockId('destination') as Destination['id'];
         const existing = {
             ...createDestination(),
             id,
             createdAt: new Date(),
             updatedAt: new Date(),
-            createdById: getMockId('user') as DestinationType['createdById'],
-            updatedById: getMockId('user') as DestinationType['updatedById']
+            createdById: getMockId('user') as Destination['createdById'],
+            updatedById: getMockId('user') as Destination['updatedById']
         };
         (model.findById as Mock).mockResolvedValue(existing);
         (model.softDelete as Mock).mockRejectedValue(new Error('DB error'));

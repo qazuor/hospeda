@@ -1,6 +1,6 @@
 import type { DestinationModel } from '@repo/db';
 import { type DestinationCreateInput, DestinationCreateInputSchema } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode } from '@repo/types';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/destination/destination.helpers';

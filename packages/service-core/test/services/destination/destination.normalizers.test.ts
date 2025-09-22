@@ -1,6 +1,5 @@
 import type { DestinationSchema } from '@repo/schemas';
-import type { AttractionId, DestinationId } from '@repo/types';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 import {
@@ -34,15 +33,15 @@ describe('Destination Normalizers', () => {
             .with({ visibility: undefined, location: validLocation })
             .withAttractions([
                 {
-                    id: getMockId('feature') as AttractionId,
-                    attractionId: getMockId('feature') as AttractionId,
+                    id: getMockId('feature') as any,
+                    attractionId: getMockId('feature') as any,
                     name: 'Attraction 1',
                     slug: 'attraction-1',
                     icon: 'icon1',
                     description: 'desc',
                     isBuiltin: false,
                     isFeatured: false,
-                    destinationId: getMockId('destination') as DestinationId,
+                    destinationId: getMockId('destination') as any,
                     adminInfo: { favorite: false }
                 }
             ])
@@ -60,15 +59,15 @@ describe('Destination Normalizers', () => {
             .with({ visibility: VisibilityEnum.PUBLIC, location: validLocation })
             .withAttractions([
                 {
-                    id: getMockId('feature') as AttractionId,
-                    attractionId: getMockId('feature') as AttractionId,
+                    id: getMockId('feature') as any,
+                    attractionId: getMockId('feature') as any,
                     name: 'Attraction 1',
                     slug: 'attraction-1',
                     icon: 'icon1',
                     description: 'desc',
                     isBuiltin: false,
                     isFeatured: false,
-                    destinationId: getMockId('destination') as DestinationId,
+                    destinationId: getMockId('destination') as any,
                     adminInfo: { favorite: false }
                 }
             ])
@@ -86,15 +85,15 @@ describe('Destination Normalizers', () => {
             .with({ location: validLocation })
             .withAttractions([
                 {
-                    id: getMockId('feature') as AttractionId,
-                    attractionId: getMockId('feature') as AttractionId,
+                    id: getMockId('feature') as any,
+                    attractionId: getMockId('feature') as any,
                     name: 'Attraction 1',
                     slug: 'attraction-1',
                     icon: 'icon1',
                     description: 'desc',
                     isBuiltin: false,
                     isFeatured: false,
-                    destinationId: getMockId('destination') as DestinationId,
+                    destinationId: getMockId('destination') as any,
                     adminInfo: { favorite: false }
                 }
             ])

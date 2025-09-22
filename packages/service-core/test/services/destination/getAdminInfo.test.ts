@@ -1,5 +1,5 @@
 import { DestinationModel } from '@repo/db';
-import { type DestinationType, PermissionEnum, RoleEnum } from '@repo/types';
+import { type Destination, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, it } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { createActor } from '../../factories/actorFactory';
@@ -19,7 +19,7 @@ function asMock(fn: unknown) {
 describe('DestinationService - getAdminInfo', () => {
     let service: DestinationService;
     let superAdmin: Actor;
-    let entity: DestinationType;
+    let entity: Destination;
 
     beforeEach(() => {
         modelMock = createTypedModelMock(DestinationModel, ['findById']);
@@ -29,7 +29,7 @@ describe('DestinationService - getAdminInfo', () => {
             role: RoleEnum.SUPER_ADMIN,
             permissions: [PermissionEnum.DESTINATION_UPDATE]
         });
-        entity = createDestination();
+        entity = createDestination() as any;
         asMock(modelMock.findById).mockResolvedValue(entity);
     });
 

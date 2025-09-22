@@ -1,5 +1,5 @@
 import type { DestinationModel } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode, TagColorEnum } from '@repo/types';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode, TagColorEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/destination/destination.permission';
 import { DestinationService } from '../../../src/services/destination/destination.service';
@@ -35,8 +35,8 @@ describe('DestinationService.search and count', () => {
 
     beforeEach(() => {
         model = createModelMock();
-        model.search = vi.fn();
-        model.countByFilters = vi.fn();
+        model.findAll = vi.fn();
+        model.count = vi.fn();
         service = new DestinationService(
             { logger: mockLogger },
             model as unknown as DestinationModel
@@ -57,11 +57,15 @@ describe('DestinationService.search and count', () => {
 
     it('should return paginated destinations for valid filters', async () => {
         // Arrange
-        (model.search as import('vitest').Mock).mockResolvedValue(paginated(entities, 1, 2));
+        (model.findAll as import('vitest').Mock).mockResolvedValue(paginated(entities, 1, 2));
         const params = { state: 'Entre Ríos' };
 
         // Act
-        const result = await service.search(admin, { filters: params });
+        const result = await service.search(admin, {
+            filters: params,
+            page: 1,
+            pageSize: 10
+        });
 
         // Assert
         expectSuccess(result);
@@ -71,11 +75,15 @@ describe('DestinationService.search and count', () => {
 
     it('should return empty result if no destinations match', async () => {
         // Arrange
-        (model.search as import('vitest').Mock).mockResolvedValue(paginated([]));
+        (model.findAll as import('vitest').Mock).mockResolvedValue(paginated([]));
         const params = { state: 'Nowhere' };
 
         // Act
-        const result = await service.search(admin, { filters: params });
+        const result = await service.search(admin, {
+            filters: params,
+            page: 1,
+            pageSize: 10
+        });
 
         // Assert
         expectSuccess(result);
@@ -85,11 +93,14 @@ describe('DestinationService.search and count', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // Arrange
-        const invalidParams = { state: 123 }; // state should be string
+        const invalidParams = { state: 123 as any }; // state should be string
 
         // Act
-        // @ts-expect-error: purposely invalid
-        const result = await service.search(admin, { filters: invalidParams });
+        const result = await service.search(admin, {
+            filters: invalidParams,
+            page: 1,
+            pageSize: 10
+        });
 
         // Assert
         expectValidationError(result);
@@ -97,30 +108,38 @@ describe('DestinationService.search and count', () => {
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         // Arrange
-        (model.search as import('vitest').Mock).mockRejectedValue(new Error('DB error'));
+        (model.findAll as import('vitest').Mock).mockRejectedValue(new Error('DB error'));
         const params = { state: 'Entre Ríos' };
 
         // Act
-        const result = await service.search(admin, { filters: params });
+        const result = await service.search(admin, {
+            filters: params,
+            page: 1,
+            pageSize: 10
+        });
 
         // Assert
         expectInternalError(result);
     });
 
     it('should return correct count for valid filters', async () => {
-        (model.countByFilters as import('vitest').Mock).mockResolvedValue(5);
+        (model.count as import('vitest').Mock).mockResolvedValue(5);
         const params = { country: 'AR' };
-        const result = await service.count(admin, { filters: params });
+        const result = await service.count(admin, {
+            filters: params,
+            page: 1,
+            pageSize: 10
+        });
         expectSuccess(result);
-        expect(result.data).toBe(5);
+        expect(result.data?.count).toBe(5);
     });
 
     it('should return 0 count if no destinations match', async () => {
-        (model.countByFilters as import('vitest').Mock).mockResolvedValue(0);
+        (model.count as import('vitest').Mock).mockResolvedValue(0);
         const params = { country: 'ZZ' };
-        const result = await service.count(admin, { filters: params });
+        const result = await service.count(admin, { filters: params, page: 1, pageSize: 10 });
         expectSuccess(result);
-        expect(result.data).toBe(0);
+        expect(result.data?.count).toBe(0);
     });
 
     it('should return FORBIDDEN for count if actor lacks permission', async () => {
@@ -131,7 +150,7 @@ describe('DestinationService.search and count', () => {
         const params = { country: 'AR' };
 
         // Act
-        const result = await service.count(guest, { filters: params });
+        const result = await service.count(guest, { filters: params, page: 1, pageSize: 10 });
 
         // Assert
         expectForbiddenError(result);
@@ -139,11 +158,14 @@ describe('DestinationService.search and count', () => {
 
     it('should return VALIDATION_ERROR for count with invalid input', async () => {
         // Arrange
-        const invalidParams = { country: 123 };
+        const invalidParams = { country: 123 as any };
 
         // Act
-        // @ts-expect-error: purposely invalid
-        const result = await service.count(admin, { filters: invalidParams });
+        const result = await service.count(admin, {
+            filters: invalidParams,
+            page: 1,
+            pageSize: 10
+        });
 
         // Assert
         expectValidationError(result);
@@ -151,11 +173,11 @@ describe('DestinationService.search and count', () => {
 
     it('should return INTERNAL_ERROR for count if model throws', async () => {
         // Arrange
-        (model.countByFilters as import('vitest').Mock).mockRejectedValue(new Error('DB error'));
+        (model.count as import('vitest').Mock).mockRejectedValue(new Error('DB error'));
         const params = { country: 'AR' };
 
         // Act
-        const result = await service.count(admin, { filters: params });
+        const result = await service.count(admin, { filters: params, page: 1, pageSize: 10 });
 
         // Assert
         expectInternalError(result);
@@ -174,11 +196,11 @@ describe('DestinationService.search and count', () => {
         const destinations = [
             new DestinationFactoryBuilder().with({ name: 'Taggy', tags: [tag] }).build()
         ];
-        (model.search as import('vitest').Mock).mockResolvedValue(paginated(destinations, 1, 1));
+        (model.findAll as import('vitest').Mock).mockResolvedValue(paginated(destinations, 1, 1));
         const filters = { tags: [tag.id] }; // Use tag ID instead of full object
 
         // Act
-        const result = await service.search(admin, { filters: filters });
+        const result = await service.search(admin, { filters: filters, page: 1, pageSize: 10 });
 
         // Assert
         expectSuccess(result);
@@ -186,31 +208,31 @@ describe('DestinationService.search and count', () => {
     });
 
     it('should handle errors from the _beforeSearch hook', async () => {
-        (model.search as import('vitest').Mock).mockResolvedValue(paginated(entities));
+        (model.findAll as import('vitest').Mock).mockResolvedValue(paginated(entities));
         vi.spyOn(
             service as unknown as { _beforeSearch: () => void },
             '_beforeSearch'
         ).mockRejectedValue(new Error('beforeSearch error'));
         const params = { state: 'Entre Ríos' };
-        const result = await service.search(admin, { filters: params });
+        const result = await service.search(admin, { filters: params, page: 1, pageSize: 10 });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
     it('should handle errors from the _afterSearch hook', async () => {
-        (model.search as import('vitest').Mock).mockResolvedValue(paginated(entities));
+        (model.findAll as import('vitest').Mock).mockResolvedValue(paginated(entities));
         vi.spyOn(
             service as unknown as { _afterSearch: () => void },
             '_afterSearch'
         ).mockRejectedValue(new Error('afterSearch error'));
         const params = { state: 'Entre Ríos' };
-        const result = await service.search(admin, { filters: params });
+        const result = await service.search(admin, { filters: params, page: 1, pageSize: 10 });
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
     it('should use the search normalizer if provided', async () => {
-        const normalizer = vi.fn((opts) => ({ ...opts, pagination: { page: 99, pageSize: 10 } }));
+        const normalizer = vi.fn((opts) => ({ ...opts, page: 99, pageSize: 10 }));
         class ServiceWithNormalizer extends DestinationService {
             protected override normalizers = {
                 ...getNormalizers(service),
@@ -221,16 +243,9 @@ describe('DestinationService.search and count', () => {
             { logger: mockLogger },
             model as unknown as DestinationModel
         );
-        (model.search as import('vitest').Mock).mockResolvedValue(paginated(entities, 99, 10));
-        await serviceWithNorm.search(admin, { filters: {}, pagination: { page: 1, pageSize: 10 } });
-        expect(normalizer).toHaveBeenCalledWith(
-            { filters: {}, pagination: { page: 1, pageSize: 10 } },
-            admin
-        );
-        expect(model.search).toHaveBeenCalledWith({
-            filters: {},
-            page: 99,
-            pageSize: 10
-        });
+        (model.findAll as import('vitest').Mock).mockResolvedValue(paginated(entities, 99, 10));
+        await serviceWithNorm.search(admin, { filters: {}, page: 1, pageSize: 10 });
+        expect(normalizer).toHaveBeenCalledWith({ filters: {}, page: 1, pageSize: 10, sortOrder: 'asc' }, admin);
+        expect(model.findAll).toHaveBeenCalledWith({}, { page: 99, pageSize: 10 });
     });
 });
