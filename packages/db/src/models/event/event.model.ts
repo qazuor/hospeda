@@ -1,11 +1,11 @@
-import type { EventType } from '@repo/types';
+import type { Event } from '@repo/schemas';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { events } from '../../schemas/event/event.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
-export class EventModel extends BaseModel<EventType> {
+export class EventModel extends BaseModel<Event> {
     protected table = events;
     protected entityName = 'events';
 
@@ -18,7 +18,7 @@ export class EventModel extends BaseModel<EventType> {
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean>
-    ): Promise<EventType | null> {
+    ): Promise<Event | null> {
         const db = getDb();
         try {
             const withObj: Record<string, boolean> = {};
@@ -39,7 +39,7 @@ export class EventModel extends BaseModel<EventType> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as EventType | null;
+                return result as Event | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
