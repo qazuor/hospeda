@@ -1,5 +1,5 @@
 import { AttractionModel } from '@repo/db';
-import { ServiceErrorCode } from '@repo/types';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/attraction/attraction.permissions';
@@ -18,7 +18,7 @@ describe('AttractionService.getBySlug', () => {
     beforeEach(() => {
         model = createTypedModelMock(AttractionModel, ['findOne']);
         service = new AttractionService({ logger: createLoggerMock() }, model);
-        entity = AttractionFactoryBuilder.create();
+        entity = AttractionFactoryBuilder.create({ slug: 'test-attraction' });
         actor = createActor({ permissions: [] });
         vi.clearAllMocks();
     });
@@ -26,7 +26,8 @@ describe('AttractionService.getBySlug', () => {
     it('should return an attraction by slug', async () => {
         (model.findOne as Mock).mockResolvedValue(entity);
         vi.spyOn(permissionHelpers, 'checkCanViewAttraction').mockReturnValue();
-        const result = await service.getBySlug(actor, entity.slug);
+        const testSlug = entity.slug ?? 'test-attraction';
+        const result = await service.getBySlug(actor, testSlug);
         expect(result.data).toBeDefined();
         expect(result.data?.slug).toBe(entity.slug);
         expect(result.error).toBeUndefined();
@@ -45,7 +46,8 @@ describe('AttractionService.getBySlug', () => {
         vi.spyOn(permissionHelpers, 'checkCanViewAttraction').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'forbidden');
         });
-        const result = await service.getBySlug(actor, entity.slug);
+        const testSlug = entity.slug ?? 'test-attraction';
+        const result = await service.getBySlug(actor, testSlug);
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
     });

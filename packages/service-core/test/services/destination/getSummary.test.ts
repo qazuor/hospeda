@@ -1,6 +1,6 @@
 import { DestinationModel } from '@repo/db';
 import type { GetDestinationSummaryInput } from '@repo/schemas';
-import { RoleEnum, VisibilityEnum } from '@repo/types';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 /**
  * @file getSummary.test.ts
  * @description Unit tests for DestinationService.getSummary. Covers success, not found, missing location, and internal error cases.
@@ -38,7 +38,18 @@ describe('DestinationService.getSummary', () => {
 
     it('should return a summary DTO for a valid destination', async () => {
         // Arrange
-        const destination = new DestinationFactoryBuilder().with({ averageRating: 4.5 }).build();
+        const destination = new DestinationFactoryBuilder()
+            .with({
+                averageRating: 4.5,
+                visibility: VisibilityEnum.PUBLIC,
+                location: {
+                    state: 'Buenos Aires',
+                    zipCode: 'C1000',
+                    country: 'Argentina',
+                    coordinates: { lat: '-34.6037', long: '-58.3816' }
+                }
+            })
+            .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
         const params: GetDestinationSummaryInput = { destinationId: destination.id };
@@ -57,8 +68,8 @@ describe('DestinationService.getSummary', () => {
             location: destination.location,
             isFeatured: destination.isFeatured,
             averageRating: destination.averageRating,
-            reviewsCount: destination.reviewsCount,
-            accommodationsCount: destination.accommodationsCount
+            reviewsCount: 0, // Service normalizes undefined to 0
+            accommodationsCount: 0 // Service normalizes undefined to 0
         });
     });
 
@@ -79,7 +90,12 @@ describe('DestinationService.getSummary', () => {
 
     it('should return NOT_FOUND if destination has no location', async () => {
         // Arrange
-        const destination = new DestinationFactoryBuilder().with({ location: undefined }).build();
+        const destination = new DestinationFactoryBuilder()
+            .with({
+                location: undefined,
+                visibility: VisibilityEnum.PUBLIC
+            })
+            .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
         const params: GetDestinationSummaryInput = { destinationId: destination.id };

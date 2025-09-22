@@ -1,10 +1,11 @@
 import { AttractionModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
 import type { Actor } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { AttractionFactoryBuilder } from '../../factories/attractionFactory';
+
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
@@ -16,7 +17,11 @@ describe('AttractionService.search', () => {
     let actor: Actor;
     const attraction = AttractionFactoryBuilder.create({ name: 'Test Attraction' });
     const paginated = { items: [attraction], total: 1 };
-    const searchParams = { filters: { name: 'Test Attraction' } };
+    const searchParams = {
+        page: 1,
+        pageSize: 10,
+        filters: { name: 'Test Attraction' }
+    };
 
     beforeEach(() => {
         attractionModelMock = createTypedModelMock(AttractionModel, ['findAll']);

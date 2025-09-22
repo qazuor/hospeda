@@ -1,10 +1,11 @@
 import { AttractionModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
 import type { Actor } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { AttractionFactoryBuilder } from '../../factories/attractionFactory';
+
 import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
