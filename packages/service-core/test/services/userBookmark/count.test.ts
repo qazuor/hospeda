@@ -1,5 +1,5 @@
 import { UserBookmarkModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { UserBookmarkService } from '../../../src/services/userBookmark/userBookmark.service';
 import { createActor } from '../../factories/actorFactory';
@@ -27,14 +27,14 @@ describe('UserBookmarkService.count', () => {
 
     it('should count bookmarks for a user (success)', async () => {
         asMock(modelMock.count).mockResolvedValue(3);
-        const result = await service.count(actor, { userId: bookmark.userId });
+        const result = await service.countBookmarksForUser(actor, { userId: bookmark.userId });
         expectSuccess(result);
         expect(result.data?.count).toBe(3);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
-        asMock(modelMock.count).mockRejectedValue(new Error('DB error'));
-        const result = await service.count(actor, { userId: bookmark.userId });
+        asMock(modelMock.count).mockRejectedValue(new Error('Database error'));
+        const result = await service.countBookmarksForUser(actor, { userId: bookmark.userId });
         expectInternalError(result);
     });
 });

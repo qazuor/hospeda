@@ -1,5 +1,5 @@
 import { UserBookmarkModel } from '@repo/db';
-import { PermissionEnum } from '@repo/types';
+import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { UserBookmarkService } from '../../../src/services/userBookmark/userBookmark.service';
 import { createActor } from '../../factories/actorFactory';
@@ -33,7 +33,13 @@ describe('UserBookmarkService.listBookmarksByUser', () => {
 
     it('should list bookmarks for the owner (success)', async () => {
         asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
-        const result = await service.listBookmarksByUser(actor, { userId: bookmark.userId });
+        const result = await service.listBookmarksByUser(actor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            filters: { userId: bookmark.userId }
+        });
         expectSuccess(result);
         expect(result.data?.bookmarks).toBeDefined();
         expect(result.data?.bookmarks).toHaveLength(1);
@@ -46,18 +52,36 @@ describe('UserBookmarkService.listBookmarksByUser', () => {
             id: 'not-owner',
             permissions: [PermissionEnum.USER_BOOKMARK_MANAGE]
         });
-        const result = await service.listBookmarksByUser(otherActor, { userId: bookmark.userId });
+        const result = await service.listBookmarksByUser(otherActor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            filters: { userId: bookmark.userId }
+        });
         expectForbiddenError(result);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.listBookmarksByUser(actor, { userId: 'not-a-uuid' as any });
+        const result = await service.listBookmarksByUser(actor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            filters: { userId: 'not-a-uuid' }
+        });
         expectValidationError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(modelMock.findAll).mockRejectedValue(new Error('DB error'));
-        const result = await service.listBookmarksByUser(actor, { userId: bookmark.userId });
+        const result = await service.listBookmarksByUser(actor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            filters: { userId: bookmark.userId }
+        });
         expectInternalError(result);
     });
 });

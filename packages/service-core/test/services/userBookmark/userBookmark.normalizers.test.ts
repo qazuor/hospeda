@@ -1,5 +1,4 @@
-import type { UserId } from '@repo/types';
-import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/types';
+import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     normalizeCreateInput,
@@ -14,8 +13,8 @@ const baseBookmark = {
     description: '  Some description  '
 };
 
-const userId = 'user-uuid' as UserId;
-type MockActor = { id: UserId; role: RoleEnum; permissions: PermissionEnum[] };
+const userId = 'user-uuid' as string;
+type MockActor = { id: string; role: RoleEnum; permissions: PermissionEnum[] };
 const actor: MockActor = {
     id: userId,
     role: RoleEnum.USER,

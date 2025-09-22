@@ -5,7 +5,7 @@
  * Covers: success, forbidden, not found, validation, internal error, edge cases.
  */
 import { UserModel } from '@repo/db';
-import { RoleEnum, type UserId } from '@repo/types';
+import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import type { Actor } from '../../../src';
 import { UserService } from '../../../src/services/user/user.service';
@@ -30,7 +30,7 @@ describe('UserService.assignRole', () => {
     let service: UserService;
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const userId = getMockId('user', 'user-1') as UserId;
+    const userId = getMockId('user', 'user-1') as string;
     const actor = getActor(RoleEnum.SUPER_ADMIN);
     const input = { userId, role: RoleEnum.ADMIN };
 
@@ -93,7 +93,7 @@ describe('UserService.assignRole', () => {
 
     it('should return VALIDATION_ERROR for invalid userId', async () => {
         const result = await service.assignRole(actor, {
-            userId: '' as UserId,
+            userId: '' as string,
             role: RoleEnum.ADMIN
         });
         expectValidationError(result);
@@ -102,7 +102,7 @@ describe('UserService.assignRole', () => {
     it('should return VALIDATION_ERROR for invalid role', async () => {
         const invalidRole = undefined as unknown as RoleEnum;
         const result = await service.assignRole(actor, {
-            userId: userId as UserId,
+            userId: userId as string,
             role: invalidRole
         });
         expectValidationError(result);
@@ -110,7 +110,7 @@ describe('UserService.assignRole', () => {
 
     it('should return VALIDATION_ERROR if userId is empty', async () => {
         const result = await service.assignRole(actor, {
-            userId: '' as UserId,
+            userId: '' as string,
             role: RoleEnum.USER
         });
         expectValidationError(result);
@@ -118,7 +118,7 @@ describe('UserService.assignRole', () => {
 
     it('should return VALIDATION_ERROR if role is invalid', async () => {
         const result = await service.assignRole(actor, {
-            userId: 'some-id' as UserId,
+            userId: 'some-id' as string,
             role: 'INVALID' as RoleEnum
         });
         expectValidationError(result);
@@ -126,7 +126,7 @@ describe('UserService.assignRole', () => {
 
     it('should return UNAUTHORIZED if actor is undefined', async () => {
         const result = await service.assignRole(undefined as unknown as Actor, {
-            userId: 'some-id' as UserId,
+            userId: 'some-id' as string,
             role: RoleEnum.USER
         });
         expectUnauthorizedError(result);
@@ -139,7 +139,7 @@ describe('UserService.assignRole', () => {
             role: undefined as unknown as RoleEnum
         } as Actor;
         const result = await service.assignRole(fakeActor, {
-            userId: userId as UserId,
+            userId: userId as string,
             role: RoleEnum.USER
         });
         expectForbiddenError(result);

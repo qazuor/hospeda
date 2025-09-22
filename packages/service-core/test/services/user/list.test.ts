@@ -5,7 +5,7 @@
  * Covers: success (admin, super admin), forbidden, internal error, lifecycle hook errors, normalizer usage, pagination.
  */
 import { UserModel } from '@repo/db';
-import { RoleEnum } from '@repo/types';
+import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createUser } from '../../factories/userFactory';
