@@ -4,16 +4,15 @@ import type {
     EventOrganizerCountInput,
     EventOrganizerCreateInput,
     EventOrganizerListInput,
-    EventOrganizerListOutput,
     EventOrganizerSearchInput,
-    EventOrganizerUpdateInput
+    EventOrganizerUpdateInput,
+    VisibilityEnum
 } from '@repo/schemas';
 import {
     EventOrganizerCreateInputSchema,
     EventOrganizerSearchInputSchema,
     EventOrganizerUpdateInputSchema
 } from '@repo/schemas';
-import type { VisibilityEnum } from '@repo/types';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import * as helpers from './eventOrganizer.helpers';
@@ -105,13 +104,12 @@ export class EventOrganizerService extends BaseCrudService<
         params: EventOrganizerSearchInput,
         _actor: Actor
     ): Promise<PaginatedListOutput<EventOrganizer>> {
-        const { filters = {}, pagination = { page: 1, pageSize: 10 } } = params;
-        const { page = 1, pageSize = 10 } = pagination;
+        const { filters = {}, page = 1, pageSize = 10, q } = params;
         const where: Record<string, unknown> = {};
         if (filters.name) where.name = filters.name;
-        if (filters.q) {
+        if (q) {
             // Partial search by name (case-insensitive)
-            where.name = { $ilike: `%${filters.q}%` };
+            where.name = { $ilike: `%${q}%` };
         }
         return this.model.findAll(where, { page, pageSize });
     }
@@ -123,9 +121,6 @@ export class EventOrganizerService extends BaseCrudService<
         const { filters = {} } = params;
         const where: Record<string, unknown> = {};
         if (filters.name) where.name = filters.name;
-        if (filters.q) {
-            where.name = { $ilike: `%${filters.q}%` };
-        }
         const count = await this.model.count(where);
         return { count };
     }
@@ -139,26 +134,23 @@ export class EventOrganizerService extends BaseCrudService<
     public async searchForList(
         actor: Actor,
         params: EventOrganizerListInput
-    ): Promise<EventOrganizerListOutput> {
+    ): Promise<{ items: EventOrganizer[]; total: number }> {
         this._canList(actor);
-        const { filters = {}, page = 1, pageSize = 10 } = params;
+        const { filters = {}, page = 1, pageSize = 10, q } = params;
 
         const where: Record<string, unknown> = {};
 
         if (filters.name) {
             where.name = { $ilike: `%${filters.name}%` };
         }
-        if (filters.q) {
-            where.$or = [{ name: { $ilike: `%${filters.q}%` } }];
+        if (q) {
+            where.$or = [{ name: { $ilike: `%${q}%` } }];
         }
 
         const result = await this.model.findAll(where, { page, pageSize });
         return {
             items: result.items,
-            total: result.total,
-            page,
-            pageSize,
-            totalPages: Math.ceil(result.total / pageSize)
+            total: result.total
         };
     }
 }
