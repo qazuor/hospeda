@@ -1,11 +1,11 @@
 import { DestinationReviewModel } from '@repo/db';
 import type {
-    DestinationId,
-    DestinationReviewId,
-    DestinationReviewType,
-    UserId
-} from '@repo/types';
-import { PermissionEnum } from '@repo/types';
+    DestinationIdType,
+    DestinationReview,
+    DestinationReviewIdType,
+    UserIdType
+} from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';
@@ -37,13 +37,13 @@ describe('list', () => {
     it('returns a paginated list of reviews when actor has permission', async () => {
         // Arrange
         const actor = createActor({
-            id: getMockId('user', 'actor-1') as UserId,
+            id: getMockId('user', 'actor-1') as UserIdType,
             permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
         });
-        const review: DestinationReviewType = {
-            id: getMockId('feature', 'review-1') as DestinationReviewId,
-            destinationId: getMockId('destination', 'dest-1') as DestinationId,
-            userId: getMockId('user', 'user-1') as UserId,
+        const review: DestinationReview = {
+            id: getMockId('feature', 'review-1') as DestinationReviewIdType,
+            destinationId: getMockId('destination', 'dest-1') as DestinationIdType,
+            userId: getMockId('user', 'user-1') as UserIdType,
             title: 'Amazing destination',
             content: 'Loved everything.',
             rating: {
@@ -69,8 +69,8 @@ describe('list', () => {
             createdAt: new Date(),
             updatedAt: new Date(),
             deletedAt: undefined,
-            createdById: getMockId('user', 'user-1') as UserId,
-            updatedById: getMockId('user', 'user-1') as UserId
+            createdById: getMockId('user', 'user-1') as UserIdType,
+            updatedById: getMockId('user', 'user-1') as UserIdType
         };
         (reviewModel.findAll as Mock).mockResolvedValue({ items: [review], total: 1 });
 
@@ -85,13 +85,13 @@ describe('list', () => {
     it('returns success even if actor has no specific permissions (public access)', async () => {
         // Arrange
         const actor = createActor({
-            id: getMockId('user', 'actor-2') as UserId,
+            id: getMockId('user', 'actor-2') as UserIdType,
             permissions: []
         });
-        const mockReview: DestinationReviewType = {
-            id: getMockId('destinationReview', 'review-1') as DestinationReviewId,
-            destinationId: getMockId('destination', 'destination-1') as DestinationId,
-            userId: getMockId('user', 'user-1') as UserId,
+        const mockReview: DestinationReview = {
+            id: getMockId('destinationReview', 'review-1') as DestinationReviewIdType,
+            destinationId: getMockId('destination', 'destination-1') as DestinationIdType,
+            userId: getMockId('user', 'user-1') as UserIdType,
             title: 'Amazing destination',
             content: 'Had a wonderful experience visiting this destination.',
             rating: {
@@ -117,8 +117,8 @@ describe('list', () => {
             createdAt: new Date(),
             updatedAt: new Date(),
             deletedAt: undefined,
-            createdById: getMockId('user', 'user-1') as UserId,
-            updatedById: getMockId('user', 'user-1') as UserId
+            createdById: getMockId('user', 'user-1') as UserIdType,
+            updatedById: getMockId('user', 'user-1') as UserIdType
         };
         const mockReviews = [mockReview];
         (reviewModel.findAll as Mock).mockResolvedValue({

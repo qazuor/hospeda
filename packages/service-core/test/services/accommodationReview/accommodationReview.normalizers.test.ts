@@ -2,7 +2,7 @@ import type {
     AccommodationReviewCreateInputSchema,
     AccommodationReviewUpdateInputSchema
 } from '@repo/schemas';
-import { RoleEnum } from '@repo/types';
+import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 import {
