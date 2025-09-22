@@ -1,11 +1,4 @@
-import type {
-    AdminInfoType,
-    ContactInfoType,
-    EventDateType,
-    EventPriceType,
-    MediaType,
-    SeoType
-} from '@repo/types';
+import type { AdminInfoType, ContactInfo, EventDate, EventPrice, Media, Seo } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import {
@@ -27,9 +20,9 @@ export const events: ReturnType<typeof pgTable> = pgTable(
         name: text('name').notNull(),
         summary: text('summary').notNull(),
         description: text('description'),
-        media: jsonb('media').$type<MediaType>(),
+        media: jsonb('media').$type<Media>(),
         category: EventCategoryPgEnum('category').notNull(),
-        date: jsonb('date').$type<EventDateType>().notNull(),
+        date: jsonb('date').$type<EventDate>().notNull(),
         authorId: uuid('author_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
@@ -39,8 +32,8 @@ export const events: ReturnType<typeof pgTable> = pgTable(
         organizerId: uuid('organizer_id').references(() => eventOrganizers.id, {
             onDelete: 'set null'
         }),
-        pricing: jsonb('pricing').$type<EventPriceType>(),
-        contact: jsonb('contact').$type<ContactInfoType>(),
+        pricing: jsonb('pricing').$type<EventPrice>(),
+        contact: jsonb('contact').$type<ContactInfo>(),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         isFeatured: boolean('is_featured').notNull().default(false),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
@@ -52,7 +45,7 @@ export const events: ReturnType<typeof pgTable> = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
-        seo: jsonb('seo').$type<SeoType>()
+        seo: jsonb('seo').$type<Seo>()
     },
     (table) => ({
         events_isFeatured_idx: index('events_isFeatured_idx').on(table.isFeatured),
