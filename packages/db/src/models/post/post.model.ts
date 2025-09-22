@@ -1,11 +1,11 @@
-import type { PostType } from '@repo/types';
+import type { Post } from '@repo/schemas';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { posts } from '../../schemas/post/post.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
-export class PostModel extends BaseModel<PostType> {
+export class PostModel extends BaseModel<Post> {
     protected table = posts;
     protected entityName = 'posts';
 
@@ -18,7 +18,7 @@ export class PostModel extends BaseModel<PostType> {
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean>
-    ): Promise<PostType | null> {
+    ): Promise<Post | null> {
         const db = getDb();
         try {
             const withObj: Record<string, boolean> = {};
@@ -41,7 +41,7 @@ export class PostModel extends BaseModel<PostType> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as PostType | null;
+                return result as Post | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);

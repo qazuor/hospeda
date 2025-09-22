@@ -1,11 +1,11 @@
-import type { PostSponsorshipType } from '@repo/types';
+import type { PostSponsorship } from '@repo/schemas';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { postSponsorships } from '../../schemas/post/post_sponsorship.dbschema';
 import { DbError } from '../../utils/error';
 import { logError, logQuery } from '../../utils/logger';
 
-export class PostSponsorshipModel extends BaseModel<PostSponsorshipType> {
+export class PostSponsorshipModel extends BaseModel<PostSponsorship> {
     protected table = postSponsorships;
     protected entityName = 'postSponsorships';
 
@@ -18,7 +18,7 @@ export class PostSponsorshipModel extends BaseModel<PostSponsorshipType> {
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean>
-    ): Promise<PostSponsorshipType | null> {
+    ): Promise<PostSponsorship | null> {
         const db = getDb();
         try {
             const withObj: Record<string, boolean> = {};
@@ -31,7 +31,7 @@ export class PostSponsorshipModel extends BaseModel<PostSponsorshipType> {
                     with: withObj
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as PostSponsorshipType | null;
+                return result as PostSponsorship | null;
             }
             const result = await this.findOne(where);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);

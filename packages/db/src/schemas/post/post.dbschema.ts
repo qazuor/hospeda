@@ -1,4 +1,4 @@
-import type { AdminInfoType, MediaType, SeoType } from '@repo/types';
+import type { AdminInfoType, Media, Seo } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
     boolean,
@@ -32,7 +32,7 @@ export const posts: ReturnType<typeof pgTable> = pgTable(
         title: text('title').notNull(),
         summary: text('summary').notNull(),
         content: text('content').notNull(),
-        media: jsonb('media').$type<MediaType>().notNull(),
+        media: jsonb('media').$type<Media>().notNull(),
         authorId: uuid('author_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
@@ -72,7 +72,7 @@ export const posts: ReturnType<typeof pgTable> = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
-        seo: jsonb('seo').$type<SeoType>()
+        seo: jsonb('seo').$type<Seo>()
     },
     (table) => ({
         posts_isNews_idx: index('posts_isNews_idx').on(table.isNews),
