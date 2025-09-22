@@ -6,6 +6,7 @@ import {
     createBaseIdFields,
     createBaseLifecycleFields,
     createBaseSocialFields,
+    createPaginatedResponse,
     createTooLongString
 } from './common.fixtures.js';
 
@@ -46,12 +47,13 @@ export const createComplexEventOrganizer = () => ({
     ...createValidEventOrganizer(),
     description: faker.lorem.paragraphs(3).slice(0, 500),
     logo: faker.image.url(),
-    // Ensure contact and social fields are present with valid formats
+    // Contact info as nested object (BaseContactFields structure)
     contactInfo: {
         mobilePhone: '+15550789', // Valid international format
         personalEmail: faker.internet.email(),
         website: faker.internet.url()
     },
+    // Social networks as nested object (SocialNetworkFields structure)
     socialNetworks: {
         facebook: 'https://www.facebook.com/example',
         instagram: 'https://www.instagram.com/example',
@@ -188,21 +190,32 @@ export const createValidEventOrganizerListInput = () => ({
 // OUTPUT FIXTURES
 // ============================================================================
 
-export const createEventOrganizerListOutput = () => ({
-    items: Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => ({
+export const createEventOrganizerListOutput = () => {
+    const eventOrganizers = Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => ({
         id: faker.string.uuid(),
         name: faker.company.name(),
         description: faker.lorem.paragraph().slice(0, 500),
         logo: faker.image.url(),
+        contactInfo: {
+            mobilePhone: '+15550123',
+            personalEmail: faker.internet.email(),
+            website: faker.internet.url()
+        },
+        socialNetworks: {
+            facebook: 'https://www.facebook.com/example',
+            instagram: 'https://www.instagram.com/example'
+        },
         createdAt: faker.date.past(),
         updatedAt: faker.date.recent(),
-        lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
-    })),
-    total: faker.number.int({ min: 1, max: 100 }),
-    page: 1,
-    pageSize: 20,
-    totalPages: faker.number.int({ min: 1, max: 5 })
-});
+        lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED']),
+        adminInfo: {
+            notes: faker.lorem.sentence(),
+            favorite: false
+        }
+    }));
+
+    return createPaginatedResponse(eventOrganizers);
+};
 
 export const createEventOrganizerSearchOutput = () => ({
     ...createEventOrganizerListOutput(),

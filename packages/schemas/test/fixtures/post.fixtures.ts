@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { PostCategoryEnum } from '@repo/types';
+import type { PostCategoryEnum } from '../../src/enums/index.js';
 import {
     createBaseAdminFields,
     createBaseAuditFields,

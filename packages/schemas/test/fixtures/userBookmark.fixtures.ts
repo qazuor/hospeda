@@ -1,13 +1,13 @@
 import type {
-    AccommodationId,
-    DestinationId,
-    EventId,
-    PostId,
-    UserBookmarkId,
-    UserBookmarkType,
-    UserId
-} from '@repo/types';
-import { EntityTypeEnum, LifecycleStatusEnum } from '@repo/types';
+    AccommodationIdType as AccommodationId,
+    DestinationIdType as DestinationId,
+    EventIdType as EventId,
+    PostIdType as PostId,
+    UserBookmarkIdType as UserBookmarkId,
+    UserIdType as UserId
+} from '../../src/common/id.schema.js';
+import type { UserBookmark as UserBookmarkType } from '../../src/entities/userBookmark/userBookmark.schema.js';
+import { EntityTypeEnum, LifecycleStatusEnum } from '../../src/enums/index.js';
 
 /**
  * UserBookmark test fixtures

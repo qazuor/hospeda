@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { TagColorEnum } from '@repo/types';
+import type { TagColorEnum } from '../../src/enums/index.js';
 import {
     createBaseAuditFields,
     createBaseIdFields,
@@ -10,6 +10,18 @@ import {
 /**
  * Tag fixtures for testing
  */
+
+/**
+ * Create minimal tag summary for list displays
+ */
+export const createTagSummary = () => ({
+    id: faker.string.uuid(),
+    name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
+    color: faker.helpers.arrayElement(['RED', 'BLUE', 'GREEN', 'YELLOW'] as TagColorEnum[]),
+    usageCount: faker.number.int({ min: 0, max: 1000 }),
+    createdAt: faker.date.past(),
+    updatedAt: faker.date.recent()
+});
 
 /**
  * Create tag-specific entity fields
@@ -238,16 +250,6 @@ export const createTagEntityRelation = () => ({
         'event',
         'user'
     ])
-});
-
-/**
- * Create tag summary for query testing
- */
-export const createTagSummary = () => ({
-    id: faker.string.uuid(),
-    name: faker.lorem.words({ min: 2, max: 3 }).slice(0, 50),
-    color: faker.helpers.arrayElement(['RED', 'BLUE', 'GREEN', 'YELLOW'] as TagColorEnum[]),
-    usageCount: faker.number.int({ min: 0, max: 1000 })
 });
 
 /**

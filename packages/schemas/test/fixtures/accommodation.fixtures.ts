@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { AccommodationTypeEnum } from '@repo/types';
+import type { AccommodationTypeEnum } from '../../src/enums/index.js';
 import {
     createBaseAdminFields,
     createBaseAuditFields,

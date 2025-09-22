@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { EventCategoryEnum } from '@repo/types';
+import type { EventCategoryEnum } from '../../src/enums/index.js';
 import {
     createBaseAdminFields,
     createBaseAuditFields,

@@ -4,6 +4,7 @@ import {
     createBaseAuditFields,
     createBaseIdFields,
     createBaseLifecycleFields,
+    createPaginatedResponse,
     createTooLongString
 } from './common.fixtures.js';
 
@@ -234,8 +235,8 @@ export const createValidFeatureListInput = () => ({
 // OUTPUT FIXTURES
 // ============================================================================
 
-export const createFeatureListOutput = () => ({
-    items: Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => ({
+export const createFeatureListOutput = () => {
+    const features = Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => ({
         id: faker.string.uuid(),
         slug: faker.lorem.slug(3),
         name: faker.lorem.words({ min: 2, max: 5 }),
@@ -246,12 +247,10 @@ export const createFeatureListOutput = () => ({
         createdAt: faker.date.past(),
         updatedAt: faker.date.recent(),
         lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
-    })),
-    total: faker.number.int({ min: 1, max: 100 }),
-    page: 1,
-    pageSize: 20,
-    totalPages: faker.number.int({ min: 1, max: 5 })
-});
+    }));
+
+    return createPaginatedResponse(features);
+};
 
 export const createFeatureSearchOutput = () => ({
     ...createFeatureListOutput(),

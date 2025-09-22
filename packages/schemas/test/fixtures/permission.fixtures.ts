@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { PermissionEnum, RoleEnum } from '@repo/types';
+import { PermissionEnum, RoleEnum } from '../../src/enums/index.js';
 
 // ============================================================================
 // PERMISSION MANAGEMENT FIXTURES

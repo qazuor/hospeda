@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { ModerationStatusEnum, VisibilityEnum } from '@repo/types';
+import { ModerationStatusEnum, VisibilityEnum } from '../../src/enums/index.js';
 // Types are inferred from the faker values, no explicit imports needed
 
 /**
@@ -347,4 +347,45 @@ export const createTooShortString = (length?: number): string => {
 export const createBasePaginationParams = () => ({
     page: faker.number.int({ min: 1, max: 10 }),
     pageSize: faker.number.int({ min: 10, max: 50 })
+});
+
+/**
+ * Creates a complete pagination object for PaginationResultSchema responses
+ */
+export const createPaginationMetadata = (options?: {
+    page?: number;
+    pageSize?: number;
+    total?: number;
+}) => {
+    const page = options?.page ?? faker.number.int({ min: 1, max: 10 });
+    const pageSize = options?.pageSize ?? faker.number.int({ min: 10, max: 50 });
+    const total = options?.total ?? faker.number.int({ min: 0, max: 1000 });
+    const totalPages = Math.ceil(total / pageSize);
+
+    return {
+        page,
+        pageSize,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+    };
+};
+
+/**
+ * Creates a complete paginated response structure
+ */
+export const createPaginatedResponse = <T>(
+    data: T[],
+    options?: {
+        page?: number;
+        pageSize?: number;
+        total?: number;
+    }
+) => ({
+    data,
+    pagination: createPaginationMetadata({
+        ...options,
+        total: options?.total ?? data.length
+    })
 });
