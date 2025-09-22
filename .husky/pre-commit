@@ -4,7 +4,7 @@ STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js
 # Only run Biome if there are staged files matching our patterns
 if [ -n "$STAGED_FILES" ]; then
   echo "🔍 Running Biome on staged files..."
-  echo "$STAGED_FILES" | xargs npx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true
+  echo "$STAGED_FILES" | xargs pnpm dlx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true
 
   # Re-add files that were modified by Biome (only existing files)
   for file in $STAGED_FILES; do
