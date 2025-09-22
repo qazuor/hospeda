@@ -1,4 +1,4 @@
-import type { AdminInfoType, BasePriceType } from '@repo/types';
+import type { AdminInfoType, PriceType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
@@ -16,7 +16,7 @@ export const postSponsorships: ReturnType<typeof pgTable> = pgTable('post_sponso
         .references(() => posts.id, { onDelete: 'cascade' }),
     message: text('message'),
     description: text('description').notNull(),
-    paid: jsonb('paid').$type<BasePriceType>().notNull(),
+    paid: jsonb('paid').$type<PriceType>().notNull(),
     paidAt: timestamp('paid_at', { withTimezone: true }),
     fromDate: timestamp('from_date', { withTimezone: true }),
     toDate: timestamp('to_date', { withTimezone: true }),
