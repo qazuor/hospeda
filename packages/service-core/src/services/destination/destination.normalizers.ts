@@ -1,5 +1,5 @@
 import type { DestinationCreateInput, DestinationUpdateInput } from '@repo/schemas';
-import { VisibilityEnum } from '@repo/types';
+import { VisibilityEnum } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { normalizeAdminInfo } from '../../utils';
 

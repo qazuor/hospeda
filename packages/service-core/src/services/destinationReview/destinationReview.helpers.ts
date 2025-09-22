@@ -1,19 +1,19 @@
 // TODO [0b9072fc-135e-4217-863e-a4bba5f59f0d]: Add destinationReview-specific helpers if needed.
 
-import type { DestinationRatingType, DestinationReviewType } from '@repo/types';
+import type { DestinationRatingInput, DestinationReview } from '@repo/schemas';
 
 /**
  * Calculates stats (reviewsCount, averageRating, rating) from a list of destination reviews.
- * @param reviews - Array of DestinationReviewType
+ * @param reviews - Array of DestinationReview
  * @returns Object with reviewsCount, averageRating, and rating (per-field averages)
  */
-export function calculateStatsFromReviews(reviews: readonly DestinationReviewType[]): {
+export function calculateStatsFromReviews(reviews: readonly DestinationReview[]): {
     reviewsCount: number;
     averageRating: number;
-    rating: DestinationRatingType;
+    rating: DestinationRatingInput;
 } {
     const reviewsCount = reviews.length;
-    const ratingFields: (keyof DestinationRatingType)[] = [
+    const ratingFields: (keyof DestinationRatingInput)[] = [
         'landscape',
         'attractions',
         'accessibility',
@@ -33,7 +33,7 @@ export function calculateStatsFromReviews(reviews: readonly DestinationReviewTyp
         'localEvents',
         'weatherSatisfaction'
     ];
-    const ratingSums: Record<keyof DestinationRatingType, number> = {
+    const ratingSums: Record<keyof DestinationRatingInput, number> = {
         landscape: 0,
         attractions: 0,
         accessibility: 0,
@@ -63,7 +63,7 @@ export function calculateStatsFromReviews(reviews: readonly DestinationReviewTyp
             totalRatings++;
         }
     }
-    const rating: DestinationRatingType = {
+    const rating: DestinationRatingInput = {
         landscape: reviewsCount ? ratingSums.landscape / reviewsCount : 0,
         attractions: reviewsCount ? ratingSums.attractions / reviewsCount : 0,
         accessibility: reviewsCount ? ratingSums.accessibility / reviewsCount : 0,
