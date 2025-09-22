@@ -1,4 +1,4 @@
-import type { DestinationRatingType } from '@repo/types';
+import type { DestinationRatingInput } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
@@ -16,7 +16,7 @@ export const destinationReviews: ReturnType<typeof pgTable> = pgTable(
             .references(() => destinations.id, { onDelete: 'cascade' }),
         title: text('title'),
         content: text('content'),
-        rating: jsonb('rating').$type<DestinationRatingType>().notNull(),
+        rating: jsonb('rating').$type<DestinationRatingInput>().notNull(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
