@@ -1,5 +1,5 @@
 import type { TagCreateInput, TagUpdateInput } from '@repo/schemas';
-import { ServiceErrorCode, TagColorEnum } from '@repo/types';
+import { ServiceErrorCode, TagColorEnum } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { generateTagSlug } from './tag.helpers';

@@ -1,5 +1,7 @@
 import { REntityTagModel, TagModel } from '@repo/db';
+import type { EntityTag, EntityTypeEnum, Tag } from '@repo/schemas';
 import {
+    ServiceErrorCode,
     type TagAddToEntityInput,
     TagAddToEntityInputSchema,
     type TagAddToEntityOutput,
@@ -19,18 +21,6 @@ import {
     TagSearchInputSchema,
     TagUpdateInputSchema
 } from '@repo/schemas';
-import type {
-    AccommodationId,
-    DestinationId,
-    EntityTagType,
-    EntityTypeEnum,
-    EventId,
-    PostId,
-    TagId,
-    TagType,
-    UserId
-} from '@repo/types';
-import { ServiceErrorCode } from '@repo/types';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
@@ -55,7 +45,7 @@ import {
  * @extends BaseCrudRelatedService
  */
 export class TagService extends BaseCrudRelatedService<
-    TagType,
+    Tag,
     TagModel,
     REntityTagModel,
     typeof TagCreateInputSchema,
@@ -111,16 +101,16 @@ export class TagService extends BaseCrudRelatedService<
     protected _canCreate(actor: Actor, _data: TagCreateInput): void {
         checkCanCreateTag(actor);
     }
-    protected _canUpdate(actor: Actor, _entity: TagType): void {
+    protected _canUpdate(actor: Actor, _entity: Tag): void {
         checkCanUpdateTag(actor, _entity);
     }
-    protected _canDelete(actor: Actor, _entity: TagType): void {
+    protected _canDelete(actor: Actor, _entity: Tag): void {
         checkCanDeleteTag(actor, _entity);
     }
-    protected _canRestore(actor: Actor, _entity: TagType): void {
+    protected _canRestore(actor: Actor, _entity: Tag): void {
         checkCanRestoreTag(actor, _entity);
     }
-    protected _canView(actor: Actor, _entity: TagType): void {
+    protected _canView(actor: Actor, _entity: Tag): void {
         checkCanViewTag(actor, _entity);
     }
     protected _canList(actor: Actor): void {
@@ -137,7 +127,7 @@ export class TagService extends BaseCrudRelatedService<
      * Checks if the actor can soft-delete a tag.
      * Uses TAG_DELETE permission.
      */
-    protected _canSoftDelete(actor: Actor, entity: TagType): void {
+    protected _canSoftDelete(actor: Actor, entity: Tag): void {
         checkCanSoftDeleteTag(actor, entity);
     }
 
@@ -145,7 +135,7 @@ export class TagService extends BaseCrudRelatedService<
      * Checks if the actor can hard-delete a tag.
      * Uses TAG_DELETE permission (no dedicated hard delete permission).
      */
-    protected _canHardDelete(actor: Actor, entity: TagType): void {
+    protected _canHardDelete(actor: Actor, entity: Tag): void {
         checkCanHardDeleteTag(actor, entity);
     }
 
@@ -153,7 +143,7 @@ export class TagService extends BaseCrudRelatedService<
      * Checks if the actor can update the visibility of a tag.
      * Uses TAG_UPDATE permission.
      */
-    protected _canUpdateVisibility(actor: Actor, entity: TagType, _newVisibility: unknown): void {
+    protected _canUpdateVisibility(actor: Actor, entity: Tag, _newVisibility: unknown): void {
         checkCanUpdateVisibilityTag(actor, entity);
     }
 
@@ -164,9 +154,7 @@ export class TagService extends BaseCrudRelatedService<
      * @returns A paginated list of tags matching the criteria.
      */
     protected async _executeSearch(params: z.infer<typeof TagSearchInputSchema>, _actor: Actor) {
-        const { filters = {}, pagination } = params;
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+        const { filters = {}, page = 1, pageSize = 10 } = params;
         return this.model.findAll(filters, { page, pageSize });
     }
 
@@ -199,7 +187,7 @@ export class TagService extends BaseCrudRelatedService<
             execute: async (validated) => {
                 this._canList(actor);
                 const results = await this.relatedModel.findPopularTags(validated.limit ?? 10);
-                const tagsList: TagType[] = results.map((row) => row.tag as TagType);
+                const tagsList: Tag[] = results.map((row) => row.tag as Tag);
                 return { tags: tagsList };
             }
         });
@@ -220,19 +208,14 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagAddToEntityInputSchema.strict(),
             execute: async (validated) => {
-                this._canUpdate(actor, { id: validated.tagId } as TagType);
-                const tag = await this.model.findById(validated.tagId as TagId);
+                this._canUpdate(actor, { id: validated.tagId } as Tag);
+                const tag = await this.model.findById(validated.tagId);
                 if (!tag) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');
                 }
                 const existing = await this.relatedModel.findOne({
-                    tagId: validated.tagId as TagId,
-                    entityId: validated.entityId as
-                        | AccommodationId
-                        | DestinationId
-                        | UserId
-                        | PostId
-                        | EventId,
+                    tagId: validated.tagId,
+                    entityId: validated.entityId,
                     entityType: validated.entityType as EntityTypeEnum
                 });
                 if (existing) {
@@ -242,13 +225,8 @@ export class TagService extends BaseCrudRelatedService<
                     );
                 }
                 await this.relatedModel.create({
-                    tagId: validated.tagId as TagId,
-                    entityId: validated.entityId as
-                        | AccommodationId
-                        | DestinationId
-                        | UserId
-                        | PostId
-                        | EventId,
+                    tagId: validated.tagId,
+                    entityId: validated.entityId,
                     entityType: validated.entityType as EntityTypeEnum
                 });
                 return { success: true };
@@ -272,15 +250,10 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagRemoveFromEntityInputSchema.strict(),
             execute: async (validated) => {
-                this._canUpdate(actor, { id: validated.tagId } as TagType);
+                this._canUpdate(actor, { id: validated.tagId } as Tag);
                 const existing = await this.relatedModel.findOne({
-                    tagId: validated.tagId as TagId,
-                    entityId: validated.entityId as
-                        | AccommodationId
-                        | DestinationId
-                        | UserId
-                        | PostId
-                        | EventId,
+                    tagId: validated.tagId,
+                    entityId: validated.entityId,
                     entityType: validated.entityType as EntityTypeEnum
                 });
                 if (!existing) {
@@ -290,13 +263,8 @@ export class TagService extends BaseCrudRelatedService<
                     );
                 }
                 await this.relatedModel.hardDelete({
-                    tagId: validated.tagId as TagId,
-                    entityId: validated.entityId as
-                        | AccommodationId
-                        | DestinationId
-                        | UserId
-                        | PostId
-                        | EventId,
+                    tagId: validated.tagId,
+                    entityId: validated.entityId,
                     entityType: validated.entityType as EntityTypeEnum
                 });
                 return { success: true };
@@ -320,7 +288,7 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagGetForEntityInputSchema.strict(),
             execute: async (validated) => {
-                this._canUpdate(actor, {} as TagType);
+                this._canUpdate(actor, {} as Tag);
                 const relations = await this.relatedModel.findAllWithTags(
                     validated.entityId,
                     validated.entityType
@@ -349,8 +317,8 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagGetEntitiesByTagInputSchema.strict(),
             execute: async (validated) => {
-                this._canUpdate(actor, { id: validated.tagId } as TagType);
-                const tag = await this.model.findById(validated.tagId as TagId);
+                this._canUpdate(actor, { id: validated.tagId } as Tag);
+                const tag = await this.model.findById(validated.tagId);
                 if (!tag) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');
                 }
@@ -358,7 +326,7 @@ export class TagService extends BaseCrudRelatedService<
                     validated.tagId,
                     validated.entityType
                 );
-                const entities = (relations as EntityTagType[]).map((rel) => ({
+                const entities = (relations as EntityTag[]).map((rel) => ({
                     entityId: rel.entityId as string,
                     entityType: rel.entityType as string
                 }));
