@@ -1,12 +1,12 @@
 import type {
     AdminInfoType,
-    ContactInfoType,
+    ContactInfo,
     FullLocationType,
-    SocialNetworkType,
+    SocialNetwork,
     UserProfile,
-    UserSettingsType
-} from '@repo/types';
-import { AuthProviderEnum } from '@repo/types';
+    UserSettings
+} from '@repo/schemas';
+import { AuthProviderEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
@@ -36,12 +36,12 @@ export const users: ReturnType<typeof pgTable> = pgTable(
         firstName: text('first_name'),
         lastName: text('last_name'),
         birthDate: timestamp('birth_date', { withTimezone: true }),
-        contactInfo: jsonb('contact_info').$type<ContactInfoType>(),
+        contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         location: jsonb('location').$type<FullLocationType>(),
-        socialNetworks: jsonb('social_networks').$type<SocialNetworkType>(),
+        socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         role: RolePgEnum('role').notNull(),
         profile: jsonb('profile').$type<UserProfile>(),
-        settings: jsonb('settings').$type<UserSettingsType>().notNull(),
+        settings: jsonb('settings').$type<UserSettings>().notNull(),
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),

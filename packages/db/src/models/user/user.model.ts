@@ -1,4 +1,4 @@
-import type { UserType } from '@repo/types';
+import type { User } from '@repo/schemas';
 import { type SQL, and, count, ilike, or } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
@@ -6,7 +6,7 @@ import type * as schema from '../../schemas/index.js';
 import { users } from '../../schemas/user/user.dbschema';
 import { buildWhereClause } from '../../utils/drizzle-helpers';
 
-export class UserModel extends BaseModel<UserType> {
+export class UserModel extends BaseModel<User> {
     protected table = users;
     protected entityName = 'users';
 
@@ -17,7 +17,7 @@ export class UserModel extends BaseModel<UserType> {
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number },
         tx?: NodePgDatabase<typeof schema>
-    ): Promise<{ items: UserType[]; total: number }> {
+    ): Promise<{ items: User[]; total: number }> {
         const db = this.getClient(tx);
         const { q, ...otherFilters } = where;
         const page = options?.page;
@@ -57,11 +57,11 @@ export class UserModel extends BaseModel<UserType> {
 
             const total = totalResult[0]?.count || 0;
 
-            return { items: items as UserType[], total };
+            return { items: items as User[], total };
         }
 
         const items = (await db.select().from(this.table).where(finalWhereClause)) || [];
-        return { items: items as UserType[], total: items.length };
+        return { items: items as User[], total: items.length };
     }
 
     /**
