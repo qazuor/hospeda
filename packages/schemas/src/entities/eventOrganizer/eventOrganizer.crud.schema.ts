@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { DeleteResultSchema, RestoreResultSchema } from '../../api/result.schema.js';
 import { EventOrganizerIdSchema } from '../../common/id.schema.js';
-import { DeleteResultSchema, RestoreResultSchema } from '../../common/result.schema.js';
 import { EventOrganizerSchema } from './eventOrganizer.schema.js';
 
 /**

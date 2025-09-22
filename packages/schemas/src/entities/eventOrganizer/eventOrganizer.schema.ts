@@ -4,7 +4,7 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
 import { EventOrganizerIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { BaseSocialFields } from '../../common/social.schema.js';
+import { SocialNetworkFields } from '../../common/social.schema.js';
 
 /**
  * Event Organizer Schema - using Base Field Objects
@@ -44,7 +44,7 @@ export const EventOrganizerSchema = z.object({
 
     // Contact and social (using base objects)
     ...BaseContactFields,
-    ...BaseSocialFields
+    ...SocialNetworkFields
 });
 
 /**

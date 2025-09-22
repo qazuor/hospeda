@@ -10,6 +10,5 @@ export * from './event.query.schema.js'; // List, Search, Summary, Stats, Filter
 // Relations
 export * from './event.relations.schema.js'; // Schemas with related entities
 
-// Additional schemas
-export * from './event.date.schema.js';
-export * from './event.price.schema.js';
+// Subtypes - all subschemas are now organized in subtypes folder
+export * from './subtypes/index.js';
