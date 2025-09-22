@@ -1,5 +1,11 @@
-import type { PostId, PostSponsorId, PostSponsorshipId, PostSponsorshipType } from '@repo/types';
-import { LifecycleStatusEnum, PriceCurrencyEnum } from '@repo/types';
+import type {
+    PostIdType,
+    PostSponsorIdType,
+    PostSponsorship,
+    PostSponsorshipIdType,
+    UserIdType
+} from '@repo/schemas';
+import { LifecycleStatusEnum, PriceCurrencyEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDb } from '../../src/client';
 import { PostSponsorshipModel } from '../../src/models/post/postSponsorship.model';
@@ -10,10 +16,10 @@ vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new PostSponsorshipModel();
-const asPostId = (id: string) => id as unknown as PostId;
-const asPostSponsorId = (id: string) => id as unknown as PostSponsorId;
-const asPostSponsorshipId = (id: string) => id as unknown as PostSponsorshipId;
-const asUserId = (id: string) => id as unknown as import('@repo/types').UserId;
+const asPostId = (id: string) => id as unknown as PostIdType;
+const asPostSponsorId = (id: string) => id as unknown as PostSponsorIdType;
+const asPostSponsorshipId = (id: string) => id as unknown as PostSponsorshipIdType;
+const asUserId = (id: string) => id as unknown as UserIdType;
 
 /**
  * Test suite for PostSponsorshipModel.
@@ -52,12 +58,13 @@ describe('PostSponsorshipModel', () => {
     });
 
     it('findWithRelations - sin relaciones, fallback a findOne', async () => {
-        const dummy: PostSponsorshipType = {
+        const dummy: PostSponsorship = {
             id: asPostSponsorshipId('dummy-id'),
             postId: asPostId('a'),
             sponsorId: asPostSponsorId('b'),
             description: 'desc',
             paid: { price: 0, currency: PriceCurrencyEnum.USD },
+            isHighlighted: false,
             createdAt: new Date(),
             updatedAt: new Date(),
             deletedAt: undefined,
