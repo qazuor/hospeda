@@ -6,7 +6,7 @@ import {
     DestinationReviewIdSchema,
     UserIdSchema
 } from '../../common/id.schema.js';
-import { DestinationRatingSchema } from '../destination/destination.rating.schema.js';
+import { DestinationRatingSchema } from '../destination/subtypes/destination.rating.schema.js';
 
 /**
  * Destination Review schema definition using Zod for validation.

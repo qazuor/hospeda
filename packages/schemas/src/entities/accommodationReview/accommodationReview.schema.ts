@@ -6,7 +6,7 @@ import {
     AccommodationReviewIdSchema,
     UserIdSchema
 } from '../../common/id.schema.js';
-import { AccommodationRatingSchema } from '../accommodation/accommodation.rating.schema.js';
+import { AccommodationRatingSchema } from '../accommodation/subtypes/accommodation.rating.schema.js';
 
 /**
  * Accommodation Review schema definition using Zod for validation.
@@ -31,9 +31,4 @@ export const AccommodationReviewSchema = z.object({
         .optional(),
     rating: AccommodationRatingSchema
 });
-
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
-
 export type AccommodationReview = z.infer<typeof AccommodationReviewSchema>;
