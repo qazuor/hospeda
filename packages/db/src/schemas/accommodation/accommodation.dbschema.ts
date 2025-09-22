@@ -1,15 +1,11 @@
 import type {
-    AccommodationPriceType,
-    AccommodationRatingType,
     AdminInfoType,
-    ContactInfoType,
-    ExtraInfoType,
+    ContactInfo,
     FullLocationType,
-    MediaType,
-    ScheduleType,
-    SeoType,
-    SocialNetworkType
-} from '@repo/types';
+    Media,
+    Seo,
+    SocialNetwork
+} from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
     boolean,
@@ -46,11 +42,11 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
         summary: text('summary').notNull(),
         type: AccommodationTypePgEnum('type').notNull(),
         description: text('description').notNull(),
-        contactInfo: jsonb('contact_info').$type<ContactInfoType>(),
-        socialNetworks: jsonb('social_networks').$type<SocialNetworkType>(),
-        price: jsonb('price').$type<AccommodationPriceType>(),
+        contactInfo: jsonb('contact_info').$type<ContactInfo>(),
+        socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
+        price: jsonb('price').$type<Record<string, unknown>>(),
         location: jsonb('location').$type<FullLocationType>(),
-        media: jsonb('media').$type<MediaType>(),
+        media: jsonb('media').$type<Media>(),
         isFeatured: boolean('is_featured').notNull().default(false),
         ownerId: uuid('owner_id')
             .notNull()
@@ -64,7 +60,7 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         reviewsCount: integer('reviews_count').notNull().default(0),
         averageRating: numeric('average_rating', { precision: 3, scale: 2 }).notNull().default('0'),
-        seo: jsonb('seo').$type<SeoType>(),
+        seo: jsonb('seo').$type<Seo>(),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -73,9 +69,9 @@ export const accommodations: ReturnType<typeof pgTable> = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
-        extraInfo: jsonb('extra_info').$type<ExtraInfoType>(),
-        schedule: jsonb('schedule').$type<ScheduleType>(),
-        rating: jsonb('rating').$type<AccommodationRatingType>()
+        extraInfo: jsonb('extra_info').$type<Record<string, unknown>>(),
+        schedule: jsonb('schedule').$type<Record<string, unknown>>(),
+        rating: jsonb('rating').$type<Record<string, unknown>>()
     },
     (table) => ({
         accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),

@@ -1,4 +1,4 @@
-import type { BasePriceType } from '@repo/types';
+import type { PriceType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
     boolean,
@@ -22,7 +22,7 @@ export const rAccommodationAmenity: ReturnType<typeof pgTable> = pgTable(
             .notNull()
             .references(() => amenities.id, { onDelete: 'cascade' }),
         isOptional: boolean('is_optional').notNull().default(false),
-        additionalCost: jsonb('additional_cost').$type<BasePriceType>(),
+        additionalCost: jsonb('additional_cost').$type<PriceType>(),
         additionalCostPercent: doublePrecision('additional_cost_percent')
     },
     (table) => ({

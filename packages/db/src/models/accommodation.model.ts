@@ -1,4 +1,4 @@
-import type { AccommodationType } from '@repo/types';
+import type { Accommodation } from '@repo/schemas';
 import { BaseModel } from '../base/base.model';
 import { getDb } from '../client';
 import { accommodations } from '../schemas/accommodation/accommodation.dbschema';
@@ -9,7 +9,7 @@ import { logError, logQuery } from '../utils/logger';
  * Model for the Accommodation entity.
  * Extends BaseModel to provide CRUD and relation methods.
  */
-export class AccommodationModel extends BaseModel<AccommodationType> {
+export class AccommodationModel extends BaseModel<Accommodation> {
     /**
      * The Drizzle table schema for accommodations.
      */
@@ -28,7 +28,7 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean>
-    ): Promise<AccommodationType | null> {
+    ): Promise<Accommodation | null> {
         const db = getDb();
         try {
             // Example: only supports 'destination' relation for now
@@ -38,7 +38,7 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
                     with: { destination: true }
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as AccommodationType | null;
+                return result as Accommodation | null;
             }
             // Fallback to base findOne if no relations requested
             const result = await this.findOne(where);
