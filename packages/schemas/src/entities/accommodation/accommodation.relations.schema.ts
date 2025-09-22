@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DestinationSummarySchema } from '../destination/destination.query.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
 /**
@@ -21,30 +22,14 @@ import { AccommodationSchema } from './accommodation.schema.js';
 // ============================================================================
 
 /**
- * Destination summary schema for relations
- * Contains essential destination information
+ * Simplified destination schema for basic API responses
+ * Contains only essential destination information
  */
-const DestinationSummarySchema = z.object({
-    id: z.string().uuid(),
-    slug: z.string(),
+export const SimplifiedDestinationSchema = z.object({
     name: z.string(),
-    summary: z.string(),
-    location: z
-        .object({
-            country: z.string(),
-            state: z.string().optional(),
-            city: z.string(),
-            coordinates: z
-                .object({
-                    latitude: z.number(),
-                    longitude: z.number()
-                })
-                .optional()
-        })
-        .optional(),
-    isFeatured: z.boolean(),
-    accommodationsCount: z.number().int().min(0)
+    slug: z.string()
 });
+export type SimplifiedDestination = z.infer<typeof SimplifiedDestinationSchema>;
 
 /**
  * User summary schema for relations
@@ -112,6 +97,7 @@ const AmenitySummarySchema = z.object({
 export const AccommodationWithDestinationSchema = AccommodationSchema.extend({
     destination: DestinationSummarySchema.optional()
 });
+export type AccommodationWithDestination = z.infer<typeof AccommodationWithDestinationSchema>;
 
 /**
  * Accommodation with owner information
@@ -120,6 +106,7 @@ export const AccommodationWithDestinationSchema = AccommodationSchema.extend({
 export const AccommodationWithOwnerSchema = AccommodationSchema.extend({
     owner: UserSummarySchema.optional()
 });
+export type AccommodationWithOwner = z.infer<typeof AccommodationWithOwnerSchema>;
 
 /**
  * Accommodation with reviews
@@ -130,6 +117,7 @@ export const AccommodationWithReviewsSchema = AccommodationSchema.extend({
     reviewsCount: z.number().int().min(0).optional(),
     averageRating: z.number().min(0).max(5).optional()
 });
+export type AccommodationWithReviews = z.infer<typeof AccommodationWithReviewsSchema>;
 
 /**
  * Accommodation with features
@@ -152,6 +140,7 @@ export const AccommodationWithFeaturesSchema = AccommodationSchema.extend({
         )
         .optional()
 });
+export type AccommodationWithFeatures = z.infer<typeof AccommodationWithFeaturesSchema>;
 
 /**
  * Accommodation with amenities
@@ -174,6 +163,7 @@ export const AccommodationWithAmenitiesSchema = AccommodationSchema.extend({
         )
         .optional()
 });
+export type AccommodationWithAmenities = z.infer<typeof AccommodationWithAmenitiesSchema>;
 
 /**
  * Accommodation with basic relations
@@ -183,6 +173,7 @@ export const AccommodationWithBasicRelationsSchema = AccommodationSchema.extend(
     destination: DestinationSummarySchema.optional(),
     owner: UserSummarySchema.optional()
 });
+export type AccommodationWithBasicRelations = z.infer<typeof AccommodationWithBasicRelationsSchema>;
 
 /**
  * Accommodation with content relations
@@ -221,6 +212,9 @@ export const AccommodationWithContentRelationsSchema = AccommodationSchema.exten
     reviewsCount: z.number().int().min(0).optional(),
     averageRating: z.number().min(0).max(5).optional()
 });
+export type AccommodationWithContentRelations = z.infer<
+    typeof AccommodationWithContentRelationsSchema
+>;
 
 /**
  * Accommodation with all relations
@@ -266,18 +260,46 @@ export const AccommodationWithFullRelationsSchema = AccommodationSchema.extend({
     reviewsCount: z.number().int().min(0).optional(),
     averageRating: z.number().min(0).max(5).optional()
 });
-
-// ============================================================================
-// TYPE EXPORTS
-// ============================================================================
-
-export type AccommodationWithDestination = z.infer<typeof AccommodationWithDestinationSchema>;
-export type AccommodationWithOwner = z.infer<typeof AccommodationWithOwnerSchema>;
-export type AccommodationWithReviews = z.infer<typeof AccommodationWithReviewsSchema>;
-export type AccommodationWithFeatures = z.infer<typeof AccommodationWithFeaturesSchema>;
-export type AccommodationWithAmenities = z.infer<typeof AccommodationWithAmenitiesSchema>;
-export type AccommodationWithBasicRelations = z.infer<typeof AccommodationWithBasicRelationsSchema>;
-export type AccommodationWithContentRelations = z.infer<
-    typeof AccommodationWithContentRelationsSchema
->;
 export type AccommodationWithFullRelations = z.infer<typeof AccommodationWithFullRelationsSchema>;
+
+// ============================================================================
+// NORMALIZED TYPES FOR API RESPONSES
+// ============================================================================
+
+/**
+ * Normalized accommodation schema for API responses
+ * Similar to Accommodation but with simplified relationships
+ */
+export const NormalizedAccommodationSchema = AccommodationSchema.extend({
+    amenities: z.array(z.string()).optional(),
+    features: z.array(z.string()).optional(),
+    destination: SimplifiedDestinationSchema.optional()
+});
+export type NormalizedAccommodationType = z.infer<typeof NormalizedAccommodationSchema>;
+
+/**
+ * Accommodation with relations type for database operations
+ * Used by normalizers that may receive objects with relations
+ */
+export const AccommodationWithRelationsSchema = AccommodationSchema.extend({
+    amenities: z
+        .union([
+            z.array(z.object({ amenity: z.object({ slug: z.string().optional() }).optional() })),
+            z.array(z.string())
+        ])
+        .optional(),
+    features: z
+        .union([
+            z.array(z.object({ feature: z.object({ slug: z.string().optional() }).optional() })),
+            z.array(z.string())
+        ])
+        .optional(),
+    destination: z
+        .object({
+            name: z.string().optional(),
+            slug: z.string().optional()
+        })
+        .nullable()
+        .optional()
+});
+export type AccommodationWithRelations = z.infer<typeof AccommodationWithRelationsSchema>;
