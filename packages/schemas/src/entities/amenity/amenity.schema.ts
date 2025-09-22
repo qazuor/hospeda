@@ -4,7 +4,7 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { AccommodationIdSchema, AmenityIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { PriceSchema } from '../../common/price.schema.js';
-import { AmenitiesTypeEnumSchema } from '../../enums/amenity-type.enum.schema.js';
+import { AmenitiesTypeEnumSchema } from '../../enums/amenity-type.schema.js';
 
 /**
  * Amenity Schema - Main Entity Schema
@@ -58,6 +58,7 @@ export const AmenitySchema = z.object({
     isBuiltin: z.boolean({ message: 'zodError.amenity.isBuiltin.required' }).default(false),
     isFeatured: z.boolean({ message: 'zodError.amenity.isFeatured.required' }).default(false)
 });
+export type Amenity = z.infer<typeof AmenitySchema>;
 
 /**
  * Accommodation-Amenity Relation Schema
@@ -78,9 +79,4 @@ export const AccommodationAmenityRelationSchema = z.object({
         .max(100, { message: 'zodError.accommodationAmenity.additionalCostPercent.max' })
         .optional()
 });
-
-/**
- * Type exports for the main Amenity entity
- */
-export type Amenity = z.infer<typeof AmenitySchema>;
 export type AccommodationAmenityRelation = z.infer<typeof AccommodationAmenityRelationSchema>;

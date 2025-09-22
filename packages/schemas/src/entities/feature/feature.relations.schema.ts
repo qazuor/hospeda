@@ -135,7 +135,7 @@ export const FeatureWithCategorySchema = FeatureSchema.extend({
                 description: true,
                 icon: true,
                 priority: true,
-                isAvailable: true,
+
                 usageCount: true
             })
         )
@@ -159,7 +159,7 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 category: true,
                 icon: true,
                 priority: true,
-                isAvailable: true,
+
                 usageCount: true
             }).extend({
                 similarityScore: z.number().min(0).max(1), // How similar (0-1)
@@ -176,8 +176,7 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 name: true,
                 category: true,
                 icon: true,
-                priority: true,
-                isAvailable: true
+                priority: true
             }).extend({
                 coOccurrenceRate: z.number().min(0).max(1), // Percentage of co-occurrence
                 coOccurrenceCount: z.number().int().min(0)
@@ -195,7 +194,7 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 category: true,
                 icon: true,
                 priority: true,
-                isAvailable: true,
+
                 usageCount: true
             }).extend({
                 alternativeReason: z.string().optional(), // Why it's an alternative
@@ -379,7 +378,7 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
                 description: true,
                 icon: true,
                 priority: true,
-                isAvailable: true,
+
                 usageCount: true
             })
         )
@@ -398,7 +397,7 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
                 category: true,
                 icon: true,
                 priority: true,
-                isAvailable: true,
+
                 usageCount: true
             }).extend({
                 similarityScore: z.number().min(0).max(1),
@@ -415,8 +414,7 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
                 name: true,
                 category: true,
                 icon: true,
-                priority: true,
-                isAvailable: true
+                priority: true
             }).extend({
                 coOccurrenceRate: z.number().min(0).max(1),
                 coOccurrenceCount: z.number().int().min(0)
