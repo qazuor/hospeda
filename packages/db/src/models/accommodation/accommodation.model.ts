@@ -1,52 +1,43 @@
 import type {
-    AccommodationAmenityType,
-    AccommodationFeatureType,
-    AccommodationRatingType,
-    AccommodationType,
-    BaseSearchType,
-    SortType
-} from '@repo/types';
+    Accommodation,
+    AccommodationSearchInput,
+    DestinationSummary,
+    UserSummary
+} from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, asc, count, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model';
 import { getDb } from '../../client';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema';
 
-type AccommodationSearchType = BaseSearchType & {
-    filters?: {
-        types?: string[];
-        priceMin?: number;
-        priceMax?: number;
-        amenities?: string[];
-        visibility?: string[];
-        ownerId?: string;
-        destinationId?: string;
-    };
-};
+// Temporary interfaces for accommodation-related data
+interface AccommodationRow {
+    accommodationId: string;
+    [key: string]: unknown;
+}
 
-export class AccommodationModel extends BaseModel<AccommodationType> {
+export class AccommodationModel extends BaseModel<Accommodation> {
     protected table = accommodations;
     protected entityName = 'accommodations';
 
-    public async countByFilters(params: AccommodationSearchType): Promise<{ count: number }> {
+    public async countByFilters(params: AccommodationSearchInput): Promise<{ count: number }> {
         const db = getDb();
-        const { filters } = params;
 
         const whereClauses = [];
-        if (filters?.ownerId) {
-            whereClauses.push(eq(this.table.ownerId, filters.ownerId));
+        if (params.hostId) {
+            whereClauses.push(eq(this.table.ownerId, params.hostId));
         }
-        if (filters?.types && filters.types.length > 0) {
-            whereClauses.push(inArray(this.table.type, filters.types));
+        if (params.type) {
+            whereClauses.push(eq(this.table.type, params.type));
         }
-        if (filters?.priceMin !== undefined) {
-            whereClauses.push(gte(this.table.price, filters.priceMin));
+        if (params.minPrice !== undefined) {
+            whereClauses.push(gte(this.table.price, params.minPrice));
         }
-        if (filters?.priceMax !== undefined) {
-            whereClauses.push(lte(this.table.price, filters.priceMax));
+        if (params.maxPrice !== undefined) {
+            whereClauses.push(lte(this.table.price, params.maxPrice));
         }
-        if (filters?.destinationId) {
-            whereClauses.push(eq(this.table.destinationId, filters.destinationId));
+        if (params.destinationId) {
+            whereClauses.push(eq(this.table.destinationId, params.destinationId));
         }
 
         const where = and(...whereClauses);
@@ -57,41 +48,41 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
     }
 
     public async search(
-        params: AccommodationSearchType
-    ): Promise<{ items: AccommodationType[]; total: number }> {
+        params: AccommodationSearchInput
+    ): Promise<{ items: Accommodation[]; total: number }> {
         const db = getDb();
-        const { filters, sort, pagination } = params;
 
         const whereClauses = [];
-        if (filters?.ownerId) {
-            whereClauses.push(eq(this.table.ownerId, filters.ownerId));
+        if (params.hostId) {
+            whereClauses.push(eq(this.table.ownerId, params.hostId));
         }
-        if (filters?.types && filters.types.length > 0) {
-            whereClauses.push(inArray(this.table.type, filters.types));
+        if (params.type) {
+            whereClauses.push(eq(this.table.type, params.type));
         }
-        if (filters?.priceMin !== undefined) {
-            whereClauses.push(gte(this.table.price, filters.priceMin));
+        if (params.minPrice !== undefined) {
+            whereClauses.push(gte(this.table.price, params.minPrice));
         }
-        if (filters?.priceMax !== undefined) {
-            whereClauses.push(lte(this.table.price, filters.priceMax));
+        if (params.maxPrice !== undefined) {
+            whereClauses.push(lte(this.table.price, params.maxPrice));
         }
-        if (filters?.destinationId) {
-            whereClauses.push(eq(this.table.destinationId, filters.destinationId));
+        if (params.destinationId) {
+            whereClauses.push(eq(this.table.destinationId, params.destinationId));
         }
         // Note: Filtering by amenities would require a join and is more complex.
         // This is a simplified example.
 
         const where = and(...whereClauses);
 
-        const orderBy =
-            sort?.map((s: SortType) => {
-                const column = accommodations[s.field as keyof typeof accommodations];
-                if (!column) throw new Error(`Invalid sort field: ${s.field}`);
-                return s.direction === 'ASC' ? asc(column) : desc(column);
-            }) ?? [];
+        const orderBy = [];
+        if (params.sortBy) {
+            const column = accommodations[params.sortBy as keyof typeof accommodations];
+            if (column) {
+                orderBy.push(params.sortOrder === 'desc' ? desc(column) : asc(column));
+            }
+        }
 
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+        const page = params.page ?? 1;
+        const pageSize = params.pageSize ?? 10;
 
         const resultsQuery = db
             .select()
@@ -106,52 +97,52 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
         const [items, totalResult] = await Promise.all([resultsQuery, totalQuery]);
         const total = totalResult[0]?.count ?? 0;
 
-        return { items: items as AccommodationType[], total };
+        return { items: items as Accommodation[], total };
     }
 
     /**
      * Search accommodations with destination and owner relations
      */
-    public async searchWithRelations(params: AccommodationSearchType): Promise<{
+    public async searchWithRelations(params: AccommodationSearchInput): Promise<{
         items: Array<
-            AccommodationType & {
-                destination?: { id: string; name: string; slug: string };
-                owner?: { id: string; displayName: string };
+            Accommodation & {
+                destination?: DestinationSummary;
+                owner?: UserSummary;
             }
         >;
         total: number;
     }> {
         const db = getDb();
-        const { filters, sort, pagination } = params;
 
         const whereClauses = [];
-        if (filters?.ownerId) {
-            whereClauses.push(eq(this.table.ownerId, filters.ownerId));
+        if (params.hostId) {
+            whereClauses.push(eq(this.table.ownerId, params.hostId));
         }
-        if (filters?.types && filters.types.length > 0) {
-            whereClauses.push(inArray(this.table.type, filters.types));
+        if (params.type) {
+            whereClauses.push(eq(this.table.type, params.type));
         }
-        if (filters?.priceMin !== undefined) {
-            whereClauses.push(gte(this.table.price, filters.priceMin));
+        if (params.minPrice !== undefined) {
+            whereClauses.push(gte(this.table.price, params.minPrice));
         }
-        if (filters?.priceMax !== undefined) {
-            whereClauses.push(lte(this.table.price, filters.priceMax));
+        if (params.maxPrice !== undefined) {
+            whereClauses.push(lte(this.table.price, params.maxPrice));
         }
-        if (filters?.destinationId) {
-            whereClauses.push(eq(this.table.destinationId, filters.destinationId));
+        if (params.destinationId) {
+            whereClauses.push(eq(this.table.destinationId, params.destinationId));
         }
 
         const where = and(...whereClauses);
 
-        const orderBy =
-            sort?.map((s: SortType) => {
-                const column = accommodations[s.field as keyof typeof accommodations];
-                if (!column) throw new Error(`Invalid sort field: ${s.field}`);
-                return s.direction === 'ASC' ? asc(column) : desc(column);
-            }) ?? [];
+        const orderBy = [];
+        if (params.sortBy) {
+            const column = accommodations[params.sortBy as keyof typeof accommodations];
+            if (column) {
+                orderBy.push(params.sortOrder === 'desc' ? desc(column) : asc(column));
+            }
+        }
 
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 10;
+        const page = params.page ?? 1;
+        const pageSize = params.pageSize ?? 10;
 
         // Get accommodations with relations
         const results = await db.query.accommodations.findMany({
@@ -161,13 +152,26 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
                     columns: {
                         id: true,
                         name: true,
-                        slug: true
+                        slug: true,
+                        summary: true,
+                        isFeatured: true,
+                        reviewsCount: true,
+                        averageRating: true,
+                        accommodationsCount: true,
+                        media: true,
+                        location: true
                     }
                 },
                 owner: {
                     columns: {
                         id: true,
-                        displayName: true
+                        displayName: true,
+                        firstName: true,
+                        lastName: true,
+                        profile: true,
+                        role: true,
+                        lifecycleState: true,
+                        createdAt: true
                     }
                 }
             },
@@ -182,9 +186,9 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
 
         return {
             items: results as Array<
-                AccommodationType & {
-                    destination?: { id: string; name: string; slug: string };
-                    owner?: { id: string; displayName: string };
+                Accommodation & {
+                    destination?: DestinationSummary;
+                    owner?: UserSummary;
                 }
             >,
             total: totalResult[0]?.count ?? 0
@@ -200,7 +204,7 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
         destinationId?: string;
         type?: string;
         onlyFeatured?: boolean;
-    }): Promise<AccommodationType[]> {
+    }): Promise<Accommodation[]> {
         const db = getDb();
         const { limit = 10, destinationId, type, onlyFeatured = false } = params ?? {};
         const results = await db.query.accommodations.findMany({
@@ -217,7 +221,7 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
             orderBy: [desc(accommodations.averageRating), desc(accommodations.reviewsCount)],
             limit
         });
-        const items = results as unknown as AccommodationType[];
+        const items = results as unknown as Accommodation[];
         if (!items || items.length === 0) return items;
         const ids = items.map((i) => i.id);
         // Fetch amenities with amenity joined
@@ -231,16 +235,16 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
                 with: { feature: true }
             })
         ]);
-        const amenitiesByAcc = new Map<string, AccommodationAmenityType[]>();
-        for (const row of amenitiesRows as unknown as AccommodationAmenityType[]) {
-            const accId = row.accommodationId as unknown as string;
+        const amenitiesByAcc = new Map<string, unknown[]>();
+        for (const row of amenitiesRows as unknown as AccommodationRow[]) {
+            const accId = row.accommodationId;
             const arr = amenitiesByAcc.get(accId) ?? [];
             arr.push(row);
             amenitiesByAcc.set(accId, arr);
         }
-        const featuresByAcc = new Map<string, AccommodationFeatureType[]>();
-        for (const row of featuresRows as unknown as AccommodationFeatureType[]) {
-            const accId = row.accommodationId as unknown as string;
+        const featuresByAcc = new Map<string, unknown[]>();
+        for (const row of featuresRows as unknown as AccommodationRow[]) {
+            const accId = row.accommodationId;
             const arr = featuresByAcc.get(accId) ?? [];
             arr.push(row);
             featuresByAcc.set(accId, arr);
@@ -249,7 +253,7 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
             ...i,
             amenities: amenitiesByAcc.get(i.id),
             features: featuresByAcc.get(i.id)
-        })) as unknown as AccommodationType[];
+        })) as unknown as Accommodation[];
     }
 
     /**
@@ -257,14 +261,15 @@ export class AccommodationModel extends BaseModel<AccommodationType> {
      */
     async updateStats(
         accommodationId: string,
-        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingType }
+        stats: { reviewsCount: number; averageRating: number; rating: unknown }
     ): Promise<void> {
         await this.update(
             { id: accommodationId },
             {
                 reviewsCount: stats.reviewsCount,
-                averageRating: stats.averageRating,
-                rating: stats.rating
+                averageRating: stats.averageRating
+                // TODO [f6fe35e2-6167-4be4-9268-e46c0a42673f]: rating needs to be handled separately as it's not part of the main accommodation entity
+                // rating: stats.rating
             }
         );
     }

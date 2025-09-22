@@ -1,4 +1,4 @@
-import type { AccommodationReviewType } from '@repo/types';
+import type { AccommodationReview } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model';
 import { accommodationReviews } from '../../schemas/accommodation/accommodation_review.dbschema';
@@ -10,7 +10,7 @@ import { logError, logQuery } from '../../utils/logger';
 /**
  * Type for accommodation review with user and accommodation relations
  */
-type AccommodationReviewWithRelations = AccommodationReviewType & {
+type AccommodationReviewWithRelations = AccommodationReview & {
     user?: { id: string; firstName?: string; lastName?: string; email: string };
     accommodation?: { id: string; name: string; slug: string };
 };
@@ -19,7 +19,7 @@ type AccommodationReviewWithRelations = AccommodationReviewType & {
  * Model for accommodation reviews. Use for all DB access related to accommodation reviews.
  * Inherits CRUD and paginated methods from BaseModel.
  */
-export class AccommodationReviewModel extends BaseModel<AccommodationReviewType> {
+export class AccommodationReviewModel extends BaseModel<AccommodationReview> {
     protected table = accommodationReviews;
     protected entityName = 'accommodationReviews';
 
